@@ -20,11 +20,9 @@ class BlobCamera(Camera):
       else:
          # else, you better have supplied a name, like "blobfinder0"
          self.deviceName = camera
-      self.blobData = self.robot.getDeviceData(self.deviceName)
-      if len(self.blobData[0]) == 2: 
-         self.width, self.height = self.blobData[0]
-      else:
-         raise "didn't load blob camera"
+      self.blobHandle = self.robot.devices.__getattr__(self.deviceName).handle
+      while self.blobHandle.width == 0: pass
+      self.width, self.height = self.blobHandle.width,self.blobHandle.height
       self.depth = depth
       self.cameraDevice = Blob(self.width, self.height,
                                self.depth)
@@ -39,6 +37,7 @@ class BlobCamera(Camera):
       self.data = CBuffer(self.cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
+      print self.width, self.height
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Blob Camera View")
       self.devData["requires"] = ["blobfinder"]
@@ -47,6 +46,14 @@ class BlobCamera(Camera):
       self.data = CBuffer(self.cbuf)
       
    def _update(self):
-      blobdata = self.robot.getDeviceData(self.deviceName)[1]
-      self.cameraDevice.updateMMap(blobdata)
+      blobs = []
+      for i in range(self.blobHandle.blob_count):
+         blobs.append( (self.blobHandle.blobs[i].left,
+                        self.blobHandle.blobs[i].top,
+                        self.blobHandle.blobs[i].right,
+                        self.blobHandle.blobs[i].bottom,
+                        self.blobHandle.blobs[i].color
+                        )
+                       )
+      self.cameraDevice.updateMMap(blobs)
       self.processAll()

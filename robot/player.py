@@ -13,12 +13,14 @@ import playerc
 # dev.__dict__[name] 
 
 class PlayerDevice(Device):
+    NEXT_INDEX = {}
     def __init__(self, client, type, groups = {}):
         Device.__init__(self, type)
         self.groups = groups
         self.client = client
         self.handle = None
-        self.name = type
+        self.index = PlayerDevice.NEXT_INDEX.setdefault(type,0)
+        self.name = type + ("%d" % self.index)
         self.printFormat["data"] = "<device data>"
         self.devData["data"] = None
         self.devData["noise"] = 0.0
@@ -27,6 +29,7 @@ class PlayerDevice(Device):
         self.startDevice()
         if "get_geom" in self.client.__dict__:
             self.client.get_geom() # reads it into handle.pose or poses
+        PlayerDevice.NEXT_INDEX[type] += 1
 
     def preGet(self, kw):
         if kw == "pose":
@@ -42,9 +45,14 @@ class PlayerDevice(Device):
                 self.setPose( *self.devData[keyword] )
 
     def startDevice(self):
-        exec("self.handle = playerc.playerc_%s(self.client, 0)" % self.name)
+        exec("self.handle = playerc.playerc_%s(self.client, %d)" %
+             (self.type, self.index))
         if self.handle.subscribe(playerc.PLAYERC_ALL_MODE) != 0:
             raise playerc.playerc_error_str()
+        # robot.blobfinder.blobs[0].x, y, top, left, range, right, color,
+        #   area, bottom,
+        # color is a pointer
+        # robot.blobfinder.blob_count, height, width
     def getDeviceData(self, pos = 0):
         return self.handle.scan[0]
     def getPose(self):
@@ -642,12 +650,8 @@ class PlayerRobot(Robot):
         self.client.connect()
 
     def removeDevice(self, item):
+        self.devData[item].unsubscribe()
         Robot.removeDevice(self, item)
-        try:
-            self.client.stop(item)
-        except:
-            pass
-
         
 if __name__ == '__main__':
     myrobot = PlayerBase()

@@ -30,31 +30,26 @@ PyObject *Blob::updateMMap(PyObject *blobData) {
   int r, g, b;
   PyObject *blob;
   clear();
-  if (!PyTuple_Check(blobData)) {
-    PyErr_SetString(PyExc_TypeError, "Invalid tuple to updateMMap()");
+  if (!PyList_Check(blobData)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid list to updateMMap()");
     return NULL;
   }
-  long int packedcolor, area;
-  int center_x, center_y, 
-    left, right, top, bottom, dist;
-  for (int i = 0; i < PyTuple_Size(blobData); i++) {
-    PyObject *blobTuple = PyTuple_GetItem(blobData, i);
-    // for each blob:
-    for (int blobcount = 0; blobcount < PyTuple_Size(blobTuple); blobcount++) {
-      blob = PyTuple_GetItem(blobTuple, blobcount);
-      if (!PyArg_ParseTuple(blob, "lliiiiiii", 
-			    &packedcolor, &area, &center_x, &center_y, \
-			    &left, &right, &top, &bottom, &dist)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid items to updateMMap()");
-	return NULL;
-      }
-      // process data
-      // draw rectangle
-      r = packedcolor >> 16;
-      g = packedcolor >> 8 & 0x0000FF;
-      b = packedcolor & 0x0000FF;
-      drawRect(left, right, top, bottom, r, g, b);
+  int left, right, top, bottom;
+  long int packedcolor;
+  // for each blob:
+  for (int i = 0; i < PyList_Size(blobData); i++) {
+    PyObject *blob = PyList_GetItem(blobData, i);
+    if (!PyArg_ParseTuple(blob, "iiiil", 
+			  &left, &top, &right, &bottom, &packedcolor)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid items to updateMMap()");
+      return NULL;
     }
+    // process data
+    // draw rectangle
+    r = packedcolor >> 16;
+    g = packedcolor >>  8 & 0x0000FF;
+    b = packedcolor       & 0x0000FF;
+    drawRect(left, right, top, bottom, r, g, b);
   }
   return PyInt_FromLong(0L);
 }
