@@ -466,6 +466,7 @@ class Network:
                 self.initialize()
                 tssErr = 1.0; e = 1; totalCorrect = 0
                 continue
+            sys.sysout.flush()
             e += 1
         print "----------------------------------------------------"
         if totalCount > 0:
@@ -534,6 +535,7 @@ class Network:
                     if self.learning and self.learnDuringSequence:
                         self.change_weights()
                 # else, do nothing here
+                sys.sysout.flush()
             if self.sequenceLength > 1:
                 if self.learning and not self.learnDuringSequence:
                     self.change_weights()
