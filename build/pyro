@@ -9,7 +9,6 @@ if sys.argv[0][0] == '/':
     cwd = sys.argv[0]
 else:
     cwd = os.getcwd() + '/' + sys.argv[0]
-print "cwd=", cwd
 (binpath,spare) = os.path.split(cwd) # peel off pyro filename
 (pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
