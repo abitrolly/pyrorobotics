@@ -139,7 +139,7 @@ int main() {
   addto_dataset(data, input);
   input = make_data_entry(points1); 
   addto_dataset(data, input);
-  input = make_data_entry_weighted_masked(points2, 2.0, mask, 5); 
+  input = make_data_entry_weighted_masked(points2, 2.0, mask, 5,0); 
   addto_dataset(data, input);
   input = make_data_entry(points3); 
   addto_dataset(data, input);
