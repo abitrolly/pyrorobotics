@@ -10,8 +10,9 @@ class FakeFile:
 
 class PCAPlot:
     def __init__(self, eigenfile, namefile = None, debug = 0,
-                 dimensions = 2, title = None, datatitle = None):
+                 dimensions = 1, title = None, datatitle = None):
         self.gp = Gnuplot.Gnuplot(debug = debug)
+        self.dimensions = dimensions
         # read in eigenvalues, names
         efp = open(eigenfile, "r")
         if namefile:
@@ -25,10 +26,21 @@ class PCAPlot:
             eline = eline.strip()
             label = nline.strip()
             data = eline.split(" ")
-            if label:
-                self.gp('set label "%s" at %f,%f' %
-                        (label, float(data[0]), float(data[1])))
-            dataset.append( (float(data[0]), float(data[1])))
+            if dimensions == 2:
+                if label:
+                    self.gp('set label "%s" at %f,%f' %
+                            (label, float(data[0]), float(data[1])))
+                dataset.append( (float(data[0]), float(data[1])))
+            elif dimensions == 3:
+                if label:
+                    self.gp('set label "%s" at %f,%f,%f' %
+                            (label, float(data[0]),
+                             float(data[1]), float(data[2])))
+                dataset.append( (float(data[0]), float(data[1]),
+                                 float(data[2])))
+            else:
+                raise "DimensionError", \
+                      "cannot handle dimensions of %d" % dimensions
             eline = efp.readline()
             nline = nfp.readline()
         efp.close()
@@ -39,7 +51,13 @@ class PCAPlot:
         self.data.set_option(title = datatitle)
 
     def plot(self):
-        self.gp.plot(self.data)
+        if self.dimensions == 2:
+            self.gp.plot(self.data)
+        elif self.dimensions == 3:
+            self.gp.splot(self.data)
+        else:
+            raise "DimensionError", \
+                  "cannot handle dimensions of %d" % dimensions
 
     def replot(self):
         self.gp.replot()
