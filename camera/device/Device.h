@@ -24,7 +24,6 @@ public:
   int height;
   int depth;
   int rgb[3];
-
 };
 
 #endif
