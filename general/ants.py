@@ -3,7 +3,7 @@
 
 from random import random
 
-version = "0.1"
+version = "0.2"
 
 class Board:
     def __init__(self, width, height, pixelsPerCell = 10, title = "Ants"):
@@ -11,7 +11,7 @@ class Board:
         from Tkinter import Tk, Canvas, Toplevel
         self.width = width
         self.height = height
-        self.color = ["white", "black", "red", "yellow", "blue", "green"]
+        self.color = ["white", "black", "red", "yellow", "blue", "green", "purple", "pink", "cyan", "turquoise", "gray"]
         self.board = [[0 for x in range(self.width)] for y in range(self.height)]
         self.box = [[0 for x in range(self.width)] for y in range(self.height)]
         self.pixelsPerCell = pixelsPerCell
@@ -134,9 +134,34 @@ class Ant:
         self.x, self.y = board.move(self.x, self.y, offsets[0], offsets[1])
 
 if __name__ == "__main__":
-    board = Board(100, 100, 4)
-    ant = Ant(board.width / 2, board.height / 2, "S", "101")
-    ant1 = Ant(board.width / 4, board.height / 4, "S", "10")
-    for i in range(11000):
-        ant.move(board)
-        ant1.move(board)
+    def ask(msg):
+        print msg, "(y or n):"
+        return raw_input() == 'y'
+
+    if ask("Do you want to see Langton's Highway?"): 
+        board = Board(100, 100, 5)
+        ant = Ant(board.width / 2, board.height / 2, "S", "10")
+        for i in range(11000):
+            ant.move(board)
+
+    if ask("Do you want to see an ant with nine states?"): 
+        board = Board(100, 100, 6)
+        ant = Ant(board.width / 2, board.height / 2, "S", "101111101")
+        for i in range(11000):
+            ant.move(board)
+
+    if ask("Do you want to see a board with two ants?"): 
+        board = Board(100, 100, 4)
+        ant1 = Ant(board.width / 2, board.height / 2, "S", "10")
+        ant2 = Ant(board.width / 4, board.height / 4, "N", "10")
+        for i in range(11000):
+            ant1.move(board)
+            ant2.move(board)
+
+    if ask("Do you want to see a board with two different kinds of ants?"): 
+        board = Board(200, 200, 4)
+        ant1 = Ant(board.width / 2, board.height / 2, "S", "101111")
+        ant2 = Ant(board.width / 4, board.height / 4, "N", "10")
+        for i in range(11000):
+            ant1.move(board)
+            ant2.move(board)
