@@ -242,6 +242,14 @@ class PyroImage:
                      data.set(x,y,val,c)
       return data
 
+   def swapPlanes(self, plane1, plane2):
+      for h in range(self.height):
+         for w in range(self.width):
+            c2 = self.get(w, h, plane2)
+            c1 = self.get(w, h, plane1)
+            self.set(w, h, c2, plane1)
+            self.set(w, h, c1, plane2)
+
 class Histogram(PyroImage):
    """
    Histogram class. Based on Image, but has methods for display.
