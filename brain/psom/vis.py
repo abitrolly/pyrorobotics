@@ -23,6 +23,7 @@ class VisPsom(psom):
    def __init__(self, *args, **keys):
       self.last_x = 0
       self.last_y = 0
+      self.fontsize = 8 # starting font size
       #get Vis-specific keyword arguements out
       if 'vis_radius' in keys.keys():
          self.vis_radius = keys['vis_radius']
@@ -183,10 +184,10 @@ class VisPsom(psom):
                self.canvas.move(self.cells[y][x]["traintext"],center[0] - px, center[1] - py)
                self.canvas.move(self.cells[y][x]["maptext"],center[0] - px, center[1] - py)
                self.canvas.move(self.cells[y][x]["labeltext"],center[0] - px, center[1] - py)
-               fontsize = self.cellwidth / 8
-               self.canvas.itemconfigure(self.cells[y][x]["traintext"], font=(('MS', 'Sans', 'Serif'), fontsize))
-               self.canvas.itemconfigure(self.cells[y][x]["maptext"], font=(('MS', 'Sans', 'Serif'), fontsize))
-               self.canvas.itemconfigure(self.cells[y][x]["labeltext"], font=(('MS', 'Sans', 'Serif'), fontsize))
+               self.fontsize = self.cellwidth / 8
+               self.canvas.itemconfigure(self.cells[y][x]["traintext"], font=(('MS', 'Sans', 'Serif'), self.fontsize))
+               self.canvas.itemconfigure(self.cells[y][x]["maptext"], font=(('MS', 'Sans', 'Serif'), self.fontsize))
+               self.canvas.itemconfigure(self.cells[y][x]["labeltext"], font=(('MS', 'Sans', 'Serif'), self.fontsize))
 
             self.cellhash[cell] = (x, y)
 
@@ -306,7 +307,7 @@ class VisPsom(psom):
       label = self.get_model_vector(point(x,y)).get_label_asString()
       self.canvas.itemconfigure(self.cells[y][x]['labeltext'],
                                 text = label,
-                                font=(('MS', 'Sans', 'Serif'), '8'))
+                                font=(('MS', 'Sans', 'Serif'), self.fontsize))
 
    def clearfill(self):
       """
