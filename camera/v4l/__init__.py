@@ -11,26 +11,14 @@ class V4LGrabber(Camera):
    A Wrapper class for the C fuctions that capture data from the Camera.
    It uses the Video4linux API, and the image is kept in memory through
    an mmap.
-
-   Thought -- I have no idea what will happen if two instances of this
-   class are created.  It might be harmless, or it might cause a crash.
-   I think if you call update on one of them, both will be updated.  Maybe
-   it wasn't such a good idea to pass the mmap directly back to Python.
-
-   It looks like trying to instanciate a V4LGrabber, deleting it, and trying
-   to instanciate another causes problems with device busy on the video device.
-   I'm not sure why.
    """
    def __init__(self, width, height, depth = 3,
-                device = '/dev/video0', channel = 1, title = None):
+                device = '/dev/video0', channel = 1, title = None,
+                visionSystem = None):
       """
-      Currently, if depth is any number other than 1 or 3, an exception
-      will be raised.  I plan on implementing various color depths soon.
-
       Device should be the name of the capture device in the /dev directory.
       This is highly machine- and configuration-dependent, so make sure you
       know what works on your system
-      
       Channel -  0: television; 1: composite; 2: S-Video
       """
       if width < 48:
@@ -41,13 +29,17 @@ class V4LGrabber(Camera):
       self.handle=None
       self.cbuf=None
       try:
-         self.cobj = V4L(device, width, height, depth, channel)
-         self.cbuf = self.cobj.getMMap()
+         self.cameraDevice = V4L(device, width, height, depth, channel)
       except:
          print "v4l: grab_image failed!"
-      self.width = self.cobj.getWidth()
-      self.height = self.cobj.getHeight()
-      self.depth = self.cobj.getDepth()
+      # connect vision system: --------------------------
+      self.vision = visionSystem
+      self.vision.registerCameraDevice(self.cameraDevice)
+      self.width = self.vision.getWidth()
+      self.height = self.vision.getHeight()
+      self.depth = self.vision.getDepth()
+      self.cbuf = self.vision.getMMap()
+      # -------------------------------------------------
       if title == None:
 	 title = self.device
       Camera.__init__(self, width, height, depth, title = title)
@@ -61,23 +53,13 @@ class V4LGrabber(Camera):
       refresh.
       """
       try:
-	 if not self.lockCamera:
-            self.cobj.updateMMap()
+         self.cameraDevice.updateMMap()
       except:
          print "v4l: refresh_image failed"
-
-#   def __del__(self):
-#      """
-#      DO NOT REMOVE THIS!
-#      This deconstructor method makes sure that the mmap is freed before the
-#      Camera is deleted.
-#      """
-#      if dir(self).count('handle') == 1 and self.handle and self.cbuf:
-#         #if __init__ was not successful in acquiring the video device,
-#         #a call to free_image will be unsuccessful.
-#         share.grabImage.free_image(self.handle, self.cbuf)
-
-   
+      try:
+         self.vision.processAll()
+      except:
+         print "error in vision system?"
 
 if __name__ == "__main__":
    cam = V4LGrabber(384, 240)
