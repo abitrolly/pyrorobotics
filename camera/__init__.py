@@ -22,20 +22,6 @@ def makeArgList(item):
       return (item, )
    return (item[0], item[1:])
 
-class BlobData:
-   def __init__(self, width, height):
-      self.min_x = width
-      self.min_y = height
-      self.max_x = 0
-      self.max_y = 0
-      self.mass = 0
-   
-class Hist:
-   def __init__(self):
-      self.red = 0
-      self.green = 0
-      self.blue = 0
-
 class CBuffer:
    """
    A private buffer class to transmute the CBuffer we get in data
@@ -117,9 +103,15 @@ class Camera(PyroImage, Service):
       return self.vision.getFilterList()
 
    def loadFilters(self):
+      # use TK file open
+      # system.loadINIT
+      # take list, and go through and addFilter
       pass
 
    def saveFilters(self):
+      # use TK file open
+      # system.loadINIT
+      # INIT() return [["match", args, ...], ["superColor", ...]]
       pass
 
    def getData(self):
@@ -132,7 +124,7 @@ class Camera(PyroImage, Service):
             data[(x + y * self.width) * self.depth + 2] = rgb[self.rgb[2]]
       return data
 
-   def saveImage(self, filename = "pyro-vision.ppm"):
+   def saveImage(self, filename = "pyro-camera.ppm"):
       # faster than saveToFile, as it is in C
       print "saving image to '%s'..." % filename,
       self.vision.saveImage(filename);
@@ -227,8 +219,8 @@ class Camera(PyroImage, Service):
          filterList = [['List filters', self.listCallbackList],
                        ['Toggle filters', self.toggleFilterMode],
                        None,
-                       ['Clear', [["Last filter", self.popCallbackList],
-                                  ['All filters', lambda self=self: self.clearCallbackList( )]]],
+                       ['Clear filters', [["Last", self.popCallbackList],
+                                          ['All', self.clearCallbackList]]],
                        None]
 
          filterList.extend( self.makeFilterMenu(filterData) )
@@ -240,9 +232,9 @@ class Camera(PyroImage, Service):
                           None,
                           ['Close',self.hideWindow] 
                           ]),
-                 ('View', [['Pause', lambda self=self: self.pauseButton()],
-                           ['Play', lambda self=self: self.playButton()],
-                           ['Update', lambda self=self: self.updateButton()],
+                 ('View', [['Pause', self.pauseButton],
+                           ['Play', self.playButton],
+                           ['Update', self.updateButton],
                            None,
                            ['Fast Update (10Hz)', lambda self=self: self.setUpdateInterval(0.1)],
                            ['Medium Update (5Hz)', lambda self=self: self.setUpdateInterval(0.2)],
