@@ -18,6 +18,7 @@ class gui:
       Child classes should do initialization pertaining to the creation
       of the GUI in the constructor.
       """
+      self.triedToStop = 0
       self.alreadyCleanedUp = 0
       self.engine = engine
       self.engine.gui = self
@@ -333,6 +334,9 @@ class gui:
 
    def INThandler(self, signum, frame):
       print "STOP ----------------------------------------------------"
+      self.triedToStop += 1
+      if self.triedToStop > 2:
+         os.system("killall -9 pyro")
       self.engine.pleaseStop()
       self.cleanup()
 
