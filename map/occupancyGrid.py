@@ -110,7 +110,18 @@ class occupancyGrid(Tkinter.Tk):
       self.redraw(self.grid)
 
    def findPath(self, event):
-      path = self.planPath(self.start, self.goal, 50)
+      end = 10
+      start = 0
+      self.initPlanPath()
+      done = 0
+      while not done:
+         try:
+            path = self.planPath(self.start, self.goal, range(start, end))
+            done = 1
+         except "NoPathExists":
+            start = end
+            end *= 2
+      print "iterations:", end
       if path:
          self.redraw(g.value, path)
 
@@ -163,7 +174,10 @@ class occupancyGrid(Tkinter.Tk):
       return self.value[row + i][col] == 1e5000 or \
                  self.value[row][col + j] == 1e5000
 
-   def planPath(self, start, goal, iterations):
+   def initPlanPath(self):
+      self.value= [[self.infinity for col in range(self.cols)] for row in range(self.rows)]
+
+   def planPath(self, start, goal, iterator):
       """
       Path planning algorithm is based on one given by Thrun in the
       chapter 'Map learning and high-speed navigation in Rhino' from
@@ -182,11 +196,10 @@ class occupancyGrid(Tkinter.Tk):
       """
       startCol, startRow = start
       goalCol, goalRow = goal
-      self.value= [[self.infinity for col in range(self.cols)] for row in range(self.rows)]
       if not self.inRange(goalRow, goalCol):
          raise "goalOutOfMapRange"
       self.value[goalRow][goalCol] = 0.0
-      for iter in range(iterations):
+      for iter in iterator:
          for row in range(self.rows):
             for col in range(self.cols):
                for i in [-1,0,1]:
@@ -197,6 +210,8 @@ class occupancyGrid(Tkinter.Tk):
                         else:
                            if self.tooTight(row, col, i, j):
                               d = self.bigButNotInfinity
+                           elif abs(i) == 0 and abs(j) == 0:
+                              d = 0.00
                            elif abs(i) == 1 and abs(j) == 1:
                               d = 1.41
                            else:
