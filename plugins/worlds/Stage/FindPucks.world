@@ -14,13 +14,13 @@ gui
   
 bitmap  
 (  
-  file "/home/pyro/plugins/worlds/Stage/rink.pnm.gz"   
+  file "rink.pnm.gz"   
   resolution 0.01  
 )  
   
 define red_puck puck( color "red" )  
   
-include "/home/pyro/plugins/worlds/Stage/usc_pioneer.inc"  
+include "usc_pioneer.inc"  
   
 usc_pioneer_gripper( color "green" name "myrobot"   
                      port 6665 pose [ 2.0 2.0 20 ])  
