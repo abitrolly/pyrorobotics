@@ -18,6 +18,7 @@ class Hinton: # Plot
       self.canvas = Canvas(self.win,width=width,height=self.height)
       self.canvas.pack()
       self.even = 0
+      self.update([1.0] * blocks)
         
    def setTitle(self, title):
       self.win.wm_title(title)

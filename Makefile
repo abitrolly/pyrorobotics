@@ -1,5 +1,6 @@
 SUBDIRS = lib robot/driver/saphira camera/bt848 geometry gui/3DArray \
-	robot/driver/grid robot/driver/video camera/v4l brain/psom/csom_src
+	robot/driver/grid robot/driver/video camera/v4l brain/psom/csom_src \
+	tools/cluster
 # Failing: robot/driver/testc
 
 everything: system/version.py all bin/pyro
