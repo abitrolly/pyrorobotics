@@ -252,8 +252,9 @@ class Camera(PyroImage, Service):
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
          
       self.visible = 1
-      self.window.aspect(self.width, self.height, self.width, self.height)
-      #self.window.minsize(355, 0)
+      self.window.aspect(self.width, self.height + 28,
+                         self.width, self.height + 28)
+      self.window.minsize(200, 0)
       while self.window.tk.dooneevent(2): pass
 
    def pauseButton(self):
@@ -328,12 +329,18 @@ class Camera(PyroImage, Service):
       if not self.active:
          self.updateOnce()
 
+   def getCanvasWidth(self):
+      return self.window.winfo_width() - 2
+
+   def getCanvasHeight(self):
+      return self.window.winfo_height() - 2 - 28
+
    def processLeftClickDown(self, event):
-      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       self.lastX, self.lastY = int(x * self.width), int(y * self.height)
 
    def processLeftClickUp(self, event):
-      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       if (x == self.lastX and y == self.lastY):
          rgb = self.vision.get(int(x), int(y))
@@ -344,14 +351,14 @@ class Camera(PyroImage, Service):
          return self.addFilter("histogram", self.lastX, self.lastY, x, y, 8)
 
    def processMiddleClick(self, event):
-      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
       print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 1)
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 1)
 
    def processRightClick(self, event):
-      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
       print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 2)
@@ -370,8 +377,8 @@ class Camera(PyroImage, Service):
          self.canvas.delete("image")
          self.im = self.getImage()
          try:
-            self.im = self.im.resize( (self.window.winfo_width() - 2, 
-                                       self.window.winfo_height() - 2) )
+            self.im = self.im.resize( (self.getCanvasWidth(),
+                                       self.getCanvasHeight()) )
             #Image.BILINEAR ) # too slow
          except:
             print "error: could not resize window"         
@@ -379,8 +386,9 @@ class Camera(PyroImage, Service):
          self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
                                   tag="image")
          self.canvas.create_rectangle(1, 1,
-                                      self.window.winfo_width() - 2,
-                                      self.window.winfo_height() - 2, tag="image")
+                                      self.getCanvasWidth()
+                                      self.getCanvasHeight(),
+                                      tag="image")
          self.canvas.pack()
          while self.window.tk.dooneevent(2): pass
 
