@@ -48,6 +48,10 @@ PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   filterList = PyList_New(0);
   // set the current image to:
   Image = image;
+  // Make memory for motion capture:
+  for (int i = 0; i < MAXMOTIONLEVELS; i++) {
+    motionArray[i] = new unsigned char[width * height * depth];
+  }
   return PyInt_FromLong(0L);
 }
 
@@ -1122,6 +1126,8 @@ PyObject *Vision::gaussianBlur() {
 } 
 
 PyObject *Vision::applyFilterList() {
+  // This is called right after a call to camera.updateMMap()
+  motionCount = 0;
   return applyFilters(filterList);
 }
 
@@ -1134,13 +1140,16 @@ PyObject *Vision::restore() {
 }
 
 PyObject *Vision::motion(int threshold, int outChannel) { 
-  static unsigned char *motion = new unsigned char[width * height * depth];
   static unsigned char *temp = new unsigned char[width * height * depth];
+  if (motionCount >= MAXMOTIONLEVELS) {
+    PyErr_SetString(PyExc_TypeError, "too many calls detecting motion; increase MAXMOTIONLEVELS in Vision.cpp");
+    return NULL;
+  }
   for (int w = 0; w < width; w++) {
     for (int h = 0; h < height; h++) {
       int totalDiff = 0;
       for (int d = 0; d < depth; d++) {
-	totalDiff += abs(Image[(h * width + w) * depth + d] - motion[(h * width + w) * depth + d]);
+	totalDiff += abs(Image[(h * width + w) * depth + d] - motionArray[motionCount][(h * width + w) * depth + d]);
 	// set it black:
 	temp[(h * width + w) * depth + d] = 0;
       }
@@ -1149,8 +1158,12 @@ PyObject *Vision::motion(int threshold, int outChannel) {
 	temp[(h * width + w) * depth + rgb[outChannel]] = 255;
     }
   }
-  memcpy(motion, Image, width * height * depth);
+  // Copy current image to motion:
+  memcpy(motionArray[motionCount], Image, width * height * depth);
+  // Copy temp to current Image:
   memcpy(Image, temp, width * height * depth);
+  // increase motion counter for next call:
+  motionCount++;
   return PyInt_FromLong(0L);
 }
 

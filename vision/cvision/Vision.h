@@ -33,6 +33,7 @@ typedef struct blob{
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAXBLOBS 2000
+#define MAXMOTIONLEVELS 3
 
 class Vision {
 public:
@@ -101,8 +102,6 @@ public:
 
   int getCopyMode() { return copyMode; }
   void setCopyMode(int value) {copyMode = value;}
-  int getMotionDetection() { return motionDetection; }
-  void setMotionDetection(int val) { motionDetection = val; }
   PyObject *getRGB();
   PyObject *setRGB(int r, int g, int b); 
 
@@ -119,6 +118,8 @@ public:
   unsigned char *image;
   unsigned char *original;
   unsigned char *workspace;
+  unsigned char *motionArray[MAXMOTIONLEVELS];
+  int motionCount;
   int copyMode;
   int allocatedImage;
 
@@ -127,7 +128,6 @@ public:
   int height;
   int depth;
   int rgb[3];
-  int motionDetection;
 
   Blob *initBlob(Blob *b);
   Blob *initBlob( Blob *b, int y, int x );

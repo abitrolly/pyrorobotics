@@ -27,9 +27,13 @@ import math, string, time, os
 
 def ellipses(things):
     if isinstance(things, (type((1,)), type([1,]))):
-        return ellipses_help(things)
+        try:
+            retval = ellipses_help(things)
+        except:
+            retval = things
     else:
-        return things
+        retval = things
+    return retval
 
 def makePerty(nums):
     str = "["
