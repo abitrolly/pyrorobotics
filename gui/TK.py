@@ -161,6 +161,16 @@ class TKgui(gui):
          self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
          self.canvasBrain.pack()
 
+   def redrawPlots(self):
+      for p in self.engine.plot:
+         try:
+            p.redraw(()) # pass in any options
+         except Tkinter.TclError:
+            #Window's closed; remove the plot from the redraw list
+            print "Removing plot"
+            self.engine.plot.remove(p)
+
+
    def redrawWindowBrain(self):
       # FIX: behavior specific. How to put this in behavior code so
       # that each brain would know how to draw itself?
@@ -319,6 +329,7 @@ class TKgui(gui):
                try: self.engine.robot.update()
                except: pass
             self.redrawWindowBrain()
+            self.redrawPlots()
             if self.textArea['Brain:']["text"] != self.engine.brainfile:
                self.textArea['Brain:'].config(text = self.engine.brainfile)
             if self.textArea['Simulator:']["text"] != self.engine.worldfile:

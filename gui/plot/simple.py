@@ -2,18 +2,20 @@
 # Sample Plotter
 # -------------------------------------------------------
 
-from Tkinter import *
-import os
+import Tkinter
+import random
 
-class SimplePlot: 
+class SimplePlot(Tkinter.Tk): 
+    COLORS = ['blue', 'red', 'tan', 'yellow', 'orange', 'black',
+              'azure', 'beige', 'brown', 'coral', 'gold', 'ivory',
+              'moccasin', 'navy', 'salmon', 'tan', 'ivory']
     def __init__(self, robot, what):
-        self.win = Toplevel()
+        Tkinter.Tk.__init__(self)
         self.what = what
         self.robot = robot
-        self.win.wm_title("pyro@%s: %s Sensors" % (os.getenv('HOSTNAME'),what))
-        self.canvas = Canvas(self.win,width=400,height=120)
+        self.title("%s Sensors" % what)
+        self.canvas = Tkinter.Canvas(self,width=400,height=120)
         self.canvas.pack()
-
         self.dataMin = 0
         self.dataMax = robot.get('range', 'maxvalue')
         self.dataWindowSize = 400
@@ -21,10 +23,16 @@ class SimplePlot:
         self.dataCount = 0
         self.lastRun = 0
         self.dataHist = [0] * self.robot.get('range', 'count')
-
-    def redraw(self, options):
+        self.update_idletasks()
+        self.done = 0
+        self.protocol('WM_DELETE_WINDOW',self.close)
+    def close(self):
+        self.done = 1
+        self.withdraw()
+        self.update_idletasks()
+        self.destroy()
+    def redraw(self, options = {}):
         # do something to draw yourself
-        colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
         if self.dataCount > self.dataWindowSize:
             self.canvas.delete('data')
             self.dataCount = 0
@@ -38,5 +46,15 @@ class SimplePlot:
                                     int(float(dist)/self.dataMax * 100.0),
                                     tags = 'data',
                                     width = 2,
-                                    fill = colors[sensor])
+                                    fill = SimplePlot.COLORS[sensor])
             self.dataHist[sensor] = int(float(dist)/self.dataMax * 100.0 - 1)
+        self.update_idletasks()
+
+if __name__ == '__main__':
+    class Robot:
+        def __init__(self):
+            self.sensorSet = {'all': (0,1)}
+        def get(self, t1 = None, t2 = None, t3 = None):
+            return int(random.random() * 10)
+    plot = SimplePlot(Robot(), 'all')
+    plot.mainloop()
