@@ -1,4 +1,3 @@
-from pyro.system import share
 from fake import Fake
 from pyro.camera import Camera, CBuffer
 import re, time, os

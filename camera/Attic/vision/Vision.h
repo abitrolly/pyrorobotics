@@ -11,6 +11,7 @@ class Vision {
 public:
   Vision();
   Vision(int w, int h, int d, int r, int g, int b);
+  Vision(int w, int h, int d);
   ~Vision();
   void initialize(int wi, int he, int de, int r, int g, int b);
   void superColor(float w1, float w2, float w3,
@@ -29,13 +30,13 @@ public:
   int saveImage(char *filename);
   PyObject *getMMap();
 
+  unsigned char *image;
 
  protected:
   int width;
   int height;
   int depth;
   int rgb[3];
-  unsigned char *image;
 };
 
 #endif

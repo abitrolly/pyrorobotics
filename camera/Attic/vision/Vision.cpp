@@ -7,6 +7,10 @@ Vision::Vision(int wi, int he, int de, int r, int g, int b) {
   initialize(wi, he, de, r, g, b);
 }
 
+Vision::Vision(int wi, int he, int de) {
+  initialize(wi, he, de, 0, 1, 2);
+}
+
 Vision::~Vision() {
   delete [] image;
 }

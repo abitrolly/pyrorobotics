@@ -14,11 +14,8 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 LIBDIRS= -L/usr/X11R6/lib
 LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
 
-v4lcap.o: v4lcap.c v4lcap.h
-	$(CC) $(CPPFLAGS) -c v4lcap.c -o v4lcap.o
-
-_v4l.so: v4l.o V4L.o v4lcap.o
-	$(CC) $(CPPFLAGS) -shared v4lcap.o v4l.o V4L.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
+_v4l.so: v4l.o V4L.o
+	$(CC) $(CPPFLAGS) -shared v4l.o V4L.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
 
 V4L.o:: V4L.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<
