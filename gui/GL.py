@@ -302,6 +302,7 @@ class GLgui(gui):
       return retval
 
    def refresh(self):
+      self.stopEngine()
       self.win.autospin = 1
       self.win.xspin = 0
       self.win.yspin = 0
