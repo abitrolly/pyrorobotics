@@ -83,8 +83,7 @@ class PlayerSonarDevice(PlayerDevice):
         self.devData["rawunits"] = "MM"
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
-        # These are fixed in rawunits (above): DO NOT CONVERT:
-        self.devData['maxvalueraw'] = 5000 # in rawunits
+        self.devData['maxvalueraw'] = 5.000
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
         self.devData['units']    = "ROBOTS"

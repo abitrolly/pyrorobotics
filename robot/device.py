@@ -75,6 +75,8 @@ class Device:
         # first, get everything into meters:
         if self.devData["rawunits"] == "MM":
             raw = raw / 1000.0
+        elif self.devData["rawunits"] == "CM":
+            raw = raw / 100.0
         elif self.devData["rawunits"] == "METERS":
             pass # ok
         else:
