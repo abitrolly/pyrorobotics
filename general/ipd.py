@@ -3,7 +3,7 @@
 # Bryn Mawr College
 
 from random import random
-import operator
+import operator, os, sys
 
 class Game:
     def __init__(self, player1, player2):
@@ -77,6 +77,17 @@ class TitForTat(Player):
 
 players = (AlwaysDefect(), RandomPlayer(), AlwaysCooperate(), TitForTat())
 
+files = os.popen("ls /home/*/ipd.py")
+sys.path.insert(0, '')
+for file in files:
+    file = file.strip()
+    path = file[:-6]
+    sys.path[0] = path
+    import ipd as userspace
+    reload(userspace)
+    IPD = userspace.IPD
+    players.append( IPD() )
+    
 for i in players:
     for j in players:
         game = Game(i, j)
