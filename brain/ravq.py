@@ -165,6 +165,7 @@ class RAVQ:
         self.labels = {}
         self.recordHistory = 0
         self.history = [] # last inputs to map to each model vector
+        self.counts = []
         self.historySize = 5
         self.winnerIndexHistory = [] # records the model indicies
         self.winnerHistory = [] # not implemented yet
@@ -254,6 +255,9 @@ class RAVQ:
         else:
             i = (index / len(self.history)) % len(self.history)
             j = index % len(self.history[i])
+        self.counts[i][j] += 1
+        if self.verbosity > 0:
+            print "Buffer counts:", self.counts
         return self.history[i][j]
     def getWinnerTotalCount(self):
         """
@@ -438,9 +442,11 @@ class RAVQ:
             # new model vector so we initialize new history list
             if len(self.history) < len(self.models):
                 self.history.append([self.buffer[len(self.buffer)-1]])
+                self.counts.append([0])
             # previous model vector, but corresponding history list is not full
             elif len(self.history[self.newWinnerIndex]) < self.historySize:
                 self.history[self.newWinnerIndex].append(self.buffer[len(self.buffer)-1])
+                self.counts[self.newWinnerIndex].append(0)
             # previous model vector, history list is full
             else:
                 self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
@@ -740,7 +746,8 @@ class ExperimentalRAVQ(ARAVQ):
             # previous model vector, but corresponding history list is not full
             elif len(self.history[self.newWinnerIndex]) < self.historySize:
                 self.history[self.newWinnerIndex].append(self.currentInput[:])
-            # previous model vector, history list is full
+                self.counts[[self.newWinnerIndex].append([0] * len(self.currentInput))]
+                # previous model vector, history list is full
             else:
                 self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
                                                     [self.currentInput[:]]
@@ -752,6 +759,7 @@ if __name__ == '__main__':
     bitlist = makeBitList()
     #parameters are buffer size, epsilon, and delta
     ravq = RAVQ(4, 2.1, 1.1)
+    ravq.setVerbosity(2)
     ravq.setHistory(1)
     cnt = 0
     for bits in bitlist:
@@ -763,6 +771,7 @@ if __name__ == '__main__':
     print "Creating an adaptive RAVQ using all possible lists of 8 bits"
     print "------------------------------------------------------------"
     ravq = ARAVQ(4, 2.1, 1.1, .2)
+    ravq.setVerbosity(2)
     ravq.setHistory(1)
     ravq.setHistorySize(2)
     cnt = 0

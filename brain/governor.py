@@ -4,8 +4,6 @@ Governor code for self regulating networks.
 
 """
 
-
-
 import pyro.brain.ravq
 import random
 
