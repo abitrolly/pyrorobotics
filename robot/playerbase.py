@@ -107,14 +107,13 @@ class PlayerBase(Robot):
     def disconnect(self):
         print "Disconnecting..."
 
-    def rawToUnits(self, dev, raw, name):
+    def rawToUnits(self, dev, raw, name, noise):
         raw = raw / 1000.0
-        if self.noise > 0:
+        if noise > 0:
             if random.random() > .5:
-                raw += (raw * (self.noise * random.random()))
+                raw += (raw * (noise * random.random()))
             else:
-                raw -= (raw * (self.noise * random.random()))
-                
+                raw -= (raw * (noise * random.random()))
         if name == 'sonar':
             val = min(max(raw, 0.0), 2.99)
         else:
