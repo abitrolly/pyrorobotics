@@ -1,6 +1,8 @@
 #ifndef  _B21RTOP_H_
  #define _B21RTOP_H_
 
+#include "Python.h"
+
 class B21R;
 
 class b21r
@@ -26,10 +28,11 @@ class b21r
     int    SetVelos              (double,double);
     void Disconnect(void);
     void initSkirtPose(void);
-    
- private:
+    PyObject *getLaser(void);
+    PyObject *getSonarHigh(void);
+    PyObject *getSonarLow(void);
+    int move(double translate, double rotate);
     B21R   *dev;
-
 };
 
 #endif

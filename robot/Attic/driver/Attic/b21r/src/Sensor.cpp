@@ -314,3 +314,9 @@ Polar Sensor :: polGetMax()
   }
 }
 
+double Sensor::get(int pos) {
+  if (pos < m_lSensorCount && pos >= 0) {
+    return m_daReadings[ pos ];
+  }	
+  return -1.0;
+}

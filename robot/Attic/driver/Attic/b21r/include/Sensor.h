@@ -64,13 +64,13 @@ class Sensor
     virtual double GetMaxDist(void);
     virtual Polar  polGetMin(void);
     virtual Polar  polGetMax();
-
+    double get(int pos);
     double * m_dpOffset;
     long SensorCount;    
+    long m_lSensorCount;    
 
  protected:
     long m_lSensorHistCount;
-    long m_lSensorCount;    
     double *m_daAngles; // angles of sonars
 
     unsigned long lLastSample;
@@ -88,8 +88,3 @@ class Sensor
 };
 
 #endif
-
-
-
-
-

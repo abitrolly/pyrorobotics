@@ -57,4 +57,41 @@ void b21r :: Disconnect (void) {
   dev->Disconnect();
 }
 
+PyObject *b21r :: getSonarHigh(void) {
+  // return Python List
+  PyObject *list = PyList_New(dev->HighSonar.m_lSensorCount);
+  PyObject *element;
+  for( int i=0; i< dev->HighSonar.m_lSensorCount; i++ ) {
+    element = Py_BuildValue("f", dev->HighSonar.get(i));
+    PyList_SET_ITEM( list, i, element);
+  }
+  return list;
+}
+
+PyObject *b21r :: getSonarLow(void) {
+  // return Python List
+  PyObject *list = PyList_New(dev->LowSonar.m_lSensorCount);
+  PyObject *element;
+  for( int i=0; i< dev->LowSonar.m_lSensorCount; i++ ) {
+    element = Py_BuildValue("f", dev->LowSonar.get(i));
+    PyList_SET_ITEM( list, i, element);
+  }
+  return list;
+}
+
+PyObject *b21r :: getLaser(void) {
+  // return Python List
+  PyObject *list = PyList_New(dev->MidLaser.m_lSensorCount);
+  PyObject *element;
+  for( int i=0; i< dev->MidLaser.m_lSensorCount; i++ ) {
+    element = Py_BuildValue("f", dev->MidLaser.get(i));
+    PyList_SET_ITEM( list, i, element);
+  }
+  return list;
+}
+
+int b21r :: move(double translate, double rotate) {
+  return (dev->SetVelos(translate, rotate));
+}
+
 

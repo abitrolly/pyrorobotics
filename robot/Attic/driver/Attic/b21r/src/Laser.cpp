@@ -116,3 +116,4 @@ double Laser :: degGetReading(double dAngle) {
   // return pos that is 0 at robot's right, counter clockwise increasing
   return m_daReadings[ pos ];
 }
+

@@ -35,8 +35,8 @@ _lowlevel.so: lowlevel.o $(B21R_OBJS)
 lowlevel.o: lowlevel.cc
 	gcc -c -frepo $(CPPFLAGS) $^ -o $@
 
-lowlevel.cc: b21r.i 
-	swig -python -I$(INCLUDE) -c++ -o $@ $<
+lowlevel.cc: b21r.i src/b21r.cpp include/b21r.h
+	swig -python -I$(INCLUDE) -c++ -o $@ b21r.i
 
 #*******************************************************
 #*************** Dependencies and Objects **************
