@@ -9,6 +9,12 @@ import RandomArray, Numeric, math, random, time, sys, signal
 
 version = "5.9"
 
+def sum(a):
+    mysum = 0
+    for n in a:
+        mysum += n
+    return mysum
+                    
 def randomArray(size, max):
     """
     Returns an array initialized to random values between -max and max
@@ -466,7 +472,7 @@ class Network:
                 self.initialize()
                 tssErr = 1.0; e = 1; totalCorrect = 0
                 continue
-            sys.sysout.flush()
+            sys.stdout.flush()
             e += 1
         print "----------------------------------------------------"
         if totalCount > 0:
@@ -535,7 +541,7 @@ class Network:
                     if self.learning and self.learnDuringSequence:
                         self.change_weights()
                 # else, do nothing here
-                sys.sysout.flush()
+                sys.stdout.flush()
             if self.sequenceLength > 1:
                 if self.learning and not self.learnDuringSequence:
                     self.change_weights()
