@@ -1,5 +1,6 @@
 from pyro.brain.conx import *
 import Tkinter
+import tkSimpleDialog
 import pyro.brain.VisConx.ActivationsDiag as ActivationsDiag
 import pyro.brain.VisConx.VisConxBase as VisConxBase
 
@@ -42,7 +43,8 @@ class SweepGUIBase(VisConxBase.VisConxBase):
 
     def propagate(self):
         #update the GUI
-        self.root.update()
+        if self.root:
+            self.root.update()
         
         #hack to allow intervention in sweep for purposes of extracting data
         self.__class__.__bases__[1].propagate(self)
@@ -179,7 +181,7 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             self.pCorrectPlot.clearData()
 
     def handleWindowClose(self):
-        VisConxBase.handleWindowClose(self)
+        VisConxBase.VisConxBase.handleWindowClose(self)
         self.stopFlag = 1
         
 class VisSweepNetwork(SweepGUIBase, Network): 
