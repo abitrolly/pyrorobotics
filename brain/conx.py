@@ -141,8 +141,11 @@ class Layer:
                 self.activation[i] = rest_value
     def getTarget(self):
         return toArray(self.target)
-    def getTSSError(self):
+    def TSSError(self):
         return sum(map(lambda (n): n ** 2, self.error))
+    def RMSError(self):
+        tss = self.TSSError()
+        return math.sqrt(tss / self.size)
     def getCorrect(self, tolerance):
         mysum = 0
         for i in range( self.size ):
@@ -257,12 +260,13 @@ class Network:
         self.learning = 1
         self.initContext = 1
         self.momentum = 0.9
-        self.resetEpoch = 1000
-        self.resetCount = 0
-        self.resetLimit = 1
+        self.resetEpoch = 5000
+        self.resetCount = 1
+        self.resetLimit = 5
         self.sequenceLength = 1
         self.autoSequence = 1 # auto detect length of sequence from input size
         self.batch = 0
+        self.epoch = 0
         self.learnDuringSequence = 0
         self.verbosity = verbosity
         self.stopPercent = 1.0
@@ -445,31 +449,38 @@ class Network:
                 (v1, offset) = vals
                 self.copyVector(self.getLayer(v1).target,
                                 self.output[pos], offset)
+    def RMSError(self):
+        tss = 0.0
+        size = 0
+        for l in range(self.layerCount):
+            if self.layer[l].type == 'Output':
+                tss += self.layer[l].TSSError()
+                size += self.layer[l].size
+        return math.sqrt( tss / size )
     def train(self):
-        tssErr = 1.0; e = 1; totalCorrect = 0; totalCount = 1;
-        #totalPatterns = len(self.output) * len(self.input[0]) /
-        #self.layer[0].size
-        self.resetCount = 0
+        tssErr = 1.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
+        self.resetCount = 1
         while totalCount != 0 and \
               totalCorrect * 1.0 / totalCount < self.stopPercent:
             (tssErr, totalCorrect, totalCount) = self.sweep()
-            if e % self.reportRate == 0:
-                print "Epoch #%6d" % e, "| TSS Error: %.2f" % tssErr, \
-                      "| Correct =", totalCorrect * 1.0 / totalCount
-            if self.resetEpoch == e:
+            if self.epoch % self.reportRate == 0:
+                print "Epoch #%6d" % self.epoch, "| TSS Error: %.2f" % tssErr, \
+                      "| Correct =", totalCorrect * 1.0 / totalCount, \
+                      "| RMS Error: %.2f" % self.RMSError()
+            if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
                     print "Reset limit reached; ending without reaching goal"
                     break
                 self.resetCount += 1
                 print "RESET! resetEpoch reached; starting over..."
                 self.initialize()
-                tssErr = 1.0; e = 1; totalCorrect = 0
+                tssErr = 1.0; self.epoch = 1; totalCorrect = 0
                 continue
             sys.stdout.flush()
-            e += 1
+            self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            print "Final #%6d" % e, "| TSS Error: %.2f" % tssErr, \
+            print "Final #%6d" % self.epoch, "| TSS Error: %.2f" % tssErr, \
                   "| Correct =", totalCorrect * 1.0 / totalCount
         else:
             print "Final: nothing done"
@@ -497,7 +508,7 @@ class Network:
     def postprop(self, pattern, sequence):
         pass
     def sweep(self):
-        if self.verbosity > 0: print "Cycle..."
+        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInput:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
@@ -545,6 +556,7 @@ class Network:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
     def step(self):
+        self.epoch += 1
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 0 or self.interactive:
@@ -628,11 +640,16 @@ class Network:
             print "Prop_process from " + connect.fromLayer.name + " to " + \
                   connect.toLayer.name
         for i in range(connect.toLayer.size):
-            if self.verbosity > 6: print "netinput@", connect.toLayer.name, "starts at", connect.toLayer.netinput[i]
+            if self.verbosity > 6: print "netinput@", connect.toLayer.name, \
+               "starts at", connect.toLayer.netinput[i]
             for j in range(connect.fromLayer.size):
-                if self.verbosity > 6: print "netinput@", connect.toLayer.name, "[", i, "] = ", connect.fromLayer.activation[j], "*", connect.weight[i][j]
+                if self.verbosity > 6: print "netinput@", \
+                   connect.toLayer.name, "[", i, "] = ", \
+                   connect.fromLayer.activation[j], "*", connect.weight[i][j]
                 connect.toLayer.netinput[i] += (connect.fromLayer.activation[j] * connect.weight[i][j])
-                if self.verbosity > 6: print "netinput@", connect.toLayer.name, "[", i, "] = ", connect.toLayer.netinput[i]
+                if self.verbosity > 6: print "netinput@", \
+                   connect.toLayer.name, "[", i, "] = ", \
+                   connect.toLayer.netinput[i]
     def backprop(self):
         retval = self.compute_error()
         if self.learning:
@@ -650,7 +667,8 @@ class Network:
                             connect.weight[i][j] += connect.dweight[i][j]
                             connect.wed[i][j] = 0.0
                         toLayer = connect.toLayer
-                        toLayer.dbias[i] = toLayer.bepsilon * toLayer.bed[i] + self.momentum * toLayer.dbias[i]
+                        toLayer.dbias[i] = toLayer.bepsilon * toLayer.bed[i] + \
+                                           self.momentum * toLayer.dbias[i]
                         toLayer.bias[i] += toLayer.dbias[i]
                         toLayer.bed[i] = 0.0
         if self.verbosity > 0:
@@ -673,8 +691,8 @@ class Network:
             if self.connection[i].fromLayer.name == fromName and \
                self.connection[i].toLayer.name == toName:
                 self.connection[i].frozen = 0
-    def getTSSError(self, layerName):
-        return self.getLayer(layerName).getTSSError()
+    def TSSError(self, layerName):
+        return self.getLayer(layerName).TSSError()
     def getCorrect(self, layerName):
         return self.getLayer(layerName).getCorrect(self.tolerance)
     def toString(self):
@@ -701,18 +719,108 @@ class Network:
         self.add( Layer('output', outc) )
         self.connect('input', 'hidden')
         self.connect('hidden', 'output')
-    def saveWeightsToFile(self, filename):
-        mylist = self.arrayify()
-        import pickle
-        fp = open(filename, "w")
-        pickle.dump(mylist, fp)
-        fp.close()
-    def loadWeightsFromFile(self, filename):
-        import pickle
-        fp = open(filename, "r")
-        mylist = pickle.load(fp)
-        fp.close()
-        self.unArrayify(mylist)
+    def saveWeightsToFile(self, filename, mode = 'pickle'):
+        # modes: pickle, plain, tlearn
+        if mode == 'pickle':
+            mylist = self.arrayify()
+            import pickle
+            fp = open(filename, "w")
+            pickle.dump(mylist, fp)
+            fp.close()
+        elif mode == 'plain':
+            fp = open(filename, "w")
+            fp.write("# Biases\n")
+            for lay in self.layer:
+                if lay.type != 'Input':
+                    fp.write("# Layer: " + lay.name + "\n")
+                    for i in range(lay.size):
+                        fp.write("%f " % lay.bias[i] )
+                    fp.write("\n")
+            fp.write("# Weights\n")
+            for con in self.connection:
+                fp.write("# from " + con.fromLayer.name + " to " +
+                         con.toLayer.name + "\n")
+                for j in range(con.fromLayer.size):
+                    for i in range(con.toLayer.size):
+                        fp.write("%f " % con.weight[i][j] )
+                    fp.write("\n")
+            fp.close()
+        elif mode == 'tlearn':
+            fp = open(filename, "w")
+            fp.write("NETWORK CONFIGURED BY TLEARN\n")
+            fp.write("# weights after %d sweeps\n" % self.epoch)
+            fp.write("# WEIGHTS\n")
+            cnt = 1
+            for lto in range(self.layerCount):
+                if self.layer[lto].type != 'Input':
+                    for i in range(self.layer[lto].size):
+                        fp.write("# TO NODE %d\n" % cnt)
+                        fp.write("%f\n" % self.layer[lto].bias[i] )
+                        for lfrom in range(self.layerCount):
+                            conn = self.getConnection(self.layer[lto].name,
+                                                      self.layer[lfrom].name)
+                            if conn:
+                                for j in range(conn.fromLayer.size):
+                                    fp.write("%f\n" % conn.weight[i][j])
+                            else:
+                                for j in range(self.layer[lfrom].size):
+                                    fp.write("%f\n" % 0.0)
+                        cnt += 1
+            fp.close()            
+        else:
+            raise "UnknownMode", mode
+    def loadWeightsFromFile(self, filename, mode = 'pickle'):
+        # modes: pickle, plain, tlearn
+        if mode == 'pickle':
+            import pickle
+            fp = open(filename, "r")
+            mylist = pickle.load(fp)
+            fp.close()
+            self.unArrayify(mylist)
+        elif mode == 'plain':
+            arr = []
+            fp = open(filename, "r")
+            lines = fp.readlines()
+            for line in lines:
+                line = line.strip()
+                if line == '' or line[0] == '#':
+                    pass
+                else:
+                    data = map( float, line.split())
+                    arr.extend( data )
+            self.unArrayify( arr )
+            fp.close()
+        elif mode == 'tlearn':
+            fp = open(filename, "r")
+            fp.readline() # NETWORK CONFIGURED BY
+            fp.readline() # # weights after %d sweeps
+            fp.readline() # # WEIGHTS
+            cnt = 1
+            for lto in range(self.layerCount):
+                if self.layer[lto].type != 'Input':
+                    for i in range(self.layer[lto].size):
+                        fp.readline() # TO NODE %d
+                        self.layer[lto].bias[i] = float(fp.readline())
+                        for lfrom in range(self.layerCount):
+                            conn = self.getConnection(self.layer[lto].name,
+                                                      self.layer[lfrom].name)
+                            if conn:
+                                for j in range(conn.fromLayer.size):
+                                    conn.weight[i][j] = float( fp.readline() )
+                            else:
+                                for j in range(self.layer[lfrom].size):
+                                    # 0.0
+                                    fp.readline()
+                        cnt += 1
+            fp.close()            
+        else:
+            raise "UnknownMode", mode
+    def getConnection(self, lto, lfrom):
+        for c in range(self.connectionCount):
+            if self.connection[c].toLayer.name == lto and \
+               self.connection[c].fromLayer.name == lfrom:
+                return self.connection[c]
+        return 0
     def saveNetworkToFile(self, filename, saveData = 1):
         print "Error: FIX doesn't save postprop() or preprop() code! Pickle?"
         basename = filename.split('.')[0]
@@ -952,7 +1060,7 @@ if __name__ == '__main__':
         n.getLayer("output").copyTarget([.5])
         print 'Output Targets:', n.getLayer('output').getTarget()
         n.compute_error()
-        print 'Output TSS Error:', n.getTSSError("output")
+        print 'Output TSS Error:', n.TSSError("output")
         print 'Output Correct:', n.getCorrect('output')
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
