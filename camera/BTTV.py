@@ -4,7 +4,7 @@
 from pyro.camera import *
 from os import getenv, system
 
-class BT848Camera(Camera):
+class BTTVCamera(Camera):
    """
    BTTV Camera Shell Interface. Call update() to get image.
    """
