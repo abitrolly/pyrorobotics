@@ -293,15 +293,17 @@ class AiboRobot(Robot):
         # TODO: what do these mean?
         self.devData["timestamp"] = self.sensor_socket.read(4, "l")
         self.devData["p"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
-        self.devData["i"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
+        self.devData["s"] = self.sensor_socket.read(6 * 4, "<6f",all=1)
+        self.devData["b"] = self.sensor_socket.read(8 * 4, "<8f",all=1)
         self.devData["d"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
-        self.devData["button"] = self.sensor_socket.read(6 * 4, "<6f",all=1)
-        if 0:
+        self.devData["extra"] = self.sensor_socket.read(10 * 4, "<10f",all=1)
+        if 1:
             print >> sys.stderr, "timestamp", self.devData["timestamp"]
             print >> sys.stderr, "p", self.devData["p"]
-            print >> sys.stderr, "i", self.devData["i"]
+            print >> sys.stderr, "s", self.devData["s"]
+            print >> sys.stderr, "b", self.devData["b"]
             print >> sys.stderr, "d", self.devData["d"]
-            print >> sys.stderr, "button", self.devData["button"]
+            print >> sys.stderr, "extra", self.devData["extra"]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
