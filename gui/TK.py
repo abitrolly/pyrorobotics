@@ -145,6 +145,7 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def showAll(self):
       if self.engine and self.engine.robot:
+         print "=" * 30
          print self.engine.robot.getAll()
 
    def makeWindows(self):

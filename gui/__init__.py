@@ -284,7 +284,7 @@ class gui:
       if f != '':
          self.lastDir["devices"] = string.join(f.split('/')[:-1],'/')
          if self.engine != 0 and self.engine.robot != 0:
-            self.engine.robot.startDevice(f)
+            self.engine.robot.startDevices(f)
 
    def freeBrain(self):
       self.engine.pleaseStop()

@@ -66,7 +66,7 @@ class Camera(PyroImage, Device):
    """
    A base class for Camera
    """
-   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None):
+   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None, visible = 1):
       """
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
@@ -77,7 +77,7 @@ class Camera(PyroImage, Device):
       self.title = title
       self.filterMode = 1
       self.callbackList = []
-      self.filterReturnValue = []
+      self.devData["filterResults"] = []
       self.callbackTextList = []
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
@@ -96,6 +96,9 @@ class Camera(PyroImage, Device):
       self.devData["filters"] = self.callbackTextList
       # Required:
       self.startDevice()
+      # make these visible by default
+      if visible:
+         self.makeWindow()
 
    def preGet(self, keyword):
       #print "preGet", keyword
@@ -470,9 +473,9 @@ class Camera(PyroImage, Device):
    def processAll(self):
       if self.filterMode:
          self.vision.applyFilterList()
-         self.filterReturnValue = []
+         while len(self.devData["filterResults"]): self.devData["filterResults"].pop()
          for filterFunc in self.callbackList:
-            self.filterReturnValue.append( filterFunc(self) )
+            self.devData["filterResults"].append( filterFunc(self) )
 
 if __name__ == '__main__':
    from pyro.vision.cvision import VisionSystem
