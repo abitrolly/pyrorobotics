@@ -35,7 +35,7 @@ class SaphiraSenseDriver(driver.Driver):
 	self.senses['sonar']['z'] = lambda self, pos: 0.25
 	self.senses['sonar']['value'] = self.getSonarRange
         self.senses['sonar']['all'] = self.getSonarAll
-        self.senses['sonar']['maxvalue'] = lambda self: self.mToSenseUnits(2.99)
+        self.senses['sonar']['maxvalue'] = lambda self, x = self.mToSenseUnits(2.99): x
 	self.senses['sonar']['flag'] = Saphira_getSonarFlag
 
 	# location of origin of sensors:
@@ -62,7 +62,8 @@ class SaphiraSenseDriver(driver.Driver):
             return val / 1000.0
         elif self.robot.senseUnits == "CM":
             return (val) / 100.0 # cm
-        elif self.robot.senseUnits == "METERS":
+        elif self.robot.senseUnits == "METERS" or \
+             self.robot.senseUnits == "RAW":
             return (val) 
         elif self.robot.senseUnits == "SCALED":
             print "WARNING: Pioneer senseUnits is SCALED?"

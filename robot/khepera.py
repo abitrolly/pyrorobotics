@@ -68,7 +68,7 @@ class KheperaRobot(Robot):
 	self.senses['ir']['z'] = lambda self, pos: 0.25
 	self.senses['ir']['value'] = self.getIRRange
         self.senses['ir']['all'] = self.getIRRangeAll
-        self.senses['ir']['maxvalue'] = lambda self: self.mmToSenseUnits(60.0)
+        self.senses['ir']['maxvalue'] = lambda self, x = self.mmToSenseUnits(60.0): x
 	self.senses['ir']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
@@ -297,6 +297,8 @@ class KheperaRobot(Robot):
             return val / 55.0 # khepera is 55mm diameter
         elif self.senseUnits == "MM":
             return val
+        elif self.senseUnits == "RAW":
+            return val # FIX: rearrange so that this does return raw
         elif self.senseUnits == "CM":
             return (val) / 10.0 # cm
         elif self.senseUnits == "METERS":
