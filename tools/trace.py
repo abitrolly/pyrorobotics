@@ -20,7 +20,7 @@ class Trace:
         self.symbols = 0        # activates/deactivates symbol mode
         self.color = 1          # activates/deactivates color
         self.lineWidth = 16     # the length of lines in non-symbol mode
-        # the resolution given for the bitmap in the world file x 1000:
+        # the resolution given for the bitmap in the world file
         self.resolution = 0.01
         self.interval = 1       # frequency datapoints should be displayed
         self.symbolList = ['o','A','B','C','D','E','F','G','H','I','J','K','L','M',
