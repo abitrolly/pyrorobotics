@@ -53,6 +53,12 @@ class DeviceGetError(AttributeError):
 class DeviceSetError(AttributeError):
     """ Used to signal device set problem: item is not setable """
 
+class PositionObject:
+    def __ini__(self):
+        pass
+    def distance(self, **args):
+        return 0.343
+
 class Device:
     """ A basic device class """
 
@@ -77,6 +83,33 @@ class Device:
         if visible:
             self.makeWindow()
         self.setup()
+
+    def getPositionObject(self, pos):
+        """ Should be overloaded by device implementations. """
+        return None
+
+    def __getitem__(self, item):
+        if type(item) == types.StringType:
+            if "groups" in self.__dict__ and item in self.__dict__["groups"]:
+                positions = self.__dict__["groups"][item]
+                retval = []
+                for p in positions:
+                    retval.append( self.getPositionObject(p) )
+                return retval
+            else: # got a string, but it isn't a group name
+                raise AttributeError, "invalid device groupname '%s'" % item
+        elif type(item) == types.IntType:
+            return self.getPositionObject(item)
+        elif type(item) == types.SliceType:
+            retval = []
+            step = 1
+            if item.step:
+                step = item.step
+            for p in range(item.start, item.stop, step):
+                retval.append( self.getPositionObject(p) )
+            return retval
+        else:
+            raise AttributeError, "invalid device[%s]" % item
 
     def __getattr__(self, attr):
         """ Overides default get attribute to return devData if exists """
@@ -103,9 +136,12 @@ class Device:
                     retval.append( key )
         return retval
 
-    def rawToUnits(self, raw, noise = 0.0):
+    def rawToUnits(self, raw, noise = 0.0, units=None):
+        if units == None:
+            units = self.devData["units"].upper()
+        else:
+            units = units.upper()
         # first, add noise, if you want:
-        units = self.devData["units"]
         if noise > 0:
             if random.random() > .5:
                 raw += (raw * (noise * random.random()))
@@ -119,21 +155,21 @@ class Device:
             return raw / self.devData["maxvalueraw"]
         # else, it is in some metric unit.
         # now, get it into meters:
-        if self.devData["rawunits"] == "MM":
+        if self.devData["rawunits"].upper() == "MM":
             if units == "MM":
                 return raw
             else:
                 raw = raw / 1000.0
-        elif self.devData["rawunits"] == "RAW":
+        elif self.devData["rawunits"].upper() == "RAW":
             if units == "RAW":
                 return raw
             # else going to be problems!
-        elif self.devData["rawunits"] == "CM":
+        elif self.devData["rawunits"].upper() == "CM":
             if units == "CM":
                 return raw
             else:
                 raw = raw / 100.0
-        elif self.devData["rawunits"] == "METERS":
+        elif self.devData["rawunits"].upper() == "METERS":
             if units == "METERS":
                 return raw
             # else, no conversion necessary

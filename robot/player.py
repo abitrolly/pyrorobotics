@@ -4,7 +4,7 @@ from pyro.robot import *
 from math import pi, cos, sin
 from os import getuid
 from pyro.robot.driver.player import *
-import time
+import time, exceptions
 
 PIOVER180 = pi / 180.0
 DEG90RADS = 0.5 * pi
@@ -12,6 +12,36 @@ COSDEG90RADS = cos(DEG90RADS) / 1000.0
 SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
 from pyro.robot.device import Device, DeviceError
+
+class PlayerDevicePosition:
+    def __init__(self, device, array, position, geometry):
+        self.device = device
+        self.array = array
+        self.pos = position
+        self.geometry = geometry
+    def distance(self, unit=None): # defaults to current setting
+        return self.device.rawToUnits(self.array[self.pos],
+                                      self.device.devData["noise"],
+                                      unit)        
+    def angle(self, unit="degrees"):
+        if self.geometry == None:
+            return 0.0
+        if unit.lower() == "radians":
+            return self.geometry[self.pos][2] * PIOVER180 # radians
+        elif unit.lower() == "degrees":
+            return self.geometry[self.pos][2]
+        else:
+            raise AttributeError, "invalid unit = '%s'" % unit
+    def position(self):
+        x = self.geometry[self.pos][0]
+        y = self.geometry[self.pos][1]
+        z = self.device.rawToUnits(300) # rawunits
+        return (x, y, z)
+    def hit(self):
+        x = self.device.getX(self.pos)
+        y = self.device.getY(self.pos)
+	z = self.device.rawToUnits(300) # rawunits
+        return (x, y, z)
 
 class PlayerDevice(Device):
     def __init__(self, dev, type, groups = {}):
@@ -119,6 +149,15 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
 
+    def __len__(self):
+        return len(self.dev.sonar[0])
+    def __iter__(self):
+        for pos in range(len(self)):
+            yield PlayerDevicePosition(self, self.dev.sonar[0], pos, self.sonarGeometry)
+        raise exceptions.StopIteration
+    def getPositionObject(self, pos):
+        return PlayerDevicePosition(self, self.dev.sonar[0], pos, self.sonarGeometry)
+
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
@@ -191,6 +230,17 @@ class PlayerLaserDevice(PlayerDevice):
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos], self.devData["noise"]) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
+
+    def __len__(self):
+        return len(self.dev.laser[0][1])
+    def __iter__(self):
+        for pos in range(len(self)):
+            yield PlayerDevicePosition(self, self.dev.laser[0][1], pos,
+                                       self.laserGeometry)
+        raise exceptions.StopIteration
+    def getPositionObject(self, pos):
+        return PlayerDevicePosition(self, self.dev.laser[0][1], pos,
+                                    self.laserGeometry)
 
     def postSet(self, keyword):
         """ Anything that might change after a set """
