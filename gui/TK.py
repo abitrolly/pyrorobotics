@@ -70,10 +70,10 @@ class TKgui(gui):
               ]
       
       button1 = [('Step',self.stepEngine),
-                 ('Reload',self.resetEngine),
                  ('Run',self.runEngine),
-                 ('Edit', self.editBrain),
-                 ('Stop',self.stopEngine)]
+                 ('Stop',self.stopEngine),
+                 ('Reload',self.resetEngine),
+]
 
       # create menu
       self.mBar = Tkinter.Frame(self.frame, relief=Tkinter.RAISED, borderwidth=2)
@@ -86,6 +86,7 @@ class TKgui(gui):
       if 1: # FIX: add a preference about showing buttons someday
          toolbar = Tkinter.Frame(self.frame)
          toolbar.pack(side=Tkinter.TOP, fill='both', expand = 1)
+         Tkinter.Label(toolbar, text="Brain:").pack(side="left")
          for b in button1:
             Tkinter.Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
 
@@ -125,13 +126,23 @@ class TKgui(gui):
       self.textframe.pack(side = "bottom", fill = "x")
 
       # Display:
-      self.displayArea = [0, 1, 2]
-      for i in range(3):
-         self.displayArea[i] = TKwidgets.StatusBar(self.frame)
-         self.displayArea[i].pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
-      self.displayArea[2].set("Brain:")
-      self.displayArea[1].set("Robot:")
-      self.displayArea[0].set("X: %4.2f Y: %4.2f Th: %4.0f  Bump: %s" % (0, 0, 0, ''))      
+      self.loadables = [ ('Simulator:', self.loadSim, self.editWorld),
+                         ('Robot:', self.loadRobot, self.editRobot),
+                         ('Camera:', self.loadCamera, self.editCamera),
+                         ('Brain:', self.loadBrain, self.editBrain),
+                        ]
+      self.displayArea = {}
+      self.textArea = {}
+      for item in self.loadables:
+         load, loadit, editit = item
+         tempframe = Tkinter.Frame(self.frame)
+         self.displayArea[load] = Tkinter.Button(tempframe, text = load,
+                                              width=10, command = loadit)
+         self.displayArea[load].pack(side=Tkinter.LEFT)
+         self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right")
+         self.textArea[load].pack(side=Tkinter.RIGHT, fill="x")
+         tempframe.pack(side = "top", anchor = "n", fill = "x")
+
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def openBrainWindow(self):
@@ -254,6 +265,24 @@ class TKgui(gui):
          os.system(os.getenv("EDITOR") + " " + self.engine.brainfile + "&")
       else:
          os.system("emacs " + self.engine.brainfile + "&")
+   def editWorld(self):
+      import os
+      if os.getenv("EDITOR"):
+         os.system(os.getenv("EDITOR") + " " + self.engine.worldfile + "&")
+      else:
+         os.system("emacs " + self.engine.worldfile + "&")
+   def editRobot(self):
+      import os
+      if os.getenv("EDITOR"):
+         os.system(os.getenv("EDITOR") + " " + self.engine.robotfile + "&")
+      else:
+         os.system("emacs " + self.engine.robotfile + "&")
+   def editCamera(self):
+      import os
+      if os.getenv("EDITOR"):
+         os.system(os.getenv("EDITOR") + " " + self.engine.camerafile + "&")
+      else:
+         os.system("emacs " + self.engine.camerafile + "&")
          
    def makeMenu(self,name,commands):
       menu = Tkinter.Menubutton(self.mBar,text=name,underline=0)
@@ -283,22 +312,17 @@ class TKgui(gui):
             #try:
             self.redrawWindowBrain()
             try:
-               if self.engine.brainfile:
-                  self.displayArea[2].set("Brain: %s" % self.engine.brainfile)
-               if self.engine.robotfile:
-                  self.displayArea[1].set("Robot: %s" % self.engine.robotfile)
                if self.engine.robot != 0:
                   if self.engine.robot.get('self', 'stall'):
                      bump = "[BUMP!]"
                   else:
                      bump = ''
-                  self.displayArea[0].set("X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                  self.textArea['Config:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
                                           % (self.engine.robot.get('robot', 'x'),
                                              self.engine.robot.get('robot', 'y'),
                                              self.engine.robot.get('robot', 'th'),
                                              bump))
             except:
-               print "Error"
                pass
             try:
                self.engine.robot.camera.updateWindow()
