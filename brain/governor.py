@@ -161,7 +161,15 @@ if __name__ == '__main__':
     for line in locations:
         targets.append( map(lambda x: float(x), line.strip().split()))
     inSize = len(sensors[0].strip().split())
-    govMask = [1] * (inSize - 1) + [16] + [inSize/(inSize/2)] * (inSize/2) + [inSize/4] * 4
+    # Weighting each bank of data equally (except for stalled)
+    govMask =  [1] * 16 # 16 sonar sensors
+    govMask += [4] * 4  # 4 colors sensors
+    govMask += [0] * 1  # 1 stalled sensor
+    govMask += [16.0/(inSize/2.0)] * (inSize/2) # context units
+    govMask += [4] * 4  # 4 output units
+    print "inSize is: ", inSize
+    print "govMask is: ", govMask
+    print "length is: ", len(govMask)
     # The "16" weights the input determining the multiple labels
     # The choice of epsilon and delta may change the required
     # weights. For binary nodes, changing the value will make the vector
@@ -171,13 +179,13 @@ if __name__ == '__main__':
     # node is important in determining the function of the network.
     net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
     net.addThreeLayers(inSize, inSize/2, 4)
-    net.setTargets( targets[:389] ) # 389 = one trip around
-    net.setInputs( inputs[:389] )
+    net.setTargets( targets[:10000] ) # 389 = one trip around
+    net.setInputs( inputs[:10000] )
     net.setStopPercent(.95)
     net.setReportRate(1)
     net.setResetLimit(1)
-    net.setStopPercent(1.1) # (110%) keep going until resetLimit 
-    net.setResetEpoch(5)
+    net.setTolerance(0.2)
+    net.setResetEpoch(2)
     net.governing = int(sys.argv[1])
     print "Goverining is", net.governing
     net.train()
