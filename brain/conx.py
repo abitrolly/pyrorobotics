@@ -592,9 +592,10 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
+        self.crossValidationCorpus = ()
+        self.crossValidationReportLayers = []
         self.crossValidationReportRate = 0
         self.crossValidationSampleRate = 0
-        self.crossValidationCorpus = ()
         self.crossValidationSampleFile = "sample.cv"
         self.patterns = {}
         self.patterned = 0 # used for file IO with inputs and targets
@@ -1222,6 +1223,8 @@ class Network:
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         for set in self.crossValidationCorpus:
             (error, correct, total) = self.step( **set )
+            if self.crossValidationReportLayers != []:
+                (error, correct, total) = self.getError( *self.crossValidationReportLayers )
             tssError += error
             totalCorrect += correct
             totalCount += total
