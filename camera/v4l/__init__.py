@@ -118,8 +118,22 @@ class V4LGrabber(Camera):
 
 
 
-   def maxBlob(self, channel, low_threshold, high_threshold, drawBox=1):
-      self.min_x, self.min_y, self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,0,drawBox,self.width, self.height);
+   def maxBlob(self, channel, low_threshold, high_threshold,sortMethod, drawBox=1):
+
+      if(cmp(sortMethod.lower(),"mass")==0):
+         self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,0,drawBox,self.width, self.height);
+
+      elif(cmp(sortMethod.lower(),"area")==0):
+         self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,1,drawBox,self.width, self.height);
+
+      #not good, 1 pixel is very dense.
+      #elif(cmp(sortMethod.lower(),"density")==0):
+      #   self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,2,drawBox,self.width, self.height);
+
+      else:
+         print "Invalid Sort Parameter to Blob."
+         
+
       print "Min x: %d  Min y: %d  Max x: %d  Max y: %d  Mass: %d" % (self.min_x, self.min_y, self.max_x, self.max_y,self.mass)
       self.sleepCheck();
 
