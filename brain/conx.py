@@ -431,7 +431,6 @@ class Connection:
         """
         self.fromLayer = fromLayer
         self.toLayer = toLayer
-        self.frozen = 0
         self.initialize()
     def initialize(self):
         """
@@ -710,23 +709,6 @@ class Network:
                 connection.changeSize( connection.fromLayer.size, newsize )
         # then, change the actual layer size:
         self.getLayer(layername).changeSize(newsize)
-    def freeze(self, fromName, toName):
-        """
-        Freezes a connection between two layers. Weights for the connection will not be changed during learning.
-        """
-        for connection in self.connections:
-            if connection.fromLayer.name == fromName and \
-               connection.toLayer.name == toName:
-                connection.frozen = 1
-    def unFreeze(self, fromName, toName):
-        """
-        unFreezes a connection between two layers.Weights for the connection will be changed during learning.
-        """
-        for connection in self.connections:
-            if connection.fromLayer.name == fromName and \
-               connection.toLayer.name == toName:
-                connection.frozen = 0
-
     # reset and intialization
     def reset(self):
         """
@@ -1454,20 +1436,19 @@ class Network:
                 dw_count += len(layer.dbias)
                 dw_sum += Numeric.add.reduce(abs(layer.dbias))
         for connection in self.connections:
-            if not connection.frozen:
-                if connection.fromLayer.active and connection.toLayer.active:
-                    toLayer = connection.toLayer
-                    connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
-                    connection.weight = connection.weight + connection.dweight
-                    connection.wed = connection.wed * 0.0
-                    #toLayer.dbias = toLayer.epsilon * toLayer.bed + \
-                    #                self.momentum * toLayer.dbias
-                    #toLayer.bias = toLayer.bias + toLayer.dbias
-                    #toLayer.bed = toLayer.bed * 0.0
-                    dw_count += Numeric.multiply.reduce(connection.dweight.shape)
-                    #dw_count += len(toLayer.dbias)
-                    dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
-                    #dw_sum += Numeric.add.reduce(abs(layer.dbias))
+            if connection.fromLayer.active and connection.toLayer.active:
+                toLayer = connection.toLayer
+                connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
+                connection.weight = connection.weight + connection.dweight
+                connection.wed = connection.wed * 0.0
+                #toLayer.dbias = toLayer.epsilon * toLayer.bed + \
+                #                self.momentum * toLayer.dbias
+                #toLayer.bias = toLayer.bias + toLayer.dbias
+                #toLayer.bed = toLayer.bed * 0.0
+                dw_count += Numeric.multiply.reduce(connection.dweight.shape)
+                #dw_count += len(toLayer.dbias)
+                dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
+                #dw_sum += Numeric.add.reduce(abs(layer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
