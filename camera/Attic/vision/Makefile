@@ -20,8 +20,8 @@ _vision.so: vision.o Vision.o
 Vision.o:: Vision.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<
 
-Vision.cc: Vision.i Vision.h
-	swig -python -c++ -o $@ $<
+Vision.cc: Vision.i Vision.h Vision.cpp
+	swig -python -c++ -o $@ Vision.i
 
 vision.o: Vision.cc
 	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@

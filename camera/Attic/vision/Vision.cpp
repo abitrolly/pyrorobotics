@@ -120,7 +120,51 @@ void Vision::filterByColor(int lr, int lg, int lb,
 }
 
 int Vision::saveImage(char *filename) {
+  return 1;
 } 
+
+void Vision::drawRectange(int x1, int y1, int x2, int y2, 
+			  int fill) {
+  for(int h=0; h<height; h++ ) {
+    for(int w=0; w<width; w++) {
+      for(int d=0; d<depth; d++) {
+	image[(h * width + w) * depth + d] = 255;
+      }
+    }
+  }
+}
+
+void Vision::meanBlur(int kernel) {
+  int w,h,i,j,side,d;
+  unsigned int average[3]={0};
+  
+  if(kernel <= 0)
+    kernel = 1;
+  else if(kernel % 2 == 0) 
+    kernel--;
+  
+  side=(int)kernel/2;
+  
+  for(h=side;h<height-side;h++)
+    {
+      for(w=side;w<width-side;w++)
+	{
+	  /* calculate average color of surrounding pixels*/
+	  for(i=-side;i<=side;i++)
+	    for(j=-side;j<=side;j++)
+	      for(d=0;d<depth;d++)
+		average[d] += image[((h+i)* width + (w + j)) * depth + d];
+	  
+	  
+	  for(d=0;d<depth;d++)
+	    image[(h * width + w) * depth + d] = average[d] / (kernel*kernel);
+	  
+	  average[0] = 0;
+	  average[1] = 0;
+	  average[2] = 0;
+	}
+    }
+}
 
 int Vision::getWidth() { return width; }
 int Vision::getHeight() { return height; }

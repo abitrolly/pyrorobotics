@@ -13,14 +13,14 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 LIBDIRS= -L/usr/X11R6/lib
 LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
 
-_fake.so: fake.o Fake.o 
+_fake.so: fake.o Fake.o ../vision/Vision.o
 	$(CC) $(CPPFLAGS) -shared fake.o Fake.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
 
-Fake.o:: Fake.cpp
+Fake.o:: Fake.cpp Fake.h
 	$(CC) $(CPPFLAGS) -o $@ -c $<
 
-Fake.cc: Fake.i Fake.h
-	swig -python -c++ -o $@ $<
+Fake.cc: Fake.i Fake.h ../vision/Vision.o
+	swig -python -c++ -o Fake.cc $<
 
 fake.o: Fake.cc
 	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@

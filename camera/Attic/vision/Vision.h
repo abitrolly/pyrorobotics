@@ -23,6 +23,9 @@ public:
 		     int outChannel);
   PyObject *get(int w, int h);
   PyObject *set(int w, int h, int d, int val);
+  void drawRectange(int x1, int y1, int x2, int y2, 
+		    int fill);
+  void meanBlur(int kernel);
 
   int getWidth();
   int getHeight();
