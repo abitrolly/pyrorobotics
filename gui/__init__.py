@@ -171,6 +171,12 @@ class gui(Drawable):
       self.engine.pleaseStop()
       self.inform("Stopped!")
 
+   def stopTranslate(self):
+      self.engine.robot.step('ST')
+
+   def stopRotate(self):
+      self.engine.robot.step('SR')
+
    def stepForward(self):
       self.engine.robot.step('F')
 

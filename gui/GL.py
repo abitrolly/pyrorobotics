@@ -55,7 +55,9 @@ class GLgui(gui):
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
                         ['Right',self.stepRight],
-                        ['Stop',self.stopEngine],
+                        ['Stop Rotate',self.stopRotate],
+                        ['Stop Translate',self.stopTranslate],
+                        ['Stop All',self.stopEngine],
                         ['Update',self.update]
                         ]),
               ('View', [['Fast Update 10/sec',self.fastUpdate],
