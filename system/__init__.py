@@ -55,10 +55,13 @@ def help():
 
 def file_exists(file_name):
     from posixpath import exists
-    if len(file_name) == 0:
-        return 0
+    if type(file_name) == type(""):
+        if len(file_name) == 0:
+            return 0
+        else:
+            return exists(file_name)
     else:
-        return exists(file_name)
+        raise AttributeError, "filename nust be a string"
     
 def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     print "Loading INIT '%s'..." % filename
