@@ -1,7 +1,3 @@
-#ifndef __SIMULATOR_H
-#define __SIMULATOR_H
-
-
 #include"Triangle.h"
 #include"TriangleList.h"
 #include"WorldObject.h"
@@ -9,7 +5,8 @@
 #include"BasicPhysicsObject.h"
 #include"SimpleObject.h"
 
-
+#ifndef __SIMULATOR_H
+#define __SIMULATOR_H
 
 #ifdef __cplusplus
 extern "C"{
@@ -22,3 +19,4 @@ void simulator_test();
 #endif
 
 #endif
+
