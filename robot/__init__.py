@@ -303,7 +303,20 @@ class Robot (Drawable):
         console.log(console.INFO,'robot sanity check completed')
 
     def startService(self, item):
-        console.log(console.ERROR, "need to override startService in robot")
+        raise "NoSuchService", item
 
     def stopService(self, item):
-        console.log(console.ERROR, "need to override stopService in robot")
+        raise "NoSuchService", item
+
+    def hasService(self, item):
+        return 0
+
+    def sendMessage(self, message):
+        raise "NoSendMessageInterface"
+
+    def getMessages(self):
+        return []
+
+    def getServiceData(self, item):
+        raise "NoSuchService", item
+        
