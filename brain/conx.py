@@ -1843,7 +1843,7 @@ class Network:
         print "   >>> network = loadNetworkFromFile(%s)" % filename
         print "   >>> network.train() # for example"
     def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
-                            delim = ' '):
+                            delim = ' ', checkEven = 1, patterned = 0):
         """
         Load a set of vectors from a file. Takes a filename, list of cols
         you want (or None for all), get every everyNrows (or 1 for no
@@ -1856,7 +1856,10 @@ class Network:
         data = []
         while line:
             if lineno % everyNrows == 0:
-                linedata1 = [float(x) for x in line.strip().split(delim)]
+                if patterned:
+                    linedata1 = [x for x in line.strip().split(delim)]
+                else:
+                    linedata1 = [float(x) for x in line.strip().split(delim)]
             else:
                 lineno += 1
                 line = fp.readline()
@@ -1867,15 +1870,24 @@ class Network:
                 newdata = []
                 for i in cols:
                     newdata.append( linedata1[i] )
-            if lastLength == None or len(newdata) == lastLength:
+            if lastLength == None or (not checkEven) or (checkEven and len(newdata) == lastLength):
                 data.append( newdata )
             else:
-                raise "DataFormatError", "line = %d" % lineno
+                raise "DataFormatError", ("line = %d:" % lineno, newdata)
             lastLength = len(newdata)
             lineno += 1
             line = fp.readline()    
         fp.close()
         return data
+    def loadInputPatternsFromFile(self, filename, cols = None, everyNrows = 1,
+                                  delim = ' ', checkEven = 1):
+        """
+        Loads inputs as patterns from file.
+        """
+        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim, checkEven, patterned = 1)
+        self.loadOrder = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = i
     def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
                            delim = ' '):
         """

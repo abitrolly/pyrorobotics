@@ -83,6 +83,8 @@ class State:
       if not (name in self.deactivatelist):
          self.deactivatelist.append(name)
    def onActivate(self):
+      self.setup()
+   def setup(self):
       pass # normally will overload
    def onDeactivate(self):
       pass # normally will overload
@@ -122,12 +124,6 @@ class State:
                self.brain.effectsTotal[b.state.name+":"+b.name+":"+r[1]] = b.effects[r[1]]
       self.update()
 
-   def get(self, *args):
-      return self.robot.get(*args)
-
-   def set(self, path, value):
-      return self.robot.set(path, value)
-
    def push(self, statename = None):
       if statename == None:
          statename = self.name
@@ -141,4 +137,30 @@ class State:
          self.goto(returnState)
       else:
          raise AttributeError, "pop without a push in state '%s'" % self.name
+
+    # wrappers here to talk to default robot:
+    def set(self, path, value):
+        return self.robot.set(path, value)
+    def get(self, *args):
+        return self.robot.get(*args)
+    def move(self, *args):
+        return self.robot.move(*args)
+    def translate(self, *args):
+        return self.robot.translate(*args)
+    def rotate(self, *args):
+        return self.robot.rotate(*args)
+    def stop(self):
+        return self.robot.stop()
+    def startDevice(self, *args, **keywords):
+        return self.robot.startDevice(*args, **keywords)
+    def removeDevice(self, *args, **keywords):
+        return self.robot.removeDevice(*args, **keywords)
+    def motors(self, *args):
+        return self.robot.motors(*args)
+    def getDevice(self, *args):
+        return self.robot.getDevice(*args)
+    def hasA(self, *args):
+        return self.robot.hasA(*args)
+    def requires(self, *args):
+        return self.robot.requires(*args)
 
