@@ -15,18 +15,17 @@ import sys
 # A TK gui
 
 class TKgui(gui): 
-   def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1): 
+   def __init__(self, engine, db = 1, depth = 1): 
       gui.__init__(self, 'TK gui', {}, engine)
       # This needs to be done here:
       self.app = Tkinter.Tk()
       self.app.wm_state('withdrawn')
       # And other main windows should use Tkinter.Toplevel()
-      self.width = width
-      self.height = height
       self.genlist = 0
       self.win = Tkinter.Toplevel()
       self.frame = Tkinter.Frame(self.win)
-      self.frame.pack(side = 'bottom', expand = "yes", anchor = "n", fill = 'both')
+      self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
+                      fill = 'both')
       self.windowBrain = 0
       self.lastRun = 0
       self.history = []
@@ -38,7 +37,18 @@ class TKgui(gui):
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['Editor',self.editor],
+                       ['Save Map...', self.saveMap],
                        ['Exit',self.cleanup] 
+                       ]),
+              ('Window', [['Fast Update 10/sec',self.fastUpdate],
+                          ['Medium Update 3/sec',self.mediumUpdate],
+                          ['Slow Update 1/sec',self.slowUpdate],
+                          ['Clear Messages', self.clearMessages]
+                          ]),
+              ('Load',[['Map...',self.loadMap],
+                       ['Device...',self.loadDevice],
+                       ['Service...',self.loadService],
+                       ['View...',self.loadView]
                        ]),
               ('Move', [['Forward',self.stepForward],
                         ['Back',self.stepBack],
@@ -49,18 +59,11 @@ class TKgui(gui):
                         ['Stop All',self.stopEngine],
                         ['Update',self.update]
                         ]),
-              ('Refresh', [['Fast Update 10/sec',self.fastUpdate],
-                           ['Medium Update 3/sec',self.mediumUpdate],
-                           ['Slow Update 1/sec',self.slowUpdate]
-                           ]),
-              ('Load',[['Device...',self.loadDevice],
-                       ['Service...',self.loadService],
-                       ['Plot...',self.loadPlot]
-                       ]),
               ('Help',[['Help',self.help],
                        ['Usage',self.usage],
                        ['Info',self.info],
-                       ['About',self.about]
+                       ['About',self.about],
+                       ['Inspector', self.inspector]
                        ])
               ]
       
@@ -129,13 +132,13 @@ class TKgui(gui):
       self.makeRow(('status', 'Pose:', '', ''))
       ## ----------------------------------
       self.textframe = Tkinter.Frame(self.frame)
-      self.status = Tkinter.Text(self.textframe, 
+      self.status = Tkinter.Text(self.textframe, width = 40, height = 10,
                                  state='disabled', wrap='word')
       self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
       self.status.configure(yscrollcommand=self.scrollbar.set)
       
       self.scrollbar.pack(side="right", fill="y")
-      self.status.pack(side=Tkinter.LEFT, fill="both")
+      self.status.pack(side=Tkinter.LEFT, expand = "yes", fill="both")
       self.textframe.pack(side = "bottom", anchor = "nw", fill = "both")
       
       self.redirectToWindow()
@@ -175,14 +178,14 @@ class TKgui(gui):
          if self.engine and self.engine.brain:
             self.engine.brain.makeWindow()
 
-   def redrawPlots(self):
-      for p in self.engine.plot:
+   def redrawViews(self):
+      for p in self.engine.view:
          try:
             p.redraw(()) # pass in any options
          except Tkinter.TclError:
-            #Window's closed; remove the plot from the redraw list
-            print "Removing plot"
-            self.engine.plot.remove(p)
+            #Window's closed; remove the view from the redraw list
+            print "Removing view"
+            self.engine.view.remove(p)
 
    def redrawWindowBrain(self):
       try:
@@ -314,7 +317,7 @@ class TKgui(gui):
             try: self.engine.robot.update()
             except: pass
          self.redrawWindowBrain()
-         self.redrawPlots()
+         self.redrawViews()
          if self.textArea['Brain:']["text"] != self.engine.brainfile:
             self.textArea['Brain:'].config(text = self.engine.brainfile)
          if self.textArea['Simulator:']["text"] != self.engine.worldfile:
@@ -472,6 +475,39 @@ class TKgui(gui):
       menu['menu'] = menu.filemenu
       return menu
 
+   def inspector(self):
+      import pyro.gui.inspector as Inspector
+      import pyro.system.share as share
+      share.brain = self.engine.brain
+      share.robot = self.engine.robot
+      share.engine = self.engine
+      inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
+
+   def clearMessages(self):
+      self.status.config(state='normal')
+      self.status.delete(1.0, 'end')
+      self.status.config(state='disabled')
+      self.status.see('end')
+
+   def filesavedialog(self, filetype, skel, startdir = ''):
+      from string import replace
+      import pyro
+      from os import getcwd, getenv, chdir
+      retval = ""
+      cwd = getcwd()
+      if startdir == '':
+         chdir(pyro.pyrodir() + "/plugins/" + filetype)
+      else:
+         chdir(startdir)
+      d = TKwidgets.SaveFileDialog(self.win, "Load " + filetype, skel)
+      if d.Show() == 1:
+         doc = d.GetFileName()
+         d.DialogCleanup()
+         retval = doc
+      else:
+         d.DialogCleanup()
+      chdir(cwd)
+      return retval
 
 if __name__ == '__main__':
    gui = TKgui(Engine())

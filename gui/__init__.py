@@ -20,6 +20,7 @@ class gui(Drawable):
       of the GUI in the constructor.
       """
       Drawable.__init__(self, name, options)
+      self.alreadyCleanedUp = 0
       self.engine = engine
       self.engine.gui = self
       self.prevsighandler = signal.signal(signal.SIGINT, self.INThandler)
@@ -121,7 +122,6 @@ class gui(Drawable):
          share.brain = self.engine.brain
          share.robot = self.engine.robot
          share.engine = self.engine
-         share.gui = self
          inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
       else:
          # elif len(retval) > 0 and retval[0] == "!":
@@ -182,17 +182,18 @@ class gui(Drawable):
       return retval
 
    def cleanup(self):
-      print "Cleaning up..."
-      self.done = 1
-      try:
-         sys.stdout = self.sysstdout
-         sys.stderr = self.sysstderr
-      except:
-         pass
-      if self.engine != 0:
-         self.engine.shutdown()
-      print "Exiting!"
-      sys.exit(1)
+      if not self.alreadyCleanedUp:
+         self.alreadyCleanedUp = 1
+         print "Cleaning up...",
+         self.done = 1
+         try:
+            sys.stdout = self.sysstdout
+            sys.stderr = self.sysstderr
+         except:
+            pass
+         if self.engine != 0:
+            self.engine.shutdown()
+         sys.exit(1)
 
    def stepEngine(self):
       self.engine.pleaseStep()
@@ -235,18 +236,25 @@ class gui(Drawable):
          self.engine.loadBrain(f)
          self.redraw()
 
-   def loadPlot(self):
-      f = self.fileloaddialog("plots","*.py")
+   def loadMap(self):
+      f = self.fileloaddialog("maps","*.py")
       self.redraw()
       if f != '':
-         self.engine.loadPlot(f)
+         self.engine.loadMap(f)
+         self.redraw()
+
+   def loadView(self):
+      f = self.fileloaddialog("views","*.py")
+      self.redraw()
+      if f != '':
+         self.engine.loadView(f)
          self.redraw()
 
    def loadDevice(self):
       f = self.fileloaddialog("devices","*.py")
       self.redraw()
       if f != '':
-         self.engine.loadDevices(f)
+         self.engine.loadDevice(f)
          self.redraw()
 
    def loadService(self):
@@ -305,3 +313,17 @@ class gui(Drawable):
    def inform(self, message):
       print message
       
+   def filesavedialog(self, type, skel, startdir = ''):
+      """ Read a line from user """
+      print "\nFilename: ",
+      retval =  sys.stdin.readline()
+      retval = retval.replace("\n", "")
+      retval = retval.replace("\r", "")
+      return retval
+
+   def saveMap(self):
+      f = self.filesavedialog("maps","*.py")
+      if f != '':
+         #save the map there
+         pass
+

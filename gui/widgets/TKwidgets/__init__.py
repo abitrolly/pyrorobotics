@@ -348,7 +348,7 @@ class FileDialog(ModalDialog):
 		self.dirLb = Tkinter.Listbox(frame, {'yscroll':scrollBar.set})
 		self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
 			'fill' :'both'})
-		self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
+		#self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
 		scrollBar['command'] = self.dirLb.yview
 
 	#	create the files list box
@@ -373,7 +373,7 @@ class FileDialog(ModalDialog):
 		self.fileLb.pack({'expand':'yes', 'side' :'top', 'pady' :'0', 
 			'fill' :'both'})
 		self.fileLb.bind('<1>', self.DoSelection)
-		self.fileLb.bind('<Double-Button-1>', self.DoDoubleClickFile)
+		#self.fileLb.bind('<Double-Button-1>', self.DoDoubleClickFile)
 		scrollBar['command'] = self.fileLb.yview
 
 	#	update the listboxes and directory label after a change of directory
