@@ -138,10 +138,17 @@ class TKgui(Tkinter.Toplevel, gui):
       self.textframe.pack(side="top", expand = "yes", fill="both")
       # could get width from config
       self.status = Tkinter.Text(self.textframe, width = 60, height = 10,
-                                 state='disabled', wrap='word')
+                                 state='disabled',
+                                 wrap='word',
+                                 bg = "white")
       self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
       self.status.configure(yscroll=self.scrollbar.set)
-      
+      # for displaying fonts, colors, etc.: -------------------
+      self.status.tag_config("red", foreground = "red")
+      self.status.tag_config("black", foreground = "black")
+      self.status.tag_config("green", foreground = "green")
+      self.status.tag_config("blue", foreground = "blue")
+      # --------------------------------------------------------
       self.scrollbar.pack(side="right", expand = "no", fill="y")
       self.status.pack(side="top", expand = "yes", fill="both")
       self.textframe.pack(side="top", fill="both")
@@ -552,10 +559,40 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def inform(self, message):
       self.write(message + "\n", echo = 1)
-   def write(self, item, echo = 0):
+
+   def parsePrint(self, message, tag = None):
+      if tag:
+         self.status.insert('end', message, tag)
+      else:
+         if "\n" in message.strip():
+            self.status.insert('end', message)
+         elif len(message) > 3 and message[:3] == ">>>":
+            # parse it and display it
+            self.status.insert('end', message[:3]) # >>>
+            self.status.insert('end', message[3:], "red")
+         elif ":" in message:
+            parts = message.split(":")
+            self.status.insert('end', parts[0], "blue")
+            for p in parts[1:]:
+               self.status.insert('end', ":")
+               self.status.insert('end', p)
+         elif "=" in message:
+            parts = message.split("=")
+            self.status.insert('end', parts[0], "blue")
+            for p in parts[1:]:
+               self.status.insert('end', "=")
+               self.status.insert('end', p)
+         elif len(message) > 3 and message.strip()[:-3] == "...":
+            self.status.insert('end', message, "green")
+         elif len(message) > 1 and message.strip()[-1] == "!":
+            self.status.insert('end', message, "red")
+         else:
+            self.status.insert('end', message)
+      
+   def write(self, item, echo = 0, tag = None):
       try:
          self.status.config(state='normal')
-         self.status.insert('end', "%s" % (item))
+         self.parsePrint("%s" % item, tag)
          self.status.config(state='disabled')
          self.status.see('end')
          if self.maxBufferSize:
