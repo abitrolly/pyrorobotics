@@ -139,7 +139,7 @@ class Robot (Drawable):
             posval = 10000
             for i in range(len(list)):
                 if list[i] < posval:
-                    pos = i
+                    pos = poslist[i]
                     posval = list[i]
             return (pos, posval)
         elif func == 'max':
@@ -147,7 +147,7 @@ class Robot (Drawable):
             posval = -10000
             for i in range(len(list)):
                 if list[i] > posval:
-                    pos = i
+                    pos = poslist[i]
                     posval = list[i]
             return (pos, posval)        
         elif func == 'sum':
