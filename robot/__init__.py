@@ -45,12 +45,8 @@ class Robot (Drawable):
         self.drivers = [] # something that implements the driver interface
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
-        # Moved to sensors:
-        #self.units = {}
-        #self.units['range'] = "ROBOTS" # default values
-        # May need these later:
-        #self.units['map']   = "METERS"
-        #self.units['motor'] = "SCALED"
+        # user init:
+        self.setup()
 
     def __repr__(self):
         return "Robot name = '%s', type = '%s'" % (self.name, self.type)
@@ -320,3 +316,9 @@ class Robot (Drawable):
     def getServiceData(self, item):
         raise "NoSuchService", item
         
+    def setup(self):
+        """
+        Gets called from __init__ so users don't have to call parent
+        constructor and all the gory details.
+        """
+        pass
