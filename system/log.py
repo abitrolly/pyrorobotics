@@ -1,6 +1,6 @@
 # A log class
 
-import time, os
+import time, os, posixpath
 
 class Log:
    """
@@ -18,6 +18,9 @@ class Log:
       timestamp = self.timestamp()
       if filename == None:
          filename= timestamp + '.log'
+         while posixpath.exists(filename):
+            timestamp = self.timestamp()
+            filename = timestamp + '.log'
       self.filename = filename
       self.file = open(filename, mode)
       self.echo = echo
@@ -37,7 +40,9 @@ class Log:
          self.writeln('User: ' + os.environ['USER'])
    def timestamp(self):
       year,month,day,hour,minute,second,one,two,three=time.localtime()
-      return '%4d-%02d-%02d_%02d.%02d.%02d' % (year, month, day, hour, minute, second)
+      return '%4d-%02d-%02d@%02d:%02d:%02d' % (year, month, day, hour, minute, second)
+   def flush(self):
+      self.file.flush()
 
    def write(self, msg):
       """ Write a string to the log """
