@@ -46,9 +46,12 @@ class Robot (Drawable):
         self.drivers = [] # something that implements the driver interface
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
-        self.senseUnits = "ROBOTS" # default values
-        self.mapUnits   = "METERS"
-        self.motorUnits = "SCALED"
+        # Moved to sensors:
+        #self.units = {}
+        #self.units['range'] = "ROBOTS" # default values
+        # May need these later:
+        #self.units['map']   = "METERS"
+        #self.units['motor'] = "SCALED"
 
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
@@ -109,6 +112,20 @@ class Robot (Drawable):
 		return self.senses[device][data]
 	else:
 		return self.senses[device][data](self.dev, pos)
+
+    def set(self, device = 'robot', data = None, val = None):
+	"""
+        A method to set the above get.
+	"""
+	if (data == None):
+            raise "Need value to set"
+	elif (val == None):
+            # this probably doesn't make sense:
+            self.senses[device] = data # dictionary?
+	else:
+            # make it a function:
+            self.senses[device][data] = val
+            # no function, only some are writeable
 
     def step(self, dir):
         if dir == 'L':
@@ -227,8 +244,9 @@ class Robot (Drawable):
                 raise "Sensor '" + sensor + "' is not of type '" + type + "'"
         return Vector(maxdist, maxangle)
 
-    def getSensorGroup(self, func = 'avg', name = 'front'): 
-        if not (name in self.sensorGroups.keys()): 
+    def getSensorGroup(self, func = 'avg', name = 'front'):
+        if not (name in self.sensorGroups.keys()):
+            print "WARN: name not in sensor groups!"
             return None
         if func == 'avg':
             sum = 0.0 
@@ -257,6 +275,7 @@ class Robot (Drawable):
                     minpos = pos
                     minangle = self.senses[type]['th'](self.dev, minpos)
             if minpos == -1:
+                print "WARN: no minimum found!"
                 return None
             return (minpos, min, minangle)
         elif func == 'max':
@@ -270,6 +289,7 @@ class Robot (Drawable):
                     maxpos = pos
                     maxangle = self.senses[type]['th'](self.dev, maxpos)
             if maxpos == -1:
+                print "WARN: no maximum found!"
                 return None
             return (maxpos, max, maxangle)
 
