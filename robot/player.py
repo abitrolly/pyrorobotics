@@ -399,7 +399,7 @@ class PlayerGripperDevice(PlayerDevice):
             elif self.devData["command"] == "halt":
                 self.devData["command"] = self.dev.gripper_halt()
             else:
-                raise AttributeError, "invalid command to ptz: '%s'" % keyword
+                raise AttributeError, "invalid command to gripper: '%s'" % self.devData["command"]
 
     def preGet(self, keyword):
         if keyword == "state":

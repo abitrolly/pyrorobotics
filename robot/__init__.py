@@ -524,17 +524,28 @@ class Robot:
         return 0
 
     def removeDevice(self, item):
-        self.device[item].setVisible(0)
-        self.device[item].setActive(0)
         if item in self.device:
-            self.device[item].destroy()
-            del self.device[item]
-        if item in self.devData:
-            del self.devData[item]
-        if item[:-1] in self.devDataFunc:
-            del self.devDataFunc[item[:-1]]
-        if item in self.directory:
-            del self.directory[item]
+            # the item is a named device
+            self.device[item].setVisible(0)
+            self.device[item].setActive(0)
+            if item in self.device:
+                self.device[item].destroy()
+                del self.device[item]
+            if item in self.devData:
+                del self.devData[item]
+            if item[:-1] in self.devDataFunc:
+                del self.devDataFunc[item[:-1]]
+            if item in self.directory:
+                del self.directory[item]
+        else:
+            # the item is a type
+            removedOne = 0
+            for dev in self.device:
+                if self.device[dev].get("type") == item:
+                    self.removeDevice(dev)
+                    removedOne += 1
+            if removedOne == 0:
+                raise AttributeError,"no such device name or type: '%s'" % item
         
     def destroy(self):
         for item in self.device:
