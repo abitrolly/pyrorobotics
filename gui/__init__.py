@@ -7,7 +7,7 @@ from pyro.gui.drawable import *
 from pyro.gui.renderer.tty import *
 from pyro.gui.renderer.streams import *
 from pyro.system.version import version as version
-from pyro.system import help as help
+from pyro.system import help, usage, about
 
 class gui(Drawable):
    """
@@ -52,8 +52,24 @@ class gui(Drawable):
          print "Running in thread..."
          self.engine.pleaseRun() # pass in callback, or not
          # self.engine.pleaseRun(self.redraw) # pass in callback
+      elif retval == "info":
+         print "-------------------------------------------------------------"
+         print "Brain file:\t%s" % self.engine.brainfile
+         print "Brain:\t\t%s" % self.engine.brain
+         print "Robot:\t\t%s" % self.engine.robot
+         print "-------------------------------------------------------------"
       elif retval == "help":
          help()
+      elif retval == "usage":
+         usage()
+      elif retval == "update":
+         if self.engine.robot != 0:
+            self.engine.robot.update()
+            print "Done!"
+         else:
+            print "Define a robot first!"
+      elif retval == "about":
+         about()
       elif retval == "reload":
          self.engine.reset()
       elif retval == "load robot":
@@ -70,7 +86,11 @@ class gui(Drawable):
          os.system(exp)
       elif retval == "edit":
          if self.engine.brainfile != '':
-            os.system("emacs -nw " + self.engine.brainfile)
+            if os.getenv("EDITOR"): 
+               editor = os.getenv("EDITOR")
+            else:
+               editor = "emacs"
+            os.system("%s %s" % (editor, self.engine.brainfile))
             print "Reloading..."
             self.engine.reset()
          else:

@@ -29,7 +29,7 @@ class Brain(threading.Thread): #, Drawable):
         self.start()
 
     def __repr__(self):
-        return "name = '%s'\n" % self.name
+        return "Brain name = '%s'" % self.name
 
     def _draw(self, options, renderer):
         pass

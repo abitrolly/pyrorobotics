@@ -928,6 +928,14 @@ if __name__ == '__main__':
     # Bryn Mawr College
     # http://emergent.brynmawr.edu/
 
+    try:
+        import psyco
+        psyco.bind(Layer)
+        psyco.bind(Connection)
+        psyco.bind(Network)
+    except:
+        print "WARNING: psyco not installed!"
+
     n = Network()
     n.addThreeLayers(2, 2, 1)
     n.setInputs([[0.0, 0.0],

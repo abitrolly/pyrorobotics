@@ -11,6 +11,21 @@ class SaphiraRobot(Robot):
         self.inform("Loading Saphira robot interface...")
         Saphira_Connect(self.dev, simulator) # connect to what?
         Robot.load_drivers(self) # queries robot
+        self.sensorSet = {'all': range(16),
+                          'front': (3, 4),
+                          'front-left' : (1,2,3),
+                          'front-right' : (4, 5, 6),
+                          'front-all' : (1,2, 3, 4, 5, 6),
+                          'left' : (0, 15), 
+                          'right' : (7, 8), 
+                          'left-front' : (0,), 
+                          'right-front' : (7, ),
+                          'left-back' : (15, ),
+                          'right-back' : (8, ),
+                          'back-right' : (9, 10, 11),
+                          'back-left' : (12, 13, 14), 
+                          'back' : (11, 12),
+                          'back-all' : ( 9, 10, 11, 12, 13, 14)}
         self.sensorGroups = {'all' : [ (0, 'sonar'), (8, 'sonar'),
                                        (1, 'sonar'), (9, 'sonar'),
                                        (2, 'sonar'), (10, 'sonar'),

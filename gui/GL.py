@@ -50,8 +50,14 @@ class GLgui(gui):
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
                         ['Right',self.stepRight],
-                        ['Stop',self.stopEngine]]),
-              ('Help',[['About',system.usage]])
+                        ['Stop',self.stopEngine],
+                        ['Update',self.engine.robot.update]
+                        ]),
+              ('Help',[['Help',system.help],
+                       ['Usage',system.usage],
+                       ['Info',self.info],
+                       ['About',system.about]
+                       ])
               ]
 
       button1 = [('Step',self.stepEngine),
@@ -172,6 +178,13 @@ class GLgui(gui):
          self.canvasBrain.create_text(xoffset + 275,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
       except:
          pass
+
+   def info(self):
+      print "-------------------------------------------------------------"
+      print "Brain file:\t%s" % self.engine.brainfile
+      print "Brain:\t\t%s" % self.engine.brain
+      print "Robot:\t\t%s" % self.engine.robot
+      print "-------------------------------------------------------------"
 
    def redrawWindowBrain(self):
       # FIX: behavior specific. How to put this in behavior code so
