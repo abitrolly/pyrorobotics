@@ -1,9 +1,9 @@
 #ifndef __FAKE_H__
 #define __FAKE_H__
 
-#include "../vision/Vision.h"
+#include "Device.h"
 
-class Fake : public Vision {
+class Fake : public Device {
 
  public:
   Fake(char filename[]);

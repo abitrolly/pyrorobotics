@@ -1,4 +1,3 @@
-#include "../vision/Vision.h"
 #include "Fake.h"
 
 Fake::Fake(char filename[]) {
@@ -56,10 +55,6 @@ PyObject *Fake::updateMMap(char filename[]) {
   width = w;
   height = h;
   fclose(theFile);
-  // apply any filters in list:
-  PyObject * retval = applyFilterList();
-  if (motionDetection) 
-    memcpy(history, image, width * height * depth);
-  return retval;
+  return PyInt_FromLong(0L);
 }
 
