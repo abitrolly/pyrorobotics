@@ -130,22 +130,21 @@ class Device:
     def updateDevice(self):
         pass
 
-    def postSet(self):
+    def postSet(self, keyword):
         pass
 
-    def preGet(self, keyword):
+    def preGet(self, pathList):
         pass
 
     def _set(self, path, value):
         if path[0] in self.devData:
             self.devData[path[0]] = value
-            self.postSet()
+            self.postSet(path[0])
         else:
             raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
     def _get(self, path, showstars = 0):
         #print "path=", path
-        self.preGet(path)
         if len(path) == 0:
             # return all of the things a sensor can show
             tmp = self.devData.copy()
@@ -157,9 +156,11 @@ class Device:
             return deviceDirectoryFormat(tmp, 0)
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
+            self.preGet(path[0])
             return self.devData[path[0]]
         elif len(path) == 1 and path[0] in self.devDataFunc:
             # return a value/ function with no argument
+            self.preGet(path[0])
             return self.devDataFunc[path[0]]()
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
@@ -185,15 +186,18 @@ class Device:
             # 4 cases:
             # 1 key 1 element
             if type(keys) == type(1) and type(elements) == type(""):
+                self.preGet(elements) 
                 return self.subDataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
+                self.preGet(elements)
                 mydict = {}
                 for e in elements:
                     mydict[e] = self.subDataFunc[e](keys)
                 return mydict
             # many keys 1 element
             elif type(elements) == type(""):
+                self.preGet(elements)
                 retval = []
                 if keys != None:
                     for i in keys:
@@ -201,6 +205,7 @@ class Device:
                 return retval
             # many keys many elements
             else:
+                self.preGet(elements)
                 retval = []
                 if keys != None:
                     for i in keys:

@@ -97,7 +97,7 @@ class PlayerSonarDevice(PlayerDevice):
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
         self.devData['units']    = "ROBOTS"
-        self.postSet()
+        self.postSet('maxvalue')
         self.devData["count"] = len(self.sonarGeometry)
         self.devData["noise"] = 0.05 # 5 percent
         # These are per reading:
@@ -113,9 +113,10 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
 
-    def postSet(self):
+    def postSet(self, keyword):
         """ Anything that might change after a set """
-        self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
+        if keyword == "maxvalue" or keyword == "maxvalueraw":
+            self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
 
     def getX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
