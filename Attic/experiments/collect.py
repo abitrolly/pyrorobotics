@@ -15,6 +15,7 @@ class Collect(Brain):
     """
 
     def setup(self):
+        self.noise = 0
         self.getRobot().startService(["BlobCamera", "truth"])
         self.camera = self.getRobot().getService("BlobCamera")
         self.truth = self.getRobot().getService("truth")
@@ -22,7 +23,7 @@ class Collect(Brain):
         self.vision = open("camera.dat","w")
         self.motors = open("motors.dat", "w")
         self.pose = open("poses.dat", "w")
-        self.camera.write("900\n")
+        self.vision.write("900\n")
         self.sonar.write("16\n")
         self.currStep = 1
         self.wasStalled = 0
