@@ -62,13 +62,10 @@ class VisPsom(psom):
                            bg='white')
       self.canvas.bind("<Button-1>", self.canvas_clicked)
       self.canvas.pack(side=LEFT)
-      self.followMap = IntVar()
-      self.followMap.set(1)
       f = Frame(self.win)
       f.pack(side=RIGHT)
-      c = Checkbutton(f, text="Follow Mapping",
-                      variable=self.followMap)
-      c.pack()
+      b = Button(f, text = "Show Count", command=self.showcount)
+      b.pack()
       b = Button(f, text = "Clear", command=self.clearfill)
       b.pack()
       
@@ -84,7 +81,7 @@ class VisPsom(psom):
             x1 = x0 + (self.vis_radius * 2)
             y1 = y0 + (self.vis_radius * 2)
             cell = self.canvas.create_oval(x0, y0, x1, y1)
-            self.cells[y].append(cell)
+            self.cells[y].append({"cell" : cell, "count" : 0})
             self.cellhash[cell] = (x, y)
 
 #      self.win.mainloop()
@@ -97,11 +94,23 @@ class VisPsom(psom):
          x, y = self.cellhash[cell]
          vec = self.get_model_vector(point(x, y))
          visclass = getVisVectorByName(self.vectortype)
-         visclass(vec, "(%d, %d)" % (x, y))
+         visclass(vec, title="(%d, %d)" % (x, y))
+
+   def showcount(self):
+      self.canvas.delete('count')
+      for list in self.cells:
+         for item in list:
+            coords = self.canvas.coords(item["cell"])
+            center = ((coords[0] + coords[2])/2, (coords[1] + coords[3])/2)
+            self.canvas.create_text(center[0], center[1],
+                                    text = str(item["count"]),
+                                    fill = 'red',
+                                    tags = 'count')
       
 
    def _setcell(self, x, y, level):
-      self.canvas.itemconfigure(self.cells[y][x], fill='gray' + str(level))
+      self.canvas.itemconfigure(self.cells[y][x]["cell"],
+                                fill='gray' + str(level))
 
    def _updatefill(self):
       for pt in self.history.keys():
@@ -117,27 +126,25 @@ class VisPsom(psom):
       for y in range(self.ydim):
          for x in range(self.xdim):
             self._setcell(x, y, 100)
+      self.canvas.delete('count')
 
    def map(self, vector):
       retval = psom.map(self,vector)
-      if self.followMap.get():
-         #if we're displaying the map
-         pt = retval.point.x, retval.point.y
-         self.history[pt] = ACT_MAX
-         self._updatefill()
+      pt = retval.point.x, retval.point.y
+      self.history[pt] = ACT_MAX
+      self.cells[pt[1]][pt[0]]["count"] += 1
+      self._updatefill()
       return retval
 
    def train(self, vector):
       retval = psom.train(self,vector)
-      if self.followMap.get():
-         #if we're displaying the map
-         pt = retval.point.x, retval.point.y
-         self.history[pt] = ACT_MAX
-         self._updatefill()
+      pt = retval.point.x, retval.point.y
+      self.history[pt] = ACT_MAX
+      self._updatefill()
       return retval
 
 if __name__ == "__main__":
-   mysom = VisPsom(file='ex.cod', vis_vectortype="Generic")
+   mysom = VisPsom(file='ex.cod', vis_vectortype="BarGraph")
    mydataset = dataset(file='ex.dat')
    mysom.init_training(0.02,4.0,5000)
    mysom.train_from_dataset(mydataset)
