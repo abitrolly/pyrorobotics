@@ -36,7 +36,8 @@ class Engine:
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if devices != ['']:
-            self.robot.startDevices(devices)
+            for dev in devices:
+               self.robot.startDevice(dev)
       if self.brainfile:
          self.loadBrain(self.brainfile)
          time.sleep(2)
