@@ -11,7 +11,7 @@ class SimpleBrain(Brain):
    def setup(self): 
       self.blockedFront = 0 
       self.direction = 1 
-      self.ravq = pyro.brain.ravq.ARAVQ(10, 1, 2, .1) 
+      self.ravq = pyro.brain.ravq.ARAVQ(10, 1.75, 2, .1) 
       self.ravq.setHistory(0)
       self.ravq.setLog('ravq.log')
       self.counter = 0 
@@ -63,15 +63,17 @@ class SimpleBrain(Brain):
    def recordRAVQ(self): 
       all = self.getRobot().get('range', 'value', 'all') 
       self.ravq.input(all)
-      self.ravq.logHistory(0, str(self.getRobot().dev.get_truth_pose()))
+      if self.counter % 1000 == 0:
+         self.ravq.logHistory(0, str(self.getRobot().dev.get_truth_pose()))
  
    def step(self): 
       print self.counter 
       target = self.avoidObstacles() 
       self.getRobot().move(target[0], target[1]) 
       self.recordRAVQ()          
-      if self.counter == 100:
+      if self.counter == 100000:
          self.ravq.logRAVQ()
+         self.ravq.saveRAVQToFile('ravq.pck')
          self.pleaseStop()
          self.ravq.closeLog()
       self.counter += 1 

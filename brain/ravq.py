@@ -1,6 +1,6 @@
 import Numeric, math
 
-version = '1.0'
+version = '1.1'
 
 # general functions
 def averageVector(V):
@@ -67,6 +67,7 @@ class RAVQ:
         self.recordHistory = 1
         self.history = {} # time indexed list of winners
         self.tolerance = delta
+        self.counters = []
 
     # update the RAVQ
     def input(self, vec):
@@ -76,7 +77,7 @@ class RAVQ:
         else:
             self.buffer = self.buffer[1:] + [array]
             self.process() # process new information
-        if self.verbosity > 1: print self
+        if self.verbosity > 2: print self
         self.time += 1
 
     # attribute methods
@@ -125,9 +126,11 @@ class RAVQ:
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
             self.models.append(self.movingAverage)
-            print 'Adding model vector', self.movingAverage
-            print 'Moving avg dist', self.movingAverageDistance
-            print 'Model vec dist', self.modelVectorsDistance
+            self.counters.append(1)
+            if self.verbosity > 1:
+                print 'Adding model vector', self.movingAverage
+                print 'Moving avg dist', self.movingAverageDistance
+                print 'Model vec dist', self.modelVectorsDistance
     def updateWinner(self):
         min = []
         for m in self.models:
@@ -137,6 +140,7 @@ class RAVQ:
         else:
             self.winnerIndex = Numeric.argmin(min)
             self.winner = self.models[self.winnerIndex]
+            self.counters[self.winnerIndex] += 1
     def updateHistory(self):
         if self.recordHistory and self.winner != 'No Winner':
             self.history[str(self.time)] = self.winner[:]
@@ -195,8 +199,12 @@ class RAVQ:
     # helpful string methods
     def modelString(self):
         s = "Model vectors:\n"
+        cnt = 0
         for array in self.models:
+            s += str(self.counters[cnt]) + " "
             s += stringArray(array)
+            cnt += 1
+            
         return s
     def labelString(self):
         s = "Model vector labels:\n"
@@ -271,9 +279,14 @@ class ARAVQ(RAVQ):
         self.learning = value
     def updateDeltaWinner(self):
         if not self.winner == 'No Winner':
+            if self.verbosity > 3:
+                print 'MAandW' , euclideanDistance(self.movingAverage, self.winner)
+                print 'MA' ,  self.movingAverageDistance
+                print 'MV' ,  self.modelVectorsDistance
+                print 'MVMD' ,  self.modelVectorsDistance - self.delta
             if euclideanDistance(self.movingAverage, self.winner) < self.epsilon / 2:
                 self.deltaWinner = self.alpha * (self.movingAverage - self.winner)
-                print 'Learning'
+                if self.verbosity > 4: print 'Learning'
             else:
                 self.deltaWinner = Numeric.zeros(len(self.winner)) 
         else:
