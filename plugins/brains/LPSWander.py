@@ -18,7 +18,7 @@ class SimpleBrain(Brain):
       self.lps = LPS( 20, 20,
                       widthMM = sizeMM,
                       heightMM = sizeMM)
-      self.gps = GPS(100, 100, widthMM = sizeMM * 5, heightMM = sizeMM * 5)
+      self.gps = GPS(400, 300, widthMM = sizeMM * 5, heightMM = sizeMM * 5)
       self.stick = Joystick()
    
    def destroy(self):
@@ -32,6 +32,7 @@ class SimpleBrain(Brain):
       self.lps.sensorHits(robot, 'range')
       self.lps.redraw()
       self.gps.updateFromLPS(self.lps, robot)
+      self.gps.redraw()
       self.robot.move( self.stick.translate, self.stick.rotate)
    
 # -------------------------------------------------------

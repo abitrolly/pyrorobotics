@@ -26,7 +26,7 @@ class GPS(TkMap):
       self.changedValues = ()
       
       # 2000 is the max dist of a Pioneer sonar (in MMs) 
-      self.range = 2000
+      self.range = 5000
 
       # sonar model is broken into 3 regions - these are the boundaries
       self.reg2max = self.range * 0.3
@@ -185,7 +185,8 @@ class GPS(TkMap):
 
             # lps saw something here - update it's probability 
             if lps.grid[i][j] == 1.0:
-               occ = lps.grid[i][j] # occ = self.getProb( dist, 0, oldVal )
+               # occ = lps.grid[i][j]
+               occ = self.getProb( dist, 0, oldVal )
                self.plotCell( xcell, ycell, occ ) #"black")
                
             # lps never updated - leave these locations along
