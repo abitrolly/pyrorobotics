@@ -41,21 +41,35 @@ class GeneralPlot:
       if self.dataWindowSize < 1:
          self.dataWindowSize = 1
       
+      self.scrollhoriz = Scrollbar(self.win, orient="horiz",
+                                   command=self.scroll)
+      self.scrollhoriz.pack(side=BOTTOM,expand="yes",fill="both",padx=1,pady=1)
       self.canvas = Canvas(self.win, width=self.width, height=self.height,
                            scrollregion=(0, 0,
                                          history * stepLength, self.height),
-                           xscrollincrement=self.stepLength)
-      self.canvas.pack()
+                           xscrollincrement=self.stepLength,
+                           xscrollcommand=self.xposition)
+      self.canvas.pack() 
 
       self.frozen = 0
 
-      b1 = Button(self.win, text="<==", command=self.scrollLeft)
-      b1.pack(side=LEFT)
-      self.freezeButton = Button(self.win, text="Freeze", command=self.freezePress)
-      b3 = Button(self.win, text="==>", command=self.scrollRight)
-      b3.pack(side=RIGHT)
-      self.freezeButton.pack(anchor=S)
+      #b1 = Button(self.win, text="<==", command=self.scrollLeft)
+      #b1.pack(side=LEFT)
+      #self.freezeButton = Button(self.win, text="Freeze", command=self.freezePress)
+      #self.freezeButton.pack(anchor=S)
 
+      #b3 = Button(self.win, text="==>", command=self.scrollRight)
+      #b3.pack(side=RIGHT)
+
+      #sbv = Scrollbar(self.win, command = "$c yview")
+
+   def xposition(self, left, right):
+      #print "LEFT=", left, "RIGHT=", right
+      pass
+
+   def scroll(self, amount):
+      #print "Amount:", amount
+      self.canvas.xview(SCROLL, int(amount) * 10, UNITS)
 
    def scrollLeft(self):
       self.canvas.xview(SCROLL, -10, UNITS)
