@@ -12,7 +12,7 @@ class NNPredict(Brain):
    def setup(self):
       """ Create the network. """
       self.net = SRN()
-      self.sensorCount = self.getRobot().get('range', 'count')
+      self.sensorCount = self.robot.get('robot/range/count')
       self.net.add(Layer('input', self.sensorCount+2))
       self.net.addContext(Layer('context', 2), 'hidden')
       self.net.add(Layer('hidden', 2))
@@ -35,8 +35,8 @@ class NNPredict(Brain):
       self.rotate = 0
       self.counter = 0
       self.doneLearning = 0
-      self.getRobot().set('range', 'units', 'METERS')
-      self.maxvalue = self.getRobot().get('range', 'maxvalue')
+      self.robot.set('robot/range/units', 'METERS')
+      self.maxvalue = self.robot.get('robot/range/maxvalue')
       print " Max value: ", self.maxvalue
       
       self.plot1 = Scatter()
@@ -45,9 +45,9 @@ class NNPredict(Brain):
       self.plot2.setTitle('hidden 0 x hidden 1')
       self.plot3 = Scatter()
       self.plot3.setTitle('targetT x targetR')
-      self.pred = Hinton(self.getRobot().get('range', 'count'),
+      self.pred = Hinton(self.robot.get('robot/range/count'),
                          title = 'Predicted Inputs')
-      self.targ = Hinton(self.getRobot().get('range', 'count'),
+      self.targ = Hinton(self.robot.get('robot/range/count'),
                          title = 'Actual Inputs')
       self.cont = Hinton(2, title = 'Context Layer')
       self.hidd = Hinton(2, title = 'Hidden Layer')
@@ -74,50 +74,50 @@ class NNPredict(Brain):
 
       # set targets   
       target_rotate = 0.5
-      if self.getRobot().get('range', 'value', 'front', 'min')[1] < .5:
+      if min(self.robot.get('robot/range/front/value')) < .5:
          target_trans = 0.0
          target_rotate = 0.0 # some asymmetry to make things interesting
-      elif self.getRobot().get('range', 'value', 'back', 'min')[1] < .5:
+      elif min(self.robot.get('robot/range/back/value')) < .5:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if self.getRobot().get('range', 'value', 'left', 'min')[1] < .2:
+      if min(self.robot.get('robot/range/left/value')) < .2:
          target_rotate = 0.0
-      elif self.getRobot().get('range', 'value', 'right', 'min')[1] < .2:
+      elif min(self.robot.get('robot/range/right/value')) < .2:
          target_rotate = 1.0
       else:
          pass
       target = [target_trans,target_rotate]
 
-      # print "Raw sensor data: ", self.getRobot().get('range', 'value', 'all')
-      # print "Context Layer: ", self.net.getLayer('context').activation
-      # print "Hidden Layer: ", self.net.getLayer('hidden').activation
+      # print "Raw sensor data: ", self.robot.get('robot/range/all/value')
+      # print "Context Layer: ", self.net['context'].activation
+      # print "Hidden Layer: ", self.net['hidden'].activation
 
-      self.cont.update(self.net.getLayer('context').activation)
-      self.hidd.update(self.net.getLayer('hidden').activation)
+      self.cont.update(self.net['context'].activation)
+      self.hidd.update(self.net['hidden'].activation)
       
       # set up inputs and learn
       if self.counter == 0:
-         self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+         self.new = map(self.scale, self.robot.get('robot/range/all/value'))
          #self.net.clearContext() # do once
       else:
          old = self.new + [self.trans, self.rotate] #trans and rotate
-         self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+         self.new = map(self.scale, self.robot.get('robot/range/all/value'))
          # print self.new
          self.net.step( input = old, motorOutput = target, prediction = self.new )
 
       # results
-      self.trans = self.net.getLayer('motorOutput').activation[0]
-      self.rotate = self.net.getLayer('motorOutput').activation[1]
+      self.trans = self.net['motorOutput'].activation[0]
+      self.rotate = self.net['motorOutput'].activation[1]
 
-      self.getRobot().move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
+      self.robot.move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
 
       self.plot1.addPoint(self.trans, self.rotate)
-      self.plot2.addPoint(self.net.getLayer('hidden').activation[0],
-                          self.net.getLayer('hidden').activation[1])
+      self.plot2.addPoint(self.net['hidden'].activation[0],
+                          self.net['hidden'].activation[1])
       self.plot3.addPoint(target_trans, target_rotate)
-      self.pred.update(self.net.getLayer('prediction').activation)
-      self.targ.update(self.net.getLayer('prediction').target)
+      self.pred.update(self.net['prediction'].activation)
+      self.targ.update(self.net['prediction'].target)
 
       self.counter += 1
 

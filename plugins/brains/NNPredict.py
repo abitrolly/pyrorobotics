@@ -57,7 +57,7 @@ class NNPredict(Brain):
       else:
          old = self.new + [self.trans, self.rotate] 
          self.net.step(input=old, output=target)
-         self.trans, self.rotate = self.net.getLayer('output').getActivations()
+         self.trans, self.rotate = self.net['output'].activations
          if self.counter % 10 == 0:
             print self.trans, self.rotate
 

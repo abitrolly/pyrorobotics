@@ -42,7 +42,7 @@ class TkMap(Map, Tkinter.Tk):
         y_pos = self.height - ((float(y)/self.rowScaleMM) * self.rowScale)
         if "fill" not in args:
             args["fill"] = "black"
-        self.canvas.create_oval(x_pos-1, y_pos-1, x_pos+1, y_pos+1, **args)
+        self.canvas.create_oval(x_pos-1, y_pos-1, x_pos+1, y_pos+1, width=0, **args)
         self.canvas.create_text(x_pos+2, y_pos, text=label, anchor="w", **args)
 
     def addKeyBindings(self, keybindings):

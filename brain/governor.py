@@ -9,7 +9,7 @@ from pyro.brain.ravq import ARAVQ, euclideanDistance
 
 class Governor:
     """
-    An RAVQ baseclass for combination with Network. 
+    An RAVQ vitual baseclass for combination with Network. 
     """
     def incompatibility(self):
         """
@@ -35,6 +35,9 @@ class Governor:
         return retval
 
     def winner(self):
+        """
+        Get's winning name, m.v. of last winner.
+        """
         index = self.ravq.newWinnerIndex
         if index >= 0:
             name = self.ravq.models.names[index]
@@ -43,6 +46,10 @@ class Governor:
         return name, self.ravq.winner
 
     def input(self, vector):
+        """
+        Wrapper around ravq.input() which returns index and mapped-to m.v. Here, we convert
+        index to "name".
+        """
         index, modelVector = self.ravq.input(vector)
         if index >= 0:
             name = self.ravq.models.names[index]
@@ -53,7 +60,7 @@ class Governor:
     def map(self, vector):
         """
         Returns the index and vector of winning position. Side effect: records
-        index of winning pos in histogram.
+        index of winning pos in histogram and decayHistogram.
         """
         index, modelVector = self.input(vector)
         if self.histogram.has_key(index):
@@ -61,7 +68,11 @@ class Governor:
         else:
             if index >= 0:
                 self.histogram[index] = 1
-            # else ignore?
+        if self.decayHistogram.has_key(index):
+            self.decayHistogram[index] += 1
+        else:
+            if index >= 0:
+                self.decayHistogram[index] = 1
         return (index, modelVector)
 
     def nextItem(self):
@@ -102,6 +113,7 @@ class GovernorNetwork(Governor, Network):
         self.ravq.setAddModels(1)
         self.setVerbosity(verbosity)
         self.histogram = {}
+        self.decayHistogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
 
@@ -136,6 +148,7 @@ class GovernorSRN(Governor, SRN):
         self.ravq.setAddModels(1)
         self.setVerbosity(verbosity)
         self.histogram = {}
+        self.decayHistogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
 
@@ -154,25 +167,37 @@ class GovernorSRN(Governor, SRN):
             if self.verbosity:
                 print "mask:", self.ravq.mask
 
+    def decayModelVectors(self):
+        good = []
+        goodNames = []
+        for name in self.decayHistogram.keys():
+            pos = self.ravq.models.names.index(name)
+            good.append( self.ravq.models.contents[pos] )
+            goodNames.append( self.ravq.models.names[pos] )
+        self.decayHistogram = {}
+        self.ravq.models.contents = good
+        self.ravq.models.names = goodNames
+        if len(self.ravq.models.contents):
+            self.ravq.models.next = self.ravq.models.next % \
+                                    len(self.ravq.models.contents)
+        else:
+            self.ravq.models.next = 0
+
+    def report(self, hist=1):
+        if hist:
+            print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
+        else:
+            print "Model vectors: %d" %( len(self.ravq.models),)
+
     def sweep(self):
         retval = SRN.sweep(self)
-        if self.decay:
-            good = []
-            goodNames = []
-            for name in self.histogram.keys():
-                pos = self.ravq.models.names.index(name)
-                good.append( self.ravq.models.contents[pos] )
-                goodNames.append( self.ravq.models.names[pos] )
-            self.ravq.models.contents = good
-            self.ravq.models.names = goodNames
-            if len(self.ravq.models.contents):
-                self.ravq.models.next = (self.ravq.models.next + 1) % \
-                                        len(self.ravq.models.contents)
-            else:
-                self.ravq.models.next = 0
-        if self.epoch % self.reportRate == 0:
+        if self.governing and (self.epoch % self.reportRate == 0):
             print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
             self.histogram = {}
+        if self.governing and self.decay:
+            self.decayModelVectors()
+            if self.epoch % self.reportRate == 0:
+                print "After decay: Model vectors: %d" % len(self.ravq.models)
         return retval
 
     def networkStep(self, **args):
