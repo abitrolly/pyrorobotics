@@ -126,11 +126,29 @@ class GovernorNetwork(Governor, Network):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
 
+    def setMaskWeight(self, iw, ow):
+        i = len(self["input"])
+        o = len(self["output"])
+        parts = []
+        if iw:
+            parts.append( i/float(iw) )
+        else:
+            parts.append( 0 )
+        if ow:
+            parts.append( o/float(ow) )
+        else:
+            parts.append( 0 )
+        sum = float(max(*parts))
+        mask = [sum/i * iw] * i + [sum/o * ow] * o
+        self.ravq.setMask( mask )
+        if self.verbosity:
+            print "mask:", self.ravq.mask
+ 
     def addThreeLayers(self, i, h, o):
         Network.addThreeLayers(self, i, h, o)
         if not self.ravq.mask:
-            sum = float(max(i, h, o))
-            mask = [sum/i] * i + [sum/h] * h + [sum/o] * o
+            sum = float(max(i, o))
+            mask = [sum/i] * i + [sum/o] * o
             self.ravq.setMask( mask )
             if self.verbosity:
                 print "mask:", self.ravq.mask
@@ -165,6 +183,29 @@ class GovernorSRN(Governor, SRN):
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
+
+    def setMaskWeight(self, iw, hw, ow):
+        i = len(self["input"])
+        h = len(self["hidden"])
+        o = len(self["output"])
+        parts = []
+        if iw:
+            parts.append( i/float(iw) )
+        else:
+            parts.append( 0 )
+        if hw:
+            parts.append( h/float(hw) )
+        else:
+            parts.append( 0 )
+        if ow:
+            parts.append( o/float(ow) )
+        else:
+            parts.append( 0 )
+        sum = float(max(*parts))
+        mask = [sum/i * iw] * i + [sum/h * hw] * h + [sum/o * ow] * o
+        self.ravq.setMask( mask )
+        if self.verbosity:
+            print "mask:", self.ravq.mask
 
     def addThreeLayers(self, i, h, o):
         SRN.addThreeLayers(self, i, h, o)
@@ -267,6 +308,8 @@ if __name__ == '__main__':
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
     net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
+    net.setSequenceType("epoch")
+    net.trainingNetwork.setSequenceType("epoch")
     net.addThreeLayers(inSize, inSize/2, 4)
     net.setTargets( targets[:389] ) # 389 = one trip around
     net.setInputs( inputs[:389] ) # has some pauses in there too

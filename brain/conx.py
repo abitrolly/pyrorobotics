@@ -1206,7 +1206,7 @@ class Network:
         return self.getLayer(layerName).TSSError()
 
     # train and sweep methods
-    def train(self):
+    def train(self, cont=0):
         """
         Trains the network on the dataset till a stopping condition is
         met. This stopping condition can be a limiting epoch or a percentage correct requirement.
@@ -1214,8 +1214,10 @@ class Network:
 
         # check architecture
         self.verifyArchitecture()
-        tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
-        self.resetCount = 1
+        tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1;
+        if not cont:
+            self.resetCount = 1
+            self.epoch = 1
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
             (tssErr, totalCorrect, totalCount) = self.sweep()
             if totalCount != 0:
