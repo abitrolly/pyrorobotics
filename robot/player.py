@@ -211,7 +211,7 @@ class PlayerLaserDevice(PlayerDevice):
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
 	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.client.laser[0][1][pos], self.devData["noise"]) 
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
@@ -538,13 +538,8 @@ class PlayerRobot(Robot):
         self.connect() # set self.client to player robot
         self.thread = PlayerUpdater(self)
         self.thread.start()
-        count = 0
-        # FIX: arbitrary setting!
-        while self.client.get_devlist() == -1 and count < 10:
-            time.sleep(.1)
-            count += 1
-        if count == 10:
-            print "ERROR: robot did not load!"
+        # a robot with no devices will hang here!
+        while self.client.get_devlist() == -1: pass
         # Make sure laser is before sonar, so if you have
         # sonar, it will be the default 'range' device
         devNameList = [playerc.playerc_lookup_name(device.code) for device in self.client.devinfos]
@@ -633,21 +628,6 @@ class PlayerRobot(Robot):
     def move(self, translate_velocity, rotate_velocity):
         self.position.handle.set_cmd_vel(translate_velocity, 0, rotate_velocity, 1)
         
-    # FIX: either sonar values are changing between calls to X, Y
-    # or sin/cos values are not taking into account offset from center
-        
-    def localX(self, pos):
-        thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
-        dist = self.rawToUnits(self.client.sonar[0][pos], 'sonar')
-        x = self.rawToUnits(self.sonarGeometry[pos][0], 'sonar')
-        return cos(thr) * dist
-
-    def localY(self, pos):
-        thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180
-        dist = self.rawToUnits(self.client.sonar[0][pos], 'sonar')
-        y = self.rawToUnits(self.sonarGeometry[pos][1], 'sonar') 
-        return sin(thr) * dist
-
     def update(self):
         self._update()
         if self.hasA("position"):
@@ -671,8 +651,13 @@ class PlayerRobot(Robot):
 
     def connect(self):
         print "hostname=", self.hostname, "port=", self.port
+        # FIX: arbitrary time! How can we know server is up and running?
+        time.sleep(1)
         self.client = playerc.playerc_client(None, self.hostname, self.port)
-        self.client.connect()
+        retval = self.client.connect()
+        while retval == -1:
+            self.client = playerc.playerc_client(None, self.hostname, self.port)
+            retval = self.client.connect()
 
     def removeDevice(self, item):
         self.devData[item].unsubscribe()

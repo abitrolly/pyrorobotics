@@ -77,7 +77,9 @@ class PyroDebugger(code.InteractiveConsole):
                 pass
             atexit.register(self.save_history, histfile)
 
-    def save_history(self, histfile):
+    def save_history(self, histfile = None):
+        if histfile:
+            histfile=os.path.expanduser("~/.pyrohist"),
         readline.write_history_file(histfile)
 
     def raw_input(self, prompt):
@@ -125,6 +127,7 @@ class PyroDebugger(code.InteractiveConsole):
 def handler(signum, frame):
     console = PyroDebugger(frame=frame)
     console.interact()
+    console.save_history()
     print colorize("\nContinuing...", "yellow")
 signal.signal(signal.SIGTSTP, handler) # suspend
 
