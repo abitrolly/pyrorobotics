@@ -50,7 +50,7 @@ $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && $(CC) $(CC_FLAGS) $(@F:.o=.c))
 
 clean::
-	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core ksim.py
+	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core ksim.py sim_control *.pyc
 
 
 

@@ -27,13 +27,13 @@ cc = gcc -g $(CFLAGS) $(INCDIRS) -c
 
 CC = gcc -g $(LIBDIRS) $(LIBS)
 
-all: sim sim_control ../ksim.so
+all: sim sim_control _ksim.so
 
 sim_control:
-	(cd ./CNTRL && make && cp sim_control ../)
+	(cd ./CNTRL && make)
 
-../ksim.so:
-	(cd ./CNTRL && make && cp ksim.so ../../)
+_ksim.so:
+	(cd ./CNTRL && make)
 
 sim:	sim.o robot.o world.o graphics.o khep_serial.o user.o
 	$(CC) OBJ/sim.o OBJ/robot.o OBJ/world.o OBJ/graphics.o OBJ/khep_serial.o OBJ/user.o -o sim
@@ -54,5 +54,5 @@ header.h: types.h graphics.h sim.h robot.h world.h
 	touch SRC/header.h
 
 clean:
-	rm -f ../ksim.so sim OBJ/*.o; \
+	rm -f sim OBJ/*.o ; \
 	(cd ./CNTRL && make clean)
