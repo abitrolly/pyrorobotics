@@ -59,10 +59,10 @@ class LPS(Tkinter.Tk):
       if label != None:
          self.label[ypos][xpos] = "%d" % label
 
-   def computeOccupancy(self, origx, origy, hitx, hity, arc, label = None):
+   def computeOccupancy(self, origx, origy, hitx, hity, arc, senseObstacle, label = None):
       """
       Initially only compute occupancies on the line from the robot to
-      the sensor hit.
+      the sensor hit.  
       """
       self.setGridLocation(origx, origy, 0.0)
       rise = hity - origy
@@ -73,6 +73,7 @@ class LPS(Tkinter.Tk):
          run = 0
       steps = round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM)))
       if steps == 0:
+         self.setGridLocation(hitx, hity, 1.0, label)
          return
       stepx = run / float(steps)
       if abs(stepx) > self.colScaleMM:
@@ -90,7 +91,10 @@ class LPS(Tkinter.Tk):
          curry += stepy
          currx += stepx
          self.setGridLocation(currx, curry, 0.0, label)
-      self.setGridLocation(hitx, hity, 1.0, label)
+      if senseObstacle:
+         self.setGridLocation(hitx, hity, 1.0, label)
+      else:
+         self.setGridLocation(hitx, hity, 0.0, label)
 
    def sensorHits(self, robot, item):
       """
@@ -122,12 +126,14 @@ class LPS(Tkinter.Tk):
       for i in range(robot.get(item, 'count')):
          offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
          dist = robot.get(item, 'value', i) 
-         theta = robot.get(item, 'th', i)
          if dist < robot.get(item, 'maxvalue'):
-            dist *= 1000
-            hitx = cos(theta) * dist + offx
-            hity = sin(theta) * dist + offy
-            self.computeOccupancy(offx, offy, hitx, hity, arc, i)
+            senseObstacle = 1
+         else:
+            senseObstacle = 0
+         theta = robot.get(item, 'th', i)
+         hitx = cos(theta) * dist * 1000 + offx
+         hity = sin(theta) * dist * 1000 + offy
+         self.computeOccupancy(offx, offy, hitx, hity, arc, senseObstacle, i)
       robot.set(item, 'units', originalUnits)
 
    def redraw(self):
