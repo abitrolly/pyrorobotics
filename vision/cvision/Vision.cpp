@@ -1,4 +1,5 @@
 #include "Vision.h"
+#include <stdlib.h>
 
 Vision::Vision() {
   allocatedImage = 0;
@@ -1194,6 +1195,34 @@ PyObject *Vision::applyFilters(PyObject *newList) {
   return retvals;
 }
 
+int randomize(int range) {
+  int amt = int(rand()/float(RAND_MAX) * range);
+  if ((rand() / float(RAND_MAX)) <.5)
+    return amt;
+  else
+    return -amt;
+}
+
+PyObject *Vision::addNoise(float percent, int range) {
+  // Used to add noise to an image
+  unsigned int thisPos;
+  int counter = 0;
+  int r;
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      if ((rand()/float(RAND_MAX)) < percent) {
+	counter++;
+	thisPos = (h * width + w) * depth;
+	r = randomize(range);
+	Image[thisPos + rgb[0]] = MIN(MAX( Image[thisPos + rgb[0]] + r, 0), 255);
+	Image[thisPos + rgb[1]] = MIN(MAX( Image[thisPos + rgb[1]] + r, 0), 255);
+	Image[thisPos + rgb[2]] = MIN(MAX( Image[thisPos + rgb[2]] + r, 0), 255);
+      }
+    }
+  }
+  return Py_BuildValue("i", counter);
+}
+
 // For upside down cameras:
 PyObject *Vision::rotate() {
   unsigned int thisPos;
@@ -1267,6 +1296,7 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Gray scale", "grayScale"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Swap planes", "swapPlanes", rgb[0], rgb[2]));
+  PyList_Append(menu, Py_BuildValue("sssfi", "Misc", "Add noise", "addNoise", 0.05, 30));
   PyList_Append(menu, Py_BuildValue("sssiiii", "Draw", "Box", "drawRect", 10, 10, 30, 30));
   PyList_Append(menu, Py_BuildValue("sssiii", "Draw", "Cross", "drawCross", 20, 20, 10));
   return menu;
@@ -1295,6 +1325,13 @@ PyObject *Vision::applyFilter(PyObject *filter) {
       return NULL;
     }
     retval = scale(f1, f2, f3);
+  } else if (strcmp((char *)command, "addNoise") == 0) {
+    f1 = 0.05, i1 = 30;
+    if (!PyArg_ParseTuple(list, "|fi", &f1, &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: addNoise");
+      return NULL;
+    }
+    retval = addNoise(f1, i1);
   } else if (strcmp((char *)command, "rotate") == 0) {
     retval = rotate();
   } else if (strcmp((char *)command, "meanBlur") == 0) {

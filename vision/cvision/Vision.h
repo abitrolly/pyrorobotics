@@ -110,6 +110,7 @@ public:
   PyObject *restore();
   PyObject *motion(int threshold, int outChannel);
   PyObject *rotate();
+  PyObject *addNoise(float percent, int range);
   PyObject *getMenu();
   PyObject *swapPlanes(int d1, int d2);
 
