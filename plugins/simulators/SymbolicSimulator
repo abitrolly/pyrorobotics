@@ -2,6 +2,7 @@
 
 """
 A simple symbloic simulator for symbolic worlds
+like the VacuumCleanerWorld (after Russell and Norvig).
 """
  
 import SocketServer, sys, threading, time, string
@@ -38,11 +39,11 @@ class Handler(SocketServer.BaseRequestHandler):
             try:
                 request = self.request.recv(10240).strip()
             except:
-                time.sleep(.25)
+                time.sleep(.01)
                 continue
             retval = self.gui.process(request)
             try:
-                self.request.send("ACK: %s\n" % retval)
+                self.request.send("%s\n" % retval)
             except: # broken pipe, etc
                 self.gui.done = 1
         self.request.close()
