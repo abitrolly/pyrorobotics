@@ -4,6 +4,11 @@ from UserString import UserString
 import types
 import sys
 
+import PIL.PpmImagePlugin
+from Tkinter import *
+import Image, ImageTk
+import time
+
 class V4LGrabber(Camera):
    """
    A Wrapper class for the C fuctions that capture data from the Khepera robot.
@@ -112,6 +117,25 @@ class V4LGrabber(Camera):
       file.write(self.cbuf)
       file.close
 
+   def makeWindow(self):
+      self.root = Tk()
+      im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                               (self.width, self.height),
+                                               self.cbuf, 'raw', "BGR")
+      self.image = ImageTk.PhotoImage(im)
+      label = Label(self.root, image=self.image, bd=0)
+      label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+      while 1:
+         im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                  (self.width, self.height),
+                                                  self.cbuf, 'raw', "BGR")
+         self.image = ImageTk.PhotoImage(im)
+         while self.root.tk.dooneevent(2): pass
+         time.sleep(.5)
+         print ".",
+         sys.stdout.flush()
+         self.update()
+
 class CBuffer:
    """
    A private buffer class to transmute the CBuffer we get in V4LGrabber.data
@@ -135,51 +159,59 @@ class CBuffer:
       return len(self.data)
 
    def __str__(self):
-      return str(self[:])
-
-   
+      return str(self[:])   
 
 if __name__ == "__main__":
    from grabImage import *
    from pyro.camera.v4l import *
-   import time
-
-   #print "Opening the camera directly using the C interface..."
-   #image = grab_image("/dev/video0", 384, 240)
-
-   #print "Printing the first 10 bytes..."
-   #for x in range(10):
-   #   print "%X" % (image[x])
-
-   #print "Freeing..."
-   #free_image(image)
 
    print "Now using the V4LGrabber class..."
    cam = V4LGrabber(384, 240)
-   #cam.update()
-   cam.saveAsTGA("./test1.tga")
-   time.sleep(3)
-   cam.saveAsTGA("./test2.tga")
-   cam.update()
-   cam.saveAsTGA("./test3.tga")
 
-   print """
-   If everything worked, then test1.tga and test2.tga should be identical,
-   but test3.tga should have been snapped about a second later.  They are
-   all saved in the current directory.
-   """
+   if 0:
+      cam.makeWindow()
+
+   if 0:
+      root = Tk()
+      im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                               (cam.width, cam.height),
+                                               cam.cbuf, 'raw', "BGR")
+      image = ImageTk.PhotoImage(im)
+      label = Label(root, image=image, bd=0)
+      label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+      root.mainloop()
+
+   if 1:
+      print "Testing frames per/second:",
+      start = time.time()
+      for i in range(100):
+         print ".",
+         sys.stdout.flush()
+         cam.update()
+      stop = time.time()
+      print "done!"
+      print "FPS = ", 100.00/ (stop - start)
+
+   if 0:
+      print "Saving images:"
+      print "test1.tga..."
+      cam.saveAsTGA("./test1.tga")
+      time.sleep(3)
+      print "test1.tga..."
+      cam.saveAsTGA("./test2.tga")
+      cam.update()
+      print "test1.tga..."
+      cam.saveAsTGA("./test3.tga")
+
+      print """
+      If everything worked, then test1.tga and test2.tga should be identical,
+      but test3.tga should have been snapped about a second later.  They are
+      all saved in the current directory.
+      """
    del cam
-   time.sleep(.5)
 
-
-   #print "Testing greyscale..."
-   #cam = V4LGrabber(384, 240, 1)
-   #cam.save("./testgrey.tga")
-   #print "Saved testgrey.tga"
-   
-
-
-      
-
-
-   
+   if 0:
+      print "Testing greyscale..."
+      cam = V4LGrabber(384, 240, 1)
+      cam.save("./testgrey.tga")
+      print "Saved testgrey.tga"
