@@ -7,7 +7,7 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.1"
+version = "6.2"
 
 def sum(a):
     mysum = 0
@@ -77,6 +77,11 @@ class Layer:
         self.bed = Numeric.zeros(self.size, 'f')
     def changeSize(self, newsize):
         # Overwrites current data!
+        minSize = min(self.size, newsize)
+        bias = randomArray(newsize, 0.1)
+        for i in range(minSize):
+            bias[i] = self.bias[i]
+        self.bias = bias
         self.size = newsize
         self.displayWidth = newsize
         self.target = Numeric.zeros(self.size, 'f')
