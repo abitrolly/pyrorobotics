@@ -54,7 +54,7 @@ class Robot (Drawable):
         #self.units['motor'] = "SCALED"
 
     def __repr__(self):
-        return "name = '%s'\ntype = '%s'\n" % (self.name, self.type)
+        return "Robot name = '%s', type = '%s'" % (self.name, self.type)
 
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
@@ -101,12 +101,13 @@ class Robot (Drawable):
                 console.log(console.INFO,'Adding control "'+key+'" from driver '+driver.__class__.__name__)
                 self.controls[key] = cd[key]
                 
-    def get(self, device = 'robot', data = None, pos = None):
+    def get(self, device = 'robot', data = None, pos = None, func = None):
 	"""
 	this is designed to be the main interface to the robot
 	and its parts. There is one assumed piece, self.dev that
 	is the actual pointer to the robot device
 	"""
+        print "type of pos=", type(pos)
 	if (data == None):
             return self.senses[device]
         elif (type(data) == type(1)):
@@ -115,9 +116,47 @@ class Robot (Drawable):
             return self.senses[device][data](self.dev)
 	elif (pos == 'function'):
             return self.senses[device][data]
-	else:
+	elif type(pos) == type(1): # number
             return self.senses[device][data](self.dev, pos)
-        
+        elif type(pos) == type([1,2]) or type(pos) == type((1,2)): # collect
+            list = []
+            for i in pos:
+                list.append( self.senses[device][data](self.dev, i) )
+            return self.applyFunc(device, pos, list, func)
+        elif type(pos) == type("name"): # string
+            list = []
+            for i in self.sensorSet[pos]:
+                list.append(self.senses[device][data](self.dev, i))
+            return self.applyFunc(device, pos, list, func)
+        else:
+            print "Error: pos is wrong type!"
+            return None
+
+    def applyFunc(self, sensor, poslist, list, func):
+        if func == None:
+            return list
+        elif func == 'min':
+            dist = 10000
+            angle = 0
+            for i in range(len(list)):
+                if list[i] < dist:
+                    dist = list[i]
+                    angle = self.senses[sensor]['th'](self.dev, poslist[i])
+            return Vector(dist, angle)
+        elif func == 'max':
+            dist = -10000
+            angle = 0
+            for i in range(len(list)):
+                if list[i] > dist:
+                    dist = list[i]
+                    angle = self.senses[sensor]['th'](self.dev, poslist[i])
+            return Vector(dist, angle)
+        elif func == 'avg':
+            dist = 0
+            for i in list:
+                dist += i
+            return dist / len(list) 
+            
     def set(self, device = 'robot', data = None, val = None):
 	"""
         A method to set the above get.
