@@ -39,9 +39,9 @@ class IRVisVector(VisVector):
       Rframe.pack(side=RIGHT, fill=Y)
       for i in range(self.length):
          ll = Label(Lframe, text="IR" + str(i))
-         ll.pack(side=LEFT)
+         ll.pack(anchor=W)
          rl = Label(Rframe, text="= " + str(self.vector[i]))
-         rl.pack(side=LEFT)
+         rl.pack(anchor=W)
 
    def close(self):
       """Close the window"""
@@ -65,9 +65,9 @@ class GenericVisVector(VisVector):
       Rframe.pack(side=RIGHT, fill=Y)
       for i in range(self.length):
          ll = Label(Lframe, text=str(i))
-         ll.pack(side=LEFT)
+         ll.pack(anchor=W)
          rl = Label(Rframe, text="= " + str(self.vector[i]))
-         rl.pack(side=LEFT)
+         rl.pack(anchor=W)
 
    def close(self):
       """Close the window"""

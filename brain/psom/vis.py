@@ -10,7 +10,7 @@ class VisPsom(psom):
    A vizualized psom class.
    """
 
-   def __init__(self, *args, **keys):
+   def __init__(self, *args, vis_radius=15, **keys):
 
       #get Vis-specific keyword arguements out
       if 'vis_radius' in keys.keys():
@@ -76,7 +76,7 @@ class VisPsom(psom):
       if (box[0] < event.x < box[2]) and (box[1] < event.y < box[3]):
          x, y = self.cellhash[cell]
          vec = self.get_model_vector(point(x, y))
-         VisVectorFactory("IR", vec, "Model Vector @ (%d, %d)" % (x, y))
+         VisVectorFactory(self.vectortype, vec, "Vector @ (%d, %d)" % (x, y))
       
 
    def _setcell(self, x, y, level):
