@@ -7,7 +7,7 @@ class Joystick:
       self.app.withdraw()
       self.win = Toplevel()
       self.win.wm_title('Joystick')
-
+      self.win.protocol('WM_DELETE_WINDOW',self.destroy)
       self.frame = Frame(self.win)
       self.canvas = Canvas(self.frame,
                            width = 220,
@@ -23,8 +23,6 @@ class Joystick:
       self.circle = self.canvas.create_oval(self.circle_dim, fill = 'white')
       self.canvas.create_oval(105, 105, 115, 115, fill='black')
 
-#      self.panicButton = Button(self.frame, text="STOP!!", command=self.stop)
-#      self.panicButton.pack(side = TOP)
       self.frame.pack()
       self.translate = 0
       self.rotate = 0
@@ -37,15 +35,35 @@ class Joystick:
       self.win.destroy()
 
    def canvas_clicked_up(self, event):
+      self.canvas.delete("lines")
       self.move(0, 0)
+
+   def drawArrows(self, x, y):
+      if y < 110:
+         yoffset = -10
+      else:
+         yoffset = 10
+      if x < 110:
+         xoffset = -10
+      else:
+         xoffset = 10
+      self.canvas.create_line(110, 110, 110, y, width=3, fill="blue", tag="lines")
+      self.canvas.create_line(110, y, 110 - 10, y - yoffset, width=3, fill="blue", tag="lines")
+      self.canvas.create_line(110, y, 110 + 10, y - yoffset, width=3, fill="blue", tag="lines")
+      self.canvas.create_line(110, 110, x, 110, width=3, fill="red", tag="lines")
+      self.canvas.create_line(x, 110, x - xoffset, 110 - 10, width=3, fill="red", tag="lines")
+      self.canvas.create_line(x, 110, x - xoffset, 110 + 10, width=3, fill="red", tag="lines")
 
    def canvas_clicked_down(self, event):
       if self.in_circle(event.x, event.y):
+         self.drawArrows(event.x, event.y)
          trans, rotate = self.calc_tr(event.x, event.y)
          self.move(trans, rotate)
 
    def canvas_moved(self, event):
       if self.in_circle(event.x, event.y):
+         self.canvas.delete("lines")
+         self.drawArrows(event.x, event.y)         
          trans, rotate = self.calc_tr(event.x, event.y)
          self.move(trans, rotate)
 
@@ -71,3 +89,7 @@ class Joystick:
       rot = float(center[0] - x) / float(center[0] - self.circle_dim[0])
       trans = float(center[1] - y) / float(center[1] - self.circle_dim[1])
       return (trans, rot)
+
+if __name__ == '__main__':
+   joystick = Joystick()
+   joystick.app.mainloop()
