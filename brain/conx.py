@@ -1806,7 +1806,7 @@ class Network:
         self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
-            self.loadOrderID[i] = i
+            self.loadOrder[i] = i
     def saveInputsToFile(self, filename):
         """
         Saves inputs to file.
