@@ -908,7 +908,8 @@ class Network:
         for connection in self.connections:
             if connection.fromLayer.name == fromName and \
                connection.toLayer.name == toName:
-                return connection.weight[fromPos][toPos] = value
+                connection.weight[fromPos][toPos] = value
+                return value
         raise NetworkError, ('Connection was not found.', (fromName, toName))
     def setOrderedInputs(self, value):
         """
