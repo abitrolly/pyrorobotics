@@ -1,4 +1,4 @@
-import Tkinter
+import Tkinter, time, sys
 import PIL.PpmImagePlugin
 import Image, ImageTk
 from pyro.gui import *
@@ -10,13 +10,24 @@ import pyro.system.share as share
 from pyro.gui.drawable import *
 from pyro.gui.renderer.tk import *
 from pyro.gui.renderer.streams import *
-from time import time, sleep
-import sys
 
 # A TK gui
 
+class AskDialog(TKwidgets.AlertDialog):
+   def __init__(self, root, dict):
+      TKwidgets.AlertDialog(self, root)
+      self.dict = dict
+   def SetupDialog(self):
+      TKwidgets.AlertDialog.SetupDialog(self)
+      self.bitmap['bitmap'] = 'warning'
+      self.CreateButton("Yes", self.OkPressed)
+      self.CreateButton("No", self.CancelPressed)
+
+def ask(root, dict):
+   box = AskDialog(root, dict)
+
 class TKgui(Tkinter.Toplevel, gui): 
-   def __init__(self, parent, engine, db = 1, depth = 1):
+   def __init__(self, engine, parent = None):
       Tkinter.Toplevel.__init__(self, parent)
       gui.__init__(self, 'TK gui', {}, engine)
       self.genlist = 0
@@ -28,7 +39,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.lasttime = 0
       self.update_interval = 100
       self.update_interval_detail = 1.0
-   
+      self.lastButtonUpdate = 0
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['Editor',self.editor],
@@ -304,6 +315,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # This contains the former contents of the while not self.done: loop in
       # .run()
       #
+      now = time.time() 
       needToUpdateState = 1
       try: needToUpdateState = self.engine.brain.needToStop
       except: pass
@@ -313,6 +325,25 @@ class TKgui(Tkinter.Toplevel, gui):
          except: pass
       self.redrawWindowBrain()
       self.redrawViews()
+      # -----------------------
+      if self.engine.robot != 0:
+         if self.engine.robot.get('self', 'stall'):
+            bump = "[BUMP!]"
+         else:
+            bump = ''
+         self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                                       % (self.engine.robot.get('robot', 'x'),
+                                          self.engine.robot.get('robot', 'y'),
+                                          self.engine.robot.get('robot', 'th'),
+                                          bump))
+         for service in self.engine.robot.getServices():
+            if self.engine.robot.getService(service).visible:
+               self.engine.robot.getService(service).updateWindow()
+      # Don't need to do the rest of this but once a second
+      if now - self.lastButtonUpdate < 1:
+         self.after(self.update_interval,self.generalUpdate)
+         return
+      self.lastButtonUpdate = now
       if self.textArea['Brain:']["text"] != self.engine.brainfile:
          self.textArea['Brain:'].config(text = self.engine.brainfile)
       if self.textArea['Simulator:']["text"] != self.engine.worldfile:
@@ -379,20 +410,6 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Reload']["state"] = 'disabled'
          if self.goButtons['View']["state"] != 'disabled':
             self.goButtons['View']["state"] = 'disabled'
-      # -----------------------
-      if self.engine.robot != 0:
-         if self.engine.robot.get('self', 'stall'):
-            bump = "[BUMP!]"
-         else:
-            bump = ''
-         self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
-                                       % (self.engine.robot.get('robot', 'x'),
-                                          self.engine.robot.get('robot', 'y'),
-                                          self.engine.robot.get('robot', 'th'),
-                                          bump))
-         for service in self.engine.robot.getServices():
-            if self.engine.robot.getService(service).visible:
-               self.engine.robot.getService(service).updateWindow()
       self.after(self.update_interval,self.generalUpdate)
       
    def run(self, command = []):
@@ -559,7 +576,13 @@ class TKgui(Tkinter.Toplevel, gui):
 
 if __name__ == '__main__':
    root = Tkinter.Tk()
-   gui = TKgui(root, Engine())
+   engine = Engine()
+   #engine.view = []
+   gui = TKgui(root, engine)
    gui.inform("Ready...")
-   gui.run()
+   #gui.run()
+   print dir(gui)
+   dialog = TKwidgets.AlertDialog(gui, "Warning!")
+   #ask(gui, {"Port": "6665", "Host": "localhost"})
+   
    gui.cleanup()

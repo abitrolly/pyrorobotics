@@ -54,6 +54,7 @@ class State:
    Collections of behaviors. this gets subclassed by each collection
    """
    def __init__(self, status = 0, name = ''):
+      self.debug = 0
       self.behaviors = {}
       self.activatelist = []
       self.deactivatelist = []

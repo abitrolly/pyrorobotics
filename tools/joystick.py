@@ -2,7 +2,7 @@ import Tkinter
 
 class Joystick(Tkinter.Toplevel):
 
-   def __init__(self, parent):
+   def __init__(self, parent = None):
       Tkinter.Toplevel.__init__(self, parent)
       self.debug = 0
       self.wm_title('Joystick')
@@ -109,5 +109,5 @@ class Joystick(Tkinter.Toplevel):
 if __name__ == '__main__':
    import pyro.system.share as share
    share.gui = Tkinter.Tk()
-   joystick = Joystick()
+   joystick = Joystick(share.gui)
    share.gui.mainloop()
