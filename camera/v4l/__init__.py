@@ -54,6 +54,5 @@ class V4LGrabber(Camera):
          self.cameraDevice.updateMMap()
       except:
          print "v4l: refresh_image failed"
-      if self.vision != None:
-         self.vision.processAll()
+      self.processAll()
 
