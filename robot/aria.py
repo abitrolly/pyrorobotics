@@ -301,7 +301,7 @@ class AriaRobot(Robot):
         self.dev.lock()
         self.x = self.dev.getX() / 1000.0
         self.y = self.dev.getY() / 1000.0
-        self.th = self.dev.getTh()
+        self.th = (self.dev.getTh() + 360) % 360
         self.thr = self.th * PIOVER180
         self.dev.unlock()
     
@@ -417,7 +417,7 @@ class AriaRobot(Robot):
         # let's check to make sure:
         self.x = self.dev.getX() / 1000.0
         self.y = self.dev.getY() / 1000.0
-        self.th = self.dev.getTh()
+        self.th = (self.dev.getTh() + 360) % 360
         self.thr = self.th * PIOVER180
 
     def disconnect(self):
