@@ -27,6 +27,7 @@ class V4LGrabber(Camera):
       self.cbuf=None
       try:
          self.cameraDevice = V4L(device, width, height, depth, channel)
+         self.cameraDevice.setRGB( 2, 1, 0)
       except:
          print "v4l: grab_image failed!"
       # connect vision system: --------------------------
@@ -40,9 +41,9 @@ class V4LGrabber(Camera):
       if title == None:
 	 title = self.device
       Camera.__init__(self, width, height, depth, title = title)
+      self.data = CBuffer(self.cbuf)
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
-      self.data = CBuffer(self.cbuf)
 
    def _update(self):
       """
