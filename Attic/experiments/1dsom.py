@@ -14,10 +14,10 @@ def randomVec(n):
   vec[int(random.random() * n)] = 1
   return vec 
 
-mysom = vis.VisPsom(2, 10, dim=10)
-mysom.init_training(0.02, 3, 10000)
+mysom = vis.VisPsom(20, 15, dim=10)
+mysom.init_training(0.2, 1, 2000)
 
-for i in range(10000): 
+for i in range(2000): 
   vec = randomVec(10) 
   #print vec 
   model = mysom.train(psom.vector(vec)) 
