@@ -907,6 +907,8 @@ class Network:
         should be ordered.
         """
         self.orderedInputs = value
+        if self.orderedInputs:
+            self.loadOrder = range(len(self.inputs))
     def verifyArguments(self, arg):
         for l in arg:
             if not type(l) == list and \
