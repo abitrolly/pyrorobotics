@@ -49,6 +49,7 @@ class Log:
          print msg
       if self.open:
          self.file.write(msg + "\n")
+         self.file.flush()
 
    def close(self):
       """ Close the log """
