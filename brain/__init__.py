@@ -57,8 +57,25 @@ class Brain(threading.Thread):
         # start the thread:
         self.start()
 
+    # wrappers here to talk to default robot:
+    def set(self, path, value):
+        return self.robot.set(path, value)
     def get(self, *args):
         return self.robot.get(*args)
+    def move(self, *args):
+        self.robot.move(*args)
+    def translate(self, *args):
+        self.robot.translate(*args)
+    def rotate(self, *args):
+        self.robot.rotate(*args)
+    def stop(self):
+        self.robot.stop()
+    def startDevice(self, *args, **keywords):
+        return self.robot.startDevice(*args, **keywords)
+    def removeDevice(self, *args, **keywords):
+        return self.robot.removeDevice(*args, **keywords)
+    def update(self):
+        self.robot.update()
 
     def __getattr__(self, attr):
         """ Overides default get attribute to return devData if exists """
@@ -72,9 +89,6 @@ class Brain(threading.Thread):
 
     def getAll(self, *args):
         return self.robot.getAll(*args)
-
-    def set(self, path, value):
-        return self.robot.set(path, value)
 
     def _draw(self, options, renderer):
         pass
