@@ -58,10 +58,7 @@ class Reinforce(Brain):
                          title = 'Predicted Inputs')
       self.targ = Hinton(self.getRobot().get('range', 'count'),
                          title = 'Actual Inputs')
-      self.weightPlot = Scatter(title = 'Best (x) and Weight(y)',
-                                history = [100], linecount = 1,
-                                legend = ['weight vs best'])
-      
+       
    def scale(self, val):
       '''scale val to fall between 0 and 1'''
       return (val / self.maxvalue)
@@ -111,46 +108,41 @@ class Reinforce(Brain):
 
       #    next set motorOutput targets
       #       determine fuzzy values
-      if self.counter % 1 == 0:
-         next_min = self.getRobot().getSensorGroup('min', 'all')[1]
+      next_min = self.getRobot().getSensorGroup('min', 'all')[1]
 
-         distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
-         speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)
-         fitness = distance & speed
-         improvement = Fuzzy(-.05, .3) >> fitness() - self.lastf
-         self.lastf = fitness()
-      
-         best = fitness | improvement
-         print best()
+      distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
+      speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)
+      fitness = distance & speed
+      improvement = Fuzzy(-.1, .3) >> fitness() - self.lastf
+      self.lastf = fitness()
+
+      best = fitness | improvement
          
-         #       determine wieghts for randomness
-         if best()-self.lastbest <= -.005:
-            self.weight += self.deltaw
-         elif best()-self.lastbest >= .005:
-            self.weight -= 1.5*self.deltaw
-         elif best() < .15:
-            self.weight += self.deltaw
-         elif best() > .5:
-            self.weight -= 1.5*self.deltaw
-      
-         if self.weight > 1:
-            self.weight = 1
-         elif self.weight < 0:
-            self.weight = 0
-      
-         print self.weight
-         self.lastbest = best()
+      #       determine weights for randomness
+      if best() > .4:
+         self.weight /= 4
+      elif best()-self.lastbest >= .005:
+         self.weight /= 2
+      elif best()-self.lastbest <= -.005:
+         self.weight += 1.5*self.deltaw
+      elif best() < .4:
+         self.weight += self.deltaw
 
-         self.weightPlot.addPoint(best(), self.weight)
+      if self.weight > .75:
+         self.weight = .75
+      elif self.weight < 0:
+         self.weight = 0
       
-         #       compute and set motorOutput targets
-         tt = self.PorM(next_motors[0], random()*self.weight)
-         tr = self.PorM(next_motors[1], random()*self.weight)
-         self.target_trans = max(min(tt, 1), 0)
-         self.target_rotate = max(min(tr, 1), 0)
-         self.net.getLayer('motorOutput').copyTarget([self.target_trans,
-                                                      self.target_rotate])
-
+      self.lastbest = best()
+      
+      #       compute and set motorOutput targets
+      tt = self.PorM(next_motors[0], random()*self.weight)
+      tr = self.PorM(next_motors[1], random()*self.weight)
+      self.target_trans = max(min(tt, 1), 0)
+      self.target_rotate = max(min(tr, 1), 0)
+      self.net.getLayer('motorOutput').copyTarget([self.target_trans,
+                                                   self.target_rotate])
+      
       # propagate backwards
       if not self.doneLearning:
          error = self.net.backprop()
