@@ -14,7 +14,7 @@ class FakeCamera(Camera):
       if not file_exists(pyrodir + "/vision/snaps/som-%d.ppm" % self.count):
          self.count = 0
       if not file_exists(pyrodir + "/vision/snaps/som-%d.ppm" % self.count):
-         import sys
+         from sys import exit
          print "Can't find $PYRO/vision/snaps/ images!"
          sys.exit(1)
       self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
