@@ -1,4 +1,4 @@
 from pyro.gui.plot.simple import SimplePlot
 
-def INIT(robot, brain = 0):
-    return SimplePlot(robot, 'all')
+def INIT(engine, brain = 0):
+    return SimplePlot(engine.robot, 'all')
