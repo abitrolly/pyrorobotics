@@ -11,6 +11,7 @@ class Engine(drawable.Drawable):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
+      self.plot = []
       self.brainfile = ''
       self.robotfile = ''
       if simfile != 0:
@@ -61,6 +62,23 @@ class Engine(drawable.Drawable):
       else:
          raise 'Simulator file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
+
+   def loadPlot(self,file):
+      import os
+      console.log(console.INFO,'Loading '+file)
+      if file[-3:] != '.py':
+         file = file + '.py'
+      if system.file_exists(file):
+         self.plot.append(system.loadINIT(file, self.robot, 0, self.brain))
+      elif system.file_exists(os.getenv('PYRO') + \
+                              '/plugins/plots/' + file): 
+         self.plot.append(system.loadINIT(os.getenv('PYRO') + \
+                                          '/plugins/plots/' + file, \
+                                          self.robot, 0, self.brain))
+      else:
+         raise 'Plot file not found: ' + file
+      console.log(console.INFO,'Loaded ' + file)
+      #self.append(self.robot)
 
    def loadRobot(self,file):
       import os
