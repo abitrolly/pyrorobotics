@@ -310,8 +310,6 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.setInteractive(value)
         SRN.setInteractive(self, value)
         
-
-
 if __name__ == '__main__':
     import os, gzip, sys
     # read in 20,000 lines of experimental training data
@@ -356,6 +354,8 @@ if __name__ == '__main__':
     net.setResetLimit(1)
     net.setTolerance(0.2)
     net.governing = int(sys.argv[1])
+    if not net.governing: # if not governing, then turn on learning in act net
+        net.learning = 1
     net.setResetEpoch(int(sys.argv[2]))
     net.decay = int(sys.argv[3])
     print "Goverining is", net.governing

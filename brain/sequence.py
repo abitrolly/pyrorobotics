@@ -1,12 +1,17 @@
 from pyro.brain.conx import *
 from pyro.brain.governor import *
+import sys
 
 # goal is to remember first input given in several sequences
+
+print "command line expects: {srn | gov | both} pause"
+
+mode = sys.argv[1] # srn, gov, or both
+pause = int(sys.argv[2])
 
 #net = SRN()
 net = GovernorSRN(1, historySize=5)
 net.addThreeLayers(1,5,1)
-pause = 15
 net.setInputs( [[0.0] + [0.0] * pause + [0.0],
                 [0.5] + [0.0] * pause + [0.0],
                 [1.0] + [0.0] * pause + [0.0]])               
@@ -15,11 +20,20 @@ net.setOutputs( [[0.0] + [0.0] * pause + [0.0],
                  [1.0] + [0.0] * pause + [1.0]] )
 net.setSequenceType("pattern")
 net.setTolerance(.2)
-net.setResetEpoch(-1)
-net.setEpsilon(0.5) # .25
+net.setResetEpoch(12000)
+net.setResetLimit(1)
+net.setEpsilon(0.25) # .25
 net.setMomentum(0.0)
-net.setLearnDuringSequence(1)
 net.decay = 1
+if mode == "gov":
+    net.governing = 1
+elif mode == "srn":
+    net.governing = 0
+    net.learning = 1
+elif mode == "both":
+    net.governing = 1
+    net.learning = 1
+    
 net.train()
 net.setLearning(0)
 net.setInteractive(1)
