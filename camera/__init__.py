@@ -100,13 +100,13 @@ class Camera(PyroImage, Device):
    def preGet(self, keyword):
       #print "preGet", keyword
       if keyword == "grayscale":
-         self.devData["grayscale"] = self.getGrayScale()
+         self.devData["grayscale"] = self.getGrayScale() # list
       elif keyword == "data":
-         self.devData["data"] = self.data
+         self.devData["data"] = self.data # list
       elif keyword == "image":
-         self.devData["image"] = self.getImage()
+         self.devData["image"] = self.getImage() # <image>
       else:
-         self.devData["filters"] = self.callbackTextList
+         self.devData["filters"] = self.callbackTextList # list
 
    def postSet(self, keyword):
       if keyword == "visible":
