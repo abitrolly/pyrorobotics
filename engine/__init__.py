@@ -7,20 +7,22 @@ import pyro.system as system
 import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
-   def __init__(self, robotfile = 0, brainfile = 0, simfile = 0, brainargs=[]):
+   def __init__(self, robotfile = None, brainfile = None, simfile = None,
+                brainargs=[], config = {}):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
       self.plot = []
       self.brainfile = ''
       self.robotfile = ''
-      if simfile != 0:
+      self.config = config
+      if simfile != None:
          self.loadSimulator(simfile)
-      if robotfile != 0:
+      if robotfile != None:
          self.loadRobot(robotfile)
-      if brainargs != [] and brainfile != 0:
+      if brainargs != [] and brainfile != None:
          self.loadBrain(brainfile, brainargs)
-      elif brainfile != 0:
+      elif brainfile != None:
          self.loadBrain(brainfile)
 
    def reset(self):
