@@ -183,8 +183,10 @@ class SerialSimulator:
         return self.last_msg 
 
     def readlines(self):
-        return [self.last_msg] 
-        
+        return [self.last_msg]
+
+    def inWaiting(self):
+        return 0
     
 class KheperaRobot(Robot):
     def __init__(self,
@@ -236,6 +238,12 @@ class KheperaRobot(Robot):
         # to be on the same scale as larger robots. -DSB
         self.translateFactor = 30
         self.rotateFactor = 12
+        self.dataTypes = {'n': 'ir',
+                          'h' : 'position',
+                          'o' : 'light',
+                          'k' : 'stall',
+                          'e' : 'speed',
+                          }
         self.senseData = {}
         self.senseData['position'] = [0] * 3
         self.senseData['ir'] = [0] * 6
@@ -256,7 +264,7 @@ class KheperaRobot(Robot):
         self.startDevice("light")
         self.devDataFunc["light"] = self.get("/devices/light0/object")
         if subtype == "Khepera":
-            self.sendMsg('H', 'position')
+            self.sendMsg('H') # position
         else:
             self.senseData["position"] = 0, 0
         self.x = 0.0
@@ -300,57 +308,40 @@ class KheperaRobot(Robot):
 
     def send(self, message):
         self.sc.writeline(message, self.newline)
-        return self.sc.readline().split(',')
+        while self.sc.inWaiting(): self.readData()
+        return self.dataTypes[ message[0].lower() ]
 
-    def sendMsg(self, msg, data = '', type = 'i'):
-        # Fix: this needs to be two processes: one write Queue
-        # and one read Queue.
-        #print "SENDING:", msg
-        tries = 0
-        done = 0
-        while tries < 5 and not done:
-            try:
-                self.sc.writeline(msg, self.newline)
-                retval = self.sc.readline() # 1 = block till we get something
-                if self.debug: print ("sendMsg loop #%d:" % tries), retval
-                if retval[0].upper() == msg[0]:
-                    done = 1
-                else:
-                    tries += 1
-            except:
-                tries += 1
-        if done == 0:
-            print "K-Team serial read/write error..."
-            self.senseData[data] = array.array(type, [0] * 20)
-            return
-        if data:
+    def sendMsg(self, msg):
+        self.sc.writeline(msg, self.newline)
+
+    def readData(self):
+        retval = self.sc.readline() # 1 = block till we get something
+        if retval:
             lines = string.split(retval, "\r\n")
             for line in lines:
-                if not line == '':
-                    #print "processing line:", line
-                    irs = string.split(line, ",")
-                    irs = irs[1:]
-                    if self.debug: print "RECEIVE data:", data, retval
+                if line != '':
+                    rawdata = string.split(line, ",")
+                    dtype, data = rawdata[0], rawdata[1:]
+                    key = self.dataTypes.get(dtype, None)
                     try:
-                        self.senseData[data] = array.array(type, map(int, irs))
+                        self.senseData[key] = map(int,data)
                     except:
-                        self.senseData[data] = array.array(type, [0] * 20)
-                        print "K-Team packet error: type=", data, "vals=", irs
-            return self.senseData[data]
+                        pass
+                        #print "K-Team packet error: key=",key,"vals=", data
         
     def update(self):
         self._update()
         if self.devData["subtype"] == "Khepera":
-            self.sendMsg('N', 'ir')     # proximity
-            self.sendMsg('O', 'light')  # ambient light
-            self.sendMsg('H', 'position')
-            self.sendMsg('E', 'speed')
-            self.sendMsg('K', 'stall')  # motor status, used by isStall
+            self.sendMsg('N') #, 'ir')     # proximity
+            self.sendMsg('O') #, 'light')  # ambient light
+            self.sendMsg('H') #, 'position')
+            self.sendMsg('E') #, 'speed')
+            self.sendMsg('K') #, 'stall')  # motor status, used by isStall
         elif self.devData["subtype"] == "Hemisson":
-            #self.sendMsg('N', 'ir')     # proximity
-            #self.sendMsg('O', 'light')  # ambient light
-            pass
-        gripperID = self.hasADeviceOfType('gripper')
+            self.sendMsg('N') #, 'ir')     # proximity
+            self.sendMsg('O') #, 'light')  # ambient light
+        while self.sc.inWaiting(): self.readData()
+        gripperID = self.hasA('gripper')
         if gripperID:
             gripper = self.device[gripperID]
             self.senseData['gripState'] = gripper._getGripState()
