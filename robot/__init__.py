@@ -82,8 +82,8 @@ class DeviceWrapper:
     def _set(self, path, value):
         return self.robot._setDevice(path, value)
 
-    def _get(self, path):
-        return self.robot._getDevice(path)
+    def _get(self, path, showstars = 0):
+        return self.robot._getDevice(path, showstars)
 
 class Robot:
     """
@@ -129,30 +129,30 @@ class Robot:
 
     def getAll(self, path = '', depth = 0):
         retval = ''
-        pathList = self.get(path)
+        pathList = self.get(path, showstars = 1)
         pathList.sort()
         for item in pathList:
             if item[0] == "*": # a group (link), do not recur
                 if item == "*range/":
-                    retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("%s/%s/type" % (path, item[1:]))))
+                    retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("%s/%s/type" % (path, item[1:]), showstars = 1)))
                     continue
-                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]))))
+                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]), showstars = 1)))
                 if item == "*all/":
-                    retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,)))
+                    retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
             elif item[-1] == "/": # more things below this
                 retval += ("   " * depth) + ("%s\n" % item)
                 retval += self.getAll("%s/%s" % (path, item), depth + 1)
             else:
-                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s" % (path, item))))
+                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s" % (path, item), showstars = 1)))
         return retval
 
-    def _getDevice(self, pathList):
+    def _getDevice(self, pathList, showstars = 0):
         if len(pathList) == 0:
             return serviceDirectoryFormat(self.device, 0)
         key = pathList[0]
         args = pathList[1:]
         if key in self.device:
-            return self.device[key]._get(args)
+            return self.device[key]._get(args, showstars)
         if key == '*':
             if args != []:
                 raise AttributeError, "wildcard feature not implemented in directory middle"
@@ -160,7 +160,7 @@ class Robot:
         else:
             raise AttributeError, "no such directory item '%s'" % key
 
-    def _get(self, pathList):
+    def _get(self, pathList, showstars = 0):
         if len(pathList) == 0:
             tmp = self.devData.copy()
             tmp.update( self.devDataFunc )
@@ -170,7 +170,7 @@ class Robot:
         if key in self.devData:
             return self.devData[key]
         elif key in self.devDataFunc:
-            return self.devDataFunc[key]._get(args)
+            return self.devDataFunc[key]._get(args, showstars)
         if key == '*':
             if args != []:
                 raise AttributeError, "wildcard feature not implemented in directory middle"
@@ -180,7 +180,7 @@ class Robot:
         else:
             raise AttributeError, "no such directory item '%s'" % key
 
-    def get(self, device = "", *args):
+    def get(self, device = "", *args, **keywords):
 	"""
 	this is designed to be the main interface to the robot
 	and its parts. There is one assumed piece, self.dev that
@@ -189,6 +189,7 @@ class Robot:
         Device names should not contain slashes, commas, dashes, or colons, nor have
         spaces as part of their names (actually spaces inside their names is fine).
 	"""
+        showstars = keywords.get("showstars", 0)
         path = device.split("/")
         # remove extra slashes
         while path.count("") > 0:
@@ -205,7 +206,7 @@ class Robot:
             return serviceDirectoryFormat(self.directory, 0) # toplevel
         elif finalPath[0] in self.directory:
             # pass the command down
-            return self.directory[finalPath[0]]._get(finalPath[1:])
+            return self.directory[finalPath[0]]._get(finalPath[1:], showstars)
         elif finalPath[0] == '*':
             return serviceDirectoryFormat(self.directory, 1)
         else:
