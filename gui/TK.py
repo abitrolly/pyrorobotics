@@ -119,24 +119,11 @@ class TKgui(gui):
                          ('button', 'Robot:', self.loadRobot, self.editRobot),
 #                         ('button', 'Camera:', self.loadCamera, self.editCamera),
                          ('button', 'Brain:', self.loadBrain, self.editBrain),
-                         ('status', 'Pose:', '', ''),
                         ]
       self.buttonArea = {}
       self.textArea = {}
       for item in self.loadables:
-         type, load, loadit, editit = item
-         tempframe = Tkinter.Frame(self.frame)
-         if type == 'button':
-            self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
-                                                    width=10, command = loadit,
-                                                    state='disabled')
-            self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right", state='disabled')
-         elif type == 'status':
-            self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
-            self.textArea[load] = Tkinter.Label(tempframe, width=55, justify="left")
-         self.buttonArea[load].pack(side=Tkinter.LEFT)
-         self.textArea[load].pack(side=Tkinter.RIGHT, fill="x")
-         tempframe.pack(side = "top", anchor = "n", fill = "x")
+         self.makeRow(item)
       self.buttonArea["Robot:"]["state"] = 'normal'
       self.buttonArea["Simulator:"]["state"] = 'normal'
       ## ----------------------------------
@@ -145,9 +132,25 @@ class TKgui(gui):
 #      Tkinter.Label(toolbar, text="Brain:").pack(side="left")
       for b in button1:
          self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],width=6,command=b[1])
-         self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)      
+         self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
+      self.makeRow(('status', 'Pose:', '', ''))
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def makeRow(self, item):
+      type, load, loadit, editit = item
+      tempframe = Tkinter.Frame(self.frame)
+      if type == 'button':
+         self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
+                                                 width=10, command = loadit,
+                                                 state='disabled')
+         self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right", state='disabled')
+      elif type == 'status':
+         self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
+         self.textArea[load] = Tkinter.Label(tempframe, width=55, justify="left")
+      self.buttonArea[load].pack(side=Tkinter.LEFT)
+      self.textArea[load].pack(side=Tkinter.RIGHT, fill="x")
+      tempframe.pack(side = "top", anchor = "n", fill = "x")
 
    def redirectToWindow(self):
       # --- save old sys.stdout, sys.stderr
@@ -347,6 +350,8 @@ class TKgui(gui):
          if self.textArea["Robot:"]["text"]:
             if self.menuButtons['Move']["state"] == 'disabled':
                self.menuButtons['Move']["state"] = 'normal'
+            if self.menuButtons['Load']["state"] == 'disabled':
+               self.menuButtons['Load']["state"] = 'normal'
             if self.buttonArea["Brain:"]["state"] == 'disabled':
                self.buttonArea["Brain:"]["state"] = 'normal'
             if self.goButtons['Reload']["state"] == 'disabled':
@@ -354,6 +359,8 @@ class TKgui(gui):
          else:
             if self.menuButtons['Move']["state"] != 'disabled':
                self.menuButtons['Move']["state"] = 'disabled'
+            if self.menuButtons['Load']["state"] != 'disabled':
+               self.menuButtons['Load']["state"] = 'disabled'
             if self.buttonArea["Brain:"]["state"] != 'disabled':
                self.buttonArea["Brain:"]["state"] = 'disabled'
             if self.goButtons['Reload']["state"] != 'disabled':
