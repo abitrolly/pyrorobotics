@@ -437,7 +437,8 @@ class AriaRobot(Robot):
             deviceName = self.startDevice("bumper")
         self.update()
         self.inform("Done loading Aria robot.")
-
+    def __del__(self):
+        self.disconnect()
     def startDeviceBuiltin(self, item):
         if item == "sonar":
             return {"sonar": AriaSonar(self.params, self.dev)}
