@@ -32,10 +32,11 @@ class OptionHandler:
         return [x.name + "=" for x in self.options if x.argCount == 1] + [x.name for x in self.options if x.argCount == 0]
 
     def help(self):
-        print '%s Options:' % self.commandName
-        print '----------------'
+        print '%s options:' % self.commandName
+        print '   %-14s  %-6s  %-24s %s' % ("Long Form", "Short", "Default", "Meaning")
+        print '   %-14s  %-6s  %-24s %s' % ("---------", "-----", "-------", "-------")
         for opt in self.options:
-            print '      --%-15s\t-%s\tDefault value: %s\t\t%s' % (opt.name, opt.shortForm, opt.defaultValue, opt.helpText)
+            print '   --%-12s  -%-5s  %-24s %s' % (opt.name, opt.shortForm, "[" + opt.defaultValue + "]", opt.helpText)
 
     def initialize(self, commandLine):
         shortforms = self.makeShortForm()

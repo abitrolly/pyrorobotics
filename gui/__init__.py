@@ -8,6 +8,22 @@ import string
 from pyro.system.version import version as version
 from pyro.system import help, usage, about, file_exists
 
+class BrainStem:
+   """
+   A stub used in the Pyro command evaluator to define "self"
+   so that self.get() self.set() will work. Without this
+   self is not defined. Only works when you have a robot, but
+   no brain yet.
+   """
+   def __init__(self, robot = 0):
+      self.robot = robot
+   def get(self, *args):
+      return self.robot.get(*args)
+   def getAll(self, *args):
+      return self.robot.getAll(*args)
+   def set(self, path, value):
+      return self.robot.set(path, value)
+
 class gui:
    """
    This is the base class for a gui.
@@ -143,7 +159,10 @@ class gui:
          exp2 = string.strip(retval)
          # perhaps could do these once, but could change:
          self.environment["gui"] = self
-         self.environment["self"] = self.engine.brain
+         if self.engine.brain:
+            self.environment["self"] = self.engine.brain
+         else:
+            self.environment["self"] = BrainStem(self.engine.robot)
          self.environment["engine"] = self.engine
          self.environment["robot"] = self.engine.robot
          self.environment["brain"] = self.engine.brain
@@ -348,7 +367,7 @@ class gui:
    def INThandler(self, signum, frame):
       print "STOP ----------------------------------------------------"
       self.triedToStop += 1
-      if self.triedToStop > 2:
+      if self.triedToStop > 1:
          os.system("killall -9 pyro")
       self.engine.pleaseStop()
       self.cleanup()
