@@ -1,5 +1,5 @@
 
-import types
+import types, random
 
 def serviceDirectoryFormat(serviceDict, retdict = 1):
     """
@@ -55,6 +55,42 @@ class Service:
             self.makeWindow()
         self.setup()
 
+    def getGroupNames(self, pos):
+        retval = []
+        for key in self.groups:
+            if self.groups[key] != None:
+                if pos in self.groups[key]:
+                    retval.append( key )
+        return retval
+
+    def rawToUnits(self, raw, noise = 0.0):
+        # first, get everything into meters:
+        if self.devData["rawunits"] == "MM":
+            raw = raw / 1000.0
+        elif self.devData["rawunits"] == "METERS":
+            pass # ok
+        else:
+            raise AttributeError, "service can't work in rawunits as %s" % self.devData["rawunits"]
+        if noise > 0:
+            if random.random() > .5:
+                raw += (raw * (noise * random.random()))
+            else:
+                raw -= (raw * (noise * random.random()))
+        val = min(max(raw, 0.0), self.devData["maxvalueraw"])
+        units = self.devData["units"]
+        if units == "ROBOTS":
+            return val / self.devData["radius"] 
+        elif units == "MM":
+            return val * 1000.0
+        elif units == "CM":
+            return (val) * 100.0 # cm
+        elif units == "METERS" or units == "RAW":
+            return (val) 
+        elif units == "SCALED":
+            return val / self.devData["maxvalueraw"]
+        else:
+            raise TypeError, "Units are set to invalid type"
+
     def setup(self):
         pass
 
@@ -93,9 +129,13 @@ class Service:
     def updateService(self):
         pass
 
+    def postSet(self):
+        pass
+
     def _set(self, path, value):
         if path[0] in self.devData:
             self.devData[path[0]] = value
+            self.postSet()
         else:
             raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
@@ -141,16 +181,18 @@ class Service:
             # many keys 1 element
             elif type(elements) == type(""):
                 retval = []
-                for i in keys:
-                    retval.append( self.devDataFunc[elements](i))
+                if keys != None:
+                    for i in keys:
+                        retval.append( self.devDataFunc[elements](i))
                 return retval
             # many keys many elements
             else:
                 retval = []
-                for i in keys:
-                    mydict = {}
-                    for e in elements:
-                        mydict[e] = self.devDataFunc[e](i)
-                    retval.append( mydict )
+                if keys != None:
+                    for i in keys:
+                        mydict = {}
+                        for e in elements:
+                            mydict[e] = self.devDataFunc[e](i)
+                        retval.append( mydict )
                 return retval
 

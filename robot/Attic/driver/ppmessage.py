@@ -477,22 +477,36 @@ def unpack_laser_data(payload):
     """
     decode laser device data.
     """
-    print "unpack laser data: len =", len(payload)
-    for i in range(1024):
-        try:
-            data = struct.unpack('!hhHH401H401B', payload)
-        except:
-            continue
-        print "decode laser device: %d worked!" % i
-        break
-            
+
+##   public void readData() {
+##     readHeader();
+##     try {
+##       minAngle     = is.readShort();
+##       maxAngle     = is.readShort();
+##       resolution   = is.readUnsignedShort();
+##       is.readUnsignedShort();                 // added range_res field
+##       samplesCount = is.readUnsignedShort();
+                                                                                
+##       for (int i = 0; i < samplesCount; i++)
+##         range[i] = is.readShort();
+##       for (int i = 0; i < samplesCount; i++)
+##         intensity[i] = is.readUnsignedByte();
+##       //System.err.println("DONE");
+##     }
+##     catch (Exception e) {
+##       System.err.println("Error when reading payload: "+e.toString());
+##     }
+##   }
+    
     try:
-        data = struct.unpack('!hhHH401H401B', payload)
+## Player 1.5 
+        data = struct.unpack('!hhHHH401H401B', payload)
+## Player 1.5 
     except:
         print "WARNING: error in laser data unpack"
         data = [0] * 806
     return ((data[0]/100.0, data[1]/100.0, data[2]/100.0),
-    	    data[4:4+data[3]], data[405:405+data[3]])
+    	    data[5:5+data[4]], data[406:406+data[4]])
 
 
 def pack_laser_geom(): 

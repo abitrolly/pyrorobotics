@@ -43,7 +43,6 @@ class TKgui(Tkinter.Toplevel, gui):
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['Editor',self.editor],
-                       ['Save Map...', self.saveMap],
                        ['Exit',self.cleanup] 
                        ]),
               ('Window', [['Open all service windows', self.makeWindows],
@@ -56,9 +55,11 @@ class TKgui(Tkinter.Toplevel, gui):
                           ['Send Messages to Window', self.redirectToWindow],
                           ['Send Messages to Terminal', self.redirectToTerminal],
                           ]),
-              ('Load',[['Map...',self.loadMap],
-                       ['Service...',self.loadService],
-                       ['View...',self.loadView]
+              ('Load',[['Simulator...', self.loadSim],
+                       ['Robot...',self.loadRobot],
+                       ['Brain...',self.loadBrain],
+                       None,
+                       ['Device...',self.loadService],
                        ]),
               ('Robot',[['Connect robot', self.connectRobot],
                         ['Disconnect robot', self.disconnectRobot],
@@ -70,6 +71,7 @@ class TKgui(Tkinter.Toplevel, gui):
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
                         ['Right',self.stepRight],
+                        None,
                         ['Stop Rotate',self.stopRotate],
                         ['Stop Translate',self.stopTranslate],
                         ['Stop All',self.stopEngine],
@@ -373,8 +375,8 @@ class TKgui(Tkinter.Toplevel, gui):
       if self.textArea["Robot:"]["text"]:
          if self.menuButtons['Robot']["state"] == 'disabled':
             self.menuButtons['Robot']["state"] = 'normal'
-         if self.menuButtons['Load']["state"] == 'disabled':
-            self.menuButtons['Load']["state"] = 'normal'
+         #if self.menuButtons['Load']["state"] == 'disabled':
+         #   self.menuButtons['Load']["state"] = 'normal'
          if self.buttonArea["Brain:"]["state"] == 'disabled':
             self.buttonArea["Brain:"]["state"] = 'normal'
          if self.goButtons['Reload']["state"] == 'disabled':
@@ -382,8 +384,8 @@ class TKgui(Tkinter.Toplevel, gui):
       else:
          if self.menuButtons['Robot']["state"] != 'disabled':
             self.menuButtons['Robot']["state"] = 'disabled'
-         if self.menuButtons['Load']["state"] != 'disabled':
-            self.menuButtons['Load']["state"] = 'disabled'
+         #if self.menuButtons['Load']["state"] != 'disabled':
+         #   self.menuButtons['Load']["state"] = 'disabled'
          if self.buttonArea["Brain:"]["state"] != 'disabled':
             self.buttonArea["Brain:"]["state"] = 'disabled'
          if self.goButtons['Reload']["state"] != 'disabled':
