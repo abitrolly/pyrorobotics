@@ -16,10 +16,14 @@ class Scatter: # Plot
     def __init__(self, history = [100,], xLabel = 'X', yLabel = 'Y',
                  title = None, legend = [None, ], width = 275, height = 200,
                  linecount = 1, xStart = 0.0, xEnd = 1.0, yStart = 0.0, yEnd = 1.0):
-        self.color = ['blue', 'red', 'green', 'yellow', 'orange', \
-                      'black', 'azure', 'beige', 'brown', 'coral', \
-                      'gold', 'ivory', 'moccasin', 'navy', 'salmon', \
-                      'tan', 'ivory']
+        self.color = ['blue', 'red', 'green', 'yellow', 'orange',
+                      'black', 'azure', 'beige', 'brown', 'coral',
+                      'gold', 'ivory', 'moccasin', 'navy', 'salmon',
+                      'tan', 'ivory', 'pink', 'violet', 'cyan',
+                      'magenta', 'aquamarine', 'khaki', 'sea green', 'hot pink',
+                      'sienna', 'tomato', 'orchid', 'cornflower blue', 'deep sky blue',
+                      'forest green', 'rosy brown']
+
         self.app = Tk()
         self.app.wm_state('withdrawn')
         self.win = Toplevel()
@@ -134,7 +138,10 @@ class Scatter: # Plot
         val = (val - self.yStart) / (self.yEnd - self.yStart)
         return int(self.plotHeight - val * self.plotHeight + self.yBorder)
 
-    def addPoint(self, x, y, line = 0):
+    def clear(self):
+        self.canvas.delete('object')
+
+    def addPoint(self, x, y, line = 0, flush = 1):
         if self.count[line] >= self.history[line]:
             self.count[line] = 0
         # if there is an old one here, delete it
@@ -183,6 +190,8 @@ class Scatter: # Plot
             self.count[line] += 1
         except:
             pass
+        if flush:
+            self.win.update_idletasks()
 
     def update(self):
         while self.win.tk.dooneevent(2): pass
