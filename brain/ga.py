@@ -199,7 +199,7 @@ class Population:
         if args.has_key('verbose'):
             self.verbose = args['verbose']
         for i in range(cnt):
-            self.individuals.append(geneConstructor(**args))
+            self.individuals.append(geneConstructor(pos = i, popSize = cnt, **args))
 
     def __getitem__(self, val):
         return self.individuals[val]
@@ -568,7 +568,9 @@ if __name__ == '__main__':
                 for c in range(len(self.pop.individuals[i].genotype)):
                     if self.pop.individuals[i].genotype[c] == phrase[c]:
                         sum += 1
-                return sum
+                fraw = float(sum) / len(self.pop.individuals[i].genotype)
+                fscale = 2 ** fraw
+                return fscale
             def isDone(self):
                 print "Best:",
                 self.pop.bestMember.display()

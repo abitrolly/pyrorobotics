@@ -220,6 +220,9 @@ if __name__ == '__main__':
     sensors = sensorfile.readlines()
     locations = locationfile.readlines()
 
+    #print "sensors:", sensors[0]
+    #print "locations:", locations[0]
+
     locationfile.close()
     sensorfile.close()
 
@@ -271,7 +274,9 @@ if __name__ == '__main__':
     for i in range(5000):
         sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
         locationlist = map(lambda x: float(x), locations[i].rstrip().split())
+        print "into gov :", len(sensorlist + locationlist)
         array = governor.process(sensorlist + locationlist)
+        print "outof gov:", len(array)
         error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
         if i % 100 == 0:
             print "Step: ", i

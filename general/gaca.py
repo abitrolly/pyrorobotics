@@ -5,7 +5,9 @@ from pyro.brain.ga import *
 class GACAGene(Gene):
     def __init__(self, **args):
         Gene.__init__(self, **args)
-        bias = random.random()
+        pos = args["pos"]
+        popSize = args["popSize"]
+        bias = pos / float(popSize) #random.random()
         self.genotype = []
         for i in range(args['size']):
             self.genotype.append( random.random() < bias)

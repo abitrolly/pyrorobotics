@@ -33,10 +33,13 @@ class LayerCanvas(Tkinter.Canvas):
     
     def updateActivs(self, newActivs):
         for i in xrange(len(self.nodeItems)):
-            if newActivs[i] > 1.0:
-                self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535,)*3))
-            else:
-                self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535*newActivs[i],)*3))
+            try:
+                if newActivs[i] > 1.0:
+                    self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535,)*3))
+                else:
+                    self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535*newActivs[i],)*3))
+            except:
+                pass
 
     def getWidth(self):
         return int(self.cget("width"))
