@@ -15,7 +15,7 @@ def usage():
     print "  -h                 show this help"
     print "  -r ROBOT           name of robot.py file to load"
     print "  -b BRAIN           name of brain.py file to load"
-    print "  -a ARGUMENTS       (string; args separated by ':', no spaces)"
+    print "  -a ARGUMENTS       user args (string)"
     print "  -s SIMULATOR       name of simulator to run"
     print "  -i CONFIGFILE      name of config file to load"
     print "  -c CAMERA          name of camera.py file to load"
