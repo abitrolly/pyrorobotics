@@ -46,12 +46,12 @@ void OpenProgram(char file_name[])
     context->World->Objects = NULL;
     CreateEmptyWorld(context);
     ReadWorldFromFile(context->World,file);
-    strcpy(context->World->Name,"avoid");
+    strncpy(context->World->Name,file_name,15);
     fclose(file);
   }
   else
   {
-    perror("unable to find avoid.world in WORLD directory");
+    perror("unable to find world in WORLD directory");
     exit(0);
   }
 
@@ -66,7 +66,7 @@ void OpenProgram(char file_name[])
   but= but->Next=CreateButton(LOAD_WORLD,"load",WINDOW_W/4,23);
   but= but->Next=CreateButton(SAVE_WORLD,"save",WINDOW_W/4+37,23);
 	
-  but= but->Next=CreateButton(SET_ROBOT,"set robot",WINDOW_W/2,4);
+  //but= but->Next=CreateButton(SET_ROBOT,"set robot",WINDOW_W/2,4);
   but= but->Next=CreateButton(SET_ANGLE,"set angle",WINDOW_W/2,23);
 
   but= but->Next=CreateButton(ADD_OBJECT,"add",WINDOW_W*3/4,4);
@@ -199,6 +199,7 @@ int main(int argc,char *argv[]) {
 	
 	while(TRUE) {
 	  graphics = TRUE;
+	  //printf("button->value: %d\n", button->Value);
 	  switch(button->Value)
 	    {
 	    case QUIT:
@@ -386,7 +387,7 @@ int main(int argc,char *argv[]) {
 	    case RUN_ROBOT:
 	      CancelCursor();
 	      DisplayComment(context,"running simulated Khepera");
-	      while (UnpressButton(context,button)==FALSE) {
+	      while (UnpressButton(context,button,robot)==FALSE) {
 		if(!queryflag && (shm_in[0] != '\0')) {
 		  queryflag = TRUE;
 		  MessageRobotDeal(context, shm_in, shm_out);
@@ -433,7 +434,7 @@ int main(int argc,char *argv[]) {
 	      if (robot->State & REAL_ROBOT_FLAG)
 		{
 		  DisplayComment(context,"testing real Khepera");
-		  while (UnpressButton(context,button)==FALSE)
+		  while (UnpressButton(context,button,robot)==FALSE)
 		    {
 		      InitKheperaSensors(context);
 		      DrawRobotIRSensors(robot);
@@ -442,7 +443,7 @@ int main(int argc,char *argv[]) {
 	      else
 		{
 		  DisplayComment(context,"testing simulated Khepera");
-		  while (UnpressButton(context,button)==FALSE)
+		  while (UnpressButton(context,button,robot)==FALSE)
 		    {
 		      InitSensors(context);
 		      DrawRobotIRSensors(robot);

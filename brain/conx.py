@@ -2031,7 +2031,7 @@ class SRN(Network):
         Enables sequencing over Network.sweep().
         """
         if self.loadOrder == []:
-            raise SRNError, ('No loadOrder. Make sure inputs are properly set.', self.loadOrder)
+            raise SRNError, ('No loadOrder. Make sure inputs are properly loaded and set.', self.loadOrder)
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()

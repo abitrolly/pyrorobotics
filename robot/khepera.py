@@ -225,14 +225,24 @@ class KheperaRobot(Robot):
 
     def getIRXCoord(self, dev, pos):
         # convert to x,y relative to robot
-        dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
+        try:
+            data = self.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
         angle = (-self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
         return dist * math.cos(angle)
         
 
     def getIRYCoord(self, dev, pos):
         # convert to x,y relative to robot
-        dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
+        try:
+            data = self.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
         angle = (-self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
         return dist * math.sin(angle)
     
@@ -438,10 +448,20 @@ class KheperaRobot(Robot):
         return self.rawToUnits(dev, 60.0, 'ir')
 
     def getIRRange(self, dev, pos):
-        return self.rawToUnits(dev, self.senseData['ir'][pos], 'ir')
+        try:
+            data = self.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        return self.rawToUnits(dev, data, 'ir')
 
     def getLightRange(self, dev, pos):
-        return self.rawToUnits(dev, self.senseData['light'][pos], 'light')
+        try:
+            data = self.senseData['light'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        return self.rawToUnits(dev, data, 'light')
 
     def getLightMaxRange(self, dev):
         return self.rawToUnits(dev, 511.0, 'light')

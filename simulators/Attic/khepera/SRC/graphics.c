@@ -329,7 +329,7 @@ void DrawWorld(struct Context *context)
   world = context->World;
   robot = context->Robot;
   strcpy(text,world->Name);
-  strcat(text,".world");
+  //strcat(text,"...");
   Color(GREY);
   FillRectangle(2,2,WINDOW_W/4-4,16);
   Color(BLACK);
@@ -1143,6 +1143,7 @@ struct Button *PressButton(struct Context *context)
   while (ret==NULL)
   {
     XNextEvent(display,&report);
+    //printf("report.type: %d\n", report.type);
     switch(report.type)
     {
       case Expose:
@@ -1220,7 +1221,8 @@ struct Button *PressButton(struct Context *context)
   return(ret);
 }
 
-boolean UnpressButton(struct Context *context,struct Button *cancelbutton)
+boolean UnpressButton(struct Context *context,struct Button *cancelbutton, 
+		      struct Robot *robot)
 {
   XEvent               report;
   int                  mouse_x,mouse_y;
@@ -1230,22 +1232,39 @@ boolean UnpressButton(struct Context *context,struct Button *cancelbutton)
   while (XPending(display))
   {
     XNextEvent(display,&report);
+    //printf("unpress report.type: %d\n", report.type);
     switch(report.type)
     {
-      case Expose:
-       redraw = TRUE;
-       break;
-      case ButtonRelease:
-       if (report.xbutton.button == Button1)
-       {
-         mouse_x = report.xbutton.x;
-         mouse_y = report.xbutton.y;
-         if ((mouse_x >= cancelbutton->X)&&
-             (mouse_x <  cancelbutton->X + cancelbutton->Width)&&
-             (mouse_y >= cancelbutton->Y)&&
-             (mouse_y <  cancelbutton->Y + cancelbutton->Height)) ret = TRUE;
-       }
-       break;
+    case Expose:
+      redraw = TRUE;
+      break;
+    case ButtonRelease:
+      if (report.xbutton.button == Button1) {
+	mouse_x = report.xbutton.x;
+	mouse_y = report.xbutton.y;
+	if ((mouse_x >= cancelbutton->X)&&
+	    (mouse_x <  cancelbutton->X + cancelbutton->Width)&&
+	    (mouse_y >= cancelbutton->Y)&&
+	    (mouse_y <  cancelbutton->Y + cancelbutton->Height)) ret = TRUE;
+      }
+      break;
+    case ButtonPress:
+      //case ButtonRelease:
+      mouse_x = report.xbutton.x;
+      mouse_y = report.xbutton.y;
+      if ((mouse_x>=WORLD_OFFSET_X)&&
+          (mouse_x< 500 + WORLD_OFFSET_X)&&
+          (mouse_y>=WORLD_OFFSET_Y)&&
+          (mouse_y< 500 + WORLD_OFFSET_Y))
+	{
+	  robot->X = mouse_x - WORLD_OFFSET_X;
+	  robot->Y = mouse_y - WORLD_OFFSET_Y;
+	  robot->X *= WORLD_INV_SCALE;
+	  robot->Y *= WORLD_INV_SCALE;
+	  DrawWorld(context);
+	  if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
+	  DrawRobotIRSensors(robot);
+	}
     } 
   }
   if (redraw == TRUE) DrawWindow(context);

@@ -89,7 +89,9 @@ extern void              CloseGraphics();
 extern void              UserInit(struct Robot *robot);
 extern void              UserClose(struct Robot *r);
 extern struct Button     *PressButton(struct Context *c);
-extern boolean           UnpressButton(struct Context *c,struct Button *b);
+extern boolean UnpressButton(struct Context *context,
+			     struct Button *cancelbutton, 
+			     struct Robot *robot);
 extern char              *ReadText(struct Context *c,char *text,
                                    struct Button *b);
 extern XPoint            *ClickInWorld(struct Context *c,struct Button *b);
