@@ -438,6 +438,8 @@ class RAVQ:
         To display ravq just call print <instance>.
         """
         s = ""
+        s += "Settings:\n"
+        s += "Delta: " + str(self.delta) + " Epsilon: " + str(self.epsilon) + " Buffer Size: " + str(self.size) + "\n"
         s += "Time: " + str(self.time) + "\n"
         s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
         s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
@@ -621,6 +623,9 @@ class ARAVQ(RAVQ):
         self.deltaWinner = 'No Winner'
         self.learning = 1
         RAVQ.__init__(self, size, epsilon, delta)
+    def __str__(self):
+        s = RAVQ.__str__(self)
+        return s[:10] + "Alpha (learning rate): " + str(self.alpha) + " " + s[10:]
     def setLearning(self, value):
         self.learning = value
     def updateDeltaWinner(self):
