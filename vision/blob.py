@@ -113,6 +113,12 @@ class PyroImage:
       """
       self.data[(x + y * self.width) * self.depth + offset] = val
 
+   def incr(self, x, y, offset = 0):
+      """
+      Method to increment a pixel to a value. offset is r, g, b (0, 1, 2)
+      """
+      self.data[(x + y * self.width) * self.depth + offset] += 1
+
    def get(self, x, y, offset = 0):
       """
       Get a pixel value. offset is r, g, b = 0, 1, 2.
@@ -126,26 +132,24 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-   def histogram(self):
-
-      ratio = [0] * 10
-      for r in range(10):
-         ratio[r] = [0] * 10
-      ratio.display()
-
+   def histogram(self, rows = 10, cols = 10):
+      """
+      Creates a histogram.
+      """
+      histogram = PyroImage(rows, cols, 1)
       for h in range(self.height):
          for w in range(self.width):
-            r = self.data[(w + h * self.width) * self.depth + 0]
-            g = self.data[(w + h * self.width) * self.depth + 1]
-            b = self.data[(w + h * self.width) * self.depth + 2]
-
+            r = self.get(w, h, 0)
+            g = self.get(w, h, 1)
+            b = self.get(w, h, 2)
             red = (int)(r*10)
             green = (int)(g*10)
             blue = (int)(b*10)
-            
-            rg = red/green
-            bg = blue/green
-
+            if green == 0: green = 1
+            rg = min(red/green, 9)
+            bg = min(blue/green, 9)
+            histogram.incr(rg, bg)
+      return histogram
                         
 class Camera(PyroImage):
    """
@@ -189,7 +193,10 @@ class Bitmap(PyroImage):
       for h in range(self.height):
          for w in range(self.width):
             if self.data[w + h * self.width]:
-               print self.equivList[self.data[w + h * self.width]],
+               try:
+                  print self.equivList[self.data[w + h * self.width]],
+               except:
+                  print ">",
             else:
                print '.',
          print ''
@@ -341,10 +348,12 @@ if __name__ == '__main__':
          image.display()
    else:
       print "skipping..."
-   print "Do you want to run test 8: create a histogram of the image?"
+   print "Do you want to run test 8: create a histogram of the image? ",
    if sys.stdin.readline().lower()[0] == 'y':
       image = Camera()
-      image.histogram()
+      image.update()
+      histogram = image.histogram()
+      histogram.display()
    else:
       print "skipping..."
       
