@@ -6,6 +6,8 @@
 
 from pyro.brain.psom import *
 from Tkinter import *
+import struct
+import ImageTk
 
 class VisVector:
    """
@@ -17,7 +19,8 @@ class VisVector:
       raise "This is an abstract function."
 
    def close(self):
-      raise "This is an abstract function."
+      """Close my Window"""
+      self.win.destroy()
 
 class IRVisVector(VisVector):
    """
@@ -43,10 +46,6 @@ class IRVisVector(VisVector):
          rl = Label(Rframe, text="= " + str(self.vector[i]))
          rl.pack(anchor=W)
 
-   def close(self):
-      """Close the window"""
-      self.win.destroy()
-
 class GenericVisVector(VisVector):
    """
    Display a generic vector of floats.
@@ -69,18 +68,50 @@ class GenericVisVector(VisVector):
          rl = Label(Rframe, text="= " + str(self.vector[i]))
          rl.pack(anchor=W)
 
-   def close(self):
-      """Close the window"""
-      self.win.destroy()
+class GrayscaleVisVector(VisVector):
+   """
+   Display a vector of floats representing a grayscale image
+   """
+   def __init__(self, vector, height, width, title=""):
+      self.vector = vector.get_elts()
+      self.length = len(self.vector)
 
-def VisVectorFactory(type, vector, title=""):
+      self.win = Tk()
+      self.win.title(title)
+      self.canvas = Canvas(self.win, width=width, height=height)
+      self.canvas.pack()
+
+      #turn unit-valued floats into 8-bit grayscale values...
+      grayvec = map(lambda x: struct.pack("B", int(x*255)), self.vector)
+      #...and pack them into a string.
+      self.graystr = ""
+      for pix in grayvec:
+         self.graystr += pix
+         
+      img = ImageTk.Image.fromstring("L", (width, height), self.graystr)
+      photo = ImageTk.PhotoImage(img)
+      i = self.canvas.create_image(1,1,anchor=NW,image=photo)
+      b = Button(self.win, text="Close", command=self.close)
+      b.pack(side=BOTTOM)
+      self.win.mainloop()
+
+def getVisVectorByName(type):
    """
    Given a type of VisVector as a string, create and initialize an
    instance of that type, and return a reference.
    """
    if type == "IR":
-      return IRVisVector(vector, title)
+      return IRVisVector
    elif type == "Generic":
-      return GenericVisVector(vector, title)
+      return GenericVisVector
+   elif type =="Grayscale" or type =="Greyscale":
+      return GrayscaleVisVector
    else:
       raise "VisVector type not supported"
+
+if __name__=="__main__":
+   from pyro.brain.psom import *
+   grayvis = getVisVectorByName("Grayscale")
+   piclist = [float(x)/255.0 for x in range(256)]
+   grayvis(vector(piclist), 16, 16)
+   print "Done"
