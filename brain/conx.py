@@ -2,7 +2,7 @@
 # An Artificial Neural Network System Implementing
 # Backprop
 # ------------------------------------------------
-# (c) 2001-2002, D.S. Blank, Bryn Mawr College
+# (c) 2001-2003, D.S. Blank, Bryn Mawr College
 # ------------------------------------------------
 
 import RandomArray, Numeric, math, random, time, sys, signal
@@ -821,102 +821,21 @@ class Network:
                self.connection[c].fromLayer.name == lfrom:
                 return self.connection[c]
         return 0
-    def saveNetworkToFile(self, filename, saveData = 1):
-        print "Error: FIX doesn't save postprop() or preprop() code! Pickle?"
+    def saveNetworkToFile(self, filename):
+        import pickle
         basename = filename.split('.')[0]
-        filename += ".py"
-        if saveData:
-            self.saveDataToFile(basename + ".dat")
-        # save a description (python code?) (.py)
+        filename += ".pickle"
         fp = open(filename, 'w')
-        fp.writelines("# This file was automatically created.\n\n")
-        fp.writelines("# Con-x: Sample XOR Network\n")
-        fp.writelines("# (c) 2001, D.S. Blank\n")
-        fp.writelines("# Bryn Mawr College\n")
-        fp.writelines("# http://emergent.brynmawr.edu/\n\n")
-        fp.writelines("from pyro.brain.conx import *\n\n")
-        fp.writelines("# Create network:\n")
-        fp.writelines("net = Network()\n")
-        fp.writelines("# Set the network parameters:\n")
-        for i in dir(self):
-            try:
-                result = eval("self.%s" % i)
-            except:
-                print "No such thing: self.%s" % i
-                continue
-            if i.find("Count") >= 0 or i.find("_") == 0:
-                # skip it
-                continue
-            elif type(result) == type(1.2):
-                methodName =  "%s" % i
-                methodName = methodName[0].upper() + methodName[1:]
-                fp.writelines("net.set%s(%f)\n" % \
-                              (methodName, eval("self.%s" % i)))
-            elif type(result) == type(1):
-                methodName =  "%s" % i
-                methodName = methodName[0].upper() + methodName[1:]
-                fp.writelines("net.set%s(%d)\n" % \
-                              (methodName, eval("self.%s" % i)))
-            else:
-                print "Unknown type: self.%s" % i
-        fp.writelines("net.setSeed(net.seed1)\n")
-        fp.writelines("# Create the layers:\n")
-        for layer in self.layer:
-            fp.writelines("net.add( Layer('%s', %d) )\n" % \
-                          (layer.name, layer.size))
-            fp.writelines("net.getLayer('%s').setDisplayWidth(%d)\n" % \
-                          (layer.name, layer.displayWidth))
-        fp.writelines("# Connect it up:\n")
-        for connect in self.connection:
-            fp.writelines("net.connect( '%s', '%s')\n" % \
-                          (connect.fromLayer.name, connect.toLayer.name))
-        fp.writelines("# Associate it:\n")
-        for assoc in self.association:
-            fp.writelines("net.associate( '%s', '%s')\n" % \
-                          (assoc[0], assoc[1]))
-        fp.writelines("# mapInput:\n")
-        for mi in self.inputMap:
-            fp.writelines("net.mapInput( '%s', %d)\n" % \
-                          (mi[0], mi[1]))
-        fp.writelines("# mapOutput:\n")
-        for mo in self.outputMap:
-            fp.writelines("net.mapOutput( '%s', %d)\n" % \
-                          (mo[0], mo[1]))
-        fp.writelines("# Load patterns:\n")
-        if len(self.output) > 0:
-            fp.writelines("net.loadDataFromFile('" + basename + ".dat', %d)\n" % len(self.output[0]))
-        else:
-            fp.writelines("net.loadDataFromFile('" + basename + ".dat')\n")
-
-        fp.writelines("# Load weights, biases, etc.:\n")
-        fp.writelines("# net.loadWeightsFromFile('')\n")
-
-        fp.writelines("print \"Do you want to load the weights? \",\n")
-        fp.writelines("if sys.stdin.readline().lower()[0] == 'y':\n")
-
-        mylist = self.arrayify();
-
-        fp.writelines("\tnet.unArrayify([");
-        started = 0
-        for i in mylist:
-            if (started):
-                fp.write(", ")
-            started = 1
-            fp.write("%f " % i)
-        fp.writelines("])\n")
-
-        fp.writelines("print \"Do you want to re-train it? \",\n")
-        fp.writelines("if sys.stdin.readline().lower()[0] == 'y':\n")
-        fp.writelines("\t# Run it:\n")
-        fp.writelines("\tnet.setInteractive(0)\n")
-        fp.writelines("\tnet.reset()\n")
-        fp.writelines("\tnet.train()\n")
-        fp.writelines("print \"Do you want to see it? \",\n")
-        fp.writelines("if sys.stdin.readline().lower()[0] == 'y':\n")
-        fp.writelines("\t# See it:\n")
-        fp.writelines("\tnet.setLearning(0)\n")
-        fp.writelines("\tnet.setInteractive(1)\n")
-        fp.writelines("\tnet.sweep()\n")
+        pickle.dump( self, fp)
+        fp.close()
+        fp = open(basename + ".py", "w")
+        fp.write("from pyro.brain.conx import *\n")
+        fp.write("import pickle\n")
+        fp.write("fp = open('%s', 'r')\n" % filename)
+        fp.write("network = pickle.load(fp)")
+        fp.close()
+        print "To load file:\npython -i %s " % (basename + ".py")
+        print ">>> network.train()"
     def setConnectionCount(self, value):
         self.connectionCount = value
     def setPrediction(self, value):
@@ -939,9 +858,6 @@ class Network:
         self.seed1 = value
     def setSeed2(self, value):
         self.seed2 = value
-    def loadNetworkFromFile(self, filename):
-        # just run the file
-        pass
     def loadInputsFromFile(self, filename, columns = 0):
         fp = open(filename, 'r')
         line = fp.readline()
@@ -1139,7 +1055,7 @@ if __name__ == '__main__':
         n.train()
 
     if ask("Do you want to see (and save) the final network?"):
-        print "Filename to save network (.py): ",
+        print "Filename to save network (.pickle): ",
         filename = sys.stdin.readline().strip()
         n.saveNetworkToFile(filename)
         n.setLearning(0)
@@ -1148,8 +1064,5 @@ if __name__ == '__main__':
 
     if ask("Do you want to save weights of final network?"):
         print "Filename to save weights (.wts): ",
-        filename = sys.stdin.readline().strip()
+        filename = sys.stdin.readline().strip() + ".wts"
         n.saveWeightsToFile(filename)
-        #n.loadWeightsFromFile(filename)
-
-
