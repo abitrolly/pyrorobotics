@@ -177,7 +177,7 @@ extern float get_error(struct teach_params *teach);
 extern float *get_activation_levels(struct teach_params *teach,
                              int *coords, float radius, short mode);
 extern float *get_levels_by_error(struct teach_params *teach,
-                struct data_entry *sample, float *erange);
+                struct data_entry *sample, float tolerance);
 extern struct data_entry *get_model_vector(struct entries *codes, int *coords);
 extern void print_dataset(struct entries *data);
 
