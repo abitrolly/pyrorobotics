@@ -20,7 +20,7 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
         #print keyword, type(deviceDict[keyword])
         if type(deviceDict[keyword]) == types.InstanceType:
             # HACK: to make it so range is an alias link
-            if keyword == "range" and showstars:
+            if keyword in ["range", "light", "ir", "sonar", "laser"] and showstars:
                 keyword = "*" + keyword
             if retdict:
                 retval[keyword + "/"] = None
