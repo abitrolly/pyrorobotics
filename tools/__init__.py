@@ -52,7 +52,7 @@ class OptionHandler:
         # now, overwrite those that came in on the commandline:
         for (o, a) in opts:
             ok = 0
-            for command in options:
+            for command in self.options:
                 if o in ("--" + command.name, "-" + command.shortForm):
                     command.value = command.evalFunc(a)
                     ok = 1
