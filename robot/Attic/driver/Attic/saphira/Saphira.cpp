@@ -323,3 +323,60 @@ double Saphira :: sonar_y (int pos) {
   }
   return (double) -1;
 }
+
+// ------------------------------------------------
+// CameraMover code
+// ------------------------------------------------
+
+extern "C" void sfPTZCamInit(void);
+extern "C" void sfPTZCamPan(int);
+extern "C" void sfPTZCamTilt(int);
+extern "C" void sfPTZCamPanTilt(int, int);
+extern "C" void sfPTZCamZoom(int);
+
+CameraMover::CameraMover() {
+  // constructor
+  PanAngle = 0;
+  TiltAngle = 0;
+  ZoomAmount = 0;
+}
+
+CameraMover::~CameraMover() {
+  // deconstruct
+}
+
+void CameraMover::Init() {
+  fprintf(stderr, "Initializing PTZ unit...");
+  sfPTZCamInit();
+  usleep(1000 * 1000); // 1 second
+  Center();
+  fprintf(stderr, "...done!\n");
+}
+
+void CameraMover::Pan(int degrees) {
+  PanAngle = degrees;
+  sfPTZCamPan(degrees);
+}
+
+void CameraMover::Tilt(int degrees) {
+  TiltAngle = degrees;
+  sfPTZCamTilt(degrees);
+}
+
+void CameraMover::PanTilt(int pdegrees, int tdegrees) {
+  TiltAngle = tdegrees;
+  PanAngle = pdegrees;
+  sfPTZCamPanTilt(pdegrees, tdegrees);
+}
+
+void CameraMover::Zoom(int amount) {
+  ZoomAmount = amount;
+  sfPTZCamZoom(amount);
+}
+
+void CameraMover::Center() {
+  sfPTZCamPanTilt(0, 0);
+  PanAngle = 0;
+  TiltAngle = 0;
+  ZoomAmount = 0;
+}

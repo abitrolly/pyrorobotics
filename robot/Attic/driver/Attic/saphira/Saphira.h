@@ -56,4 +56,24 @@ public:
   int SonarCount;
 };
 
+// ----------------------------------------
+
+class CameraMover {
+ private:
+  int TiltAngle;
+  int PanAngle;
+  int ZoomAmount;  
+
+ public:
+  CameraMover ();
+  ~CameraMover ();
+
+  void Init();
+  void Pan(int);
+  void Tilt(int);
+  void PanTilt(int, int);
+  void Zoom(int);
+  void Center();
+};
+
 #endif

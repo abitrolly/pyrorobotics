@@ -1,4 +1,4 @@
-SAPHIRA_LIB = -L$(SAPHIRA)/handler/obj -lsfx 
+SAPHIRA_LIB = -L$(SAPHIRA)/handler/obj -lsfx -L$(PYRO)/lib -lptzsys 
 SAPHIRA_INC = -I$(SAPHIRA)/handler/include 
 PYTHON_INC  = -I/usr/local/include/python2.1/ -I/home/dblank/Python-2.1.1/Include/ -I/home/dblank/Python-2.1.1/ -I/usr/include/python2.1/
 
