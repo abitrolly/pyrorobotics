@@ -1915,11 +1915,11 @@ class Network:
         for i in range(len(self.inputs)):
             self.loadOrder[i] = i
     def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
-                           delim = ' '):
+                           delim = ' ', checkEven = 1):
         """
         Loads inputs from file. Patterning is lost.
         """
-        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
+        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim, checkEven)
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
             self.loadOrder[i] = i
@@ -1934,12 +1934,19 @@ class Network:
                 fp.write("%f " % item)
             fp.write("\n")
     def loadTargetsFromFile(self, filename, cols = None, everyNrows = 1,
-                            delim = ' '):
+                            delim = ' ', checkEven = 1):
         """
         Loads targets from file.
         """
         self.targets = self.loadVectorsFromFile(filename, cols, everyNrows,
-                                                delim)
+                                                delim, checkEven)
+    def loadTargetPatternssFromFile(self, filename, cols = None, everyNrows = 1,
+                                    delim = ' ', checkEven = 1):
+        """
+        Loads targets as patterns from file.
+        """
+        self.targets = self.loadVectorsFromFile(filename, cols, everyNrows,
+                                                delim, checkEven, patterned=1)
     def saveTargetsToFile(self, filename):
         """
         Saves targets to file.
