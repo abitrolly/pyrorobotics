@@ -123,6 +123,7 @@ if pyro.startup_check():
         brainargs = c.get('brain', 'args')
     else:
         c.put('brain', 'args', brainargs)
+    c.put('pyro', 'gui', window)
     share.config = c
     eng = Engine(robotfile, brainfile, simulator,
                  brainargs, c, camerafile, worldfile)
