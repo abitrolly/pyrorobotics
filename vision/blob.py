@@ -88,7 +88,7 @@ class PyroImage:
             for w in range(self.width):
                r = self.data[(w + h * self.width) * self.depth + 0]
                g = self.data[(w + h * self.width) * self.depth + 1]
-               b = self.data[(w + h * self.width) * self.depth + 2]
+               b = self.data[(w + h * self.width) * self.depth + 2]               
                if int(((r + g + b) / 3 ) * 9):
                   line += "%d" % int(((r + g + b) / 3 ) * 9)
                else:
@@ -126,6 +126,26 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
+   def histogram(self):
+      for a in range(9):
+         for b in range(9):
+            ration[a][b] = 0
+            
+      for h in range(self.height):
+         for w in range(self.width):
+            r = self.data[(w + h * self.width) * self.depth + 0]
+            g = self.data[(w + h * self.width) * self.depth + 1]
+            b = self.data[(w + h * self.width) * self.depth + 2]
+
+            red = (int)(r*10)
+            green = (int)(g*10)
+            blue = (int)(b*10)
+            
+            rg = red/green
+            bg = blue/green
+
+            
+            
 class Camera(PyroImage):
    """
    A Fake camera class. Simulates live vision. Call update() to get image.
@@ -318,4 +338,11 @@ if __name__ == '__main__':
       for x in range(10):
          image.update()
          image.display()
+
+   print "Do you want to run test 8: create a histogram of the image?"
+   if sys.stdin.readline().lower()[0] == 'y':
+      image.histogram()
+   else:
+      print "skipping..."
+      
    print "All done!"
