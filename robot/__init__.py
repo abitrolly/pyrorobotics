@@ -105,20 +105,17 @@ class Robot:
     def _get(self, pathList):
         pass
 
-    def get(self, device, *args):
+    def get(self, device = "", *args):
 	"""
 	this is designed to be the main interface to the robot
 	and its parts. There is one assumed piece, self.dev that
 	is the actual pointer to the robot device
 	"""
-        if device[0] == "/":
-            path = device.split("/")
-            # remove extra slashes
-            while path.count("") > 0:
-                path.remove("")
-        else: # given in device, args form
-            path = [device,]
-            path.extend( args )
+        path = device.split("/")
+        # remove extra slashes
+        while path.count("") > 0:
+            path.remove("")
+        path.extend( args )
         # parse path parts for dashes, colons, and commas
         finalPath = []
         for part in path:
