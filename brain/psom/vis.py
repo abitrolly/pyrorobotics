@@ -189,7 +189,7 @@ class VisPsom(psom):
       ShowBtn.invoke(ShowBtn.index('Train Count')) 
       # end menu bar
 
-   def close(self):
+   def destroy(self):
       self.win.destroy()
       
    def canvas_clicked_up(self, event):
@@ -493,5 +493,8 @@ if __name__ == "__main__":
    pause()
    mysom.display()
 
-   print "---> DONE. Please close window."
-   mysom.win.mainloop()
+   #print "---> DONE. Please close window (use exit menu option)."
+   #mysom.win.mainloop()
+
+   #mysom.destroy()
+

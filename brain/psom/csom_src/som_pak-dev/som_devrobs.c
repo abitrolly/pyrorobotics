@@ -41,6 +41,12 @@ eptr *get_eptr(void) {
   return p;
 }
 
+/* free eptr 
+ * -- WKV 2003-07-23
+ */
+void free_eptr(eptr *p) { 
+  free(p);
+}
 
 /* --------------------- data set manipulation functions ----------------- */
 
@@ -199,7 +205,7 @@ int set_label_data_entry(struct data_entry *entry, char **label) {
 /* Returns 0 if adding a label is successful, 1 otherwise. 
  * add_label simply adds a label to the entry; any previous
  * associations remain the same. 
- * --added June 17, 2003
+ * --added June 17, 2003 (Yee Lin Tan)
  */
 void add_label_data_entry(struct data_entry *entry, char **label) {
   int i;
@@ -209,8 +215,8 @@ void add_label_data_entry(struct data_entry *entry, char **label) {
   }
 }
 
-/* Clears all labels associated with the entry 
- * --added June 17, 2003
+/* Clears all labels associated with a data entry 
+ * --added June 17, 2003 (Yee Lin Tan)
  */
 void clear_labels_data_entry(struct data_entry *entry) {
   clear_entry_labels(entry);
@@ -291,7 +297,9 @@ int init_training_session(struct teach_params_counters *params,
     return 1;
   }
 
-  //these error checks are now done in the python code: __init__.py
+  /* these error checks are now done in the python code: __init__.py
+   * -- Yee Lin Tan
+   */
   /* 
   if(alpha_0 < 0.0) {
     fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
@@ -1074,6 +1082,8 @@ char *get_mask_data_entry(struct data_entry *entry, int dim) {
 /* Returns the label array associated with the given
  * data entry as a array of strings.
  * --added June 20, 2003 (Yee Lin Tan)
+ * Malloc'ed an extra spot for the NULL pointer at the end of char **.
+ * --added July 22, 2003 (WKV)
  */
 char **get_label_data_entry(struct data_entry *entry, int num_labels) {
   int i, label;

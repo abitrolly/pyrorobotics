@@ -62,7 +62,7 @@ struct teach_params_counters {
 int write_entries(struct entries *codes, char *out_code_file);
 void set_globals(void);
 eptr *get_eptr(void);
-
+void free_eptr(eptr *); /* -- WKV 2003-07-23 */
 
 /* --------------------- data set manipulation functions ----------------- */
 
@@ -115,10 +115,7 @@ int *map_one(struct teach_params_counters *params,
 int *train_one(struct teach_params_counters *params, 
 	       struct data_entry *sample, 
 	       int *last_coords, int update_counter_flag);
-/*
-struct data_entry *train_fromdataset_old(struct teach_params *teach,
-					 struct entries *data, short mode);
-*/
+
 struct data_entry *train_fromdataset(struct teach_params_counters *params, 
 				     struct entries *data, short mode);
 struct data_entry *map_fromdataset(struct teach_params_counters *params, 
@@ -145,6 +142,5 @@ void print_dataset(struct entries *data);
 
 char *get_mask_data_entry(struct data_entry *entry, int dim);
 char **get_label_data_entry(struct data_entry *entry, int num_labels);
-//void foo(char **s);
 
 #endif /* SOM_DEVROBS_H */

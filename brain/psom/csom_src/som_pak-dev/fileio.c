@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h> /* -- WKV 2003-07-23*/
 #include "fileio.h"
 
 /* prototypes for local functions */
@@ -212,14 +213,14 @@ static struct file_info *alloc_file_info(void)
       perror("alloc_file_info");
       return NULL;
     }
-
   /* initialize structure members to reasonable values */
-  fi->name = NULL;
-  fi->fp = NULL;
-  fi->flags.pipe = 0;
-  fi->flags.compressed = 0;
-  fi->flags.eof = 0;
-  fi->lineno = 0;
+  //fi->name = NULL;
+  //fi->fp = NULL;
+  //fi->flags.pipe = 0;
+  //fi->flags.compressed = 0;
+  //fi->flags.eof = 0;
+  //fi->lineno = 0;
+  memset(fi, 0, sizeof(struct file_info)); /* WKV */
   return fi;
 }
 
@@ -233,6 +234,12 @@ int close_file(struct file_info *fi)
     {
       if (fi->name)
 	free(fi->name);
+      if(fi->buf) /* -- WKV 2003-07-23 */
+	{
+	  free(fi->buf);
+	  fi->buf = NULL;
+	  fi->len = 0;
+	} 
       if (fi->fp)
 #ifndef NO_PIPED_COMMANDS
 	if (fi->flags.pipe) /* piped commands + compressed files */
@@ -278,7 +285,7 @@ static char *check_for_compression(char *name)
 
 /* mygetline - get a line from file. Returns a char * to the line (a
    static buffer), NULL on error. */
-    
+/*
 char *mygetline(struct file_info *fi)
 {
   static char *stre = NULL;
@@ -290,7 +297,7 @@ char *mygetline(struct file_info *fi)
 
   fi->error = 0;
   fi->flags.eof = 0;
-  /* allocate memory for line buffer */
+  //allocate memory for line buffer
 
   if (stre == NULL) 
     {
@@ -305,72 +312,151 @@ char *mygetline(struct file_info *fi)
     }
 
   len = 0;
-  /* increment file line number */
+  //increment file line number
   fi->lineno += 1;
   tstr = stre;
-
+  
   while (1)
-    {
-
-      /* if line buffer is too small, increase its size */
-      if (len >= strl)
-	{
-	  strl += STR_LNG;
-	  tstr = stre = realloc(stre, sizeof(char) * strl);
-	  if (stre == NULL)
-	    {
-	      perror("mygetline");
-	      fi->error = ERR_NOMEM;
-	      return NULL;
-	    }
-
-	  if (strl > ABS_STR_LNG) 
-	    {
-	      fprintf(stderr, "mygetline: Too long lines in file %s (max %d)\n",
-		      fi->name, ABS_STR_LNG);
-	      fi->error = ERR_LINETOOLONG;
-	      return NULL;
-	    }
-	}
-
-      /* get next character */
-      c = fgetc(fp);
-
-      /* end of line? */
-      if (c == '\n')
-	{
-	  tstr[len] = '\0';
-	  break;
-	}
-
-      /* end of file / error? */
-      if (c == EOF)
-	{
-	  tstr[len] = '\0';
-
-	  /* really an EOF? */
-	  if (feof(fp))
-	    {
-	      /* we are at the end of file */
-	      fi->flags.eof = 1;
-	      if (len == 0)
+  {
+    
+    //if line buffer is too small, increase its size
+    if (len >= strl)
+      {
+	strl += STR_LNG;
+	tstr = stre = realloc(stre, sizeof(char) * strl);
+	if (stre == NULL)
+	  {
+	    perror("mygetline");
+	    fi->error = ERR_NOMEM;
+	    return NULL;
+	  }
+	
+	if (strl > ABS_STR_LNG) 
+	  {
+	    fprintf(stderr, "mygetline: Too long lines in file %s (max %d)\n",
+		    fi->name, ABS_STR_LNG);
+	    fi->error = ERR_LINETOOLONG;
+	    return NULL;
+	  }
+      }
+    
+    //get next character
+    c = fgetc(fp);
+    
+    // end of line?
+    if (c == '\n')
+      {
+	tstr[len] = '\0';
+	break;
+      }
+    
+    //end of file / error?
+    if (c == EOF)
+      {
+	tstr[len] = '\0';
+	
+	//really an EOF?
+	if (feof(fp))
+	  {
+	    //we are at the end of file
+	    fi->flags.eof = 1;
+	    if (len == 0)
 		tstr = NULL;
-	    }
-	  else
-	    {
-	      /* read error */
-	      tstr = NULL;
-	      fi->error = ERR_FILEERR;
-	      fprintf(stderr, "mygetline: read error on line %d of file %s\n", fi->lineno, fi->name);
-	      perror("mygetline");
-	    }
-	  break;
-	}
-
-      tstr[len++] = c;
-    }
+	  }
+	else
+	  {
+	    //read error
+	    tstr = NULL;
+	    fi->error = ERR_FILEERR;
+	    fprintf(stderr, "mygetline: read error on line %d of file %s\n", fi->lineno, fi->name);
+	    perror("mygetline");
+	  }
+	break;
+      }
+    
+    tstr[len++] = c;
+  }
   
   return tstr;
+}
+*/
+
+/* Fixed inefficiency with old mygetline routine as well as
+ * addressing it's problems with static buffers.  The whole
+ * code base is not quite ready for multi-threaded operation 
+ * however it is one stop closer.  Note overall the routine
+ * should be magnitudes faster.  It now resizes it's buffer
+ * for every file opened/read. 
+ * -- WKV 2003-07-23 (in email to pyro-developers)
+ */
+char *mygetline(struct file_info *fi)
+{
+  char *s;
+  int  pos;
+  int  curlen;
+  
+  /* Allocate memory for line buffer */
+  if (fi->len == 0 || fi->buf == NULL) {
+    fi->buf = malloc(sizeof(char) * STR_LNG);
+    if (fi->buf == NULL) {
+      perror("malloc");
+      fi->error = ERR_NOMEM;
+      return NULL;
+    }
+    fi->len = STR_LNG;
+  }
+       
+  /* increment file line number */
+  fi->lineno++;
+  
+  fi->buf[0] = 0; /* NUL terminate buffer */
+  fi->buf[fi->len - 2] = fi->buf[fi->len - 1] = 0; /* NUL terminate buffer */
+  curlen = fi->len;
+  pos = 0;
+  /* Loop reading fi->len portions of lines */
+   while (1) {
+      s = fgets(&fi->buf[pos], curlen, fi->fp);
+      /* On error return, check EOF or give error */
+      if (s == NULL) {
+       if (feof(fi->fp)) {
+           fi->flags.eof = 1;
+           if (fi->buf[0] == 0)
+             return NULL;
+           return fi->buf;
+       }
+       else {
+           fi->error = errno;
+           fprintf(stderr, "mygetline: read error %s on line %d of file %s\n",
+		   strerror(fi->error), fi->lineno, fi->name);
+           fi->error = ERR_FILEERR;
+           return NULL;
+         }
+      }
+      
+      /* Good return, see if buffer was filled and no new-line seen */
+      if (s[curlen - 2] != 0 && s[curlen - 2] != '\n') {
+         pos = fi->len - 1;
+         fi->len = fi->len + STR_LNG;
+         s = realloc(fi->buf, sizeof(char) * fi->len);
+         if (s == NULL) {
+             free(fi->buf);
+             fi->buf = NULL;
+             fi->len = 0;
+             perror("realloc");
+	     fi->error = ERR_NOMEM;
+	     return NULL;
+	 }
+         fi->buf = s;
+         curlen = STR_LNG + 1;
+         fi->buf[fi->len - 2] = fi->buf[fi->len - 1] = 0; /* NUL terminate
+							     buffer */
+      }
+      else {
+         /* Found new-line, remove it and return */
+	s[strlen(s)-1] = 0;
+	return fi->buf;
+      }
+   }
 }
 
 /* *********** routines for getting the program name ********** */

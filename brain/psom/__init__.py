@@ -343,7 +343,7 @@ class psom:
         >>> mysom.timing_stop()
         >>> ttime = mysom.get_training_time()
         >>> print ttime
-            """
+        """
         csom.timing_start(self.params)
             
     def timing_stop(self):
@@ -669,7 +669,7 @@ class psom:
         self.last = vector(entry=entry, dim=self.dim,
                            label=csom.get_label_data_entry(entry, \
                            csom.data_entry_num_labs_get(entry)))
-        
+
         coords = csom.map_one(self.params, self.last.entry,
                               point(-1,-1).asIntPtr(), 0) # don't update counters
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
@@ -1322,7 +1322,13 @@ class dataset:
     # with this commented out you might end up with a memory leak
     #def __del__(self):
     #   csom.close_entries(self.data)
-    
+
+    # Fixed other memory corruptions, uncommented and didn't find problems.
+    # -- WKV 2003-07-23
+    def __del__(self):
+       csom.close_entries(self.data)
+       csom.free_eptr(self.p)
+
     def addvec(self, vec):
         """
         dataset: addvec()
@@ -1652,7 +1658,7 @@ if(__name__ == '__main__'):
     print "output written to file \"test3b.cod\""
     print "test 3 successfully completed"
     print ""
-    
+
 
     # test 4:
     # SOM's model vectors are read in from ex.cod.  SOM is then trained on
@@ -1661,7 +1667,7 @@ if(__name__ == '__main__'):
     print "test 4: data/training dynamic, view SRN levels"
     print "----------------------------------------------"
     mysom4 = psom(file='ex.cod')
-    mysom4.init_training(0.02,2.0,6)
+    mysom4.init_training(0.02,8,6)
     vecs = []
     vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))
     vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
@@ -1677,11 +1683,15 @@ if(__name__ == '__main__'):
     print "Adding vectors to dataset, displaying mask and labels"
     for i in range(1,5):
         vecs[i].display()
-        print "\n"
         mydataset.addvec(vecs[i])
+        print "\n-->Prev label: %s" % vecs[i].get_label_asString()
         vecs[i].add_label([i])
-        if(i==3): vecs[i].clear_label()            
-    print "\nDisplaying dataset..."
+        print "-->New Label : %s" % vecs[i].get_label_asString()
+        if(i==3):
+            vecs[i].clear_label()
+            print "Label at vecs[%s] cleared" % i
+        print "\n"
+    print "Displaying dataset..."
     mydataset.display()
     print "\n"
 
@@ -1689,6 +1699,20 @@ if(__name__ == '__main__'):
     mysom4.logging_clear()
     mysom4.logging_on()
 
+    # Make sure model vectors were updated during training
+    # Compare this output with the ones printed under
+    # "AFTER TRAINING"
+    print "****** BEFORE TRAINING *******"
+    print "Model vector at point:"
+    print "(0,4): ", mysom4.get_model_vector(point(0,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "(7,4): ", mysom4.get_model_vector(point(7,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "******************************"
+    
+    # Training
     i=0
     for v in vecs:
         print "\nTraining vector #%s" % i
@@ -1702,6 +1726,19 @@ if(__name__ == '__main__'):
         m.point.display()
     mysom4.logging_off()
 
+    # Make sure model vectors were updated during training
+    # Compare this output with the ones printed under
+    # "BEFORE TRAINING"
+    print "\n****** AFTER TRAINING *******"
+    print "Model vector at point:"
+    print "(0,4): ", mysom4.get_model_vector(point(0,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "(7,4): ", mysom4.get_model_vector(point(7,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "******************************\n"
+    
     print "last mapping produces the following bubble srn activations:"
     myact = mysom4.get_activations()
     mysom4.display_activations(myact)
@@ -1749,6 +1786,41 @@ if(__name__ == '__main__'):
     test4t_fd.write("*** End Max Consec Train Counter ***\n")
     test4t_fd.close()
     print "Test 4: Train counters written to: %s\n" % 'test4.train_counter'
+
+    # Make sure model vectors were not updated during mapping
+    # Compare with "AFTER MAPPING"
+    print "\n******* BEFORE MAPPING ********"
+    print "Model vector at point:"
+    print "(0,4): ", mysom4.get_model_vector(point(0,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "(7,4): ", mysom4.get_model_vector(point(7,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "*******************************"
+    
+    # Mapping
+    i=0
+    for v in vecs:
+        print "\nMapping vector #%s" % i
+        i += 1
+        m = mysom4.map(v)
+        print "input vector",
+        v.display()
+        print "maps to model vector",
+        m.display()
+        print "at point",
+        m.point.display()
+
+    print "\n******* AFTER MAPPING ********"
+    print "Model vector at point:"
+    print "(0,4): ", mysom4.get_model_vector(point(0,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "(7,4): ", mysom4.get_model_vector(point(7,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(3,4): ", mysom4.get_model_vector(point(3,4))
+    print "(0,6): ", mysom4.get_model_vector(point(0,6))
+    print "********************************\n"
     
     test4m_fd = open("test4.map_counter", "w")    
     test4m_fd.write("*** Map Counter ***\n")

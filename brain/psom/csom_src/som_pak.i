@@ -178,6 +178,7 @@ extern struct entries *randinit_codes(struct entries *data, int topol,
 extern int write_entries(struct entries *codes, char *out_code_file);
 extern void set_globals(void);
 extern eptr *get_eptr(void);
+extern void free_eptr(eptr *); /* WKV */
 
 /* --------------------- data set manipulation functions ----------------- */
 

@@ -114,19 +114,29 @@ int read_headers(struct entries *entries)
   struct file_info *fi = entries->fi;
   char *iline;
   int dim, sta;
-  long row = 0;
-  int error = 0;
+  //int error = 0; /* WKV */
 
   clear_err();
-  /* Find the first not-comment line */
-
+  /* Find the first non-comment line */
+  
   do 
     {
       iline = mygetline(fi);
-      row++;
       if (iline == NULL) {
-	fprintf(stderr, "Can't read file %s", fi->name);
-	return lvq_errno;
+	//fprintf(stderr, "Can't read file %s", fi->name); /* WKV */
+	//return lvq_errno; /* WKV */
+	ERROR(fi->error); /* WKV */
+	if(lvq_errno) { /* WKV */
+	  fprintf(stderr, "Can't read file %s", fi->name);
+	  return lvq_errno;
+	}
+	/* End of file - empty dataset */
+	entries->dimension = 0;
+	entries->topol = TOPOL_UNKNOWN;
+	entries->neigh = NEIGH_UNKNOWN;
+	entries->xdim = 0;
+	entries->ydim = 0;
+	return ERR_OK;
       }
       
     } while (iline[0] == '#');
@@ -144,7 +154,8 @@ int read_headers(struct entries *entries)
   entries->xdim = get_xdim(iline);
   entries->ydim = get_ydim(iline);
 
-  return error;
+  //return error; /* WKV */
+  return ERR_OK; /* WKV */
 }
 
 /* skip_headers - skip over headers of a file. Used when a file is re-opened. 
@@ -850,6 +861,7 @@ struct data_entry *rewind_entries(struct entries *entries, eptr *ptr)
       if ((current == NULL) && (!entries->flags.totlen_known))
 	{
 	  /* file not loaded into memory */
+	  lvq_errno = 0; /* WKV */
 	  if (!read_entries(entries))
 	    {
 	      fprintf(stderr, "rewind_entries failed\n");

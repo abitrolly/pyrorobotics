@@ -51,6 +51,8 @@ struct file_info {
   } flags;
   int error;                     /* error code or 0 if OK */
   long lineno;                   /* line number we are on */
+  char *buf;                     /* Pointer to input buffer -- WKV 2003-07-23 */
+  int len;                       /* Length of allocated buffer -- WKV 2003-07-23 */
 };
 
 #define fi2fp(fi) ((fi != NULL) ? (fi)->fp : NULL)
