@@ -230,6 +230,9 @@ class PyroImage:
          retval[x] = self.getVal(x, y)
       return retval
 
+   def getDim(self):
+      return self.width, self.height
+
    def getCol(self, x):
       """ Get the entire col, in tuples """
       retval = [0] * self.height
