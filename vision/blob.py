@@ -115,7 +115,7 @@ class PyroImage:
 
    def incr(self, x, y, offset = 0):
       """
-      Method to increment a pixel to a value. offset is r, g, b (0, 1, 2)
+      Method to increment a pixel value. offset is r, g, b (0, 1, 2)
       """
       self.data[(x + y * self.width) * self.depth + offset] += 1
 
@@ -132,23 +132,23 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-   def histogram(self, rows = 10, cols = 10):
+   def histogram(self, cols = 20, rows = 20, initvals = 0):
       """
       Creates a histogram.
       """
-      histogram = Histogram(rows, cols)
+      if not initvals:
+         histogram = Histogram(cols, rows)
+      else:
+         histogram = initvals
       for h in range(self.height):
          for w in range(self.width):
             r = self.get(w, h, 0)
             g = self.get(w, h, 1)
             b = self.get(w, h, 2)
-            red = (int)(r*10)
-            green = (int)(g*10)
-            blue = (int)(b*10)
-            if green == 0: green = 1
-            rg = min(red/green, 9)
-            bg = min(blue/green, 9)
-            histogram.incr(rg, bg)
+            if r == 0: r = 1.0
+            br = min(int(b/float(r) * float(cols - 1)), cols - 1)
+            gr = min(int(g/float(r) * float(rows - 1)), rows - 1)
+            histogram.incr(br, gr)
       return histogram
 
 class Camera(PyroImage):
@@ -190,13 +190,13 @@ class Histogram(PyroImage):
       maxval = 0
       for h in range(self.height):
          for w in range(self.width):
-            maxval = max(maxval, self.data[w + h * self.width])
+            maxval = max(maxval, self.get(w, h))
       for h in range(self.height):
          for w in range(self.width):
             if maxval:
-               print "%d" % int(self.data[w + h * self.width]/float(maxval) * 9.0),
+               print "%5d" % self.get(w, h),
             else:
-               print '.',
+               print ' ',
          print ''
       print ''
 
@@ -409,8 +409,12 @@ if __name__ == '__main__':
       print "Running..."
       image = Camera()
       image.update()
-      histogram = image.histogram()
+      histogram = image.histogram(15, 20)
       histogram.display()
+      for x in range(99):
+         image.update()
+         histogram = image.histogram(15, 20, histogram)
+         histogram.display()
       print "Done!"
    else:
       print "skipping..."
