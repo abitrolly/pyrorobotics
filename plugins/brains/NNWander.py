@@ -15,16 +15,19 @@ class NNBrain(Brain):
    """
    def setup(self):
       """ Init the brain, and create the network. """
+      # create the network
       self.net = Network()
       self.net.addThreeLayers(self.getRobot().get('range', 'count'), 2, 2)
-      self.net.setBatch(0)
       self.net.initialize()
+      # learning parameters
       self.net.setEpsilon(0.5)
       self.net.setMomentum(.1)
       self.net.setLearning(1)
+      # some helpful attributes
       self.counter = 0
       self.doneLearning = 0
       self.maxvalue = self.getRobot().get('range', 'maxvalue')
+      # visualization
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])
@@ -50,9 +53,8 @@ class NNBrain(Brain):
          self.net.setLearning(1)
          print self.counter,
          
-      # First, set inputs and targets:
-      ins = map(self.scale, self.getRobot().get('range', 'value', 'all'))
-      self.net.setInputs([ ins ])
+      # first inputs and targets:
+      inputs = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       # Compute targets:
       if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
          target_trans = 0.0
@@ -66,10 +68,10 @@ class NNBrain(Brain):
          target_rotate = 1.0
       else:
          target_rotate = 0.5
-      self.net.setOutputs([[target_trans, target_rotate]])
-      # next, cycle through inputs/outputs:
-      #print "Learning: trans =", target_trans, "rotate =", target_rotate
-      self.net.sweep()
+      targets = [target_trans, target_rotate]
+      # step
+      self.net.step(input = inputs, output = targets)
+      # print "Learning: trans =", target_trans, "rotate =", target_rotate
       self.hidScat.addPoint( self.net.getLayer('hidden').activation[0],
                              self.net.getLayer('hidden').activation[1], 0 )
       # get the output, and move:

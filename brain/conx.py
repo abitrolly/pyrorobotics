@@ -85,6 +85,7 @@ class Layer:
         self.size = size
         self.displayWidth = size
         self.type = 'Undefined' # determined later by connectivity
+        self.kind = 'Undefined' # mirrors self.type but will include 'Context'
         self.verbosity = 0
         self.log = 0
         self.logFile = ''
@@ -284,10 +285,11 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to setActivations()', \
                    self.activationSet)
-        else:
-            self.activationSet = 1
+        if value < 0 or value > 1:
+            print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
         for i in range(self.size):
             self.activation[i] = value
+        self.activationSet = 1
     def copyActivations(self, arr, symmetric = 0):
         """
         Copies activations from the argument array into
@@ -301,14 +303,15 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet)
-        else:
-            self.activationSet = 1
         if symmetric:
             for i in range(self.size):
                 self.activation[i] = arr[i] - 0.5
         else:
             for i in range(self.size):
+                if arr[i] < 0 or arr[i] > 1:
+                    print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, arr[i]) 
                 self.activation[i] = arr[i]
+        self.activationSet = 1
 
     # target methods
     def getTarget(self):
@@ -320,24 +323,35 @@ class Layer:
         """
         Sets all targets the the value of the argument.
         """
-        self.targetSet = 1
+        if value > 1 or value < 0:
+            raise LayerError, ('Targets for this layer are out of range.', (self.name, value))
+        if not self.targetSet == 0:
+            print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+                  (self.name, self.targetSet)
         for i in range(self.size):
             self.target[i] = value
+        self.targetSet = 1
     def copyTargets(self, arr, symmetric = 0):
         """
         Copies the targets of the argument array into the self.target attribute.
         """
-        self.targetSet = 1
+
         if not len(arr) == self.size:
             raise LayerError, \
                   ('Mismatched target size and layer size in call to copyTargets()', \
                    (len(arr), self.size))
+        if not self.targetSet == 0:
+            print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+                  (self.name, self.targetSet)
         if symmetric:
             for i in range(self.size):
                 self.target[i] = arr[i] - 0.5
         else:
             for i in range(self.size):
+                if arr[i] < 0 or arr[i] > 1:
+                    raise LayerError, ('Targets for this layer are out of range.', (self.name, arr[i]))
                 self.target[i] = arr[i]
+        self.targetSet = 1
 
     # flag methods
     def resetFlags(self):
@@ -517,6 +531,30 @@ class Network:
         self.patterned = 0 # used for file IO with inputs and targets
 
     # general methods
+    def path(self, startLayer, endLayer):
+        """
+        Used in error checking with verifyArchitecture() and in prop_from().
+        """
+        next = {startLayer.name : startLayer}
+        visited = {}
+        while next != {}:
+            for item in next.items():
+                # item[0] : name, item[1] : layer reference
+                # add layer to visited dict and del from next 
+                visited[item[0]] = item[1]
+                del next[item[0]]
+                for connection in self.connections:
+                    if connection.fromLayer.name == item[0]:
+                        if connection.toLayer.name == endLayer.name:
+                            return 1 # a path!
+                        elif next.has_key(connection.toLayer.name):
+                            pass # already in the list to be traversed
+                        elif visited.has_key(connection.toLayer.name):
+                            pass # already been there
+                        else:
+                            # add to next
+                            next[connection.toLayer.name] = connection.toLayer
+        return 0 # didn't find it and ran out of places to go
     def __str__(self):
         """
         Returns string representation of network.
@@ -532,7 +570,14 @@ class Network:
         Returns the number of layers in the network.
         """
         return len(self.layers)
-
+    def getLayerIndex(self, layer):
+        """
+        Given a reference to a layer, returns the index of that layer in self.layers.
+        """              
+        for i in range(len(self.layers)):
+            if layer == self.layers[i]: # shallow cmp
+                return i
+        return -1 # not in list
     # methods for constructing and modifying a network
     def add(self, layer, verbosity = 0):
         """
@@ -548,14 +593,19 @@ class Network:
         """
         fromLayer = self.getLayer(fromName)
         toLayer   = self.getLayer(toName)
+        if self.getLayerIndex(fromLayer) >= self.getLayerIndex(toLayer):
+            raise NetworkError, ('Layers out of order.', (fromLayer.name, toLayer.name))
         if (fromLayer.type == 'Output'):
             fromLayer.type = 'Hidden'
+            fromLayer.kind = 'Hidden'
         elif (fromLayer.type == 'Undefined'):
             fromLayer.type = 'Input'
+            fromLayer.kind = 'Input'
         if (toLayer.type == 'Input'):
-            toLayer.type = 'Hidden'
+            raise NetworkError, ('Connections out of order', (fromLayer.name, toLayer.name))
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
+            toLayer.kind = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
         self.connections[len(self.connections) - 1].setEpsilon(self.epsilon)
     def addThreeLayers(self, inc, hidc, outc):
@@ -779,11 +829,21 @@ class Network:
         should be ordered.
         """
         self.orderedInputs = value
+    def verifyArguments(self, arg):
+        for l in arg:
+            if not type(l) == list:
+                return 0
+            for i in l:
+                if type(i) == list:
+                    return 0
+        return 1
     def setInputs(self, inputs):
         """
         Sets self.input to inputs. self.loadOrder is initalized by not
         random.
         """
+        if not self.verifyArguments(inputs) and not self.patterned:
+            raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
         self.inputs = inputs
         self.loadOrder = range(len(self.inputs)) # not random
         # will randomize later, if need be
@@ -791,6 +851,8 @@ class Network:
         """
         For compatiblity.
         """
+        if not self.verifyArguments(outputs):
+            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', outputs)
         self.setTargets(outputs)
     def setTargets(self, targets):
         """
@@ -983,31 +1045,7 @@ class Network:
         # network should not have directed cycles
         for layer in self.layers:
             if self.path(layer, layer):
-                raise NetworkError, ('Network contains a cycle.', layer.name)
-    def path(self, startLayer, endLayer):
-        """
-        Used in error checking with verifyArchitecture().
-        """
-        next = {startLayer.name : startLayer}
-        visited = {}
-        while next != {}:
-            for item in next.items():
-                # item[0] : name, item[1] : layer reference
-                # add layer to visited dict and del from next 
-                visited[item[0]] = item[1]
-                del next[item[0]]
-                for connection in self.connections:
-                    if connection.fromLayer.name == item[0]:
-                        if connection.toLayer.name == endLayer.name:
-                            return 1 # a path!
-                        elif next.has_key(connection.toLayer.name):
-                            pass # already in the list to be traversed
-                        elif visited.has_key(connection.toLayer.name):
-                            pass # already been there
-                        else:
-                            # add to next
-                            next[connection.toLayer.name] = connection.toLayer
-        return 0 # didn't find it and ran out of places to go
+                raise NetworkError, ('Network contains a cycle.', layer.name)   
     def verifyInputs(self):
         """
         Used in propagate() to verify that the network input
@@ -1164,14 +1202,24 @@ class Network:
         pass
 
     # step method 
-    def step(self):
+    def step(self, **args):
         """
         Does a single step. Calls propagate(), backprop(), and
         change_weights() if learning is set. Use
         self.copyActivations() to set inputs and self.copyTargets() to
-        set targets.
+        set targets according to values passed to step via
+        **args. Must pass associated targets manually. Format for parameters:
+        <layer name> = <activation/target list>
+        
         """
-        self.epoch += 1
+        for item in args.items():
+            layer = self.getLayer(item[0])
+            if layer.type == 'Input':
+                layer.copyActivations(item[1])
+            elif layer.type == 'Output':
+                layer.copyTargets(item[1])
+            else:
+                raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 0 or self.interactive:
@@ -1188,6 +1236,34 @@ class Network:
         return (error, correct, total)
 
     # propagation methods
+    def prop_from(self, startLayers):
+        """
+        Start propagation from the layers in the list
+        startLayers. Make sure startLayers are initialized with the
+        desired activations. NO ERROR CHECKING.
+        """
+        if self.verbosity > 2: print "Partially propagating network:"
+        # find all the layers involved in the propagation
+        propagateLayers = []
+        # propagateLayers should not include startLayers (no loops)
+        for startLayer in startLayers:
+            for layer in self.layers:
+                if self.path(startLayer, layer):
+                    propagateLayers.append(layer)
+        for layer in propagateLayers:
+            if layer.active: 
+                for i in range(layer.size):
+                    layer.netinput[i] = layer.bias[i]
+        for layer in propagateLayers:
+            if layer.active:
+                for connection in self.connections:
+                    if connection.toLayer.name == layer.name:
+                        self.prop_process(connection)
+                    for i in range(layer.size):
+                        layer.activation[i] = self.activationFunction(layer.netinput[i])
+        for layer in propagateLayers:
+            if layer.log and layer.active:
+                layer.writeLog()
     def propagate(self):
         """
         Propagates activation through the network.
@@ -1759,7 +1835,7 @@ class SRN(Network):
         self.prediction = []
         self.initContext = 1
         self.contextLayers = {} # records layer reference and associated hidden layer
-
+       
     # set and get methods for attributes
     def setPrediction(self, value):
         """
@@ -1793,17 +1869,22 @@ class SRN(Network):
         self.learnDuringSequence = value
 
     # methods for constructing and modifying SRN network
-    def addSRNLayers(self, numInput, numHidden, numOutput):
+    def addThreeLayers(self, inc, hidc, outc):
         """
         Creates a three level network with a context layer.
         """
-        self.add(Layer('input', numInput))
-        self.addContext(Layer('context', numHidden), 'hidden')
-        self.add(Layer('hidden', numHidden))
-        self.add(Layer('output', numOutput))
+        self.add(Layer('input', inc))
+        self.addContext(Layer('context', hidc), 'hidden')
+        self.add(Layer('hidden', hidc))
+        self.add(Layer('output', outc))
         self.connect('input', 'hidden')
         self.connect('context', 'hidden')
         self.connect('hidden', 'output')
+    def addSRNLayers(self, inc, hidc, outc):
+        """
+        Wraps SRN.addThreeLayers() for compatibility.
+        """
+        self.addThreeLayers(inc, hidc, outc)
     def addContext(self, layer, hiddenLayerName = 'hidden', verbosity = 0):
         """
         Adds a context layer. Necessary to keep self.contextLayers dictionary up to date. 
@@ -1815,23 +1896,41 @@ class SRN(Network):
                              hiddenLayerName)
         else:
             self.contextLayers[hiddenLayerName] = layer
-
-    # new methods for sweep
+            layer.kind = 'Context'
+    # new methods for sweep, step, propagate
     def copyHiddenToContext(self):
         """
         Uses key to identify the hidden layer associated with each
-        layer in the self.contextLayers dictionary.
+        layer in the self.contextLayers dictionary. 
         """
         for item in self.contextLayers.items():
+            if self.verbosity > 2: print 'Hidden layer: ', self.getLayer(item[0]).activation
+            if self.verbosity > 2: print 'Context layer before copy: ', item[1].activation
             item[1].copyActivations(self.getLayer(item[0]).activation)
+            if self.verbosity > 2: print 'Context layer after copy: ', item[1].activation
     def clearContext(self, value = .5):
         """
-        Clears context layer by reseting context layer flags and
-        setting activation to (default) .5.
+        Clears the context layer. 
         """
-        for layer in self.contextLayers.values():
-            layer.resetFlags()
-            layer.setActivations(value)
+        for context in self.contextLayers.values():
+            context.resetFlags() # hidden activations have already been copied in
+            context.setActivations(value)
+    def propagate(self):
+        """
+        Extends propagate() from Network to automatically deal with context layers.
+        """
+        Network.propagate(self)
+        self.copyHiddenToContext() # must go after, may make display misleading after propagate
+    def step(self, **args):
+        """
+        Extends network step method by automatically copying hidden
+        layer activations to the context layer.
+        """
+        if args.has_key('clearContext'):
+            if args['clearContext']:
+                self.clearContext()
+            del args['clearContext']
+        return Network.step(self, **args)
     def preprop(self, pattern, step):
         """
         Extends preprop() by adding support for clearing context layers
@@ -1860,11 +1959,9 @@ class SRN(Network):
                 self.copyTargets(outLayer, self.inputs[pattern], start)
     def postprop(self, patnum, step):
         """
-        Copies hidden layer activations to context layer by calling
-        self.copyHiddenToContext().
+        Do any necessary post propagation here.
         """
         Network.postprop(self, patnum, step)
-        self.copyHiddenToContext()
     def sweep(self):
         """
         Enables sequencing over Network.sweep().
@@ -1900,6 +1997,7 @@ class SRN(Network):
                     totalCorrect += correct
                     totalCount += total
                 if self.verbosity > 0 or self.interactive:
+                    print 'After propagation ...........................................'
                     self.display()
                     if self.interactive:
                         print "--More-- [quit, go] ",
@@ -1969,6 +2067,8 @@ if __name__ == '__main__':
         net.setPatterns( {"one" : [0, 0, 0], "two" :  [1, 1, 1]} )
         print net.getPattern("one")
         print net.getPattern("two")
+        print "Replacing patterns..."
+        print net.replacePatterns(["one", "two"])
         net.setInputs([ "one", "two" ])
         net.loadInput(0)
         net.resetFlags()
@@ -2063,8 +2163,6 @@ if __name__ == '__main__':
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
         print "XOR Backprop batch mode: .............................."
-        print n.targets
-        print n.inputs
         n.setBatch(1)
         n.reset()
         n.setEpsilon(0.5)
@@ -2078,7 +2176,24 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.train()
+        if ask("Do you want to test prop_from() method?"):
+            n.prop_from([n.getLayer('input')])
+            print "Output activations: ", n.getLayer('output').activation
+            print "Hidden activations: ", n.getLayer('hidden').activation
+            print "Now propagating directly from hidden layer..."
+            n.prop_from([n.getLayer('hidden')])
+            print "Output activations (should not have changed): ",  n.getLayer('output').activation
+            print "Hidden activations (should not have changed): ", n.getLayer('hidden').activation
+            print "Now setting hidden activations..."
+            n.getLayer('hidden').activation = [0.0, 0.0]
+            print "Output activations: ", n.getLayer('output').activation
+            print "Hidden activations: ", n.getLayer('hidden').activation
+            print "Now propagating directly from hidden layer..."
+            n.prop_from([n.getLayer('hidden')])
+            print "Output activations: ",  n.getLayer('output').activation
+            print "Hidden activations: ", n.getLayer('hidden').activation
 
+            
     if ask("Do you want to test an AND network?"):
         print "Creating and running and network..."
         n = Network() 
@@ -2112,6 +2227,8 @@ if __name__ == '__main__':
         n.setStopPercent(0.7)
         n.setResetEpoch(2000)
         n.setResetLimit(0)
+        #n.setInteractive(1)
+        #n.verbosity = 3
         n.train()
 
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
@@ -2163,12 +2280,12 @@ if __name__ == '__main__':
         raam.setResetLimit(0)
         # train:
         raam.train()
+        raam.setLearning(0)
+        raam.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
             print "Filename to save network (.pickle): ",
             filename = sys.stdin.readline().strip()
             raam.saveNetworkToFile(filename)
-            raam.setLearning(0)
-            raam.setInteractive(1)
             raam.sweep()
         if ask("Do you want to save weights of previous network?"):
             print "Filename to save weights (.wts): ",
@@ -2215,12 +2332,12 @@ if __name__ == '__main__':
         n.setResetLimit(0)
         n.setOrderedInputs(1)
         n.train()
+        n.setLearning(0)
+        n.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
             print "Filename to save network (.pickle): ",
             filename = sys.stdin.readline().strip()
             n.saveNetworkToFile(filename)
-            n.setLearning(0)
-            n.setInteractive(1)
             n.sweep()
         if ask("Do you want to save weights of previous network?"):
             print "Filename to save weights (.wts): ",
@@ -2567,18 +2684,18 @@ if __name__ == '__main__':
         else:
             print "Didn't catch exception."
         print "Creating an architecture with a cycle..."
-        n = Network()
-        n.add(Layer('1',1))
-        n.add(Layer('2',1))
-        n.add(Layer('3',1))
-        n.add(Layer('4',1))
-        n.add(Layer('5',1))
-        n.connect('1','3')
-        n.connect('2','3')
-        n.connect('3','4')
-        n.connect('4','3') #cycle
-        n.connect('4','5')
         try:
+            n = Network()
+            n.add(Layer('1',1))
+            n.add(Layer('2',1))
+            n.add(Layer('3',1))
+            n.add(Layer('4',1))
+            n.add(Layer('5',1))
+            n.connect('1','3')
+            n.connect('2','3')
+            n.connect('3','4')
+            n.connect('4','3') #cycle
+            n.connect('4','5')
             n.verifyArchitecture()
         except Exception, err:
             print "Caught exception. ", err
@@ -2612,13 +2729,88 @@ if __name__ == '__main__':
             print "Didn't catch exception."
         print "Creating an architecture with a connection between a layer and itself."
         n = Network()
-        n.add(Layer('1',1))
-        n.add(Layer('2',1))
-        n.connect('1','2')
-        n.connect('2','2')
         try:
+            n.add(Layer('1',1))
+            n.add(Layer('2',1))
+            n.connect('1','2')
+            n.connect('2','2')
             n.verifyArchitecture()
         except Exception, err:
             print "Caught exception. ", err
         else:
             print "Didn't catch exception."
+
+    if ask("Test the new step() method?"):
+        print "Creating 2-2-1 network..."
+        n = Network()
+        n.addThreeLayers(2,2,1)
+        n.setInteractive(1)
+        print "Using step with arguments..."
+        n.step(input = [1.0,0.0], output = [1.0])
+        n.getLayer('input').copyActivations([1.0,1.0])
+        n.getLayer('output').copyTargets([0.0])
+        print "Using step without arguments..."
+        n.step()
+        print "Creating SRN Network..."
+        n = SRN()
+        n.addSRNLayers(3,3,3)
+        n.setInteractive(1)
+        print "Using step with arguments..."
+        n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], clearContext = 1)
+        n.step(input = [0.0,1.0,1.0], output = [0.0, 1.0, 1.0], clearContext = 0)
+        print "Using step withoutarguments..."
+        n.getLayer('input').copyActivations([1.0,0.0,0.0])
+        n.getLayer('output').copyTargets([1.0, 0.0, 0.0])
+        n.clearContext()
+        n.step() 
+
+    if ask("Additional tests?"):
+        try:
+            n = Network()
+            n.add(Layer('1',2))
+            n.add(Layer('2',2))
+            n.add(Layer('3',1))
+            n.connect('2','3')
+            n.connect('1','2')
+            n.verifyArchitecture()
+            n.setInputs([[0.0, 0.0],
+                         [0.0, 1.0],
+                         [1.0, 0.0],
+                         [1.0, 1.0]])
+            n.setTargets([[0.0],
+                          [1.0],
+                          [1.0],
+                          [0.0]])
+            n.setReportRate(100)
+            n.setBatch(0)
+            n.initialize()
+            n.setEpsilon(0.5)
+            n.setMomentum(.975)
+            n.train()
+        except Exception, err:
+            print err
+        try:
+            n = Network()
+            n.add(Layer('input',2))
+            n.add(Layer('output',1))
+            n.add(Layer('hidden',2))
+            n.connect('input','hidden')
+            n.connect('hidden','output')
+            n.verifyArchitecture()
+            n.initialize()
+            n.setEpsilon(0.5)
+            n.setMomentum(.975)
+            #n.setInteractive(1)
+            n.mapInput('input',0)
+            n.mapTarget('output',0)
+            n.setInputs([[0.0, 0.0],
+                         [0.0, 1.0],
+                         [1.0, 0.0],
+                         [1.0, 1.0]])
+            n.setTargets([[0.0],
+                          [1.0],
+                          [1.0],
+                          [0.0]])
+            n.train()
+        except Exception, err:
+            print err

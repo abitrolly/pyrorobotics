@@ -18,7 +18,7 @@ class Reinforce(Brain):
       self.net = SRN()
       self.sensorCount = self.getRobot().get('range', 'count')
       self.net.add(Layer('input', self.sensorCount+2))
-      self.net.add(Layer('context', 2))
+      self.net.addContext(Layer('context', 2), 'hidden')
       self.net.add(Layer('hidden', 2))
       self.net.add(Layer('motorOutput', 2))
       self.net.add(Layer('sensorOutput', self.sensorCount))
@@ -26,7 +26,7 @@ class Reinforce(Brain):
       self.net.connect('context', 'hidden')
       self.net.connect('hidden', 'motorOutput')
       self.net.connect('hidden', 'sensorOutput')
-      self.net.getLayer('context').copyActivations([0.5, 0.5])
+      self.net.clearContext(.5)
 
       self.net.setBatch(0)
       self.net.initialize()
@@ -142,6 +142,7 @@ class Reinforce(Brain):
       tr = self.PorM(next_motors[1], random()*self.weight)
       self.target_trans = max(min(tt, 1), 0)
       self.target_rotate = max(min(tr, 1), 0)
+      # there is no backprop() between this an the last call of copyTarget()
       self.net.getLayer('motorOutput').copyTarget([self.target_trans,
                                                    self.target_rotate])
       
