@@ -63,10 +63,10 @@ def process_options():
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
                                    "r:b:hg:s:a:i:e:w:v:", \
-                                   ["robot", "brain", "help", \
-                                    "gui", "sim", "args",\
-                                    "init", "eval", "world",
-                                    "services"])
+                                   ["robot=", "brain=", "help", \
+                                    "gui=", "sim=", "args=",\
+                                    "init=", "eval=", "world=",
+                                    "services="])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
