@@ -166,6 +166,7 @@ class RAVQ:
             self.process() 
         if self.verbosity > 2: print self
         self.time += 1
+        return (self.newWinnerIndex, self.winner)
 
     # attribute methods
     def getNewWinner(self):
@@ -285,7 +286,7 @@ class RAVQ:
         Calculate distance map.
         """
         map = []
-        for x, y in [(x,y) for x in self.models for y in self.models]:
+        for x, y in [(x.vector,y.vector) for x in self.models for y in self.models]:
             map.append(euclideanDistance(x,y,self.mask))
         return map
 
@@ -308,10 +309,13 @@ class RAVQ:
         s += self.modelString()
         if self.printDistance:
             s += "Distance map:\n"
-            s += stringArray(self.distanceMap(), 1, len(self.models), format="%4.2f ")
+            s += self.distanceMapAsString()
         if self.verbosity > 0:
             s += str(self.models)
         return s
+
+    def distanceMapAsString(self):
+        return stringArray(self.distanceMap(), 1, len(self.models), format="%4.2f ")
 
     def saveRAVQToFile(self, filename):
         import pickle
@@ -329,13 +333,18 @@ class RAVQ:
         s = ""
         cnt = 0
         totalCount = 0
+        totalIncompatibility = 0.0
         for m in self.models:
             s += ("%4d Model: " % (cnt + 1)) + stringArray(m.vector) 
-            s += "     Count: " + str(m.counter)
+            sum = 0.0
+            for b in m.contents:
+                sum += euclideanDistance(m.vector, b, self.mask)
+            totalIncompatibility += sum
+            s += "     Count: %d Buffers: %d Incompatibility: %f\n" % (m.counter, len(m.contents), sum)
             totalCount += m.counter
-            s += "\n"
             cnt += 1            
-        return ("%d Model vectors:\n" % cnt) + s + "Total model vectors : %d\nTotal mapped vectors: %d\n" % (cnt, totalCount)
+        return ("%d Model vectors:\n" % cnt) + s + "Total model vectors : %d\nTotal mapped vectors: %d\nTotal incompatibility: %f\n" % \
+               (cnt, totalCount, totalIncompatibility)
     def bufferString(self):
         s = "Buffer:\n"
         for array in self.buffer:
@@ -387,6 +396,7 @@ class ARAVQ(RAVQ):
         next time step anyway.
         """
         if self.deltaWinner != 'No Winner' and self.learning:
+            if self.verbosity > 0: print "LEARNING: was:", self.models[self.newWinnerIndex].vector, "delta:", self.deltaWinner
             self.models[self.newWinnerIndex].vector += self.deltaWinner
         else:
             pass 
@@ -402,20 +412,25 @@ if __name__ == '__main__':
     print "Creating a RAVQ using all possible lists of 8 bits"
     print "------------------------------------------------------------"
     bitlist = makeBitList()
-    #parameters are buffer size, epsilon, and delta
+    #parameters are buffer size, epsilon, delta, and history size
     ravq = RAVQ(4, 2.1, 1.1, 5)
     #ravq.setVerbosity(2)
     for bits in bitlist:
         ravq.input(bits)
     print ravq
+    print "Distance map:"
+    print ravq.distanceMapAsString()
 
     print "Creating an adaptive RAVQ using all possible lists of 8 bits"
     print "------------------------------------------------------------"
+    #parameters are buffer size, epsilon, delta, history size, and alpha (learning rate)
     ravq = ARAVQ(4, 2.1, 1.1, 2, .2)
     #ravq.setVerbosity(2)
     for bits in bitlist:
         ravq.input(bits)
     print ravq
+    print "Distance map:"
+    print ravq.distanceMapAsString()
 
     print "Creating a RAVQ using a sequence of real-valued lists"
     print "------------------------------------------------------------"
@@ -432,14 +447,16 @@ if __name__ == '__main__':
     
     print "Test the masking capability and distance measures"
     print "------------------------------------------------------------"
-    print ravq.mask
-    # test masking functionality in euclidean distance calc's
+    print "mask:", ravq.mask
+    print "Test masking functionality in euclidean distance calc's:", 
     print euclideanDistance(Numeric.array([1,2]),
                             Numeric.array([3,5]),
                             Numeric.array([1,0]))
     print ravq
-
+    print "Saving to file..."
     ravq.saveRAVQToFile('test.ravq')
+    print "Loading from file..."
     ravq.loadRAVQFromFile('test.ravq')
+    print "Comparing after save..."
     print ravq
-
+    print "Done testing!"

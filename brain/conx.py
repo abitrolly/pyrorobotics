@@ -5,10 +5,14 @@
     ----------------------------------------------------
     (c) 2001-2004, Developmental Robotics Research Group
     ----------------------------------------------------
+
+    This file implements the major classes and functions for
+    making artificial neural networks in Python. Part of the
+    Pyro project.
 """
 import Numeric, math, random, time, sys, signal, operator
 
-version = "6.15"
+version = "6.16"
 
 def loadNetworkFromFile(filename):
     """
@@ -20,23 +24,16 @@ def loadNetworkFromFile(filename):
     f.close()
     return network
 
-# better to use Numeric.add.reduce() when you know that "a" is a Numeric list
-def sum(a):
+def ndim(n, *args):
     """
-    Sums elements in a sequence.
+    Makes a multi-dimensional array of random floats. (Replaces RandomArray).
     """
-    mysum = 0
-    for n in a:
-        mysum += n
-    return mysum
-
-def ndim(n, *args): 
-     if not args: 
+    if not args: 
         return [random.random() for i in xrange(n)]
-     A = [] 
-     for i in range(n):
-         A.append( ndim(*args) ) 
-     return A 
+    A = [] 
+    for i in range(n):
+        A.append( ndim(*args) ) 
+    return A 
 
 def randomArray(size, bound):
     """
@@ -46,13 +43,6 @@ def randomArray(size, bound):
         size = (size,)
     temp = Numeric.array( ndim(*size) ) * (2.0 * bound)
     return temp - bound
-
-# better to use array.tolist() when you know that it has a tolist()
-def toArray(thing):
-    """
-    Converts any sequence (such as a NumericArray) to a Python List.
-    """
-    return [x for x in thing]
 
 def displayArray(name, a, width = 0):
     """
@@ -343,12 +333,12 @@ class Layer:
     # activation methods
     def getActivationsList(self):
         """
-        Returns node activations in list form.
+        Returns node activations in list (copy) form.
         """
         return self.activation.tolist()
     def getActivations(self):
         """
-        Returns node activations in (Numeric) array form.
+        Returns node activations in (Numeric) array (pointer) form.
         """
         return self.activation
     def setActivations(self, value):
@@ -754,6 +744,20 @@ class Network:
             layer.resetFlags()
 
     # set and get methods for attributes
+    def putActivations(self, dict):
+        """
+        Puts a dict of name: activations into their respective layers.
+        """
+        for name in dict:
+            self.layersByName[name].copyActivations( dict[name] )
+    def getActivationsDict(self, nameList):
+        """
+        Returns a dictionary of layer names that map to a list of activations.
+        """
+        retval = {}
+        for name in nameList:
+            retval[name] = self.layersByName[name].getActivationsList()
+        return retval
     def getLayer(self, name):
         """
         Returns the layer with the argument (string) name.
