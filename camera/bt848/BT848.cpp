@@ -58,9 +58,9 @@ PyObject *BT848::updateMMap( ) {
   int pos = 0;
   for (int j=0; j<height; j++) {
     for (int k=0; k<width; k++) {
-      image[pos + 2] = *mmptr++;            /* blue */
+      image[pos + 0] = *mmptr++;            /* blue */
       image[pos + 1] = *mmptr++;            /* green */
-      image[pos + 0] = *mmptr++;            /* red */
+      image[pos + 2] = *mmptr++;            /* red */
       *mmptr++;                     /* NULL byte */
       pos += 3;
      }
