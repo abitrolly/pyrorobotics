@@ -64,12 +64,6 @@ class VisPsom(psom):
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.canvas.pack(side=LEFT)
-      f = Frame(self.win)
-      f.pack(side=RIGHT)
-      b = Button(f, text = "Show Count", command=self.showcount)
-      b.pack()
-      b = Button(f, text = "Clear", command=self.clearfill)
-      b.pack()
       
       self.cells = []
       self.cellhash = {}
@@ -82,17 +76,30 @@ class VisPsom(psom):
             y0 = (cellwidth * y) + self.vis_padding
             x1 = x0 + (self.vis_radius * 2)
             y1 = y0 + (self.vis_radius * 2)
-            cell = self.canvas.create_oval(x0, y0, x1, y1)
-            self.cells[y].append({"cell" : cell, "count" : 0})
+            cell = self.canvas.create_oval(x0, y0, x1, y1, fill='white',
+                                           tags = 'cell')
+            center = ((x0 + x1)/2, (y0 + y1)/2)
+            text = self.canvas.create_text(center[0], center[1],
+                                    text = "0",
+                                    fill = 'red',
+                                    tags = 'count')
+            self.cells[y].append({"cell" : cell, "text" : text, "count" : 0})
             self.cellhash[cell] = (x, y)
 
+      self.canvas.tag_lower('cell', 'count')
+            
 #      self.win.mainloop()
 
    def canvas_clicked_up(self, event):
-      celllist = self.canvas.find_closest(event.x, event.y)
-      cell = celllist[0]
-      box = self.canvas.bbox(cell)
-      if (box[0] < event.x < box[2]) and (box[1] < event.y < box[3]):
+      celllist = self.canvas.find_overlapping(event.x, event.y,
+                                              event.x, event.y)
+      cell = None
+      for item in celllist:
+         if item in self.cellhash.keys():
+            cell = item
+            break
+                                          
+      if cell:
          x, y = self.cellhash[cell]
          vec = self.get_model_vector(point(x, y))
          if x == self.last_x and y == self.last_y:
@@ -110,23 +117,24 @@ class VisPsom(psom):
                      % (x, y, self.last_x, self.last_y))
 
    def canvas_clicked_down(self, event):
-      celllist = self.canvas.find_closest(event.x, event.y)
-      cell = celllist[0]
-      box = self.canvas.bbox(cell)
-      if (box[0] < event.x < box[2]) and (box[1] < event.y < box[3]):
+      celllist = self.canvas.find_overlapping(event.x, event.y,
+                                              event.x, event.y)
+      cell = None
+      for item in celllist:
+         if item in self.cellhash.keys():
+            cell = item
+            break
+
+      if cell:
          self.last_x, self.last_y = self.cellhash[cell]
 
-   def showcount(self):
-      self.canvas.delete('count')
-      for list in self.cells:
-         for item in list:
-            coords = self.canvas.coords(item["cell"])
-            center = ((coords[0] + coords[2])/2, (coords[1] + coords[3])/2)
-            self.canvas.create_text(center[0], center[1],
-                                    text = str(item["count"]),
-                                    fill = 'red',
-                                    tags = 'count')
-      
+   def inccount(self, x, y):
+      """
+      Update the hit count of a cell, and change the label.
+      """
+      self.cells[y][x]["count"] += 1
+      self.canvas.itemconfigure(self.cells[y][x]["text"],
+                                text = str(self.cells[y][x]["count"]))
 
    def _setcell(self, x, y, level):
       self.canvas.itemconfigure(self.cells[y][x]["cell"],
@@ -157,7 +165,7 @@ class VisPsom(psom):
       retval = psom.map(self,vector)
       pt = retval.point.x, retval.point.y
       self.history[pt] = ACT_MAX
-      self.cells[pt[1]][pt[0]]["count"] += 1
+      self.inccount(pt[0], pt[1])
       self._updatefill()
       return retval
 
@@ -165,7 +173,7 @@ class VisPsom(psom):
       retval = psom.train(self,vector)
       pt = retval.point.x, retval.point.y
       self.history[pt] = ACT_MAX
-      self.cells[pt[1]][pt[0]]["count"] += 1
+      self.inccount(pt[0], pt[1])
       self._updatefill()
       return retval
 
