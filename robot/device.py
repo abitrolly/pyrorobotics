@@ -1,9 +1,9 @@
 
 import types, random
 
-def serviceDirectoryFormat(serviceDict, retdict = 1, showstars = 0):
+def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
     """
-    Takes a service directory dictionary and makes it presentable for viewing.
+    Takes a device directory dictionary and makes it presentable for viewing.
 
     Also takes a flag to indicate if it should return a dictionary (for * listings)
     or a list (for regular directory content listing).
@@ -16,9 +16,9 @@ def serviceDirectoryFormat(serviceDict, retdict = 1, showstars = 0):
         retval = {}
     else:
         retval = []
-    for keyword in serviceDict:
-        #print keyword, type(serviceDict[keyword])
-        if type(serviceDict[keyword]) == types.InstanceType:
+    for keyword in deviceDict:
+        #print keyword, type(deviceDict[keyword])
+        if type(deviceDict[keyword]) == types.InstanceType:
             # HACK: to make it so range is an alias link
             if keyword == "range" and showstars:
                 keyword = "*" + keyword
@@ -28,21 +28,21 @@ def serviceDirectoryFormat(serviceDict, retdict = 1, showstars = 0):
                 retval.append( keyword + "/")
         else:
             if retdict:
-                retval[keyword] = serviceDict[keyword]
+                retval[keyword] = deviceDict[keyword]
             else:
                 retval.append( keyword )
     return retval
 
 class WindowError(AttributeError):
-    """ Service Window Error """
+    """ Device Window Error """
 
-class ServiceError(AttributeError):
-    """ Used to signal service problem """
+class DeviceError(AttributeError):
+    """ Used to signal device problem """
 
-class Service:
-    """ A basic service class """
+class Device:
+    """ A basic device class """
 
-    def __init__(self, serviceType = 'unspecified', visible = 0):
+    def __init__(self, deviceType = 'unspecified', visible = 0):
         self.devData = {}
         self.devDataFunc = {} # not currently working
         self.subDataFunc = {}
@@ -50,7 +50,7 @@ class Service:
         self.dev = 0
         self.devData["active"] = 1
         self.devData["visible"] = visible
-        self.devData["type"] = serviceType
+        self.devData["type"] = deviceType
         self.devData["state"] = "stopped"
         if visible:
             self.makeWindow()
@@ -71,7 +71,7 @@ class Service:
         elif self.devData["rawunits"] == "METERS":
             pass # ok
         else:
-            raise AttributeError, "service can't work in rawunits as %s" % self.devData["rawunits"]
+            raise AttributeError, "device can't work in rawunits as %s" % self.devData["rawunits"]
         if noise > 0:
             if random.random() > .5:
                 raw += (raw * (noise * random.random()))
@@ -107,27 +107,27 @@ class Service:
         self.devData["active"] = value
         return "Ok"
 
-    def startService(self):
+    def startDevice(self):
         self.devData["state"] = "started"
         return self
 
-    def stopService(self):
+    def stopDevice(self):
         self.devData["state"] = "stopped"
         return "Ok"
 
     def makeWindow(self):
-        raise WindowError, "No Service Window Defined"
+        raise WindowError, "No Device Window Defined"
 
     def updateWindow(self):
-        raise WindowError, "No Service Window Defined"
+        raise WindowError, "No Device Window Defined"
 
-    def getServiceData(self):
+    def getDeviceData(self):
         return {}
 
-    def getServiceState(self):
+    def getDeviceState(self):
         return self.devData["state"]
 
-    def updateService(self):
+    def updateDevice(self):
         pass
 
     def postSet(self):
@@ -154,7 +154,7 @@ class Service:
                 tmp.update( dict([("*" + key + "/", self.groups[key]) for key in self.groups]))
             else:
                 tmp.update( dict([(key + "/", self.groups[key]) for key in self.groups]))
-            return serviceDirectoryFormat(tmp, 0)
+            return deviceDirectoryFormat(tmp, 0)
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
             return self.devData[path[0]]
@@ -165,7 +165,7 @@ class Service:
         if len(path) == 1: # no specific data request
             #tmp = self.subData.copy()
             #tmp.update( self.subDataFunc )
-            return serviceDirectoryFormat(self.subDataFunc, 0)
+            return deviceDirectoryFormat(self.subDataFunc, 0)
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]

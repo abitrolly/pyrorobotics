@@ -11,17 +11,17 @@ DEG90RADS = 0.5 * pi
 COSDEG90RADS = cos(DEG90RADS) / 1000.0
 SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
-from pyro.robot.service import Service, ServiceError
+from pyro.robot.device import Device, DeviceError
 
-class PlayerService(Service):
+class PlayerDevice(Device):
     def __init__(self, dev, type, groups = {}):
-        Service.__init__(self, type)
+        Device.__init__(self, type)
         self.groups = groups
         self.dev = dev
         self.name = type
-        self.startService()
+        self.startDevice()
 
-    def startService(self):
+    def startDevice(self):
         try:
             self.dev.start(self.name)
             time.sleep(.5)
@@ -30,23 +30,23 @@ class PlayerService(Service):
             self.dev = 0
         return self
 
-    def checkService(self):
+    def checkDevice(self):
         if self.dev == 0:
             print "Device '%s' not available" % self.name
             return 0
         return 1
 
-    def stopService(self):
-        if self.checkService():
+    def stopDevice(self):
+        if self.checkDevice():
             self.dev.stop(self.name)
             self.dev.__dict__[self.name] = {}
 
-    def getServiceData(self, pos = 0):
-        if self.checkService():
+    def getDeviceData(self, pos = 0):
+        if self.checkDevice():
             return self.dev.__dict__[self.name][pos]
 
-    def getServiceState(self):
-        if self.checkService():
+    def getDeviceState(self):
+        if self.checkDevice():
             if self.dev.__dict__[self.name] != {}:
                 return "started"
             else:
@@ -58,7 +58,7 @@ class PlayerService(Service):
             x, y, th = function(self.dev)
             return (x / 1000.0, y / 1000.0, th % 360)
         else:
-            raise ServiceError, "Function 'getPose' is not available for service '%s'" % self.name
+            raise DeviceError, "Function 'getPose' is not available for device '%s'" % self.name
 
 
     def setPose(self, xM, yM, thDeg):
@@ -67,11 +67,11 @@ class PlayerService(Service):
         if function != None:
             return function( self.dev, xM * 1000.0, yM * 1000.0, thDeg % 360)
         else:
-            raise ServiceError, "Function 'setPose' is not available for service '%s'" % self.name
+            raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.name
 
-class PlayerSonarService(PlayerService):
+class PlayerSonarDevice(PlayerDevice):
     def __init__(self, dev, name):
-        PlayerService.__init__(self, dev, name)
+        PlayerDevice.__init__(self, dev, name)
         self.sonarGeometry = self.dev.get_sonar_geometry()
         self.groups = {'all': range(16),
                        'front': (3, 4),
@@ -129,9 +129,9 @@ class PlayerSonarService(PlayerService):
         y = self.rawToUnits(self.sonarGeometry[pos][1]) 
         return sin(thr) * dist
 
-class PlayerLaserService(PlayerService):
+class PlayerLaserDevice(PlayerDevice):
     def __init__(self, dev, name):
-        PlayerService.__init__(self, dev, name)
+        PlayerDevice.__init__(self, dev, name)
         count = int((self.dev.laser[0][0][1] - self.dev.laser[0][0][0]) / self.dev.laser[0][0][2] + 1)
         part = int(count/8)
         start = 0
@@ -175,21 +175,21 @@ class PlayerLaserService(PlayerService):
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
-class PlayerCommService(PlayerService):
+class PlayerCommDevice(PlayerDevice):
 
     def __init__(self, dev, name):
-        PlayerService.__init__(self, dev, name)
+        PlayerDevice.__init__(self, dev, name)
         self.messages = []
     
     def sendMessage(self, message):
         if self.dev.comms == {}:
-            print "Need to startService('comm') in robot: message not sent"
+            print "Need to startDevice('comm') in robot: message not sent"
             return
         self.dev.send_message(message)
 
     def getMessages(self):
         if not 'comms' in dir(self.dev) or self.dev.comms == {}:
-            raise ServiceError, "Need to startService('comm') in robot"
+            raise DeviceError, "Need to startDevice('comm') in robot"
         #if self.dev.comms[0] != '':
         #    self.update() # this is update in robot
         tmp = self.messages
@@ -197,16 +197,16 @@ class PlayerCommService(PlayerService):
         self.messages = []
         return tmp
 
-    def updateService(self):
+    def updateDevice(self):
         for i in self.dev.comms:
             msg = self.dev.get_comms()
             if msg:
                 self.messages.append( msg )
 
-class PlayerPTZService(PlayerService):
+class PlayerPTZDevice(PlayerDevice):
 
     def __init__(self, dev, name):
-        PlayerService.__init__(self, dev, name)
+        PlayerDevice.__init__(self, dev, name)
         self.origPose = (0, 0, 120)
 
     def init(self):
@@ -307,7 +307,7 @@ class PlayerPTZService(PlayerService):
     def getMinZoom(self):
         return 120
 
-class PlayerGripperService(PlayerService):
+class PlayerGripperDevice(PlayerDevice):
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
 
@@ -366,7 +366,7 @@ class PlayerRobot(Robot):
         self.port = port
         self.name = name
         self.connect() # set self.dev to player robot
-        # for some basic services:
+        # for some basic devices:
         # Make sure sonar is before laser, so if you have
         # laser, it will be the default 'range' device
         for device in ["power", "position", "sonar", "laser",
@@ -377,28 +377,28 @@ class PlayerRobot(Robot):
             devNameList = map(lambda triplet: triplet[0], devList)
             if device in devNameList:
                 if device == "ptz":
-                    self.devDataFunc[device] = PlayerPTZService(self.dev, "ptz")
+                    self.devDataFunc[device] = PlayerPTZDevice(self.dev, "ptz")
                 elif device == "comms":
-                    self.devDataFunc[device] = PlayerCommService(self.dev, "comms")
+                    self.devDataFunc[device] = PlayerCommDevice(self.dev, "comms")
                 elif device == "gripper":
-                    self.devDataFunc[device] = PlayerGripperService(self.dev, "gripper")
+                    self.devDataFunc[device] = PlayerGripperDevice(self.dev, "gripper")
                 elif device == "laser":
-                    self.devDataFunc[device] = PlayerLaserService(self.dev, "laser")
+                    self.devDataFunc[device] = PlayerLaserDevice(self.dev, "laser")
                     self.devDataFunc["range"] = self.devDataFunc["laser"]
                 elif device == "sonar":
-                    self.devDataFunc[device] = PlayerSonarService(self.dev, "sonar")
+                    self.devDataFunc[device] = PlayerSonarDevice(self.dev, "sonar")
                     self.devDataFunc["range"] = self.devDataFunc["sonar"]
                 else:
-                    self.devDataFunc[device] = PlayerService(self.dev, device)
-            #self.supports["blob"] = PlayerService(self.dev, "blobfinder")
-            #self.supports["power"] = PlayerService(self.dev, "power")
-            #self.supports["position"] = PlayerService(self.dev, "position")
-            #self.supports["sonar"] = PlayerService(self.dev, "sonar")
-            #self.supports["laser"] = PlayerService(self.dev, "laser")
-            #self.supports["ptz"] = PlayerPTZService(self.dev, "ptz")
-            #self.supports["gps"] = PlayerService(self.dev, "gps")
-            #self.supports["bumper"] = PlayerService(self.dev, "bumper")
-            #self.supports["truth"] = PlayerService(self.dev, "truth")
+                    self.devDataFunc[device] = PlayerDevice(self.dev, device)
+            #self.supports["blob"] = PlayerDevice(self.dev, "blobfinder")
+            #self.supports["power"] = PlayerDevice(self.dev, "power")
+            #self.supports["position"] = PlayerDevice(self.dev, "position")
+            #self.supports["sonar"] = PlayerDevice(self.dev, "sonar")
+            #self.supports["laser"] = PlayerDevice(self.dev, "laser")
+            #self.supports["ptz"] = PlayerPTZDevice(self.dev, "ptz")
+            #self.supports["gps"] = PlayerDevice(self.dev, "gps")
+            #self.supports["bumper"] = PlayerDevice(self.dev, "bumper")
+            #self.supports["truth"] = PlayerDevice(self.dev, "truth")
         # default values
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
