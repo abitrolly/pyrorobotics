@@ -30,7 +30,7 @@ pyro-$(PYRO_VERSION).tgz: Makefile
 	mv *.tgz tars/ || true
 	make clean; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude wikiparser.php --exclude stylesheet.css --exclude knoppix --exclude pyro/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
 	$(RM) -f tars/pyro-latest.tgz
-	ln -s pyro-$(PYRO_VERSION).tgz 
+	cd tars; ln -s pyro-$(PYRO_VERSION).tgz pyro-latest.tgz
 
 Makefile.cfg:
 	$(PYTHON_BIN) configure.py
