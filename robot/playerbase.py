@@ -4,7 +4,7 @@ from pyro.robot import *
 from math import pi, cos, sin
 from os import getuid
 from pyro.robot.driver.player import *
-import random
+import random, time
 
 PIOVER180 = pi / 180.0
 DEG90RADS = 0.5 * pi
@@ -149,12 +149,14 @@ class PlayerBase(Robot):
 
     def startService(self, item):
         self.dev.start(item)
+        print "Starting service '%s'..." % item
+        time.sleep(1)
 
     def stopService(self, item):
         self.dev.stop(item)
 
     def hasService(self, item):
-        return item in dir(self.dev)
+        return item in dir(self.dev) and self.dev.__dict__[item] != {}
 
     def getServiceData(self, item):
         return self.dev.__dict__[item][0]
