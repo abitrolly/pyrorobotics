@@ -40,10 +40,10 @@ for module in args:
             print "}}}\n"
         if moduleName != module:
             if moduleName:
-                print """This method is defined in ["%s"]\n""" % moduleName
+                print """This class is defined in ["%s"]\n""" % moduleName
                 continue
             else:
-                print "This method is defined elsewhere.\n"
+                print "This class is defined elsewhere.\n"
         for m in dirList:
             exec("obj = %s.%s.%s" % (module, i, m))
             mType = type(obj)
