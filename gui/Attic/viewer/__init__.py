@@ -9,22 +9,24 @@ class KheperaViewer(drawable.Drawable):
    A class to view all the sensor data of the Khepera at once.
    """
 
-   def __init__(self, imageSize):
+   def __init__(self, imageSize, color=1, radius=25):
       """
       Imagesize needs to be a (width, height) tuple, or None.  If it is None,
       we will assume that there is no camera attached.
+
+      If color is 0, the KheperaViewer will display in grayscale.  It is in
+      color by default.
+
+      Radius is the radius of the center Khepera circle.  The size of the
+      whole viewer is calculated with respect to this measure.
       """
       self.imageSize = imageSize
       self.win = Tk()
       if not self.imageSize:
-         self.radius = 25
+         self.radius = radius
       else:
          #inscribe the image in the circle representing the robot
-         r = int(sqrt((imageSize[0]/2)**2 + (imageSize[1]/2)**2)) + 3
-         if r < 25:
-            self.radius = 25
-         else:
-            self.radius = r
+         self.radius = int(sqrt((imageSize[0]/2)**2 + (imageSize[1]/2)**2)) + 3
          
 
       self.maxVals = {
@@ -32,9 +34,12 @@ class KheperaViewer(drawable.Drawable):
          "light" : 200.0,  #???
          "camera" : 255}
          
-
+      if color:
+         bg = 'blue'
+      else:
+         bg = 'white'
       self.canvas = Canvas(self.win, height = self.rad(7),
-                           width = self.rad(7), bg = 'blue')
+                           width = self.rad(7), bg = bg)
       
       self.circle = self.canvas.create_oval(self.rad(2.5),
                                             self.rad(2.5),
@@ -52,12 +57,20 @@ class KheperaViewer(drawable.Drawable):
          10.0,  #5
          280.0, #6
          250.0] #7
+
+      if color:
+         fill = 'red'
+         stipple = ''
+      else:
+         fill = 'white'
+         stipple = 'gray75'
       for i in range(8):
          self.ir_circle.append(self.canvas.create_arc(self.rad(2.5),
                                                       self.rad(2.5),
                                                       self.rad(4.5),
                                                       self.rad(4.5),
-                                                      fill = 'red',
+                                                      fill = fill,
+                                                      stipple = stipple,
                                                       tags = 'ir',
                                                       start = ir_starts[i],
                                                       extent = 10.0))
@@ -85,22 +98,25 @@ class KheperaViewer(drawable.Drawable):
          self.light_circle.append(arc)
 
       if imageSize:
-         print imageSize
          self.photo = ImageTk.PhotoImage("L", imageSize)
-         print self.photo
          self.camera_view = self.canvas.create_image(self.rad(3.5),
                                                      self.rad(3.5),
                                                      tags = 'camera',
                                                      image=self.photo)
-
+      if color:
+         fill='white'
+      else:
+         fill='black'
       self.motor_line = self.canvas.create_line(self.rad(5.75), self.rad(4.25),
                                                 self.rad(5.75), self.rad(4.25),
                                                 self.rad(5.75), self.rad(4.25),
                                                 self.rad(5.75), self.rad(4.25),
                                                 arrow = LAST,
-                                                arrowshape = (7, 7, 3),
-                                                width = 4,
-                                                fill = 'white',
+                                                arrowshape = (int(self.radius/3),
+                                                              int(self.radius/3),
+                                                              3),
+                                                width = int(self.radius/6),
+                                                fill = fill,
                                                 tags = 'motor')
                                                
       self.canvas.tag_lower('circle', 'camera')
@@ -146,6 +162,7 @@ class KheperaViewer(drawable.Drawable):
                                         graystr)
          self.photo.paste(img, None)
 
+
    def scale(self, percent):
       """
       Scale the bounding box of for the ir arcs
@@ -162,7 +179,7 @@ class KheperaViewer(drawable.Drawable):
       return int(val * self.radius)
    
 if __name__ == "__main__":
-   print "Trying w/o vision:"
+   print "Trying w/o vision (color):"
    kv = KheperaViewer(None)
    kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
              [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 199.0],
@@ -173,7 +190,19 @@ if __name__ == "__main__":
              [60.0, 20.0, 55.0, 75.0, 125.0, 135.0, 75.0, 5.0, 90.0],
              [.9, .75])
    raw_input()
-
+   
+   print "Trying w/o vision (b/w):"
+   kv = KheperaViewer(None, 0)
+   kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
+             [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 200.0, 199.0],
+             [.3, 0])
+   print "press RETURN..."
+   raw_input()
+   kv.update([.3, .9, .5, .8, .95, .8, .3, .7],
+             [60.0, 200.0, 55.0, 75.0, 125.0, 135.0, 75.0, 5.0, 90.0],
+             [.9, .75])
+   raw_input()
+   
    print "Testing w/vision:"
    kv = KheperaViewer((20, 10))
    a = [int(x*(200.0/255.0)) for x in range(200)]
