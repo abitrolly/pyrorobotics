@@ -36,11 +36,14 @@ class TkMap(Map, Tkinter.Tk):
         self.canvas_width_diff = int(self.winfo_width()) - int(self.canvas["width"])
         self.canvas_height_diff = int(self.winfo_height()) - int(self.canvas["height"])
 
-    def addText(self, x, y, label):
+    def addText(self, x, y, label, **args):
+        """ Millimeters """
         x_pos = (float(x)/self.colScaleMM) * self.colScale
         y_pos = self.height - ((float(y)/self.rowScaleMM) * self.rowScale)
-        self.canvas.create_oval(x_pos-1, y_pos-1, x_pos+1, y_pos+1, fill="black")
-        self.canvas.create_text(x_pos+2, y_pos, text=label, anchor="w")
+        if "fill" not in args:
+            args["fill"] = "black"
+        self.canvas.create_oval(x_pos-1, y_pos-1, x_pos+1, y_pos+1, **args)
+        self.canvas.create_text(x_pos+2, y_pos, text=label, anchor="w", **args)
 
     def addKeyBindings(self, keybindings):
         """ Bind keys and mice events to the canvas """
@@ -142,8 +145,9 @@ class TkSimpleMap(TkMap):
                        x_meter * 50, y_meter * 50, # pixels
                        x_meter * 1000, y_meter * 1000, # MM
                        title)
-    def addText(self, x, y, label):
-        TkMap.addText(self, x * 1000, y * 1000, label)
+    def addText(self, x, y, label, **args):
+        """ Meters """
+        TkMap.addText(self, x * 1000, y * 1000, label, **args)
 
 if __name__ == '__main__':
     print "Testing TkMap()..."

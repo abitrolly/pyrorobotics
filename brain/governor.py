@@ -34,6 +34,14 @@ class Governor:
             retval.append( euclideanDistance(vector, m.vector, self.ravq.mask) )
         return retval
 
+    def winner(self):
+        index = self.ravq.newWinnerIndex
+        if index >= 0:
+            name = self.ravq.models.names[index]
+        else:
+            name = index
+        return name, self.ravq.winner
+
     def input(self, vector):
         index, modelVector = self.ravq.input(vector)
         if index >= 0:
