@@ -1,0 +1,3 @@
+#!/bin/sh
+
+player ../configs/Player/pioneer.cfg
