@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h>
 
 #include "header.h"
 #include "sim.h"
@@ -85,7 +86,7 @@ void OpenProgram()
   but= but->Next=CreateButton(RESET_ROBOT,"reset",WINDOW_W/2,PLATE1_H+168);
   but= but->Next=CreateButton(QUIT,"quit",WINDOW_W-40,PLATE1_H+168);
 
-	//but= but->Next=CreateButton(COMMAND,"command",73,PLATE1_H+168);
+  //but= but->Next=CreateButton(COMMAND,"command",73,PLATE1_H+168);
   //but= but->Next=CreateButton(KHEPERA_BUTTON,">",WINDOW_W/2+220,40);
   //but= but->Next=CreateButton(NEW_ROBOT,"new",WINDOW_W/2+48,WINDOW_W/2-34);
   //but= but->Next=CreateButton(LOAD_ROBOT,"load",WINDOW_W/2+92,WINDOW_W/2-34);
@@ -126,7 +127,7 @@ struct Button *FindButton(struct Button *current, u_char value) {
 int main(int argc,char *argv[]) {
   char              text[TEXT_BUF_SIZE],name[TEXT_BUF_SIZE],
                     file_name[TEXT_BUF_SIZE];
-	char *rmsg;
+  char              *rmsg;
   boolean           quit=FALSE,ok,queryflag=FALSE,graphics;
   struct World      *world;
   struct Robot      *robot,saved_robot;
@@ -136,331 +137,340 @@ int main(int argc,char *argv[]) {
   double            val0;
   long int          i,j;
   int               angle;
-	u_char            initButtonValue = -1;
+  u_char            initButtonValue = -1;
   FILE              *ffile;
-	char *shm_in, *shm_out;
-	int shmid_in, shmid_out;
+  char              *shm_in, *shm_out;
+  int               shmid_in, shmid_out;
+  struct shmid_ds   ds;
+  int               key_in, key_out;
 
-	if(GetOption("r",argc,argv))
-		initButtonValue = RUN_ROBOT;
-	if(GetOption("f",argc,argv))
-		initButtonValue = RUN_ROBOT_NO_GUI;
+  if(GetOption("r",argc,argv))
+    initButtonValue = RUN_ROBOT;
+  if(GetOption("f",argc,argv))
+    initButtonValue = RUN_ROBOT_NO_GUI;
+  
+  key_in = 4000 + (int)getuid();
+  key_out = key_in + 10000;
 
-	if((shmid_in = shmget(SHM_KEY_IN, SHM_BUF_SIZE, IPC_CREAT | SHM_PERM)) < 0) {
-		perror("shmget");
-		exit(1);
-	}
-	if((shmid_out = shmget(SHM_KEY_OUT, SHM_BUF_SIZE, IPC_CREAT | SHM_PERM)) < 0){
-		perror("shmget");
-		exit(1);
-	}
-	if((shm_in = shmat(shmid_in, NULL, 0)) == (char *) -1) {
-		perror("shmat");
-		exit(1);
-	}
-	if((shm_out = shmat(shmid_out, NULL, 0)) == (char *) -1) {
-		perror("shmat");
-		exit(1);
-	}
-
-	shm_in[0] = '\0';
-	shm_out[0] = '\0';
-
-
+  if((shmid_in = shmget((key_t)key_in, SHM_BUF_SIZE, IPC_CREAT | SHM_PERM)) < 0) {
+    perror("shmget");
+    exit(1);
+  }
+  if((shmid_out = shmget((key_t)key_out, SHM_BUF_SIZE, IPC_CREAT | SHM_PERM)) < 0){
+    perror("shmget");
+    exit(1);
+  }
+  if((shm_in = shmat(shmid_in, NULL, 0)) == (char *) -1) {
+    perror("shmat");
+    exit(1);
+  }
+  if((shm_out = shmat(shmid_out, NULL, 0)) == (char *) -1) {
+    perror("shmat");
+    exit(1);
+  }
+  
+  shm_in[0] = '\0';
+  shm_out[0] = '\0';
+  
   context = (struct Context *)malloc(sizeof(struct Context));
-	
-	context->KheperaAvailable = FALSE;
-	context->Pipe = FALSE;
-	context->MonoDisplay = FALSE;
-	
+  
+  context->KheperaAvailable = FALSE;
+  context->Pipe = FALSE;
+  context->MonoDisplay = FALSE;
+  
   OpenProgram();
   world = context->World;
   robot = context->Robot;
   UserInit(robot);
-
-	button = FindButton(context->Buttons,initButtonValue);
-	if(button != NULL) {
-		button->State=PLATE_DOWN;
-		DrawButton(button);
-	} else button=PressButton(context);
-
-  while(TRUE) {
-		graphics = TRUE;
-    switch(button->Value)
-    {
-      case QUIT:
-       DisplayComment(context,"bye !");
-       quit = TRUE;
-       break;
-
-      case NEW_WORLD:
-       DisplayComment(context,"creating new world");
-       CreateDefaultWorld(context);
-       strcpy(world->Name,"new");
-       DrawWorld(context);
-       DisplayComment(context,"new world created");
-       break;
-
-      case LOAD_WORLD:
-       strcpy(name,ReadText(context,FILE_NAME_TEXT,button));
-       if (name[0]!='\0')
-       {
-         sprintf(text,"loading %s.world",name);
-         DisplayComment(context,text);
-         strcpy(text,name);
-         strcat(name,".world");
-         strcpy(file_name,"WORLD/");
-         strcat(file_name,name);
-         ffile = fopen(file_name,"r");
-         if (ffile)
-         {
-           WaitCursor();
-           CreateEmptyWorld(context);
-           ReadWorldFromFile(world,ffile);
-           strcpy(world->Name,text);
-           fclose(ffile);
-           DrawWorld(context);
-           if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
-           DrawRobotIRSensors(robot);
-           sprintf(text,"%s loaded",name);
-           PointerCursor();
-         }
-         else sprintf(text,"unable to find %s in WORLD directory",name);
-         DisplayComment(context,text);
-       }
-       else DisplayComment(context,"nothing done");
-       break;
-
-      case SAVE_WORLD:
-       strcpy(name,ReadText(context,FILE_NAME_TEXT,button));
-       if (name[0]!='\0')
-       {
-         WaitCursor();
-         strcpy(world->Name,name);
-         strcat(name,".world");
-         sprintf(text,"saving %s",name);
-         strcpy(file_name,"WORLD/");
-         strcat(file_name,name);
-         DrawWorld(context);
-         DisplayComment(context,text);
-         ffile = fopen(file_name,"w");
-         WriteWorldToFile(world,ffile);
-         fclose(ffile);
-         sprintf(text,"%s saved",name);
-         PointerCursor();
-         DisplayComment(context,text);
-       }
-       else DisplayComment(context,"nothing done");
-       break;
-
-      case SET_ROBOT:
-        DisplayComment(context,"click in the world to set the robot");
-        ok = FALSE;
-        while(ok == FALSE)
-        {
-          point = ClickInWorld(context,button);
-          if (point->x != -1)
-          {
-            robot->X = point->x;
-            robot->Y = point->y;
-            DrawWorld(context);
-            if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
-             DrawRobotIRSensors(robot);
-            ok = TRUE;
-          }
-          else ok = TRUE;
-        }
-        UndisplayComment(context);
-       break;
-
-      case REDRAW_WORLD:
-       DrawObstacles(context);
-       DrawWorld(context);
-       if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
-        DrawRobotIRSensors(robot);
-       break;
-
-      case REMOVE_OBJECT:
-       DisplayComment(context,"click in the world to remove objects");
-       ok = FALSE;
-       while(ok == FALSE)
-       {
-         point = ClickInWorld(context,button);
-         if (point->x != -1)
-         {
-           object = FindObject(world,point->x,point->y);
-           if (object)
-           {
-             sprintf(text,"%s removed at (%d,%d)",
-                     world->ObjectName[object->Type],object->X,object->Y);
-             RemoveObject(world,object);
-             DrawWorld(context);
-             DisplayComment(context,text);
-           }
-           else DisplayComment(context,"oops");
-         }
-         else ok = TRUE;
-       }
-       UndisplayComment(context);
-       break;
-
-      case ADD_OBJECT:
-       DisplayComment(context,"click in the world to put objects");
-       ok = FALSE;
-       while(ok == FALSE)
-       {
-         obj = AddObjectInWorld(context,button);
-         if (obj)
-         {
-           object = CreateObject(obj->Type,obj->X,obj->Y,obj->Alpha);
-           AddObject(world,object);
-           DrawObject(object);
-           sprintf(text,"%s added at (%d,%d)",
-                   world->ObjectName[obj->Type],obj->X,obj->Y);
-           DisplayComment(context,text);
-         }
-         else ok = TRUE;
-       }
-       UndisplayComment(context);
-       break;
-
-      case TURN_OBJECT:
-        world->ObjectAlpha[world->ObjectType] += 15;
-        if (world->ObjectAlpha[world->ObjectType] >= 360) 
-         world->ObjectAlpha[world->ObjectType] -= 360;
-        DrawConsObject(world);
-        sprintf(text,"turning %s",
-                world->ObjectName[world->ObjectType]);
-        DisplayComment(context,text);
-        break;
-
-      case OBJECT_PLUS:
-        if (world->ObjectType == N_OBJECTS-1) 
-         world->ObjectType= 0;
-        else world->ObjectType++;
-        DrawConsObject(world);
-        sprintf(text,"%s selected",
-                world->ObjectName[world->ObjectType]);
-        DisplayComment(context,text);
-        break;
-
-      case OBJECT_MINUS:
-        if (world->ObjectType == 0) 
-         world->ObjectType = N_OBJECTS-1;
-        else world->ObjectType--;
-        DrawConsObject(world);
-        sprintf(text,"%s selected",
-                world->ObjectName[world->ObjectType]);
-        DisplayComment(context,text);
-        break;
-
-      case STEP_ROBOT:
-			 if(!queryflag && (shm_in[0] != '\0')) {
-					 queryflag = TRUE;
-					 MessageRobotDeal(context, shm_in, shm_out);
-					 DisplayComment(context, shm_out);
-			 }
-			 MessageRobotRun(context, graphics);
-			 if(queryflag && (shm_in[0] == '\0')) {
-					 queryflag = FALSE;
-					 shm_out[0] = '\0';
-			 }
-			 RunRobotStop(robot);
-			 break;
-
-			case RUN_ROBOT_NO_GUI:
-			 graphics = FALSE;
-      case RUN_ROBOT:
-       CancelCursor();
-       DisplayComment(context,"running simulated Khepera");
-			 while (UnpressButton(context,button)==FALSE) {
-				 if(!queryflag && (shm_in[0] != '\0')) {
-					 queryflag = TRUE;
-					 MessageRobotDeal(context, shm_in, shm_out);
-				 }
-				 MessageRobotRun(context, graphics);
-				 if(queryflag && (shm_in[0] == '\0')) {
-					 queryflag = FALSE;
-					 shm_out[0] = '\0';
-				 }
-				 usleep(TIME_DELAY);
-			 }
-			 RunRobotStop(robot);
-			 DisplayComment(context,"simulated Khepera stopped");
-			 PointerCursor();
-			 break;
-
-      case RESET_ROBOT:
-       InitRobot(context);
-       DrawRobotIRSensors(robot);
-       DrawRobotEffectors(robot);
-       DisplayComment(context,"Khepera reset");
-       break;
-
-      case SET_ANGLE:
-       strcpy(name,ReadText(context,ANGLE_TEXT,button));
-       if (name[0]!='\0')
-       {
-         UndisplayComment(context);
-         CancelCursor();
-         if (sscanf(name,"%d",&angle)==1)
-         {
-           robot->Alpha = (angle*M_PI)/180.0;
-           DrawLittleRobot(robot,robot);
-				 } else {
-					 DisplayComment(context,"invalid angle");
-				 }
-         PointerCursor();
-       }
-       else DisplayComment(context,"nothing done");
-       break;
-
-
-      case TEST:
-       if (robot->State & REAL_ROBOT_FLAG)
-       {
-         DisplayComment(context,"testing real Khepera");
-         while (UnpressButton(context,button)==FALSE)
-	 {
-           InitKheperaSensors(context);
-           DrawRobotIRSensors(robot);
-         }
-       }
-       else
-       {
-         DisplayComment(context,"testing simulated Khepera");
-         while (UnpressButton(context,button)==FALSE)
-	 {
-           InitSensors(context);
-           DrawRobotIRSensors(robot);
-         }
-       }
-       DisplayComment(context,"done");
-       break;
-
-       case SENSORS_BUTTON:    if (robot->State & DISTANCE_SENSOR_FLAG)
-	                       {
-                                 robot->State ^= DISTANCE_SENSOR_FLAG;
-                                 robot->State ^= LIGHT_SENSOR_FLAG;
-			       }
-                               else if (robot->State & LIGHT_SENSOR_FLAG)
-                                robot->State ^= LIGHT_SENSOR_FLAG;
-                               else robot->State ^= DISTANCE_SENSOR_FLAG;
-                               DrawRobotToggleButtons(robot);
-                               DrawRobotIRSensors(robot);
-                               UndisplayComment(context);
-                               break;
-       case MOTORS_BUTTON:     robot->State ^= MOTOR_VALUES_FLAG;
-                               DrawRobotToggleButtons(robot);
-                               DrawRobotEffectors(robot);
-                               UndisplayComment(context);
-                               break;
-    }
-    button->State = PLATE_UP;
+  
+  button = FindButton(context->Buttons,initButtonValue);
+  if(button != NULL) {
+    button->State=PLATE_DOWN;
     DrawButton(button);
-		if(quit) break;
-    button=PressButton(context);
-  }
-  CloseProgram();
-}
+  } else button=PressButton(context);
+	
+	while(TRUE) {
+	  graphics = TRUE;
+	  switch(button->Value)
+	    {
+	    case QUIT:
+	      DisplayComment(context,"bye !");
+	      quit = TRUE;
+	      break;
+	      
+	    case NEW_WORLD:
+	      DisplayComment(context,"creating new world");
+	      CreateDefaultWorld(context);
+	      strcpy(world->Name,"new");
+	      DrawWorld(context);
+	      DisplayComment(context,"new world created");
+	      break;
+	      
+	    case LOAD_WORLD:
+	      strcpy(name,ReadText(context,FILE_NAME_TEXT,button));
+	      if (name[0]!='\0')
+		{
+		  sprintf(text,"loading %s.world",name);
+		  DisplayComment(context,text);
+		  strcpy(text,name);
+		  strcat(name,".world");
+		  strcpy(file_name,"WORLD/");
+		  strcat(file_name,name);
+		  ffile = fopen(file_name,"r");
+		  if (ffile)
+		    {
+		      WaitCursor();
+		      CreateEmptyWorld(context);
+		      ReadWorldFromFile(world,ffile);
+		      strcpy(world->Name,text);
+		      fclose(ffile);
+		      DrawWorld(context);
+		      if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
+		      DrawRobotIRSensors(robot);
+		      sprintf(text,"%s loaded",name);
+		      PointerCursor();
+		    }
+		  else sprintf(text,"unable to find %s in WORLD directory",name);
+		  DisplayComment(context,text);
+		}
+	      else DisplayComment(context,"nothing done");
+	      break;
+	      
+	    case SAVE_WORLD:
+	      strcpy(name,ReadText(context,FILE_NAME_TEXT,button));
+	      if (name[0]!='\0')
+		{
+		  WaitCursor();
+		  strcpy(world->Name,name);
+		  strcat(name,".world");
+		  sprintf(text,"saving %s",name);
+		  strcpy(file_name,"WORLD/");
+		  strcat(file_name,name);
+		  DrawWorld(context);
+		  DisplayComment(context,text);
+		  ffile = fopen(file_name,"w");
+		  WriteWorldToFile(world,ffile);
+		  fclose(ffile);
+		  sprintf(text,"%s saved",name);
+		  PointerCursor();
+		  DisplayComment(context,text);
+		}
+	      else DisplayComment(context,"nothing done");
+	      break;
+	      
+	    case SET_ROBOT:
+	      DisplayComment(context,"click in the world to set the robot");
+	      ok = FALSE;
+	      while(ok == FALSE)
+		{
+		  point = ClickInWorld(context,button);
+		  if (point->x != -1)
+		    {
+		      robot->X = point->x;
+		      robot->Y = point->y;
+		      DrawWorld(context);
+		      if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
+		      DrawRobotIRSensors(robot);
+		      ok = TRUE;
+		    }
+		  else ok = TRUE;
+		}
+	      UndisplayComment(context);
+	      break;
+	      
+	    case REDRAW_WORLD:
+	      DrawObstacles(context);
+	      DrawWorld(context);
+	      if (!(robot->State & REAL_ROBOT_FLAG)) InitSensors(context);
+	      DrawRobotIRSensors(robot);
+	      break;
+	      
+	    case REMOVE_OBJECT:
+	      DisplayComment(context,"click in the world to remove objects");
+	      ok = FALSE;
+	      while(ok == FALSE)
+		{
+		  point = ClickInWorld(context,button);
+		  if (point->x != -1)
+		    {
+		      object = FindObject(world,point->x,point->y);
+		      if (object)
+			{
+			  sprintf(text,"%s removed at (%d,%d)",
+				  world->ObjectName[object->Type],object->X,object->Y);
+			  RemoveObject(world,object);
+			  DrawWorld(context);
+			  DisplayComment(context,text);
+			}
+		      else DisplayComment(context,"oops");
+		    }
+		  else ok = TRUE;
+		}
+	      UndisplayComment(context);
+	      break;
+	      
+	    case ADD_OBJECT:
+	      DisplayComment(context,"click in the world to put objects");
+	      ok = FALSE;
+	      while(ok == FALSE)
+		{
+		  obj = AddObjectInWorld(context,button);
+		  if (obj)
+		    {
+		      object = CreateObject(obj->Type,obj->X,obj->Y,obj->Alpha);
+		      AddObject(world,object);
+		      DrawObject(object);
+		      sprintf(text,"%s added at (%d,%d)",
+			      world->ObjectName[obj->Type],obj->X,obj->Y);
+		      DisplayComment(context,text);
+		    }
+		  else ok = TRUE;
+		}
+	      UndisplayComment(context);
+	      break;
 
+	    case TURN_OBJECT:
+	      world->ObjectAlpha[world->ObjectType] += 15;
+	      if (world->ObjectAlpha[world->ObjectType] >= 360) 
+		world->ObjectAlpha[world->ObjectType] -= 360;
+	      DrawConsObject(world);
+	      sprintf(text,"turning %s",
+		      world->ObjectName[world->ObjectType]);
+	      DisplayComment(context,text);
+	      break;
+	      
+	    case OBJECT_PLUS:
+	      if (world->ObjectType == N_OBJECTS-1) 
+		world->ObjectType= 0;
+	      else world->ObjectType++;
+	      DrawConsObject(world);
+	      sprintf(text,"%s selected",
+		      world->ObjectName[world->ObjectType]);
+	      DisplayComment(context,text);
+	      break;
+	      
+	    case OBJECT_MINUS:
+	      if (world->ObjectType == 0) 
+		world->ObjectType = N_OBJECTS-1;
+	      else world->ObjectType--;
+	      DrawConsObject(world);
+	      sprintf(text,"%s selected",
+		      world->ObjectName[world->ObjectType]);
+	      DisplayComment(context,text);
+	      break;
+	      
+	    case STEP_ROBOT:
+	      if(!queryflag && (shm_in[0] != '\0')) {
+		queryflag = TRUE;
+		MessageRobotDeal(context, shm_in, shm_out);
+		DisplayComment(context, shm_out);
+	      }
+	      MessageRobotRun(context, graphics);
+	      if(queryflag && (shm_in[0] == '\0')) {
+		queryflag = FALSE;
+		shm_out[0] = '\0';
+	      }
+	      RunRobotStop(robot);
+	      break;
+	      
+	    case RUN_ROBOT_NO_GUI:
+	      graphics = FALSE;
+	    case RUN_ROBOT:
+	      CancelCursor();
+	      DisplayComment(context,"running simulated Khepera");
+	      while (UnpressButton(context,button)==FALSE) {
+		if(!queryflag && (shm_in[0] != '\0')) {
+		  queryflag = TRUE;
+		  MessageRobotDeal(context, shm_in, shm_out);
+		}
+		MessageRobotRun(context, graphics);
+		if(queryflag && (shm_in[0] == '\0')) {
+		  queryflag = FALSE;
+		  shm_out[0] = '\0';
+		}
+		usleep(TIME_DELAY);
+	      }
+	      RunRobotStop(robot);
+	      DisplayComment(context,"simulated Khepera stopped");
+	      PointerCursor();
+	      break;
+	      
+	    case RESET_ROBOT:
+	      InitRobot(context);
+	      DrawRobotIRSensors(robot);
+	      DrawRobotEffectors(robot);
+	      DisplayComment(context,"Khepera reset");
+	      break;
+	      
+	    case SET_ANGLE:
+	      strcpy(name,ReadText(context,ANGLE_TEXT,button));
+	      if (name[0]!='\0')
+		{
+		  UndisplayComment(context);
+		  CancelCursor();
+		  if (sscanf(name,"%d",&angle)==1)
+		    {
+		      robot->Alpha = (angle*M_PI)/180.0;
+		      DrawLittleRobot(robot,robot);
+		    } else {
+		      DisplayComment(context,"invalid angle");
+		    }
+		  PointerCursor();
+		}
+	      else DisplayComment(context,"nothing done");
+	      break;
+
+	      
+	    case TEST:
+	      if (robot->State & REAL_ROBOT_FLAG)
+		{
+		  DisplayComment(context,"testing real Khepera");
+		  while (UnpressButton(context,button)==FALSE)
+		    {
+		      InitKheperaSensors(context);
+		      DrawRobotIRSensors(robot);
+		    }
+		}
+	      else
+		{
+		  DisplayComment(context,"testing simulated Khepera");
+		  while (UnpressButton(context,button)==FALSE)
+		    {
+		      InitSensors(context);
+		      DrawRobotIRSensors(robot);
+		    }
+		}
+	      DisplayComment(context,"done");
+	      break;
+	      
+	    case SENSORS_BUTTON:    if (robot->State & DISTANCE_SENSOR_FLAG)
+	      {
+		robot->State ^= DISTANCE_SENSOR_FLAG;
+		robot->State ^= LIGHT_SENSOR_FLAG;
+	      }
+	    else if (robot->State & LIGHT_SENSOR_FLAG)
+	      robot->State ^= LIGHT_SENSOR_FLAG;
+	    else robot->State ^= DISTANCE_SENSOR_FLAG;
+	    DrawRobotToggleButtons(robot);
+	    DrawRobotIRSensors(robot);
+	    UndisplayComment(context);
+	    break;
+
+	    case MOTORS_BUTTON:     robot->State ^= MOTOR_VALUES_FLAG;
+	      DrawRobotToggleButtons(robot);
+	      DrawRobotEffectors(robot);
+	      UndisplayComment(context);
+	      break;
+	    }
+
+	  button->State = PLATE_UP;
+	  DrawButton(button);
+	  if(quit) break;
+	  button=PressButton(context);
+	}
+	// release shared memory
+	shmctl(shmid_in, IPC_RMID, &ds);
+	shmctl(shmid_out, IPC_RMID, &ds);
+	CloseProgram();
+}
+ 
