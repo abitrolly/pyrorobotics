@@ -124,20 +124,26 @@ int addto_dataset(struct entries *data, struct data_entry *entry) {
  *   length as 'points'.  A 1 indicates that the corresponding point in
  *   'points' should be ignored in computing the winning model vector.
  *   Typically 'mask' is {0, 0, ...}, or equivalently NULL.
+ *
  * it is primarily left up to the user to make certain that 'points',
- * 'mask', and the associated SOM are all of the same vector dimension */
+ * 'mask', and the associated SOM are all of the same vector dimension 
+ * -- this is no longer true.  checks have been added to __init__.py 
+ *    (Yee Lin Tan, June 9,2002)
+ */
 
 struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
 						   short *mask, int dim) {
   struct data_entry *entry;
   char *charmask = NULL;
   int i;
-
+  
+  /* this check has been moved to __init__.py
   if(weight < 0.0) {
     fprintf(stderr, "make_data_entry_weighted_masked(): invalid weight: ");
     fprintf(stderr, "%f\n", weight);
     return NULL;
   }
+  */
 
   entry = (struct data_entry *)malloc(sizeof(struct data_entry));
 
@@ -148,12 +154,12 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   entry->fixed = NULL;
 
   if(mask) {
-		charmask = (char *) malloc(dim);
-		for(i=0;i<dim;i++)
-			charmask[i] = (char) mask[i];
-	}
+    charmask = (char *) malloc(dim);
+    for(i=0;i<dim;i++)
+      charmask[i] = (char) mask[i];
+  }
   entry->mask = charmask;
-  
+
   return entry;
 }
 
@@ -234,11 +240,18 @@ int init_training_session(struct teach_params *params,
     fprintf(stderr, "init_training_session(): NULL teach_params\n");
     return 1;
   }
+  /* these error checks are now done in the python code: __init__.py
   if(alpha_0 < 0.0) {
     fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
 	    alpha_0);
     fprintf(stderr, "using 0.0\n");
     alpha_0 = 0.0;
+  }
+  if(alpha_0 > 1.0) {
+    fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
+	    alpha_0);
+    fprintf(stderr, "using 1.0\n");
+    alpha_0 = 1.0;
   }
   if(radius_0 < 1.0) {
     fprintf(stderr, "init_training_session(): invalid radius_0: %f, ",
@@ -258,7 +271,7 @@ int init_training_session(struct teach_params *params,
     fprintf(stderr, "using 1\n");
     qerror_window = 1;
   }
-
+  */
   params->alpha = alpha_0;
   params->radius = radius_0;
   params->length = length;
@@ -663,25 +676,45 @@ struct data_entry *get_model_vector(struct entries *codes, int *coords) {
 /* print_dataset()
  * ---------------
  * prints the data set associated with 'data' to stdout.  Can be used for both
- * model vectors (codes) and data vectors.  */
+ * model vectors (codes) and data vectors.  
+ *
+ * prints label associated with model vectors. 
+ * (see labels.c for info on labels) -- Added June 11, 2003 (Yee Lin Tan) */
 
 void print_dataset(struct entries *data) {
   int i;
+  int label; 
   eptr p;
   struct data_entry *entry;
 
   entry = rewind_entries(data, &p);
   while(entry!=NULL) {
+    /* display points in vector */
     for(i=0;i<data->dimension;i++)
       printf("%.3f ", entry->points[i]);
-		printf(" wt: %d", entry->weight);
-		if(entry->mask) {
+    
+    /* display weight of vector */
+    printf(" wt: %d", entry->weight);
+
+    /* display mask associated with vector if there is one */
+    if(entry->mask) {
       printf("  mask: ");
       for(i=0;i<data->dimension;i++)
         printf("%d ", entry->mask[i]);
     }
+
+    /* display label(s) if there are any */
+    if(entry->num_labs) {
+      printf("  label: ");
+      for(i=0;;i++) {
+	label = get_entry_labels(entry, i);
+	if(label != LABEL_EMPTY) /* last label in label array is always LABEL_EMPTY */
+	  printf("%s ", find_conv_to_lab(label));
+	else break;
+      }
+    }
     printf("\n");
-    entry = next_entry(&p);
+    entry = next_entry(&p); /* go on to the next vector */
   }
   printf("%d total entries\n", data->num_entries);
 }
