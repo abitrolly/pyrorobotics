@@ -409,6 +409,27 @@ class RAVQ:
             self.winner = self.models[self.newWinnerIndex]
             self.counters[self.newWinnerIndex] += 1
             self.totalCount += 1
+    def retrieveWinner(self, vector):
+        """
+        Given a vector return the closest matching model vector and its index.
+        """
+        min = []
+        array = Numeric.array(vector)
+        for m in self.models:
+            min.append(euclideanDistance(m, array, self.mask))
+        if min == []:
+            self.winner = 'No Winner'
+        else:
+            index = Numeric.argmin(min)
+            return index, self.models[index]
+    def allModels(self):
+        """
+        Returns a list of model vectors in index order.
+        """
+        models = []
+        for m in self.models:
+            models.append(m.tolist())
+        return models
     def updateHistory(self):
         """
         Record a history of where inputs map.
