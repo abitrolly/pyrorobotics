@@ -31,8 +31,8 @@ class Avoid (Behavior):
         else:
             self.count += 1
         # Normally :
-        close_dist = self.getRobot().getSensorGroup('min', 'front-all')[1]
-        close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / (math.pi)
+        close_dist, close_angl = self.getRobot().get('range', 'value', 'front-all', 'close')
+        close_angl /= (math.pi)
         #print "Closest distance =", close_dist, "angle =", close_angl
         self.IF(Fuzzy(0.0, 1.5) << close_dist, 'translate', 0.0, "TooClose")
         self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'translate', .2, "Ok")

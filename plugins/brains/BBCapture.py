@@ -30,9 +30,9 @@ class Avoid (Behavior):
         #self.IF(1, 'translate', .2) 
         #self.IF(1, 'rotate', 0)
         
-        left = self.getRobot().getSensorGroup('min', 'left')[1]
-        front = self.getRobot().getSensorGroup('min', 'front')[1]
-        right = self.getRobot().getSensorGroup('min', 'right')[1]
+        left = self.getRobot().get('range', 'value', 'left', 'min')[1]
+        front = self.getRobot().get('range', 'value', 'front', 'min')[1]
+        right = self.getRobot().get('range', 'value', 'right', 'min')[1]
         
         if (left < LTOLERANCE and right < RTOLERANCE):
             #self.getRobot().move(0, .2)

@@ -80,19 +80,15 @@ class NNBrain(Brain):
       ins = map(self.scale, self.getRobot().get('range', 'all'))
       self.net.setInputs([ ins ])
       # Compute targets:
-      #print "Front:", self.getRobot().getSensorGroup('min', 'front')[1]
-      #print "Back:", self.getRobot().getSensorGroup('min', 'back')[1]
-      #print "Left:", self.getRobot().getSensorGroup('min', 'left')[1]
-      #print "Right:", self.getRobot().getSensorGroup('min', 'right')[1]
-      if self.getRobot().getSensorGroup('min', 'front')[1] < 1:
+      if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
          target_trans = 0.0
-      elif self.getRobot().getSensorGroup('min', 'back')[1] < 1:
+      elif self.getRobot().get('range', 'value', 'back', 'min')[1] < 1:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if self.getRobot().getSensorGroup('min', 'left')[1] < 1:
+      if self.getRobot().get('range', 'value', 'left', 'min')[1] < 1:
          target_rotate = 0.0
-      elif self.getRobot().getSensorGroup('min', 'right')[1] < 1:
+      elif self.getRobot().get('range', 'value', 'right', 'min')[1] < 1:
          target_rotate = 1.0
       else:
          target_rotate = 0.5

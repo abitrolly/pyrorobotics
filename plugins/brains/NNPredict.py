@@ -57,15 +57,15 @@ class predict(Brain):
          print self.counter
          
       # set targets
-      if self.getRobot().getSensorGroup('min', 'front')[1] < 1:
+      if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
          target_trans = 0.0
-      elif self.getRobot().getSensorGroup('min', 'back')[1] < 1:
+      elif self.getRobot().get('range', 'value', 'back', 'min')[1] < 1:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if self.getRobot().getSensorGroup('min', 'left')[1] < 1:
+      if self.getRobot().get('range', 'value', 'left', 'min')[1] < 1:
          target_rotate = 0.0
-      elif self.getRobot().getSensorGroup('min', 'right')[1] < 1:
+      elif self.getRobot().get('range', 'value', 'right', 'min')[1] < 1:
          target_rotate = 1.0
       else:
          target_rotate = 0.5

@@ -12,9 +12,9 @@ class SimpleBrain(Brain):
       LTOLERANCE = 1.0
       RTOLERANCE = 1.0
 
-      left = self.getRobot().getSensorGroup('min', 'left')[1]
-      right = self.getRobot().getSensorGroup('min', 'right')[1]
-      front = self.getRobot().getSensorGroup('min', 'front')[1]
+      left = self.getRobot().get('range', 'value', 'left', 'min')[1]
+      right = self.getRobot().get('range', 'value', 'right', 'min')[1]
+      front = self.getRobot().get('range', 'value', 'front', 'min')[1]
 
       print "left", left, "front", front, "right", right
 

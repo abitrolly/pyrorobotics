@@ -108,7 +108,7 @@ class Reinforce(Brain):
 
       #    next set motorOutput targets
       #       determine fuzzy values
-      next_min = self.getRobot().getSensorGroup('min', 'all')[1]
+      next_min = self.getRobot().get('range', 'value', 'all', 'min')[1]
 
       distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
       speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)
