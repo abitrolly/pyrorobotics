@@ -63,6 +63,7 @@ class gui(Drawable):
          print "Brain file:\t%s" % self.engine.brainfile
          print "Brain:\t\t%s" % self.engine.brain
          print "Robot:\t\t%s" % self.engine.robot
+         print "World:\t\t%s" % self.engine.worldfile
          print "-------------------------------------------------------------"
       elif retval == "help":
          help()
@@ -84,6 +85,9 @@ class gui(Drawable):
          self.loadRobot()
       elif retval == "load brain":
          self.loadBrain()
+      elif retval == "load simulator":
+         print "Enter path (i.e., plugins/simulators/Aria|Stage|Pioneer)"
+         self.loadSim(self.engine.worldfile)
       elif retval == "stop":
          self.engine.pleaseStop()
          print "Stopped!"
@@ -151,7 +155,7 @@ class gui(Drawable):
       pass
 
    def fileloaddialog(self, type, skel):
-      """ Could read a line from user """
+      """ Read a line from user """
       print "\nFilename: ",
       retval =  sys.stdin.readline()
       retval = retval.replace("\n", "")
@@ -219,12 +223,12 @@ class gui(Drawable):
    def freeBrain(self):
       self.engine.freeBrain()
 
-   def loadSim(self):
+   def loadSim(self, worldfile = ''):
       f = self.fileloaddialog("simulators","*")
       self.redraw()
       if f != '':
          import os
-         os.system(f + " &")
+         os.system(f + " " + worldfile + " &")
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py")

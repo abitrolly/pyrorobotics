@@ -13,4 +13,11 @@
 #                                     ActivMediaLab.wld, for example
 # [-s | -g factor]     none           Grows/Shrinks the simulator window 
 
-/usr/local/Aria/bin/SRIsim -p $(( 8000 + $UID ))  -w office.wld -t tcp
+if [ $# -eq 0 ]
+then
+    world="office.wld"
+else
+    world="$1"
+fi
+export ARIA=/usr/local/Aria
+$ARIA/bin/SRIsim -p $(( 8000 + $UID ))  -w $world -t tcp

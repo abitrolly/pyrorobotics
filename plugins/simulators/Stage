@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ $# -eq 0 ]
+then
+    world="/usr/local/stage/worlds/everything.world"
+else
+    world="$1"
+fi
 export PATH=$PATH:/usr/local/stage/bin:/usr/local/player/bin
-
-stage /usr/local/stage/worlds/everything.world &
+stage $world &

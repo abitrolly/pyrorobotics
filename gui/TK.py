@@ -36,7 +36,7 @@ class TKgui(gui):
       menu = [('File',[['Edit Brain', self.editBrain],
                        ['Exit',self.cleanup] 
                        ]),
-              ('Simulators',[['Load...',self.loadSim]]),
+              ('Simulators',[['Load...', lambda x = self.engine.worldfile: self.loadSim(x)]]),
               ('Robot',[['Load...',self.loadRobot],
                         ['Unload',self.freeRobot],
                         ['Load Camera...',self.loadCamera]]),
