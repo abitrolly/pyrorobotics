@@ -513,6 +513,10 @@ class AriaRobot(Robot):
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
             self.devData["builtinDevices"].append( "bumper" )
             deviceName = self.startDevice("bumper")
+        self.devData["supportedFeatures"].append( "odometry" )
+        self.devData["supportedFeatures"].append( "continuous-movement" )
+        if "range" in self.devDataFunc:
+            self.devData["supportedFeatures"].append( "range-sensor" )
         self.update()
         self.inform("Done loading Aria robot.")
     def __del__(self):
@@ -530,6 +534,9 @@ class AriaRobot(Robot):
             return {"ptz": AriaPTZDevice(self.dev, model = "canon")}
         elif item == "gripper":
             return {"gripper": AriaGripperDevice(self.dev)}
+        elif item == "camera":
+            devId = self.startDevice("V4LCamera") # already starts and loads
+            return {} # return nothing?
         else:
             raise AttributeError, "aria robot does not support device '%s'" % item
         

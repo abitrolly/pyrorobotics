@@ -480,6 +480,8 @@ class PlayerRobot(Robot):
         # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
         devNameList = map(lambda triplet: triplet[0], devList)
         self.devData["builtinDevices"] = devNameList
+        if "blobfinder" in self.devData["builtinDevices"]:
+            self.devData["builtinDevices"].append( "camera" )
         for device in ["position", "laser", "ir", "sonar", "bumper"]:
             #is it supported? if so start it up:
             if device in devNameList:
@@ -530,6 +532,12 @@ class PlayerRobot(Robot):
             return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
         elif item in self.devData["builtinDevices"]:
             return {item: PlayerDevice(self.dev, item)}
+        #elif item == "camera":
+        #    if self.devData["simulated"]:
+        #        devId = self.startDevice("BlobCamera") # starts and loads
+        #    else:
+        #        devId = self.startDevice("V4LCamera") # starts and loads
+        #    return {} # return nothing?
         else:
             raise AttributeError, "player robot does not support device '%s'" % item
     

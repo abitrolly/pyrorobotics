@@ -81,15 +81,6 @@ def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
         userspace.INIT
     except AttributeError:
         raise ImportError, "your program needs an INIT() function"
-    requires = 0
-    try:
-        userspace.REQUIRES
-        requires = 1
-    except AttributeError:
-        print "brain has no requirements: allowing to load"
-    if requires:
-        if not userspace.REQUIRES(engine):
-            raise ImportError, "brain has unmet requirements; cannot run"
     if brain is 0:
         if engine is 0:
             retval = userspace.INIT()

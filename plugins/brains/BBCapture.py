@@ -114,6 +114,8 @@ class state3 (State):
         self.goto("state1")
 
 def INIT(engine): # passes in robot, if you need it
+   assert (engine.robot.requires("range-sensor") and
+           engine.robot.requires("continuous-movement"))
     brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
                                 'rotate' : engine.robot.rotate, \
                                 'update' : engine.robot.update }, engine)

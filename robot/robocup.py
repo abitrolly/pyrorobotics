@@ -276,6 +276,9 @@ class RobocupRobot(Robot):
         self.devData["type"] = "Robocup"
         self.devData["subtype"] = 0
         self.devData["units"] = "METERS"
+        #self.devData["supportedFeatures"].append( "odometry" )
+        self.devData["supportedFeatures"].append( "continuous-movement" )
+        self.devData["supportedFeatures"].append( "range-sensor" )
         self.localize(0, 0, 0)
         self.update()
         

@@ -299,6 +299,9 @@ class KheperaRobot(Robot):
         self.devData['z'] = self.getZ()
         self.devData['th'] = self.getTh() # in degrees
         self.devData['thr'] = self.getThr() # in radians
+        self.devData["supportedFeatures"].append( "odometry" )
+        self.devData["supportedFeatures"].append( "continuous-movement" )
+        self.devData["supportedFeatures"].append( "range-sensor" )
 	self.update() 
         self.inform("Done loading K-Team robot.")
 
