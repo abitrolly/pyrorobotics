@@ -154,38 +154,6 @@ class Engine(drawable.Drawable):
       console.log(console.INFO,'Loaded ' + file)
       #self.append(self.robot.camera)
 
-   def loadDevice(self,file):
-      import os
-      console.log(console.INFO,'Loading '+file)
-      if file[-3:] != '.py':
-         file = file + '.py'
-      if system.file_exists(file):
-         self.robot.device.append( system.loadINIT(file, self) )
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/devices/' + file): 
-         self.robot.device.append( system.loadINIT(os.getenv('PYRO') + \
-                                                   '/plugins/devices/' + \
-                                                   file, self))
-      else:
-         raise 'Device file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
-
-   def loadService(self,file):
-      import os
-      console.log(console.INFO,'Loading '+file)
-      if file[-3:] != '.py':
-         file = file + '.py'
-      if system.file_exists(file):
-         self.robot.service.append( system.loadINIT(file, self) )
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/services/' + file): 
-         self.robot.service.append( system.loadINIT(os.getenv('PYRO') + \
-                                                    '/plugins/services/' + \
-                                                    file, self))
-      else:
-         raise 'Service file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
-
    def loadMap(self,file):
       import os
       console.log(console.INFO,'Loading '+file)
