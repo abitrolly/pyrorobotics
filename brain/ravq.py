@@ -246,6 +246,8 @@ class RAVQ:
             return 0
         else:
             return Numeric.add.reduce(self.counters)
+    def getWinnerIndex(self):
+        return self.newWinnerIndex
     def setVerbosity(self, value):
         self.verbosity = value
     def setHistory(self, value):
