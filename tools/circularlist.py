@@ -13,6 +13,8 @@ class CircularList:
         self.maxSize = size
         self.next = 0
         self.contents = []
+        self.names = []
+        self.nextID = 0
 
     def __str__(self):
         output = ""
@@ -37,7 +39,10 @@ class CircularList:
         if self.maxSize == 0: return
         if len(self.contents) == self.maxSize:
             self.contents.pop(0)
+            self.names.pop(0)
         self.contents.append(item)
+        self.names.append(self.nextID)
+        self.nextID += 1
 
     def nextItem(self):
         if len(self.contents) == 0:

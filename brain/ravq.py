@@ -258,11 +258,13 @@ class RAVQ:
         """
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
-            if self.addNewModelCallback:
-                self.addNewModelCallback(len(self.models), self.movingAverage)
             self.models.addItem(self.movingAverage)
+            name = self.models.names[-1]
+            if self.addNewModelCallback:
+                self.addNewModelCallback(name, self.movingAverage)
             if self.verbosity > 1:
                 print 'Adding model vector', self.movingAverage
+                print 'Unique name', name
                 print 'Moving avg dist', self.movingAverageDistance
                 print 'Model vec dist', self.modelVectorsDistance
 

@@ -34,12 +34,20 @@ class Governor:
             retval.append( euclideanDistance(vector, m.vector, self.ravq.mask) )
         return retval
 
+    def input(self, vector):
+        index, modelVector = self.ravq.input(vector)
+        if index >= 0:
+            name = self.ravq.models.names[index]
+        else:
+            name = index
+        return name, modelVector
+
     def map(self, vector):
         """
         Returns the index and vector of winning position. Side effect: records
         index of winning pos in histogram.
         """
-        index, modelVector = self.ravq.input(vector)
+        index, modelVector = self.input(vector)
         if self.histogram.has_key(index):
             self.histogram[index] += 1
         else:
@@ -142,9 +150,13 @@ class GovernorSRN(Governor, SRN):
         retval = SRN.sweep(self)
         if self.decay:
             good = []
-            for pos in self.histogram.keys():
+            goodNames = []
+            for name in self.histogram.keys():
+                pos = self.ravq.models.names.index(name)
                 good.append( self.ravq.models.contents[pos] )
+                goodNames.append( self.ravq.models.names[pos] )
             self.ravq.models.contents = good
+            self.ravq.models.names = goodNames
             if len(self.ravq.models.contents):
                 self.ravq.models.next = (self.ravq.models.next + 1) % \
                                         len(self.ravq.models.contents)
@@ -221,10 +233,12 @@ if __name__ == '__main__':
     net.setTolerance(0.2)
     net.governing = int(sys.argv[1])
     net.setResetEpoch(int(sys.argv[2]))
+    net.decay = int(sys.argv[3])
     print "Goverining is", net.governing
-    net.decay = 1
+    print "Decay is", net.decay
     net.train()
     print net.ravq
+    print "Decay:", net.decay
     print "Testing..."
     print "This takes a while..."
     net.governing = 0
@@ -234,4 +248,4 @@ if __name__ == '__main__':
     tss, correct, total = net.sweep()
     print "TSS: %.4f Percent: %.4f" % (tss, correct / float(total))
     # run with -i to see net
-
+    
