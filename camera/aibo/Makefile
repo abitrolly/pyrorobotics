@@ -12,7 +12,7 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 
 LIBDIRS= 
-LIBS= -lstdc++ -ldl -lpthread
+LIBS= -lstdc++ -ldl -lpthread -ljpeg
 
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
