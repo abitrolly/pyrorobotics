@@ -1,33 +1,70 @@
 #include "Aibo.h"
 
-//int socket(int domain, int type, int protocol);
-
 PyObject *Aibo::updateMMap() {
   // get an image from socket
+  /*
+        ## Got type=TekkotsuImage
+        ## Got format=0
+        ## Got compression=1
+        ## Got newWidth=104
+        ## Got newHeight=80
+        ## Got timest=121465
+        ## Got frameNum=3185
+  */
+  char *header;
+  header = sock->read(4);  // \r\0\0\0
+  printf("read: %d %d %d %d\n", 
+	 header[0], 
+	 header[1], 
+	 header[2], 
+	 header[3] );
+  
+    /*
+    type = rawimage_data.readUntil(chr(0)) # "TekkotsuImage"
+    print "type:", type
+    format = rawimage_data.read()
+    print "format:", format
+    compression = rawimage_data.read()
+    print "compression:", compression
+    newWidth = rawimage_data.read()
+    print "newWidth:", newWidth
+    newHeight = rawimage_data.read()
+    print "newHeight:", newHeight
+    timeStamp = rawimage_data.read()
+    print "timeStamp:", timeStamp
+    frameNum = rawimage_data.read()
+    print "frameNum:", frameNum
+    unknown1 = rawimage_data.read()
+    print "unknown1:", unknown1
+        ## Got creator=FbkImage
+        ## Got chanwidth=104
+        ## Got chanheight=80
+        ## Got layer=3
+        ## Got chan_id=0
+        ## Got fmt=JPEGColor
+        ## read JPEG: len=2547
+    creator = rawimage_data.readUntil(chr(0)) # creator
+    print "creator:", creator
+    chanWidth = rawimage_data.read()
+    print "chanWidth:", chanWidth
+    chanHeight = rawimage_data.read()
+    print "chanHeight:", chanHeight
+    layer = rawimage_data.read()
+    print "layer:", layer
+    chanID = rawimage_data.read()
+    print "chanID:", chanID
+    chanWidth = rawimage_data.read()
+    print "chanWidth:", chanWidth
+    fmt = rawimage_data.readUntil(chr(0)) # fmt
+    print "fmt:", fmt
+    size = rawimage_data.read()
+  */
   return PyInt_FromLong(0L);
 }
 
 Aibo::Aibo(char *hostname) {
-  host = hostname;
-  he = gethostbyname(host);
-  int PORT = 80;
-  // open socket
-  server_addr.sin_family = AF_INET;      /* host byte order */
-  server_addr.sin_port = htons(PORT);    /* short, network byte order */
-  server_addr.sin_addr = *((struct in_addr *)he->h_addr);
-  bzero(&(server_addr.sin_zero), 8);     /* zero the rest of the struct */
-  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    printf("Error: socket could not be opened\n");
-  }
-  if (connect(sockfd, (struct sockaddr *)&server_addr,
-	      sizeof(struct sockaddr)) == -1) {
-    printf("Error: socket could not connect\n");    
-  }
   // get image details
-  char buf[1024];
-  send(sockfd, "get\n", 4, 0);
-  int numbytes=recv(sockfd, buf, 1024, 0);
-  printf(buf);
+  sock = new Socket(hostname, 10011);
   width = 100;
   height = 100;
   depth = 3;

@@ -17,10 +17,10 @@ LIBS= -lstdc++ -ldl -lpthread
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
-_aibo.so: aibo.o Aibo.o 
-	$(CC) $(CPPFLAGS) -shared aibo.o Aibo.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+_aibo.so: aibo.o Aibo.o Socket.o
+	$(CC) $(CPPFLAGS) -shared aibo.o Aibo.o Socket.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
 
-Aibo.o:: Aibo.cpp Aibo.h ../device/Device.o
+Aibo.o: Aibo.cpp Aibo.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c Aibo.cpp
 
 Aibo.cc: Aibo.i Aibo.h ../device/Device.o
@@ -28,6 +28,9 @@ Aibo.cc: Aibo.i Aibo.h ../device/Device.o
 
 aibo.o: Aibo.cc 
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Aibo.cc -o $@
+
+Socket.o: Socket.cpp Socket.h
+	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Socket.cpp -o $@
 
 clean::
 	$(RM) *~ *.so *.o Aibo.cc aibo.py
