@@ -63,8 +63,15 @@ class PyroImage:
       """
       Method to convert depth 3 color into depth 1 grayscale
       """
+      self.data = self.getGrayScale()
+      self.depth = 1
+
+   def getGrayScale(self):
+      """
+      Method to convert depth 3 color into depth 1 grayscale
+      """
       if self.depth == 1:
-         return
+         return self.data
       data = [0] * self.width * self.height
       for h in range(self.height):
          for w in range(self.width):
@@ -72,8 +79,7 @@ class PyroImage:
             g = self.data[(w + h * self.width) * self.depth + 1]
             b = self.data[(w + h * self.width) * self.depth + 2]
             data[w + h * self.width] = (r + g + b) / 3.0
-      self.data = data
-      self.depth = 1
+      return data
 
    def display(self):
       """
@@ -326,6 +332,18 @@ class Bitmap(PyroImage):
       blob.equivList = self.equivList[:]
       return blob
 
+   def convolve(self, maskVector):
+      mask = Bitmap(3, 3)
+      mask.reset(maskVector)
+      print self.width
+      print self.height
+      for w in range(self.width-2):
+         for h in range(self.height-2):
+            if self.get(w, h)== mask.get(0,0) and self.get(w, h+1)==mask.get(0,1)\
+               and self.get(w, h+2)==mask.get(0,2) and self.get(w+1,h)==mask.get(1,0)\
+               and self.get(w+2,h)==mask.get(2,0) and self.get(w+2,h+1)==mask.get(2,1)\
+               and self.get(w+1,h+2)==mask.get(1,2) and self.get(w+2,h+2)==mask.get(2,2):
+               self.set(w+1,h+1,mask.get(1, 1))
 
 """
 assume that we are starting our x,y coordinates from the upper-left,
@@ -648,7 +666,8 @@ if __name__ == '__main__':
    print "Do you want to run test 7: create a camera view, and display 10 frames in ASCII? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = Camera()
+      from pyro.camera.fake import FakeCamera
+      image = FakeCamera()
       for x in range(10):
          image.update()
          image.display()
@@ -658,7 +677,8 @@ if __name__ == '__main__':
    print "Do you want to run test 8: create a histogram of the image? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = Camera()
+      from pyro.camera.fake import FakeCamera
+      image = FakeCamera()
       image.update()
       histogram = image.histogram(15, 20)
       histogram.display()
@@ -681,12 +701,13 @@ if __name__ == '__main__':
       print "Done! View filter bitmap with 'xv filter.ppm'"
    else:
       print "skipping..."
-   print "Do you want to run test 10: find motion in 100 frames? ",
+   print "Do you want to run test 10: find motion in 10 frames? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      camera = Camera()
+      from pyro.camera.fake import FakeCamera
+      camera = FakeCamera()
       camera.update()
-      for x in range(100):
+      for x in range(10):
          camera.update(1)
          camera.motion.display()
          print "avg color of motion:", camera.motion.avgColor(camera)
@@ -697,11 +718,12 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       bitmap.display()
-      mask = bitmap.maskify()
+      mask = bitmap.convolve([1,1,1,
+                              1,1,1,
+                              1,1,1])
       print "Here is your final image"
       bitmap.display()
    else:
       print "skipping..."
-
 
    print "All done!"
