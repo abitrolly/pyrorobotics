@@ -145,7 +145,7 @@ class GovernorSRN(Governor, SRN):
         
 
 if __name__ == '__main__':
-    import os, gzip
+    import os, gzip, sys
     # read in 20,000 lines of experimental training data
     locationfile = gzip.open('location.dat.gz', 'r')
     sensorfile = gzip.open('sensors.dat.gz', 'r')
@@ -178,7 +178,8 @@ if __name__ == '__main__':
     net.setResetLimit(1)
     net.setStopPercent(1.1) # (110%) keep going until resetLimit 
     net.setResetEpoch(5)
-    net.governing = 0
+    net.governing = int(sys.argv[1])
+    print "Goverining is", net.governing
     net.train()
     print net.ravq
     print "Testing..."
