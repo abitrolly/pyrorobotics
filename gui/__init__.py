@@ -66,7 +66,8 @@ class gui:
       """
       done = 0
       print "========================================================="
-      print "Pyro Robotics Control System, (c) 2002, D.S. Blank"
+      print "Pyro Robotics, (c) 2005, D.S. Blank"
+      print "http://PyroRobotics.org"
       print "Version " + version()
       print "========================================================="
       while done is not 1:
@@ -91,6 +92,74 @@ class gui:
       if self.watcher == None:
          self.makeWatcher()
       self.watcher.watch(exp)
+
+   def setCurrentConfig(self, config):
+      cwd = os.getcwd()
+      if self.engine.simfile:
+         file = self.engine.simfile
+         if os.environ["PYRO"] + "/plugins/" in file or \
+                cwd in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         config.put("simulator", "file", file)
+      if self.engine.worldfile:
+         file = self.engine.worldfile
+         if os.environ["PYRO"] + "/plugins/" in file or \
+                cwd in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         config.put("world", "file", file)
+      if self.engine.robotfile:
+         file = self.engine.robotfile
+         if os.environ["PYRO"] + "/plugins/" in file or \
+                cwd in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         config.put("robot", "file", file)
+      if self.engine.brainfile:
+         file = self.engine.brainfile
+         if os.environ["PYRO"] + "/plugins/" in file or \
+                cwd in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         config.put("brain", "file", file)
+      print "Ok"
+
+   def printCommandLine(self):
+      commandLine = sys.argv[0] + " "
+      if self.engine.simfile:
+         file = self.engine.simfile
+         if os.environ["PYRO"] + "/plugins/" in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         commandLine += "-s %s " % file
+      if self.engine.worldfile:
+         file = self.engine.worldfile
+         if os.environ["PYRO"] + "/plugins/" in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         commandLine += "-w %s " % file
+      if self.engine.robotfile:
+         file = self.engine.robotfile
+         if os.environ["PYRO"] + "/plugins/" in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         commandLine += "-r %s " % file
+      if self.engine.brainfile:
+         file = self.engine.brainfile
+         if os.environ["PYRO"] + "/plugins/" in file:
+            file = file.split(os.path.sep)[-1]
+         if file[-3:] == ".py":
+            file = file[:-3]
+         commandLine += "-b %s " % file
+      print commandLine
 
    def processCommand(self, retval):
       retval = retval.replace("\n", "")
@@ -309,14 +378,14 @@ class gui:
       
    def loadBrain(self):
       f = self.fileloaddialog("brains","*.py", self.lastDir.get("brain", ''))
-      if f != '':
+      if f != '' and f != 0:
          self.lastDir["brain"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.engine.loadBrain(f)
 
    def loadDevice(self):
       f = self.fileloaddialog("devices","*.py",self.lastDir.get("devices",''))
-      if f != '':
+      if f != '' and f != 0:
          self.lastDir["devices"] = string.join(f.split('/')[:-1],'/')
          if self.engine != 0 and self.engine.robot != 0:
             self.engine.robot.startDevices(f)
@@ -330,7 +399,7 @@ class gui:
    def loadSim(self, worldfile = ''):
       pyropath = os.getenv('PYRO')
       f = self.fileloaddialog("simulators","*",self.lastDir.get("sim", ''))
-      if f != '':
+      if f != '' and f != 0:
          self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')
          if worldfile == '':
             simulatorName = f.split('/')[-1]
@@ -356,13 +425,14 @@ class gui:
                                                   self.lastDir.get("%s-world" % simulatorName,
                                                                    "%s/plugins/worlds/%s/" %
                                                                    (pyropath, simDirName)))
-               if worldfile == "":
+               if worldfile == "" or worldfile == 0:
                   return
                self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          else:
             simulatorName = worldfile
             self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          self.engine.worldfile = worldfile
+         self.engine.simfile = f
          pyroPID = os.getpid()
          if os.name in ['nt', 'dos', 'os2'] :
             os.system("start "+ (" %d " % pyroPID) + worldfile + " &")
@@ -373,7 +443,7 @@ class gui:
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))
-      if f != '':
+      if f != '' and f != 0:
          self.lastDir["robot"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.freeRobot()

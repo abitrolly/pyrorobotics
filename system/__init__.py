@@ -7,7 +7,7 @@ def about():
     print "Pyro - Python Robotics"
     print "Version:", version()
     print "See: http://PyroRobotics.org"
-    print "(c) 2004, D.S. Blank"
+    print "(c) 2005, D.S. Blank"
     print "-------------------------------------------------------------"
 
 def usage():

@@ -73,6 +73,8 @@ class TKgui(Tkinter.Toplevel, gui):
                        None,
                        ['Editor',self.editor],
                        ['Expression Watcher', self.makeWatcher],
+                       ['Save current config as...', self.saveConfig],
+                       None,
                        ['Exit',self.cleanup] 
                        ]),
               ('Window', [['Open all device windows', self.makeWindows],
@@ -546,36 +548,6 @@ class TKgui(Tkinter.Toplevel, gui):
       self.after(self.update_interval,self.generalUpdate)
       self.mainloop()
 
-   def fileloaddialog(self, filetype, skel, startdir = ''):
-      from string import replace
-      import pyro
-      from os import getcwd, getenv, chdir
-      retval = ""
-      cwd = getcwd()
-      if startdir == '':
-         chdir(pyro.pyrodir() + "/plugins/" + filetype)
-      else:
-         chdir(startdir)
-      d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel, \
-                                   pyro.pyrodir() + "/plugins/" + filetype)
-      try:
-         retval = d.Show()
-         if retval == 1:
-            doc = d.GetFileName()
-            d.DialogCleanup()
-            retval = doc
-         else:
-            d.DialogCleanup()
-            return ""
-      except:
-         print "failed!"
-         # double-click bug. What should we do?
-         doc = d.GetFileName()
-         d.DialogCleanup()
-         retval = doc
-      chdir(cwd)
-      return retval
-
    def refresh(self):
       #   self.win.autospin = 1
       #   self.win.xspin = 0
@@ -666,7 +638,10 @@ class TKgui(Tkinter.Toplevel, gui):
       return menu
 
    def makeWatcher(self):
-      self.watcher = TKwidgets.Watcher(self)
+      if self.watcher:
+         self.watcher.deiconify()
+      else:
+         self.watcher = TKwidgets.Watcher(self)
 
    def clearMessages(self):
       self.status.config(state='normal')
@@ -674,7 +649,14 @@ class TKgui(Tkinter.Toplevel, gui):
       self.status.config(state='disabled')
       self.status.see('end')
 
-   def filesavedialog(self, filetype, skel, startdir = ''):
+   def saveConfig(self):
+      retval = self.filesavedialog("Config", "*.ini", ".", "pyro.ini")
+      if retval:
+         self.setCurrentConfig(self.engine.config)
+         self.engine.config.save(retval)
+         print "Config '%s' saved!" % retval
+
+   def fileloaddialog(self, filetype, skel, startdir = ''):
       from string import replace
       import pyro
       from os import getcwd, getenv, chdir
@@ -684,8 +666,36 @@ class TKgui(Tkinter.Toplevel, gui):
          chdir(pyro.pyrodir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
-      d = TKwidgets.SaveFileDialog(self, "Load " + filetype, skel,
+      d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel, \
                                    pyro.pyrodir() + "/plugins/" + filetype)
+      try:
+         retval = d.Show()
+         if retval == 1:
+            doc = d.GetFileName()
+            d.DialogCleanup()
+            retval = doc
+         else:
+            d.DialogCleanup()
+      except:
+         print "failed!"
+         # double-click bug. What should we do?
+         doc = d.GetFileName()
+         d.DialogCleanup()
+         retval = doc
+      chdir(cwd)
+      return retval
+
+   def filesavedialog(self, filetype, skel, startdir = '', default=None):
+      from string import replace
+      import pyro
+      from os import getcwd, getenv, chdir
+      retval = ""
+      cwd = getcwd()
+      if startdir == '':
+         chdir(pyro.pyrodir() + "/plugins/" + filetype)
+      else:
+         chdir(startdir)
+      d = TKwidgets.SaveFileDialog(self, "Save " + filetype, skel, defaultFilename=default)
       try:
          if d.Show() == 1:
             doc = d.GetFileName()

@@ -9,13 +9,9 @@ class Configuration:
             "robot":       {},
             "brain":       {},
             "simulator":   {},
-            "pioneer":     {},
-            "khepera":     {},
-            "aria":        {},
-            "srisim":      {},
             "pyro":        {}
             }
-        if file != None:
+        if file != None and file != "None":
             self.load(file)
 
     def display(self):
@@ -37,6 +33,7 @@ class Configuration:
         self.data[name][opt] = value
 
     def processFile(self, file, cp):
+        print "Loading config '%s'..." % file
         cp.read(file)
         for sec in cp.sections():
             name = string.lower(sec)
@@ -44,6 +41,15 @@ class Configuration:
                 self.data[name] = {}
             for opt in cp.options(sec):
                 self.data[name][string.lower(opt)] = string.strip(cp.get(sec, opt))
+
+    def save(self, file="pyro.ini"):
+        fp = open(file, "w")
+        for section in self.data:
+            print >> fp, "[%s]" % section
+            for item in self.data[section]:
+                print >> fp, "%s=%s" % (item, self.data[section][item])
+            print >> fp
+        fp.close()
 
     def load(self, file = None):
         cp = ConfigParser.ConfigParser()

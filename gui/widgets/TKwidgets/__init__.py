@@ -238,9 +238,21 @@ class Watcher(Tkinter.Toplevel):
       Tkinter.Toplevel.__init__(self, root)
       self.winfo_toplevel().title("Pyro Expression Watcher")
       self.data = []
-      self.textbox = {}
+
+   def unwatch(self, exp):
+      i = 0
+      for (oldExp, textbox) in self.data:
+         if oldExp == exp:
+            self.data.pop(i)
+            textbox.destroy()
+            return
+         i += 1
+      raise AttributeError, "expression not found: '%s'" % exp
 
    def watch(self, exp):
+      for (oldExp, textbox) in self.data:
+         if oldExp == exp:
+            return # don't watch the same expression more than once
       textbox = self.CreateTextBox(exp, width=30, default="")
       self.data.append( (exp, textbox))
 
@@ -249,7 +261,7 @@ class Watcher(Tkinter.Toplevel):
          try:
             value = eval(exp, locals)
          except:
-            value = "undefined"
+            value = "<Undefined>"
          textbox.delete(0, 'end')
          textbox.insert(0, value)
 
@@ -318,10 +330,38 @@ class FileDialog(ModalDialog):
                 self.pyro_dir = pyro_dir
 		self.cwd = getcwd()
                 self.lastCwd = self.cwd
+                self.defaultFilename =""
                 #	the logical current working directory
 		Dialog.__init__(self, widget)
 
 	#	setup routine called back from Dialog
+
+        def HomePressed(self):
+           from os import getenv
+           if self.goHomeButton['text'] == 'Home':
+              #if self.cwd != getenv('HOME') and \
+              #       self.cwd != self.pyro_dir:
+              self.lastCwd = self.cwd
+              self.cwd = getenv('HOME')
+              self.goHomeButton['text'] = 'Pyro'
+              self.UpdateListBoxes()
+           elif self.goHomeButton['text'] == 'Last':
+              tmp = self.cwd 
+              self.cwd = self.lastCwd
+              #if tmp != getenv('HOME') and \
+              #       tmp != self.pyro_dir:
+              self.lastCwd = tmp
+              self.goHomeButton['text'] = 'Home'
+              self.UpdateListBoxes()
+           elif self.goHomeButton['text'] == 'Pyro':
+              #if self.lastCwd != getenv('HOME') and \
+              #       self.lastCwd != self.pyro_dir:
+              #   self.goHomeButton['text'] = 'Last'
+              #else:
+              self.goHomeButton['text'] = 'Home'
+              self.lastCwd = self.cwd
+              self.cwd = self.pyro_dir
+              self.UpdateListBoxes()
 
 	def SetupDialog(self):
 
@@ -381,6 +421,8 @@ class FileDialog(ModalDialog):
 		self.fileNameEntry["relief"] = "ridge"
 		self.fileNameEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
 		self.fileNameEntry.bind('<Return>', self.FileNameReturnKey)
+                if self.defaultFilename:
+                   self.fileNameEntry.insert(0, self.defaultFilename)
 
                 # help text:
                 helpFrame = Tkinter.Frame(self.top)
@@ -640,33 +682,6 @@ class LoadFileDialog(FileDialog):
            FileDialog.__init__(self, master, title, filter, pyro_dir)
            self.top.title(title)
 
-        def HomePressed(self):
-           from os import getenv
-           if self.goHomeButton['text'] == 'Home':
-              #if self.cwd != getenv('HOME') and \
-              #       self.cwd != self.pyro_dir:
-              self.lastCwd = self.cwd
-              self.cwd = getenv('HOME')
-              self.goHomeButton['text'] = 'Pyro'
-              self.UpdateListBoxes()
-           elif self.goHomeButton['text'] == 'Last':
-              tmp = self.cwd 
-              self.cwd = self.lastCwd
-              #if tmp != getenv('HOME') and \
-              #       tmp != self.pyro_dir:
-              self.lastCwd = tmp
-              self.goHomeButton['text'] = 'Home'
-              self.UpdateListBoxes()
-           elif self.goHomeButton['text'] == 'Pyro':
-              #if self.lastCwd != getenv('HOME') and \
-              #       self.lastCwd != self.pyro_dir:
-              #   self.goHomeButton['text'] = 'Last'
-              #else:
-              self.goHomeButton['text'] = 'Home'
-              self.lastCwd = self.cwd
-              self.cwd = self.pyro_dir
-              self.UpdateListBoxes()
-
 	def OkPressed(self):
 		fileName = self.GetFileName()
 		if file_exists(fileName) == 0:
@@ -687,9 +702,9 @@ class LoadFileDialog(FileDialog):
 ####
 
 class SaveFileDialog(FileDialog):
-
-	def __init__(self, master, title, filter):
-		FileDialog.__init__(self, master, title, filter)
+        def __init__(self, master, title, filter, defaultFilename=""):
+                FileDialog.__init__(self, master, title, filter)
+                self.defaultFilename = defaultFilename
 		self.top.title(title)
 
 	def OkPressed(self):
