@@ -178,12 +178,12 @@ class Layer:
     # error and report methods
     def TSSError(self):
         """
-        Returns Total Sum Squared Error.
+        Returns Total Sum Squared Error for this layer's pattern.
         """
         return Numeric.add.reduce(self.error ** 2)
     def RMSError(self):
         """
-        Returns Root Mean Squared Error.
+        Returns Root Mean Squared Error for this layer's pattern.
         """
         tss = self.TSSError()
         return math.sqrt(tss / self.size)
@@ -1156,7 +1156,7 @@ class Network:
         return self.getLayer(layerName).getCorrect(self.tolerance)
     def RMSError(self):
         """
-        Returns Root Mean Squared Error for all output layers in the network.
+        Returns Root Mean Squared Error for all output layers in this network.
         """
         tss = 0.0
         size = 0
@@ -1167,7 +1167,7 @@ class Network:
         return math.sqrt( tss / size )
     def TSSError(self, layerName):
         """
-        Returns Total Sum Squared error for the given layer.
+        Returns Total Sum Squared error for the specified layer's pattern.
         """
         return self.getLayer(layerName).TSSError()
 
@@ -1177,17 +1177,19 @@ class Network:
         Trains the network on the dataset till a stopping condition is
         met. This stopping condition can be a limiting epoch or a percentage correct requirement.
         """
+
         # check architecture
         self.verifyArchitecture()
-        tssErr = 1.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
+        tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
         self.resetCount = 1
         while totalCount != 0 and \
               totalCorrect * 1.0 / totalCount < self.stopPercent:
             (tssErr, totalCorrect, totalCount) = self.sweep()
+            rmsErr = math.sqrt(tssErr / totalCount)
             if self.epoch % self.reportRate == 0:
-                print "Epoch #%6d" % self.epoch, "| TSS Error: %.2f" % tssErr, \
+                print "Epoch #%6d" % self.epoch, "| TSS Error: %f" % tssErr, \
                       "| Correct =", totalCorrect * 1.0 / totalCount, \
-                      "| RMS Error: %.2f" % self.RMSError()
+                      "| RMS Error: %f" % rmsErr
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
                     print "Reset limit reached; ending without reaching goal"
@@ -1195,14 +1197,15 @@ class Network:
                 self.resetCount += 1
                 print "RESET! resetEpoch reached; starting over..."
                 self.initialize()
-                tssErr = 1.0; self.epoch = 1; totalCorrect = 0
+                tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0
                 continue
             sys.stdout.flush()
             self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            print "Final #%6d" % self.epoch, "| TSS Error: %.2f" % tssErr, \
-                  "| Correct =", totalCorrect * 1.0 / totalCount
+            print "Final #%6d" % self.epoch, "| TSS Error: %f" % tssErr, \
+                  "| Correct =", totalCorrect * 1.0 / totalCount, \
+                  "| RMS Error: %.2f" % rmsErr
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
@@ -1211,20 +1214,29 @@ class Network:
         Runs through entire dataset. Must call setInputs(),
         setTargets(), and associate() methods to initialize all inputs
         and targets for the entire dataset before calling
-        propagate() and backprop() (possibly without learning). Returns TSS error, total correct, and total count.
+        propagate() and backprop() (possibly without learning). Returns TSS error,
+        total correct, and total count.
         """
         if self.loadOrder == []:
-            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
+            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs \
+            are properly set.', self.loadOrder)
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
+#        print 'performing sweep...'
         for i in self.loadOrder:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
             self.preprop(i)
             self.propagate()
             (error, correct, total) = self.backprop() # compute_error()
+##            print '   pattern', i, ':', self.getLayer('input').activation
+##            print '   pattern', i, 'targets =', self.getLayer('output').target
+##            print '   pattern', i, 'outputs =', self.getLayer('output').activation
+##            print '   pattern', i, 'errors =', self.getLayer('output').error
+##            print '   pattern', i, 'deltas =', self.getLayer('output').delta
+##            print '   sum squared error for pattern', i, '=', error
             tssError += error
             totalCorrect += correct
             totalCount += total
@@ -1239,6 +1251,11 @@ class Network:
                 self.change_weights()
         if self.learning and self.batch:
             self.change_weights() # batch
+##        print 'tssError =', tssError
+##        print '   TOTAL SUM SQUARED ERROR =', tssError
+##        print self.connections[1]
+##        print self.connections[0]
+##        self.prompt()
         return (tssError, totalCorrect, totalCount)
     def cycle(self):
         """
@@ -1374,7 +1391,7 @@ class Network:
         return retval
     def change_weights(self):
         """
-        Changes the weights according to the error values calaculated
+        Changes the weights according to the error values calculated
         during backprop(). Learning must be set.
         """
         for connection in self.connections:
@@ -1832,7 +1849,7 @@ class Network:
         for w in self.patterns:
             if self.compare( self.patterns[w], pattern ):
                 return w
-        return ""
+        return None
     # use addPattern and delPattern
     def setPattern(self, word, vector):
         """
@@ -2103,11 +2120,13 @@ if __name__ == '__main__':
     n.setInputs([[0.0, 0.0],
                  [0.0, 1.0],
                  [1.0, 0.0],
-                 [1.0, 1.0]])
+                 [1.0, 1.0]
+                 ])
     n.setTargets([[0.0],
                   [1.0],
                   [1.0],
-                  [0.0]])
+                  [0.0]
+                  ])
     n.setReportRate(100)
 
     if ask("Do you want to test the pattern replacement utility?"):
@@ -2219,8 +2238,7 @@ if __name__ == '__main__':
         n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
-        #n.verbosity = 10
-        #n.setInteractive(1)
+        n.setReportRate(10)
         n.train()
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
@@ -2229,6 +2247,7 @@ if __name__ == '__main__':
         n.initialize()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
+        n.setReportRate(10)
         n.train()
         if ask("Do you want to test prop_from() method?"):
             n.prop_from([n.getLayer('input')])
