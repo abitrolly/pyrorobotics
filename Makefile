@@ -10,11 +10,6 @@ include Makefile.cfg
 
 SUBDIRS = vision/cvision camera/fake camera/blob $(CONFIGDIRS) 
 
-ifeq ($(SAPHIRA),)
-else
-SUBDIRS += lib robot/driver/saphira 
-endif
-
 everything: system/version.py all bin/pyro plugins/simulators/Khepera compile 
 
 include Makefile.src

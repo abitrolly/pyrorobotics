@@ -3,6 +3,7 @@
 
 import sys
 from posixpath import exists, isdir, isfile, islink
+from posix import popen
 import os
 
 def file_exists(file_name, type = 'file'):
@@ -37,9 +38,8 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    while not done:
       print question
       if locate:
-          print "   It may be located here: ",
-          sys.stdout.flush()
-          os.system("locate %s | head -1 " % locate )
+          pipe = popen("locate %s | head -1 " % locate )
+          default = pipe.readline().strip()
       print 'Default = [' + default + ']: ',
       retval = raw_input()
       if retval == "":
@@ -76,10 +76,6 @@ PYTHON_BIN=%s
 # Where is this version of Python's include files?
 PYTHON_INCLUDE=-I%s
 
-# Where is Saphira? Leave empty if you don't want to build
-# Saphira-related items.
-SAPHIRA=%s
-
 # Where are X11 files (such as X11 include directory)?
 X11_DIR = %s
 
@@ -105,17 +101,12 @@ python_bin_path = ask("3. What is Python's binary? (enter path and name)",
                            "/usr/local/bin/python" + python_script_name,
                       locate = "bin/python" + python_script_name)
 
-saphira =ask("4. Where is Saphira? ('none' if you don't have it)",
-             "none",
-             type = "dir",
-             locate = "/ver62/",)
-
-x11_include_dir = ask("5. Where is the X11 include directory?",
+x11_include_dir = ask("4. Where is the X11 include directory?",
                       "/usr/X11",
                       type = "dir",
                       locate = "/usr/X11")
 
-included_packages = ask_yn("\n6. Options:", [
+included_packages = ask_yn("\n5. Options:", [
     ('camera/v4l', "Video for Linux (v4l)"),
     ('camera/bt848', "BT848 Video (old Pioneers)"),
     ('brain/psom brain/psom/csom_src/som_pak-dev',
@@ -124,13 +115,9 @@ included_packages = ask_yn("\n6. Options:", [
     ('simulators/khepera', "Khepera Simulator"),
     ])
 
-#camera/bt848 geometry gui/3DArray robot/driver/grid \
-#	robot/driver/video camera/v4l brain/psom tools/cluster \
-#	brain/psom/csom_src/som_pak-dev simulators/khepera
-
 fp = open("Makefile.cfg", "w")
 fp.write(text % (python_script_name, python_bin_path, python_include_files,
-                 saphira, x11_include_dir, included_packages))
+                 x11_include_dir, included_packages))
 fp.close()
 
 print """
@@ -139,5 +126,5 @@ Configuration is complete!
 You just created Makefile.cfg. You can run this again, or edit
 Makefile.cfg by hand if you need to.
 
-Now you are ready to run 'make'
+Now you are ready to run 'make' (if you aren't already)
 """
