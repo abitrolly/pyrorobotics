@@ -1,13 +1,13 @@
 CC = gcc
 CXX = gcc
-PYTHONINCLUDE = -I/usr/include/python2.0
+PYTHONINCLUDE = -I/usr/include/python2.1
 
-BASEDIR=/home/dblank/pyro/stuff
+BASEDIR=.
 
-INCLUDEFLAGS = -I${BASEDIR}
+INCLUDEFLAGS = -I${BASEDIR} -I..
 CFLAGS = -Werror -Wall -g ${INCLUDEFLAGS} ${DEFINES}
 CXXFLAGS = ${CFLAGS} 
-LDFLAGS = -L${BASEDIR}/lib ${LIB:lib%.so=-l%} -lm
+LDFLAGS = -L${BASEDIR} -L../geometry ${LIB:lib%.so=-l%} -lm
 
 GLLDFLAGS = -L/usr/X11R6/lib -lGL -lGLU
 C++LDFLAGS = -lstdc++

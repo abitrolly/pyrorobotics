@@ -6,7 +6,7 @@ LIB = libgeometry.so
 include ../Makefile.include
 
 DEFINES= -D__USE_GL -D_GNU_SOURCE
-LDFLAGS := ${LDFLAGS} ${GLLDFLAGS} ${C++LDFLAGS}
+LDFLAGS := ${LDFLAGS} ${GLLDFLAGS} ${C++LDFLAGS} 
 
 libgeometry.so : $(OBJ)
 
