@@ -7,6 +7,7 @@ class SimpleBrain(Brain):
 
    def step(self):
       self.getRobot().move(.3, .2)
+      #self.quit()
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.

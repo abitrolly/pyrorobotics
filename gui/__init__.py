@@ -21,6 +21,7 @@ class gui(Drawable):
       """
       Drawable.__init__(self, name, options)
       self.engine = engine
+      self.engine.gui = self
       self.prevsighandler = signal.signal(signal.SIGINT, self.INThandler)
       self.append(self.engine)  # append engine to drawable
 

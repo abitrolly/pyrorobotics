@@ -41,6 +41,12 @@ class Brain(threading.Thread): #, Drawable):
 
     def getEngine(self):
         return self.engine
+
+    def quit(self):
+        self.needToStop = 0
+        self.needToQuit = 1
+        if self.engine and self.engine.gui:
+            self.engine.gui.done = 1
     
     def run(self):
         while self.needToQuit is not 1 and self.isAlive():
