@@ -87,6 +87,8 @@ class State:
    def onDeactivate(self):
       pass # normally will overload
    def update(self):
+      self.step()
+   def step(self):
       pass # normally will overload
    def setup(self):
       pass # normally will overload
