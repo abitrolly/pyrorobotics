@@ -16,13 +16,13 @@ class Engine(drawable.Drawable):
       self.brainfile = ''
       self.robotfile = ''
       self.config = config
-      if simfile != None:
+      if simfile:
          self.loadSimulator(simfile)
-      if robotfile != None:
+      if robotfile:
          self.loadRobot(robotfile)
-      if brainargs != [] and brainfile != None:
+      if brainargs != [] and brainfile:
          self.loadBrain(brainfile, brainargs)
-      elif brainfile != None:
+      elif brainfile:
          self.loadBrain(brainfile)
 
    def reset(self):
