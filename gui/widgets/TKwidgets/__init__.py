@@ -443,7 +443,7 @@ class FileDialog(ModalDialog):
                 # the module, but that would require us to load it
                 # and that seems like not a good idea. Maybe better
                 # to get data from a text file, or top of .py file
-                if field.get()[-3:] == ".py":
+                if field.get()[-3:] == ".py" or field.get()[-6:] == ".world":
                    fp = open(field.get(), "r")
                    lines = fp.readlines()
                    stringlines = string.join(lines, '')
