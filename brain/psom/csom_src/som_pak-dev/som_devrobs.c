@@ -1080,7 +1080,8 @@ char **get_label_data_entry(struct data_entry *entry, int num_labels) {
   char **labels = NULL, *str_label = NULL;
 
   if(entry->num_labs) {
-    labels = malloc(entry->num_labs*sizeof(char*));
+    //labels = malloc(entry->num_labs*sizeof(char*));
+    labels = malloc((entry->num_labs+1)*sizeof(char*));
     for(i=0;;i++) {
       label = get_entry_labels(entry, i);
       if(label != LABEL_EMPTY) {
