@@ -17,7 +17,7 @@ class GPS(TkMap):
      heightMM: actual distance represented by a row (in MMs)
      title: window title
    """
-   def __init__(self, cols=400, rows=400, value = 0.5,
+   def __init__(self, parent, cols=400, rows=400, value = 0.5,
                 widthMM = 10000, heightMM = 10000,
                 title = "Global Perceptual Space"):
       """ Pass in grid cols, grid cells, and total cols/rows in MM"""
@@ -38,7 +38,7 @@ class GPS(TkMap):
       self.maxOccupied = 0.98
 
       # create the map
-      TkMap.__init__(self, cols, rows, value,
+      TkMap.__init__(self, parent, cols, rows, value,
                      cols, rows,
                      widthMM, heightMM, title)
 
@@ -258,6 +258,8 @@ class GPS(TkMap):
                                       fill=color, tag = "old")
             
 if __name__ == '__main__':
-    gps = GPS(50, 50)
-    gps.application = 1
-    gps.mainloop()
+   import Tkinter
+   root = Tkinter.Tk()
+   gps = GPS(root, 50, 50)
+   gps.application = 1
+   gps.mainloop()

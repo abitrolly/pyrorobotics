@@ -123,7 +123,6 @@ def INIT(engine): # passes in robot, if you need it
 
     # activate a state:
     brain.activate('state1') # could have made it active in constructor
-    brain.init()
 
     import pyro.camera
     brain.camera = pyro.camera.Camera()

@@ -23,6 +23,8 @@ class Brain(threading.Thread):
         if self.robot != 0:
             self.robot.localize()
         # user setup:
+        self.profilePerformance = 0
+        self.profileCount = 0
         self.setup(**kwargs)
         # start the thread:
         self.start()
@@ -79,6 +81,15 @@ class Brain(threading.Thread):
             self.step()
             self.couldBeMoving = 1
             time.sleep(self.pauseTime)
+            if self.profilePerformance == 2:
+                self.profileCount += 1
+                self.profileTotalTime += time.time() - self.lastRun
+                if self.profileCount % 100 == 0:
+                    print "Profile: brain running at %.3f steps/second" % (float(self.profileCount) / self.profileTotalTime)
+                    self.profileTotalTime = 0.0
+                    self.profileCount = 0
+            if self.profilePerformance == 1:
+                self.profilePerformance = 2
             self.lastRun = time.time() # seconds
             #print "release()"
             self.condition.release()

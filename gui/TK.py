@@ -6,6 +6,7 @@ import pyro.gui.widgets.TKwidgets as TKwidgets
 from pyro.system.version import *
 from pyro.engine import *
 import pyro.system as system
+import pyro.system.share as share
 from pyro.gui.drawable import *
 from pyro.gui.renderer.tk import *
 from pyro.gui.renderer.streams import *
@@ -14,16 +15,12 @@ import sys
 
 # A TK gui
 
-class TKgui(gui): 
-   def __init__(self, engine, db = 1, depth = 1): 
+class TKgui(Tkinter.Toplevel, gui): 
+   def __init__(self, parent, engine, db = 1, depth = 1):
+      Tkinter.Toplevel.__init__(self, parent)
       gui.__init__(self, 'TK gui', {}, engine)
-      # This needs to be done here:
-      self.app = Tkinter.Tk()
-      self.app.withdraw()
-      # And other main windows should use Tkinter.Toplevel()
       self.genlist = 0
-      self.win = Tkinter.Toplevel()
-      self.frame = Tkinter.Frame(self.win)
+      self.frame = Tkinter.Frame(self)
       self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
                       fill = 'both')
       self.windowBrain = 0
@@ -396,7 +393,7 @@ class TKgui(gui):
          for service in self.engine.robot.getServices():
             if self.engine.robot.getService(service).visible:
                self.engine.robot.getService(service).updateWindow()
-      self.win.after(self.update_interval,self.generalUpdate)
+      self.after(self.update_interval,self.generalUpdate)
       
    def run(self, command = []):
       self.done = 0
@@ -410,8 +407,8 @@ class TKgui(gui):
       #
       # get the general update going -jp
       #
-      self.win.after(self.update_interval,self.generalUpdate)
-      self.win.mainloop()
+      self.after(self.update_interval,self.generalUpdate)
+      self.mainloop()
 
    def fileloaddialog(self, filetype, skel, startdir = ''):
       from string import replace
@@ -423,7 +420,7 @@ class TKgui(gui):
          chdir(pyro.pyrodir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
-      d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel, \
+      d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel, \
                                    pyro.pyrodir() + "/plugins/" + filetype)
       try:
          if d.Show() == 1:
@@ -519,7 +516,7 @@ class TKgui(gui):
          chdir(pyro.pyrodir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
-      d = TKwidgets.SaveFileDialog(self.win, "Load " + filetype, skel,
+      d = TKwidgets.SaveFileDialog(self, "Load " + filetype, skel,
                                    pyro.pyrodir() + "/plugins/" + filetype)
       try:
          if d.Show() == 1:
@@ -561,7 +558,8 @@ class TKgui(gui):
          raise ValueError, "select robot first"
 
 if __name__ == '__main__':
-   gui = TKgui(Engine())
+   root = Tkinter.Tk()
+   gui = TKgui(root, Engine())
    gui.inform("Ready...")
    gui.run()
    gui.cleanup()

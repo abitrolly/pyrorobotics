@@ -114,6 +114,5 @@ def INIT(engine): # passes in engine, if you need it
     brain.add(state3())
     # activate a state:
     brain.activate('state1') # could have made it active in constructor
-    brain.init()
     return brain
 

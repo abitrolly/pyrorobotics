@@ -5,7 +5,7 @@
 
 from time import *
 from pyro.brain import *
-from pyro.brain.behaviors.fsm import State
+from pyro.brain.behaviors.fsm import State # not used here, but needed when you import this
 
 class BehaviorBasedBrain(Brain):
    """
@@ -20,6 +20,7 @@ class BehaviorBasedBrain(Brain):
       self.pie = []
       self.desires = []
       self.effectsTotal = {}
+      self.initialized = 0
    def set_controls(self, controllers):
       self.controls = controllers
       self.history = [{}, {}, {}]
@@ -34,7 +35,7 @@ class BehaviorBasedBrain(Brain):
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
       state.behaviorEngine = self
-      state.init()
+      state.setup()
       if state.status:
          state.onActivate()
    def reset(self):
@@ -42,13 +43,11 @@ class BehaviorBasedBrain(Brain):
       #self.status = -1
       self.desires = []
       self.effectsTotal = {}
-   def init(self): # init and get ready to run
-      for s in self.states.keys():
-         self.states[s].setcontrols(self.controls)
-      #if self.status == -1: # virgin, need to init states
-      #self.status = 1 # be is read to run
    def step(self):
-      #self.init() # init if necessary
+      if not self.initialized:
+         for s in self.states.keys():
+            self.states[s].setcontrols(self.controls)
+         self.initialized = 1
       self.desires = [] # init all desires (this will be set in state.run)
       self.history[2] = self.history[1]
       self.history[1] = self.history[0]
@@ -164,7 +163,7 @@ class Behavior:
       self.type = self.__class__.__name__
       self.name = name or self.type
       self.effects = effects
-   def init(self):
+   def setup(self):
       pass # this will get over written, normally
    def onActivate(self):
       pass

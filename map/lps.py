@@ -1,4 +1,3 @@
-
 from pyro.map.tkmap import TkMap
 from math import cos, sin, pi, sqrt
 
@@ -6,13 +5,13 @@ class LPS(TkMap):
    """
    GUI for visualizing the local perceptual space of a robot.
    """
-   def __init__(self, cols, rows, value = 0.5,
+   def __init__(self, parent, cols, rows, value = 0.5,
                 width = 200, height = 200,
                 widthMM = 7500, heightMM = 7500,
                 title = "Local Perceptual Space"):
       """ Pass in grid cols, grid cells, and total width/height in MM"""
       self.step = 0
-      TkMap.__init__(self, cols, rows, value,
+      TkMap.__init__(self, parent, cols, rows, value,
                      width, height,
                      widthMM, heightMM, title)
 
@@ -35,7 +34,7 @@ class LPS(TkMap):
       run  = hitx - origx
       if abs(run) < 0.1:
          run = 0
-      steps = round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM)))
+      steps = int(round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM))))
       if steps == 0:
          self.setGridLocation(hitx, hity, 1.0, label)
          return
@@ -107,42 +106,44 @@ class LPS(TkMap):
       robot.set(item, 'units', originalUnits)
 
    def redraw(self):
-      maxval = 1
-      for i in range(self.rows):
-         for j in range(self.cols):
-            self.canvas.create_rectangle(int(j * self.colScale),
-                                         int(i * self.rowScale),
-                                         int((j + 1) * self.colScale),
-                                         int((i + 1) * self.rowScale),
-                                         width = 0,
-                                         fill=self.color(self.grid[i][j],
-                                                         maxval),
-                                         tag = "cell%d" % self.step)
-            if self.label[i][j]:
-               self.canvas.create_text(int((j + .5) * self.colScale),
-                                       int((i + .5) * self.rowScale),
-                                       text = self.label[i][j],
-                                       fill="yellow",
-                                       tag = "cell%d" % self.step)
-      self.canvas.create_oval( self.width / 2.0 - 10,
-                               self.height / 2.0 - 10,
-                               self.width / 2.0 + 10,
-                               self.height / 2.0 + 10,
-                               fill = "red",
-                               tag = "cell%d" % self.step)
-      self.canvas.create_rectangle( self.width / 2.0 + 5,
-                               self.height / 2.0 - 5,
-                               self.width / 2.0 + 15,
-                               self.height / 2.0 + 5,
-                               fill = "blue",
-                               tag = "cell%d" % self.step)
-                               
+      if 1:
+         maxval = 1
+         for i in range(self.rows):
+            for j in range(self.cols):
+               self.canvas.create_rectangle(int(j * self.colScale),
+                                            int(i * self.rowScale),
+                                            int((j + 1) * self.colScale),
+                                            int((i + 1) * self.rowScale),
+                                            width = 0,
+                                            fill=self.color(self.grid[i][j],
+                                                            maxval),
+                                            tag = "cell%d" % self.step)
+               if self.label[i][j]:
+                  self.canvas.create_text(int((j + .5) * self.colScale),
+                                          int((i + .5) * self.rowScale),
+                                          text = self.label[i][j],
+                                          fill="yellow",
+                                          tag = "cell%d" % self.step)
+         self.canvas.create_oval( self.width / 2.0 - 10,
+                                  self.height / 2.0 - 10,
+                                  self.width / 2.0 + 10,
+                                  self.height / 2.0 + 10,
+                                  fill = "red",
+                                  tag = "cell%d" % self.step)
+         self.canvas.create_rectangle( self.width / 2.0 + 5,
+                                  self.height / 2.0 - 5,
+                                  self.width / 2.0 + 15,
+                                  self.height / 2.0 + 5,
+                                  fill = "blue",
+                                  tag = "cell%d" % self.step)
       self.step = not self.step
       self.canvas.delete("cell%d" % self.step)
-      self.update_idletasks()
+      #self.win.update_idletasks()
 
 if __name__ == '__main__':
-   lps = LPS(10, 10)
+   import Tkinter
+   root = Tkinter.Tk()
+   lps = LPS(root, 10, 10)
    lps.redraw()
    lps.application = 1
    lps.mainloop()

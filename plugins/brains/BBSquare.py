@@ -91,7 +91,4 @@ def INIT(engine): # passes in robot, if you need it
     # add a few states:
     brain.add(edge(1))
     brain.add(turn())
-
-    brain.init()
-    #robot.localize(1, 1.5)
     return brain

@@ -245,6 +245,4 @@ def INIT(engine): # passes in robot, if you need it
     brain.add(E1()) # non active
     brain.add(E2()) # non active
     brain.add(Done()) # non active
-
-    brain.init()
     return brain

@@ -23,7 +23,7 @@ class FSMBrain (Brain):
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
       state.behaviorEngine = self
-      state.init()
+      state.setup()
       if state.status:
          state.onActivate()
 
@@ -80,9 +80,12 @@ class State:
       pass # normally will overload
    def update(self):
       pass # normally will overload
-   def init(self):
+   def setup(self):
       pass # normally will overload
    def add(self, b):
+      print b
+      print b.name
+      print self.behaviors
       if b.name in self.behaviors.keys():
          raise "ERROR: beh already exists: '" + b.name + "'"
       else:
@@ -91,7 +94,7 @@ class State:
       b.behaviorEngine = self.behaviorEngine
       # keep a pointer to parent state, from the beh:
       b.state = self
-      b.init() # init the behavior, just once
+      b.setup() # init the behavior, just once
       if b.status:
          b.onActivate()
    def setcontrols(self, controls):

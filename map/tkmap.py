@@ -2,17 +2,18 @@ from pyro.map import Map
 import Tkinter
 import pyro.gui.widgets.TKwidgets as TKwidgets
 import pyro.system as system
+import pyro.system.share as share
 import pyro.gui.console as console
 
-class TkMap(Map, Tkinter.Tk):
+class TkMap(Map, Tkinter.Toplevel):
     """ Map with Tkinter GUI functions """
 
-    def __init__(self, cols, rows, value,
+    def __init__(self, parent, cols, rows, value,
                  width, height,
                  widthMM, heightMM, title, menu = None, keybindings = []):
         """ TkMap extends Map and Tkinter """
+        Tkinter.Toplevel.__init__(self, parent)
         Map.__init__(self, cols, rows, widthMM, heightMM)
-        Tkinter.Tk.__init__(self)
         self.title(title)
         if menu == None:
             menu = [('File',[['Exit',self.destroy]])]
@@ -77,11 +78,11 @@ class TkMap(Map, Tkinter.Tk):
         Map.setGrid(self, grid)
         self.changeSize()
 
-    def destroy(self):
-        self.withdraw()
-        self.update_idletasks()
-        if self.application:
-            Tkinter.Tk.destroy(self)
+#    def destroy(self):
+#        self.withdraw()
+#        self.update_idletasks()
+#        if self.application:
+#            self.destroy()
 
     def redraw(self):
         print "warn: Need to overload redraw() from TkMap class"
@@ -131,8 +132,9 @@ class TkMap(Map, Tkinter.Tk):
         pass
 
 if __name__ == '__main__':
+    root = Tkinter.Tk()
     print "Testing TkMap()..."
-    map = TkMap(8, 10, .5, 200, 200, 500, 1000, "Sample Map")
+    map = TkMap(root, 8, 10, .5, 200, 200, 500, 1000, "Sample Map")
     map.display()
     map.reset()
     map.display()

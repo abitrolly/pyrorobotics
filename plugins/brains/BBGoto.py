@@ -46,7 +46,6 @@ def INIT(engine):
                                 'rotate' : engine.robot.rotate, \
                                 'update' : engine.robot.update }, engine)
     brain.add(Main(1)) 
-    brain.init()
     return brain
 
 

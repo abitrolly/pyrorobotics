@@ -1,32 +1,30 @@
-from Tkinter import *
+import Tkinter
 
-class Joystick:
+class Joystick(Tkinter.Toplevel):
 
-   def __init__(self):
+   def __init__(self, parent):
+      Tkinter.Toplevel.__init__(self, parent)
       self.debug = 0
-      self.app = Tk()
-      self.app.withdraw()
-      self.win = Toplevel()
-      self.win.wm_title('Joystick')
-      self.win.protocol('WM_DELETE_WINDOW',self.destroy)
-      self.frame = Frame(self.win)
-      label = Label(self.frame, text = "Forward")
+      self.wm_title('Joystick')
+      self.protocol('WM_DELETE_WINDOW',self.destroy)
+      self.frame = Tkinter.Frame(self)
+      label = Tkinter.Label(self.frame, text = "Forward")
       label.pack(side = "top")
-      label = Label(self.frame, text = "Reverse")
+      label = Tkinter.Label(self.frame, text = "Reverse")
       label.pack(side = "bottom")
-      label = Label(self.frame, text = "Turn\nLeft")
+      label = Tkinter.Label(self.frame, text = "Turn\nLeft")
       label.pack(side = "left")
-      label = Label(self.frame, text = "Turn\nRight")
+      label = Tkinter.Label(self.frame, text = "Turn\nRight")
       label.pack(side = "right")
-      self.canvas = Canvas(self.frame,
-                           width = 220,
-                           height = 220,
-                           bg = 'white')
+      self.canvas = Tkinter.Canvas(self.frame,
+                                   width = 220,
+                                   height = 220,
+                                   bg = 'white')
       
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.canvas.bind("<B1-Motion>", self.canvas_moved)
-      self.canvas.pack(side=BOTTOM)
+      self.canvas.pack(side=Tkinter.BOTTOM)
 
       self.circle_dim = (10, 10, 210, 210) #x0, y0, x1, y1
       self.circle = self.canvas.create_oval(self.circle_dim, fill = 'white')
@@ -55,7 +53,7 @@ class Joystick:
          print self.translate, self.rotate
 
    def destroy(self):
-      self.win.destroy()
+      self.destroy()
 
    def canvas_clicked_up(self, event):
       self.canvas.delete("lines")
@@ -112,5 +110,7 @@ class Joystick:
       return (trans, rot)
 
 if __name__ == '__main__':
+   import pyro.system.share as share
+   share.gui = Tkinter.Tk()
    joystick = Joystick()
-   joystick.app.mainloop()
+   share.gui.mainloop()

@@ -147,8 +147,16 @@ class ActivDiag(Tkinter.Toplevel):
         nameSizeList = [("Desired %s" % (layer[0],), layer[1]) for layer in nameSizeList]
         self.levelFrameList += [LevelFrame(self, nameSizeList)]
         self.levelFrameList[-1].grid(row=0, column=len(self.netStruct.levelList))
+        # Go through and set visible based on nodeNum
+        # If too many (> 50), then don't initially show
         for i in xrange(len(self.levelFrameList)):
-            self.levelFrameList[i].setVisible([0] * len(self.levelFrameList[i].visibleList))
+            vlist = []
+            for canvas in self.levelFrameList[i].layerCanvasList:
+                if canvas.numNodes <= 50:
+                    vlist.append( 1 )
+                else:
+                    vlist.append( 0 )
+            self.levelFrameList[i].setVisible(vlist)
     
     def updateActivs(self):
         for i in xrange(len(self.levelFrameList)-1):
