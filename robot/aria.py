@@ -137,20 +137,15 @@ class AriaRobot(Robot):
         self.dev.unlock()
         return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
-#    def setGripper(self, dev, option):
-#        pass
-
     ## Methods for gripper from Aria
 
-    def gripOpen(self):
-        self.dev.lock()
+    def gripperOpen(self):
         self.controls['gripper'].gripOpen()
-        self.dev.unlock()
 
-    def gripClose(self):
-        self.controls['gripper'].gripClose() #ArGripper(self.dev).gripClose()
+    def gripperClose(self):
+        self.controls['gripper'].gripClose() 
 
-    def gripStop(self):
+    def gripperStop(self):
         self.controls['gripper'].gripStop()
 
     def liftUp(self):
@@ -171,13 +166,13 @@ class AriaRobot(Robot):
     def gripperHalt(self):
         self.controls['gripper'].gripperHalt()
 
-    def getGripState(self):
+    def getGripperState(self):
         return self.controls['gripper'].getGripState()
 
     def getBreakBeamState(self):
         return self.controls['gripper'].getBreakBeamState()
 
-    def isGripMoving(self):
+    def isGripperMoving(self):
         return self.controls['gripper'].isGripMoving()
 
     def isLiftMoving(self):
