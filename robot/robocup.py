@@ -1,9 +1,20 @@
+"""
+Pyro module for interfacing with the Robocup Server.
+
+TODO: need localize that would triangulate from flags/landmarks OR
+      need someother way of dead reckoning (for x, y, th)
+      need to make unique colors of lines and objects
+      need to make laser sensor have more than single angle hits
+"""
 from socket import *
 from pyro.robot import Robot
 from pyro.robot.device import Device
 from random import random
 from time import sleep
+from math import pi, sin, cos
 import threading
+
+PIOVER180 = pi / 180.0
 
 class ReadUDP(threading.Thread):
     """
@@ -167,6 +178,7 @@ class RobocupLaserDevice(Device):
         self.subDataFunc['oz']    = lambda pos: 0
         # FIX: the index here should come from the "index"
         self.subDataFunc['th']    = lambda pos: pos - 45 # in degrees
+        self.subDataFunc['thr']   = lambda pos: (pos - 45) * PIOVER180 
         self.subDataFunc['arc']   = lambda pos: 1
         self.subDataFunc['x']     = self.getX
         self.subDataFunc['y']     = self.getY
@@ -249,8 +261,23 @@ class RobocupRobot(Robot):
         while self.devData["address"][1] == self.devData["port"]: pass
         self.devData["builtinDevices"] = ["truth", "laser"]
         self.startDevice("truth")
+        self.startDevice("laser")
         self.set("/devices/truth0/pose", (random() * 100 - 50,
-                          random() * 20 - 10))
+                                          random() * 20 - 10))
+        self.devDataFunc["range"] = self.get("/devices/laser0/object")
+        # default values for all robots:
+        self.devData["stall"] = 0
+        self.devData["x"] = 0.0
+        self.devData["y"] = 0.0
+        self.devData["th"] = 0.0
+        self.devData["thr"] = 0.0
+        # Can we get these from robocup?
+        self.devData["radius"] = 0.75
+        self.devData["type"] = "Robocup"
+        self.devData["subtype"] = 0
+        self.devData["units"] = "METERS"
+        self.localize(0, 0, 0)
+        self.update()
         
     def startDeviceBuiltin(self, item):
         if item == "truth":
