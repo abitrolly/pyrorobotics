@@ -306,25 +306,67 @@ class AiboRobot(Robot):
         self.devData["timestamp"] = self.sensor_socket.read(4, "l")
         # ---
         numPIDJoints = self.sensor_socket.read(4, "l")
-        self.devData["numPIDJoints"] = numPIDJoints
-        self.devData["position"] = self.sensor_socket.read(numPIDJoints * 4,
+        self.devData["numPIDJoints"] = numPIDJoints # ERS7: 18
+        self.devData["positionRaw"] = self.sensor_socket.read(numPIDJoints * 4,
                                                            "<%df" % numPIDJoints,all=1)
         # ---
-        numSensors = self.sensor_socket.read(4, "l")
+        numSensors = self.sensor_socket.read(4, "l") # ERS7: 8
         self.devData["numSensors"] = numSensors
-        self.devData["sensor"] = self.sensor_socket.read(numSensors * 4,
+        self.devData["sensorRaw"] = self.sensor_socket.read(numSensors * 4,
                                                          "<%df" % numSensors,all=1)
         # ---
-        numButtons = self.sensor_socket.read(4, "l")
+        numButtons = self.sensor_socket.read(4, "l") # ERS7: 6
         self.devData["numButtons"] = numButtons
-        self.devData["button"] = self.sensor_socket.read(numButtons * 4,
+        self.devData["buttonRaw"] = self.sensor_socket.read(numButtons * 4,
                                                          "<%df" % numButtons,all=1)
-        # --- same number as PID joints:
-        self.devData["dutyCycle"] = self.sensor_socket.read(numPIDJoints * 4,
+        # --- same number as PID joints:             # ERS7: 18
+        self.devData["dutyCycleRaw"] = self.sensor_socket.read(numPIDJoints * 4,
                                                             "<%df" % numPIDJoints,all=1)
         if 1:
             for item in self.devData:
                 print >> sys.stdderr, item, self.devData[item]
+
+    def getJoint(self, jointName):
+        """ Get position, dutyCycle of joint by name """
+        if   jointName == "left front rotator":
+            pos = 0
+        elif jointName == "left front elevator":
+            pos = 1
+        elif jointName == "left front knee":
+            pos = 2
+        elif jointName == "right front rotator":
+            pos = 3
+        elif jointName == "right front elevator":
+            pos = 4
+        elif jointName == "right front knee":
+            pos = 5
+        elif jointName == "left back rotator":
+            pos = 6
+        elif jointName == "left back elevator":
+            pos = 7
+        elif jointName == "left back knee":
+            pos = 8
+        elif jointName == "right back rotator":
+            pos = 9
+        elif jointName == "right back elevator":
+            pos = 10
+        elif jointName == "right back knee":
+            pos = 11
+        elif jointName == "head tilt":
+            pos = 12
+        elif jointName == "head pan":
+            pos = 13
+        elif jointName == "head roll":
+            pos = 14
+        elif jointName == "tail tilt":
+            pos = 15
+        elif jointName == "tail pan":
+            pos = 16
+        elif jointName == "jaw":
+            pos = 17
+        else:
+            AttributeError, "no such joint: '%s'" %s jointName
+        return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
@@ -378,8 +420,7 @@ class AiboRobot(Robot):
 
 # 1. How to read sensors? Infrared, Touch, joint positions
 # 2. How to change gait? Running? Walking? On knees?
-# 3. Create vision C code wrapper (see RobocupCamera as example)
-# 4. Make a "virtual range sensor" from vision
+# 3. Make a "virtual range sensor" from vision
 
 # Aibo 3D: Listens to aibo3d control commands coming in from port 10051
 
