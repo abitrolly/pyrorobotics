@@ -40,7 +40,10 @@ PyObject *V4L:: updateMMap( )
 	//swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
 	width  = grab_buf.width;
 	height = grab_buf.height;
-	return applyFilterList();
+	PyObject *retval = applyFilterList();
+	if (motionDetection) 
+	  memcpy(history, image, width * height * depth);
+	return retval;
       }
     }
     sleep(1); 
