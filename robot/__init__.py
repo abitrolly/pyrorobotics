@@ -46,8 +46,8 @@ class Robot (Drawable):
         self.drivers = [] # something that implements the driver interface
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
-        self.device = []
-        self.service = []
+        self.service = {}
+        self.supports = {}
         self.map = []
         # user init:
         self.setup(**kwargs)
@@ -302,14 +302,54 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'control has NO update')
         console.log(console.INFO,'robot sanity check completed')
 
-    def startService(self, item):
-        raise "NoSuchService", item
+    def loadServiceFromFile(self, dict):
+        for service in dict.keys():
+            console.log(console.INFO,"Loading service '%s'..." % service)
+            if self.service.has_key(service):
+                raise "DuplicateService", service
+            self.service[service] = dict[service]
+            self.senses[service] = self.service[service]
+            self.service[service].start()
 
-    def stopService(self, item):
-        raise "NoSuchService", item
+    def loadService(self, item):
+        import pyro.system as system
+        import os
+        if self.supportsService(item):
+            if self.service.has_key(item):
+                raise "DuplicateService", item
+            self.service[item] = self.supports[item]
+            self.senses[item] = self.service[item]
+            self.service[item].start()
+        else:
+            file = item
+            console.log(console.INFO,'Loading '+file)
+            if file[-3:] != '.py':
+                file = file + '.py'
+            if system.file_exists(file):
+                self.loadServiceFromFile( system.loadINIT(file, self) )
+            elif system.file_exists(os.getenv('PYRO') + \
+                                    '/plugins/services/' + file): 
+                self.loadServiceFromFile( system.loadINIT(os.getenv('PYRO') + \
+                                                          '/plugins/services/'+ \
+                                                          file, self))
+            else:
+                raise 'Service file not found: ' + file
+            console.log(console.INFO,'Loaded ' + file)
+
+    def supportsService(self, item):
+        return self.supports.has_key(item)
+
+    def getService(self, item):
+        if self.service.has_key(item):
+            return self.service[item]
+        else:
+            raise "UnknownService", item
+
+    def allServices(self):
+        return self.service.keys()
 
     def hasService(self, item):
-        return 0
+        return self.service.has_key(item)
 
     def sendMessage(self, message):
         raise "NoSendMessageInterface"
@@ -317,9 +357,6 @@ class Robot (Drawable):
     def getMessages(self):
         return []
 
-    def getServiceData(self, item):
-        raise "NoSuchService", item
-        
     def setup(self, **kwargs):
         """
         Is called from __init__ so users don't have to call parent
