@@ -235,7 +235,7 @@ class PlayerPTZDevice(PlayerDevice):
     def __init__(self, dev, name):
         PlayerDevice.__init__(self, dev, name)
         self.origPose = (0, 0, 120)
-        self.devData["_help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
+        self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
                                 """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
         self.devData.update( {"tilt": None, "pan": None,
                               "zoom": None, "command": None, "pose": None} )
@@ -361,7 +361,7 @@ class PlayerGripperDevice(PlayerDevice):
             self.devData["command"] = "close"
         else:
             self.devData["command"] = "open"
-        self.devData["_help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
+        self.devData[".help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
                                 """     down, store, deploy, halt.\n""" \
                                 """.get('/robot/gripper/KEYWORD') where KEYWORD is: gripperState, breakBeamState,\n""" \
                                 """     isClosed, isMoving, isLiftMoving, isLiftMaxed""" 

@@ -17,7 +17,7 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
     else:
         retval = []
     for keyword in deviceDict:
-        if keyword[0] == "_":
+        if keyword[0] == ".": # hidden properties
             continue
         #print keyword, type(deviceDict[keyword])
         # if this is an instance, then don't follow
@@ -57,10 +57,10 @@ class Device:
         self.groups = {}
         self.printFormat = {}
         self.dev = 0
-        self.devData["active"] = 1
-        self.devData["visible"] = visible
+        self.devData[".active"] = 1
+        self.devData[".visible"] = visible
         self.devData["type"] = deviceType
-        self.devData["state"] = "stopped"
+        self.devData[".state"] = "stopped"
         #self.devData["object"] = self
         if visible:
             self.makeWindow()
@@ -129,20 +129,20 @@ class Device:
             raise TypeError, "Units are set to invalid type '%s'" % units
 
     def getVisible(self):
-        return self.devData["visible"]
+        return self.devData[".visible"]
     def setVisible(self, value):
-        self.devData["visible"] = value
+        self.devData[".visible"] = value
         return "Ok"
     def getActive(self):
-        return self.devData["active"]
+        return self.devData[".active"]
     def setActive(self, value):
-        self.devData["active"] = value
+        self.devData[".active"] = value
         return "Ok"
     def startDevice(self):
-        self.devData["state"] = "started"
+        self.devData[".state"] = "started"
         return self
     def stopDevice(self):
-        self.devData["state"] = "stopped"
+        self.devData[".state"] = "stopped"
         return "Ok"
     def makeWindow(self):
         pass
@@ -151,7 +151,7 @@ class Device:
     def getDeviceData(self):
         return {}
     def getDeviceState(self):
-        return self.devData["state"]
+        return self.devData[".state"]
     def updateDevice(self):
         pass
     def postSet(self, keyword):
