@@ -25,7 +25,7 @@ class B21RRobot(Robot):
         self.sensorSet = {'all': range(180),
                           'front' : range(45, 135), 
                           'front-left' : range(115, 165), 
-                          'front-right' :range (22,70),
+                          'front-right' :range (15,65),
                           'front-all' : range(45, 135),
                           'left' : range(135,180),
                           'right' : range(0,45), 
@@ -78,7 +78,7 @@ class B21RRobot(Robot):
 
 	self.senses['laser'] = {}
 	self.senses['laser']['count'] = lambda self: 180
-	self.senses['laser']['type'] = lambda self: 'measure'
+	self.senses['laser']['type'] = lambda self: 'range'
         self.senses['laser']['maxvalue'] = self.getLaserMaxRange
         self.senses['laser']['units'] = lambda self: "ROBOTS"
         self.senses['laser']['all'] =   self.getLaserRangeAll

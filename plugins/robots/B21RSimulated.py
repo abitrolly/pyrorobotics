@@ -10,11 +10,11 @@ class B21RSimulated(PlayerRobot):
         self.dev.start('ptz')
         self.dev.start('laser')
         self.laserNoise = 0.01
-
+        self.dev.set_laser_config(resolution = 1.0)
         self.sensorSet = {'all': range(180),
                           'front' : range(45, 135), 
                           'front-left' : range(115, 165), 
-                          'front-right' :range (22,70),
+                          'front-right' :range (15,65),
                           'front-all' : range(45, 135),
                           'left' : range(135,180),
                           'right' : range(0,45), 
