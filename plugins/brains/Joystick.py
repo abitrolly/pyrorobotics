@@ -1,11 +1,12 @@
 from pyro.brain import Brain
 from pyro.tools import joystick
 from time import sleep
+import pyro.system.share as share
 
 class JoystickControl(Brain):
 
    def setup(self):
-      self.stick = joystick.Joystick()
+      self.stick = joystick.Joystick(share.gui)
 
    def step(self):
       self.getRobot().move( self.stick.translate,

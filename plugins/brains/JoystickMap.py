@@ -38,7 +38,6 @@ class Map(Brain):
        self.gps.updateFromLPS(self.lps, robot)
        # Finally, we redraw the GPS window
        self.gps.redraw()
-       self.gps.update()
        self.robot.move(self.joystick.translate, self.joystick.rotate)
        
    def destroy(self):
