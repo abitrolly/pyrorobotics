@@ -1,6 +1,7 @@
 # robot goes forward and then slows to a stop when it detects something 
   
 from pyro.brain import Brain 
+import random
   
 class NNBrain(Brain): 
           
@@ -18,6 +19,16 @@ class NNBrain(Brain):
 
    def determineTurn(self, sensors): 
       # return a value between -1 and 1 based on sensors:
+      # left:
+      if sensors[0] < 0.5 or sensors[1] < 0.5:
+         return -1.0 # turn right
+      # right:
+      if sensors[4] < 0.5 or sensors[5] < 0.5:
+         return 1.0 # turn left
+      # front:
+      if sensors[2] < 0.5 or sensors[3] < 0.5:
+         return random.random() * 2.0 - 1.0
+      # else don't turn
       return 0.0
      
    def step(self): 

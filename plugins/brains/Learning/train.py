@@ -5,11 +5,6 @@
 from pyro.brain.conx import * 
 from pyro.system.log import * 
     
-def saveListToFile(ls, file): 
-   for i in range(len(ls)): 
-      file.write(str(ls[i]) + " ") 
-   file.write("\n") 
-
 # Create the network 
 n = Network() 
 n.addThreeLayers(8,1,2) # size of input, hidden, output

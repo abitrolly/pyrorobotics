@@ -28,10 +28,10 @@ class CollectDataBrain(Brain):
          return(0) 
       elif sensors[2] < 0.8 or sensors[3] < 0.8: 
          print "object detected" 
-         return(0.08) 
+         return(0.1) 
       else: 
          print "clear" 
-         return(0.15) 
+         return(0.3) 
 
    def determineTurn(self, sensors): 
       # return a value between -1 and 1 based on sensors:
@@ -71,7 +71,8 @@ class CollectDataBrain(Brain):
       else: 
          print "move", self.counter, translate, rotate
          saveListToFile( map(self.scale, sensors), self.datafile1) 
-         saveListToFile([translate, rotate] , self.datafile2) 
+         saveListToFile(map( lambda x: (x + 1)/2.0, [translate, rotate]),
+                        self.datafile2) 
          robot.move(translate, rotate)
          self.counter += 1 
         

@@ -21,11 +21,11 @@ class NNBrain(Brain):
    def step(self):  
       robot = self.getRobot()  
       # Set inputs  
-      sensors = robot.get('range', 'value', 'front')  
+      sensors = robot.get('range', 'value', 'all')
       self.n.getLayer('input').copyActivations( map(self.scale, sensors) ) 
       self.n.propagate()  
-      translateActual = self.n.getLayer('output').activation[0]  
-      rotateActual = self.n.getLayer('output').activation[1]  
+      translateActual = self.n.getLayer('output').activation[0] * 2 - 1.0
+      rotateActual = self.n.getLayer('output').activation[1]  * 2 - 1.0
       print "move", translateActual, rotateActual 
       robot.move(translateActual, rotateActual)  
    
