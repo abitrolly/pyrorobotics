@@ -142,8 +142,11 @@ class Robot (Drawable):
     def move(self, translate, rotate):
         self.act('move', translate, rotate)
 
+    def move_now(self, translate, rotate):
+        self.act('move_now', translate, rotate)
+
     def stop(self):
-        self.act('move', 0, 0)
+        self.act('move_now', 0, 0)
 
     def translate(self, val):
         self.act('translate', val)
@@ -355,6 +358,8 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'sense has NO robot')
 	if (not self.controls.has_key('move')):
 	        console.log(console.FATAL,'control has NO move')
+	if (not self.controls.has_key('move_now')):
+	        console.log(console.FATAL,'control has NO move_now')
 	if (not self.controls.has_key('translate')):
 	        console.log(console.FATAL,'control has NO translate')
 	if (not self.controls.has_key('rotate')):
