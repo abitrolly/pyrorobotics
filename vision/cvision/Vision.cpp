@@ -710,10 +710,10 @@ PyObject *Vision::meanBlur(int kernel) {
 
 Blob *Vision::initBlob(Blob *b) {
   b->mass = 0;
-  b->ul.x = width;
-  b->ul.y = height;
-  b->lr.x = 0;
-  b->lr.y = 0;
+  b->ul.x = 0;
+  b->ul.y = 0;
+  b->lr.x = width;
+  b->lr.y = height;
   b->cm.x = 0;
   b->cm.y = 0;
   b->next = 0;  
@@ -783,10 +783,10 @@ void Vision::deleteBlob( Blob *b )
   
   b->cm.x = width / 2;
   b->cm.y = height / 2;
-  b->ul.x = width;
-  b->ul.y = height;
-  b->lr.x = 0;
-  b->lr.x = 0;
+  b->ul.x = 0;
+  b->ul.y = 0;
+  b->lr.x = width;
+  b->lr.x = height;
   b->mass = 0;
   
 }
@@ -1046,7 +1046,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 				  bloblist[maxIndex[i]].ul.x,
 				  bloblist[maxIndex[i]].ul.y,
 				  bloblist[maxIndex[i]].lr.x,
-				  bloblist[maxIndex[i]].ul.x,
+				  bloblist[maxIndex[i]].lr.y,
 				  bloblist[maxIndex[i]].mass));
   }
   return tuple; 
