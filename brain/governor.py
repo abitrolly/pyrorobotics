@@ -252,7 +252,8 @@ if __name__ == '__main__':
     alpha = 0.02
     ravqBuffer = 5
     govBuffer = 5
-    govMask = [1] * (inSize - 1) + [inSize/4] * 4 + [16]
+    # The "16" weights the input determining the multiple labels
+    govMask = [1] * (inSize - 1) + [16] + [inSize/4] * 4
     governor = BalancingGovernor(ravqBuffer, govEpsilon, delta, alpha, govMask, govBuffer)
 
     #print govMask
