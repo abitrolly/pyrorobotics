@@ -4,8 +4,7 @@
 include Makefile.cfg
 
 SUBDIRS = camera/bt848 geometry gui/3DArray robot/driver/grid \
-	robot/driver/video camera/v4l brain/psom/csom_src \
-	tools/cluster 
+	robot/driver/video camera/v4l brain/psom tools/cluster 
 
 # Failing subdir: robot/driver/testc
 
