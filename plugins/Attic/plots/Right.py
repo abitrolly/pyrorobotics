@@ -2,7 +2,7 @@
 # Sample Plotter
 # -------------------------------------------------------
 
-from OpenGL.Tk import *
+from Tkinter import *
 import os
 
 class SimplePlot: # based on Plot

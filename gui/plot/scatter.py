@@ -2,7 +2,7 @@
 # Scatter Plotter
 # -------------------------------------------------------
 
-from OpenGL.Tk import *
+from Tkinter import *
 import os
 
 class Line:
@@ -25,81 +25,101 @@ class Scatter: # Plot
             self.win.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
         else:
             self.win.wm_title(title)
-        self.canvas = Canvas(self.win,width=width,height=height)
-        self.canvas.bind("<Configure>", self.changeSize)
-        self.canvas.pack()
+        self.width = width
+        self.height = height
+        self.title = title
         self.xBorder = 30
         self.yBorder = 30
-        self.plotHeight = height - 2 * self.yBorder # / max value
+        self.plotHeight = self.height - 2 * self.yBorder # / max value
         self.plotWidth =  self.plotHeight # / max value
         self.xStart = xStart
         self.xEnd = xEnd
         self.yStart = yStart
         self.yEnd = yEnd
-        # width - 2 * self.xBorder # / max value
-        # background
-        self.canvas.create_rectangle(self.xBorder, self.yBorder,
-                                     self.xBorder + self.plotWidth,
-                                     height - self.yBorder,
-                                     width = 1, fill='white')
-        # title
-        self.canvas.create_text(width / 2.0, 13,
-                                text=title, fill='black')
-        # legend
-        for i in range(linecount):
-            self.canvas.create_rectangle(self.xBorder + self.plotWidth + 5,
-                                         self.yBorder + i * 20,
-                                         self.xBorder + self.plotWidth + 5 + 15,
-                                         self.yBorder + i * 20 + 15,
-                                         width = 1, fill=self.color[i])
-            self.canvas.create_text(self.xBorder + self.plotWidth + 5 + 20,
-                                    self.yBorder + i * 20 + 8,
-                                    text=legend[i], fill='black',
-                                    anchor='w')
-        # text
-        tick = 0.0 
-        xtick_label = xStart
-        while tick <= 1.0: 
-            self.canvas.create_text(self.xBorder + self.plotWidth * tick, height - 10,
-                                    text=xtick_label, fill='black')
-            self.canvas.create_line(self.xBorder + self.plotWidth * tick,
-                                    height - self.yBorder - 5,
-                                    self.xBorder + self.plotWidth * tick,
-                                    height - self.yBorder + 5,
-                                    width = 2, fill='black')
-            tick += 1.0 / 4.0
-            xtick_label += (xEnd - xStart) / 4.0
-        tick = 1.0
-        ytick_label = yStart
-        while tick >= 0.0:
-            self.canvas.create_text(10, self.yBorder + self.plotHeight * tick,
-                                    text=ytick_label, fill='black')
-            self.canvas.create_line(self.xBorder - 5,
-                                    self.yBorder + self.plotHeight * tick,
-                                    self.xBorder + 5,
-                                    self.yBorder + self.plotHeight * tick,
-                                    width = 2, fill='black')
-            tick -= 1.0 / 4.0
-            ytick_label += (yEnd - yStart) / 4.0
-            
+        self.linecount = linecount
+        self.legend = legend
         # ----------------------------------------------------------
-        self.lineCount = linecount
-        self.hist = [0] * linecount # actual hist of line
+        self.lineCount = self.linecount
+        self.hist = [0] * self.linecount # actual hist of line
         self.history = history[:] # history counts for each line
-        self.firstEver = [0] * linecount
-        self.last = [0] * linecount
-        self.count = [0] * linecount
-        for i in range(linecount):
+        self.firstEver = [0] * self.linecount
+        self.last = [0] * self.linecount
+        self.count = [0] * self.linecount
+        for i in range(self.linecount):
             self.hist[i] = [0] * history[i]
             self.firstEver[i] = 1
             self.last[i] = 0
             self.count[i] = 0
 
+        # width - 2 * self.xBorder # / max value
+        # background
+        self.canvas = Canvas(self.win, width=width, height=height)
+        self.canvas.bind("<Configure>", self.changeSize)
+        self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
+        self.init_graphics()
+        
+    def init_graphics(self):
+        self.canvas.delete('graph')
+        self.canvas.delete('object')
+        self.canvas.create_rectangle(self.xBorder, self.yBorder,
+                                     self.xBorder + self.plotWidth,
+                                     self.height - self.yBorder,
+                                     tag = 'graph',
+                                     width = 1, fill='white')
+        # title
+        self.canvas.create_text(self.width / 2.0, 13,
+                                tag = 'graph',
+                                text=self.title, fill='black')
+        # legend
+        for i in range(self.linecount):
+            self.canvas.create_rectangle(self.xBorder + self.plotWidth + 5,
+                                         self.yBorder + i * 20,
+                                         self.xBorder + self.plotWidth + 5 + 15,
+                                         self.yBorder + i * 20 + 15,
+                                         tag = 'graph',
+                                         width = 1, fill=self.color[i])
+            self.canvas.create_text(self.xBorder + self.plotWidth + 5 + 20,
+                                    self.yBorder + i * 20 + 8,
+                                    text=self.legend[i], fill='black',
+                                    tag = 'graph',
+                                    anchor='w')
+        # text
+        tick = 0.0 
+        xtick_label = self.xStart
+        while tick <= 1.0: 
+            self.canvas.create_text(self.xBorder + self.plotWidth * tick, self.height - 10,
+                                    tag = 'graph',
+                                    text=xtick_label, fill='black')
+            self.canvas.create_line(self.xBorder + self.plotWidth * tick,
+                                    self.height - self.yBorder - 5,
+                                    self.xBorder + self.plotWidth * tick,
+                                    self.height - self.yBorder + 5,
+                                    tag = 'graph',
+                                    width = 2, fill='black')
+            tick += 1.0 / 4.0
+            xtick_label += (self.xEnd - self.xStart) / 4.0
+        tick = 1.0
+        ytick_label = self.yStart
+        while tick >= 0.0:
+            self.canvas.create_text(10, self.yBorder + self.plotHeight * tick,
+                                    tag = 'graph',
+                                    text=ytick_label, fill='black')
+            self.canvas.create_line(self.xBorder - 5,
+                                    self.yBorder + self.plotHeight * tick,
+                                    self.xBorder + 5,
+                                    self.yBorder + self.plotHeight * tick,
+                                    tag = 'graph',
+                                    width = 2, fill='black')
+            tick -= 1.0 / 4.0
+            ytick_label += (self.yEnd - self.yStart) / 4.0
+        #self.canvas.lower('graph')
+            
     def changeSize(self, event):
-        self.width = self.canvas.winfo_width() 
-        self.height = self.canvas.winfo_height() 
-        self.plotHeight = self.height - 2 * self.yBorder # / max value
+        self.width = self.win.winfo_width() 
+        self.height = self.win.winfo_height() 
+        self.plotHeight = self.height - (2 * self.yBorder) # / max value
         self.plotWidth =  self.plotHeight # / max value
+        self.init_graphics()
             
     def setTitle(self, title):
         self.win.wm_title(title)

@@ -2,7 +2,7 @@
 # Hinton Diagram
 # -------------------------------------------------------
 
-from OpenGL.Tk import *
+from Tkinter import *
 import os
 
 class Hinton: # Plot
@@ -26,9 +26,9 @@ class Hinton: # Plot
          self.win.wm_title("hinton@%s:"%os.getenv('HOSTNAME'))
       else:
          self.win.wm_title(title)
-      self.canvas = Canvas(self.win,width=width,height=self.height)
+      self.canvas = Canvas(self.win,width=self.width,height=self.height)
       self.canvas.bind("<Configure>", self.changeSize)
-      self.canvas.pack(fill=BOTH)
+      self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
       self.even = 0
       if data:
          self.update(data)

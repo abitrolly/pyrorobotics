@@ -2,7 +2,7 @@
 # Matrix Plot (Images)
 # -------------------------------------------------------
 
-from OpenGL.Tk import *
+from Tkinter import *
 import os
 
 class Matrix: # Plot

@@ -1,4 +1,4 @@
-from OpenGL.Tk import *
+from Tkinter import *
 from string import *
 
 class GeneralPlot:
