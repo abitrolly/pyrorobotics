@@ -39,7 +39,6 @@ class PyroImage:
                for w in range(self.width):
                   self.set(w,h,g,1)
                   self.set(w,h,b,2)
-      
 
    def loadFromFile(self, filename):
       """
@@ -86,20 +85,9 @@ class PyroImage:
             fp.writelines(r)
          x += 1
 
-
-
-   def shrink(self, xscale=0.5, yscale='unset', mode='average'):
+   def getScaledImage(self, xscale=0.5, yscale='unset', mode='sample'):
       """
-      shrink the current image using getShrunkenImage()
-      """
-      newImage = self.getShrunkenImage(xscale,yscale,mode)
-      self.data = newImage.data
-      self.width = newImage.width
-      self.height = newImage.height
-      
-   def getShrunkenImage(self, xscale=0.5, yscale='unset', mode='average'):
-      """
-      return a shrunken version of the current image
+      return a scaled version of the current image
       if used without arguments, will return a 1/2 scale image
       if yscale is unspecified, the image is uniformly scaled
       currently you get wacky results unless you use scale values that
@@ -129,14 +117,6 @@ class PyroImage:
             newImage.setVal(x,y,newval)
       return newImage
 
-   def grayScale(self):
-      """
-      Method to convert depth 3 color into depth 1 grayscale
-      """
-      self.data = self.getGrayScale()
-      self.depth = 1
-      self.rgb = (0, )
-
    def getGrayScale(self):
       """
       Method to convert depth 3 color into depth 1 grayscale
@@ -146,7 +126,6 @@ class PyroImage:
       data = [0] * self.width * self.height
       for h in range(self.height):
          for w in range(self.width):
-            # FIX: offsets might not be RGB = 012
             r = self.data[(w + h * self.width) * self.depth + 0]
             g = self.data[(w + h * self.width) * self.depth + 1]
             b = self.data[(w + h * self.width) * self.depth + 2]
@@ -181,10 +160,9 @@ class PyroImage:
          line = ''
          for h in range(self.height):
             for w in range(self.width):
-               # FIX: offsets might not be RGB = 012
-               r = self.data[(w + h * self.width) * self.depth + 0]
-               g = self.data[(w + h * self.width) * self.depth + 1]
-               b = self.data[(w + h * self.width) * self.depth + 2]               
+               r = self.data[(w + h * self.width) * self.depth + self.rgb[0]]
+               g = self.data[(w + h * self.width) * self.depth + self.rgb[1]]
+               b = self.data[(w + h * self.width) * self.depth + self.rgb[2]]               
                if int(((r + g + b) / 3 )/255.0 * 9):
                   line += "%d" % int(((r + g + b) / 3 )/255.0 * 9)
                else:
@@ -195,33 +173,13 @@ class PyroImage:
          line = ''
          for h in range(self.height):
             for w in range(self.width):
-               # FIX: offsets might not be RGB = 012
-               r = self.data[(w + h * self.width) * self.depth + 0]
-               if int(r/255.0 * 9):
-                  line += "%d" % int(r * 9)
+               c = self.data[(w + h * self.width) * self.depth + 0]
+               if int(c/255.0 * 9):
+                  line += "%d" % int(c * 9)
                else:
                   line += '.'
             print line; line = ''
          print line; line = ''
-
-   def set(self, x, y, val, offset = 0):
-      """
-      Method to set a pixel to a value. offset may be r, g, b (0, 1, 2)
-      """
-      self.data[(x + y * self.width) * self.depth + offset] = val
-
-   def setVal(self, x, y, val):
-      """
-      Method to set the entire RGB value of a pixel.
-      val should be an n-tuple (or length n list), where n is the depth of the
-      image.  For RGB, it should be of the form (r, g, b)
-      """
-      if len(val) != self.depth:
-         print "Error in setVal: val is not the same length as depth"
-         return
-      
-      for offset in range(self.depth):
-         self.data[(x + y * self.width) * self.depth + offset] = val[offset]
 
    def get(self, x, y, offset = 0):
       """
@@ -253,10 +211,22 @@ class PyroImage:
       """
       start = (x + y * self.width) * self.depth
       end = start + self.depth
-      # FIX: need to get RGB in right order
       rgb = self.data[start:end]
       return tuple( (rgb[self.rgb[0]], rgb[self.rgb[1]], rgb[self.rgb[2]] ))
 
+   def setVal(self, x, y, val):
+      """
+      Method to set the entire RGB value of a pixel.
+      val should be an n-tuple (or length n list), where n is the depth of the
+      image.  For RGB, it should be of the form (r, g, b)
+      """
+      if len(val) != self.depth:
+         print "Error in setVal: val is not the same length as depth"
+         return
+
+      for offset in range(self.depth):
+         self.data[(x + y * self.width) * self.depth + offset] = val[offset]
+         
    def reset(self, vector):
       """
       Reset an image to a vector.
@@ -439,6 +409,13 @@ class PyroImage:
                      data.set(x,y,val,c)
       return data
 
+   def getPlane(self, colorPlane): # 0, 1, 2
+      data = [0 for x in range(self.width * self.height)]
+      for h in range(self.height):
+         for w in range(self.width):
+            data[h * self.width + w] = self.get(w, h, self.rgb[colorPlane])
+      return data
+   
    def swapPlanes(self, plane1, plane2):
       for h in range(self.height):
          for w in range(self.width):
