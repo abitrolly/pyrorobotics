@@ -27,7 +27,7 @@ class gui(Drawable):
    def init(self):
       pass
       
-   def run(self):
+   def run(self, command = []):
       """
       Child classes should do the beef of what they do right here.
       """
@@ -38,16 +38,22 @@ class gui(Drawable):
       print "========================================================="
       while done is not 1:
          print "Pyro > ",
-         retval = sys.stdin.readline()
+         if len(command) > 0:
+            print command[0],
+            retval = command[0]
+            command = command[1:]
+         else:
+            retval = sys.stdin.readline()
          print ""
          if retval == '':
             done = 1
             continue
-         retval = retval.replace("\n", "")
-         retval = retval.replace("\r", "")
          done = self.processCommand(retval)
 
    def processCommand(self, retval):
+      retval = retval.replace("\n", "")
+      retval = retval.replace("\r", "")
+      retval = retval.strip()
       if retval == "run":
          print "Running in thread..."
          self.engine.pleaseRun() # pass in callback, or not
@@ -82,6 +88,7 @@ class gui(Drawable):
          self.engine.pleaseStop()
          print "Stopped!"
       elif retval == "quit" or retval == "exit" or retval == "bye":
+         self.done = 1
          return 1
       elif len(retval) > 2 and retval[0] == "%":
          exp = string.strip(retval[1:])

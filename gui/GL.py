@@ -259,9 +259,14 @@ class GLgui(gui):
       menu['menu'] = menu.filemenu
       return menu
 
-   def run(self):
+   def run(self, command = []):
       if self.graphicsMode == 1: # GL
          self.done = 0
+         while len(command) > 0:
+            print command[0],
+            retval = command[0]
+            self.processCommand(retval)
+            command = command[1:]
          while not self.done:
             needToUpdateState = 1
             try: needToUpdateState = self.engine.brain.needToStop

@@ -38,8 +38,8 @@ class TKgui(gui):
                        ]),
               ('Simulators',[['Load...',self.loadSim]]),
               ('Robot',[['Load...',self.loadRobot],
-                        ['Unload',self.freeRobot]]),
-              #['Load Camera...',self.loadCamera]]),
+                        ['Unload',self.freeRobot],
+                        ['Load Camera...',self.loadCamera]]),
               ('Brain',[['Load...',self.loadBrain],
                         ['Unload',self.freeBrain],
                         ['Brain View', self.openBrainWindow]]),
@@ -250,9 +250,14 @@ class TKgui(gui):
       menu['menu'] = menu.filemenu
       return menu
 
-   def run(self):
+   def run(self, command = []):
       if 1:
          self.done = 0
+         while len(command) > 0:
+            print command[0],
+            retval = command[0]
+            self.processCommand(retval)
+            command = command[1:]
          while not self.done:
             needToUpdateState = 1
             try: needToUpdateState = self.engine.brain.needToStop

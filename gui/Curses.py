@@ -12,15 +12,20 @@ class Curses(gui):
         height = 5 ; width = 40
         self.win = curses.newwin(height, width, begin_y, begin_x)
           
-    def run(self):
-      done = 0
-      while done is not 1:
-         self.stdscr.addstr( "Pyro > ")
-         self.stdscr.refresh()
-         curses.echo()            # Enable echoing of characters
-         retval = self.stdscr.getstr()
-         curses.noecho()
-         done = self.processCommand(retval)
+    def run(self, command = []):
+        self.done = 0
+        while len(command) > 0:
+            print command[0],
+            retval = command[0]
+            self.processCommand(retval)
+            command = command[1:]
+        while self.done is not 1:
+            self.stdscr.addstr( "Pyro > ")
+            self.stdscr.refresh()
+            curses.echo()            # Enable echoing of characters
+            retval = self.stdscr.getstr()
+            curses.noecho()
+            self.done = self.processCommand(retval)
 
     def cleanup(self):
         #curses.nobreak(); curses.keypad(0);
