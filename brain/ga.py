@@ -23,7 +23,7 @@
 # --------------------------------------------------------------------------
 
 import RandomArray, Numeric, math, random, time, sys
-from copy import deepcopy
+from copy import deepcopy, copy
 
 def display(v):
     print v,
@@ -214,7 +214,7 @@ class Population:
                 self.eliteMembers.append( current )
                 self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
                 self.eliteMembers = self.eliteMembers[1:]
-        self.bestMember = deepcopy(best)
+        self.bestMember = copy(best)
         self.avgFitness = (self.sumFitness * 1.0) / self.size
         if self.verbose > 0:
             print "Fitness: Total", "%7.2f" % self.sumFitness, 

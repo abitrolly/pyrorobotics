@@ -6,6 +6,7 @@ class GPGene(Gene):
     def __init__(self, **args):
         self.bias = .6
         self.constructor = GPGene
+        self.fitness = 0.0
         if args.has_key('bias'):
             self.bias = args['bias']
         # higher the bias, more likely to be shallow
