@@ -34,10 +34,10 @@ class Avoid (Behavior):
         close_dist, close_angl = self.getRobot().get('range', 'value', 'front-all', 'close')
         close_angl /= (math.pi)
         #print "Closest distance =", close_dist, "angle =", close_angl
-        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'translate', 0.0, "TooClose")
-        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'translate', .2, "Ok")
-        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'rotate', self.direction(close_angl, close_dist), "TooClose")
-        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'rotate', 0.0, "Ok")
+        self.IF(Fuzzy(0.0, 0.8) << close_dist, 'translate', 0.0, "TooClose")
+        self.IF(Fuzzy(0.0, 0.8) >> close_dist, 'translate', .2, "Ok")
+        self.IF(Fuzzy(0.0, 0.8) << close_dist, 'rotate', self.direction(close_angl, close_dist), "TooClose")
+        self.IF(Fuzzy(0.0, 0.8) >> close_dist, 'rotate', 0.0, "Ok")
 
 class state1 (State):
     def init(self):
