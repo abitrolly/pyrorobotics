@@ -22,8 +22,10 @@ class GPS(TkMap):
        # things we will need:
        #grid, x, y, th, cellxMM, cellyMM:
        grid = lps.grid
+       #self.canvas.delete("old")
        x = robot.getX() * 1000
        y = robot.getY() * 1000
+       thr = robot.getThr()
        # going to plot each cell:
        #for row in range(len(grid)):
        #    for col in range(len(grid[row])):
@@ -31,20 +33,35 @@ class GPS(TkMap):
        #        plot it
        #        self.grid[][] = grid[row][col]
        # for now, just plot robot:
-       print "robot:", (x, y)
        xpos = int(x / self.colScaleMM)
        # In GPS, the origin is at the bottom left corner.
        # This matches the way world files are specified.
-       ypos = self.rows - int(y / self.rowScaleMM)
-       print "grid:", (xpos, ypos)
+       ypos = self.rows - int(y / self.rowScaleMM) - 1
        if self.inRange(ypos, xpos) and self.grid[ypos][xpos] != 1.0:
            self.grid[ypos][xpos] = 1.0
-           self.canvas.create_rectangle(int(xpos * self.colScale),
-                                        int(ypos * self.rowScale),
-                                        int((xpos + 1) * self.colScale),
-                                        int((ypos + 1) * self.rowScale),
-                                        width = 0,
-                                        fill="red")
+           self.plotCell(ypos, xpos, "red")
+       for i in range(lps.rows):
+          for j in range(lps.cols):
+             if lps.grid[i][j] > .5:
+                # y component is negative because y up is positive
+                xMM = (j - (lps.cols / 2)) * lps.colScaleMM
+                yMM = -1 * (i - (lps.rows / 2)) * lps.rowScaleMM
+                # cos(0) = 1, sin(0) = 0
+                xrot = (xMM * cos(thr) - yMM * sin(thr))
+                yrot = (xMM * sin(thr) + yMM * cos(thr))
+                xhit = x + xrot 
+                yhit = y + yrot 
+                xcell = int(xhit / self.colScaleMM)
+                ycell = self.rows - int(yhit / self.rowScaleMM) - 1
+                self.plotCell( ycell, xcell, "black")
+
+   def plotCell(self, ypos, xpos, color):
+      self.canvas.create_rectangle(int(xpos * self.colScale),
+                                   int(ypos * self.rowScale),
+                                   int((xpos + 1) * self.colScale),
+                                   int((ypos + 1) * self.rowScale),
+                                   width = 0,
+                                   fill=color, tag = "old")
 
 
 if __name__ == '__main__':

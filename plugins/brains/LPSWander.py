@@ -14,10 +14,10 @@ class SimpleBrain(Brain):
       sizeMM = self.getRobot().get('range', 'maxvalue') * 3 + \
                self.getRobot().get('self', 'radius')
       self.getRobot().set('range', 'units', units)
-      self.lps = LPS( 10, 10,
+      self.lps = LPS( 20, 20,
                       widthMM = sizeMM,
                       heightMM = sizeMM)
-      self.gps = GPS(100, 100)
+      self.gps = GPS(100, 100, widthMM = sizeMM * 5, heightMM = sizeMM * 5)
 
    def destroy(self):
       self.lps.destroy()
