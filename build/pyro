@@ -46,6 +46,9 @@ elif os.name in ['posix']:
 if not os.environ.has_key('PYRO'):
     os.environ['PYRO'] = pyropath
     os.putenv('PYRO', pyropath )
+if not os.environ.has_key('HOSTNAME'):
+    os.environ['HOSTNAME'] = 'computer'
+    os.putenv('HOSTNAME', 'computer' )
 try:
     from pyro.system import share
     from pyro.engine import *

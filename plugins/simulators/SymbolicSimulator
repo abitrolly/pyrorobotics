@@ -7,9 +7,10 @@ A simple symbloic simulator for symbolic worlds
 import SocketServer, sys, Tkinter, threading
 
 class Thread(threading.Thread):
-    def __init__(self, gui):
+    def __init__(self, gui, port):
         threading.Thread.__init__(self)
         self.gui = gui
+        self.port = port
         self.server = Server(('', port),  Handler, gui)
 
     def run(self):
@@ -17,20 +18,29 @@ class Thread(threading.Thread):
         self.gui.destroy()
 
 class GUI(Tkinter.Toplevel):
-    def __init__(self, root, width, height, worldFile):
+    def __init__(self, root, width, height, worldFile, port):
         Tkinter.Toplevel.__init__(self, root)
         self.root = root
         self.width = width
         self.height = height
         self.worldFile = worldFile
+        self.port = port
         self.title("SymbolicServer")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.thread = Thread(self)
+        self.thread = Thread(self, port)
         self.thread.start()
         #self.server = Server(('', port),  Handler, self)
         #self.server.handle_request()
+        self.world = {"A": ("Dirty",), "B": ("Clean",)}
+        self.location = "A"
+        self.redraw()
+
+    def redraw(self):
+        self.canvas.delete('all')
+        #if self.location == 'A':
+        #else:
 
     def destroy(self):
         self.root.quit()
@@ -54,26 +64,42 @@ class Handler(SocketServer.BaseRequestHandler):
             # ------------------------------------------
             # handle request
             # ------------------------------------------
+            retval = "error"
             if request == 'worldFile':
-                print self.gui.worldFile
+                retval = self.gui.worldFile
+            elif request == 'move':
+                if self.gui.location == 'A':
+                    self.gui.location = 'B'
+                else:
+                    self.gui.location = 'A'
+                retval = "ok"
+            elif request == 'location':
+                retval = self.gui.location
+            elif request == 'status':
+                retval = self.gui.world[self.gui.location]
             elif request == 'quit':
+                retval = "ok"
                 done = 1
             else:
                 # unknown command
                 pass
+            self.gui.redraw()
             # ------------------------------------------
             # return request
             # ------------------------------------------
             try:
-                self.request.send("ACK: %s\n" % request)
+                self.request.send("ACK: %s\n" % retval)
             except: # broken pipe, etc
                 done = 1
         self.request.close()
 
 if __name__ == "__main__":
-    port = int(sys.argv[1])
+    # argv can be -g for no graphics, too
+    pid = int(sys.argv[1])
+    port = 6000 # int(sys.argv[1])
     worldFile = sys.argv[2]
+    # open world file, get details: width, height
     root = Tkinter.Tk()
     root.withdraw()
-    gui = GUI(root, 400, 200, worldFile)
+    gui = GUI(root, 400, 200, worldFile, port)
     gui.mainloop()
