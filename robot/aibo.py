@@ -324,7 +324,7 @@ class AiboRobot(Robot):
                                                             "<%df" % numPIDJoints,all=1)
         if 1:
             for item in self.devData:
-                print >> sys.stdderr, item, self.devData[item]
+                print >> sys.stderr, item, self.devData[item]
 
     def getJoint(self, jointName):
         """ Get position, dutyCycle of joint by name """
