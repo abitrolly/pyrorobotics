@@ -1877,11 +1877,6 @@ class SRN(Network):
         self.contextLayers = {} # records layer reference and associated hidden layer
        
     # set and get methods for attributes
-    def setPrediction(self, value):
-        """
-        Sets prediction to value.
-        """
-        self.prediction = value
     def predict(self, inName, outName):
         """
         Adds two layers for prediction.
