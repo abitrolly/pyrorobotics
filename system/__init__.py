@@ -1,9 +1,11 @@
 import string
-import sys 
+import sys
+from pyro.system.version import version
 
 def about():
     print "-------------------------------------------------------------"
     print "Pyro - Python Robotics"
+    print "Version:", version()
     print "See: http://wiki.cs.brynmawr.edu/?Pyro"
     print "(c) 2002, D. S. Blank"
     print "-------------------------------------------------------------"
