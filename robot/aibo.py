@@ -290,20 +290,41 @@ class AiboRobot(Robot):
     def update(self):
         self._update()
         # read sensor/pid states:
-        # TODO: what do these mean?
+        # from: http://tekkotsu.no-ip.org/dox/classWorldStateSerializerBehavior.html
+        # * <unsigned int: timestamp>
+        # * <unsigned int: NumPIDJoints>
+        # * for each i of NumPIDJoints:
+        #   o <float: position of joint i>
+        # * <unsigned int: NumSensors>
+        # * for each i of NumSensors:
+        #   o <float: value of sensor i>
+        # * <unsigned int: NumButtons>
+        # * for each i of NumButtons:
+        #   o <float: value of button i>
+        # * for each i of NumPIDJoints:
+        #   o <float: duty cycle of joint i> 
         self.devData["timestamp"] = self.sensor_socket.read(4, "l")
-        self.devData["p"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
-        self.devData["s"] = self.sensor_socket.read(6 * 4, "<6f",all=1)
-        self.devData["b"] = self.sensor_socket.read(8 * 4, "<8f",all=1)
-        self.devData["d"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
-        self.devData["extra"] = self.sensor_socket.read(10 * 4, "<10f",all=1)
+        # ---
+        numPIDJoints = self.sensor_socket.read(4, "l")
+        self.devData["numPIDJoints"] = numPIDJoints
+        self.devData["position"] = self.sensor_socket.read(numPIDJoints * 4,
+                                                           "<%df" % numPIDJoints,all=1)
+        # ---
+        numSensors = self.sensor_socket.read(4, "l")
+        self.devData["numSensors"] = numSensors
+        self.devData["sensor"] = self.sensor_socket.read(numSensors * 4,
+                                                         "<%df" % numSensors,all=1)
+        # ---
+        numButtons = self.sensor_socket.read(4, "l")
+        self.devData["numButtons"] = numButtons
+        self.devData["button"] = self.sensor_socket.read(numButtons * 4,
+                                                         "<%df" % numButtons,all=1)
+        # --- same number as PID joints:
+        self.devData["dutyCycle"] = self.sensor_socket.read(numPIDJoints * 4,
+                                                            "<%df" % numPIDJoints,all=1)
         if 1:
-            print >> sys.stderr, "timestamp", self.devData["timestamp"]
-            print >> sys.stderr, "p", self.devData["p"]
-            print >> sys.stderr, "s", self.devData["s"]
-            print >> sys.stderr, "b", self.devData["b"]
-            print >> sys.stderr, "d", self.devData["d"]
-            print >> sys.stderr, "extra", self.devData["extra"]
+            for item in self.devData:
+                print >> sys.stdderr, item, self.devData[item]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
