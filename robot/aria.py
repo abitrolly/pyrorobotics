@@ -3,6 +3,7 @@
 from pyro.robot import *
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection
 from math import pi
+from os import getuid
 
 PIOVER180 = pi / 180.0
 
@@ -196,20 +197,16 @@ class AriaRobot(Robot):
         Aria.init()
         self.dev = ArRobot()
         self.conn = ArTcpConnection()
-        self.conn.setPort()
+        print "Opening port %d..." % (8000 + getuid())
+        self.conn.setPort("%d" % (8000 + getuid()))
         self.dev.setDeviceConnection(self.conn)
         if (self.dev.blockingConnect() != 1):
-            # could not connect to TCP; let's try a serial one:
+            # could not connect to TCP; let's try a serial one
+            # this is a real robot
             self.conn = ArSerialConnection()
             self.conn.setPort()
             self.dev.setDeviceConnection(self.conn)
-            if (self.dev.blockingConnect() != 1):
-                # let's try a local TCP
-                self.conn = ArTcpConnection()
-                self.conn.setPort("/tmp/dblank")
-                self.dev.setDeviceConnection(self.conn)
-                if (self.dev.blockingConnect() != 1):
-                    raise "FailedConnection"
+            raise "FailedConnection"
         self.simulated = 1 # how do you tell?
         self.localize(0.0, 0.0, 0.0)
 
