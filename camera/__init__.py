@@ -133,6 +133,7 @@ class Camera(PyroImage, Service):
       return data
 
    def saveImage(self, filename = "pyro-vision.ppm"):
+      # faster than saveToFile, as it is in C
       self.vision.saveImage(filename);
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
@@ -165,32 +166,17 @@ class Camera(PyroImage, Service):
       """
       pass
 
-   def update(self, detectMotion = 0, threshold = 25):
+   def update(self):
       """
       Update method for getting next sequence from a video camera.
-      Also can detectMotion.
       """
-      if detectMotion:
-         self.previous = self.data[:]
       self._update()
-      if detectMotion:
-         self.motion = Bitmap(self.width, self.height)
-         self.movedPixelCount = 0
-         for x in range(self.width):
-            for y in range(self.height):
-               if (abs((self.previous[(x + y * self.width) * self.depth + 0] +
-                        self.previous[(x + y * self.width) * self.depth + 1] +
-                        self.previous[(x + y * self.width) * self.depth + 2])
-                       / 3.0 -
-                       (self.vision.get(x, y) / 3.0)) > threshold):
-                  self.motion.set(x, y, 1)
-                  self.movedPixelCount += 1
-         print "moved:", self.movedPixelCount
 
    def updateOnce(self):
       oldActive = self.active
       self.active = 1
       self.update()
+      self.updateWindow()
       self.processAll()
       self.active = oldActive
 
@@ -337,34 +323,6 @@ class Camera(PyroImage, Service):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       self.lastX, self.lastY = int(x * self.width), int(y * self.height)
 
-#    def get(self, x, y, offset = 0):
-#       """
-#       Get a pixel value. offset is r, g, b = 0, 1, 2.
-#       """
-#       rgb = self.vision.get(int(x), int(y))
-#       return rgb[offset]
-
-#    def getVal(self, x, y):
-#       return self.vision.get(int(x), int(y))
-
-#    def getRow(self, y):
-#       """ Get the entire row, in tuples """
-#       retval = [0] * self.width
-#       for x in range(self.width):
-#          retval[x] = self.getVal(x, y)
-#       return retval
-
-#    def getDim(self):
-#       return self.width, self.height
-
-#    def getCol(self, x):
-#       """ Get the entire col, in tuples """
-#       retval = [0] * self.height
-#       for y in range(self.height):
-#          retval[y] = self.getVal(x, y)
-#       return retval
-
-
    def processLeftClickUp(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       x, y = int(x * self.width), int(y * self.height)
@@ -381,26 +339,27 @@ class Camera(PyroImage, Service):
       self.window.withdraw()
       
    def updateWindow(self):
-      now = time.time()
-      if now - self.lastWindowUpdate < self.updateWindowInterval:
-         return
-      self.lastWindowUpdate = now
-      self.canvas.delete("image")
-      self.im = self.getImage()
-      try:
-         self.im = self.im.resize( (self.window.winfo_width() - 2, 
-                                    self.window.winfo_height() - 2) )
-         #Image.BILINEAR ) # too slow
-      except:
-         print "error: could not resize window"         
-      self.image = ImageTk.PhotoImage(self.im)
-      self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
-                               tag="image")
-      self.canvas.create_rectangle(1, 1,
-                                   self.window.winfo_width() - 2,
-                                   self.window.winfo_height() - 2, tag="image")
-      self.canvas.pack()
-      while self.window.tk.dooneevent(2): pass
+      if self.visible:
+         now = time.time()
+         if now - self.lastWindowUpdate < self.updateWindowInterval:
+            return
+         self.lastWindowUpdate = now
+         self.canvas.delete("image")
+         self.im = self.getImage()
+         try:
+            self.im = self.im.resize( (self.window.winfo_width() - 2, 
+                                       self.window.winfo_height() - 2) )
+            #Image.BILINEAR ) # too slow
+         except:
+            print "error: could not resize window"         
+         self.image = ImageTk.PhotoImage(self.im)
+         self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
+                                  tag="image")
+         self.canvas.create_rectangle(1, 1,
+                                      self.window.winfo_width() - 2,
+                                      self.window.winfo_height() - 2, tag="image")
+         self.canvas.pack()
+         while self.window.tk.dooneevent(2): pass
 
    def startService(self):
       self.state = "started"
@@ -452,7 +411,8 @@ class Camera(PyroImage, Service):
             self.filterReturnValue.append( filterFunc(self) )
 
 if __name__ == '__main__':
-   cam = Camera(100, 80)
-   cam.visionSystem = FakeVisionSystem()
+   from pyro.vision.cvision import VisionSystem
+   from pyro.camera.fake import FakeCamera
+   cam = FakeCamera(visionSystem = VisionSystem())
    cam.makeWindow()
    cam.window.mainloop()
