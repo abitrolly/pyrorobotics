@@ -264,8 +264,9 @@ class GLgui(gui):
          self.done = 0
          while len(command) > 0:
             print command[0],
-            retval = command[0]
-            self.processCommand(retval)
+            retval = command[0].strip()
+            if retval:
+               self.processCommand(retval)
             command = command[1:]
          while not self.done:
             needToUpdateState = 1

@@ -37,10 +37,10 @@ class gui(Drawable):
       print "Version " + version()
       print "========================================================="
       while done is not 1:
-         print "Pyro > ",
+         print "Pyro > ", 
          if len(command) > 0:
             print command[0],
-            retval = command[0]
+            retval = command[0].strip()
             command = command[1:]
          else:
             retval = sys.stdin.readline()

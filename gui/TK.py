@@ -256,7 +256,8 @@ class TKgui(gui):
          while len(command) > 0:
             print command[0],
             retval = command[0]
-            self.processCommand(retval)
+            if retval:
+               self.processCommand(retval)
             command = command[1:]
          while not self.done:
             needToUpdateState = 1
