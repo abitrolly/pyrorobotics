@@ -24,7 +24,6 @@ class PlayerDevice(Device):
         if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
             self.devData["pose"] = self.getPose()
 
-
     def preGet(self, kw):
         if kw == "pose":
             self.devData["pose"] = self.getPose()
@@ -34,6 +33,7 @@ class PlayerDevice(Device):
     def startDevice(self):
         try:
             self.dev.start(self.name)
+            # self.devData["index"] get index here for this device (ie, dev.laser[index])
             time.sleep(.5)
             Device.startDevice(self)
         except:
@@ -64,21 +64,25 @@ class PlayerSonarDevice(PlayerDevice):
     def __init__(self, dev, name):
         PlayerDevice.__init__(self, dev, name)
         self.sonarGeometry = self.dev.get_sonar_geometry()
-        self.groups = {'all': range(16),
-                       'front': (3, 4),
-                       'front-left' : (1,2,3),
-                       'front-right' : (4, 5, 6),
-                       'front-all' : (1,2, 3, 4, 5, 6),
-                       'left' : (0, 15), 
-                       'right' : (7, 8), 
-                       'left-front' : (0,), 
-                       'right-front' : (7, ),
-                       'left-back' : (15, ),
-                       'right-back' : (8, ),
-                       'back-right' : (9, 10, 11),
-                       'back-left' : (12, 13, 14), 
-                       'back' : (11, 12),
-                       'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        self.devData["count"] = len(self.sonarGeometry)
+        if self.devData["count"] == 16:
+            self.groups = {'all': range(16),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1,2, 3, 4, 5, 6),
+                           'left' : (0, 15), 
+                           'right' : (7, 8), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        else:
+            self.groups= {'all': range(len(self.sonarGeometry))}
         # What are the raw units?
         self.devData["rawunits"] = "MM"
         # These are fixed in meters: DO NOT CONVERT ----------------
@@ -88,11 +92,10 @@ class PlayerSonarDevice(PlayerDevice):
         # All of the rest of the measures are relative to units, given in rawunits:
         self.devData['units']    = "ROBOTS"
         self.postSet('maxvalue')
-        self.devData["count"] = len(self.sonarGeometry)
         self.devData["noise"] = 0.05 # 5 percent
         # These are per reading:
-        self.subDataFunc['ox']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][0])
-        self.subDataFunc['oy']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][1])
+        self.subDataFunc['ox']    = lambda pos: self.sonarGeometry[pos][0]
+        self.subDataFunc['oy']    = lambda pos: self.sonarGeometry[pos][1]
         self.subDataFunc['oz']    = lambda pos: 0.03 # meters
         self.subDataFunc['thr']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
         self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] # degrees
@@ -111,19 +114,20 @@ class PlayerSonarDevice(PlayerDevice):
 
     def getX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
-        dist = self.rawToUnits(self.dev.sonar[0][pos])
-        x = self.rawToUnits(self.sonarGeometry[pos][0])
+        dist = self.dev.sonar[0][pos]
+        x = self.sonarGeometry[pos][0]
         return cos(thr) * dist
 
     def getY(self, pos):
         thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180
-        dist = self.rawToUnits(self.dev.sonar[0][pos])
-        y = self.rawToUnits(self.sonarGeometry[pos][1]) 
+        dist = self.dev.sonar[0][pos]
+        y = self.sonarGeometry[pos][1]
         return sin(thr) * dist
 
 class PlayerLaserDevice(PlayerDevice):
     def __init__(self, dev, name):
         PlayerDevice.__init__(self, dev, name)
+        self.laserGeometry = self.dev.get_laser_geometry()
         count = int((self.dev.laser[0][0][1] - self.dev.laser[0][0][0]) / self.dev.laser[0][0][2] + 1)
         part = int(count/8)
         start = 0
@@ -158,14 +162,27 @@ class PlayerLaserDevice(PlayerDevice):
         self.subDataFunc['ox']    = lambda pos: 0
         self.subDataFunc['oy']    = lambda pos: 0
         self.subDataFunc['oz']    = lambda pos: 0
+        # FIX: the index here should come from the "index"
         self.subDataFunc['th']    = lambda pos: self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos) # in degrees
         self.subDataFunc['arc']   = lambda pos: self.dev.laser[0][0][2] # in degrees
-        self.subDataFunc['x']     = lambda pos: 0
-        self.subDataFunc['y']     = lambda pos: 0
+        self.subDataFunc['x']     = self.getX
+        self.subDataFunc['y']     = self.getY
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.dev.laser[0][1][pos] / 1000.0 # fix, get in units
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos] / 1000.0) # fix, get in units
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
+
+    def getX(self, pos):
+        thr = (self.laserGeometry[pos][2] + 90.0) * PIOVER180
+        dist = self.dev.laser[0][1][pos] / 1000.0
+        x = self.laserGeometry[pos][0]
+        return cos(thr) * dist
+
+    def getY(self, pos):
+        thr = (self.laserGeometry[pos][2] - 90.0) * PIOVER180
+        dist = self.dev.laser[0][1][pos] / 1000.0
+        y = self.laserGeometry[pos][1]
+        return sin(thr) * dist
 
 class PlayerCommDevice(PlayerDevice):
 
