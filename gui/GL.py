@@ -93,46 +93,60 @@ class GLgui(gui):
 
    def viewRobot(self):
       self.windowRobot = Tk()
+      self.windowRobot.wm_title("Brain View")
       self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
       canvasRobot.pack()
 
    def viewBrain(self):
       self.windowBrain = Tk()
+      self.windowBrain.wm_title("Brain View")
       self.canvasBrain = Canvas(self.windowBrain,width=400,height=400)
       self.canvasBrain.pack()
 
-   def redrawPie(self, pie, percentSoFar, piececnt, controller, percent):
-      row = (pie - 1) * 100
+   def redrawPie(self, pie, percentSoFar, piececnt, controller, percent, name):
+      # FIX: behavior specific. How to put in Behavior-based code?
+      xoffset = 5
+      yoffset = 20
+      width = 100
+      row = (pie - 1) * (width * 1.5)
       colors = ['blue', 'red', 'green', 'yellow']
-      self.canvasBrain.create_arc(0,row,400,row + 100 ,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[piececnt - 1])
+      self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
+      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[piececnt - 1])
+      self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[piececnt - 1], text = name)
 
    def redrawWindowBrain(self):
+      # FIX: behavior specific. How to put in Behavior-based code?
       if self.windowBrain != 0:
          if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
             self.lastRun = self.engine.brain.lastRun
             self.canvasBrain.delete('pie')
             total = {}
-            for desire in self.engine.brain.desires:
-               (truthAmount, controller, amount, behname, statename) = desire
-               if total.has_key(controller):
-                  total[controller] += amount
+            for d in self.engine.brain.desires:
+               if d[1] in total.keys():
+                  total[d[1]] += d[2]
                else:
-                  total[controller] = amount
+                  total[d[1]] = d[2]
             piecnt = 0
-            for control in total.keys():
+            keys = total.keys()
+            keys.sort()
+            for control in keys:
                piecnt += 1
                percentSoFar = 0
                piececnt = 0
-               for desire in self.engine.brain.desires:
-                  (truthAmount, controller, amount, behname, statename) = desire
-                  if control == controller:
+               for d in self.engine.brain.desires:
+                  if control == d[1] and total[d[1]] != 0:
                      piececnt += 1
-                     self.redrawPie(piecnt, percentSoFar, piececnt, controller, amount/total[controller])
-                     percentSoFar += amount/total[controller]
+                     portion = d[2]/total[d[1]] # * d[0]
+                     self.redrawPie(piecnt, percentSoFar, \
+                                    piececnt, \
+                                    d[1], \
+                                    portion, d[4] + ":" + d[3] + " = %.2f" % d[0])
+                     percentSoFar += portion
 
    def redrawWindowRobot(self):
-      if self.windowRobot != 0:
-         print dir(self.engine.robot),
+      #if self.windowRobot != 0:
+      #   print dir(self.engine.robot),
+      pass
 
    def editBrain(self):
       import os
