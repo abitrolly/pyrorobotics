@@ -4,7 +4,7 @@
 from random import random
 from math import log
 
-def poisson(lmbda):
+def poisson(_lambda):
     """
     Function to generate Poisson distributed random variable between 0 and
     infinity with mean equal to lambda
@@ -13,11 +13,42 @@ def poisson(lmbda):
     r = 0
     while 1:
         p = p - log(random());
-        if (p < lmbda):
+        if (p < _lambda):
             r += 1
         else:
             break
     return r
+
+def decimalToBinaryString(val, maxbits = 128): 
+    """ 
+    A decimal to binary converter. Returns bits in a string. 
+    """ 
+    retval = ""
+    for i in range(maxbits - 1, -1, -1): 
+        bit = long(val / (2 ** i)) 
+        val = (val % (2 ** i)) 
+        retval += "%d" % bit
+    assert(val == 0)
+    return retval  
+
+def decimalToBinary(val, maxbits = 128): 
+    """ 
+    A decimal to binary converter. Returns bits in a list. 
+    """ 
+    retval = []
+    for i in range(maxbits - 1, -1, -1): 
+        bit = long(val / (2 ** i)) 
+        val = (val % (2 ** i)) 
+        retval.append(bit)
+    assert(val == 0)
+    return retval
+
+def binaryStringToDecimal(str):
+    retval = 0
+    for i in range(len(str)):
+        val = long(str[-(i + 1)])
+        retval += (val * (2 ** i))
+    return retval  
 
 class Matrix:
     def randomize(self, bias = .5):
@@ -49,6 +80,14 @@ class Matrix:
             if self.data[row][i]:
                 cnt += 1
         return (cnt / self.size)
+    def init(self, str):
+        if type(str) == type("1001"):
+            if (len(str) != self.size):
+                raise "ImproperLength", str
+            for i in range(len(str)):
+                self.data[0][i] = (str[i] == '1' or str[i] == 'X')
+        else:
+            self.init(decimalToBinaryString(str, self.size))
 
 class Rules(Matrix):
     def __init__(self, window = 3, values = 2):
@@ -72,10 +111,10 @@ class Rules(Matrix):
         #    if lat.data[c] == lat.data[c + 1]:
         #        return c
         #return length
-        self.redraw(lat, length)
+        self.draw(lat, length)
         self.win.mainloop()
-    def redraw(self, lat, length):
-        print "Redrawing...",
+    def draw(self, lat, length):
+        print "Drawing...",
         for h in range(length):
             for w in range(self.width):
                 if lat.data[h][w]:
@@ -83,9 +122,10 @@ class Rules(Matrix):
         print "Done!"
     def apply(self, lat, c):
         for i in range(lat.size):
-            lat.data[c+1][i] = self.data[0][lat.bits2rule(c,
+            lat.data[c+1][i] = self.data[0][self.size -
+                                            lat.bits2rule(c,
                                                           i - self.window,
-                                                          i + self.window)]
+                                                          i + self.window) - 1]
     def applyAll(self, lat, length = -1):
         if length == -1:
             length = lat.height - 1
@@ -94,11 +134,6 @@ class Rules(Matrix):
             if lat.data[c] == lat.data[c + 1]:
                 return c
         return length
-    def init(self, str):
-        if (len(str) != self.size):
-            raise "ImproperLength", str
-        for i in range(len(str)):
-            self.data[0][i] = (str[i] == '1' or str[i] == 'X')
 
 class Lattice(Matrix):
     def __init__(self, size = 149, height = 150):
@@ -108,64 +143,80 @@ class Lattice(Matrix):
         for h in range(self.height):
             self.data[h] = [0] * self.size
     def bit(self, row, pos):
-        if pos < 0:
-            return self.data[row][self.size + pos]
-        if pos >= self.size:
-            return self.data[row][pos % self.size]
-        else:
-            return self.data[row][pos]
+        return self.data[row][pos % self.size]
     def bits2rule(self, row, start, stop):
         sum = 0
         cnt = 0
+        #print "bits2rule:", stop, start, range(stop, start - 1, -1),
         for i in range(stop, start - 1, -1):
             sum += self.bit(row, i) * 2 ** cnt
             cnt += 1
+        #print "RULE FIRING! #", sum
         return sum
 
 if __name__ == '__main__':
+    import sys
+
+    def pause():
+        print "---Press ENTER to continue---",
+        sys.stdin.readline()
 
     data = Lattice()
+
+    rules = Rules(window = 1)
+    rules.init(110)
+    print "Rule #110:"
+    rules.display()
+    print "Rule #110 applied to single bit on, Width = %d:" % data.size
+    data.init("0" * data.size)
+    data.data[0][data.size/2] = 1
+    rules.applyAll(data)
+    data.display()
+    #rules.watch(data)
+    pause()
+
     data.randomize(.1)
-    print "A 10% Lattice:"
-    data.display()
+    print "A 10%% Lattice, Width = %d:" % data.size
+    data.display(0)
+    pause()
+
     data.randomize(.5)
-    print "A 50% Lattice:"
-    data.display()
+    print "A 50%% Lattice, Width = %d:" % data.size
+    data.display(0)
+    pause()
+    
     data.randomize(.9)
-    print "A 90% Lattice:"
-    data.display()
+    print "A 90%% Lattice, Width = %d:" % data.size
+    data.display(0)
+    pause()
     
     rules = Rules()
     rules.randomize()
-    print "A 50% Random Rule set:"
+    print "A 50%% Random Rule set, Width = %d:" % rules.size
     rules.display()
+    pause()
     
     data.randomize(.05)
-    #for c in range( data.height - 1):
     rules.applyAll(data)
-    print "A 50% Rule applied to a 10% Lattice:"
+    print "A 50%% Rule applied to a 5%% Lattice, Lattice Width = %d:" % data.size
     data.display()
+    pause()
         
-    rules.init("00000000010111110000000001011111000000000101111100000000010111110000000001011111111111110101111100000000010111111111111101011111")
+    rules.init('11111010111111111111101000000000111110101111111111111010000000001111101000000000111110100000000011111010000000001111101000000000')
     print "GKL Rule set:"
     rules.display()
+    pause()
+
+    for percent in [ x/10.0 for x in range(10)]:
+        data.randomize(percent)
+        print "GKL Rule applied to a %d%% Lattice, Width = %d:" % (percent * 100, data.size)
+        print rules.applyAll(data)
+        data.display()
+        pause()
     
-    data.randomize(.3)
-    #for c in range( data.height - 1):
-    print "GKL Rule applied to a 30% Lattice:"
-    print rules.applyAll(data)
-    data.display()
-    
-    data.randomize(.4)
-    #for c in range( data.height - 1):
-    print "GKL Rule applied to a 70% Lattice:"
-    print rules.applyAll(data)
-    data.display()
+    data.randomize()
+    rules.randomize()
+    print "A 50%% Rule applied to a 50%% Lattice, Lattice Width = %d:" % data.size
+    #data.display()
     rules.watch(data)
 
-    data.randomize(.6)
-    #for c in range( data.height - 1):
-    print "GKL Rule applied to a 70% Lattice:"
-    print rules.applyAll(data)
-    data.display()
-    rules.watch(data)
