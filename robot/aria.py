@@ -1,7 +1,7 @@
 # Defines AriaRobot, a subclass of robot
 
 from pyro.robot import *
-from pyro.robot.service import Service, ServiceError, Device
+from pyro.robot.service import Service, ServiceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
@@ -34,11 +34,9 @@ BITPOS = (BIT0, BIT1, BIT2,  BIT3,  BIT4,  BIT5,  BIT6,  BIT7,
           BIT8, BIT9, BIT10, BIT11, BIT12, BIT13, BIT14, BIT15 )
 
 class AriaService(Service):
-
-    def __init__(self, robot, name):
-        Service.__init__(self)
+    def __init__(self, robot, type):
+        Service.__init__(self, type)
         self.robot = robot
-        self.name = name
 
     def checkService(self):
         if self.dev == 0:
@@ -107,6 +105,7 @@ class AriaPTZService(AriaService):
     def __init__(self, robot, type = "sony"):
         # here, robot is the robot.device
         AriaService.__init__(self, robot, "ptz")
+        self.devData["model"] = type
         if type == "sony":
             self.dev = ArSonyPTZ(self.robot)
         elif type == "canon":
@@ -204,21 +203,20 @@ class AriaPTZService(AriaService):
     def getMinZoom(self):
         return self.dev.getMinZoom()
 
-class AriaSensor(Device):
-    def __init__(self, params, device):
-        Device.__init__(self)
+class AriaSensor(Service):
+    def __init__(self, params, device, type):
+        Service.__init__(self, type)
         self.params = params
         self.device = device
-        self.data['type'] = 'range'
 
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
-        AriaSensor.__init__(self, params, device)
-        self.data['maxvalueraw'] = 2.99
-        self.data['units']    = "ROBOTS"
-        self.data['maxvalue'] = self.getSonarMaxRange() # FIX: this should change when you change units
-        self.data["count"] = self.params.getNumSonar()
-        if self.data["count"] == 16:
+        AriaSensor.__init__(self, params, device, "sonar")
+        self.devData['maxvalueraw'] = 2.99
+        self.devData['units']    = "ROBOTS"
+        self.devData['maxvalue'] = self.getSonarMaxRange() # FIX: this should change when you change units
+        self.devData["count"] = self.params.getNumSonar()
+        if self.devData["count"] == 16:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),
@@ -237,17 +235,17 @@ class AriaSonar(AriaSensor):
         elif self.params.getNumSonar() > 16:
             raise AttributeError, ("Need to define sensor groups for sonars "
                                    "with %d sensors" % self.params.getNumSonar())
-        self.subdataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
-        self.subdataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
-        self.subdataFunc['oz']    = lambda pos: 0.03
-        self.subdataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
-        self.subdataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
-        self.subdataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
-        self.subdataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
-	self.subdataFunc['z']     = lambda pos: 0.03 # meters
-        self.subdataFunc['value'] = lambda pos: self.getSonarRange(pos)
-        self.subdataFunc['pos']   = lambda pos: pos
-        self.subdataFunc['group']   = lambda pos: self.getGroupNames(pos)
+        self.devDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
+        self.devDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
+        self.devDataFunc['oz']    = lambda pos: 0.03
+        self.devDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
+        self.devDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
+        self.devDataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
+        self.devDataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
+	self.devDataFunc['z']     = lambda pos: 0.03 # meters
+        self.devDataFunc['value'] = lambda pos: self.getSonarRange(pos)
+        self.devDataFunc['pos']   = lambda pos: pos
+        self.devDataFunc['group']   = lambda pos: self.getGroupNames(pos)
 
     def getGroupNames(self, pos):
         retval = []
@@ -263,8 +261,8 @@ class AriaSonar(AriaSensor):
         return self.rawToUnits(2.99)
 
     def rawToUnits(self, raw):
-        val = min(max(raw, 0.0), self.data['maxvalueraw'])
-        units = self.data["units"]
+        val = min(max(raw, 0.0), self.devData['maxvalueraw'])
+        units = self.devData["units"]
         if units == "ROBOTS":
             return val / 0.75 # Pioneer is about .5 meters diameter
         elif units == "MM":
@@ -274,19 +272,19 @@ class AriaSonar(AriaSensor):
         elif units == "METERS" or units == "RAW":
             return (val) 
         elif units == "SCALED":
-            return val / self.data['maxvalueraw']
+            return val / self.devData['maxvalueraw']
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
 class AriaLaser(AriaSensor):
     def __init__(self,  params, device):
-        AriaSensor.__init__(self, params, device)
-        self.data['maxvalue'] = 15.0 # FIX
-        self.data['units']    = "ROBOTS"
-        self.data["count"] = self.params.getNumLaser()
-        self.data["x"] = self.params.getLaserX()
-        self.data["y"] = self.params.getLaserY()
-        if self.data["count"] == 181:
+        AriaSensor.__init__(self, params, device, "laser")
+        self.devData['maxvalue'] = 15.0 # FIX
+        self.devData['units']    = "ROBOTS"
+        self.devData["count"] = self.params.getNumLaser()
+        self.devData["x"] = self.params.getLaserX()
+        self.devData["y"] = self.params.getLaserY()
+        if self.devData["count"] == 181:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),
@@ -305,22 +303,22 @@ class AriaLaser(AriaSensor):
         #elif self.params.getNumSonar() > 181:
         #    raise AttributeError, ("Need to define sensor groups for lasers "
         #                           "with %d sensors" % self.params.getNumSonar())
-        self.subdataFunc['oz']    = lambda pos: 0.03
-        self.subdataFunc['th']    = lambda pos: pos
-        self.subdataFunc['arc']   = lambda pos: 1.0
-        self.subdataFunc['x']     = lambda pos: self.params.getLaserX()
-        self.subdataFunc['y']     = lambda pos: self.params.getLaserX()
-	self.subdataFunc['z']     = lambda pos: 0.03 # meters
-        self.subdataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
-        self.subdataFunc['pos']   = lambda pos: pos
+        self.devDataFunc['oz']    = lambda pos: 0.03
+        self.devDataFunc['th']    = lambda pos: pos
+        self.devDataFunc['arc']   = lambda pos: 1.0
+        self.devDataFunc['x']     = lambda pos: self.params.getLaserX()
+        self.devDataFunc['y']     = lambda pos: self.params.getLaserX()
+	self.devDataFunc['z']     = lambda pos: 0.03 # meters
+        self.devDataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
+        self.devDataFunc['pos']   = lambda pos: pos
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
-        AriaSensor.__init__(self, params, device)
-        self.data['maxvalue'] = 1.0 
-        self.data['units']    = "RAW"
-        self.data["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
-        if self.data["count"] == 5:
+        AriaSensor.__init__(self, params, device, "bumper")
+        self.devData['maxvalue'] = 1.0 
+        self.devData['units']    = "RAW"
+        self.devData["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
+        if self.devData["count"] == 5:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),
@@ -336,7 +334,7 @@ class AriaBumper(AriaSensor):
                            'back-left' : (12, 13, 14), 
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        elif self.data["count"] == 10:
+        elif self.devData["count"] == 10:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),
@@ -354,9 +352,9 @@ class AriaBumper(AriaSensor):
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         elif self.params.getNumSonar() > 10:
             raise AttributeError, ("Need to define sensor groups for bumpers "
-                                   "with %d sensors" % self.data["count"])
-        self.subdataFunc['pos']   = lambda pos: pos
-        self.subdataFunc['value']   = lambda pos: pos
+                                   "with %d sensors" % self.devData["count"])
+        self.devDataFunc['pos']   = lambda pos: pos
+        self.devDataFunc['value']   = lambda pos: pos
 
 ##     def getBumpersPosDev(self, dev, pos):
 ##         return self.getBumpersDev(dev)[pos]
@@ -377,28 +375,27 @@ class AriaRobot(Robot):
         self.inform("Loading Aria robot interface...")
         Robot.__init__(self) # robot constructor
         self.connect()
-        self.data['stall'] = 0
-        self.data['x'] = 0.0
-        self.data['y'] = 0.0
-        self.data['z'] = 0.0
-        self.data['datestamp'] = time.time()
-        self.data['radius'] = self.params.getRobotRadius() / 1000.0 # in MM, convert to meters
-        self.data['th'] = 0.0 # in degrees
-        self.data['thr'] = 0.0 # in radians
-	self.data['type'] = self.dev.getRobotType()
-	self.data['subtype'] = self.params.getSubClassName()
-        self.data['units'] = 'METERS' # x,y,z units
-        self.data['name'] = self.dev.getRobotName()
-        console.log(console.INFO,'aria sense drivers loaded')
+        self.devData['stall'] = 0
+        self.devData['x'] = 0.0
+        self.devData['y'] = 0.0
+        self.devData['z'] = 0.0
+        self.devData['datestamp'] = time.time()
+        self.devData['radius'] = self.params.getRobotRadius() / 1000.0 # in MM, convert to meters
+        self.devData['th'] = 0.0 # in degrees
+        self.devData['thr'] = 0.0 # in radians
+	self.devData['type'] = self.dev.getRobotType()
+	self.devData['subtype'] = self.params.getSubClassName()
+        self.devData['units'] = 'METERS' # x,y,z units
+        self.devData['name'] = self.dev.getRobotName()
         self.dev.runAsync(1)
         if self.params.getNumSonar() > 0:
-            self.dataFunc["sonar"] = AriaSonar(self.params, self.dev)
-            self.dataFunc["range"] = self.dataFunc["sonar"]
+            self.devDataFunc["sonar"] = AriaSonar(self.params, self.dev)
+            self.devDataFunc["range"] = self.devDataFunc["sonar"]
         if self.params.getLaserPossessed():
-            self.dataFunc["laser"] = AriaLaser(self.params, self.dev)
-            self.dataFunc["range"] = self.dataFunc["laser"]
+            self.devDataFunc["laser"] = AriaLaser(self.params, self.dev)
+            self.devDataFunc["range"] = self.devDataFunc["laser"]
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
-            self.dataFunc["bumper"] = AriaBumper(self.params, self.dev)
+            self.devDataFunc["bumper"] = AriaBumper(self.params, self.dev)
 	self.update() 
         self.inform("Done loading Aria robot.")
 
@@ -413,7 +410,7 @@ class AriaRobot(Robot):
         self.dev.unlock()
 
     def move(self, translate_velocity, rotate_velocity):
-        print "move:", translate_velocity, rotate_velocity
+        #print "move:", translate_velocity, rotate_velocity
         self.dev.lock()
         self.dev.setVel((int)(translate_velocity * 1100.0))
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
@@ -422,11 +419,11 @@ class AriaRobot(Robot):
     def update(self):
         self.dev.lock()
         self._update()
-        self.data["x"] = self.dev.getX() / 1000.0
-        self.data["y"] = self.dev.getY() / 1000.0
-        self.data["th"] = (self.dev.getTh() + 360) % 360
-        self.data["thr"] = self.data["th"] * PIOVER180
-        self.data["stall"] = self.dev.getStallValue()
+        self.devData["x"] = self.dev.getX() / 1000.0
+        self.devData["y"] = self.dev.getY() / 1000.0
+        self.devData["th"] = (self.dev.getTh() + 360) % 360
+        self.devData["thr"] = self.devData["th"] * PIOVER180
+        self.devData["stall"] = self.dev.getStallValue()
         self.dev.unlock()
     
     def enableMotors(self):
@@ -441,7 +438,7 @@ class AriaRobot(Robot):
 
     def connect(self):
         Aria.init()
-        self.data["simulated"] = 1 
+        self.devData["simulated"] = 1 
         self.dev = ArRobot()
         self.conn = ArTcpConnection()
         print "Attempting to open TCP port at localhost:%d..." % (8000 + getuid())
@@ -450,7 +447,7 @@ class AriaRobot(Robot):
         if (self.dev.blockingConnect() != 1):
             # could not connect to TCP; let's try a serial one
             # this is a real robot
-            self.data["simulated"] = 0 
+            self.devData["simulated"] = 0 
             print "Attempting to open Serial TTY port..."
             self.conn = ArSerialConnection()
             self.conn.setPort()
