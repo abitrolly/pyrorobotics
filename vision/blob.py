@@ -8,7 +8,22 @@ class Image:
       self.data = [init_val] * height * width * 3
 
    def loadFromFile(self, filename):
-      pass
+      fp = open(filename, "r")
+      line1 = fp.readline()
+      of.write("P2\n")
+      line2 = fp.readline()
+      of.write(line2)
+      line3 = fp.readline()
+      of.write(line3)
+      c = fp.read(1)
+      x = 0
+      while (c):
+         of.write("%f " % (float(struct.unpack('h', c + '\x00')[0]) / 255.0))
+         c = fp.read(1)
+         x += 1
+         if (x > 10):
+            x = 0
+            of.write("\n")
 
 class Bitmap:
    def __init__(self, width, height, init_val = 0):
@@ -99,7 +114,7 @@ class Bitmap:
                      blob.set(w, h, count)
                      count += 1
       blob.equivList = self.equivList[:]
-      blob.display()
+      return blob
 
 if __name__ == '__main__':
    bitmap = Bitmap(20, 15)
@@ -119,4 +134,5 @@ if __name__ == '__main__':
                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
    bitmap.display()
-   bitmap.blobify()
+   blob = bitmap.blobify()
+   blob.display()
