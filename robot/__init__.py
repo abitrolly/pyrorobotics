@@ -140,10 +140,6 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
-    #def __getattr__(self, path):
-    #    #if path[:2] != "__":
-    #    return self.get(path)
-
     def __repr__(self):
         retval = '---------------------------------\nRobot properties:\n---------------------------------\n'
         items = self.get("robot/")
@@ -165,7 +161,7 @@ class Robot:
         console.log(console.INFO, msg)
 
     def getAll(self, path = '', depth = 0):
-        retval = '=======================================================\n'
+        retval = ''
         pathList = self.get(path, showstars = 1)
         if isinstance(pathList, (type((1,)), type([1,]))):
             pathList.sort()
@@ -207,6 +203,7 @@ class Robot:
             raise AttributeError, "no such directory item '%s'" % key
 
     def _get(self, pathList, showstars = 0):
+        #print "_get", pathList
         if len(pathList) == 0:
             tmp = self.devData.copy()
             tmp.update( self.devDataFunc )
@@ -251,6 +248,7 @@ class Robot:
         if len(finalPath) == 0:
             return deviceDirectoryFormat(self.directory, 0) # toplevel
         elif finalPath[0] in self.directory:
+            #print "finalPath=", finalPath, self.directory
             # pass the command down
             return self.directory[finalPath[0]]._get(finalPath[1:], showstars)
         elif finalPath[0] == '*':
