@@ -40,15 +40,17 @@ def avg(seq):
 #  GA - the parameters of evolution
 
 class Gene:
-    def __init__(self, verbose = 0, **args):
+    def __init__(self, **args):
         # Possible Change: Initialization is made beween -1, and 1
-        self.verbose = verbose
+        self.verbose = 0
         self.genotype = []
         self.fitness = 0.0
         self.mode = 'float'
         self.bias = 0.5
         self.min = 0 # inclusive
         self.max = 1 # inclusive
+        if args.has_key('verbose'):
+            self.verbose = args['verbose']
         if args.has_key('min'):
             self.min = args['min']
         if args.has_key('max'):
@@ -128,14 +130,16 @@ class Population:
     """
     Class to abstract gene-related items.
     """
-    def __init__(self, cnt, geneConstructor, verbose = 0, **args):
+    def __init__(self, cnt, geneConstructor, **args):
         self.individuals = []
         self.size = cnt
         self.geneConstructor = geneConstructor
         self.args = args
-        self.verbose = verbose
+        self.verbose = 0
+        if args.has_key('verbose'):
+            self.verbose = args['verbose']
         for i in range(cnt):
-            self.individuals.append( geneConstructor(verbose, **args))
+            self.individuals.append( geneConstructor(**args))
 
     def __getitem__(self, val):
         return self.individuals[val]
@@ -189,7 +193,7 @@ class GA:
     """
     Class which defines everything needed to run a GA.
     """
-    def __init__(self, population, verbose = 0, **args):
+    def __init__(self, population, **args):
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
         self.pop = population
@@ -199,7 +203,9 @@ class GA:
         self.crossoverRate = 0.3
         self.maxGeneration = 0
         self.generation = 0
-        self.verbose = verbose
+        self.verbose = 0
+        if args.has_key('verbose'):
+            self.verbose = args['verbose']
         if args.has_key('mutationRate'):
             self.mutationRate = args['mutationRate']
         if args.has_key('crossoverRate'):
@@ -262,6 +268,8 @@ class GA:
             
     def evolve(self):
         self.generation = 0
+        self.applyFitnessFunction()
+        self.sort()
         while (self.generation < self.maxGeneration or self.maxGeneration == 0):
             print "-" * 30
             print "Generation #", self.generation, ":"

@@ -10,16 +10,16 @@ class GPGene(Gene):
             self.bias = args['bias']
         # higher the bias, more likely to be shallow
         if (random.random() < self.bias):
-            self.data = share.terminals[ int(random.random() * len(share.terminals))]
+            self.genotype = share.terminals[ int(random.random() * len(share.terminals))]
         else:
             pos = int(random.random() * len(share.operators)) 
-            self.data = [share.operators[ pos ], ]
+            self.genotype = [share.operators[ pos ], ]
             for i in range( share.operands[ share.operators[pos] ] ):
-                self.data.append( GPGene(**args).data )
+                self.genotype.append( GPGene(**args).genotype )
 
     def eval_tree(self, values, tree = ''):
         if tree == '':
-            tree = self.data
+            tree = self.genotype
         if type(tree) == type('string') and values.has_key(tree):
             return values[tree]
         elif type(tree) == type( [1,]) and type(tree[0]) == type('s') and share.operands.has_key( tree[0] ):
@@ -56,7 +56,7 @@ class GPGene(Gene):
 
     def depth(self, tree = ''):
         if tree == '':
-            tree = self.data
+            tree = self.genotype
         if tree in share.terminals:
             return 0
         elif tree[0] in share.operators:
@@ -72,7 +72,7 @@ class GPGene(Gene):
     def mutate(self, **args):
         total_points = self.countPoints()
         rand = int(random.random() * (total_points - 1)) + 1
-        #self.data = self.replaceSymbol( rand, self.constructor(bias = self.bias).data)
+        #self.data = self.replaceSymbol( rand, self.constructor(bias = self.bias).genotype)
 
     def replaceTree( self, pos, subtree ):
         # first, replace symbol at pos with a special marker
@@ -103,7 +103,7 @@ class GPGene(Gene):
 
     def replaceSymbol(self, pos, replacement = '???'):
         self.replace = 0
-        return self.replaceSymbolHelper(pos, self.data, replacement)
+        return self.replaceSymbolHelper(pos, self.genotype, replacement)
     
     def replaceSymbolHelper(self, pos, tree, replacement):
         self.replace += 1
@@ -125,7 +125,7 @@ class GPGene(Gene):
 
     def getTree(self, pos):
         self.points = 0
-        return self.getTreeHelper(self.data, pos)
+        return self.getTreeHelper(self.genotype, pos)
 
     def getTreeHelper(self, tree, pos):
         if tree in share.terminals:
@@ -145,7 +145,7 @@ class GPGene(Gene):
 
     def countPoints(self, what = 'all'):
         self.points = 0
-        self.countPoint( self.data, what )
+        self.countPoint( self.genotype, what )
         return self.points
 
     def countPoint(self, tree, what = 'all'):
@@ -162,7 +162,7 @@ class GPGene(Gene):
 
     def display(self, tree = ''):
         if tree == '':
-            tree = self.data
+            tree = self.genotype
         if tree in share.terminals:
             print tree,
         elif tree[0] in share.operators:
@@ -192,36 +192,36 @@ if __name__ == '__main__':
 
     class GP(GA):
         def __init__(self, cnt, **args):
-            GA.__init__(self, Population( cnt, GPGene, **args))
+            GA.__init__(self, Population( cnt, GPGene, **args), **args)
     
         def fitnessFunction(self, pos):
             score = 0
             for i in range(len(values)):
                 set, goal = values[i], goals[i]
-                item  = self.pop.data[pos].eval_tree(set) - goal
+                item  = self.pop.individuals[pos].eval_tree(set) - goal
                 score += abs(item)
             return -score
     
-        def isDoneFunction(self):
+        def isDone(self):
             return self.fitnessFunction(0) == 0
     
-    gp = GP(300, bias = .6)
+    gp = GP(300, bias = .6, verbose = 1)
     gp.evolve()
     print " -----------------------------------------------------------------"
 
     class PI_GP(GA):
         def __init__(self, cnt, **args):
-            GA.__init__(self, Population( cnt, GPGene, **args))
+            GA.__init__(self, Population( cnt, GPGene, **args), **args)
     
         def fitnessFunction(self, pos, pr = 0):
-            val = self.pop.data[pos].eval_tree(values) 
+            val = self.pop.individuals[pos].eval_tree(values) 
             score  = abs(val - pi)
             if pr:
                 print val
             return -score
                 
-        def isDoneFunction(self):
-            return self.fitnessFunction(0, 1) == 0
+        def isDone(self):
+            return abs(self.fitnessFunction(0, 1)) < 0.0001
 
     share.operators = ['+', '-', '*', '/']
     # how many operands (arguments):
@@ -231,6 +231,6 @@ if __name__ == '__main__':
                        '/'   : 2 }
     share.terminals = ['1', 'e']
     values = {'1' : 1, 'e' : math.e}
-    gp = PI_GP(1000, bias = .6)
+    gp = PI_GP(1000, bias = .6, verbose = 1)
     gp.evolve()
     print " -----------------------------------------------------------------"
