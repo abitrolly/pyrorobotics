@@ -1,3 +1,16 @@
 #!/bin/sh
 
-/usr/local/Aria/bin/SRIsim -w office.wld -t local
+# Option               Default        Description
+# ==================   =============  ========================================
+# [-p port_name]       8101           Socket port, or file; /tmp/mySim, for 
+#                                     example, if local port
+# [-r robot_type]      P2DX           Defines simulated robot; see specific 
+#                                     definitions in $ARIA/params/
+# [-t port_type]       TCP            Simulator connection port; TCP or local
+# [-timeout .1secs]    no timeout     Simulator automatically exits after 
+#                                     n seconds of no connection
+# [-w worldname.wld]  none            Load a 2-D world (.wld) description file 
+#                                     ActivMediaLab.wld, for example
+# [-s | -g factor]     none           Grows/Shrinks the simulator window 
+
+/usr/local/Aria/bin/SRIsim -p /tmp/$USER -w office.wld -t local
