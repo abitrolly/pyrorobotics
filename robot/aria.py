@@ -29,19 +29,16 @@ BIT15 = 0x8000
 BITPOS = (BIT0, BIT1, BIT2,  BIT3,  BIT4,  BIT5,  BIT6,  BIT7,
           BIT8, BIT9, BIT10, BIT11, BIT12, BIT13, BIT14, BIT15 )
 
+class AriaSensor(Device):
+    def __init__(self, params, device, type):
+        Device.__init__(self, type)
+        self.params = params
+        self.dev = device
+
 class AriaDevice(Device):
     def __init__(self, robot, type):
         Device.__init__(self, type)
         self.robot = robot
-
-    def checkDevice(self):
-        if self.dev == 0:
-            raise DeviceError, "Device '%s' not available" % self.name
-
-    #def getDeviceData(self, pos = 0):
-    #    self.checkDevice()
-    #    return self.dev.__dict__[self.name][pos]
-
 
 class AriaGripperDevice(AriaDevice):
         ## Methods for gripper from Aria
@@ -49,6 +46,7 @@ class AriaGripperDevice(AriaDevice):
     def __init__(self, robot):
         AriaDevice.__init__(self, robot, "gripper")
         self.dev = ArGripper(self.robot)
+        self.startDevice()
 
     def open(self):
         self.dev.gripOpen()
@@ -108,11 +106,9 @@ class AriaPTZDevice(AriaDevice):
             self.dev = ArVCC4(self.robot)
         else:
             raise TypeError, "invalid type: '%s'" % type
-
-    def init(self):
-        # this should NOT happen until the robot is connected:
         self.dev.init()
-        
+        self.startDevice()
+
     def setPose(self, *args):
         if len(args) == 3:
             pan, tilt, zoom = args[0], args[1], args[2]
@@ -199,12 +195,6 @@ class AriaPTZDevice(AriaDevice):
     def getMinZoom(self):
         return self.dev.getMinZoom()
 
-class AriaSensor(Device):
-    def __init__(self, params, device, type):
-        Device.__init__(self, type)
-        self.params = params
-        self.dev = device
-
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "sonar")
@@ -243,6 +233,7 @@ class AriaSonar(AriaSensor):
         self.subDataFunc['value'] = lambda pos: self.getSonarRange(pos)
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
+        self.startDevice()
 
     def getSonarRange(self, pos):
         return self.rawToUnits(self.dev.getSonarRange(pos) / 1000.0)
@@ -303,6 +294,7 @@ class AriaLaser(AriaSensor):
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
         self.subDataFunc['value'] = lambda pos: self.dev.getSonarRange(pos) # METERS? FIX: make in units
         self.subDataFunc['pos']   = lambda pos: pos
+        self.startDevice()
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
@@ -347,6 +339,7 @@ class AriaBumper(AriaSensor):
                                    "with %d sensors" % self.devData["count"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['value']   = lambda pos: pos
+        self.startDevice()
 
 ##     def getBumpersPosDev(self, dev, pos):
 ##         return self.getBumpersDev(dev)[pos]
