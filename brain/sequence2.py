@@ -1,3 +1,4 @@
+from pyro.brain.conx import Network
 from pyro.brain.governor import *
 import Numeric
 
@@ -28,6 +29,15 @@ class myGovernorSRN(GovernorSRN):
                 (v1, offset) = vals
                 retval[v1] = self.targets[pos][offset:offset+self[v1].size]
         return retval
+    def change_weights(self):
+        Network.change_weights(self)
+        if net.useRAVQ:
+            # put it back the way that it was
+            self.copyActivations(self["input"], self.lastInput)
+            # copy context
+            self.copyActivations(self["context"], self.lastContext)
+            self.propagate()
+            self.copyHiddenToContext()
     def preprop(self, pattern, step):
         """
         Extends preprop() by adding support for clearing context layers
@@ -41,33 +51,39 @@ class myGovernorSRN(GovernorSRN):
                 self.clearContext()
         # --------------------------------------------------------------------------------------
         if self.useRAVQ:
+            # get what the input would be:
             input = self.getInput(pattern, step)
             target = self.getTarget(pattern, step)
+            if self.count == 0:
+                self.clearContext()
+            # make copy
+            self.lastInput = input["input"]
+            self.lastContext = self["context"].activation
+            # get the sizes:
             inputSize   = self["input"].size
             contextSize = self["context"].size
+            # map it in the RAVQ:
             index, modelVector = net.map(input["input"] + list(self["context"].activation) + target["output"])
             array = net.nextItem()
+            # stick it in the network
             if self.verbosity > 0:
                 print "RAVQ input:", input["input"] + list(self["context"].activation) + target["output"]
                 print "RAVQ MV:", modelVector
                 print "RAVQ array:", array
             if index == -1: # no winner
                 self.copyActivations(self["input"], input["input"])
-                self["context"].activationSet = 1
                 self.copyTargets(self["output"], target["output"])
             else:
                 self.copyActivations(self["input"], array[0:inputSize])
-                self["context"].activationSet = 0
                 self.copyActivations(self["context"], array[inputSize:inputSize+contextSize])
                 self.copyTargets(self["output"], array[inputSize+contextSize:])                
-            #self.setLayerVerification(0)
         else:
             # this loads inputs into the network:
             Network.preprop(self, pattern, step) # must go here, consider raam example
         # --------------------------------------------------------------------------------------
         for p in self.prediction:
             if self.useRAVQ:
-                raise AttributeError, "Governored network doesn't work with prediction"
+                raise AttributeError, "Governed network doesn't work with prediction"
             (inName, outName) = p
             inLayer = self.getLayer(inName)
             if not inLayer.type == 'Input':
@@ -81,16 +97,13 @@ class myGovernorSRN(GovernorSRN):
             else:
                 start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.inputs[pattern]))
                 self.copyTargets(outLayer, self.inputs[pattern], start)
-    def trainWithRAVQ(self):
-        return
-
 # set RAVQ parameters
-govEpsilon = 2.1
-delta = 0.8
-alpha = 0.02
-ravqBuffer = 5
-govBuffer = 5
-net = myGovernorSRN(ravqBuffer, govEpsilon, delta, govBuffer, alpha)
+ravqBuffer = 5 # old params (4, 2.1, 1.1, 2, .2)
+govEpsilon = 2.1  
+delta = 0.00
+govBuffer = 2
+alpha = 0.2
+net = myGovernorSRN(ravqBuffer, govEpsilon, delta, govBuffer, alpha, mask = [5, 1, 1, 1, 1, 1, 5])
 net.useRAVQ = 1
 net.addThreeLayers(1,5,1)
 net.setInputs( [[0.0,  0.0,  0.0, 
@@ -101,17 +114,24 @@ net.setOutputs( [[0.0, 0.0,  0.0,
                   0.0, 0.0,  1.0,
                   0.0, 0.0,  0.0,
                   0.0, 0.0,  0.5]] )
+net.setLayerVerification(0)
 net.setOrderedInputs(0)
-net.setTolerance(.1)
-net.setResetEpoch(3000)
+net.setTolerance(-.1)
+net.setResetEpoch(30)
 net.setResetLimit(1)
 net.setEpsilon(0.25)
 net.setMomentum(0)
 net.setLearnDuringSequence(1)
 net.train()
+print net.ravq
 net.useRAVQ = 0
 net.setLearning(0)
 net.setInteractive(1)
 net.sweep()
 
-# this will add the governor, and it should work!
+# preprop        - get intended input/target, map RAVQ/get array as input/context/target
+# propagate      - propagate
+#     clearcontext
+# backprop       - compute wed/bed
+#    copyContext - copy hidden->context
+# update_weights - change weights, but back, propagate, copycontext
