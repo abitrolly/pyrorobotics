@@ -64,9 +64,6 @@ class Brain(threading.Thread):
     def set(self, path, value):
         return self.robot.set(path, value)
 
-    def __repr__(self):
-        return "Brain name = '%s'" % self.name
-
     def _draw(self, options, renderer):
         pass
 

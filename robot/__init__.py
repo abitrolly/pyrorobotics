@@ -160,17 +160,6 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
-    def __repr__(self):
-        retval = '---------------------------------\nRobot properties:\n---------------------------------\n'
-        items = self.get("robot/")
-        items.sort()
-        for item in items:
-            if item[-1] == "/": # more things below this
-                retval += "%12s\n" % item
-            else:
-                retval += "%12s = %s\n" % (item, self.get("robot/%s" % item))
-        return retval
-
     def disconnect(self):
         pass
 
