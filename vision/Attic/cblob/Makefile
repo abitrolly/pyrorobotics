@@ -28,3 +28,6 @@ blob.o: blob.c blob.h hsbrgb.h
 
 clean::
 	$(RM) blob$(SO) *module.c _*$(SO) *.o *.pyc 
+
+v4lblobtest: v4lblob.c blob.o hsbrgb.o
+	gcc -I../../camera/v4l/ -o v4lblobtest v4lblobtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
