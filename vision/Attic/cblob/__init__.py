@@ -59,5 +59,7 @@ if __name__ == '__main__':
     
     blob.Bitmap_write_to_pgm(bmp, "python.pgm", 1)
 
+    blobdata = blob.Blobdata_init(bmp)
+
     #clean it up
-    blob.Bitmap_del(bmp)
+    #blob.Bitmap_del(bmp)

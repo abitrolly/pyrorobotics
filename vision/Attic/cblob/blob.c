@@ -118,7 +118,7 @@ void Bitmap_del(struct bitmap* map){
   and 0 on failure*/
 int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels){
   FILE* out;
-  int max = 0;
+  int maxval = 0;
   int i, w;
   uint8_t temp;
   
@@ -131,11 +131,11 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels){
   if (levels <= 0 || levels > 65535){
     //default to the maximum
     fprintf(out, "P5\n%d %d\n65535\n", map->width, map->height);
-    max = 1;
+    maxval = 1;
   } else{
     fprintf(out, "P5\n%d %d\n%d\n", map->width, map->height, levels);
   }
-  if (max || levels > 255){
+  if (maxval || levels > 255){
     i = fwrite(map->data, 2, map->width * map->height, out);
     if (i == 0 && map->width * map->height != 0){
       perror("Bitmap_write_to_pgm: error writing to file");
@@ -157,15 +157,13 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels){
   return 1;
 }
   
-    
-  
-
 /* -------------- Blobdata operations ---------------*/
 
-void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
+struct blobdata* Blobdata_init(struct bitmap* theBitmap){
   int count = 0;
   int w, h, n, m, minBlobNum, maxBlobNum, i;
   struct blob* tempBlob;
+  struct blobdata *data = (struct blobdata*)malloc(sizeof(struct blobdata));
   /*--------------------
     This is a traslation into C of Doug's Blob code from
     pyro.camera.Blobdata.__init__.  It's pretty much exactly
@@ -285,6 +283,7 @@ void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
       m--;
     }
   }
+  return data;
 }
 
 void Blobdata_del(struct blobdata* data){
@@ -302,11 +301,9 @@ void Blobdata_del(struct blobdata* data){
 
 
 /* --------------- transducers -----------------
-   These functions take image data of some form and reutrn a bitmap
+   These functions take image data of some form and return a bitmap
    that can be used with the blob functions.
 */
-
-
 
 struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height,
 			       double (*filter)(double, double, double),
@@ -397,13 +394,10 @@ struct bitmap* bitmap_from_pgm(char* filename,
   double temp;
   int i;
 
-  
-
   theFile = fopen(filename, "r");
   if (!theFile){
     perror("bitmap_from_pgm: Error openeing file for read");
   }
-
 
   fscanf(theFile, "%*s%d%d%d", &rows, &cols, &maxval);
   gray = (unsigned char*)malloc(rows*cols);
@@ -476,8 +470,23 @@ struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int h
   return bmp;
 }
   
+struct bitmap* get_inverted_bitmap(struct bitmap* thebitmap) {
+  int i;
+  struct bitmap * bmp;
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, thebitmap->width, thebitmap->height);
+  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
+    bmp->data[i] = ! thebitmap->data[i];
+  }
+  return bmp;
+}  
 
-  
+void invert_bitmap(struct bitmap* thebitmap) {
+  int i;
+  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
+    thebitmap->data[i] = thebitmap->data[i] < .5;
+  }
+}  
 
 //---------- Filter functions ------------------
 
@@ -492,7 +501,6 @@ double filter_green (double r, double g, double b){
 double filter_blue (double r, double g, double b){
     return b;
 }
-
 
 double filter_hue (double r, double g, double b){
   float h, s, v;
@@ -511,12 +519,33 @@ double filter_brightness (double r, double g, double b){
   rmRGBtoHSV(r, g, b, &h, &s, &v);
   return v;
 }
+
 /* ------- Blob output ---------
    Given an array of blobdata pointers, an array of ints (packed
    RGB color values for the channel colors), and an int
    representing the length of the previous two arrays (which much be equal),
    return a struct that looks like the player-stage blob struct
 */
+
+player_blobfinder_data_t* make_player_blob_default(struct blobdata** blobs) {
+  int channel_data[] = {255, 255, 255, 
+			255, 0, 0,   
+			0, 255, 0,   
+			0, 0, 255,   
+			0, 255, 255, 
+			255, 255, 0,  
+			255, 0, 255,  
+			0, 0, 0 };
+  int n_channels = 8;
+  uint32_t channels[8];
+  int i;
+  for(i = 0; i < n_channels; i++) {
+    channels[i] = ((channel_data[i * 3 + 0] << 16) ||
+		   (channel_data[i * 3 + 1] << 8) ||
+		   (channel_data[i * 3 + 2]));
+  }
+  return make_player_blob(blobs, channels, n_channels);
+}
 
 player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
 						 uint32_t* channels,
@@ -569,7 +598,6 @@ player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
   }
   return data;
 }
-
 
 /*
   This function is almost identical to the one above, but it
@@ -629,8 +657,3 @@ void playerblob_del(playerblob_t* blobs){
   free(blobs->header);
   free(blobs->blobs);
 }
-	
-	  
-  
-    
-      

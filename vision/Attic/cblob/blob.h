@@ -8,8 +8,8 @@
 #define BLOBLIST_SIZE 10000
 #define BITMAP_CUTOFF 0.5
 #define PLAYERBLOB_MAX_CHANNELS 8
-#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
-#define max(X, Y)  ((X) > (Y) ? (X) : (Y))
+//#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
+//#define max(X, Y)  ((X) > (Y) ? (X) : (Y))
 
 //Given a bitmap, computes an (x,y) offset (row-major)
 //#define bm_offset(bm, x, y)  x*bm->width + y
@@ -73,9 +73,10 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels);
 
 /*----------- Blobdata functions ----------
  */
-void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
-void Blobdata_del(struct blobdata* data);
 
+struct blobdata* Blobdata_init(struct bitmap* theBitmap);
+//void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
+void Blobdata_del(struct blobdata* data);
 
 /*---------- transducer functions -------------
      These functions should take image data in some format, filter
@@ -111,6 +112,9 @@ struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int h
 					       double (*filter)(double, double, double),
 					       double threshold);
 
+struct bitmap* get_inverted_bitmap(struct bitmap* thebitmap);
+void invert_bitmap(struct bitmap* thebitmap);
+
 /*--------- filter functions -----------
     Must conform to the prototype double func(double r, double g, double b).
     They Are expected to take an rgb value, with each element in the range
@@ -139,6 +143,7 @@ double filter_brightness (double r, double g, double b);
   on blobs per channel or number of channels.  The struct cannot
   be dynamically resized, however.
 */
+player_blobfinder_data_t* make_player_blob_default(struct blobdata** blobs);
 player_blobfinder_data_t* make_player_blob(struct blobdata** blobs, uint32_t* channels, int n_channels);
 playerblob_t* make_player_blob_varsize(struct blobdata** blobs, uint32_t* channels, int n_channels);
 void playerblob_del(playerblob_t* blobs);
