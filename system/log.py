@@ -28,7 +28,7 @@ class Log:
 
    def timestamp(self):
       year,month,day,hour,minute,second,one,two,three=time.localtime()
-      return '%4d-%02d-%02d:%02d:%02d:%02d' % (year, month, day, hour, minute, second)
+      return '%4d-%02d-%02d_%02d.%02d.%02d' % (year, month, day, hour, minute, second)
 
    def write(self, msg):
       """ Write a string to the log """
