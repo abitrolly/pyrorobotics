@@ -329,6 +329,19 @@ class Robot:
         else:
             raise AttributeError, "'%s' is not a root directory" % path[0]
 
+    def setGroup(self, sensorName, groupName, values):
+        """ addGroup(sensorName, groupName, values)
+
+        This method is used to add a named group to a sensor.
+
+        Example:
+
+        robot.addGroup("sonar0", "odd", (1, 3, 5))
+        
+        """
+        device = self.getDevice(sensorName)
+        device.groups[groupName] = values
+
     def step(self, dir):
         if dir == 'L':
             self.rotate(.2)
