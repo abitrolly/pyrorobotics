@@ -76,12 +76,14 @@ class BehaviorBasedBrain(Brain):
       for d in self.desires: 
          # (beffect / totaleffect) * (truth / totaltruth) * value
          c = d[1]
-         part = ((d[0]*(self.effectsTotal[d[5]+":"+d[4]+":"+d[1]]/totalEffects[d[1]]))/totalTruth[c])
+         if totalTruth[c] != 0:
+            part = ((d[0]*(self.effectsTotal[d[5]+":"+d[4]+":"+d[1]]/totalEffects[d[1]]))/totalTruth[c])
+         else:
+            part = 0
          amt = part * d[2]
          self.pie.append( [d[1], (self.effectsTotal[d[5] + ":" + d[4] + ":" + c] / totalEffects[c]),
                            part, d[2], amt,
                            d[5] + ":" + d[4] + ":" + d[3] ] )
-                          
          if c in control.keys():
             control[c] += amt
          else:
