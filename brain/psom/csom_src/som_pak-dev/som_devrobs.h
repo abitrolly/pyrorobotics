@@ -101,7 +101,7 @@ float get_error(struct teach_params *teach);
 float *get_activation_levels(struct teach_params *teach,
 			     int *coords, float radius, short mode);
 float *get_levels_by_error(struct teach_params *teach,
-								struct data_entry *sample, float *erange);
+								struct data_entry *sample, float tolerance);
 struct data_entry *get_model_vector(struct entries *codes, int *coords);
 void print_dataset(struct entries *data);
 

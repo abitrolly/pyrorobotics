@@ -567,7 +567,7 @@ float *get_activation_levels(struct teach_params *teach,
  * for each model vector */
 
 float *get_levels_by_error(struct teach_params *teach,
-								       struct data_entry *sample, float *erange) {
+								       struct data_entry *sample, float tolerance) {
   DIST_FUNCTION *distf = teach->dist;
   float *levels, delta, emin, emax;
   int i, x, y, xdim, ydim, dim=teach->codes->dimension, *coords;
@@ -581,17 +581,10 @@ float *get_levels_by_error(struct teach_params *teach,
     fprintf(stderr, "get_levels_by_error(): NULL teach_params->codes\n");
     return NULL;
   }
-	if(erange != NULL) {
-  	if(erange[0] < 0.0) {
-    	fprintf(stderr,"get_levels_by_error(): invalid max %.3f using 0.0\n"
-					,erange[0]);
-    	erange[0] = 0.0;
-  	}
-  	if(erange[1] <= erange[0] || erange[1] == 0.0) {
-    	fprintf(stderr,"get_levels_by_error(): invalid min %.3f using 1.0\n",
-					erange[1]);
-    	erange[0] = 1.0;
-  	}
+	if(tolerance < 0.0 || tolerance > 1.0) {
+		fprintf(stderr, "get_levels_by_error(): invalid tolerance %d, using 1.0\n",
+				tolerance);
+		tolerance = 1.0;
 	}
 
   xdim = teach->codes->xdim;
@@ -612,17 +605,15 @@ float *get_levels_by_error(struct teach_params *teach,
 			if(levels[i] > emax) emax = levels[i];
 		}
 	}
-	emax -= (emax-emin)/2.0;
-	if(erange != NULL) {
-		emin = erange[0];
-		emax = erange[1];
-	}
+	emax -= (emax-emin)*(1.0-tolerance);
+	
 	for(y=0;y<ydim;y++) {
 		for(x=0;x<xdim;x++) {
 			i = x + y * xdim;
 			levels[i] = 1.0 - (levels[i]-emin)/emax;
 			if(levels[i] < 0.0) levels[i] = 0.0;
 			if(levels[i] > 1.0) levels[i] = 1.0;
+			levels[i] *= levels[i] * levels[i];
 		}
 	}
 		
