@@ -45,7 +45,7 @@ enter "2.2".
 python_script_name = ask("1. Python version number?", "")
 
 python_include_files = ask("2. Where are Python's include files?",
-                           "/usr/local/include/python2.2")
+                           "/usr/local/include/python" + python_script_name)
 
 saphira =ask("3. Where is Saphira? (Type 'none' if you don't have it)",
              "/usr/local/saphira/ver62")
