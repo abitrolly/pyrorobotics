@@ -16,84 +16,14 @@ import csom
 csom.set_globals()  # neither worry about nor change this
 
 
-<<<<<<< __init__.py
-
-
-=======
-"""
-class psom
-----------
-this is the big one, your basic som object
-in general, construct a psom, then initialize it, then map to/train it,
-periodically doing something with the information it produces.
-the devil is in the details:
----------------
-data members of interest to a user:
-self.xdim  (x dimension of map)
-self.ydim  (y dimension of map)
-self.dim   (length of vectors)
-self.topol ('rect' or 'hexa')
----------------
-constructor examples:
-to read a som from a .cod file (the same file format as used in som_pak):
->>> mysom = psom(file=filename)
-to create a som with model vectors evenly distributed in the space of
-a pre-existing data set:
->>> mysom = psom(xdim,ydim,data=mydataset)
-to randomly initialize (this doesn't actually work yet)
->>> mysom = psom(xdim,ydim) ...
-----------------------
-training examples:
->>> mysom.init_training(initial_alpha,initial_radius,run_length)
-then either:
->>> mysom.train_from_dataset(mydataset)
-or:
->>> model1 = mysom.train(vec1)
->>> model2 = mysom.train(vec2)
->>> ...
-there are straightforward timing functions available if you like that
-sort of thing.
-map() acts a lot like train() but will not actually adjust any map
-weights (equivalent to training with zero alpha)
---------------------
-looking at SRN activation levels:
-after calling map(), train(), or train_from_dataset(),
-calling get_activation_levels() returns an activations class instance
-corresponding to the appropriate activation levels.
-This can either be done based on simple bubble or gaussian neighborhoods,
-or (as suggested by doug) by assigning activation weight according to
-error in mapping to each corresponding model vector.  this can either be
-done with a dynamically calculated error window, or a user-defined
-error window.
-some examples:
->>> mysom.train(myvec)
->>> myact = mysom.get_activations('bubble',2.0)
->>> myact = mysom.get_activations('gaussian',3.0)
->>> myact = mysom.get_activations('error')
->>> myact = mysom.get_activations('error',emin=0.0,emax=1.0)
-note that error values are always >= 0.0
----------------------------------
-a few notes about init_training():
-   runlen is the number of training samples you expect to use in the
-current training session.  this affects the rate at which alpha and radius
-decay.  by default, the decay of these is linear, such that after running
-runlen samples, alpha is zero and radius is 1.0.  so it is kind of important
-to set runlen appropriately.  also, both radius and alpha can be set
-to decay with an inverse time function (alpha_mode='inverse_t'...),
-which can sometimes be less drastic because then your alpha never
-actually ends up at zero, even if you exceed the expected runlen number
-of training samples.  you can also reinitialize a training session
-whenever you like (currently alpha_mode and radius_mode are set in stone
-when the psom is created, however)
-   errorwindow is sort of an ad-hoc way of making the error value returned
-by get_error() time dependent on the last 'errorwindow' number of
-training samples.  the default is 1, which should just return the error
-associated with the most recent training sample
-"""
->>>>>>> 1.3
 
 class psom:
 	"""
+	this is the big one, your basic som object
+	in general, construct a psom, then initialize it, then map to/train it,
+	periodically doing something with the information it produces.
+	the devil is in the details:
+	---------------------------
 	data members of interest to a user:
 	self.xdim  (x dimension of map)
 	self.ydim  (y dimension of map)
