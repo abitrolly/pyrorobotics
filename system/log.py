@@ -24,7 +24,7 @@ class Log:
       if robot:
          self.writeln('Robot:\n' + "   " + robot.get('robot','type'))
       if brain:
-         self.writeln('Brain:\n' + "   " + robot.name)
+         self.writeln('Brain:\n' + "   " + brain.name)
 
    def write(self, msg):
       """ Write a string to the log """
