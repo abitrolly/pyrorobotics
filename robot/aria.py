@@ -458,7 +458,7 @@ class AriaRobot(Robot):
         self.dev.runAsync(1)
         self.devData["builtinDevices"] = ["gripper", "ptz-sony", "ptz-canon"]
         if ArAudio:
-            self.devData.append( "audio" )
+            self.devData["builtinDevices"].append( "audio" )
         if self.params.getNumSonar() > 0:
             self.devData["builtinDevices"].append( "sonar" )
             deviceName = self.startDevice("sonar")
