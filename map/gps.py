@@ -10,6 +10,8 @@ class GPS(TkMap):
    ---------------------------------
    __init__: initialize a GPS window
    ----------------------------------
+     parent: root of GUI
+     maxrange: maximum range of range sensors, in MM
      cols: number of columns in map
      rows: number of rows in map
      value:
@@ -17,40 +19,34 @@ class GPS(TkMap):
      heightMM: actual distance represented by a row (in MMs)
      title: window title
    """
-   def __init__(self, parent, cols=400, rows=400, value = 0.5,
+   def __init__(self, parent, maxrange = 2000, cols=400, rows=400, value = 0.5,
                 widthMM = 10000, heightMM = 10000,
                 title = "Global Perceptual Space"):
-      """ Pass in grid cols, grid cells, and total cols/rows in MM"""
+      """ Pass in parent GUI, maxrange, grid cols, grid cells, and total cols/rows in MM"""
       self.step = 0
-      
       self.changedValues = ()
-      
       # 2000 is the max dist of a Pioneer sonar (in MMs) 
-      self.range = 2000
-
+      self.range = maxrange
       # sonar model is broken into 3 regions - these are the boundaries
       self.reg2max = self.range * 0.3
       self.reg1max = self.range * 0.75
-
       self.field = 15
-
       # max probability of occupancy
       self.maxOccupied = 0.98
-
       # create the map
       TkMap.__init__(self, parent, cols, rows, value,
                      cols, rows,
                      widthMM, heightMM, title)
 
 
-   """
-   -------------------------------------------------------------------------
-   probOccupied: compute the probability that a given location is occupied
-   -------------------------------------------------------------------------
-     dist: distance from robot to location
-     angle: angle from robot from zero heading of sensor
-   """
    def probOccupied( self, dist, angle ):
+      """
+      -------------------------------------------------------------------------
+      probOccupied: compute the probability that a given location is occupied
+      -------------------------------------------------------------------------
+      dist: distance from robot to location
+      angle: angle from robot from zero heading of sensor
+      """
       # figure out what region we are in
       if( dist <= self.reg2max ):
          region = 2
@@ -71,14 +67,14 @@ class GPS(TkMap):
       elif( region == 3 ):
          return( -1 )
 
-   """
-   -------------------------------------------------------------------------
-   probEmpty: compute the probability that a given location is NOT occupied
-   -------------------------------------------------------------------------
-     dist: distance from robot to location
-     angle: angle from robot from zero heading of sensor
-   """
    def probEmpty( self, dist, angle ):
+      """
+      -------------------------------------------------------------------------
+      probEmpty: compute the probability that a given location is NOT occupied
+      -------------------------------------------------------------------------
+      dist: distance from robot to location
+      angle: angle from robot from zero heading of sensor
+      """
       # figure out what region
       if( dist <= self.reg2max ):
          region = 2
@@ -100,15 +96,15 @@ class GPS(TkMap):
       elif( region == 3 ):
          return( -1 )
 
-   """
-   -------------------------------------------------------------------------
-   getProb: compute the probability that a given location is NOT occupied
-   -------------------------------------------------------------------------
-     dist: distance from robot to location
-     angle: angle from robot from zero heading of sensor
-     prevVal: get probability from previous iterations
-   """
    def getProb( self, dist, angle, prevVal ):
+      """
+      -------------------------------------------------------------------------
+      getProb: compute the probability that a given location is NOT occupied
+      -------------------------------------------------------------------------
+      dist: distance from robot to location
+      angle: angle from robot from zero heading of sensor
+      prevVal: get probability from previous iterations
+      """
       # get region
       if( dist <= self.reg2max ):
          region = 2
@@ -129,15 +125,14 @@ class GPS(TkMap):
       else:
          return( (probOcc * prevVal) / ( (probOcc * prevVal) + (probEmpty * prevValInv) ) )
  
-   """
-   -------------------------------------------------------------------------
-   updateFromLPS: update values based on LPS
-   -------------------------------------------------------------------------
-     lps: class containing sensor data
-     robot: contains information about current robot
-   """
    def updateFromLPS(self, lps, robot):
-
+      """
+      -------------------------------------------------------------------------
+      updateFromLPS: update values based on LPS
+      -------------------------------------------------------------------------
+      lps: class containing sensor data
+      robot: contains information about current robot
+      """
       # things we will need:
       #grid, x, y, th, cellxMM, cellyMM:
       #self.canvas.delete("old")
@@ -148,7 +143,6 @@ class GPS(TkMap):
       # This matches the way world files are specified.
       ypos = self.rows - int(y / self.rowScaleMM) - 1
       xpos = int(x / self.colScaleMM)
-
       ## draw out the sonar readings from the LPS
       for i in range(lps.rows):
          for j in range(lps.cols):
@@ -201,16 +195,16 @@ class GPS(TkMap):
 
       ## print "--------DONE WITH LPS---------"
  
-   """
-   -------------------------------------------------------------------------
-   plotCell: sets a point up to be plotted - no longer actually plots a cell
-             this does, however, update the grid location with the new value
-   -------------------------------------------------------------------------
-     xpos: x coordinate on map
-     ypos: y coordinate on map
-     value: new value for [x,y]
-   """
    def plotCell( self, xpos, ypos, value ):
+      """
+      -------------------------------------------------------------------------
+      plotCell: sets a point up to be plotted - no longer actually plots a cell
+      this does, however, update the grid location with the new value
+      -------------------------------------------------------------------------
+      xpos: x coordinate on map
+      ypos: y coordinate on map
+      value: new value for [x,y]
+      """
       # figure out which cell this represents
       xCell = int(xpos * self.colScale) + (self.rows/3)
       yCell = int(ypos * self.rowScale) - (self.cols/3)
@@ -234,12 +228,12 @@ class GPS(TkMap):
          # update the changedValues tuple with this new coordinate set
          self.changedValues = self.changedValues, (xCell, yCell)
 
-   """
-   -------------------------------------------------------------------------
-   redraw: redraws the graphical map
-   -------------------------------------------------------------------------
-   """
    def redraw( self ):
+      """
+      -------------------------------------------------------------------------
+      redraw: redraws the graphical map
+      -------------------------------------------------------------------------
+      """
       # traverse through updated points - redraw those points on map
       while( len( self.changedValues ) ):
          self.changedValues, (row,col) = self.changedValues
