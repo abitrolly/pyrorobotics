@@ -34,6 +34,7 @@ brainargs = []
 simulator = 0
 configfile = 0
 camerafile = 0
+evalcommand = ""
 
 def basichelp():
     print "You may need to define the PYRO environment variable. Try:"
@@ -54,13 +55,13 @@ except:
 def process_options():
     import getopt, sys, string
     global robotfile, brainfile, window, simulator, \
-           brainargs, configfile, camerafile
+           brainargs, configfile, camerafile, evalcommand
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:o:i:c:", \
+                                   "r:b:hg:s:o:i:c:e:", \
                                    ["robot", "brain", "help", \
                                     "gui", "sim", "brain-args",\
-                                    "init", "camera"])
+                                    "init", "camera", "eval"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -84,6 +85,8 @@ def process_options():
             configfile = a
 	elif o in ("-c", "--camera"):
             camerafile = a
+	elif o in ("-e", "--eval"):
+            evalcommand = a
 
 if pyro.startup_check():
     import pyro.system
@@ -128,7 +131,7 @@ if pyro.startup_check():
         from pyro.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)
     gui.engine.postinit()
-    gui.run()
+    gui.run(evalcommand.split(';'))
     gui.cleanup()
 else:
     basichelp()
