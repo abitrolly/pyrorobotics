@@ -105,14 +105,16 @@ class Robot (Drawable):
 	is the actual pointer to the robot device
 	"""
 	if (data == None):
-		return self.senses[device]
+            return self.senses[device]
+        elif (type(data) == type(1)):
+            return self.senses[device]['value'](self.dev, data)
 	elif (pos == None):
-		return self.senses[device][data](self.dev)
+            return self.senses[device][data](self.dev)
 	elif (pos == 'function'):
-		return self.senses[device][data]
+            return self.senses[device][data]
 	else:
-		return self.senses[device][data](self.dev, pos)
-
+            return self.senses[device][data](self.dev, pos)
+        
     def set(self, device = 'robot', data = None, val = None):
 	"""
         A method to set the above get.
