@@ -47,7 +47,7 @@ class PlayerService(Service):
             return "stopped"
 
     def getPose(self):
-        function = self.dev.__dict__[ "get_%s_pose" % self.name]
+        function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
         if function != None:
             function(self.dev)
         else:
@@ -55,7 +55,7 @@ class PlayerService(Service):
 
 
     def setPose(self, xMM, yMM, thDeg):
-        function = self.dev.__dict__[ "set_%s_pose" % self.name]
+        function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
         if function != None:
             function( self.dev, xMM, yMM, thDeg)
         else:
