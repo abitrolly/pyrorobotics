@@ -40,7 +40,19 @@ def randomArray(size, max):
     temp = RandomArray.random(size) * 2 * max
     return temp - max
 
+def toArray(thing):
+    """
+    Converts any sequence thing (such as a NumericArray) to a Python Array.
+    """
+    arr = [0] * len(thing)
+    for i in range(len(thing)):
+        arr[i] = thing[i]
+    return arr
+
 def displayArray(name, a, width = 0):
+    """
+    Prints an array (any sequence of floats, really) to the screen.
+    """
     print name + ": "
     cnt = 0
     for i in a:
@@ -135,12 +147,19 @@ class Layer:
             print "    ", ; displayArray('delta', self.delta)
             print "    ", ; displayArray('netinput', self.netinput)
             print "    ", ; displayArray('bed', self.bed)
+    def getActivations(self):
+        return toArray(self.activation)
     def setActivations(self, value):
         for i in range(self.size):
             self.activation[i] = value
     def copyActivations(self, arr):
         for i in range(self.size):
             self.activation[i] = arr[i]
+    def getTarget(self):
+        return toArray(self.target)
+    def setTarget(self, value):
+        for i in range(self.size):
+            self.target[i] = value
     def copyTarget(self, arr):
         for i in range(self.size):
             self.target[i] = arr[i]
@@ -930,6 +949,11 @@ if __name__ == '__main__':
                   [1.0],
                   [0.0]])
     n.setReportRate(100)
+
+    print "Do you want to see some test values? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        print 'Input Activations:', n.getLayer('input').getActivations()
+        print 'Output Targets:', n.getLayer('output').getTarget()
 
     print "Do you want to run an XOR BACKPROP network in BATCH mode? ",
     if sys.stdin.readline().lower()[0] == 'y':
