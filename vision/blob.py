@@ -139,9 +139,9 @@ class Camera(Image):
       Update method for getting next sequence in simulated video camera.
       This will loop when it gets to the end.
       """
-      if not file_exists("snaps/som-%d.ppm" % self.count):
+      if not file_exists("/usr/local/pyro/vision/snaps/som-%d.ppm" % self.count):
          self.count = 0
-      self.loadFromFile("snaps/som-%d.ppm" % self.count)
+      self.loadFromFile("/usr/local/pyro/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
 
 class Bitmap(Image):
