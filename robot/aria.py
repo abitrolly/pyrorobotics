@@ -299,6 +299,7 @@ class AriaRobot(Robot):
 
     def update(self):
         self.dev.lock()
+        self._update()
         self.x = self.dev.getX() / 1000.0
         self.y = self.dev.getY() / 1000.0
         self.th = (self.dev.getTh() + 360) % 360
