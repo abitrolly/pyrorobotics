@@ -4,12 +4,10 @@ import time
 import sys
 import pyro.gui.console as console
 import pyro.system as system
-import pyro.gui.drawable as drawable
 
-class Engine(drawable.Drawable):
+class Engine:
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                pyroargs=[], config = {}, worldfile = None, services = ['']):
-      drawable.Drawable.__init__(self,'engine')
+                pyroargs=[], config = {}, worldfile = None, devices = ['']):
       self.robot = 0
       self.brain = 0
       self.gui = None
@@ -37,8 +35,8 @@ class Engine(drawable.Drawable):
          time.sleep(2)
       if self.robotfile:
          self.loadRobot(self.robotfile)
-         if services != ['']:
-            self.robot.startServices(services)
+         if devices != ['']:
+            self.robot.startDevices(devices)
       if self.brainfile:
          self.loadBrain(self.brainfile)
          time.sleep(2)
@@ -50,6 +48,10 @@ class Engine(drawable.Drawable):
          self.brain.pleaseQuit()
          time.sleep(.1) # give it time to stop
          #self.robot = system.loadINIT(self.robotfile, redo = 1)
+         try:
+            self.brain.window.destroy()
+         except:
+            pass
          try:
             self.brain.destroy()
          except:
@@ -131,11 +133,9 @@ class Engine(drawable.Drawable):
          self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
       else:
          raise 'Robot file not found: ' + file
-      self.append(self.robot)
 
    def setRobot(self,robot):
       self.robot = robot
-      self.append(self.robot)
 
    def setBrain(self,brain):
       self.brain = brain
@@ -147,10 +147,26 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
+         try:
+            self.brain.window.destroy()
+         except:
+            pass
+         try:
+            self.brain.destroy()
+         except:
+            pass
          self.brain = system.loadINIT(file, self)
          self.brainfile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
+         try:
+            self.brain.window.destroy()
+         except:
+            pass
+         try:
+            self.brain.destroy()
+         except:
+            pass
          self.brain = system.loadINIT(os.getenv('PYRO') + \
                                       '/plugins/brains/' + file, self)
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
