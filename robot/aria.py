@@ -37,7 +37,7 @@ class AriaRobot(Robot):
 	# robot senses (all are functions):
         self.senses['robot'] = {}
         self.senses['robot']['simulator'] = lambda dev, x = simulated: x
-        self.senses['robot']['stall'] = self.getStallValue
+        self.senses['robot']['stall'] = lambda dev: dev.getStallValue()
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
         self.senses['robot']['z'] = self.getZ
@@ -58,7 +58,7 @@ class AriaRobot(Robot):
         self.senses['sonar']['y'] = lambda dev, pos: self.getSonarY(pos)
 	self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
         self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
-        self.senses['sonar']['maxvalue'] = lambda dev: 0 # self.getSonarMaxRange
+        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2.99, 'sonar')
         self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
 
@@ -137,9 +137,6 @@ class AriaRobot(Robot):
     def move(self, translate_velocity, rotate_velocity):
         self.dev.setVel((int)(translate_velocity * 1100.0))
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
-
-    def getStallValue(dev):
-        return dev.getStallValue()
 
     def getX(self, dev):
         return self.x
