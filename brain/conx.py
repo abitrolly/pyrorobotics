@@ -43,6 +43,19 @@ def displayArray(name, a, width = 0):
             print ''
         cnt += 1
 
+def toStringArray(name, a, width = 0):
+    """
+    Returns an array (any sequence of floats, really) as a string.
+    """
+    string = name + ": "
+    cnt = 0
+    for i in a:
+        string += "%4.2f" % i + "  " 
+        if width > 0 and (cnt + 1) % width == 0:
+            string += '\n'
+        cnt += 1
+    return string
+
 def writeArray(fp, a):
     """
     Writes a sequence a of floats to file pointed to by file pointer.
@@ -252,13 +265,25 @@ class Layer:
         """
         Returns a string representation of Layer instance.
         """
-        return "Layer " + self.name + ": type " + self.type + " size " + str(self.size) + "\n"
+        string = "Layer " + self.name + ": (Type " + self.kind + ") (Size " + str(self.size) + ")\n"
+        if (self.type == 'Output'):
+            string += toStringArray('Target    ', self.target, self.displayWidth)
+        string += toStringArray('Activation', self.activation, self.displayWidth)
+        if (self.type != 'Input' and self.verbosity > 0):
+            string += toStringArray('Error     ', self.error, self.displayWidth)
+        if (self.verbosity > 4 and self.type != 'Input'):
+            string +=  toStringArray('bias      ', self.bias, self.displayWidth)
+            string +=  toStringArray('dbias     ', self.dbias, self.displayWidth)
+            string +=  toStringArray('delta     ', self.delta, self.displayWidth)
+            string +=  toStringArray('netinput  ', self.netinput, self.displayWidth)
+            string +=  toStringArray('bed       ', self.bed, self.displayWidth)
+        return string 
     def display(self):
         """
         Displays the Layer instance to the screen.
         """
         print "============================="
-        print "Display Layer '" + self.name + "' (type " + self.type + "):"
+        print "Display Layer '" + self.name + "' (kind " + self.kind + "):"
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
@@ -404,7 +429,10 @@ class Connection:
         self.weight = randomArray((self.fromLayer.size, \
                                    self.toLayer.size),
                                   self.toLayer.maxRandom)
-         
+
+    def __str__(self):
+        return self.toString()
+    
     # connection modification methods
     def changeSize(self, fromLayerSize, toLayerSize):
         """
@@ -468,6 +496,48 @@ class Connection:
                 print self.weight[i][j],
             print ''
         print ''
+
+    # string method
+    def toString(self):
+        """
+        Connection information as a string.
+        """
+        string = ""
+        if self.toLayer.verbosity > 0:
+            string += "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n" 
+            string += "            "
+            for j in range(self.toLayer.size):
+                string += "        " + self.toLayer.name + "[" + str(j) + "]"
+            string += '\n'
+            for i in range(self.fromLayer.size):
+                string += self.fromLayer.name+ "["+ str(i)+ "]"+ ": "
+                for j in range(self.toLayer.size):
+                    string += "              " + str(self.wed[i][j])
+                string += '\n'
+            string += '\n'
+            string += "dweight: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n"
+            string += "            "
+            for j in range(self.toLayer.size):
+                string += "        " + self.toLayer.name+ "["+ str(j)+ "]"
+            string += '\n'
+            for i in range(self.fromLayer.size):
+                string += self.fromLayer.name+ "["+ str(i)+ "]"+ ": "
+                for j in range(self.toLayer.size):
+                    string +=  "              " + str(self.dweight[i][j])
+                string += '\n'
+            string += '\n'
+        string += "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n"
+        string += "            "
+        for j in range(self.toLayer.size):
+            string += "        "  + self.toLayer.name+ "["+ str(j)+ "]"
+        string += '\n'
+        for i in range(self.fromLayer.size):
+            string += self.fromLayer.name+ "["+ str(i)+ "]"+ ": "
+            for j in range(self.toLayer.size):
+                string +=  "    " + str(self.weight[i][j])
+            string += '\n'
+        string += '\n'
+        return string
     
     # parameter methods
     def setEpsilon(self, value):
@@ -597,15 +667,18 @@ class Network:
             raise NetworkError, ('Layers out of order.', (fromLayer.name, toLayer.name))
         if (fromLayer.type == 'Output'):
             fromLayer.type = 'Hidden'
-            fromLayer.kind = 'Hidden'
+            if fromLayer.kind == 'Output':
+                fromLayer.kind = 'Hidden'
         elif (fromLayer.type == 'Undefined'):
             fromLayer.type = 'Input'
-            fromLayer.kind = 'Input'
+            if fromLayer.kind == 'Undefined':
+                fromLayer.kind = 'Input'
         if (toLayer.type == 'Input'):
             raise NetworkError, ('Connections out of order', (fromLayer.name, toLayer.name))
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
-            toLayer.kind = 'Output'
+            if fromLayer.kind == 'Undefined':
+                toLayer.kind = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
         self.connections[len(self.connections) - 1].setEpsilon(self.epsilon)
     def addThreeLayers(self, inc, hidc, outc):
@@ -1045,6 +1118,10 @@ class Network:
         for layer in self.layers:
             if self.path(layer, layer):
                 raise NetworkError, ('Network contains a cycle.', layer.name)   
+        temp = self.verbosity
+        self.setVerbosity(10)
+        self.display()
+        self.setVerbosity(temp)
     def verifyInputs(self):
         """
         Used in propagate() to verify that the network input
@@ -1152,12 +1229,7 @@ class Network:
             if self.verbosity > 0 or self.interactive:
                 self.display()
             if self.interactive:
-                print "--More-- [quit, go] ",
-                chr = sys.stdin.readline()
-                if chr[0] == 'g':
-                    self.interactive = 0
-                elif chr[0] == 'q':
-                    sys.exit(1)
+                self.prompt()
             # the following could be in this loop, or not
             self.postprop(i)
             sys.stdout.flush()
@@ -1224,12 +1296,7 @@ class Network:
         if self.verbosity > 0 or self.interactive:
             self.display()
             if self.interactive:
-                print "--More-- [quit, go] ",
-                chr = sys.stdin.readline()
-                if chr[0] == 'g':
-                    self.interactive = 0
-                elif chr[0] == 'q':
-                    sys.exit(1)
+                self.prompt()
         if self.learning:
             self.change_weights()
         return (error, correct, total)
@@ -1428,6 +1495,13 @@ class Network:
         for layer in self.layers:
             output += layer.toString()
         return output
+    def prompt(self):
+        print "--More-- [quit, go] ",
+        chr = sys.stdin.readline()
+        if chr[0] == 'g':
+            self.interactive = 0
+        elif chr[0] == 'q':
+            sys.exit(1)
     def display(self):
         """
         Displays the network to the screen.
@@ -2000,12 +2074,7 @@ class SRN(Network):
                     print 'After propagation ...........................................'
                     self.display()
                     if self.interactive:
-                        print "--More-- [quit, go] ",
-                        chr = sys.stdin.readline()
-                        if chr[0] == 'g':
-                            self.interactive = 0
-                        elif chr[0] == 'q':
-                            sys.exit(1)
+                        self.prompt()
                 # the following could be in this loop, or not
                 self.postprop(i, s)
                 if self.sequenceLength > 1:
