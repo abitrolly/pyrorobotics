@@ -140,6 +140,7 @@ class RAVQ:
         self.addModels = 1
         self.winnerCount = 0
         self.totalCount = 0
+        self.printDistance = 0
       
     # update the RAVQ
     def input(self, vec):
@@ -252,16 +253,38 @@ class RAVQ:
         else:
             return Numeric.add.reduce(self.counters)
     def getWinnerIndex(self):
+        """
+        Index of current winner in self.models.
+        """
         return self.newWinnerIndex
     def setVerbosity(self, value):
+        """
+        Determines which print statements to call.
+        Debugging only.
+        """
         self.verbosity = value
     def setHistory(self, value):
+        """
+        RAVQ will record history for each model vector consisting of
+        the last inputs that mapped to that model vector. Note that
+        these are inputs and not moving averages, and so for large
+        buffers, the inputs may not map correctly.
+        """
         self.recordHistory = value
     def setHistorySize(self, value):
+        """
+        Size of each history associated with a model vector.
+        """
         self.historySize = value
     def setTolerance(self, value):
+        """
+        Used to retrieve labels.
+        """
         self.tolerance = value
     def setAddModels(self, value):
+        """
+        Allows the RAVQ to dynamically add model vectors.
+        """
         self.addModels = value
         
     # process happens once the buffer is full
@@ -291,15 +314,28 @@ class RAVQ:
         self.updateWinner()
         self.updateHistory()
     def setMovingAverage(self):
+        """
+        Determine moving average.
+        """
         self.movingAverage = averageVector(self.buffer)
     def setMovingAverageDistance(self):
+        """
+        How close is the moving average to the current inputs?
+        """
         self.movingAverageDistance = SetDistance([self.movingAverage], self.buffer, self.mask)
     def setModelVectorsDistance(self):
+        """
+        How close are the model vectors to the current inputs?
+        """
         if not self.models == []:
             self.modelVectorsDistance = SetDistance(self.models, self.buffer, self.mask)
         else:
             self.modelVectorsDistance = self.epsilon + self.delta
     def updateModelVectors(self):
+        """
+        Update models vectors with moving average if the moving
+        average is the best model of the inputs.
+        """
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
             self.models.append(self.movingAverage)
@@ -309,6 +345,10 @@ class RAVQ:
                 print 'Moving avg dist', self.movingAverageDistance
                 print 'Model vec dist', self.modelVectorsDistance
     def updateWinner(self):
+        """
+        Calculate the current winner based on which model vector is
+        closest to the moving average.
+        """
         min = []
         for m in self.models:
             min.append(euclideanDistance(m, self.movingAverage, self.mask))
@@ -330,6 +370,9 @@ class RAVQ:
             self.counters[self.newWinnerIndex] += 1
             self.totalCount += 1
     def updateHistory(self):
+        """
+        Record a history of where inputs map.
+        """
         if self.recordHistory and self.winner != 'No Winner':
             # new model vector so we initialize new history list
             if len(self.history) < len(self.models):
@@ -342,6 +385,9 @@ class RAVQ:
                 self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
                                                     [self.buffer[ len(self.buffer)-1]]
     def distanceMap(self):
+        """
+        Calculate distance map.
+        """
         map = []
         for x, y in [(x,y) for x in self.models for y in self.models]:
             map.append(euclideanDistance(x,y,self.mask))
@@ -364,9 +410,11 @@ class RAVQ:
         s += self.bufferString()
         s += self.modelString()
         s += self.labelString()
-        s += "Distance map:\n"
-        s += stringArray(self.distanceMap(), 1, len(self.models))
-        s += self.historyString()
+        if self.printDistance:
+            s += "Distance map:\n"
+            s += stringArray(self.distanceMap(), 1, len(self.models))
+        if self.recordHistory:
+            s += self.historyString()
         return s
 
     def saveRAVQToFile(self, filename):
@@ -412,7 +460,7 @@ class RAVQ:
     def logRAVQ(self):
         self.log.write(str(self))
 
-    # helpful string methods
+    # helpful string methods, see __str__ method for use.
     def modelString(self):
         s = "Model vectors:\n"
         cnt = 0
@@ -433,8 +481,6 @@ class RAVQ:
             s += stringArray(array)
         return s
     def historyString(self):
-        if not self.recordHistory:
-            return ''
         s = "History:\n"
         for pair in zip(self.models,self.history):
             s += "Model:\n" + stringArray(pair[0])
@@ -473,6 +519,9 @@ class RAVQ:
         """
         del self.labels[word]
     def delAllLabels(self):
+        """
+        Clears the labels dictionary.
+        """
         self.labels = {}
     def compare(self, v1, v2):
         """
@@ -486,6 +535,10 @@ class RAVQ:
         else:
             return 1
     def labelSize(self):
+        """
+        Returns the size of largest label. Useful for processing
+        labels with a network.
+        """
         max = 0
         for l in self.labels:
             if len(l) > max:
@@ -556,6 +609,9 @@ class ARAVQ(RAVQ):
         else:
             pass 
     def process(self):
+        """
+        Here we add the new learning methods.
+        """
         RAVQ.process(self)
         self.updateDeltaWinner()
         self.learn()
@@ -586,7 +642,7 @@ if __name__ == '__main__':
             ravq.getHistory(index) # test history features
             index = (index + 1) % ravq.getHistoryLength() 
         cnt += 1
-    print ravq
+    print len(ravq.models)
     print ravq.mask
     # test masking functionality in euclidean distance calc's
     print euclideanDistance(Numeric.array([1,2]),
