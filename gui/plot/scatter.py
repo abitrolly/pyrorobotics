@@ -15,7 +15,7 @@ class Line:
 class Scatter: # Plot
     def __init__(self, history = [100,], xLabel = 'X', yLabel = 'Y',
                  title = None, legend = [None, ], width = 275, height = 200,
-                 linecount = 1):
+                 linecount = 1, xStart = 0.0, xEnd = 1.0, yStart = 0.0, yEnd = 1.0):
         self.color = ['blue', 'red', 'green', 'yellow', 'orange', \
                       'black', 'azure', 'beige', 'brown', 'coral', \
                       'gold', 'ivory', 'moccasin', 'navy', 'salmon', \
@@ -26,11 +26,16 @@ class Scatter: # Plot
         else:
             self.win.wm_title(title)
         self.canvas = Canvas(self.win,width=width,height=height)
+        self.canvas.bind("<Configure>", self.changeSize)
         self.canvas.pack()
         self.xBorder = 30
         self.yBorder = 30
         self.plotHeight = height - 2 * self.yBorder # / max value
         self.plotWidth =  self.plotHeight # / max value
+        self.xStart = xStart
+        self.xEnd = xEnd
+        self.yStart = yStart
+        self.yEnd = yEnd
         # width - 2 * self.xBorder # / max value
         # background
         self.canvas.create_rectangle(self.xBorder, self.yBorder,
@@ -51,44 +56,32 @@ class Scatter: # Plot
                                     self.yBorder + i * 20 + 8,
                                     text=legend[i], fill='black',
                                     anchor='w')
-
-        # markers
-        self.canvas.create_line(self.xBorder - 5, self.yBorder,
-                                self.xBorder + 5, self.yBorder,
-                                width = 2, fill='black')
-        self.canvas.create_line(self.xBorder - 5,
-                                self.yBorder + self.plotHeight / 2,
-                                self.xBorder + 5,
-                                self.yBorder + self.plotHeight / 2,
-                                width = 2, fill='black')
-        self.canvas.create_line(self.xBorder - 5, height - self.yBorder,
-                                self.xBorder + 5, height - self.yBorder,
-                                width = 2, fill='black')
-        self.canvas.create_line(self.xBorder, height - self.yBorder - 5,
-                                self.xBorder, height - self.yBorder + 5,
-                                width = 2, fill='black')
-        self.canvas.create_line(self.xBorder + self.plotWidth / 2,
-                                height - self.yBorder - 5,
-                                self.xBorder + self.plotWidth / 2,
-                                height - self.yBorder + 5,
-                                width = 2, fill='black')
-        self.canvas.create_line(self.xBorder + self.plotWidth,
-                                height - self.yBorder - 5,
-                                self.xBorder + self.plotWidth,
-                                height - self.yBorder + 5,
-                                width = 2, fill='black')
         # text
-        self.canvas.create_text(self.xBorder, height - 10,
-                                text='0.0', fill='black')
-        self.canvas.create_text(self.xBorder + self.plotWidth / 2, height - 10,
-                                text='0.5', fill='black')
-        self.canvas.create_text(self.xBorder + self.plotWidth, height - 10,
-                                text='1.0', fill='black')
-        self.canvas.create_text(10, self.yBorder, text='1.0', fill='black')
-        self.canvas.create_text(10, self.yBorder + self.plotHeight / 2,
-                                text='0.5', fill='black')
-        self.canvas.create_text(10, height - self.yBorder,
-                                text='0.0', fill='black')
+        tick = 0.0 
+        xtick_label = xStart
+        while tick <= 1.0: 
+            self.canvas.create_text(self.xBorder + self.plotWidth * tick, height - 10,
+                                    text=xtick_label, fill='black')
+            self.canvas.create_line(self.xBorder + self.plotWidth * tick,
+                                    height - self.yBorder - 5,
+                                    self.xBorder + self.plotWidth * tick,
+                                    height - self.yBorder + 5,
+                                    width = 2, fill='black')
+            tick += 1.0 / 4.0
+            xtick_label += (xEnd - xStart) / 4.0
+        tick = 1.0
+        ytick_label = yStart
+        while tick >= 0.0:
+            self.canvas.create_text(10, self.yBorder + self.plotHeight * tick,
+                                    text=ytick_label, fill='black')
+            self.canvas.create_line(self.xBorder - 5,
+                                    self.yBorder + self.plotHeight * tick,
+                                    self.xBorder + 5,
+                                    self.yBorder + self.plotHeight * tick,
+                                    width = 2, fill='black')
+            tick -= 1.0 / 4.0
+            ytick_label += (yEnd - yStart) / 4.0
+            
         # ----------------------------------------------------------
         self.lineCount = linecount
         self.hist = [0] * linecount # actual hist of line
@@ -101,13 +94,22 @@ class Scatter: # Plot
             self.firstEver[i] = 1
             self.last[i] = 0
             self.count[i] = 0
+
+    def changeSize(self, event):
+        self.width = self.canvas.winfo_width() 
+        self.height = self.canvas.winfo_height() 
+        self.plotHeight = self.height - 2 * self.yBorder # / max value
+        self.plotWidth =  self.plotHeight # / max value
+            
     def setTitle(self, title):
         self.win.wm_title(title)
 
     def _x(self, val):
+        val = (val - self.xStart) / (self.xEnd - self.xStart)
         return int(val * self.plotWidth) + self.xBorder
 
     def _y(self, val):
+        val = (val - self.yStart) / (self.yEnd - self.yStart)
         return int(self.plotHeight - val * self.plotHeight + self.yBorder)
 
     def addPoint(self, x, y, line = 0):
@@ -163,7 +165,9 @@ class Scatter: # Plot
 
 if __name__ == '__main__':
     sp = Scatter()
+    from random import random
     for y in range(100):
         for x in range(10):
-            sp.addPoint(x/10.0, x/10.0)
+            sp.addPoint(random(), random())
+            sp.win.tk.dooneevent(0)
     sp.win.mainloop()

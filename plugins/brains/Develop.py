@@ -1,10 +1,13 @@
-# A bare brain
-
 from pyro.brain import Brain
+from pyro.gui.plot.scatter import *
 from random import random
 from time import sleep
 from math import sqrt, fabs, floor
 
+from OpenGL.Tk import *
+
+# some test data for offline work:
+# a difference matrix:
 data = [[0, 0.85162, 1.1705, 1.16898, 1.13626, 1.02382, 1.02108, 0.92296, 1.03327, 1.12973, 1.17869, 1.27797, 1.44365, 1.35182, 1.0667, 0.32486],
         [0, 0, 0.57832, 0.82448, 1.2327, 1.2223, 1.1779, 1.15408, 1.15861, 1.02119, 1.01911, 0.99189, 1.14645, 1.25696, 1.21544, 0.97718],
         [0, 0, 0, 0.51826, 0.96656, 1.13812, 1.1872, 1.2268, 1.22425, 1.07375, 0.95339, 0.88097, 1.04973, 1.26618, 1.24508, 1.28552],
@@ -31,43 +34,58 @@ class Relax:
       self.point_y = []
       self.num = num
       self.time = 0.0
-      self.maxtime = 50.0
+      self.maxtime = 1000.0
+      self.scatter = Scatter(title = 'The Kuipers Experiment',
+                             history = [16], linecount = 1, width=400, height=300,
+                             legend = ["16th Sonar Sensor"],
+                             xStart=-2, xEnd = 3,
+                             yStart=-2, yEnd = 3)
       for i in range(num):
          self.point_x.append(random())
          self.point_y.append(random())
+      self.graph()
 
    def step(self, diff):
       incr = 0.1
       self.time += 1.0
-      temp = 1.0 - self.time / self.maxtime # .05 # need a temp schedule
+      temp = .01 # 1.0 - (self.time / self.maxtime)  # .05 # need a temp schedule
       for i in range(self.num):
          # print "Relax.step", i
-         ox = self.point_x[i] 
-         oy = self.point_y[i]
-         emin = 10000000
-         for px in range(-1,1):
-            for py in range(-1,1):
-               self.point_x[i] = ox + px * incr
-               self.point_y[i] = oy + py * incr
-               e = self.energy(diff)
-               if e < emin:
-                  emin = e
-                  ex = px
-                  ey = py
-
-         print "Min Energy:", emin, "at time", self.time
-
-         if random() < temp: # go with a random choice, override ex, ey
+         rand = random()
+         #print rand, temp
+         if rand < temp: # go with a random choice, override ex, ey
             print "     Random!"
             ex = floor(random() * 3) - 1
             ey = floor(random() * 3) - 1
-
+         else:
+            ox = self.point_x[i] 
+            oy = self.point_y[i]
+            emin = 10000000
+            for px in range(-1,2):
+               for py in range(-1,2):
+                  self.point_x[i] = ox + px * incr
+                  self.point_y[i] = oy + py * incr
+                  e = self.energy(diff)
+                  if e < emin:
+                     emin = e
+                     ex = px
+                     ey = py
          self.point_x[i] = ox + ex * incr
          self.point_y[i] = oy + ey * incr
+      print "Min Energy:", emin, "at time", self.time
+      self.graph()
+
+   def graph(self):
+      for i in range(self.num):
+         ox = self.point_x[i] 
+         oy = self.point_y[i]
+         self.scatter.addPoint( ox, oy)
 
    def display(self):
+      print "-------------------------------------------------------------------------"
       for i in range(self.num):
-         print i, self.point_x[i], self.point_y[i]
+         print self.point_x[i], self.point_y[i]
+      print "-------------------------------------------------------------------------"
             
    def energy(self, diff):
       e = 0
@@ -77,7 +95,7 @@ class Relax:
             d = distance(self.point_x[i], self.point_y[i], \
                          self.point_x[j], self.point_y[j]) - diff[i][j]
             e += d * d
-      e /= 2
+      e /= 1.5 # largest diff?
       return e
 
 class DevelopBrain(Brain):
@@ -90,10 +108,13 @@ class DevelopBrain(Brain):
       self.data = []
       self.lastx = 0
       self.lasty = 0
-      self.capture = 20
+      self.capture = 10
       self.dist_away_enough = .25
-      self.state = 'capture' # initial state = 'capture', 'analyze'
-      self.relax = Relax(16) # sometimes running off line: don't query robot
+      if self.robot:
+         self.state = 'capture' # initial state = 'capture', 'analyze'
+      else:
+         self.state = 'analyze'
+      self.relax = Relax(16) # sometimes running off line: don't query robot for count
 
    def step(self):
       if self.state == 'capture':
@@ -140,10 +161,18 @@ class DevelopBrain(Brain):
             self.relax.display()
             self.state = 'done'
          else:
-            self.relax.step(self.diff) # (data) for hardcoded
+            if self.robot:
+               self.relax.step(self.diff) # (data) for hardcoded
+            else:
+               self.relax.step(data) # (data) for hardcoded
       elif self.state == 'done':
-         self.robot.disconnect()
-         self.pleaseStop()
+         if self.robot:
+            self.robot.disconnect()
+            self.pleaseStop()
+         else:
+            self.pleaseQuit()
+            return 0
+      return 1
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
@@ -155,5 +184,5 @@ def INIT(robot):
       
 if __name__ == '__main__':
    db = DevelopBrain(0)
-   while 1:
-      db.step()
+   while db.step():
+      pass
