@@ -627,6 +627,7 @@ class Network:
         self.useCrossValidationToStop = 0
         self.saveResults = 0 # will save error, correct, total in sweep()
         self.results = []
+        self.autoCrossValidation = 0
         self._cv = False # set true when in cross validation
 
     # general methods
@@ -1228,7 +1229,7 @@ class Network:
             if self.epoch % self.reportRate == 0:
                 print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-                if len(self.crossValidationCorpus) > 0:
+                if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                     (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                     print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
@@ -1252,7 +1253,7 @@ class Network:
         if totalCount > 0:
             print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                   (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-            if len(self.crossValidationCorpus) > 0:
+            if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
@@ -1352,13 +1353,25 @@ class Network:
         self.learning = 0
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         self._cv = True # in cross validation
-        for set in self.crossValidationCorpus:
-            (error, correct, total) = self.step( **set )
-            if self.crossValidationReportLayers != []:
-                (error, correct, total) = self.getError( *self.crossValidationReportLayers )
-            tssError += error
-            totalCorrect += correct
-            totalCount += total
+        if self.autoCrossValidation:
+            for i in range(len(self.inputs)):
+                set = {"input": self.inputs[i]}
+                if self.targets:
+                    set["output"] = self.targets[i]
+                (error, correct, total) = self.step( **set )
+                if self.crossValidationReportLayers != []:
+                    (error, correct, total) = self.getError( *self.crossValidationReportLayers )
+                tssError += error
+                totalCorrect += correct
+                totalCount += total
+        else:
+            for set in self.crossValidationCorpus:
+                (error, correct, total) = self.step( **set )
+                if self.crossValidationReportLayers != []:
+                    (error, correct, total) = self.getError( *self.crossValidationReportLayers )
+                tssError += error
+                totalCorrect += correct
+                totalCount += total
         self.learning = oldLearning
         self._cv = False
         return (tssError, totalCorrect, totalCount)
