@@ -18,7 +18,9 @@ class SimpleBrain(Brain):
 
       print "left", left, "front", front, "right", right
 
-      if (left < LTOLERANCE and right < RTOLERANCE):
+      if (front > FTOLERANCE):
+         self.getRobot().move(0.2, 0)
+      elif (left < LTOLERANCE and right < RTOLERANCE):
          self.getRobot().move(0, .2)
          #sleep(.5)
       elif (right < RTOLERANCE):

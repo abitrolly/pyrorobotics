@@ -79,12 +79,16 @@ PyObject *b21r :: getSonarLow(void) {
   return list;
 }
 
+#define max(a,b) (((a)>(b))?(a):(b))
+
 PyObject *b21r :: getLaser(void) {
   // return Python List
   PyObject *list = PyList_New(dev->MidLaser.m_lSensorCount);
   PyObject *element;
   for( int i=0; i< dev->MidLaser.m_lSensorCount; i++ ) {
-    element = Py_BuildValue("f", dev->MidLaser.get(i));
+    // Subtract the diameter of the robot, so distance is from 
+    // robot's surface
+    element = Py_BuildValue("f", max(dev->MidLaser.get(i) - 0.33, 0.0));
     PyList_SET_ITEM( list, i, element);
   }
   return list;

@@ -23,12 +23,12 @@ class B21RRobot(Robot):
         self.stallHistorySize = 5
         self.stallHistory = [0] * self.stallHistorySize
         self.sensorSet = {'all': range(180),
-                          'front' : range(80, 100), 
-                          'front-left' : range(90, 135), 
-                          'front-right' :range (45,90),
+                          'front' : range(45, 135), 
+                          'front-left' : range(115, 165), 
+                          'front-right' :range (22,70),
                           'front-all' : range(45, 135),
                           'left' : range(135,180),
-                          'right' : range(45), 
+                          'right' : range(0,45), 
                           'back-left' : (), 
                           'back-right' : (), 
                           'back-all' : (), 
@@ -45,7 +45,7 @@ class B21RRobot(Robot):
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
         self.senses['robot']['z'] = self.getZ
-        self.senses['robot']['radius'] = lambda self: 6000.0 # in MM
+        self.senses['robot']['radius'] = lambda self: .6 # in UNITS
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda self: 'b21r'
@@ -267,31 +267,31 @@ class B21RRobot(Robot):
         elif units == 'METERS':
             return mm / 1000.0
         elif units == 'ROBOTS':
-            return mm / 6000
+            return mm / 6000.0
         
     def rawToUnits(self, dev, raw, name, units = None):
         if units == None:
             units = self.senses[name]['units'](dev)
         if name == 'sonar':
             maxvalue = 2.999
-            mm = min(max(((1023.0 - raw) / 1023.0) * maxvalue, 0.0), maxvalue)
+            meters = raw
         elif name == 'laser':
-            maxvalue = 15.0
-            mm = min(max((raw / 511.0) * maxvalue, 0.0), maxvalue)
+	    maxvalue = 15.0
+            meters = raw
         else:
             raise 'InvalidType', "Type is invalid"
         if units == "ROBOTS":
-            return mm / 6000.0 # b21r is about 6000mm diameter
-        elif units == "MM":
-            return mm
+            return meters / 0.6 # b21r is about 6000mm diameter
+        elif units == "METERS":
+            return meters
         elif units == "RAW":
             return raw 
         elif units == "CM":
-            return mm / 100.0 # cm
-        elif units == "METERS":
-            return mm / 1000.0 # meters
+            return meters / 100.0 # cm
+        elif units == "MM":
+            return meters / 1000.0 
         elif units == "SCALED":
-            return mm / maxvalue
+            return meters / maxvalue
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
