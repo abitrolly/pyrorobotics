@@ -898,76 +898,69 @@ class Network:
         Check for orphaned layers or connections. Assure that network
         architecture is feed-forward (no-cycles). Check connectivity. Check naming.
         """
-        # must have layers and connections (duplicated in propagate)
+        # flags for layer type tests
+        hiddenInput = 1
+        hiddenOutput = 1       
+        outputLayerFlag = 1  
+        inputLayerFlag = 1
+        # must have layers and connections
         if len(self.layers) == 0:
             raise NetworkError, ('No network layers but propagate() was called.', \
                                  self.layers)
         if len(self.connections) == 0:
             raise NetworkError, ('No network connections but propagate() was called.', \
                                  self.connections)
-        # no undefined layers
-        for layer in self.layers:
-            if layer.type == 'Undefined':
-                raise NetworkError, ('There is an unconnected layer.', layer.name)
         # layers should not have the same name
         for x, y in [(x, y) for x in range(len(self.layers)) for y in range(len(self.layers))]:
             if x == y:
                 pass # same layer so same name
             else:
+                # different layers same name
                 if self.layers[x].name == self.layers[y].name:
-                    # different layers same name
                     raise NetworkError, ('Two layers have the same name.', (x,y))
         # no multiple connections between layers
         for x, y in [(x,y) for x in range(len(self.connections)) for y in range(len(self.connections))]:
             if x == y:
                 pass # same connection
             else:
+                # multiple connections between fromLayer and toLayer
                 if self.connections[x].fromLayer.name == self.connections[y].fromLayer.name and \
                    self.connections[x].toLayer.name == self.connections[y].toLayer.name:
-                    # multiple connections between fromLayer and toLayer
                     raise NetworkError, ('Multiple connections between two layers.', \
                                          (self.connections[x].fromLayer.name, \
                                           self.connections[x].toLayer.name))
-        # input layers must have outgoing connections 
-        inputLayerFlag = 1
+        # layer type tests
         for layer in self.layers:
-            if layer.type == 'Input':
+            # no undefined layers
+            if layer.type == 'Undefined':
+                raise NetworkError, ('There is an unconnected layer.', layer.name)
+            elif layer.type == 'Input':
                 for connection in self.connections:
+                    # input layers must have outgoing connections 
                     if connection.fromLayer.name == layer.name:
                         inputLayerFlag = 0
-                if inputLayerFlag:
-                    raise NetworkError, \
-                          ('Layer has type \'Input\' but no outgoing connections', layer.name)
-        # input layers must have no incoming connections
-        for layer in self.layers:
-            if layer.type == 'Input':
-                for connection in self.connections:
+                    # input layers must have no incoming connections
                     if connection.toLayer.name == layer.name:
                         raise NetworkError, \
                               ('Layer has type \'Input\' and an incoming connection.', layer.name)
-        # output layers must have no outgoing connections
-        for layer in self.layers:
-            if layer.type == 'Output':
+                if inputLayerFlag:
+                    raise NetworkError, \
+                          ('Layer has type \'Input\' but no outgoing connections', layer.name)
+            elif layer.type == 'Output':
                 for connection in self.connections:
+                    # output layers must have no outgoing connections`
                     if connection.fromLayer.name == layer.name:
                         raise NetworkError, \
                               ('Layer has type \'Output\' and an outgoing connections.',layer.name)
-        # output layers must have an incoming connection
-        outputLayerFlag = 1
-        for layer in self.layers:
-            if layer.type == 'Output':
-                for connection in self.connections:
+                    # output layers must have an incoming connection
                     if connection.toLayer.name == layer.name:
                         outputLayerFlag = 0
                 if outputLayerFlag:
                     raise NetworkError, \
-                          ('Layer has type \'Output\' and no incoming connections.', layer.name)
-        # hidden layers must have incoming and outgoing connections.
-        hiddenInput = 1
-        hiddenOutput = 1
-        for layer in self.layers:
-            if layer.type == 'Hidden':
+                          ('Layer has type \'Output\' and no incoming connections.', layer.name)           
+            elif layer.type == 'Hidden':
                 for connection in self.connections:
+                    # hidden layers must have incoming and outgoing connections.
                     if connection.toLayer.name == layer.name:
                         hiddenInput = 0
                     if connection.fromLayer.name == layer.name:
@@ -976,6 +969,8 @@ class Network:
                     raise NetworkError, \
                           ('Layer has type \'Hidden\' but does not have both input and output connections.',\
                            layer.name)
+            else:
+                raise LayerError, ('Unknown layer encountered in verifyArchitecture().', layer.name)
         # network should not have unconnected sub networks
         # every input layer should have a path to every output layer
         for inLayer in self.layers:
@@ -1066,6 +1061,8 @@ class Network:
         Trains the network on the dataset till a stopping condition is
         met.
         """
+        # check architecture
+        self.verifyArchitecture()
         tssErr = 1.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
         self.resetCount = 1
         while totalCount != 0 and \
@@ -1195,12 +1192,6 @@ class Network:
         """
         Propagates activation through the network.
         """
-        if len(self.layers) == 0:
-            raise NetworkError, ('No network layers but propagate() was called.', \
-                                 self.layers)
-        if len(self.connections) == 0:
-            raise NetworkError, ('No network connections but propagate() was called.', \
-                                 self.connections)
         self.verifyInputs() # better have inputs set
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # initialize netinput:
@@ -1817,7 +1808,7 @@ class SRN(Network):
         """
         Adds a context layer. Necessary to keep self.contextLayers dictionary up to date. 
         """
-        # better not add context layer first if using sweep()
+        # better not add context layer first if using sweep() without mapInput
         self.add(layer, verbosity)
         if self.contextLayers.has_key(hiddenLayerName):
             raise KeyError, ('There is already a context layer associated with this hidden layer.', \
@@ -2493,7 +2484,7 @@ if __name__ == '__main__':
             print err
         else:
             print "No exception caught."
-        print "Calling propagate with not connections..."
+        print "Calling propagate with no connections..."
         n.add(Layer('input', 3))
         n.add(Layer('output',3))
         try:
@@ -2613,6 +2604,18 @@ if __name__ == '__main__':
         n.add(Layer('4',1))
         n.connect('1','3')
         n.connect('2','4')
+        try:
+            n.verifyArchitecture()
+        except Exception, err:
+            print "Caught exception. ", err
+        else:
+            print "Didn't catch exception."
+        print "Creating an architecture with a connection between a layer and itself."
+        n = Network()
+        n.add(Layer('1',1))
+        n.add(Layer('2',1))
+        n.connect('1','2')
+        n.connect('2','2')
         try:
             n.verifyArchitecture()
         except Exception, err:
