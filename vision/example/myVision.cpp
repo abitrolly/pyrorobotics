@@ -184,11 +184,18 @@ void myVision::swapPlanes(int d1, int d2) {
 }
 
 PyObject *myVision::drawRect(int x1, int y1, int x2, int y2, 
-		      int fill, int channel) {
+			     int fill, int channel) {
+  if (x1 > x2)
+    SWAP(x1, x2);
+  if (y1 > y2)
+    SWAP(y1, y2);
+  x2 = MAX(MIN(width - 1, x2),0);
+  y2 = MAX(MIN(height - 1, y2),0);
   for(int w=x1; w<=x2; w++) {
       for(int h=y1; h<=y2; h++ ) {
-	if (fill == 1 || (h == x1 || h == x2 ||
-			  w == y1 || w == y2))
+	if (fill == 1 || 
+	    (h == x1 || h == x2) ||
+	    (w == y1 || w == y2))
 	  if (channel == ALL)
 	    for(int d=0; d<depth; d++) {
 	      Image[(h * width + w) * depth + d] = 255;
@@ -263,8 +270,8 @@ PyObject *myVision::applyFilters(PyObject *newList) {
 
 PyObject *myVision::getMenu() {
   PyObject *menu = PyList_New( 0 );
-  PyList_Append(menu, Py_BuildValue("sss", "myFilters", "Match pixel", "match"));
-  PyList_Append(menu, Py_BuildValue("sss", "myFilters", "Draw box", "drawRect"));
+  PyList_Append(menu, Py_BuildValue("sssiiiii", "myFilters", "Match pixel", "match", 0, 0, 0, 30, 0));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "myFilters", "Draw box", "drawRect", 10, 10, 30, 30));
   return menu;
 }
 
