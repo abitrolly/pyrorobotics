@@ -144,8 +144,8 @@ class GovernorNetwork(Governor, Network):
             parts.append( o/float(ow) )
         else:
             parts.append( 0 )
-        sum = float(max(*parts))
-        mask = [sum/i * iw] * i + [sum/o * ow] * o
+        big = float(max(*parts))
+        mask = [big/i * iw] * i + [big/o * ow] * o
         self.ravq.setMask( mask )
         if self.verbosity:
             print "mask:", self.ravq.mask
@@ -153,8 +153,8 @@ class GovernorNetwork(Governor, Network):
     def addThreeLayers(self, i, h, o):
         Network.addThreeLayers(self, i, h, o)
         if not self.ravq.mask:
-            sum = float(max(i, o))
-            mask = [sum/i] * i + [sum/o] * o
+            big = float(max(i, o))
+            mask = [big/i] * i + [big/o] * o
             self.ravq.setMask( mask )
             if self.verbosity:
                 print "mask:", self.ravq.mask
@@ -216,8 +216,8 @@ class GovernorSRN(Governor, SRN):
             parts.append( o/float(ow) )
         else:
             parts.append( 0 )
-        sum = float(max(*parts))
-        mask = [sum/i * iw] * i + [sum/h * hw] * h + [sum/o * ow] * o
+        big = float(max(*parts))
+        mask = [big/i * iw] * i + [big/h * hw] * h + [big/o * ow] * o
         self.ravq.setMask( mask )
         if self.verbosity:
             print "mask:", self.ravq.mask
@@ -228,11 +228,19 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.setLayerVerification(0)
         self.trainingNetwork.shareWeights(self)
         if not self.ravq.mask:
-            sum = float(max(i, h, o))
-            mask = [sum/i] * i + [sum/h] * h + [sum/o] * o
+            big = float(max(i, h, o))
+            mask = [big/i] * i + [big/h] * h + [big/o] * o
             self.ravq.setMask( mask )
             if self.verbosity:
                 print "mask:", self.ravq.mask
+                
+    def add(self, layer, verbosity = 0):
+        SRN.add(self, layer, verbosity)
+        self.trainingNetwork.add(layer, verbosity)
+
+    def connect(self, fromName, toName):
+        SRN.connect(self, fromName, toName)
+        self.trainingNetwork.connect(fromName, toName)
 
     def decayModelVectors(self):
         good = []
@@ -273,14 +281,22 @@ class GovernorSRN(Governor, SRN):
 
     def networkStep(self, **args):
         if self.governing and not self._cv:
+            if self.trainingNetwork.sharedWeights == 0:
+                self.trainingNetwork.setLayerVerification(0)
+                self.trainingNetwork.shareWeights(self)
             # map the ravq input context and target
             actContext = list(self["context"].activation)
             vector = list(args["input"]) + actContext + list(args["output"])
             self.map(vector)
             # get the next
-            inLen = self["input"].size
+            inLen = 0
+            outLen = 0
+            for layer in self.layers:
+                if layer.type == 'Input' and layer.name != 'context':
+                    inLen += len(layer)
+                elif layer.type == 'Output':
+                    outLen += len(layer)            
             conLen = self["context"].size
-            outLen = self["output"].size
             array = self.nextItem()
             if array == None:
                 array = vector
