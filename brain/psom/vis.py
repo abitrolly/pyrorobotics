@@ -137,8 +137,11 @@ class VisPsom(psom):
                                 text = str(self.cells[y][x]["count"]))
 
    def _setcell(self, x, y, level):
-      self.canvas.itemconfigure(self.cells[y][x]["cell"],
-                                fill='gray' + str(level))
+      try:
+         self.canvas.itemconfigure(self.cells[y][x]["cell"],
+                                   fill='gray' + str(level))
+      except:
+         pass
 
    def _updatefill(self):
       for pt in self.history.keys():
