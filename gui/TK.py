@@ -112,7 +112,7 @@ class TKgui(gui):
       self.status = Tkinter.Text(self.textframe, width = 40, height = 10,
                                  state='disabled', wrap='word')
       self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
-      self.status.configure(yscrollcommand=self.scrollbar.set)
+      self.status.configure(yscroll=self.scrollbar.set)
       
       self.scrollbar.pack(side="right", expand = "no", fill="y")
       self.status.pack(side="top", expand = "yes", fill="both")
