@@ -10,7 +10,7 @@ class FakeFile:
 
 class PCAPlot:
     def __init__(self, eigenfile, namefile = None, debug = 0,
-                 dimensions = 1, title = None, datatitle = None):
+                 dimensions = 2, title = None, datatitle = None):
         self.gp = Gnuplot.Gnuplot(debug = debug)
         self.dimensions = dimensions
         # read in eigenvalues, names
