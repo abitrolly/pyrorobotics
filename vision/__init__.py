@@ -29,14 +29,16 @@ class PyroImage:
       self.width = width
       self.height = height
       self.depth = depth
+      self.rgb = (0, 1, 2)[0:self.depth] # offsets to red, green, blue
       if self.depth == 1:  # initialize grayScale image to initial brightness
          self.data = [init_val] * height * width * depth
       else:   # initialize color image to initial color
-         self.data = [r] * height * width * depth         
-         for h in range(self.height):
-            for w in range(self.width):
-               self.set(w,h,g,1)
-               self.set(w,h,b,2)
+         self.data = [r] * height * width * depth
+         if r != 0 or g != 0 or b != 0:
+            for h in range(self.height):
+               for w in range(self.width):
+                  self.set(w,h,g,1)
+                  self.set(w,h,b,2)
       
 
    def loadFromFile(self, filename):
@@ -133,6 +135,7 @@ class PyroImage:
       """
       self.data = self.getGrayScale()
       self.depth = 1
+      self.rgb = (0, )
 
    def getGrayScale(self):
       """

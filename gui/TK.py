@@ -28,8 +28,6 @@ class TKgui(gui):
                       fill = 'both')
       self.windowBrain = 0
       self.lastRun = 0
-      self.history = []
-      self.history_pointer = 0
       self.lasttime = 0
       self.update_interval = 0.10
       self.update_interval_detail = 1.0
@@ -226,14 +224,6 @@ class TKgui(gui):
       else:
          print 'No more commands!', chr(7)
 
-   def addCommandHistory(self, command):
-      if len(self.history) > 0:
-         if command != self.history[ len(self.history) - 1]:
-            self.history.append(command)
-      else:
-            self.history.append(command)
-      self.history_pointer = len(self.history)
-      
    def CommandReturnKey(self, event):
       from string import strip
       command = strip(self.commandEntry.get())

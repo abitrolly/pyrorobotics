@@ -1,3 +1,7 @@
+
+class WindowError(AttributeError):
+    """ Service Window Error """
+
 class Service:
     """ A basic service class """
 
@@ -16,10 +20,10 @@ class Service:
         return "Ok"
 
     def makeWindow(self):
-        raise "NoServiceWindowDefined"
+        raise WindowError, "No Service Window Defined"
 
     def updateWindow(self):
-        raise "NoServiceWindowDefined"
+        raise WindowError, "No Service Window Defined"
 
     def getServiceData(self):
         return {}
@@ -27,5 +31,5 @@ class Service:
     def getServiceState(self):
         return self.state
 
-    def update(self):
+    def updateService(self):
         pass

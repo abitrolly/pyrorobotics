@@ -8,7 +8,8 @@ struct image_cap {
   void *data; //image data
 };
 
-struct image_cap *Cgrab_image(char* device, int width, int height, int color);
+struct image_cap *Cgrab_image(char* device, int width, int height, 
+			      int color, int select_channel);
 int Crefresh_image(struct image_cap *image_struct, int width, int height);
 int Cfree_image(struct image_cap *image_struct);
 

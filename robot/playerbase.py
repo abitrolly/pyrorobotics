@@ -13,6 +13,12 @@ SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
 from pyro.robot.service import Service
 
+class ServiceError(AttributeError):
+    """ Used to signal service problem """
+
+class TypeError(AttributeError):
+    """ Used to signal type problem """
+
 class PlayerService(Service):
     def __init__(self, dev, name):
         Service.__init__(self)
@@ -20,17 +26,27 @@ class PlayerService(Service):
         self.name = name
 
     def startService(self):
-        self.dev.start(self.name)
-        time.sleep(1)
+        try:
+            self.dev.start(self.name)
+        except:
+            print "Device not supported: '%s'" % self.name
+            self.dev = 0
+
+    def checkService(self):
+        if self.dev == 0:
+            raise ServiceError, "Service '%s' not available" % self.name
 
     def stopService(self):
+        self.checkService()
         self.dev.stop(self.name)
         self.dev.__dict__[self.name] = {}
 
     def getServiceData(self, pos = 0):
+        self.checkService()
         return self.dev.__dict__[self.name][pos]
 
     def getServiceState(self):
+        self.checkService()
         if self.dev.__dict__[self.name] != {}:
             return "started"
         else:
@@ -39,15 +55,15 @@ class PlayerService(Service):
 class PlayerCommService(PlayerService):
     def sendMessage(self, message):
         if self.dev.comms == {}:
-            print "Need to startService 'comms' interface in robot"
+            print "Need to startService('comm') in robot: message not sent"
             return
         self.dev.send_message(message)
 
     def getMessages(self):
         if not 'comms' in dir(self.dev) or self.dev.comms == {}:
-            raise "Need to loadService('comm') in robot"
-        if self.dev.comms[0] != '':
-            self.update()
+            raise ServiceError, "Need to startService('comm') in robot"
+        #if self.dev.comms[0] != '':
+        #    self.update() # this is update in robot
         tmp = self.messages
         # reset queue:
         self.messages = []
@@ -227,7 +243,7 @@ class PlayerBase(Robot):
         if name == 'sonar':
             val = min(max(raw, 0.0), 2.99)
         else:
-            raise 'InvalidType', "Type is invalid"
+            raise TypeError, "Type is invalid"
         if self.senses[name]['units'](dev) == "ROBOTS":
             return val / 0.75 # Pioneer is about .5 meters diameter
         elif self.senses[name]['units'](dev) == "MM":
@@ -240,7 +256,7 @@ class PlayerBase(Robot):
         elif self.senses[name]['units'](dev) == "SCALED":
             return val / 2.99
         else:
-            raise 'InvalidType', "Units are set to invalid type"
+            raise TypeError, "Units are set to invalid type"
 
     def localize(self, x = 0, y = 0, th = 0):
         """

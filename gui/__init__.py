@@ -7,7 +7,7 @@ from pyro.gui.drawable import *
 from pyro.gui.renderer.tty import *
 from pyro.gui.renderer.streams import *
 from pyro.system.version import version as version
-from pyro.system import help, usage, about
+from pyro.system import help, usage, about, file_exists
 
 class gui(Drawable):
    """
@@ -25,6 +25,23 @@ class gui(Drawable):
       self.engine.gui = self
       self.prevsighandler = signal.signal(signal.SIGINT, self.INThandler)
       self.append(self.engine)  # append engine to drawable
+      self.history = []
+      self.history_pointer = 0
+      self.MAXHISTORY = 50
+      self.environment = {}
+      if file_exists(os.getenv('HOME') + "/.pyrohist"):
+         fp = open(os.getenv('HOME') + "/.pyrohist", "r")
+         self.history = map( string.strip, fp.readlines())
+         fp.close()
+         self.history_pointer = len(self.history) - 1
+
+   def addCommandHistory(self, command):
+      if len(self.history) > 0:
+         if command != self.history[ len(self.history) - 1]:
+            self.history.append(command)
+      else:
+            self.history.append(command)
+      self.history_pointer = len(self.history)
 
    def init(self):
       pass
@@ -126,29 +143,34 @@ class gui(Drawable):
          exp1 = """_retval = """ + string.strip(retval)
          _retval = "error"
          exp2 = string.strip(retval)
-         brain = self.engine.brain
-         robot = self.engine.robot
-         engine = self.engine
-         gui = self
-         self = brain
+         # perhaps could do these once, but could change:
+         self.environment["gui"] = gui
+         self.environment["self"] = self
+         self.environment["engine"] = self.engine
+         self.environment["robot"] = self.engine.robot
+         self.environment["brain"] = self.engine.brain
          print ">>> ",
          print retval
          try:
-            exec exp1
-            print _retval
+            exec exp1 in self.environment
          except:
             try:
-               exec exp2
-               print "Ok"
+               exec exp2 in self.environment
             except:
-               print gui.formatExceptionInfo()
-         self = gui
+               print self.formatExceptionInfo()
+            else:
+               print "Ok"
+         else:
+            print self.environment["_retval"]
       return 0
 
    def formatExceptionInfo(self, maxTBlevel=1):
       import sys, traceback
       cla, exc, trbk = sys.exc_info()
-      excName = cla.__name__
+      if cla.__dict__.get("__name__") != None:
+         excName = cla.__name__  # a real exception object
+      else:
+         excName = cla   # one our fake, string exceptions
       try:
          excArgs = exc.__dict__["args"]
       except KeyError:
@@ -201,6 +223,14 @@ class gui(Drawable):
             pass
          if self.engine != 0:
             self.engine.shutdown()
+         try:
+            fp = open(os.getenv('HOME') + "/.pyrohist", "w")
+            line_count = min( len(self.history), self.MAXHISTORY)
+            for i in range( line_count ):
+               fp.write( self.history[ len(self.history) - line_count + i] +"\n" )
+            fp.close()
+         except:
+            pass
          sys.exit(1)
 
    def stepEngine(self):

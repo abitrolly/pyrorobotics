@@ -19,17 +19,17 @@
  
 static PyObject *grab_image(PyObject *self, PyObject *args){
   char *device;
-  int width, height, color;
+  int width, height, color, channel;
   struct image_cap *image;
   PyObject *buffer, *tuple;
 
-  //Expects grab_image(device_name, width, height)
-  if(!PyArg_ParseTuple(args, "siii", &device, &width, &height, &color)){
+  //Expects grab_image(device_name, width, height, color, channel)
+  if(!PyArg_ParseTuple(args, "siiii", &device, &width, &height, &color, &channel)){
     PyErr_SetString(PyExc_TypeError, "Invalid arguments to grab_image");
     return NULL;
   }
 
-  image = Cgrab_image(device, width, height, color);
+  image = Cgrab_image(device, width, height, color, channel);
   if (image == NULL){
     PyErr_SetString(PyExc_IOError, "Error in C function call");
     return NULL;

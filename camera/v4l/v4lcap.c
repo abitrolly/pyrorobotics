@@ -14,7 +14,8 @@
 
 #define verbose 1
 
-struct image_cap* Cgrab_image(char* device, int width, int height, int color){
+struct image_cap* Cgrab_image(char* device, int width, 
+			      int height, int color, int select_channel){
   //struct video_window  vidwin;
   struct video_mbuf    vidmbuf;
   struct video_mmap    vidmmap;
@@ -143,7 +144,7 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     return NULL;
     }*/
 
-  vc[curChannel].channel = 1;
+  vc[curChannel].channel = select_channel;
   vc[curChannel].norm = 1; // this seems to be necessary (?)
   if(ioctl(dev, VIDIOCSCHAN, &(vc[curChannel])) < 0){
     perror("VIDIOCSCHAN");
@@ -169,6 +170,9 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
   image_struct->bpp  = depth * 8;
   image_struct->handle = dev;
   return image_struct;
+}
+
+int Cset_image_location(int x, int y, int value) {
 }
 
 int Crefresh_image(struct image_cap *image_struct, int width, int height){

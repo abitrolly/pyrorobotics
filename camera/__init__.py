@@ -86,6 +86,9 @@ class Camera(PyroImage, Service):
    def getServiceState(self):
       return self.state
 
+   def updateService(self):
+      self.update()
+
 if __name__ == '__main__':
    from os import getenv
    mycam = Camera(0,0)
