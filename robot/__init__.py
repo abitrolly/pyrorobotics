@@ -299,6 +299,10 @@ class Robot (Drawable):
                 print "WARN: no maximum found!"
                 return None
             return (maxpos, max, maxangle)
+        elif func == 'count':
+            return len(self.sensorGroups[name])
+        else:
+            raise 'InvalidType', 'Function is unknown type'
 
     def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
         if sensor != 'all':
