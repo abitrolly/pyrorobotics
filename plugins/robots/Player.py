@@ -6,11 +6,16 @@ from pyro.system.share import ask
 def INIT():
     retval = ask("Please enter the Player Data",
                  (("Port", "6665"),
-                  ("Host", "localhost")))
+                  ("Host", "localhost"),
+                  ("Start devices?", "yes")))
     if retval["ok"]:
+        startDevices = 1
+        if retval["Start devices?"] != "yes":
+            startDevices = 0
         return PlayerRobot("Player6665",
                            port = int(retval["Port"]),
-                           hostname = retval["Host"])
+                           hostname = retval["Host"],
+                           startDevices=startDevices)
     else:
         raise "Cancelled!"
 

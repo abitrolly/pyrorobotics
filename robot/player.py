@@ -534,7 +534,8 @@ class PlayerUpdater(threading.Thread):
         threading.Thread.join(self, timeout)
 
 class PlayerRobot(Robot):
-    def __init__(self, name = "Player", port = 6665, hostname = 'localhost'):
+    def __init__(self, name = "Player", port = 6665, hostname = 'localhost',
+                 startDevices = 1):
         Robot.__init__(self) # robot constructor
         self.devData["simulated"] = 1 # FIX: how can you tell?
         self.hostname = hostname
@@ -552,20 +553,21 @@ class PlayerRobot(Robot):
         if "blobfinder" in self.devData["builtinDevices"]:
             self.devData["builtinDevices"].append( "camera" )
         self.devData["builtinDevices"].append( "simulation" )
-        for device in ["position", "laser", "ir", "sonar", "bumper"]:
-            #is it supported? if so start it up:
-            if device in devNameList:
-                deviceName = self.startDevice(device)
-                self.devDataFunc[device] = self.get("/devices/%s0/object" % device)
-                if device == "laser":
-                    self.devDataFunc["range"] = self.get("/devices/laser0/object")
-                elif device == "ir":
-                    self.devDataFunc["range"] = self.get("/devices/ir0/object")
-                elif device == "sonar":
-                    self.devDataFunc["range"] = self.get("/devices/sonar0/object")
-                elif device == "position":
-                    self.devData["supportedFeatures"].append( "odometry" )
-                    self.devData["supportedFeatures"].append( "continuous-movement" )
+        if startDevices:
+            for device in ["position", "laser", "ir", "sonar", "bumper"]:
+                #is it supported? if so start it up:
+                if device in devNameList:
+                    deviceName = self.startDevice(device)
+                    self.devDataFunc[device] = self.get("/devices/%s0/object" % device)
+                    if device == "laser":
+                        self.devDataFunc["range"] = self.get("/devices/laser0/object")
+                    elif device == "ir":
+                        self.devDataFunc["range"] = self.get("/devices/ir0/object")
+                    elif device == "sonar":
+                        self.devDataFunc["range"] = self.get("/devices/sonar0/object")
+                    elif device == "position":
+                        self.devData["supportedFeatures"].append( "odometry" )
+                        self.devData["supportedFeatures"].append( "continuous-movement" )
         if "range" in self.devDataFunc:
             self.devData["supportedFeatures"].append( "range-sensor" )
         # try to add a simulation device from port 7000
