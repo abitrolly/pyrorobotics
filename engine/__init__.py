@@ -140,6 +140,13 @@ class Engine(drawable.Drawable):
       console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
 
+   def setRobot(self,robot):
+      self.robot = robot
+      self.append(self.robot)
+
+   def setBrain(self,brain):
+      self.brain = brain
+
    def loadMap(self,file):
       import os
       console.log(console.INFO,'Loading '+file)
@@ -155,7 +162,6 @@ class Engine(drawable.Drawable):
       else:
          raise 'Map file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
-
 
    def loadBrain(self,file):
       if self.robot is 0:
