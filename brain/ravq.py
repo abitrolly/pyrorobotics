@@ -144,6 +144,7 @@ class RAVQ:
         self.addModels = 1
         self.winnerCount = 0
         self.printDistance = 0
+        self.addNewModelCallback = None
       
     # update the RAVQ
     def input(self, vec):
@@ -248,6 +249,8 @@ class RAVQ:
             self.modelVectorsDistance = getDistance([v.vector for v in self.models], self.buffer.contents, self.mask)
         else:
             self.modelVectorsDistance = self.epsilon + self.delta
+    def setAddNewModelCallback(self, func):
+        self.addNewModelCallback = func
     def updateModelVectors(self):
         """
         Update models vectors with moving average if the moving
@@ -255,6 +258,8 @@ class RAVQ:
         """
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
+            if self.addNewModelCallback:
+                self.addNewModelCallback(len(self.models), self.movingAverage)
             self.models.addItem(self.movingAverage)
             if self.verbosity > 1:
                 print 'Adding model vector', self.movingAverage
