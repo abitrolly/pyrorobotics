@@ -157,6 +157,9 @@ class Device:
         return "Ok"
     def makeWindow(self):
         pass
+    def destroy(self):
+        if self.window:
+            self.window.destroy()
     def updateWindow(self):
         pass
     def getDeviceData(self):

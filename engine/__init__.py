@@ -54,6 +54,7 @@ class Engine:
             pass
          try:
             self.brain.destroy()
+            self.robot.destroy()
          except:
             print "I was unable to properly destroy the brain"
          self.brain = system.loadINIT(self.brainfile, self, 1)
@@ -139,6 +140,7 @@ class Engine:
             pass
          try:
             self.brain.destroy()
+            self.robot.destroy()
          except:
             pass
          self.brain = system.loadINIT(file, self)
@@ -151,6 +153,7 @@ class Engine:
             pass
          try:
             self.brain.destroy()
+            self.robot.destroy()
          except:
             pass
          self.brain = system.loadINIT(os.getenv('PYRO') + \
@@ -199,6 +202,7 @@ class Engine:
       if self.brain is not 0:
          try:
             self.brain.destroy()
+            self.robot.destroy()
          except:
             print "I was unable to properly destroy the brain"
 
