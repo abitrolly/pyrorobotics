@@ -1,10 +1,17 @@
 from pyro.camera import Camera, CBuffer
 from pyro.camera.aibo.aibo import AiboCam
-from math import pi, sin, cos
 import threading
 import time
 
-PIOVER180 = pi / 180.0
+# FIX: why does the speed of the CameraThread effect the main
+# thread? I don't know...
+
+# Fix would like to add filter processing in this loop, but
+# we would need to change the way the robot interacts with
+# the filter data (lock it)
+
+# Did I break something? the filter doesn't seem to run after every
+# screen update?
 
 class CameraThread(threading.Thread):
     """
@@ -26,8 +33,8 @@ class CameraThread(threading.Thread):
         main control loop
         """
         while not self._stopevent.isSet():
-           self.runable.cameraDevice.updateMMap(0)
-           self._stopevent.wait(self._sleepperiod)
+            self.runable.cameraDevice.updateMMap(0) # read and throw away
+            self._stopevent.wait(self._sleepperiod)
 
     def join(self,timeout=None):
         """
@@ -44,6 +51,7 @@ class AiboCamera(Camera):
       """
       self.robot = robot
       self.robot.setRemoteControl("Raw Cam Server", "on")
+      self.thread = None
       time.sleep(1)
       self.cameraDevice = AiboCam( self.robot.host, self.robot.PORT["Raw Cam Server"])
       # connect vision system: --------------------------
@@ -64,13 +72,9 @@ class AiboCamera(Camera):
       self.thread.start()
 
    def _update(self):
-      try:
-         # may need to add a lock here, and above
-         # to make sure we don't crash into each other
-         self.cameraDevice.updateMMap(1)
-      except:
-         print "error in AiboCamera data format"
-      self.processAll() # filters
+       if self.thread:
+           self.cameraDevice.updateMMap(1) # read and map
+           self.processAll() # need to process filters
 
    def destroy(self):
       self.thread.join()
