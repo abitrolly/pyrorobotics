@@ -1266,8 +1266,7 @@ class Network:
         Returns TSS error, total correct, and total count.
         """
         if self.loadOrder == []:
-            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs \
-            are properly set.', self.loadOrder)
+            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
         if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
             raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
@@ -2029,9 +2028,18 @@ class SRN(Network):
         Network.__init__(self, name = name, verbosity = verbosity)
         self.sequenceType = None # You will need to set this!
         # It should be one or the other:
-        # self.sequenceType = "epoch"    # self.sequenceType = "pattern"
-        self.orderedInputs = 1           # self.orderedInputs = 0
-        self.initContext = 0             # self.initContext = 1
+        # self.sequenceType = "ordered-continuous"    
+        self.orderedInputs = 1           
+        self.initContext = 0             
+        # self.sequenceType = "random-segmented":
+        # self.orderedInputs = 0
+        # self.initContext = 1
+        # self.sequenceType = "random-continuous":
+        # self.orderedInputs = 0
+        # self.initContext = 0
+        # self.sequenceType = "ordered-segmented":
+        # self.orderedInputs = 1
+        # self.initContext = 1
         # Other options:
         self.learnDuringSequence = 1
         self.contextCopying = 1
@@ -2042,16 +2050,21 @@ class SRN(Network):
         """
         You must set this! Set it to "epoch" or "pattern".
         """
-        if value == "epoch":
-            self.sequenceType = "epoch"
-            self.orderedInputs = 1         
-            self.initContext = 0
-        elif value == "pattern":
-            self.sequenceType = "pattern"
+        if value == "ordered-continuous":
+            self.orderedInputs = 1           
+            self.initContext = 0             
+        elif value == "random-segmented":
             self.orderedInputs = 0
+            self.initContext = 1
+        elif value == "random-continuous":
+            self.orderedInputs = 0
+            self.initContext = 0
+        elif value == "ordered-segmented":
+            self.orderedInputs = 1
             self.initContext = 1
         else:
             raise AttributeError, "invalid sequence type: '%s'" % value
+        self.sequenceType = value
     # set and get methods for attributes
     def predict(self, inName, outName):
         """
@@ -2145,7 +2158,7 @@ class SRN(Network):
         # two ways to clear context:
         # 1. force it to right now with arg initContext = 1:
         if self.sequenceType == None:
-            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType('epoch' OR 'pattern') """
+            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType() """
         if args.has_key('initContext'):
             if args['initContext']:
                 self.setContext()
@@ -2462,7 +2475,7 @@ if __name__ == '__main__':
         seq1 = [1,0,0, 0,1,0, 0,0,1]
         seq2 = [1,0,0, 0,0,1, 0,1,0]
         n.setInputs([seq1, seq2])
-        n.setSequenceType("pattern")
+        n.setSequenceType("random-continuous")
         n.setReportRate(75)
         n.setEpsilon(0.1)
         n.setMomentum(0)
@@ -2485,7 +2498,7 @@ if __name__ == '__main__':
         n.predict('input','output')
         seq1 = [1,0,0, 0,1,0, 0,0,1, 0,1,0, 1,0,0]
         n.setInputs([seq1])
-        n.setSequenceType("pattern")
+        n.setSequenceType("ordered-continuous")
         n.setReportRate(75)
         n.setEpsilon(0.1)
         n.setMomentum(0)
@@ -2541,7 +2554,7 @@ if __name__ == '__main__':
                          [ "mary", "is", "mary" ],
                          ])
         # network learning parameters:
-        raam.setSequenceType("pattern")
+        raam.setSequenceType("ordered-continuous")
         raam.setReportRate(10)
         raam.setEpsilon(0.1)
         raam.setMomentum(0.0)
@@ -2598,7 +2611,7 @@ if __name__ == '__main__':
         n.associate('input', 'assocInput')
         n.predict('input', 'output')
         n.setInputs([[1,0,0, 0,1,0, 0,0,1, 0,0,1, 0,1,0, 1,0,0]])
-        n.setSequenceType("pattern")
+        n.setSequenceType("ordered-continuous")
         n.setReportRate(25)
         n.setEpsilon(0.1)
         n.setMomentum(0.3)
@@ -2827,7 +2840,7 @@ if __name__ == '__main__':
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.predict('hidden','output')
-        n.setSequenceType("pattern")
+        n.setSequenceType("ordered-continous")
         print "Attempting to predict hidden and output layers..."
         try:
             n.step()
@@ -2910,7 +2923,7 @@ if __name__ == '__main__':
         n = SRN()
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
-        n.setSequenceType("pattern")
+        n.setSequenceType("ordered-continuous")
 
     if ask("Do you want to test verifyArchitecture()?"):
         print "Creating normal 3-3-3 architecture..."
@@ -3018,7 +3031,7 @@ if __name__ == '__main__':
         print "Creating SRN Network..."
         n = SRN()
         n.addSRNLayers(3,3,3)
-        n.setSequenceType("pattern")
+        n.setSequenceType("ordered-continuous")
         #n.setInteractive(1)
         print "Using step with arguments..."
         n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], initContext = 1)
