@@ -11,3 +11,6 @@ grabImage.o: grabImage.c v4lcap.h
 
 grabImage$(SO):  grabImage.o v4lcap.o
 	$(LD)  -shared grabImage.o v4lcap.o -o grabImage$(SO)
+
+cleanall::
+	$(RM) *.tga
