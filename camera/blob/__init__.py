@@ -26,7 +26,6 @@ class BlobCamera(Camera):
       else:
          raise "didn't load blob camera"
       self.depth = depth
-      self.interval = interval
       self.cameraDevice = Blob(self.width, self.height,
                                self.depth)
       # connect vision system: --------------------------
