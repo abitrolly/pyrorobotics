@@ -712,8 +712,8 @@ Blob *Vision::initBlob(Blob *b) {
   b->mass = 0;
   b->ul.x = 0;
   b->ul.y = 0;
-  b->lr.x = width;
-  b->lr.y = height;
+  b->lr.x = 0;
+  b->lr.y = 0;
   b->cm.x = 0;
   b->cm.y = 0;
   b->next = 0;  
@@ -781,12 +781,12 @@ void Vision::joinBlob( Blob *self, Blob *other )
 void Vision::deleteBlob( Blob *b )
 {
   
-  b->cm.x = width / 2;
-  b->cm.y = height / 2;
+  b->cm.x = 0;
+  b->cm.y = 0;
   b->ul.x = 0;
   b->ul.y = 0;
-  b->lr.x = width;
-  b->lr.x = height;
+  b->lr.x = 0;
+  b->lr.x = 0;
   b->mass = 0;
   
 }

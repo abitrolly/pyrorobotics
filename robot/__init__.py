@@ -25,6 +25,9 @@ from pyro.geometry import Polar, distance
 from pyro.robot.device import *
 import math, string, time, os
 
+if not os.environ.has_key('PYRO'):
+    raise AttributeError, "PYRO not defined: export PYRO=/usr/local/pyro"
+
 def ellipses(things):
     if isinstance(things, (type((1,)), type([1,]))):
         try:
