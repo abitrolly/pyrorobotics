@@ -14,4 +14,4 @@ grabImage.o: grabImage.c v4lcap.h
 	$(CC) $(PYTHON_INCLUDE) $(CCSHARED) $(CFLAGS) -c grabImage.c
 
 cleanall::
-	$(RM) *.tga
+	$(RM) *.tga grabImage$(SO) *.o
