@@ -110,6 +110,10 @@ class Layer:
         self.active = 1
         self.maxRandom = 0.1
         self.initialize(0.1)
+        self.minActivation = 0
+        self.maxActivation = 1
+        self.minTarget = 0
+        self.maxTarget = 1
     def initialize(self, epsilon):
         """
         Initializes important node values to zero for each node in the
@@ -333,7 +337,7 @@ class Layer:
         if not self.activationSet == 0:
             raise LayerError, \
                   ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
-        if (value < 0 or value > 1) and self.kind == 'Input':
+        if (value < self.minActivation or value > self.maxActivation) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
@@ -351,7 +355,7 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet) 
-        if (Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1)) and self.kind == 'Input':
+        if (Numeric.add.reduce(array < self.minActivation) or Numeric.add.reduce(array > self.maxActivation)) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, array) 
         self.activation = array
         self.activationSet = 1
@@ -374,7 +378,7 @@ class Layer:
         if not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
-        if value > 1 or value < 0:
+        if value > self.maxActivation or value < self.minActivation:
             raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
         self.targetSet = 1
@@ -390,7 +394,7 @@ class Layer:
         if not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
-        if Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1):
+        if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
             raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
         self.target = array
         self.targetSet = 1
