@@ -5,7 +5,7 @@ LIB = libsimulator.so
 include ../Makefile.include
 
 DEFINES = -D__USE_GL -D_GNU_SOURCE
-LDFLAGS :=  $(LDFLAGS) $(GLLDFLAGS) -lgeometry 
+LDFLAGS :=  $(LDFLAGS) $(GLLDFLAGS) -lgeometry -lstdc++ -ldl -lg++
 
 libsimulator.so : $(OBJ)
 
