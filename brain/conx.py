@@ -1531,7 +1531,7 @@ class Network:
         self.getLayer(layerName).logMsg(message)
     def logLayer(self, layerName, fileName):
         """
-        Sets the layerName to fileName
+        Sets the layerName's log feature.
         """
         self.getLayer(layerName).setLog(fileName)
     def saveWeightsToFile(self, filename, mode = 'pickle'):
@@ -1898,12 +1898,13 @@ class SRN(Network):
     # set and get methods for attributes
     def predict(self, inName, outName):
         """
-        Adds two layers for prediction.
+        Sets prediction between an input and output layer.
         """
         self.prediction.append((inName, outName))
     def setAutoSequence(self, value):
         """
-        Automatically determines the length of a sequence. Length of input / Number of input nodes.
+        Automatically determines the length of a sequence. Length of
+        input / Number of input nodes.
         """
         self.autoSequence = value
     def setSequenceLength(self, value):
