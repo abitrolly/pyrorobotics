@@ -80,7 +80,7 @@ class psom:
 					for i in range(dim):
 						mylist.append(gen.random() * (rmax - rmin) + rmin)
 					data.addvec(vector(mylist))
-			codes = csom.randinit_codes(data.data,topol,neigh,xdim,ydim)
+			codes = csom.lininit_codes(data.data,topol,neigh,xdim,ydim)
 			self.params = csom.construct_teach_params(codes,alpha_mode,radius_mode)
 
 		self.xdim = csom.entries_xdim_get(codes)
@@ -516,8 +516,8 @@ if(__name__ == '__main__'):
 	print "error-based srn activations, tolerance 1.0:"
 	myact = mysom.get_activations('error')
 	mysom.display_activations(myact)
-	print "error-based srn activations, tolerance 0.1:"
-	myact = mysom.get_activations('error', 0.1)
+	print "error-based srn activations, tolerance 0.5:"
+	myact = mysom.get_activations('error', 0.5)
 	mysom.display_activations(myact)
 
 	mysom.save_to_file("test4.cod")
