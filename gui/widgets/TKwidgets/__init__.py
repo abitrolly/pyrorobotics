@@ -82,7 +82,7 @@ class ModalDialog(Dialog):
 		self.top.waitvar(self.myWaitVar)
                 #print "waitvar =", self.top.getvar(self.myWaitVar), type(self.top.getvar(self.myWaitVar))
                 result = self.top.getvar(self.myWaitVar)
-                print "result =", result, type(result)
+                #print "result =", result, type(result)
                 if type(result) == type(1):
                    return self.top.getvar(self.myWaitVar)
                 else:

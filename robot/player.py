@@ -44,7 +44,7 @@ class PlayerDevice(Device):
         try:
             self.dev.start(self.name)
             # self.devData["index"] get index here for this device (ie, dev.laser[index])
-            time.sleep(2) # required!
+            time.sleep(1) # required!
             Device.startDevice(self)
         except:
             print "Pyro error: player device did not start: '%s'" % self.name
