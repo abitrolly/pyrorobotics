@@ -7,7 +7,7 @@ from pyro.map.lps import LPS
 
 class SimpleBrain(Brain):
    def setup(self):
-      self.lps = LPS( 20, 20, widthMM = 14000, heightMM = 14000 )
+      self.lps = LPS( 20, 20)
       # create the Local Perceptiual Space window
 
    def destroy(self):
@@ -16,7 +16,7 @@ class SimpleBrain(Brain):
    def step(self):
       robot = self.getRobot()
       self.lps.reset() # reset counts
-      self.lps.plotSensor(robot, 'sonar')
+      self.lps.sensorHits(robot, 'sonar')
       self.lps.redraw()
 
       FTOLERANCE = 1.0
@@ -26,7 +26,7 @@ class SimpleBrain(Brain):
       left = robot.get('range', 'value', 'left', 'min')[1]
       right = robot.get('range', 'value', 'right', 'min')[1]
       front = robot.get('range', 'value', 'front', 'min')[1]
-
+      return
       print "left", left, "front", front, "right", right
 
       if (left < LTOLERANCE and right < RTOLERANCE):
