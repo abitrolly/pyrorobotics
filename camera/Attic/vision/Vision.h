@@ -65,7 +65,8 @@ public:
   void drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
   void meanBlur(int kernel);
-
+  PyObject *threshold(int channel, int value);
+  PyObject *inverse(int channel);
   int getWidth();
   int getHeight();
   int getDepth();

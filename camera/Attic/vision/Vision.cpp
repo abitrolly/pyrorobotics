@@ -131,7 +131,7 @@ void Vision::superColor(float w1, float w2, float w3,
 	// compute brightness as sum of values * weight
 	brightness += (int) (Image[(h * width + w) * depth + rgb[d]] * weight[rgb[d]]);
 	// blacken other pixels:
-	// Image[(h * width + w) * depth + rgb[d]] = 0;
+	Image[(h * width + w) * depth + rgb[d]] = 0;
       }
       if (brightness > 0)
 	// reset outChannel pixel to brightness level:
@@ -179,17 +179,14 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
 	  for (int d = 0; d < depth; d++) {
 	    Image[(h * width + w) * depth + rgb[d] ] = 255;
 	  }
-	} else
+	} else {
+	  for (int d = 0; d < depth; d++) {
+	    Image[(h * width + w) * depth + rgb[d] ] = 0;
+	  }
 	  Image[(h * width + w) * depth + rgb[outChannel] ] = 255;
-      } else { // no match
-	if (mode != ACCUM) {
-	  if (outChannel == ALL) {
-	    for (int d = 0; d < depth; d++) {
-	      Image[(h * width + w) * depth + rgb[d] ] = 0;
-	    }
-	  } else
-	    Image[(h * width + w) * depth + rgb[outChannel] ] = 0;
 	}
+      } else { // no match
+	// leave alone for now
       }
     }
   }
@@ -306,6 +303,28 @@ void Vision::grayScale(int value) {
 	  Image[(x+y*width)*depth + d]= value;
 	}
       }
+}
+
+PyObject *Vision::threshold(int channel, int value) {
+  int x, y;
+  for (y=0; y<height; y++)
+    for(x=0; x<width; x++) {
+      if (Image[(x+y*width)*depth + rgb[channel]] >= value) {
+	Image[(x+y*width)*depth + rgb[channel]] = 255;
+      } else {
+	Image[(x+y*width)*depth + rgb[channel]] = 0;
+      }
+    }
+  return Py_BuildValue("");
+}
+
+PyObject *Vision::inverse(int channel) {
+  int x, y;
+  for (y=0; y<height; y++)
+    for(x=0; x<width; x++) {
+      Image[(x+y*width)*depth + rgb[channel]] = 255 - Image[(x+y*width)*depth + rgb[channel]];
+    }
+  return Py_BuildValue("");
 }
 
 PyObject *Vision::sobel(int thresh) {
@@ -938,6 +957,20 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	return NULL;
       }
       grayScale(i1);
+    } else if (strcmp((char *)command, "threshold") == 0) {
+      i1 = 0; i2 = 128;
+      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: threshold");
+	return NULL;
+      }
+      threshold(i1, i2);
+    } else if (strcmp((char *)command, "inverse") == 0) {
+      i1 = 0;
+      if (!PyArg_ParseTuple(list, "|i", &i1)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: inverse");
+	return NULL;
+      }
+      inverse(i1);
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;
