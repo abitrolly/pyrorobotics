@@ -198,7 +198,12 @@ class AriaPTZDevice(AriaDevice):
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "sonar")
+        # What are the raw units?
+        self.devData["rawunits"] = "METERS"
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.devData["radius"] = 0.750 # meters
         self.devData['maxvalueraw'] = 2.99
+        # ----------------------------------------------------------
         self.devData['units']    = "ROBOTS"
         self.devData['maxvalue'] = self.getSonarMaxRange() # FIX: this should change when you change units
         self.devData["count"] = self.params.getNumSonar()
@@ -240,22 +245,6 @@ class AriaSonar(AriaSensor):
 
     def getSonarMaxRange(self):
         return self.rawToUnits(2.99)
-
-    def rawToUnits(self, raw):
-        val = min(max(raw, 0.0), self.devData['maxvalueraw'])
-        units = self.devData["units"]
-        if units == "ROBOTS":
-            return val / 0.75 # Pioneer is about .5 meters diameter
-        elif units == "MM":
-            return val * 1000.0
-        elif units == "CM":
-            return (val) * 100.0 # cm
-        elif units == "METERS" or units == "RAW":
-            return (val) 
-        elif units == "SCALED":
-            return val / self.devData['maxvalueraw']
-        else:
-            raise 'InvalidType', "Units are set to invalid type"
 
 class AriaLaser(AriaSensor):
     def __init__(self,  params, device):
