@@ -19,7 +19,7 @@ def usage():
     print "  -b BRAIN           name of brain.py file to load"
     print "  -a ARGUMENTS       user args; available as string engine.args"
     print "  -s SIMULATOR       name of simulator to run"
-    print "  -i INI_FILE        name of init file to load"
+    print "  -i INI_FILE        name of init file to load, or 'None'"
     print "  -w WORLDFILE       name of simulator world to load"
     print "  -c CONFIGFILE      name of server config to load"
     print "  -d DEVICE[,...]    names of devices (files or names)"
