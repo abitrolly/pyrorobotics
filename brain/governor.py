@@ -150,25 +150,31 @@ if __name__ == '__main__':
         epochCount = 0
         epochCorrect = 0
         epochTSS = 0
+        i = 0
+        # prime the RAVQ
+        print "Priming..."
+        while len(net.ravq.models) < 25 and i < 5000:  
+            sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
+            locationlist = map(lambda x: float(x), locations[i].rstrip().split())
+            index, modelVector = net.map(sensorlist + locationlist)
+            i += 1
+        # ok, now let's start
         for i in range(5000):  # about 80 is one room; loops about every 410
             sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
             locationlist = map(lambda x: float(x), locations[i].rstrip().split())
-            #array = sensorlist + locationlist
             index, modelVector = net.map(sensorlist + locationlist)
-            #array = net.categorize(sensorlist + locationlist)
             array = net.nextItem()
             if array == None:
                 array = sensorlist + locationlist
-            error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
-            epochTSS += error
-            epochCorrect += correct
-            epochCount += total
             if lastNumberOfModelVectors != len(net.ravq.models):
                 print "*" * 50, "New model vector!"
                 print "Distances from new model vector at all others:"
                 print ["%.2f" % v for v in net.distancesTo( net.ravq.winner )]
-                print "*" * 50
                 lastNumberOfModelVectors = len(net.ravq.models)
+            error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
+            epochTSS += error
+            epochCorrect += correct
+            epochCount += total
             if (totalSteps+1) % 80 == 0 or totalSteps == 5000 - 1:
                 print "-" * 50
                 print "Step: %5d Error: %9.4f Correct: %9.4f" % (totalSteps+1, epochTSS, epochCorrect/float(epochCount))
@@ -182,5 +188,19 @@ if __name__ == '__main__':
         print "Distance map:\n"
         print net.ravq.distanceMapAsString()
         print "*" * 50
+print "Testing..."
+net.setLearning(0)
+epochTSS = 0
+epochCorrect = 0
+epochCount = 0
+for i in range(5000):  
+    sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
+    locationlist = map(lambda x: float(x), locations[i].rstrip().split())
+    array = sensorlist + locationlist
+    error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
+    epochTSS += error
+    epochCorrect += correct
+    epochCount += total
+print "OVERALL Error: %9.4f Correct: %9.4f" % (epochTSS, epochCorrect/float(epochCount))
 
 # plot map with: gnuplot: splot "datafile" matrix with pm3d
