@@ -152,8 +152,28 @@ time.sleep(2)
 #estopControl_port=10053
 #wsjoints_port=10031
 #wspids_port=10032
-#walkControl     = Listener(10050, robotIP, "UDP") # walk command
-#headControl     = Listener(10052, robotIP, "UDP") # head movement
+walk_control     = Listener(10050, robotIP, "UDP") # walk command
+head_control     = Listener(10052, robotIP, "UDP") # head movement
+def makeControlCommand(control, amt):
+    # HEAD: control is tilt 't', pan 'p', or roll 'r'
+    # WALK: control is forward 'f', strafe 's', and rotate 'r'
+    sequence = [0] * 5
+    bits = struct.pack('f', amt) # Java's FloatToIntBits
+    sequence[0] = ord(control) # single char
+    sequence[4] = struct.unpack('b', bits[3])[0] 
+    sequence[3] = struct.unpack('b', bits[2])[0] 
+    sequence[2] = struct.unpack('b', bits[1])[0] 
+    sequence[1] = struct.unpack('b', bits[0])[0]
+    return struct.pack('bbbbb', *sequence)
+
+head_control.s.write( makeControlCommand('t', 0)) # see HeadPointListener.java
+head_control.s.write( makeControlCommand('p', 0)) # or  HeadPointGUI.java
+head_control.s.write( makeControlCommand('r', 0)) 
+
+walk_control.s.write( makeControlCommand('f', 0)) # see MechaController.java
+walk_control.s.write( makeControlCommand('s', 0)) # or  WalkGUI.java
+walk_control.s.write( makeControlCommand('r', 0)) 
+
 rawimage_data   = Listener(10011, robotIP) # raw_image
 # now, just process image data. This should be in a thread:
 while 1:
