@@ -57,7 +57,7 @@ class SaphiraSenseDriver(driver.Driver):
         val = min(max(Saphira_getSonarRange(dev, pos), 0.0),
                   self.senses['sonar']['maxvalue'](dev))
         if self.senses['sonar']['units'](dev) == "ROBOTS":
-            return val / 1.0 # Pioneer is about .5 meters diameter
+            return val / 0.75 # Pioneer is about .5 meters diameter
         elif self.senses['sonar']['units'](dev) == "MM":
             return val / 1000.0
         elif self.senses['sonar']['units'](dev) == "CM":
