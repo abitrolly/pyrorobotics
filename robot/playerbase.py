@@ -265,10 +265,12 @@ class PlayerBase(Robot):
                 raw -= (raw * (noise * random.random()))
         if name == 'sonar':
             val = min(max(raw, 0.0), 2.99)
+        elif name == 'laser':
+            val = min(max(raw, 0.0), 8000.0)
         else:
             raise TypeError, "Type is invalid"
         if self.senses[name]['units'](dev) == "ROBOTS":
-            return val / 0.75 # Pioneer is about .5 meters diameter
+            return val / 0.75 # Pioneer is about .75 meters diameter
         elif self.senses[name]['units'](dev) == "MM":
             return val * 1000.0
         elif self.senses[name]['units'](dev) == "CM":
