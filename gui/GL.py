@@ -78,7 +78,7 @@ class GLgui(gui):
                         height = height, double = db, depth = depth)
 
       self.win.pack(side = 'top', expand = 1, fill = 'both')
-      #self.?.wm_title("pyro@%s - %s" % (os.getenv('HOSTNAME'), version()))
+      self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
       self.win.redraw = self.redraw
 
       self.mode = IntVar(self.win)
@@ -91,13 +91,13 @@ class GLgui(gui):
 
    def viewRobot(self):
       self.windowRobot = Tk()
-      self.windowRobot.wm_title("Pyro: Robot View")
+      self.windowRobot.wm_title("pyro@%s: Robot View" % os.getenv('HOSTNAME'))
       self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
       canvasRobot.pack()
 
    def viewBrain(self):
       self.windowBrain = Tk()
-      self.windowBrain.wm_title("Pyro: Brain View")
+      self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
       self.canvasBrain = Canvas(self.windowBrain,width=400,height=300)
       self.canvasBrain.pack()
 
@@ -107,10 +107,13 @@ class GLgui(gui):
       yoffset = 20
       width = 100
       row = (pie - 1) * (width * 1.5)
-      colors = ['blue', 'red', 'green', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
-      self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
-      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-      self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
+      colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
+      try:
+         self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
+         self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
+         self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
+      except:
+         pass
 
    def redrawWindowBrain(self):
       # FIX: behavior specific. How to put this in behavior code so
@@ -141,6 +144,11 @@ class GLgui(gui):
                                     d[1] + " effects", \
                                     portion, d[4] + ":" + d[3] + " IF %.2f THEN %.2f" % (d[0], d[5]))
                      percentSoFar += portion
+         else:
+            try:
+               self.canvasBrain.create_text(200,130, tags='pie',fill='black', text = "Ready...")
+            except:
+               pass
 
    def redrawWindowRobot(self):
       #if self.windowRobot != 0:

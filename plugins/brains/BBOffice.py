@@ -116,8 +116,8 @@ class B1 (State):
 
     def update(self):
         th = self.getRobot().get('robot', 'th')
-        if angleEqual(angleAdd(th, -self.th), 270)
-            self.goto('B2')
+        #if angleEqual(angleAdd(th, -self.th), 270)
+        #    self.goto('B2')
             
 class B2 (State):
     # go straight for 6.5 meters
