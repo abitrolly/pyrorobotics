@@ -1,4 +1,4 @@
-import Numeric, math, random
+import Numeric, math, random, sys
 from pyro.tools.circularlist import CircularList
 
 version = '1.4'
@@ -27,12 +27,23 @@ def averageVector(V):
     """
     return Numeric.add.reduce(V) / len(V)
 
+def tooSmall(v):
+    if v < 1.0e-32:
+        return 0.0
+    return v
+
 def euclideanDistance(x, y, mask):
     """
     Takes two Numeric vectors as arguments.
     d(x, y) = sqrt(Sum[i = 1 to |x|]{(x_i - y_i) ^ 2 * mask_i})
     """
-    return math.sqrt(Numeric.add.reduce( ((x - y)  ** 2) * mask))
+    try:
+        result = math.sqrt(Numeric.add.reduce( ((x - y)  ** 2) * mask))
+    except:
+        x = Numeric.array(map(tooSmall, x))
+        y = Numeric.array(map(tooSmall, y))
+        result = math.sqrt(Numeric.add.reduce( ((x - y)  ** 2) * mask))
+    return result
 
 def getDistance(V, X, mask):
     """
