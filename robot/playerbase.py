@@ -52,6 +52,21 @@ class PlayerService(Service):
         else:
             return "stopped"
 
+    def getPose(self):
+        function = self.dev.__dict__[ "get_%s_pose" ]
+        if function != None:
+            function(self.dev)
+        else:
+            raise ServiceError, "Function 'getPose' is not available for service '%s'" % self.name
+
+
+    def setPose(self, xMM, yMM, thDeg):
+        function = self.dev.__dict__[ "set_%s_pose" ]
+        if function != None:
+            function( self.dev, xMM, yMM, thDeg)
+        else:
+            raise ServiceError, "Function 'setPose' is not available for service '%s'" % self.name
+
 class PlayerCommService(PlayerService):
     def sendMessage(self, message):
         if self.dev.comms == {}:
