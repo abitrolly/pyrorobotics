@@ -1438,7 +1438,7 @@ class Network:
         dw_count, dw_sum = 0, 0.0
         for connection in self.connections:
             if not connection.frozen:
-                if connection.fromLayer.active:
+                if connection.fromLayer.active and connection.toLayer.active:
                     toLayer = connection.toLayer
                     connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
                     connection.weight = connection.weight + connection.dweight
