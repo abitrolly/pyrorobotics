@@ -336,7 +336,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # -----------------------
       if self.engine.robot != 0:
          if self.engine.robot.get('/robot/stall'):
-            bump = "[BUMP!]"
+            bump = "[STALL!]"
          else:
             bump = ''
          self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
