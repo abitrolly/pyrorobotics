@@ -33,7 +33,9 @@
  *
  **********************************/
 
-/* ------------- Blob operations ------------ */
+/* ------------- Blob operations ------------
+    Largely copied from pyro.vision.Blob
+*/
 
 void Blob_init(struct blob* theBlob, struct point* pixel){
   Blob_init_xy(theBlob, pixel->x, pixel->y);
@@ -347,11 +349,17 @@ struct bitmap* bitmap_from_ppm(char* filename,
 
   theFile = fopen(filename, "r");
   if (!theFile){
-    perror("bitmap_from_ppm: Error openeing file for read");
+    perror("bitmap_from_ppm: Error openeing file for read.");
   }
   bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
   fscanf(theFile, "%*2c\n%d %d\n%d", &cols, &rows, &maxval);
   Bitmap_init(bmp, cols, rows);
+  /*
+    If there are fewer than 255 colors in a pgm, each color value
+    is represented by one byte.  Otherwise, two bytes are used.
+    Thus, we need to treat the file differently depending on the
+    maxval.
+  */
   if (maxval <= 255){
     rgb = (uint8_t*)malloc(rows*cols*3);
     fread(rgb, 1, rows*cols*3, theFile);
@@ -404,6 +412,8 @@ struct bitmap* bitmap_from_pgm(char* filename,
   fread(gray, 1, rows*cols, theFile);
   fclose(theFile);
   for (i = 0; i < rows*cols; i++) {
+    //Calculate once here, so we don't have
+    //to write it three times on the next line.
     temp = gray[i]/(double)maxval;
     bmp->data[i] = ((*filter)(temp, temp, temp) > threshold);
   }
@@ -502,9 +512,10 @@ double filter_brightness (double r, double g, double b){
   return v;
 }
 /* ------- Blob output ---------
-   Given an array of blobdatas, an array of ints, and an int representing the
-   length of the previous two arrays (which much be equal), return a struct that looks
-   like the player-stage blob struct
+   Given an array of blobdata pointers, an array of ints (packed
+   RGB color values for the channel colors), and an int
+   representing the length of the previous two arrays (which much be equal),
+   return a struct that looks like the player-stage blob struct
 */
 
 player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
@@ -519,17 +530,25 @@ player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
   data = (player_blobfinder_data_t*)malloc(sizeof(player_blobfinder_data_t));
   data->width = blobs[0]->width;
   data->height = blobs[0]->height;
-  
+
+  //If there are more channels than P._B._MAX_CHANNELS, we are just
+  //going to ignore the rest of them.
   maxn = min(n_channels, PLAYER_BLOBFINDER_MAX_CHANNELS);
+  
   lastj = 0;
   for (i = 0; i < maxn; i++){
     header.index = lastj;
+    //If there are more blobs in this channel than P._B._MAX_B._P._CHANNEL
+    //we will ignore them.
     maxb = min(blobs[i]->nblobs, PLAYER_BLOBFINDER_MAX_BLOBS_PER_CHANNEL);
     header.num = maxb;
     data->header[i] = header;
 
     for (j = 0; j < maxb; j++){
       currblob = blobs[i]->bloblist[j];
+      //The ints in the channels list ought to be the
+      //color of the channel that the blob data came from, although
+      //I suppose you could use any int you wanted.
       blob.color = channels[i];
       blob.area = (currblob->lr.x - currblob->ul.x) * (currblob->lr.y - currblob->ul.y);
       blob.x = (uint16_t)currblob->cm_x;
@@ -538,7 +557,11 @@ player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
       blob.top = currblob->ul.y;
       blob.right = currblob->lr.x;
       blob.bottom = currblob->lr.y;
+      //range can only be calcuated in the simulator.
       blob.range = 0;
+
+      //The blobs are packed in this array, indexed by the
+      //header struct.
       data->blobs[lastj+j] = blob;
     }
 
@@ -546,7 +569,15 @@ player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
   }
   return data;
 }
-	
+
+
+/*
+  This function is almost identical to the one above, but it
+  does not truncate the blob or channels lists to conform to
+  Player/Stage's size limits.  It returns a playerblob_t pointer,
+  which is nearly compatible with the Player/Statge struct, but not
+  exactly.
+*/
 playerblob_t* make_player_blob_varsize(struct blobdata** blobs,
 				       uint32_t* channels,
 				       int n_channels){
