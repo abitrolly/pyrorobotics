@@ -1245,6 +1245,8 @@ class Network:
                     sys.stdout.flush()
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
                         self.saveWeightsToFile(self.autoSaveWeightsFile)
+                        print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
+                        sys.stdout.flush()
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
                         break
@@ -1273,6 +1275,8 @@ class Network:
                 sys.stdout.flush()
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
                     self.saveWeightsToFile(self.autoSaveWeightsFile)
+                    print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
+                    sys.stdout.flush()
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
