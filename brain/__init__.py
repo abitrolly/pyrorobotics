@@ -15,6 +15,7 @@ class Brain(threading.Thread): #, Drawable):
 
     def __init__(self, name = 'brain', robot = 0):
         threading.Thread.__init__(self)
+        self.lastRun = time.time() # seconds
         #Drawable.__init__(self, name)
         self.name = name
         self.robot = robot
@@ -60,6 +61,7 @@ class Brain(threading.Thread): #, Drawable):
             
             #print "step()"
             self.step()
+            self.lastRun = time.time() # seconds
             #print "release()"
             self.condition.release()
             #print "Return  ----------------------------"
