@@ -225,10 +225,10 @@ class Camera(PyroImage, Service):
             filterData = []
 
          filterList = [['List filters', self.listCallbackList],
-                       ['Toggle filter', self.toggleFilterMode],
+                       ['Toggle filters', self.toggleFilterMode],
                        None,
-                       ['Clear last filter', self.popCallbackList],
-                       ['Clear all filters', lambda self=self: self.clearCallbackList( )],
+                       ['Clear', [["Last filter", self.popCallbackList],
+                                  ['All filters', lambda self=self: self.clearCallbackList( )]]],
                        None]
 
          filterList.extend( self.makeFilterMenu(filterData) )
@@ -240,9 +240,9 @@ class Camera(PyroImage, Service):
                           None,
                           ['Close',self.hideWindow] 
                           ]),
-                 ('View', [['Pause', lambda self=self: self.setActive(0)],
-                           ['Play', lambda self=self: self.setActive(1)],
-                           ['Update', lambda self=self: self.updateOnce()],
+                 ('View', [['Pause', lambda self=self: self.pauseButton()],
+                           ['Play', lambda self=self: self.playButton()],
+                           ['Update', lambda self=self: self.updateButton()],
                            None,
                            ['Fast Update (10Hz)', lambda self=self: self.setUpdateInterval(0.1)],
                            ['Medium Update (5Hz)', lambda self=self: self.setUpdateInterval(0.2)],
@@ -263,6 +263,15 @@ class Camera(PyroImage, Service):
       self.window.aspect(self.width, self.height, self.width, self.height)
       #self.window.minsize(355, 0)
       while self.window.tk.dooneevent(2): pass
+
+   def pauseButton(self):
+      self.setActive(0)
+
+   def playButton(self):
+      self.setActive(1)
+
+   def updateButton(self):
+      self.updateOnce()
 
    def setUpdateInterval(self, val):
       self.updateWindowInterval = val

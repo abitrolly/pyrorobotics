@@ -4,21 +4,20 @@ include ../../Makefile.cfg
 include ../../Makefile.src
 
 INCLUDE = -I../device/
-CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
+CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 	-D_POSIX_THREAD_SAFE_FUNCTIONS \
 	-D_REENTRANT -DPOSIX \
 	-D__x86__ -D__linux__ \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 
-LIBDIRS= -L/usr/X11R6/lib
-LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
+LIBS= -lstdc++ -ldl -lpthread
 
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
 _fake.so: fake.o Fake.o 
-	$(CC) $(CPPFLAGS) -shared fake.o Fake.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -shared fake.o Fake.o ../device/Device.o -o $@ $(LIBS)
 
 Fake.o:: Fake.cpp Fake.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c Fake.cpp
