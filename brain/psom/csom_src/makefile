@@ -8,13 +8,13 @@
 #
 # TARGET is the resultant .so file for importing to python
 # INTERFACE is the interface (.i) file
-# OBJS is a list of c object files in your c project directory
+# MYOBJS is a list of c object files in your c project directory
 # OBJDIR is the relative path to your c project directory to the
 #   interface project directory
 
-TARGET=csom.so
+OBJS=csom.so
 INTERFACE=som_pak.i
-OBJS:=som_devrobs.o lvq_pak.o som_rout.o datafile.o fileio.o version.o labels.o
+MYOBJS:=som_devrobs.o lvq_pak.o som_rout.o datafile.o fileio.o version.o labels.o
 OBJLIB=som_pak-dev
 
 include ../../../Makefile.src
@@ -26,13 +26,13 @@ CC_FLAGS=-c -g
 SWIG_FLAGS=-python
 LD_FLAGS=-shared
 
-OBJS:=$(patsubst %.o, $(OBJLIB)/%.o, $(OBJS))
+MYOBJS:=$(patsubst %.o, $(OBJLIB)/%.o, $(MYOBJS))
 
-$(TARGET): $(INTERFACE:.i=_wrap.o) $(OBJS) 
+$(OBJS): $(INTERFACE:.i=_wrap.o) $(MYOBJS) 
 	$(LD) $(LD_FLAGS) $^ -o $@
 
-$(INTERFACE:.i=_wrap.o): $(INTERFACE:.i=_wrap.c) $(OBJS:.o=.h)
-	$(CC) $(CC_FLAGS) $(INTERFACE:.i=_wrap.c) $(PYINCL) -I$(OBJLIB)
+$(INTERFACE:.i=_wrap.o): $(INTERFACE:.i=_wrap.c) $(MYOBJS:.o=.h)
+	$(CC) $(CC_FLAGS) $(INTERFACE:.i=_wrap.c) $(PYTHON_INCLUDE) -I$(OBJLIB)
 
 $(INTERFACE:.i=_wrap.c): $(INTERFACE)
 	$(SWIG) $(SWIG_FLAGS) $<
@@ -41,7 +41,7 @@ $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && make $(@F)) 
 
 clean::
-	rm -f $(TARGET) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core
+	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core
 
 cleanall::
 	(make clean && cd $(OBJLIB) && make clean)
