@@ -107,6 +107,7 @@ class RAVQ:
         self.counters = []
         self.addModels = 1
         self.winnerCount = 0
+        self.totalCount = 0
 
     # update the RAVQ
     def input(self, vec):
@@ -195,6 +196,7 @@ class RAVQ:
                 self.winnerCount += 1
             self.winner = self.models[self.winnerIndex]
             self.counters[self.winnerIndex] += 1
+            self.totalCount += 1
     def updateHistory(self):
         if self.recordHistory and self.winner != 'No Winner':
             self.history[str(self.time)] = self.winner[:]
