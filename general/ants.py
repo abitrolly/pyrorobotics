@@ -125,7 +125,7 @@ class Ant:
         turnDir = self.rule[(currentState + 1) % len(self.rule)]
         self.turn( int(turnDir) )
         # next, let's change this cell's state:
-        if currentState == len(self.rule) - 1:
+        if currentState >= len(self.rule) - 1:
             board[self.x,self.y] = 0
         else:
             board[self.x,self.y] = currentState + 1
@@ -135,6 +135,8 @@ class Ant:
 
 if __name__ == "__main__":
     board = Board(100, 100, 4)
-    ant = Ant(board.width / 2, board.height / 2, "S", "10")
+    ant = Ant(board.width / 2, board.height / 2, "S", "101")
+    ant1 = Ant(board.width / 4, board.height / 4, "S", "10")
     for i in range(11000):
         ant.move(board)
+        ant1.move(board)
