@@ -58,6 +58,21 @@ class Rules(Matrix):
         self.height = 1
         self.data = [0]
         self.data[0] = [0] * self.size
+    def watch(self, lat):
+        width = lat.size
+        length = data.height - 1
+        from Tkinter import Tk, Canvas, BOTH
+        self.win = Tk()
+        self.win.wm_title("Python Cellular Automata Experimenter Toolbox")
+        self.canvas = Canvas(self.win,width=width,height=length)
+        #self.canvas.bind("<Configure>", self.changeSize)
+        self.canvas.pack(fill=BOTH)
+        self.win.mainloop()
+        #for c in range( length):
+        #    self.apply(lat, c)
+        #    if lat.data[c] == lat.data[c + 1]:
+        #        return c
+        #return length
     def apply(self, lat, c):
         for i in range(lat.size):
             lat.data[c+1][i] = self.data[0][lat.bits2rule(c,
@@ -74,14 +89,8 @@ class Rules(Matrix):
     def init(self, str):
         if (len(str) != self.size):
             raise "ImproperLength", str
-        if str[0] == '0' or str[0] == '1': # repr of 0 and 1
-            for i in range(len(str)):
-                self.data[0][i] = (str[i] == '1')
-        elif str[0] == '.' or str[0] == 'X': # repr of . and X
-            for i in range(len(str)):
-                self.data[0][i] = (str[i] == 'X')
-        else:
-            raise "UnknownRepresentation", str
+        for i in range(len(str)):
+            self.data[0][i] = (str[i] == '1' or str[i] == 'X')
 
 class Lattice(Matrix):
     def __init__(self, size = 149, height = 150):
@@ -144,4 +153,4 @@ if __name__ == '__main__':
     print "GKL Rule applied to a 70% Lattice:"
     print rules.applyAll(data)
     data.display()
-    
+    rules.watch(data)
