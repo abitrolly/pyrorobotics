@@ -140,6 +140,8 @@ class Behavior:
       self.rules.append([float(fvalue), controller, float(amount), name])
    def getRobot(self):
       return self.behaviorEngine.robot
+   def getEngine(self):
+      return self.behaviorEngine.getEngine()
 
 class State:
    """
@@ -210,3 +212,6 @@ class State:
 
    def getRobot(self):
       return self.behaviorEngine.robot
+
+   def getEngine(self):
+      return self.behaviorEngine.getEngine()
