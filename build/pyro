@@ -31,12 +31,12 @@ except ImportError:
     raise "$PYTHONPATH needs to include dir ABOVE where $PYRO is installed"
 
 robotfile = 0
+services = 0
 brainfile = 0
 window = 'TK'
 pyroargs = []
 simulator = 0
 configfile = 0
-camerafile = 0
 worldfile = 0
 evalcommand = ""
 
@@ -59,13 +59,14 @@ except:
 def process_options():
     import getopt, sys, string
     global robotfile, brainfile, window, simulator, \
-           pyroargs, configfile, camerafile, evalcommand, worldfile
+           pyroargs, configfile, evalcommand, worldfile, services
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:a:i:c:e:w:", \
+                                   "r:b:hg:s:a:i:e:w:v:", \
                                    ["robot", "brain", "help", \
                                     "gui", "sim", "args",\
-                                    "init", "camera", "eval", "world"])
+                                    "init", "eval", "world",
+                                    "services"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -87,10 +88,10 @@ def process_options():
             pyroargs = a
 	elif o in ("-i", "--init"):
             configfile = a
-	elif o in ("-c", "--camera"):
-            camerafile = a
 	elif o in ("-w", "--world"):
             worldfile = a
+	elif o in ("-v", "--services"):
+            services = a
 	elif o in ("-e", "--eval"):
             evalcommand = a
 
@@ -105,6 +106,10 @@ if pyro.startup_check():
         robotfile = c.get('robot', 'file')
     else:
         c.put('robot', 'file', robotfile)
+    if not services:
+        services = c.get('robot', 'services')
+    else:
+        c.put('robot', 'services', services)
     if not simulator:
         simulator = c.get('simulator', 'file')
     else:
@@ -113,10 +118,6 @@ if pyro.startup_check():
         brainfile = c.get('brain', 'file')
     else:
         c.put('brain', 'file', brainfile)
-    if not camerafile:
-        camerafile = c.get('camera', 'file')
-    else:
-        c.put('camera', 'file', camerafile)
     if not worldfile:
         worldfile = c.get('world', 'file')
     else:
@@ -128,7 +129,7 @@ if pyro.startup_check():
     c.put('pyro', 'gui', window)
     share.config = c
     eng = Engine(robotfile, brainfile, simulator,
-                 pyroargs, c, camerafile, worldfile)
+                 pyroargs, c, worldfile, services.split(",") )
     if window == 'GL':
         from pyro.gui.GL import GLgui
         gui = GLgui(eng)
