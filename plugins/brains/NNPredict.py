@@ -6,9 +6,8 @@ from pyro.brain.conx import *
 from pyro.gui.plot.scatter import *
 
 class predict(Brain):
-   def __init__(self, name, engine):
-      """ Init the brain, and create the network. """
-      Brain.__init__(self, name, engine)
+   def setup(self):
+      """ Create the network. """
       self.net = SRN()
       self.sensorCount = self.getRobot().get('range', 'count')
       self.net.add(Layer('input', self.sensorCount+2))

@@ -12,8 +12,7 @@ from math import fabs
 
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
-   def __init__(self, name, engine):
-      Brain.__init__(self, name, engine)
+   def setup(self):
       self.getRobot().set('light', 'units', 'SCALED')
 
    def step(self):

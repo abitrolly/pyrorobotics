@@ -7,9 +7,6 @@ import time
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
     
-   def __init__(self, name, engine):
-	Brain.__init__(self, name, engine)
-
    def step(self):
 	self.robot.camera.update()
 	self.robot.camera.track(cutoff=4.0,mode='yellow')	

@@ -101,8 +101,7 @@ class Relax:
 class DevelopBrain(Brain):
    # Only method you have to define is the step method:
 
-   def __init__(self, engine):
-      Brain.__init__(self, engine)
+   def setup(self):
       self.t = 0
       self.data = []
       self.lastx = 0

@@ -160,6 +160,57 @@ class PlayerBase(Robot):
 
     def getServiceData(self, item):
         return self.dev.__dict__[item][0]
+
+    # Gripper functions
+    #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
+
+    def gripperOpen(self):
+        return self.dev.gripper_open() 
+
+    def gripperClose(self):
+        return self.dev.gripper_close() 
+
+    def gripperStop(self):
+        return self.dev.gripper_stop()
+
+    def liftUp(self):
+        return self.dev.gripper_up()
+
+    def liftDown(self):
+        return self.dev.gripper_down()
+
+    def liftStop(self):
+        return self.dev.gripper_stop()
+
+    def gripperStore(self):
+        return self.dev.gripper_store() 
+
+    def gripperDeploy(self):
+        return self.dev.gripper_deploy()
+
+    def gripperHalt(self):
+        return self.dev.gripper_halt()
+
+    def getGripperState(self):
+        return self.dev.is_paddles_closed() # help!
+
+    def getBreakBeamState(self):
+        sum = 0
+        sum += self.dev.is_ibeam_obstructed() * 2 #FIX: which?
+        sum += self.dev.is_obeam_obstructed()
+        return sum
+
+    def isGripperClosed(self): # FIX: add this to aria
+        return self.dev.is_paddles_closed() #ok
+
+    def isGripperMoving(self):
+        return self.dev.is_paddles_moving() #ok
+
+    def isLiftMoving(self):
+        return self.dev.is_lift_moving() # ok
+
+    def isLiftMaxed(self):
+        return self.dev.is_lift_up() # ok
     
 if __name__ == '__main__':
     myrobot = PlayerBase()
