@@ -7,6 +7,7 @@ import sys, os
 
 import PIL.PpmImagePlugin
 import time
+import re
 
 class V4LGrabber(Camera):
    """
@@ -278,6 +279,77 @@ class CBuffer:
 
    def __str__(self):
       return str(self[:])   
+
+
+
+class FakeCamera(V4LGrabber):
+"""
+A fake camera.  This will emulate a V4LGrabber, but instead of
+accessing the hardware, it will load a series of images from file.
+"""
+   def __init__(self, pattern, start = 0, limit = -1, char = "?"):
+      """
+      pattern is a filename with indicators on where to put digits for the
+      sequence.  Absolute or relative filenames can be used.
+      For example, 'image???-.ppm' would start at 'image000.ppm'
+      and continue up to limit.
+      char is the character that should be replaced in the pattern.
+
+      As an example, to load image000.ppm through image120.ppm, we could call
+      FakeCamera('imagexxx.ppm', 0, 120, 'x')
+      """
+      self.pattern = pattern
+      self.limit = limit
+      #create a matchdata object that we will store
+      self.match = re.search(re.escape(char) + "+", pattern)
+      #create a format string that we can use to replace the
+      #replace characters
+      self.fstring = "%%0%dd" % len(self.match.group())
+      self.current = start
+      currname = self.pattern[:self.match.start()] + \ #$`
+                 self.fstring % self.current + \       #the substitution
+                 self.pattern[self.match.end():]       #$'
+      self.width, self.height, self.depth, self.cbuf = fake_grab_image(currname)
+      if self.depth == 8:
+         self.color = 0
+      else:
+         self.color = 1
+         
+      Camera.__init__(self, self.width, self.height, self.depth)
+      self.data = CBuffer(self.cbuf)
+
+      #for compatibility with V4LGrabber fucntions
+      self.lockCamera = 0
+      self.rgb = (0, 1, 2) # offsets to BGR
+      
+
+      # puts a sleep in the update function to slow down video
+      # to beable to see the video screen update.
+      # sleeptime tells how long to sleep for.
+      self.sleepFlag = 0
+      self.sleepTime = 2
+      
+      self.min_x = width
+      self.min_y = height
+      self.max_x = 0
+      self.max_y = 0
+      #self.cm_x = 0
+      #self.cm_y = 0
+      self.mass  = 0
+      
+   def _update(self):
+      if self.limit > 0:
+         if (self.current < self.limit):
+            currname = self.pattern[:self.match.start()] + \
+                       self.fstring % self.current + \
+                       self.pattern[self.match.end():]
+            fake_load_image(currname)
+            self.current += 1
+
+   def __del__(self):
+      fake_free_image()
+
+
 
 if __name__ == "__main__":
    cam = V4LGrabber(384, 240)
