@@ -27,6 +27,9 @@ class Joystick:
       self.translate = 0
       self.rotate = 0
 
+   def getValue(self, event = None):
+      return self.translate, self.rotate
+
    def move(self, translate, rotate):
       self.translate = translate
       self.rotate = rotate
