@@ -10,7 +10,7 @@ class GeneralPlot:
                 robot,
                 brain,
                 sensorList,
-                sensorType='sonar',
+                sensorType='range',
                 name='Plot',
                 history=1000,
                 stepLength=2,
@@ -28,9 +28,7 @@ class GeneralPlot:
         be polled by this plot.
 
       Optional arguments:
-      sensorType - The type of sensors to be polled.  This is used in
-        as an argument to robot.get(), so it must be accurate.  Deaults
-        to 'sonar'
+      sensorType - The type of sensors to be polled. 
       name - Not really used. defaults to 'Plot'
       history - The number of timesteps to keep in memory.  Defaults to 1000
       stepLength - the amount of space (in pixels) that each timestep gets
