@@ -1,13 +1,13 @@
 """
 Ioana Butoi and Doug Blank
 Aibo client commands for talking to the Tekkotsu servers
-from Python
+from Python.
 """
 
 from pyro.robot import Robot
 from pyro.robot.device import Device
 from socket import *
-import struct, time, sys
+import struct, time, sys, threading
 
 def makeControlCommand(control, amt):
     # HEAD: control is tilt 't', pan 'p', or roll 'r'
@@ -15,11 +15,16 @@ def makeControlCommand(control, amt):
     return struct.pack('<bf', ord(control), amt) 
 
 class Listener:
+    """
+    A class for talking to ports on Aibo. If you want to read the data off
+    in the background, give this thread to ListenerThread, below.
+    """
     def __init__(self, port, host, protocol = "TCP"):
         self.port = port
         self.host = host
         self.protocol = protocol
         self.runConnect()
+        #self.s.settimeout(0.1)
 
     def runConnect(self):
         print >> sys.stderr, "[",self.port,"] connecting ...",
@@ -27,12 +32,11 @@ class Listener:
             if self.protocol == "UDP":
                 self.s = socket(AF_INET, SOCK_DGRAM) # udp socket
             elif self.protocol == "TCP":
-                self.s = socket(AF_INET, SOCK_STREAM) # udp socket
+                self.s = socket(AF_INET, SOCK_STREAM) # tcp socket
             done = 0
             while not done:
                 try:
                     self.s.connect((self.host,self.port)) # connect to server
-                    #self.s.settimeout(1)
                     done = 1
                 except KeyboardInterrupt:
                     print >> sys.stderr, "aborted!"
@@ -64,12 +68,47 @@ class Listener:
         retval = self.s.send(message)
         return retval
 
+class ListenerThread(threading.Thread):
+    """
+    A thread class, for ports where Aibo feeds it to us
+    as fast as we can eat em!
+    """
+    def __init__(self, listener, callback):
+        """
+        Constructor, setting initial variables
+        """
+        self.listener = listener
+        self.callback = callback
+        self._stopevent = threading.Event()
+        self._sleepperiod = 0.01
+        threading.Thread.__init__(self, name="ListenerThread")
+        
+    def run(self):
+        """
+        overload of threading.thread.run()
+        main control loop
+        """
+        while not self._stopevent.isSet():
+            self.callback(self.listener)
+            self._stopevent.wait(self._sleepperiod)
+
+    def join(self,timeout=None):
+        """
+        Stop the thread
+        """
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
+
 class AiboHeadDevice(Device):
+    """
+    Class for moving the Aibo Head unit as a Pan-Tilt-Zoom-Nod device.
+    Does not implement zoom.
+    """
     def __init__(self, robot):
-        Device.__init__(self, "ptz")
+        #Device.__init__(self, "ptz")
         self.robot = robot
         # Turn on head remote control if off:
-        self.robot.setRemoteControl("Head Remote Control")
+        self.robot.setRemoteControl("Head Remote Control", "on")
         time.sleep(1) # pause for a second
         self.dev   = Listener(10052, self.robot.host) # head movement
         self.devData["supports"] = ["pan", "tilt", "roll"]
@@ -153,39 +192,47 @@ class AiboHeadDevice(Device):
         return self.setPose(0, 0, 0, 0)
 
 class AiboRobot(Robot):
+    """
+    Class for an Aibo robot in Pyro. 
+    """
     # TODO: put listeners in a dict, referenced by name
     # Look up port here:
     PORT = {"Head Remote Control": 10052,
             "Root Control": 10020,
             "Walk Remote Control": 10050, 
-            "EStop Remote Control": 10053
+            "EStop Remote Control": 10053,
+            "World State Serializer": 10031,
             }
     def __init__(self, host):
         Robot.__init__(self)
         self.host = host
         #---------------------------------------------------
-        self.menu_control     = Listener(10020,self.host) # menu controls
-        self.menu_control.s.send("!reset\n") # reset menu
+        self.main_control     = Listener(10020,self.host) # menu controls
+        self.main_control.s.send("!reset\n") # reset menu
         # --------------------------------------------------
-        self.setRemoteControl("Walk Remote Control")
-        self.setRemoteControl("EStop Remote Control")
-        self.setRemoteControl("World State Serializer")
+        self.setRemoteControl("Walk Remote Control", "on")
+        self.setRemoteControl("EStop Remote Control", "on")
+        self.setRemoteControl("World State Serializer", "on")
         time.sleep(1) # let the servers get going...
-        self.walk_control     = Listener(10050, self.host) # walk command
-        self.estop_control    = Listener(10053, self.host) # stop control
+        self.walk_control     = Listener(self.PORT["Walk Remote Control"],
+                                         self.host)
+        self.estop_control    = Listener(self.PORT["EStop Remote Control"],
+                                         self.host) # stop control
         #wsjoints_port   =10031 # world state read sensors
         #wspids_port     =10032 # world state read pids        
-        self.sensor_socket    = Listener(10031, self.host) # sensors
+        self.sensor_socket    = Listener(self.PORT["World State Serializer"],
+                                         self.host) # sensors
+        self.sensor_thread    = ListenerThread(self.sensor_socket, self.readWorldState)
+        self.sensor_thread.start()
         #self.pid_socket       = Listener(10032, self.host) # sensors
         time.sleep(1) # let all of the servers get going...
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
-        self.devData["servers"] = self.menuData['TekkotsuMon']
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
-        self.startDevice("ptz")
+        #self.startDevice("ptz")
         #self.startDevice("camera")
 
-        # Commands available on menu_control (port 10020):
+        # Commands available on main_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,
         #               or when other output has scrolled it off the screen)
         # '!reset' - return to the root control
@@ -194,7 +241,8 @@ class AiboRobot(Robot):
         # '!select' - calls doSelect() of the current control
         # '!cancel' - calls doCancel() of the current control
         # '!msg text' - broadcasts text as a TextMsgEvent
-        # '!root text' - calls takeInput(text) on the root control
+        # '!root text ...' - calls takeInput(text) on the root control
+        # '!cmd control' - calls takeInput("") on control
         # '!hello' - responds with 'hello\ncount\n' where count is the number of times
         #            '!hello' has been sent.  Good for detecting first connection after
         #            boot vs. a reconnect.
@@ -203,10 +251,15 @@ class AiboRobot(Robot):
         # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
         #  any text not beginning with ! - sent to takeInput() of the current control
 
-    def setRemoteControl(self, item):
+    def setConfig(self, item, state):
+        self.main_control.s.send("!set \"%s=%s\"\n" % (item, state))
+
+    def setRemoteControl(self, item, state):
         # "Walk Remote Control"
         # could also use "!root "TekkotsuMon" %(item)"
-        self.menu_control.s.send("!cmd \"%s\"\n" % item)
+        if state == "off":
+            item = "#" + item
+        self.main_control.s.send("!cmd \"%s\"\n" % item)
 
         # Main menu:
         # 0 Mode Switch - Contains the "major" apps, mutually exclusive selection
@@ -234,83 +287,76 @@ class AiboRobot(Robot):
 
     def update(self):
         self._update()
-        # read sensor/pid states:
-        # from: http://tekkotsu.no-ip.org/dox/classWorldStateSerializerBehavior.html
-        # * <unsigned int: timestamp>
-        # * <unsigned int: NumPIDJoints>
-        # * for each i of NumPIDJoints:
-        #   o <float: position of joint i>
-        # * <unsigned int: NumSensors>
-        # * for each i of NumSensors:
-        #   o <float: value of sensor i>
-        # * <unsigned int: NumButtons>
-        # * for each i of NumButtons:
-        #   o <float: value of button i>
-        # * for each i of NumPIDJoints:
-        #   o <float: duty cycle of joint i> 
-        self.devData["timestamp"] = self.sensor_socket.read(4, "l")
-        # ---
-        numPIDJoints = self.sensor_socket.read(4, "l")
-        self.devData["numPIDJoints"] = numPIDJoints # ERS7: 18
-        self.devData["positionRaw"] = self.sensor_socket.read(numPIDJoints * 4,
-                                                           "<%df" % numPIDJoints,all=1)
-        # ---
-        numSensors = self.sensor_socket.read(4, "l") # ERS7: 8
-        self.devData["numSensors"] = numSensors
-        self.devData["sensorRaw"] = self.sensor_socket.read(numSensors * 4,
-                                                         "<%df" % numSensors,all=1)
-        # ---
-        numButtons = self.sensor_socket.read(4, "l") # ERS7: 6
-        self.devData["numButtons"] = numButtons
-        self.devData["buttonRaw"] = self.sensor_socket.read(numButtons * 4,
-                                                         "<%df" % numButtons,all=1)
-        # --- same number as PID joints:             # ERS7: 18
-        self.devData["dutyCycleRaw"] = self.sensor_socket.read(numPIDJoints * 4,
-                                                            "<%df" % numPIDJoints,all=1)
-        if 0:
-            for item in self.devData:
-                print >> sys.stderr, item, self.devData[item]
 
-    def getJoint(self, jointName):
+    def readWorldState(self, socket):
+        """ Used as a callback in ListenerThread for sockets that produce data fast for us to read. """
+        # read sensor/pid states:
+        self.devData["ws_timestamp"] = socket.read(4, "l")
+        # ---
+        numPIDJoints = socket.read(4, "l")
+        self.devData["numPIDJoints"] = numPIDJoints # ERS7: 18
+        self.devData["positionRaw"] = socket.read(numPIDJoints * 4,
+                                                  "<%df" % numPIDJoints,all=1)
+        # ---
+        numSensors = socket.read(4, "l") # ERS7: 8
+        self.devData["numSensors"] = numSensors
+        self.devData["sensorRaw"] = socket.read(numSensors * 4,
+                                                "<%df" % numSensors,all=1)
+        # ---
+        numButtons = socket.read(4, "l") # ERS7: 6
+        self.devData["numButtons"] = numButtons
+        self.devData["buttonRaw"] = socket.read(numButtons * 4,
+                                                "<%df" % numButtons,all=1)
+        # --- same number as PID joints:             # ERS7: 18
+        self.devData["dutyCycleRaw"] = socket.read(numPIDJoints * 4,
+                                                   "<%df" % numPIDJoints,all=1)
+                
+    def getJoint(self, jointGroup, jointD1="", jointD2="", jointD3=""):
         """ Get position, dutyCycle of joint by name """
-        if   jointName == "left front rotator":
-            pos = 0
-        elif jointName == "left front elevator":
-            pos = 1
-        elif jointName == "left front knee":
-            pos = 2
-        elif jointName == "right front rotator":
-            pos = 3
-        elif jointName == "right front elevator":
-            pos = 4
-        elif jointName == "right front knee":
-            pos = 5
-        elif jointName == "left back rotator":
-            pos = 6
-        elif jointName == "left back elevator":
-            pos = 7
-        elif jointName == "left back knee":
-            pos = 8
-        elif jointName == "right back rotator":
-            pos = 9
-        elif jointName == "right back elevator":
-            pos = 10
-        elif jointName == "right back knee":
-            pos = 11
-        elif jointName == "head tilt":
-            pos = 12
-        elif jointName == "head pan":
-            pos = 13
-        elif jointName == "head roll":
-            pos = 14
-        elif jointName == "tail tilt":
-            pos = 15
-        elif jointName == "tail pan":
-            pos = 16
-        elif jointName == "jaw":
-            pos = 17
+        legOffset = 0
+        numLegs = 4
+        jointsPerLeg = 3
+        numLegJoints = numLegs*jointsPerLeg
+        headOffset = legOffset+numLegJoints
+        numHeadJoints = 3
+        tailOffset = headOffset + numHeadJoints
+        numTailJoints = 2
+        mouthOffet = tailOffset + numTailJoints
+        if jointGroup == "leg":
+            if jointD2 == "front":
+                offset = 0
+            elif jointD2 == "back":
+                offset = numLegs/2
+            if jointD1 == "left":
+                offset = legOffset + offset*jointsPerLeg
+            elif jointD1 == "back":
+                offset = legOffset + (offset+1)*jointsPerLeg
+            if jointD3 == "rotator":
+                # moves leg forward or backward along body
+                pos = offset
+            elif jointD3 == "elevator":
+                # moves leg toward or away from body
+                pos = offset + 1
+            elif jointD3 == "knee":
+                pos = offset + 2
+        elif jointGroup == "head":
+            if jointD1 == "tilt":
+                pos = headOffset
+            elif jointD1 == "pan":
+                pos = headOffset +1
+            elif jointD1 == "roll":
+                pos = headOffset +2
+            elif jointD1 == "nod":
+                pos = headOffset+2
+        elif jointGroup == "tail":
+            if jointD1 == "tilt":
+                pos = tailOffset
+            elif jointD1 == "pan":
+                pos = tailOffset +1
+        elif jointGroup == "mouth":
+            pos = mouthOffset
         else:
-            AttributeError, "no such joint: '%s'" % jointName
+            AttributeError, "no such joint: '%s'" % jointGroup
         return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
 
     def startDeviceBuiltin(self, item):
@@ -345,19 +391,24 @@ class AiboRobot(Robot):
         # forward: -1 to 1 (backward to forward)
         # rotate: -1 to 1 (right to left)
         self.walk_control.write( makeControlCommand('f', translate)) 
-        self.walk_control.write( makeControlCommand('r', rotate)) 
+        self.walk_control.write( makeControlCommand('r', rotate))
+
+    def destroy(self):
+        self.sensor_thread.join()
+        Robot.destroy(self)
 
     def setWalk(self, value):
         # If you change the walk, then you have to reconnect
         # back onto the walk server
+        # PACE.PRM TIGER.PRM (crawl) WALK.PRM
         code = {"pace":0, "walk":1, "crawl":2}
         self.walk_control.s.close()
-        self.menu_control.s.send("!reset\n")
-        self.menu_control.s.send("5\n") # walk editor
-        self.menu_control.s.send("9\n") # load walk
-        self.menu_control.s.send("%d\n" % code[value]) # walk number
-        self.menu_control.s.send("0\n") # stop walk socket
-        self.menu_control.s.send("0\n") # start walk socket
+        self.main_control.s.send("!reset\n")
+        self.main_control.s.send("5\n") # walk editor
+        self.main_control.s.send("9\n") # load walk
+        self.main_control.s.send("%d\n" % code[value]) # walk number
+        self.main_control.s.send("0\n") # stop walk socket
+        self.main_control.s.send("0\n") # start walk socket
         self.walk_control     = Listener(10050, self.host) # walk command
 
 #TODO:
