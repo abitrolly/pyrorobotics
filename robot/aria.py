@@ -378,17 +378,32 @@ class AriaRobot(Robot):
         self.devData['units'] = 'METERS' # x,y,z units
         self.devData['name'] = self.dev.getRobotName()
         self.dev.runAsync(1)
+        self.supports = []
         if self.params.getNumSonar() > 0:
-            self.devDataFunc["sonar"] = AriaSonar(self.params, self.dev)
-            self.devDataFunc["range"] = self.devDataFunc["sonar"]
+            self.supports.append( "sonar" )
+            deviceName = self.startDevice("sonar")
+            self.devDataFunc["range"] = self.get("/device/%s/object" % deviceName)
         if self.params.getLaserPossessed():
-            self.devDataFunc["laser"] = AriaLaser(self.params, self.dev)
-            self.devDataFunc["range"] = self.devDataFunc["laser"]
+            self.supports.append( "laser" )
+            deviceName = self.startDevice("laser")
+            self.devDataFunc["range"] = self.get("/device/%s/object" % deviceName)
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
-            self.devDataFunc["bumper"] = AriaBumper(self.params, self.dev)
-	self.update() 
+            self.supports.append( "bumper" )
+            deviceName = self.startDevice("bumper")
+        self.update()
+        self.devData['supports'] = self.supports
         self.inform("Done loading Aria robot.")
 
+    def startDeviceBuiltin(self, item):
+        if item == "sonar":
+            return {"sonar": AriaSonar(self.params, self.dev)}
+        elif item == "laser":
+            return {"laser": AriaLaser(self.params, self.dev)}
+        elif item == "bumper":
+            return {"bumper": AriaBumper(self.params, self.dev)}
+        else:
+            raise AttributeError, "aria robot does not support device '%s'" % item
+        
     def translate(self, translate_velocity):
         self.dev.lock()
         self.dev.setVel((int)(translate_velocity * 1100.0))
