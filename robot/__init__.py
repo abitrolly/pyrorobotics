@@ -530,7 +530,6 @@ class Robot:
         if item in self.directory:
             del self.directory[item]
         
-
     def destroy(self):
         for item in self.device:
             self.removeDevice(item)

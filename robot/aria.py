@@ -5,6 +5,10 @@ from pyro.geometry import *
 from pyro.robot.device import Device, DeviceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
+try:
+    import ArAudio
+except:
+    ArAudio = 0
 from math import pi, cos, sin
 from os import getuid
 import time
@@ -40,6 +44,36 @@ class AriaDevice(Device):
         Device.__init__(self, type)
         self.robot = robot
 
+class AriaAudioDevice(AriaDevice):
+    def __init__(self, robot):
+        AriaDevice.__init__(self, robot, "audio")
+        self.audio = ArAudio()
+        self.audio.init()
+        self.devData["data"] = ""
+        self.devData["listening?"] = 0
+        self.devData["speaking?"] = 0
+        self.devData["speak"] = None
+        self.devData["listen"] = None
+        self.devData["play"] = None
+        self.notSetables.extend( ["data", "listening?", "speaking?"] )
+        self.notGetables.extend( ["speak", "listen", "play"] )
+
+    def preGet(self, item):
+        if item == "data":
+            self.devData["data"] = self.audio.getPhrase()
+        elif item == "listening":
+            self.devData["listening?"] = self.audio.amListening()
+        elif item == "speaking":
+            self.devData["speaking?"] = self.audio.amSpeaking()
+
+    def postSet(self, item, value):
+        if item == "speak":
+            self.audio.speak(value)
+        elif item == "listen":
+            self.audio.setListen(value)
+        elif item == "play":
+            self.audio.play(value) # filename
+            
 class AriaGripperDevice(AriaDevice):
         ## Methods for gripper from Aria
 
@@ -140,16 +174,16 @@ class AriaGripperDevice(AriaDevice):
 class AriaPTZDevice(AriaDevice):
     ## Methods for PTZ from Aria
 
-    def __init__(self, robot, type = "sony"):
+    def __init__(self, robot, model = "sony"):
         # here, robot is the lowlevel robot.dev driver
         AriaDevice.__init__(self, robot, "ptz")
-        self.devData["model"] = type
-        if type == "sony":
+        self.devData["model"] = model
+        if model == "sony":
             self.dev = ArSonyPTZ(self.robot)
-        elif type == "canon":
+        elif model == "canon":
             self.dev = ArVCC4(self.robot)
         else:
-            raise TypeError, "invalid type: '%s'" % type
+            raise TypeError, "invalid model: '%s'" % model
         self.dev.init()
         self.devData["pose"] = self.getPose()
         self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
@@ -421,7 +455,9 @@ class AriaRobot(Robot):
         self.devData['units'] = 'METERS' # x,y,z units
         self.devData['name'] = name #self.dev.getRobotName()
         self.dev.runAsync(1)
-        self.devData["builtinDevices"] = []
+        self.devData["builtinDevices"] = ["gripper", "ptz-sony", "ptz-canon"]
+        if ArAudio:
+            self.devData.append( "audio" )
         if self.params.getNumSonar() > 0:
             self.devData["builtinDevices"].append( "sonar" )
             deviceName = self.startDevice("sonar")
@@ -446,6 +482,12 @@ class AriaRobot(Robot):
             return {"laser": AriaLaser(self.params, self.dev)}
         elif item == "bumper":
             return {"bumper": AriaBumper(self.params, self.dev)}
+        elif item == "ptz-sony":
+            return {"ptz": AriaPTZDevice(self.params, self.dev, model = "sony")}
+        elif item == "ptz-canon":
+            return {"ptz": AriaPTZDevice(self.params, self.dev, model = "canon")}
+        elif item == "gripper":
+            return {"gripper": AriaGripperDevice(self.dev)}
         else:
             raise AttributeError, "aria robot does not support device '%s'" % item
         
