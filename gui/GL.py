@@ -81,10 +81,33 @@ class GLgui(gui):
          self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
          self.win = self.frame
 
+      self.commandFrame = Frame(self.frame)
+      self.commandFrame['relief'] = 'raised'
+      self.commandFrame['bd']	 = '2'
+      self.commandFrame.pack({'expand':'no', 'side':'bottom', 'fill':'x'})
+
+      self.commandLabel = Label(self.commandFrame)
+      self.commandLabel["text"] = "Command:"
+      self.commandLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+      # create a command 
+      self.commandEntry = Entry(self.commandFrame)
+      self.commandEntry.bind('<Return>', self.CommandReturnKey)
+      self.commandEntry["relief"] = "ridge"
+      self.commandEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
+
       # create a status bar
       self.status = StatusBar(self.frame)
       self.status.pack(side=BOTTOM, fill=X)
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def CommandReturnKey(self, event):
+      from string import strip
+      command = strip(self.commandEntry.get())
+      self.commandEntry.delete(0, 'end')
+      self.processCommand(command)
+      #self.commandEntry.insert(0, filter)
+      #self.commandButton.flash()
+      #self.UpdateListBoxes()
 
    def viewRobot(self):
       self.windowRobot = Tk()

@@ -65,12 +65,6 @@ class gui(Drawable):
          print "Stopped!"
       elif retval == "quit" or retval == "exit" or retval == "bye":
          return 1
-      elif len(retval) > 0 and retval[0] == "!":
-         exp = string.strip(retval[1:])
-         try:
-            exec exp
-         except:
-            print "Error in command: '" + exp + "'"
       elif retval[0] == "%":
          exp = string.strip(retval[1:])
          os.system(exp)
@@ -82,7 +76,15 @@ class gui(Drawable):
          else:
             print "Need to load a brain first"
       else:
-         print "Unknown command: '" + retval + "'"
+         # elif len(retval) > 0 and retval[0] == "!":
+         exp = string.strip(retval)
+         brain = self.engine.brain
+         robot = self.engine.robot
+         try:
+            exec exp
+         except:
+            print "Error in command: '" + exp + "'"
+         #print "Unknown command: '" + retval + "'"
       return 0
 
    def redraw(self):
