@@ -441,6 +441,7 @@ class AriaRobot(Robot):
 
     def connect(self):
         Aria.init()
+        self.simulated = 1 
         self.dev = ArRobot()
         self.conn = ArTcpConnection()
         print "Attempting to open TCP port at localhost:%d..." % (8000 + getuid())
@@ -449,13 +450,13 @@ class AriaRobot(Robot):
         if (self.dev.blockingConnect() != 1):
             # could not connect to TCP; let's try a serial one
             # this is a real robot
+            self.simulated = 0 
             print "Attempting to open Serial TTY port..."
             self.conn = ArSerialConnection()
             self.conn.setPort()
             self.dev.setDeviceConnection(self.conn)
             if (self.dev.blockingConnect() != 1):
                 raise "FailedConnection"
-        self.simulated = 1 # how do you tell?
         self.params = self.dev.getRobotParams()
         # now, can say self.params.getSonarX(4)
         self.localize(0.0, 0.0, 0.0)
