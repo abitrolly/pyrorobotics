@@ -142,10 +142,10 @@ class PlayerRobot(PlayerBase):
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
         
         # location of origin of sensors:
-        self.senses['sonar']['ox'] = lambda dev, pos: self.rawToUnits(dev, self.sonarGeometry[pos][0], 'sonar')
-        self.senses['sonar']['oy'] = lambda dev, pos: self.rawToUnits(dev, self.sonarGeometry[pos][1], 'sonar')
+        self.senses['sonar']['ox'] = lambda dev, pos:self.sonarGeometry[pos][0]
+        self.senses['sonar']['oy'] = lambda dev, pos:self.sonarGeometry[pos][1]
         self.senses['sonar']['oz'] = lambda dev, pos: 0.03 # meters
-        self.senses['sonar']['th'] = lambda dev, pos: self.sonarGeometry[pos][2] * PIOVER180 
+        self.senses['sonar']['th'] = lambda dev, pos:self.sonarGeometry[pos][2] * PIOVER180 
         #         # in radians:
         self.senses['sonar']['arc'] = lambda dev, pos, \
                                       x = (7.5 * PIOVER180) : x
