@@ -1011,6 +1011,7 @@ class Network:
         self.patterns[word] = vector
     def compare(self, v1, v2):
         try:
+            if len(v1) != len(v2): return 0
             for i in range(len(v1)):
                 if abs( v1[i] - v2[i]) > self.tolerance:
                     return 0
