@@ -541,11 +541,12 @@ class Robot:
             # the item is a type
             removedOne = 0
             for dev in self.device:
-                if self.device[dev].get("type") == item:
+                if self.device[dev].devData["type"] == item:
                     self.removeDevice(dev)
                     removedOne += 1
             if removedOne == 0:
                 raise AttributeError,"no such device name or type: '%s'" % item
+        return "Ok"
         
     def destroy(self):
         for item in self.device:
