@@ -159,13 +159,13 @@ PyObject *Vision::superColor(float w1, float w2, float w3,
       int brightness = 0;
       for (int d = 0; d < depth; d++) {
 	// compute brightness as sum of values * weight
-	brightness += (int) (Image[(h * width + w) * depth + rgb[d]] * weight[rgb[d]]);
-	// blacken other pixels:
+	brightness += (int) (Image[(h * width + w) * depth + rgb[d]] * weight[d]);
+	// blacken all pixels:
 	Image[(h * width + w) * depth + rgb[d]] = 0;
       }
       if (brightness > 0)
 	// reset outChannel pixel to brightness level:
-	Image[(h * width + w) * depth + rgb[outChannel] ] = brightness; 
+	Image[(h * width + w) * depth + rgb[outChannel] ] = MAX(MIN(brightness,255),0); 
     }
   }
   return PyInt_FromLong(0L);
