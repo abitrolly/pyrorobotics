@@ -315,9 +315,9 @@ class gui:
                                                              (pyropath, simulatorName)))
          else:
             simulatorName = worldfile
-            self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
-            self.engine.worldfile = worldfile
-            os.system(f + " " + worldfile + " &")
+         self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
+         self.engine.worldfile = worldfile
+         os.system(f + " " + worldfile + " &")
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))
