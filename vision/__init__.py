@@ -21,14 +21,23 @@ class PyroImage:
    """
    A Basic Image class. 
    """
-   def __init__(self, width = 0, height = 0, depth = 3, init_val = 0):
+   def __init__(self, width = 0, height = 0, depth = 3, init_val = 0,
+                r=0,g=0,b=0):
       """
       Constructor. Depth is bytes per pixel.
       """
       self.width = width
       self.height = height
       self.depth = depth
-      self.data = [init_val] * height * width * depth
+      if self.depth == 1:  # initialize grayScale image to initial brightness
+         self.data = [init_val] * height * width * depth
+      else:   # initialize color image to initial color
+         self.data = [r] * height * width * depth         
+         for h in range(self.height):
+            for w in range(self.width):
+               self.set(w,h,g,1)
+               self.set(w,h,b,2)
+      
 
    def loadFromFile(self, filename):
       """
@@ -96,6 +105,30 @@ class PyroImage:
             b = self.data[(w + h * self.width) * self.depth + 2]
             data[w + h * self.width] = (r + g + b) / 3.0
       return data
+   
+
+
+   def getColorFilter(self, r, g, b):
+      """
+      returns a filtered image
+      r,g,b values indicate percentage of each color to keep
+      eg. self.getColorFilter(0.0,1.0,1.0) filters out all the red
+      eg. self.getColorFilter(1.0,0.5,0.0) creates an orange image
+      """
+      if self.depth==1:
+         raise "cannot apply a colour filter to greyscale image"
+      newimage = PyroImage(self.width,self.height)
+      for h in range(self.height):
+         for w in range(self.width):
+            red = self.get(w,h,0)*r
+            newimage.set(w,h,red,0)
+            green = self.get(w,h,1)*g
+            newimage.set(w,h,green,1)
+            blue = self.get(w,h,2)*b
+            newimage.set(w,h,blue,2)
+      return newimage
+
+
 
    def display(self):
       """
@@ -145,13 +178,6 @@ class PyroImage:
       for offset in range(self.depth):
          self.data[(x + y * self.width) * self.depth + offset] = val[offset]
 
-   def incr(self, x, y, offset = 0):
-      """
-      Method to increment a pixel value. offset is r, g, b (0, 1, 2)
-      """
-      self.data[(x + y * self.width) * self.depth + offset] += 1
-
-
    def get(self, x, y, offset = 0):
       """
       Get a pixel value. offset is r, g, b = 0, 1, 2.
@@ -174,18 +200,161 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-   def brightness(self, cutoff):
-      grayImage = self.getGrayScale()
-      bitmap = Bitmap(grayImage.width, grayImage.height)
-      for i in range( bitmap.width):
-         for j in range( bitmap.height):
-            if grayImage.get(i, j) > cutoff:
-               bitmap.set(i, j, 1)
+
+   """
+   reset the image to a specified color
+   """
+   def resetToColor(self,r,g,b):
+      if self.depth == 1:
+         raise "cannot set color for a depth 1 image"
+      for h in range(self.height):
+         for w in range(self.width):
+            self.set(w,h,r,0)
+            self.set(w,h,g,1)
+            self.set(w,h,b,2)
+
+
+
+   def incr(self, x, y, offset = 0):
+      """
+      Method to increment a pixel value. offset is r, g, b (0, 1, 2)
+      """
+      self.data[(x + y * self.width) * self.depth + offset] += 1
+
+
+
+
+   """
+   cropPixels()
+   ------------
+   crops pixels in the amount specified from left, top, right, and bottom
+   if unspecified, right is assumed to be the same as left and bottom the
+   same as top.  if top is unspecified it is assumed to be the same as left
+   """
+   def cropPixels(self, l, t='unset', r='unset', b='unset'):
+      if t == 'unset':
+         t = l
+      if r == 'unset':
+         r = l
+      if b == 'unset':
+         b = t
+      for h in range(t):
+         for w in range(self.width):
+            if self.depth == 1:
+               self.set(w,h,0)
             else:
-               bitmap.set(i, j, 0)
+               self.set(w,h,0,0)
+               self.set(w,h,0,1)
+               self.set(w,h,0,2)
+      for h in range(self.height - b, self.height):
+         for w in range(self.width):
+            if self.depth == 1:
+               self.set(w,h,0)
+            else:
+               self.set(w,h,0,0)
+               self.set(w,h,0,1)
+               self.set(w,h,0,2)
+      for w in range(l):
+         for h in range(self.height):
+            if self.depth == 1:
+               self.set(w,h,0)
+            else:
+               self.set(w,h,0,0)
+               self.set(w,h,0,1)
+               self.set(w,h,0,2)
+      for w in range(self.width - r, self.width):
+         for h in range(self.height):
+            if self.depth == 1:
+               self.set(w,h,0)
+            else:
+               self.set(w,h,0,0)
+               self.set(w,h,0,1)
+               self.set(w,h,0,2)                              
+
+
+
+
+   """
+   getBitmap()
+   -----------
+   constructs a bitmap from the image based on one of four modes
+   ----------------------
+   the default mode is 'brightness', which only keeps pixels of the
+   brightness specified by cutoff (here cutoff2 is ignored)
+   ----------------------
+   the remaining modes construct bitmaps based on ratioing
+   ('rg/b', 'rb/g', and 'gb/r', with support for the reverse permutation of
+   the first two letters)
+   this is most easily explained with an example, take 'rg/b':
+   at each pixel, we keep it only if r/b > cutoff and if g/b > cutoff2
+   if cutoff2 is unspecified, it is set to cutoff
+   cutoff always applies to the first color and cutoff2 to the second
+   (so if you do 'gr/b' cutoff applies to g and cutoff2 to r)
+   """
+   
+   def getBitmap(self, cutoff, cutoff2='unset', mode='brightness'):
+      if cutoff2 == 'unset':
+         cutoff2 = cutoff
+
+      # set alternate mode permutations to usable modes
+      if mode == 'gr/b' or mode == 'br/g' or mode == 'bg/r':
+         temp = cutoff
+         cutoff = cutoff2
+         cutoff2 = temp
+         if mode == 'gr/b':
+            mode = 'rg/b'
+         elif mode == 'br/g':
+            mode = 'rb/g'
+         else:
+            mode = 'gb/r'
+            
+      if mode == 'brightness':
+         grayImage = PyroImage(self.width,self.height,depth=1)
+         grayImage.data = self.getGrayScale()
+         bitmap = Bitmap(grayImage.width, grayImage.height)
+         for h in range(bitmap.height):
+            for w in range(bitmap.width):
+               if grayImage.get(w, h) > cutoff:
+                  bitmap.set(w, h, 1)
+               else:
+                  bitmap.set(w, h, 0)
+      elif mode == 'rg/b' or mode == 'rb/g' or mode == 'gb/r':
+         if mode == 'rg/b':
+            o_n1 = 0  # first numerator offset
+            o_n2 = 1  # second numerator offset            
+            o_d  = 2  # denominator offset
+         elif mode == 'rb/g':
+            o_n1 = 0
+            o_n2 = 2
+            o_d  = 1
+         else:
+            o_n1 = 1
+            o_n2 = 2
+            o_d  = 0
+         bitmap = Bitmap(self.width,self.height)
+         for h in range(bitmap.height):
+            for w in range(bitmap.width):
+               d = self.get(w,h,o_d)   # denominator
+               if d == 0:
+                  d = 0.01
+               if self.get(w,h,o_n1)/d > cutoff and self.get(w,h,o_n2)/d > cutoff2:
+                  bitmap.set(w, h, 1)
+               else:
+                  bitmap.set(w, h, 0)
+      else:
+         raise "unrecognized mode", mode
       return bitmap
 
-   def filter(self, r, g, b, threshold=0):
+
+
+   """
+   i am keeping this in here for posterity's sake and to avoid pissing anyone
+   off who wrote it.  well, i am sort of keeping this in here...
+   """
+   def filter(self, r, g, b, threshold):
+      raise "this filter() method is obselete\n" \
+            "use getColorFilter() combined with getBitMap() instead"
+      """
       bitmap = Bitmap(self.width, self.height)
       for i in range( bitmap.width):
          for j in range( bitmap.height):
@@ -199,6 +368,9 @@ class PyroImage:
                finalval = 1
             bitmap.set(i, j, finalval, 0)
       return bitmap
+      """
+
+
 
    def histogram(self, cols = 20, rows = 20, initvals = 0):
       """
@@ -533,6 +705,29 @@ class Blobdata:
             newlist[i] = self.bloblist[m]
             self.bloblist[m] = 0
          self.bloblist = newlist
+      elif mode == "wacky":
+         for i in range(0,self.nblobs):
+            max = 0
+            m = 0
+            for n in range(0,self.nblobs):
+               if self.bloblist[n] == 0:
+                  pass
+               else:
+                  blob = self.bloblist[n]
+                  center = Point(float(self.blobmap.width)/2.0, \
+                                 float(self.blobmap.height)/2.0)
+                  dx = blob.cm.x - center.x
+                  dy = blob.cm.y - center.y
+                  dist = dx*dx + dy*dy
+                  if dist == 0:
+                     dist = 0.5
+                  val = blob.density() * blob.mass * blob.mass / dist
+                  if val > max:
+                     max = val
+                     m = n
+            newlist[i] = self.bloblist[m]
+            self.bloblist[m] = 0
+         self.bloblist = newlist      
       else:
          print "unknown sorting parameter:", mode
 
@@ -549,6 +744,9 @@ if __name__ == '__main__':
    from os import getenv
    import sys
 
+   raise "this filter() method is obselete\n" \
+         "use getColorFilter() combined with getBitMap() instead"
+   """
    from pyro.camera.fake import FakeCamera
    camera = FakeCamera()
    camera.update()
@@ -558,8 +756,23 @@ if __name__ == '__main__':
       camera.motionMap.display()
       print "avg color of motion:", camera.motion.avgColor(camera)
    print "Done!"
-
    exit
+   """
+
+   """
+   image = PyroImage(0, 0)
+   image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
+   image.cropPixels(5)
+   image.saveToFile("test.ppm")
+   bitmap = image.getBitmap(4.0, mode='rg/b')
+   bitmap.saveToFile("bitmap.ppm")
+   blobdata = Blobdata(bitmap)
+   blobdata.sort("wacky")
+   for i in range(4):
+      blobdata.bloblist[i].display()
+      print ""
+   """
+   
    
    bitmap = Bitmap(20, 15)
    bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
@@ -596,6 +809,24 @@ if __name__ == '__main__':
       print "Done! To see output, use 'xv test.ppm'"
    else:
       print "skipping..."
+   print "Do you want to run test 2.5: create a filtered image, save to file? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      newimage = image.getColorFilter(1,.5,0)
+      newimage.saveToFile("testorange.ppm")
+      #image.display()
+      print "Done! To see output, use 'xv testorange.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 2.75: reset to a solid color, save to file? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      newimage.resetToColor(0,.5,1)
+      newimage.saveToFile("testturquoise.ppm")
+      #image.display()
+      print "Done! To see output, use 'xv testturquoise.ppm'"
+   else:
+      print "skipping..."      
    print "Do you want to run test 3: create a grayscale image, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
@@ -605,6 +836,27 @@ if __name__ == '__main__':
       print "Done! To see output, use 'xv testgray.ppm'"
    else:
       print "skipping..."
+
+   print "Do you want to run test 3.01: recognize a yellow object? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = PyroImage(0, 0)
+      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
+      image.saveToFile("yellowObject.ppm")
+      mybitmap = image.getBitmap(4.0, mode='rg/b')
+      mybitmap.saveToFile("yellowObjectBitmap.ppm")
+      myblobdata = Blobdata(mybitmap)
+      myblobdata.sort("wacky")
+      print "original image: yellowObject.ppm"
+      print "bitmapped image: yellowObjectBitmap.ppm"
+      print "dominant blob:"
+      myblobdata.bloblist[0].display()
+      print ""
+   else:
+      print "skipping..."      
+
+   
+   
    print "Do you want to run test 4: convert PyroImage to PIL image, and display it using xv? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
