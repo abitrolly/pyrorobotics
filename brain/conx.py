@@ -1025,7 +1025,7 @@ if __name__ == '__main__':
         n.setQuickProp(1)
         n.train()
 
-    if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3a,2?"):
+    if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2?"):
         print "SRN ..................................................."
         print "It is not possible to perfectly predict the sequences"
         print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"

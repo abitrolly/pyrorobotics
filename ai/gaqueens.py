@@ -18,7 +18,15 @@ def fitness(sol):
             return 0
         sum += safe_queen( row, col, set)
         row += 1
-    return sum
+    previous = -1
+    for col in sol:
+        # see how far apart each is, normalize, add to sum
+        if previous == -1:
+            bonus = 0.0
+        else:
+            bonus += abs(col - previous)
+        previous = col
+    return sum + 1 - (bonus / ((len(sol) - 1) * len(sol)))
 
 class GAQueens(GA):
     def fitnessFunction(self, genePos):
@@ -41,7 +49,7 @@ class MyGene(Gene):
             print ""
 
 if __name__ == '__main__':    
-    ga = GAQueens(Population(300, MyGene, size = 100, mode = 'integer', max = 100))
+    ga = GAQueens(Population(600, MyGene, size = 100, mode = 'integer', max = 100))
     ga.evolve(0)
 
 # after 83 generations:
