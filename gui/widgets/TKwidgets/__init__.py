@@ -504,11 +504,13 @@ class FileDialog(ModalDialog):
         def CopyPressed(self):
            import os
            filename = self.fileNameEntry.get()
-           myfilename = "$HOME/my" + filename.split("/")[-1]
+           myfilename = os.getenv("HOME") + "/my" + filename.split("/")[-1]
            os.system("cp -i %s %s" %(filename, myfilename))
-           self.EditPressed(myfilename)
+           self.fileNameEntry.delete(0, 'end')
+           self.fileNameEntry.insert(0, myfilename)
+           self.EditPressed(myfilename, 1)
 
-        def EditPressed(self, filename = None):
+        def EditPressed(self, filename = None, selectIt = 0):
            import os
            if filename == None:
               filename = self.fileNameEntry.get()
@@ -517,7 +519,7 @@ class FileDialog(ModalDialog):
            else:
               editor = "emacs"
            os.system("%s %s &" % (editor, filename))
-           self.TerminateDialog(0)
+           self.TerminateDialog(selectIt)
 
 	def GetFileName(self):
 		return self.fileNameEntry.get()
