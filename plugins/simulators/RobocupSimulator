@@ -15,8 +15,9 @@ else
     graphics=1
 fi
 world=$1
-# Start robocup
-rcssserver &
+# Start robocup -sfile is server config, -pfile is player config
+# this will have player config default to ~./rcssserver-player.conf
+rcssserver -sfile $world &
 spid=$!
 # Wait a sec for it to get started
 sleep 1
