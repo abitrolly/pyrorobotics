@@ -42,7 +42,7 @@ class state1 (State):
     def init(self):
         self.add(beh1(1))
         self.add(beh2(1))
-        self.add(beh2(1, 'beh3'))
+        self.add(beh2(1, {}, 'beh3'))
         print "initialized state", self.name
 
     def onActivate(self):
