@@ -69,7 +69,14 @@ class VisPsom(psom):
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.canvas.pack(side=LEFT)
-      
+      f = Frame(self.win)
+      self.showCount = "Train"
+      self.toggleCount = Button(f, text="Show Map Count",
+                                command=self.countSwitch)
+      self.toggleCount.pack()
+      f.pack(side=RIGHT)
+
+      self.lastMapped = (0,0)
       self.cells = []
       self.cellhash = {}
       self.history = {}
@@ -84,14 +91,20 @@ class VisPsom(psom):
             cell = self.canvas.create_oval(x0, y0, x1, y1, fill='white',
                                            tags = 'cell')
             center = ((x0 + x1)/2, (y0 + y1)/2)
-            text = self.canvas.create_text(center[0], center[1],
-                                    text = "0",
-                                    fill = 'red',
-                                    tags = 'count')
-            self.cells[y].append({"cell" : cell, "text" : text, "count" : 0})
+            traintext = self.canvas.create_text(center[0], center[1],
+                                                text = "0",
+                                                fill = 'blue',
+                                                tags = 'traincount')
+            maptext = self.canvas.create_text(center[0], center[1],
+                                              text = "0",
+                                              fill = 'red',
+                                              tags = 'mapcount')
+            self.cells[y].append({"cell" : cell,"traincount" : 0,"mapcount": 0,
+                                  "traintext" : traintext, "maptext": maptext})
             self.cellhash[cell] = (x, y)
 
-      self.canvas.tag_lower('cell', 'count')
+      self.canvas.tag_lower('cell', 'traincount')
+      self.canvas.tag_lower('mapcount', 'cell')
             
 #      self.win.mainloop()
 
@@ -140,13 +153,25 @@ class VisPsom(psom):
       if cell:
          self.last_x, self.last_y = self.cellhash[cell]
 
-   def inccount(self, x, y):
+   def countSwitch(self):
+      if self.showCount == "Map":
+         self.canvas.tag_raise('traincount', 'cell')
+         self.canvas.tag_lower('mapcount', 'cell')
+         self.toggleCount.configure(text="Show Map Count")
+         self.showCount = "Train"
+      elif self.showCount == "Train":
+         self.canvas.tag_raise('mapcount', 'cell')
+         self.canvas.tag_lower('traincount', 'cell')
+         self.toggleCount.configure(text="Show Train Count")
+         self.showCount = "Map"
+         
+   def inccount(self, x, y, which):
       """
       Update the hit count of a cell, and change the label.
       """
-      self.cells[y][x]["count"] += 1
-      self.canvas.itemconfigure(self.cells[y][x]["text"],
-                                text = str(self.cells[y][x]["count"]))
+      self.cells[y][x][which+"count"] += 1
+      self.canvas.itemconfigure(self.cells[y][x][which+"text"],
+                                text = str(self.cells[y][x][which+"count"]))
 
    def _setcell(self, x, y, level):
       try:
@@ -179,16 +204,18 @@ class VisPsom(psom):
    def map(self, vector):
       retval = psom.map(self,vector)
       pt = retval.point.x, retval.point.y
-      self.history[pt] = ACT_MAX
-      self.inccount(pt[0], pt[1])
-      self._updatefill()
+      self._setcell(self.lastMapped[0], self.lastMapped[1], 100)
+      self.canvas.itemconfigure(self.cells[pt[1]][pt[0]]["cell"],
+                                fill = 'green')
+      self.lastMapped = pt
+      self.inccount(pt[0], pt[1], 'map')
       return retval
 
    def train(self, vector):
       retval = psom.train(self,vector)
       pt = retval.point.x, retval.point.y
       self.history[pt] = ACT_MAX
-      self.inccount(pt[0], pt[1])
+      self.inccount(pt[0], pt[1], 'train')
       self._updatefill()
       return retval
 
