@@ -176,8 +176,8 @@ class Camera(PyroImage, Service):
       oldActive = self.active
       self.active = 1
       self.update()
-      self.updateWindow()
       self.processAll()
+      self.updateWindow()
       self.active = oldActive
 
    def getImage(self):
