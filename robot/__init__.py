@@ -21,7 +21,7 @@ from math import pi
 
 # Units of measure for sense, map, and motors:
 # -------------------------------------------
-# ROBOTS - unit is given interms of self.radius's
+# ROBOTS - unit is given interms of robot's diameter
 # METERS - meters
 # CM     - centimeters
 # MM     - millimeters
