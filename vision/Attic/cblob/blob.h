@@ -3,7 +3,7 @@
 
 #include "v4lcap.h"
 
-#define BLOBLIST_SIZE 2000
+#define BLOBLIST_SIZE 10000
 #define BITMAP_CUTOFF 0.5
 #define min(X, Y)  ((X) < (Y) ? (X) : (Y))
 #define max(X, Y)  ((X) > (Y) ? (X) : (Y))
