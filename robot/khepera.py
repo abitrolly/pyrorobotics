@@ -213,8 +213,8 @@ class KheperaRobot(Robot):
         self.senseData['ir'] = []
         self.senseData['light'] = []
         self.senseData['stall'] = []
-
-        self.devData["supports"] = ['ir', 'light']
+        
+        self.devData["builtinDevices"] = ['ir', 'light']
         self.startDevice("ir")
         self.devDataFunc["range"] = self.get("/devices/ir0/object")
         self.devDataFunc["ir"] = self.get("/devices/ir0/object")

@@ -317,7 +317,7 @@ class gui:
          self.freeRobot()
          self.engine.loadRobot(f)
          #if self.engine.robot:
-         #   for device in self.engine.robot.supports:
+         #   for device in self.engine.robot.devData["builtinDevices"]:
          #      self.menuButtons["Built-in Devices"].add_command(label=device,command=lambda:self.startDevice(device))
 
    def freeRobot(self):

@@ -184,5 +184,7 @@ class Behavior:
       self.rules.append([float(fvalue), controller, float(amount), name])
    def get(self, *args):
       return self.robot.get(*args)
+   def getAll(self, *args):
+      return self.robot.getAll(*args)
    def set(self, path, value):
       return self.robot.set(path, value)

@@ -64,7 +64,7 @@ class FakeCamera(Camera):
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Fake Camera View")
       self.devData["subtype"] = "simulated"
-      self.devData["source"] = self.path + currname
+      self.devData["source"] = self.pattern
       self.data = CBuffer(self.cbuf)
       self.oldStart = None
       self.oldStop = None

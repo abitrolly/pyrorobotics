@@ -13,6 +13,7 @@ import Command
 import KheperaCommand
 import CameraCommand
 import Camera
+from TERMIOS import *
 
 ########################################################################
 
@@ -56,7 +57,6 @@ def getSerialParameters():
     gTTY. These values are predefined in the Configure.py file.
     """
     global gBaudRate, gTTY
-    from TERMIOS import *
 
     try:
         vString = os.environ["PyKhep_Baud"]

@@ -84,27 +84,27 @@ class LPS(TkMap):
       (0,0)
       
       """
-      originalUnits = robot.get(item, 'units')
-      robot.set(item, 'units', 'METERS')
-      arc = robot.get(item, 'arc', 0)
+      originalUnits = robot.get("robot", item, 'units')
+      robot.set("robot/%s/units" % item, 'METERS')
+      arc = robot.get("robot", item, 0, 'arc')
       # FIX: fill in radius of robot:
       radius = robot.get('robot', 'radius')
       # -----------------------------------
-      for i in range(robot.get(item, 'count')):
+      for i in range(robot.get("robot", item, 'count')):
          # in MM:
-         offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
+         offx, offy = robot.get("robot", item, i, 'ox'), robot.get("robot", item, i, 'oy')
          # in METERS, because we set it so above:
-         dist = robot.get(item, 'value', i) 
-         if dist < robot.get(item, 'maxvalue'):
+         dist = robot.get("robot", item, i, 'value') 
+         if dist < robot.get("robot", item, 'maxvalue'):
             senseObstacle = 1
          else:
             senseObstacle = 0
-         theta = robot.get(item, 'th', i) # in radians
+         theta = robot.get("robot", item, i, 'thr') # in radians
          # convert to MMs:
          hitx = cos(theta) * dist * 1000 + offx
          hity = sin(theta) * dist * 1000 + offy
          self.computeOccupancy(offx, offy, hitx, hity, arc, senseObstacle, i)
-      robot.set(item, 'units', originalUnits)
+      robot.set("robot/%s/units" % item, originalUnits)
 
    def redraw(self):
       maxval = 1

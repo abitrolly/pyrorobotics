@@ -90,7 +90,6 @@ class TKgui(Tkinter.Toplevel, gui):
                  ('Run',self.runEngine),
                  ('Stop',self.stopEngine),
                  ('Reload Brain',self.resetEngine),
-                 #('View', self.openBrainWindow)
                  ]
 
       # create menu
@@ -211,15 +210,6 @@ class TKgui(Tkinter.Toplevel, gui):
       except:
          if self.engine and self.engine.brain:
             self.engine.brain.makeWindow()
-
-   def redrawViews(self):
-      for p in self.engine.view:
-         try:
-            p.redraw(()) # pass in any options
-         except Tkinter.TclError:
-            #Window's closed; remove the view from the redraw list
-            print "Removing view"
-            self.engine.view.remove(p)
 
    def redrawWindowBrain(self):
       try:
@@ -348,7 +338,6 @@ class TKgui(Tkinter.Toplevel, gui):
             self.engine.robot.update()
          except: pass
       self.redrawWindowBrain()
-      self.redrawViews()
       # -----------------------
       if self.engine.robot != 0:
          if self.engine.robot.get('/robot/stall'):

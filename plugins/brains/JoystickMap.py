@@ -7,11 +7,11 @@ from pyro.map.gps import GPS
 class Map(Brain):
    def setup(self):
        # We want our map to measure in MM, so we first store our current unit of measure
-       units = self.robot.get('/robot/range/units')
+       units = self.get('/robot/range/units')
        # We then reset our measurements to MMs
        self.robot.set('/robot/range/units', 'MM')
        # Calculate the maximum range of our sensors
-       rangeMaxMM = self.robot.get('/robot/range/maxvalue')
+       rangeMaxMM = self.get('/robot/range/maxvalue')
        sizeMM = rangeMaxMM * 3 + self.robot.get('/robot/radius')
        # Reset our unit of measure
        self.robot.set('robot/range/units', units)
@@ -20,8 +20,7 @@ class Map(Brain):
        self.lps = LPS( 20, 20, widthMM = sizeMM, heightMM = sizeMM)
        # Then create our Global Perceptual Space window - this will hold our global map
        #    This map will be 500px by 500px and will represent an area ten times the size of our maximum range
-       self.gps = GPS(maxrange=rangeMaxMM, cols=500, rows=500,
-		      heightMM = sizeMM * 10, widthMM = sizeMM * 10)
+       self.gps = GPS(cols=500, rows=500, heightMM = sizeMM * 10, widthMM = sizeMM * 10)
        self.joystick = Joystick()
        
    def step(self):
