@@ -8,6 +8,25 @@ import pyro.system.share as share
 from posixpath import exists
 from pyro.tools.joystick import Joystick
 
+def ask(title, qlist):
+   d = TKwidgets.AskDialog(share.gui, title, qlist)
+   ok = d.Show()
+   if ok:
+      retval = {"ok": 1}
+      for (name, value) in qlist:
+         retval[name] = d.textbox[name].get()
+      d.DialogCleanup()
+      return retval
+   else:
+      d.DialogCleanup()
+      return {"ok" : 0}
+
+if share.gui == 0:
+   share.gui = Tkinter.Tk()
+   share.gui.withdraw()
+ 
+share.ask = ask
+
 # A TK gui
 
 class JoystickDriver(Joystick):

@@ -87,6 +87,7 @@ class ModalDialog(Dialog):
                    return self.top.getvar(self.myWaitVar)
                 else:
                    return string.atoi(self.top.getvar(self.myWaitVar))
+
 ####
 #	Class AlertDialog
 #
@@ -148,6 +149,21 @@ class AlertDialog(ModalDialog):
 		self.button["command"]   = command
 		self.button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
 
+	def CreateTextBox(self, text, width = 30, default = ""):
+		frame = Tkinter.Frame(self.lowerFrame)
+		frame.pack({'expand':'yes', 'side' :'top', 'pady' :'2', 
+			'fill' :'x'})
+		frame['relief'] = 'raised'
+		frame['bd']	 = '2'
+		label = Tkinter.Label(frame)
+		label['text'] = text
+		label.pack({'side':'left', 'expand':'no', 'anchor':'w',
+                            'fill':'none'})
+		textbox = Tkinter.Entry(frame, width=width, bg="white")
+                textbox.insert(0, default)
+		textbox.pack({'expand':'no', 'side':'right', 'fill':'x'})
+                self.textbox[text] = textbox
+
 ####
 #	Class ErrorDialog
 #
@@ -163,6 +179,8 @@ class ErrorDialog(AlertDialog):
 		AlertDialog.SetupDialog(self)
 		self.bitmap['bitmap'] = 'error'
 		self.CreateButton("OK", self.OkPressed)
+                #self.CreatePickListBox("Something", lambda: "Click!")
+
 
 ####
 #	Class WarningDialog
@@ -198,6 +216,22 @@ class QuestionDialog(AlertDialog):
 		self.CreateButton("Yes", self.OkPressed)
 		self.CreateButton("No", self.NoPressed)
 		self.CreateButton("Cancel", self.CancelPressed)
+
+
+class AskDialog(AlertDialog):
+   def __init__(self, root, title, qlist):
+      AlertDialog.__init__(self, root, title)
+      self.title = title
+      self.qlist = qlist
+      self.textbox = {}
+      
+   def SetupDialog(self):
+      AlertDialog.SetupDialog(self)
+      self.bitmap['bitmap'] = 'question'
+      self.CreateButton("Ok", self.OkPressed)
+      self.CreateButton("Cancel", self.CancelPressed)
+      for (text, default) in self.qlist:
+         self.CreateTextBox(text, width=30, default=default)
 
 ####
 #	Class MessageDialog
@@ -798,3 +832,5 @@ def string_printable(s):
 		return s
 	else:
 		return res + s[l:length]
+
+
