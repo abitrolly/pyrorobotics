@@ -255,6 +255,13 @@ class Histogram(PyroImage):
          print ''
       print ''
 
+   def compare(self, hist):
+      sum = 0
+      for h in range(self.height):
+         for w in range(self.width):
+            sum += min(self.get(w, h), hist.get(w, h))
+      return sum
+
 class Bitmap(PyroImage):
    """
    Bitmap class. Based on Image, but has methods for blobs, etc.
@@ -311,66 +318,6 @@ class Bitmap(PyroImage):
             avg[i] /= n
          return tuple(avg)
                
-   def blobify(self):
-      """
-      Algorithm for 1 pass blobification. Returns a bitmap.
-      Probably need to return a blob object.
-      """
-      self.equivList = [0] * 2000
-      for n in range(2000):
-         self.equivList[n] = n
-      blob = Bitmap(self.width, self.height)
-      count = 1
-      for w in range(self.width):
-         for h in range(self.height):
-            if self.get(w, h):
-               if h == 0 and w == 0: # if in upper left hand corner
-                  # new blob!
-                  blob.set(w, h, count)
-                  count += 1
-               elif w == 0:  # if in first col 
-                  if self.get(w, h - 1): # if pixel above is on
-                     # old blob
-                     blob.set(w, h, blob.get(w, h - 1))
-                  else: # above is off
-                     # new blob!
-                     blob.set(w, h, count)
-                     count += 1
-               elif h == 0:
-                  if self.get(w - 1, h): # if pixel to left is on
-                     # old blob
-                     blob.set(w, h, blob.get(w - 1, h))
-                  else: # left is off
-                     # new blob!
-                     blob.set(w, h, count)
-                     count += 1
-               elif self.get(w - 1, h)  and self.get(w, h - 1):
-                  # both on!
-                  if blob.get(w - 1, h) == blob.get(w, h - 1):
-                     blob.set(w, h, blob.get(w - 1, h))
-                  else: # intersection of two blobs
-                     minBlobNum = min( self.equivList[blob.get(w - 1, h)],
-                                       self.equivList[blob.get(w, h - 1)])
-                     maxBlobNum = max( self.equivList[blob.get(w - 1, h)],
-                                       self.equivList[blob.get(w, h - 1)])
-                     blob.set(w, h, minBlobNum)
-                     for n in range(2000):
-                        if self.equivList[n] == maxBlobNum:
-                           self.equivList[n] = minBlobNum
-               else:
-                  if self.get(w - 1, h): # if pixel to left is on
-                     # old blob
-                     blob.set(w, h, blob.get(w - 1, h))
-                  elif self.get(w, h - 1): # if pixel above is on
-                     # old blob
-                     blob.set(w, h, blob.get(w, h - 1))
-                  else: # left is off, above is off
-                     # new blob!
-                     blob.set(w, h, count)
-                     count += 1
-      blob.equivList = self.equivList[:]
-      return blob
-
 """
 assume that we are starting our x,y coordinates from the upper-left,
 and starting at (0,0), such that (0,0) represents the upper-left-most
@@ -598,13 +545,10 @@ if __name__ == '__main__':
                  0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
-   """
    print "Do you want to run test 1: create bitmap, blobify, and display results? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       bitmap.display()
-      blob = bitmap.blobify()
-      blob.display()
       myblobdata = Blobdata(bitmap)
       myblobdata.sort("area")
       myblobdata.display()
@@ -723,8 +667,11 @@ if __name__ == '__main__':
       image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
       filter = image.filter(.65, .35, .22, .01) # r, g, b, threshold
       filter.saveToFile("filter.ppm")
-      blob = filter.blobify()
-      blob.display()
+      blobs = Blobdata(filter)
+      blobs.sort("area")
+      blobs.display()
+      #blob = filter.blobify()
+      #blob.display()
       print "Done! View filter bitmap with 'xv filter.ppm'"
    else:
       print "skipping..."
@@ -741,10 +688,8 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
-   print "Do you want to run test 11: find edges in bitmap ",
+   print "Do you want to run test 11: find edges in bitmap? ",
    if sys.stdin.readline().lower()[0] == 'y':
-   """
-   if 1:
       print "Running..."
       image = PyroImage(0,0)
       image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
@@ -755,5 +700,44 @@ if __name__ == '__main__':
       mask.saveToFile('convolve.ppm')
    else:
       print "skipping..."
+   print "Do you want to run test 12: do person ID test with histograms? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      hists = [0] * 8
+      files = [0] * 8
+      imgs = [0] * 8
+      files[0] = "/vision/snaps/som-andrew1.ppm"
+      files[1] = "/vision/snaps/som-doug1.ppm"
+      files[2] = "/vision/snaps/som-evan1.ppm"
+      files[3] = "/vision/snaps/som-katie1.ppm"
+      files[4] = "/vision/snaps/som-maria1.ppm"
+      files[5] = "/vision/snaps/som-ry1.ppm"
+      files[6] = "/vision/snaps/som-sharonrose1.ppm"
+      files[7] = "/vision/snaps/som-dsb1.ppm"
 
+      for x in range( len(files)):
+         print "Loading " + files[x] + "..."
+         imgs[x] = PyroImage(0,0)
+         imgs[x].loadFromFile(getenv('PYRO') + files[x])
+         hists[x] = imgs[x].histogram(20, 20)
+
+      f = "/vision/snaps/som-dsb4.ppm"
+      print "========================= Testing " + f
+      i = PyroImage(0,0)
+      i.loadFromFile(getenv('PYRO') + f)
+      h = i.histogram(20,20)
+      maxcomp = 0
+      for x in range( len(files)):
+         print "Comparing to " + files[x] + "=",
+         comp = hists[x].compare(h)
+         print comp
+         if comp > maxcomp:
+            maxfile = files[x]
+            maxcomp = comp
+      print "=========================="
+      print "I found the closest histogram to be:" + maxfile
+
+   else:
+      print "skipping..."
+      
    print "All done!"
