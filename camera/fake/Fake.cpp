@@ -57,6 +57,9 @@ PyObject *Fake::updateMMap(char filename[]) {
   height = h;
   fclose(theFile);
   // apply any filters in list:
-  return applyFilterList();
+  PyObject * retval = applyFilterList();
+  if (motionDetection) 
+    memcpy(history, image, width * height * depth);
+  return retval;
 }
 

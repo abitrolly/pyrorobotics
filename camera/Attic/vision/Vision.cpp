@@ -13,37 +13,90 @@ Vision::Vision(int wi, int he, int de) {
 
 Vision::~Vision() {
   delete [] image;
+  delete [] workspace;
+  delete [] history;
 }
 
 void Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   width = wi;
   height = he;
   depth = de;
-  int rgb_order[3] = {r, g, b};
+  int rgb_order[MAXDEPTH] = {r, g, b};
   for (int d = 0; d < depth; d++)
     // set offsets for RGB
     rgb[d] = rgb_order[d];
   image = new unsigned char [width * height * depth];
+  workspace = new unsigned char [width * height * depth];
+  history = new unsigned char [width * height * depth];
   memset(image, 0, width * height * depth);
+  memset(history, 0, width * height * depth);
+  memset(workspace, 0, width * height * depth);
   filterList = PyList_New(0);
+  // set the current image to:
+  Image = image;
 }
 
-PyObject *Vision::set(int w, int h, int d, int val) {
+PyObject *Vision::setImage(int newImage) {
+  if (newImage == HISTORY)
+    Image = history;
+  else if (newImage == IMAGE) 
+    Image = image;
+  else if (newImage == WORKSPACE)
+    Image = workspace;
+  else {
+    PyErr_SetString(PyExc_ValueError, "invalid image ID in setImage()");
+    return NULL;
+  }
+  return Py_BuildValue("");
+}
+
+// set(): works on current image
+// sets the depth R, G, or B at (w, h) to val.
+// if d is RED, GREEN, or BLUE then set just that d; if
+// d == ALL, then set all colors to val.
+
+PyObject *Vision::set(int w, int h, int d, int value) {
   if (w < 0 || w >= width ||
       h < 0 || h >= height ||
-      d < 0 || d >= depth ||
-      val < 0 || val >= 256) {
-    PyErr_SetString(PyExc_ValueError, "width, height, depth or value out-of-bounds in set");
+      value < 0 || value >= 256) {
+    PyErr_SetString(PyExc_ValueError, "width, height, or value out-of-bounds in set()");
     return NULL;
   } else {
-    image[(h * width + w) * depth + rgb[d]] = val;
+    if (d < MAXDEPTH)
+      Image[(h * width + w) * depth + rgb[d]] = value;
+    else if (d == ALL)
+      for (int deep = 0; deep < depth; deep++)
+	Image[(h * width + w) * depth + deep] = value;
+    else {
+      PyErr_SetString(PyExc_ValueError, "invalid color in set()");
+      return NULL;
+    }
   }
-  return Py_BuildValue("i", val);
+  return Py_BuildValue("i", value);
+}
+
+// same as set(), but for the entire color plane (depth)
+
+PyObject *Vision::setPlane(int d, int value) {
+  for (int w=0; w<width; w++) {
+    for (int h=0; h<height; h++) {
+      if (d < MAXDEPTH)
+	Image[(h * width + w) * depth + rgb[d]] = value;
+      else if (d == ALL)
+	for (int deep = 0; deep < depth; deep++)
+	  Image[(h * width + w) * depth + deep] = value;
+      else {
+	PyErr_SetString(PyExc_ValueError, "invalid color in set()");
+	return NULL;
+      }
+    }
+  }
+  return Py_BuildValue("i", value);
 }
 
 PyObject *Vision::getMMap() {
   PyObject *buffer;
-  buffer = PyBuffer_FromMemory(image, 
+  buffer = PyBuffer_FromMemory(Image, 
 			       width * height * depth * sizeof(unsigned char));
   return Py_BuildValue("O", buffer);
 }
@@ -57,22 +110,14 @@ PyObject *Vision::get(int w, int h) {
   }
   if (depth == 3) {
     return Py_BuildValue("iii", 
-			 image[(h * width + w) * depth + rgb[0]],
-			 image[(h * width + w) * depth + rgb[1]],
-			 image[(h * width + w) * depth + rgb[2]] );
+			 Image[(h * width + w) * depth + rgb[0]],
+			 Image[(h * width + w) * depth + rgb[1]],
+			 Image[(h * width + w) * depth + rgb[2]] );
   } else if (depth == 1) {
-    return Py_BuildValue("i", image[(h * width + w) * depth + 0]);
+    return Py_BuildValue("i", Image[(h * width + w) * depth + 0]);
   } else {
     PyErr_SetString(PyExc_ValueError, "Invalid depth in get");
     return NULL;
-  }
-}
-
-void Vision::clear(int channel, int value) {
-  for (int w=0; w<width; w++) {
-    for (int h=0; h<height; h++) {
-      image[(h * width + w) * depth + rgb[channel]] = value;
-    }
   }
 }
 
@@ -84,49 +129,71 @@ void Vision::superColor(float w1, float w2, float w3,
       int brightness = 0;
       for (int d = 0; d < depth; d++) {
 	// compute brightness as sum of values * weight
-	brightness += (int) (image[(h * width + w) * depth + rgb[d]] * weight[rgb[d]]);
+	brightness += (int) (Image[(h * width + w) * depth + rgb[d]] * weight[rgb[d]]);
 	// blacken other pixels:
-	// image[(h * width + w) * depth + rgb[d]] = 0;
+	// Image[(h * width + w) * depth + rgb[d]] = 0;
       }
       if (brightness > 0)
 	// reset outChannel pixel to brightness level:
-	image[(h * width + w) * depth + rgb[outChannel] ] = brightness; 
+	Image[(h * width + w) * depth + rgb[outChannel] ] = brightness; 
     }
   }
 }  
 
-void Vision::filterByColor(int r, int g, int b, int tolerance, 
-			   int outChannel) {
-  filterByColor( r - tolerance, g - tolerance, b - tolerance,
-		 r + tolerance, g + tolerance, b + tolerance,
-		 outChannel );
+// match() - match pixels by tolerance
+
+PyObject *Vision::match(int r, int g, int b, int tolerance, 
+			int outChannel, int mode) {
+  return matchRange( r - tolerance, g - tolerance, b - tolerance,
+		     r + tolerance, g + tolerance, b + tolerance,
+		     outChannel, mode);
 }
 
+// match() - match pixels by range
+// outChannel can be RED, GREEN, BLUE, or ALL
+// mode is either AND, OR, XOR, or ACCUM
 
-void Vision::filterByColor(int lr, int lg, int lb,
-			   int hr, int hg, int hb,
-			   int outChannel ) {
+PyObject *Vision::matchRange(int lr, int lg, int lb, 
+			     int hr, int hg, int hb,
+			     int outChannel, int mode ) {
   int matches;
   for(int h=0;h<height;h++) {
     for(int w=0;w<width;w++) {
       matches = 0;
-      if (( image[(h * width + w) * depth + rgb[RED]] >= lr && 
-	    image[(h * width + w) * depth + rgb[RED]] <= hr) &&
-	  ( image[(h * width + w) * depth + rgb[GREEN]] >= lg && 
-	    image[(h * width + w) * depth + rgb[GREEN]] <= hg) &&
-	  ( image[(h * width + w) * depth + rgb[BLUE]] >=  lb && 
-	    image[(h * width + w) * depth + rgb[BLUE]] <= hb) ) {
-	matches = 1;
+      if (
+	  (lr == -1 || 
+	   (Image[(h * width + w) * depth + rgb[RED]] >= lr && 
+	    Image[(h * width + w) * depth + rgb[RED]] <= hr))
+	  &&
+	  (lg == -1 || 
+	   (Image[(h * width + w) * depth + rgb[GREEN]] >= lg && 
+	    Image[(h * width + w) * depth + rgb[GREEN]] <= hg))
+	  &&
+	  (lb == -1 ||
+	   (Image[(h * width + w) * depth + rgb[BLUE]] >=  lb && 
+	    Image[(h * width + w) * depth + rgb[BLUE]] <= hb))
+	  ) {
 	/* maybe add a normalizer here so the outputs are 
 	   between 100-255ish for more varied usage? */
-	for (int d = 0; d < depth; d++) {
-	  image[(h * width + w) * depth + rgb[d] ] = 0;
+	if (outChannel == ALL) {
+	  for (int d = 0; d < depth; d++) {
+	    Image[(h * width + w) * depth + rgb[d] ] = 255;
+	  }
+	} else
+	  Image[(h * width + w) * depth + rgb[outChannel] ] = 255;
+      } else { // no match
+	if (mode != ACCUM) {
+	  if (outChannel == ALL) {
+	    for (int d = 0; d < depth; d++) {
+	      Image[(h * width + w) * depth + rgb[d] ] = 0;
+	    }
+	  } else
+	    Image[(h * width + w) * depth + rgb[outChannel] ] = 0;
 	}
-	if (matches)
-	  image[(h * width + w) * depth + rgb[outChannel] ] = 255;
       }
     }
   }
+  return Py_BuildValue("");
 }
 
 PyObject *Vision::saveImage(char *filename) {
@@ -135,7 +202,7 @@ PyObject *Vision::saveImage(char *filename) {
   unsigned char *p;
   FILE *fptr;
   
-  p=image;  
+  p=Image;  
   
   if ((fptr=fopen(filename, "w+"))==NULL)
     {
@@ -165,12 +232,12 @@ void Vision::drawRect(int x1, int y1, int x2, int y2,
       for(int h=y1; h<=y2; h++ ) {
 	if (fill == 1 || (h == x1 || h == x2 ||
 			  w == y1 || w == y2))
-	  if (channel == -1)
+	  if (channel == ALL)
 	    for(int d=0; d<depth; d++) {
-	      image[(h * width + w) * depth + d] = 255;
+	      Image[(h * width + w) * depth + d] = 255;
 	    }
 	  else
-	    image[(h * width + w) * depth + rgb[channel]] = 255;
+	    Image[(h * width + w) * depth + rgb[channel]] = 255;
       }
   }
 }
@@ -189,8 +256,8 @@ void Vision::gaussianBlur() {
   unsigned char *out;
   
   /******************************
-    here it says image[(x-1)+(y+1)*width] 
-    if it is changed to image[(x-depth+offset)+(y+depth)*width]
+    here it says Image[(x-1)+(y+1)*width] 
+    if it is changed to Image[(x-depth+offset)+(y+depth)*width]
     it should work for rgb (or bgr as the case may be)
     -----------------------------------------------------
      this means we will probably need another for loop for
@@ -203,7 +270,7 @@ void Vision::gaussianBlur() {
        and take the average
        --------------------------------------------
        I think *out is just the output buffer, which
-       in this case we want to be *image, so I think all
+       in this case we want to be *Image, so I think all
        those parts can be omitted
   ******************************************/
 
@@ -211,17 +278,17 @@ void Vision::gaussianBlur() {
     for (x=1;x<width-1;x++)
       for(offset=0;offset<depth;offset++)
       {
-	temp=image[(x-depth+offset+y*width)*depth+offset];
-	temp+=2*image[(x-depth+y*width)*depth+offset];
-	temp+=image[(x-depth+(y+1)*width)*depth+offset];
-	temp+=2*image[(x+(y-1)*width)*depth+offset];
-	temp+=4*image[(x+y*width)*depth+offset];
-	temp+=2*image[(x+(y+1)*width)*depth+offset];
-	temp+=image[(x+depth+offset+(y-1)*width)*depth+offset];
-	temp+=2*image[(x+depth+offset+y*width)*depth+offset];
-	temp+=image[(x+depth+offset+(y+1)*width)*depth+offset];
+	temp=Image[(x-depth+offset+y*width)*depth+offset];
+	temp+=2*Image[(x-depth+y*width)*depth+offset];
+	temp+=Image[(x-depth+(y+1)*width)*depth+offset];
+	temp+=2*Image[(x+(y-1)*width)*depth+offset];
+	temp+=4*Image[(x+y*width)*depth+offset];
+	temp+=2*Image[(x+(y+1)*width)*depth+offset];
+	temp+=Image[(x+depth+offset+(y-1)*width)*depth+offset];
+	temp+=2*Image[(x+depth+offset+y*width)*depth+offset];
+	temp+=Image[(x+depth+offset+(y+1)*width)*depth+offset];
 	temp/=16;
-	image[(x+offset+y*width)*depth+offset] = temp;
+	Image[(x+offset+y*width)*depth+offset] = temp;
       }
 }
 
@@ -232,11 +299,11 @@ void Vision::grayScale(int value) {
       {
 	value = 0;
 	for (d = 0; d < depth; d++) {
-	  value += (int)image[(x+y*width)*depth + d];
+	  value += (int)Image[(x+y*width)*depth + d];
 	}
 	value /= depth;
 	for (d = 0; d < depth; d++) {
-	  image[(x+y*width)*depth + d]= value;
+	  Image[(x+y*width)*depth + d]= value;
 	}
       }
 }
@@ -244,14 +311,14 @@ void Vision::grayScale(int value) {
 PyObject *Vision::sobel(int thresh) {
   int i, j, offset;
   unsigned int tempx, tempy;
-  unsigned char *imagePtr;
+  unsigned char *ImagePtr;
   unsigned char *out;
   
   unsigned int a,b,d,f,g,z,c,e,h,gc, sobscale;
 
   out = (unsigned char *)malloc(sizeof(char)*width*height*depth);
     
-  imagePtr = image;
+  ImagePtr = Image;
   
   for (j=0;j<height*width*depth;j++)
     out[j]=0;
@@ -263,18 +330,18 @@ PyObject *Vision::sobel(int thresh) {
   
   for (j=0;j<height-2;j++)
   {
-    a = image[(j*width+i)*depth];
-    b = image[(j*width+(i+1))*depth];
-    d = image[((j+1)*width+i)*depth];
-    f = image[((j+2)*width+i)*depth];
-    g = image[((j+2)*width+(i+1))*depth];
-    z = image[(j*width+i)*depth];
+    a = Image[(j*width+i)*depth];
+    b = Image[(j*width+(i+1))*depth];
+    d = Image[((j+1)*width+i)*depth];
+    f = Image[((j+2)*width+i)*depth];
+    g = Image[((j+2)*width+(i+1))*depth];
+    z = Image[(j*width+i)*depth];
     
     for (i=0;i<width-2;i++) 
     {
-      c = image[(j*width+(i+2))*depth];
-      e = image[((j+1)*width+(i+2))*depth];
-      h = image[((j+2)*width+(i+2))*depth];
+      c = Image[(j*width+(i+2))*depth];
+      e = Image[((j+1)*width+(i+2))*depth];
+      h = Image[((j+2)*width+(i+2))*depth];
 
       tempx = (a+d+f) - (c+e+h);
       if( tempx < 0 ) tempx = -1*tempx;
@@ -302,11 +369,11 @@ PyObject *Vision::sobel(int thresh) {
 
   }
 
-  imagePtr = image;
+  ImagePtr = Image;
   for (j=0;j<height;j++)
     for (i=0;i<width;i++)
       for(offset=0;offset<depth;offset++)
-	image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
+	Image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
 
   free(out);
  
@@ -335,11 +402,11 @@ void Vision::meanBlur(int kernel) {
 	  for(i=-side;i<=side;i++)
 	    for(j=-side;j<=side;j++)
 	      for(d=0;d<depth;d++)
-		average[d] += image[((h+i)* width + (w + j)) * depth + d];
+		average[d] += Image[((h+i)* width + (w + j)) * depth + d];
 	  
 	  
 	  for(d=0;d<depth;d++)
-	    image[(h * width + w) * depth + d] = average[d] / (kernel*kernel);
+	    Image[(h * width + w) * depth + d] = average[d] / (kernel*kernel);
 	  
 	  average[0] = 0;
 	  average[1] = 0;
@@ -546,7 +613,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 
   //[240][384]={0};
   
-  unsigned char *imagePtr;
+  unsigned char *ImagePtr;
   PyObject *tuple;
   
   if(inChannel == BLUE)
@@ -570,14 +637,14 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   
   count = 1;
   
-  imagePtr = image;
+  ImagePtr = Image;
 
   /*build the blobmap and construct unjoined Blob objects*/
   for(h=0;h<height;h++)
     {
-      for(w=0;w<width;w++,imagePtr+=3)
+      for(w=0;w<width;w++,ImagePtr+=3)
 	{
-	  if(*(imagePtr+offset) >= low && *(imagePtr+offset) <= high )
+	  if(*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high )
 	    {  
 	      if(h == 0 && w == 0)
 		{ /*in upper left corner - new blob */
@@ -669,17 +736,17 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 
   sortBlobs(sortmethod, bloblist, maxIndex,size);
 
-  imagePtr = image;
+  ImagePtr = Image;
 
   if(drawBox)
     {
       for(i=0; i<height; i++ )
-	for(j=0; j<width; j++,imagePtr+=3 )
+	for(j=0; j<width; j++,ImagePtr+=3 )
 	  for(k=0;k<size;k++) {
 	    if(blobdata[j][i] == maxIndex[k]) {
-	      *(image+offset) = high;
-	      *(image+mark1) = 0;
-	      *(image+mark2) = 0;
+	      *(Image+offset) = high;
+	      *(Image+mark1) = 0;
+	      *(Image+mark2) = 0;
 	    }
 	    if(bloblist[maxIndex[k]].mass > 0 )
 	      if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
@@ -687,9 +754,9 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		 ((j == bloblist[maxIndex[k]].ul.x || j == bloblist[maxIndex[k]].lr.x) &&
 		  (i >= bloblist[maxIndex[k]].ul.y && i <= bloblist[maxIndex[k]].lr.y)))
 		{
-		  *(image+offset) = 255;
-		  *(image+mark1) = 255;
-		  *(image+mark2) = 255;
+		  *(Image+offset) = 255;
+		  *(Image+mark1) = 255;
+		  *(Image+mark2) = 255;
 		}
 	  }
     }      
@@ -843,27 +910,27 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	return NULL;
       }
       sobel(i1);
-    } else if (strcmp((char *)command, "clear") == 0) {
+    } else if (strcmp((char *)command, "setPlane") == 0) {
       i1 = 0; i2 = 0;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: clear");
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
 	return NULL;
       }
-      clear(i1, i2);
+      setPlane(i1, i2);
     } else if (strcmp((char *)command, "drawRect") == 0) {
-      i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = -1;
+      i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = ALL;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
 	return NULL;
       }
       drawRect(i1, i2, i3, i4, i5, i6);
-    } else if (strcmp((char *)command, "filterByColor") == 0) {
-      i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
-      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: filterByColor");
+    } else if (strcmp((char *)command, "match") == 0) {
+      i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0; i6 = ACCUM;
+      if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match()");
 	return NULL;
       }
-      filterByColor(i1, i2, i3, i4, i5);
+      match(i1, i2, i3, i4, i5, i6);
     } else if (strcmp((char *)command, "grayScale") == 0) {
       i1 = 255;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {

@@ -32,11 +32,22 @@ typedef struct blob{
 #define MAXBLOBS 2000
 
 class Vision {
+public:
   static const int RED = 0;
   static const int GREEN = 1;
   static const int BLUE = 2;
+  static const int MAXDEPTH = 3;
+  static const int ALL = 10;
+
+  static const int WORKSPACE = 50;
+  static const int HISTORY = 60;
+  static const int IMAGE = 70;
+
+  static const int AND = 100;
+  static const int OR = 101;
+  static const int XOR = 102;
+  static const int ACCUM = 103;
   
-public:
   Vision();
   Vision(int w, int h, int d, int r, int g, int b);
   Vision(int w, int h, int d);
@@ -44,11 +55,11 @@ public:
   void initialize(int wi, int he, int de, int r, int g, int b);
   void superColor(float w1, float w2, float w3,
 		  int outChannel);
-  void filterByColor(int lr, int lg, int lb,
-		     int hr, int hg, int hb,
-		     int outChannel);
-  void filterByColor(int r, int g, int b, int tolerance, 
-		     int outChannel);
+  PyObject *matchRange(int lr, int lg, int lb,
+		       int hr, int hg, int hb,
+		       int outChannel, int mode);
+  PyObject *match(int r, int g, int b, int tolerance,
+		  int outChannel, int mode);
   PyObject *get(int w, int h);
   PyObject *set(int w, int h, int d, int val);
   void drawRect(int x1, int y1, int x2, int y2, 
@@ -61,26 +72,13 @@ public:
   PyObject *saveImage(char *filename);
   PyObject *getMMap();
 
-  unsigned char *image;
-
-
   PyObject *Vision::colorHistogram();
   PyObject *Vision::trainColor();
   void gaussianBlur();
   void grayScale(int value);
   PyObject *sobel(int val);
   void medianBlur(int kernel);
-  void clear(int channel, int value);
-
-  Blob *initBlob(Blob *b);
-  Blob *initBlob( Blob *b, int y, int x );
-  Blob *addPixel( Blob *b, int y,int x );
-  void joinBlob( Blob *self, Blob *other );
-  void deleteBlob( Blob *b );
-  int getBlobWidth( Blob *b );
-  int getBlobHeight( Blob *b );
-  int getBlobArea( Blob *b );
-  void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
+  PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
 			    int size, int drawBox);
@@ -91,12 +89,32 @@ public:
   PyObject *getFilterList();
   PyObject *popFilterList();
 
+  int getMotionDetection() { return motionDetection; }
+  void setMotionDetection(int val) { motionDetection = val; }
+  PyObject *setImage(int newImage);
+
  protected:
+  unsigned char *Image; // current image (image, history, workspace)
+  unsigned char *image;
+  unsigned char *history;
+  unsigned char *workspace;
+
   PyObject *filterList;
   int width;
   int height;
   int depth;
   int rgb[3];
+  int motionDetection;
+
+  Blob *initBlob(Blob *b);
+  Blob *initBlob( Blob *b, int y, int x );
+  Blob *addPixel( Blob *b, int y,int x );
+  void joinBlob( Blob *self, Blob *other );
+  void deleteBlob( Blob *b );
+  int getBlobWidth( Blob *b );
+  int getBlobHeight( Blob *b );
+  int getBlobArea( Blob *b );
+  void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
 };
 
 #endif

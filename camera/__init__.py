@@ -1,7 +1,7 @@
 # A Base Camera class
 
-import pyro.system.share as share
 from pyro.vision import *
+from pyro.camera.vision import vision as Vision
 from pyro.robot.service import Service
 
 import Tkinter
@@ -105,12 +105,18 @@ class Camera(PyroImage, Service):
       """
       myList = map(makeArgList, filterList)
       self.cobj.setFilterList(myList)
+      # if paused, update the screen
+      if self.active == 0:
+         self.update()
 
-   def clear(self, channel, value = 0):
-      self.cobj.clear( channel, value)
+   def setPlane(self, channel, value = 0):
+      self.cobj.setPlane( channel, value)
 
    def popFilterList(self):
       self.cobj.popFilterList()
+      # if paused, update the screen
+      if self.active == 0:
+         self.update()
 
    def getFilterList(self):
       return self.cobj.getFilterList()
@@ -118,18 +124,21 @@ class Camera(PyroImage, Service):
    def saveImage(self, filename="image.ppm"):
       self.cobj.saveImage(filename)      
 
-   def filterByColor(self, red, green, blue, tol=30, channel=0):
-      self.cobj.filterByColor(red, green, blue, tol, channel)
+   def match(self, red, green, blue, tol=30, channel=0,
+             mode=Vision.Vision.ACCUM):
+      self.cobj.match(red, green, blue, tol, channel, mode)
       
-   def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30, channel=1):
-      self.cobj.filterByColor(red-t1, green-t2, blue-t3,
-                                    red+t1, green+t2, blue+t3,
-                                    channel)
+   def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30,
+                           channel=1, mode=Vision.Vision.ACCUM):
+      self.cobj.matchRange(red-t1, green-t2, blue-t3,
+                           red+t1, green+t2, blue+t3,
+                           channel, mode)
 
    def colorFilterHiLow(self, lred, hred, lgreen,
-                        hgreen, lblue,hblue, channel=1):
-      self.cobj.filterByColor(lred, lgreen, lblue, hred, hgreen, hblue,
-                              channel)
+                        hgreen, lblue,hblue, channel=1,
+                        mode = Vision.Vision.ACCUM):
+      self.cobj.matchRange(lred, lgreen, lblue, hred, hgreen, hblue,
+                           channel, mode)
 
    def loadFilters(self):
       pass
@@ -285,7 +294,10 @@ class Camera(PyroImage, Service):
          self.app.withdraw()
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
-         self.canvas = Tkinter.Canvas(self.window)
+         w, h = self.width, self.height
+         while w < 200:
+            w, h = map(lambda x: x * 2, (w, h))
+         self.canvas = Tkinter.Canvas(self.window, width = w, height = h)
          self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
          self.canvas.bind("<1>", self.processClick)
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
@@ -298,23 +310,23 @@ class Camera(PyroImage, Service):
                            ['Play', lambda: self.setActive(1)],
                            ['Update', lambda: self.updateOnce()],
                            ]),
-                 ('Filter', [['blur edges', lambda: self.selectFilter( "meanBlur") ],
-                             ['detect edges', lambda: self.selectFilter( "sobel") ],
-                             None,
-                             ['clear red', lambda: self.selectFilter("clear", 0)],
-                             ['clear green', lambda: self.selectFilter("clear", 1)],
-                             ['clear blue', lambda: self.selectFilter("clear", 2)],
-                             None,
-                             ['superColor red', lambda: self.selectFilter("superColor", 1, -1, -1, 0)],
-                             ['superColor green', lambda: self.selectFilter("superColor", -1, 1, -1, 1)],
-                             ['superColor blue', lambda: self.selectFilter("superColor", -1, -1, 1, 2)],
-                             None,
-                             ['gray scale', lambda: self.selectFilter("grayScale")],
-                             None,
-                             ['List filters', self.listFilterList],
-                             ['Clear last', self.popFilterList],
-                             ['Clear all', lambda: self.setFilterList( [] )]
-                             ]),
+                 ('Add Filter', [['blur edges', lambda: self.selectFilter( "meanBlur") ],
+                                 ['detect edges', lambda: self.selectFilter( "sobel") ],
+                                 None,
+                                 ['clear red', lambda: self.selectFilter("setPlane", 0)],
+                                 ['clear green', lambda: self.selectFilter("setPlane", 1)],
+                                 ['clear blue', lambda: self.selectFilter("setPlane", 2)],
+                                 None,
+                                 ['superColor red', lambda: self.selectFilter("superColor", 1, -1, -1, 0)],
+                                 ['superColor green', lambda: self.selectFilter("superColor", -1, 1, -1, 1)],
+                                 ['superColor blue', lambda: self.selectFilter("superColor", -1, -1, 1, 2)],
+                                 None,
+                                 ['gray scale', lambda: self.selectFilter("grayScale")],
+                                 None,
+                                 ['List filters', self.listFilterList],
+                                 ['Clear last filter', self.popFilterList],
+                                 ['Clear all filters', lambda: self.setFilterList( [] )]
+                                 ]),
                  ]
          # create menu
          self.mBar = Tkinter.Frame(self.window, relief=Tkinter.RAISED, borderwidth=2)
@@ -330,7 +342,7 @@ class Camera(PyroImage, Service):
    def selectFilter(self, command, *args):
       self.addFilter(command, *args)
       if not self.active:
-         # if paused, apply it once
+         # if paused, apply it once, and update
          Camera.__dict__[command](self, *args)
 
    def setActive(self, val):
@@ -359,7 +371,7 @@ class Camera(PyroImage, Service):
       print x, y, 
       rgb = self.cobj.get(x, y)
       print rgb
-      self.selectFilter("filterByColor", int(rgb[0]), int(rgb[1]), int(rgb[2])) 
+      self.selectFilter("match", int(rgb[0]), int(rgb[1]), int(rgb[2])) 
 
    def hideWindow(self):
       self.visible = 0
