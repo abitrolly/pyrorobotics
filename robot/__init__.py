@@ -271,7 +271,7 @@ class Robot:
             path.remove("")
         path.extend( args )
         if len(path) > 0 and path[-1] == "help":
-            return self.help(string.join(path[:-1], "/") + "/.help")
+            return self.help(string.join(path[:-1], "/"))
         # parse path parts for dashes, colons, and commas
         finalPath = []
         for part in path:
@@ -291,7 +291,7 @@ class Robot:
             raise AttributeError, "'%s' is not a root directory" % finalPath[0]
 
     def _set(self, pathList, value):
-        if len(pathList) < 2:
+        if len(pathList) < 1:
             raise DeviceSetError, "invalid format to set()"
         key = pathList[0]
         args = pathList[1:]
