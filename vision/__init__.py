@@ -830,7 +830,7 @@ if __name__ == '__main__':
       image = PyroImage(0, 0)
       image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
       image.saveToFile("test3.01a.ppm")
-      mybitmap = image.getBitmap(8.0, mode='rg/b')
+      mybitmap = image.getBitmap(4.0, mode='rg/b')
       mybitmap.saveToFile("test3.01b.ppm")
       mybitmap = image.getBitmap(70, mode='brightness')
       mybitmap.saveToFile("test3.01c.ppm")
