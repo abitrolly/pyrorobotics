@@ -13,4 +13,4 @@
 #                                     ActivMediaLab.wld, for example
 # [-s | -g factor]     none           Grows/Shrinks the simulator window 
 
-/usr/local/Aria/bin/SRIsim -p /tmp/$USER -w office.wld -t local
+/usr/local/Aria/bin/SRIsim -w office.wld 
