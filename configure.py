@@ -1,13 +1,26 @@
 # Pyro configure.py script
 
 import sys
-from posixpath import exists
+from posixpath import exists, isdir, isfile, islink
+import os
 
-def file_exists(file_name):
+def file_exists(file_name, type = 'file'):
     if len(file_name) == 0:
         return 0
     else:
-        return exists(file_name)
+        if exists(file_name):
+            if type == 'file' and isfile(file_name):
+                return 1
+            elif type == 'dir' and isdir(file_name):
+                return 1
+            else:
+                if islink(file_name):
+                    print "INFO: using '%s' which is a link" % file_name
+                    return 1
+                else:
+                    return 0
+        else:
+            return 0
 
 def ask_yn(title, list_of_options):
     print title
@@ -17,12 +30,16 @@ def ask_yn(title, list_of_options):
             retval = retval + " " + directory
     return retval
 
-def ask(question, default, filecheck = 1):
+def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    done = 0
    print "-------------------------------------------------------------------"
    while not done:
       print question
-      print '[' + default + ']: ',
+      if locate:
+          print "   It may be located here: ",
+          sys.stdout.flush()
+          os.system("locate %s | head -1 " % locate )
+      print 'Default = [' + default + ']: ',
       retval = raw_input()
       if retval == "":
          retval = default
@@ -30,10 +47,10 @@ def ask(question, default, filecheck = 1):
          done = 1
       elif not filecheck:
          done = 1
-      elif file_exists(retval):
+      elif file_exists(retval, type):
          done = 1
       else:
-         print "WARNING: doesn't exist: '%s'" % retval
+         print "WARNING: '%s' does not exist, or wrong type (file or dir)!" % retval
    if retval == 'none':
       return ''
    else:
@@ -79,16 +96,23 @@ enter "2.2".
 python_script_name = ask("1. Python version number?", "", 0)
 
 python_include_files = ask("2. Where are Python's include files?",
-                           "/usr/local/include/python" + python_script_name)
+                           "/usr/local/include/python" + python_script_name,
+                           type = "dir",
+                           locate = "include/python" + python_script_name)
 
-python_bin_path = ask("3. Where is Python's binary? (enter path and name)",
-                           "/usr/local/bin/python" + python_script_name)
+python_bin_path = ask("3. What is Python's binary? (enter path and name)",
+                           "/usr/local/bin/python" + python_script_name,
+                      locate = "bin/python" + python_script_name)
 
-saphira =ask("4. Where is Saphira? (Type 'none' if you don't have it)",
-             "/usr/local/saphira/ver62")
+saphira =ask("4. Where is Saphira? ('none' if you don't have it)",
+             "none",
+             type = "dir",
+             locate = "/ver62/",)
 
 x11_include_dir = ask("5. Where is the X11 include directory?",
-                      "/usr/X11")
+                      "/usr/X11",
+                      type = "dir",
+                      locate = "/usr/X11")
 
 included_packages = ask_yn("\n6. Options:", [
     #('camera/bt848',"BT848 camera"),
