@@ -412,6 +412,7 @@ class PlayerRobot(Robot):
                     self.devDataFunc["sonar"] = self.get("/devices/sonar0/object")
         # specific things about this robot type:
         self.devData["port"] = port
+        self.devData["hostname"] = hostname
         # default values for all robots:
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
