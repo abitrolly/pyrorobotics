@@ -11,7 +11,6 @@ class SimpleBrain(Brain):
 	Brain.__init__(self, name, robot)
 
    def step(self):
-#	pass
 	self.robot.camera.update()
 	self.robot.camera.track(cutoff=4.0,mode='yellow')	
 
