@@ -2112,6 +2112,7 @@ class SRN(Network):
         Extends network step method by automatically copying hidden
         layer activations to the context layer.
         """
+        totalRetvals = (0.0, 0, 0)
         # take care of any params other than layer names:
         # two ways to clear context:
         # 1. force it to right now with arg clearContext = 1:
@@ -2150,8 +2151,9 @@ class SRN(Network):
                     start = (step + 1) * inLayer.size
                 dict[outName] = args[inName][start:start+patternLength]
             retvals = Network.step(self, **dict)
+            totalRetvals = map(lambda (x,y): (x+y), zip(totalRetvals, retvals))
         # FIX: return summary of all steps
-        return retvals
+        return totalRetvals
 
 if __name__ == '__main__':
 
