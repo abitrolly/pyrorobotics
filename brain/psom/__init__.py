@@ -12,7 +12,7 @@
 #		activations
 
 from os import getenv
-import time
+import time, types
 from posixpath import exists
 import _csom as csom
 
@@ -44,15 +44,16 @@ class PointError(AttributeError):
     for a point object.
     """
 
-# Hacks added to replace the ptrset, ptrvalue, ptrcreate functions from pointer.i
-# which has been deprecated with SWIG 1.3.  cpointer.i is the new SWIG pointer 
-# library now.  Need to find a better way to determine C types.
-# The reason Doug checks the last 3 or 5 elements in myarr for type is because
-# SWIG encodes pointers to primitive C types such as int *, double ***, and char **
-# in a representation that contains the actual value of the pointer and a type tag.
-# For example, the SWIG representation of the above pointers may look like the
-# following: _10081012_p_int, _1008e124_ppp_double, f8ac_pp_char.  These
-# representations are of type str in python.
+# Hacks added to replace the ptrset, ptrvalue, ptrcreate functions
+# from pointer.i which has been deprecated with SWIG 1.3.  cpointer.i
+# is the new SWIG pointer library now.  Need to find a better way to
+# determine C types.  The reason Doug checks the last 3 or 5 elements
+# in myarr for type is because SWIG encodes pointers to primitive C
+# types such as int *, double ***, and char ** in a representation
+# that contains the actual value of the pointer and a type tag.  For
+# example, the SWIG representation of the above pointers may look like
+# the following: _10081012_p_int, _1008e124_ppp_double, f8ac_pp_char.
+# These representations are of type str in python.
 
 def _ptrset(myarr, item, i):
     """
@@ -1294,7 +1295,14 @@ class vector:
         Returns the vector element at index position given by key.
         """
         mylist = self.get_elts()
-        return mylist[key]
+        if isinstance(key, types.SliceType):
+            if key.stop > len(self):
+                stop = len(self)
+            else:
+                stop = key.stop
+            return mylist[key.start:stop]
+        else:
+            return mylist[key]
     
     def __len__(self):
         """

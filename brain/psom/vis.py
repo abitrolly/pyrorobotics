@@ -1,7 +1,6 @@
 from pyro.brain.psom import *
 from pyro.brain.psom.visvector import *
 from Tkinter import *
-import sys
 
 ACT_MAX   = 5
 GRAY_STEP = 20
@@ -176,7 +175,7 @@ class VisPsom(psom):
       self.win.config(menu=menuBar)
       FileBtn = Menu(menuBar)
       menuBar.add_cascade(label='File', menu=FileBtn)
-      FileBtn.add_command(label='Exit', command=sys.exit)
+      FileBtn.add_command(label='Exit', command=self.close)
 
       ShowBtn = Menu(menuBar)
       menuBar.add_cascade(label='Show', menu=ShowBtn)
@@ -188,6 +187,9 @@ class VisPsom(psom):
                               command=self.show_labels)
       ShowBtn.invoke(ShowBtn.index('Train Count')) # show train count by default
       # end menu bar
+
+   def close(self):
+      self.win.destroy()
       
    def canvas_clicked_up(self, event):
       celllist = self.canvas.find_overlapping(event.x, event.y,
