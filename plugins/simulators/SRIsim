@@ -1,7 +1,0 @@
-#!/bin/sh
-
-# BUG: do not use following:
-#SRIsim -w office.wld local 
-# due to a bug in SRIsim
-
-SRIsim local 

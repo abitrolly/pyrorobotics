@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/local/Aria/bin/SRIsim -w office.wld -t local
