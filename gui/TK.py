@@ -8,8 +8,16 @@ from pyro.engine import *
 import pyro.system as system
 import pyro.system.share as share
 from posixpath import exists
+from pyro.tools.joystick import Joystick
 
 # A TK gui
+
+class JoystickDriver(Joystick):
+   def __init__(self, robot):
+      self.robot = robot
+      Joystick.__init__(self)
+   def move(self, translate, rotate):
+      self.robot.move(translate, rotate)
 
 class AskDialog(TKwidgets.AlertDialog):
    def __init__(self, root, dict):
@@ -69,6 +77,7 @@ class TKgui(Tkinter.Toplevel, gui):
                         None,
                         ['Enable motors', self.enableMotors],
                         ['Disable motors', self.disableMotors],
+                        ['Joystick...', self.joystick],
                         None,
                         ['Forward',self.stepForward],
                         ['Back',self.stepBack],
@@ -81,10 +90,7 @@ class TKgui(Tkinter.Toplevel, gui):
                         ['Update',self.update]
                         ]),
               ('Help',[['Help',self.help],
-                       ['Usage',self.usage],
-                       ['Info',self.info],
                        ['About',self.about],
-                       ['Inspector', self.inspector]
                        ])
               ]
       
@@ -266,29 +272,18 @@ class TKgui(Tkinter.Toplevel, gui):
       #self.commandButton.flash()
       #self.UpdateListBoxes()
 
-   def info(self):
+   def joystick(self):
+      self.joywin = JoystickDriver(self.engine.robot)
+
+   def about(self):
       self.redirectToTerminal()
-      print "-------------------------------------------------------------"
-      print "Brain file:\t%s" % self.engine.brainfile
-      print "Brain:\t\t%s" % self.engine.brain
-      print "Robot:\t\t%s" % self.engine.robot
-      print "Worldfile:\t\t%s" % self.engine.worldfile
-      print "-------------------------------------------------------------"
+      system.about()
       self.redirectToWindow()
 
    def help(self):
       self.redirectToTerminal()
       system.help()
-      self.redirectToWindow()
-
-   def usage(self):
-      self.redirectToTerminal()
       system.usage()
-      self.redirectToWindow()
-
-   def about(self):
-      self.redirectToTerminal()
-      system.about()
       self.redirectToWindow()
 
    def editor(self):
