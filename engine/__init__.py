@@ -37,7 +37,7 @@ class Engine(drawable.Drawable):
          self.loadRobot(self.robotfile)
          if services != ['']:
             self.robot.startServices(services)
-      elif self.brainfile:
+      if self.brainfile:
          self.loadBrain(self.brainfile)
          time.sleep(2)
 
