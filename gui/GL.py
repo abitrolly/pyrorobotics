@@ -142,7 +142,7 @@ class GLgui(gui):
                      self.redrawPie(piecnt, percentSoFar, \
                                     piececnt, \
                                     d[1] + " effects", \
-                                    portion, d[4] + ":" + d[3] + " IF %.2f THEN %.2f" % (d[0], d[5]))
+                                    portion, d[4] + ":" + d[3] + ":" + d[6] + " IF %.2f THEN %.2f" % (d[0], d[5]))
                      percentSoFar += portion
          else:
             try:

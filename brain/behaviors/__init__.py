@@ -113,8 +113,8 @@ class Behavior:
       pass # this will get over written, normally
    def Effects(self, controller, amount = 1.0):
       self.effects[controller] = amount
-   def IF(self, fvalue, controller, amount = 1.0):
-      self.rules.append([fvalue, controller, amount])
+   def IF(self, fvalue, controller, amount = 1.0, name = ''):
+      self.rules.append([fvalue, controller, amount, name])
    def getRobot(self):
       return self.behaviorEngine.robot
 
@@ -193,7 +193,7 @@ class State:
                                                       b.effects[c],
                                                       b.name, \
                                                       b.state.name,
-                                                      r[2]])
+                                                      r[2], r[3]])
       self.update()
 
    def getRobot(self):
