@@ -53,6 +53,7 @@ class V4LGrabber(Camera):
       except:
          print "v4l: grab_image failed!"
       Camera.__init__(self, width, height, depth)
+      self.rgb = (2, 1, 0) # offsets to BGR
       self.data = CBuffer(self.cbuf)
 
    def _update(self):
