@@ -137,7 +137,7 @@ class TwoDimPlot(Tkinter.Toplevel):
         Draws a line on the canvas connecting (x1,y1) and (x2,y2).
         """
         if self.linesOn:
-            self.plotArea.create_line(self.xToCanvas(x1), self.yToCanvas(y1), self.xToCanvas(x2), self.yToCanvas(y2))
+            self.plotArea.create_line(self.xToCanvas(x1), self.yToCanvas(y1), self.xToCanvas(x2), self.yToCanvas(y2), width=1)
         else:
             self.plotArea.lower(self.plotArea.create_line(self.xToCanvas(x1), self.yToCanvas(y1), self.xToCanvas(x2), self.yToCanvas(y2), fill="white"))
 

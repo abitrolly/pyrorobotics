@@ -21,6 +21,9 @@ class SweepGUIBase(VisConxBase.VisConxBase):
         self.pauseButton.pack(side=Tkinter.LEFT)
         self.stopButton = Tkinter.Button(innerButtonFrame, text="Stop", state=Tkinter.DISABLED, command=self.handleStopButton)
         self.stopButton.pack(side=Tkinter.LEFT)
+        Tkinter.Label(innerButtonFrame, text="Epoch: ").pack(side=Tkinter.LEFT)
+        self.epochLabel = Tkinter.Label(innerButtonFrame, text="0")
+        self.epochLabel.pack(side=Tkinter.LEFT)
         self.settingsButton = Tkinter.Button(innerButtonFrame, text="Settings..", command=lambda:
                                              VisConxBase.NNSettingsDialog(self.root, self.netStruct.network))
         self.settingsButton.pack(side=Tkinter.RIGHT)
@@ -35,6 +38,19 @@ class SweepGUIBase(VisConxBase.VisConxBase):
         
     #overloaded methods from Network/SRN
     def train(self):
+        self.handleTrainButton()
+
+    def propagate(self):
+        #update the GUI
+        self.root.update()
+        
+        #hack to allow intervention in sweep for purposes of extracting data
+        self.__class__.__bases__[1].propagate(self)
+        if self.activDiag:
+            self.activDiag.extractActivs() 
+
+    #train network
+    def trainGUI(self):
         if self.activDiag:
             self.handleActivDiag()
         self.activButton.config(state=Tkinter.DISABLED)
@@ -52,8 +68,7 @@ class SweepGUIBase(VisConxBase.VisConxBase):
                     self.handleActivDiag()
             if self.stopFlag:
                 break
-    
-            self.root.update()
+            
             #update data plots
             self.TSSData +=  [(self.epoch, tssErr)]
             self.updatePlot(self.TSSPlot, self.TSSData[-1])
@@ -75,6 +90,7 @@ class SweepGUIBase(VisConxBase.VisConxBase):
                 continue
             sys.stdout.flush()
             self.epoch += 1
+            self.updateEpochLabel()
         if totalCount > 0:
             self.TSSData +=  [(self.epoch, tssErr)]
             self.updatePlot(self.TSSPlot, self.TSSData[-1])
@@ -86,19 +102,14 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             self.write("Nothing done.")
         self.activButton.config(state=Tkinter.NORMAL)
 
-    def propagate(self):
-        #hack to allow intervention in sweep for purposes of extracting data
-        self.__class__.__bases__[1].propagate(self)
-        if self.activDiag:
-            self.activDiag.extractActivs() 
-
     #handlers for activations diagram
     def handleActivDiag(self):
         if not self.activDiag:
             try:
                 self.activDiag = ActivationsDiag.ActivSweepDiag(self.root,self.netStruct)
-            except LayerError:
+            except LayerError, err:
                 self.write("Error! You must have called setInputs and setOutputs before using the activation display.")
+                self.write(err)
                 self.activDiag.destroy()
                 self.activDiag = None
                 self.activButton.deselect()
@@ -129,9 +140,10 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             if self.pCorrectPlot:
                 self.pCorrectPlot.clearData()
             try:
-                self.train()
-            except AttributeError:
+                self.trainGUI()
+            except AttributeError, err:
                 self.write("Error!  Must call setInputs and setOutputs before training.")
+                self.write(err)
 
             #set buttons and flags back after train concludes
             self.trainButton.config(state=Tkinter.NORMAL)
@@ -158,6 +170,9 @@ class SweepGUIBase(VisConxBase.VisConxBase):
         self.pauseButton.config(state=Tkinter.DISABLED)
         self.stopButton.config(state=Tkinter.DISABLED)
 
+    #updates epoch label
+    def updateEpochLabel(self):
+        self.epochLabel.config(text="%d" % (self.epoch,))
 
 class VisSweepNetwork(SweepGUIBase, Network): 
     def __init__(self):

@@ -112,7 +112,7 @@ class VisConxBase:
         Tkinter.Label(self.visualFrame, text="Connections:").grid(col=0, row=4, sticky=Tkinter.NW)
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
         self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.W)
-        Tkinter.Button(self.visualFrame,text="Draw Hinton Diagram", command=self.createHintonDiag).grid(col=1,row=5, sticky=Tkinter.N)
+        Tkinter.Button(self.visualFrame,text="Show weights", command=self.createHintonDiag).grid(col=1,row=5, sticky=Tkinter.N)
         self.refreshHintonListBox()
 
         #options for displaying the network topology
