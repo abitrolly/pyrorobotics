@@ -305,7 +305,7 @@ class KheperaRobot(Robot):
         self.sendMsg('H', 'position')
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
-        gripperID = self.hasADeviceOfType('gripper'):
+        gripperID = self.hasADeviceOfType('gripper')
         if gripperID:
             gripper = self.device[gripperID]
             self.senseData['gripState'] = gripper._getGripState()
