@@ -19,7 +19,7 @@ def usage():
     print "  -s SIMULATOR       name of simulator to run"
     print "  -i CONFIGFILE      name of config file to load"
     print "  -c CAMERA          name of camera.py file to load"
-    print "  -e \"string\"      eval string of commands"
+    print "  -e \"string\"        eval string of commands"
     print "                     that are ; separated"    
     print ""
 
