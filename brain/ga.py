@@ -67,6 +67,7 @@ class GA:
         self.maxEpoch = 0
         self.batch = batch
         self.integer = 0
+        self.generation = 0
 
     def isDoneFunction(self):
         pass
@@ -126,7 +127,6 @@ class GA:
         else:
             map(lambda v: display("%3.2f" % v), self.pop[i])
             print "Fitness:", self.fitness[i]
-            
 
     def probability(self, pos):
         return ((self.popsize - pos) + 0.0) / self.popsize
@@ -153,6 +153,9 @@ class GA:
         self.mutate()
 
     def crossover(self):
+        """
+        If crossoverRate = .3, then .3 of pop will be replaced.
+        """
         number = int(self.crossoverRate * self.popsize)
         for i in range(number):
             g1 = self.pick(GOOD)
@@ -164,6 +167,11 @@ class GA:
             self.pop[b1] = temp
             
     def mutate(self):
+        """
+        If mutationRate = .1, then .1 of the pop will get mutated.
+        If self.integer, flip bit
+        Else mutate with momentum (+- previous value)
+        """
         number = int(self.mutationRate * self.popsize)
         for i in range(number):
             rand = self.pick(RANDOM)
@@ -177,12 +185,12 @@ class GA:
                     self.pop[rand][pos] += random.random()
     
     def evolve(self):
-        e = 0
-        while (e < self.maxEpoch or self.maxEpoch == 0):
-            e += 1
+        self.generation = 0
+        while (self.generation < self.maxEpoch or self.maxEpoch == 0):
+            self.generation += 1
             self.sweep()
             print "-" * 30
-            print "Epoch #", e, ":"
+            print "Epoch #", self.generation, ":"
             print "Best : (position # 0 )"
             self.display(0)
             print "Median: (position #", self.popsize/2, ")"
