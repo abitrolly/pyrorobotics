@@ -53,7 +53,7 @@ class Gene:
         self.fitness = 0.0
         self.mode = 'float'
         self.bias = 0.5
-        self.min = 0 # inclusive
+        self.min = -1 # inclusive
         self.max = 1 # inclusive
         self.args = args
         if args.has_key('verbose'):
@@ -103,16 +103,20 @@ class Gene:
                     self.genotype[i] = not self.genotype[i]
                 elif self.mode == 'integer': 
                     r = random.random()
-                    if (r < .5):
-                        self.genotype[i] += 1
+                    if (r < .33):
+                        self.genotype[i] += math.floor(random.random() * (self.max - self.min + 1)) + self.min
+                    elif (r < .67):
+                        self.genotype[i] -= math.floor(random.random() * (self.max - self.min + 1)) + self.min
                     else:
-                        self.genotype[i] -= 1
+                        self.genotype[i] = math.floor(random.random() * (self.max - self.min + 1)) + self.min
                 elif self.mode == 'float': 
                     r = random.random()
-                    if (r < .5):
-                        self.genotype[i] -= random.random()
+                    if (r < .33):
+                        self.genotype[i] += (random.random() * (self.max - self.min)) + self.min
+                    elif (r < .67):
+                        self.genotype[i] -= (random.random() * (self.max - self.min)) + self.min
                     else:
-                        self.genotype[i] += random.random()
+                        self.genotype[i] = (random.random() * (self.max - self.min)) + self.min
                 else:
                     raise "unknownMode", self.mode
 
@@ -141,7 +145,7 @@ class Gene:
             if self.verbose > 2:
                 print "no crossover"
             return deepcopy(parent1), deepcopy(parent2)
-    
+
 class Population:
     def __init__(self, cnt, geneConstructor, **args):
         self.sumFitness = 0   
@@ -248,14 +252,21 @@ class GA:
             self.maxGeneration = args['maxGeneration']
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
-        self.pop = population
+        self.origPop = population
+        self.reInitialize()
+
+    def reInitialize(self):
+        self.pop = deepcopy(self.origPop)
+        self.initialize()
+
+    def initialize(self):
         self.applyFitnessFunction()
         if self.verbose > 0:
             print "-" * 60
             print "Initial population"
         self.pop.statistics()
         if self.verbose > 1:
-            self.display()
+            self.display()        
 
     def isDone(self):
         # Override this
@@ -331,6 +342,76 @@ class GA:
         self.pop.bestMember.display()
         print "Fitness", self.pop.bestMember.fitness
 
+    def saveToFile(self, filename):
+        import pickle
+        fp = open(filename, "w")
+        if self.verbose > 0:
+            print "Saving GA to '%s'..." % (filename,)
+        pickle.dump(self, fp)
+        fp.close()
+
+    def loadFromFile(self, filename):
+        # probably just copy this... no need to create an entire object
+        # to load another one.
+        import pickle
+        fp = open(filename, "w")
+        if self.verbose > 0:
+            print "Loading GA from '%s'..." % (filename,)
+        fp.close()
+        return pickle.load(fp)
+
+    def saveGenesToFile(self, filename, listOfPositions = None):
+        import pickle
+        if listOfPositions == None:
+            listOfPositions = range(len(self.pop.individuals))
+        fp = open(filename, "w")
+        if self.verbose > 0:
+            print "Saving %d genes to '%s'..." % (len(listOfPositions), filename)
+        pickle.dump( len(listOfPositions), fp)
+        for i in listOfPositions:
+            pickle.dump(self.pop.individuals[i], fp)
+        fp.close()
+
+    def getGenesFromFile(self, filename):
+        import pickle
+        fp = open(filename, "r")
+        geneCount = pickle.load(fp)
+        if self.verbose > 0:
+            print "Loading %d genes from '%s'..." % (geneCount, filename)
+        individuals = []
+        for i in range(geneCount):
+            individuals.append(pickle.load(fp))
+        fp.close()
+        return individuals
+
+    def loadGenesFromFile(self, filename):
+        self.pop.individuals = self.getGenesFromFile(filename)
+
+    def initGenesFromFile(self, filename, sampleSize = 0,mutate = 1,full = 0):
+        # sampleSize = how many to get from saved pop?
+        # mutate = should I mutate them?
+        # full = should I create a full pop, or just replace sampleSize?
+        oldGenes = self.getGenesFromFile(filename)
+        if sampleSize == 0:
+            sampleSize = len(oldGenes)
+        if self.verbose > 0:
+            print "oldGenes had %d individuals" % len(oldGenes)
+            print "current  has %d individuals" % len(self.pop.individuals)
+            print "Loading %d..." % sampleSize
+        if full:
+            currentOld = 0
+            for i in range(len(self.pop.individuals)):
+                currentOld = currentOld % len(oldGenes)
+                self.pop.individuals[i] = oldGenes[currentOld]
+                currentOld += 1
+                if mutate:
+                    self.pop.individuals[i].mutate(self.mutationRate)
+        else:
+            for i in range(sampleSize):
+                self.pop.individuals[i] = oldGenes[i]
+                if mutate:
+                    self.pop.individuals[i].mutate(self.mutationRate)
+
 if __name__ == '__main__':
     # Here is a test to evolve a list of integers to maximize their sum:
 
@@ -347,6 +428,31 @@ if __name__ == '__main__':
                                  verbose=1, elitePercent = .1),
                       mutationRate=0.1, crossoverRate=0.5, verbose=1,
                       maxGeneration=50)
+        ga.evolve()
+        print "Testing loading/saving..."
+        ga.saveGenesToFile("maxsumga.genes")
+        print "Deleting genes..."
+        ga.pop.individuals = []
+        ga.loadGenesFromFile("maxsumga.genes")
+        print "Press enter to continue evolving...",
+        sys.stdin.readline()
+        ga.evolve()
+        print "Press enter to Test init from file (load all with mutate)...",
+        sys.stdin.readline()
+        print "reInitialize pop..."
+        ga.reInitialize()
+        ga.initGenesFromFile("maxsumga.genes")
+        ga.evolve()
+        print "Press enter to Test init from file (load 1 no mutate)...",
+        sys.stdin.readline()
+        ga.saveGenesToFile("bestsumga.genes", (ga.pop.bestMember.position,))
+        ga.reInitialize()
+        ga.initGenesFromFile("bestsumga.genes", 1, 0)
+        ga.evolve()
+        print "Press enter to Test init from file (load 1 no mutate, full)...",
+        sys.stdin.readline()
+        ga.reInitialize()
+        ga.initGenesFromFile("bestsumga.genes", 1, 0, 1)
         ga.evolve()
     print 
 
@@ -397,4 +503,6 @@ if __name__ == '__main__':
         ga.network.unArrayify(ga.pop.bestMember.genotype)
         ga.network.setInteractive(1)
         ga.network.sweep()
+        ga.saveGenesToFile("gann.pop")
+        ga.initGenesFromFile("gann.pop")
 
