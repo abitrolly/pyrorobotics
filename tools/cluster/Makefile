@@ -102,6 +102,8 @@ LIBS	= -lm -lcurses
 OTHERS	= ALGORITHM ANNOUNCE README BENCHMARKS MAIL Makefile vectors names \
 	  $(PROG).man $(ALIAS).man testm.c test/*
 
+all: $(PROG) $(ALIAS)
+
 $(PROG):	$(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
 
