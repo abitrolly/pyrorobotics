@@ -109,6 +109,15 @@ class TKgui(gui):
       # create a status bar
       self.status = TKwidgets.StatusBar(self.frame)
       self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
+
+      # Display:
+      self.displayArea = [0, 1, 2]
+      for i in range(3):
+         self.displayArea[i] = TKwidgets.StatusBar(self.frame)
+         self.displayArea[i].pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
+      self.displayArea[2].set("Brain:")
+      self.displayArea[1].set("Robot:")
+      self.displayArea[0].set("X: %4.2f Y: %4.2f Th: %4.0f  Bump: %s" % (0, 0, 0, ''))      
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def openBrainWindow(self):
@@ -253,6 +262,24 @@ class TKgui(gui):
                except: pass
             #try:
             self.redrawWindowBrain()
+            try:
+               if self.engine.brainfile:
+                  self.displayArea[2].set("Brain: %s" % self.engine.brainfile)
+               if self.engine.robotfile:
+                  self.displayArea[1].set("Robot: %s" % self.engine.robotfile)
+               if self.engine.robot != 0:
+                  if self.engine.robot.get('self', 'stall'):
+                     bump = "[BUMP!]"
+                  else:
+                     bump = ''
+                  self.displayArea[0].set("X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                                          % (self.engine.robot.get('robot', 'x'),
+                                             self.engine.robot.get('robot', 'y'),
+                                             self.engine.robot.get('robot', 'th'),
+                                             bump))
+            except:
+               print "Error"
+               pass
             try:
                self.engine.robot.camera.updateWindow()
             except:
