@@ -20,6 +20,14 @@ class KheperaRobot(Robot):
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.dev = self # pointer to self
+        self.sensorGroups = {'front' : [2, 3], \ 
+                             'front-left' : [0, 1], \ 
+                             'front-right' : [4, 5], \ 
+                             'left' : [0], \ 
+                             'right' : [5], \ 
+                             'back-left' : [7], \ 
+                             'back-right' : [6], \ 
+                             'back' : [6, 7]} 
         self.senseData = {}
         self.lastTranslate = 0
         self.lastRotate = 0
