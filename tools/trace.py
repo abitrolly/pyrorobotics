@@ -1,9 +1,10 @@
+# Python Program to display a path in a window
+
 import Image, ImageChops, ImageDraw, ImageFont
 import sys, os, colorsys, math
 import random
 import Tkinter, ImageTk
 import string
-#from pyro.vision import *
 
 class ColorSet:
     def __init__(self):
@@ -28,44 +29,42 @@ class Trace:
     Trace provides a general way of displaying a path on an image.
     """
 
-    def __init__(self, pathDataFilename = "", worldImageFilename = ""):
+    def __init__(self, pathDataFilename = "", worldImageFilename = "", resolution = 0.01):
         self.worldImageFilename = worldImageFilename
         self.pathDataFilename = pathDataFilename
         self.outfile = ""
-        self.window = 0
         self.app = 0
-        self.view = 0
         if os.environ.has_key('PYRO'):
             path = os.environ['PYRO']
         else:
-            raise "UnknownEnvVar", "PYRO"
+            raise "Unknown Environment Variable", "PYRO"
         self.fontFilename = path + "/tools/pilfonts/courR08.pil"
         self.symbols = 1        # activates/deactivates symbol mode
-        self.color = 1          # activates/deactivates color
-        self.lineWidth = 10     # the length of lines in non-symbol mode
+        self.color = "0"          # activates/deactivates color
+        self.length = 10     # the length of lines in non-symbol mode
         # the resolution given for the bitmap in the world file
-        self.resolution = 0.01
+        self.resolution = resolution
         self.interval = 2       # frequency datapoints should be displayed
         self.robotPathData = self.readDataFile()
         im = Image.open(self.worldImageFilename)
-        if not self.color:
-            self.image = ImageChops.invert(im)
-        self.image = im.convert("RGB")
-        self.convertXPositionData(self.image, self.robotPathData)
-        self.drawObj = ImageDraw.Draw(self.image)
+        if self.color == "0":
+            self.imageData = ImageChops.invert(im)
+        self.imageData = im.convert("RGB")
+        self.convertXPositionData(self.imageData, self.robotPathData)
+        self.drawObj = ImageDraw.Draw(self.imageData)
         self.textDict = {}
         self.symbolDict = {}
-        self.autoSymbol = 0
         self.symbolSet = SymbolSet()
         self.colorSet = ColorSet()
+        self.quitWhenDone = 1
 
     def readDataFile(self):
         dataFile = open(self.pathDataFilename, "r")
         dataList = []
         for line in dataFile:
             elements = line.split()
-            if len(elements) < 3:
-                raise ValueError, "line contains less than 3 elements:" + line
+            if len(elements) < 3 or len(elements) > 5:
+                continue
             elif len(elements) == 3:
                 dataList += [[float(x) for x in elements] + [" "]]
             else:
@@ -89,18 +88,20 @@ class Trace:
             self.symbolDict[label] = self.symbolSet.next()
             return self.symbolDict[label]
 
-    def drawSymbol(self, loc, angle, label):
+    def drawSymbol(self, loc, angle, label = None):
         pointList = []
-        if self.autoSymbol:
+        if label:
             label = self.getSymbol(label)
+        else:
+            label = self.getSymbol(1)
         colorNum = self.getColor(label)
         if self.symbols:
             self.drawObj.text(loc, label, font = ImageFont.load(self.fontFilename),
                               fill = self.indexToColor(colorNum) )
         else:
             self.drawObj.line([(loc[0], loc[1]),
-                          (loc[0] + self.lineWidth * math.sin(angle),
-                           loc[1] + self.lineWidth * math.cos(angle))],
+                          (loc[0] + self.length * math.sin(angle),
+                           loc[1] + self.length * math.cos(angle))],
                          fill = self.indexToColor(colorNum))
             self.drawObj.ellipse( (loc[0] - 2, loc[1] - 2, loc[0] + 2, loc[1] + 2),
                              fill = (0, 0, 0))
@@ -121,24 +122,30 @@ class Trace:
             self.visible = 1
         while self.window.tk.dooneevent(2): pass
 
-    def hideWindow(self):
+    def hideWindow(self, signum = None, frame = None):
         self.visible = 0
         self.window.withdraw()
+        if self.quitWhenDone:
+            sys.exit(1)
       
     def updateWindow(self):
-        image = ImageTk.PhotoImage(self.im)
-        self.label.configure(image = image)
+        self.rawImage = ImageTk.PhotoImage(self.im)
+        self.label.configure(image = self.rawImage)
         while self.window.tk.dooneevent(2): pass
 
     def getImage(self):
-        return self.image
+        return self.imageData
 
     def indexToColor(self, index):
         maxIndex = 256
-        if self.color:
+        if self.color == "A":
             retColor = colorsys.hsv_to_rgb(float(index)/maxIndex, 1.0, 1.0)
-        else:
+        elif self.color == "0":
             retColor = (0,0,0)
+        elif self.color == "1":
+            retColor = (255, 0, 0)
+        else:
+            raise ValueError, "invalid color: '%s'" % self.color
         return (int(retColor[0]*255), int(retColor[1]*255), int(retColor[2]*255))
 
     def convertXPositionData(self, image, data):
@@ -147,62 +154,88 @@ class Trace:
             ls[1] = imWidth - ls[1]
 
     def addLine(self, data):
-        print "data=", data
-        x, y, angle, model = data
-        model = 1
-        self.drawSymbol((x,y), angle, int(model), data[1])
+        if len(data) == 4:
+            x, y, angle, symbol = data
+        elif len(data) == 3:
+            x, y, angle = data
+            symbol = None
+        else:
+            print "Skipping data; wrong number of values (should be 3 or 4):", data
+        self.drawSymbol((x,y), angle, symbol)
         self.updateWindow()
 
     def output(self):
-        outFile = self.outfile
         iteration = 0
         for x, y, angle, label in self.robotPathData:
             if iteration % self.interval == 0:
                 self.drawSymbol((x,y), angle, label)
             iteration += 1
-        self.image.save(outFile)
+        self.imageData.save(self.outfile)
 
     def run(self):
-        print "path data", self.robotPathData
         for data in self.robotPathData:
             self.addLine(data)
 
 if __name__ == "__main__":
-    import sys, getopt
-    opts, args = getopt.getopt(sys.argv[3:], "cm:i:l:r:o:hvw", ["color", "markers=", "interval=", "length=", "resolution=", "outfile=", "help", "view", "window"])
-    tracer = Trace(sys.argv[1], sys.argv[2]) # world, data
-    print "opts:", opts
+    import sys, getopt, signal
+    if len(sys.argv) < 2:
+        opts, args = ('-h', '')
+    else:
+        opts, args = getopt.getopt(sys.argv[3:], "c:s:i:l:r:o:hvw", ["color=", "symbols=", "interval=", "length=", "resolution=", "outfile=", "help", "view", "window"])
+    resolution = 0.01
+    defaults = {"color": "'0'", "symbols": "1", "interval": "1", 
+                "length": "10", "outfile": '""', "window": "0", "view": "0"}
     for opt, val in opts:
-        print opt, val
         if opt in ("-h", "--help"):
             print "Help:"
+            print "-c --color      [0|1|A] B&W, color, or Automatic"
+            print "-s --symbols    [0|1] Show lines or symbols"
+            print "-i --interval   <INT> Frequency data should be displayed"
+            print "-l --length     <INT> Line width (use with -s 0)"
+            print "-r --resolution <REAL> Value given in stage world file"
+            print "-o --outfile    <FILENAME> Output filename (.gif, .jpg, .ppm)"
+            print "-h --help       This help message"
+            print "-w --window     Show data interactively in Tk window"
+            print "-v --view       Open xview after creating an output file"
             sys.exit()
         elif opt in ("-c", "--color"): 
-            tracer.color = 1
-        elif opt in ("-m", "--markers"): 
-            tracer.markers = int(val)
+            defaults["color"] = "'" + val + "'"
+        elif opt in ("-s", "--symbols"): 
+            defaults["symbols"] = val
         elif opt in ("-i", "--interval"):
-            tracer.interval = int(val)
+            defaults["interval"] = val
         elif opt in ("-l", "--length"):
-            tracer.lineLength = int(val)
+            defaults["length"] = val
         elif opt in ("-r", "--resolution"):
-            tracer.resolution = int(val)
+            resolution = float(val)
         elif opt in ("-o", "--outfile"):
-            tracer.outfile = val
+            defaults["outfile"] = "'" + val + "'"
         elif opt in ("-w", "--window"):
-            tracer.window = 1
+            defaults["window"] = "1"
         elif opt in ("-v", "--view"):
-            tracer.view = 1
-    if tracer.view:
-        if tracer.outfile:
-            tracer.output()
-            sys.system("xview %s" % tracer.outfile)
-        else:
-            print "No outfile specified"
-    elif tracer.outfile:
-        tracer.output()
-        sys.system("xview %s" % tracer.outfile)
+            defaults["view"] = "1"
+    tracer = Trace(sys.argv[1], sys.argv[2], resolution) # world, data
+    prevsighandler = signal.signal(signal.SIGINT, tracer.hideWindow)
+    for item in defaults:
+        exec("tracer.%s = %s" % (item, defaults[item]))
+    if tracer.outfile == '' and tracer.window == 0:
+        print "Nothing to do. Try -v -o outputfile.gif, or -w"
+        sys.exit(1)
     if tracer.window:
         tracer.makeWindow()
         tracer.run()
+    if tracer.view:
+        if tracer.outfile:
+            print "Creating file '%s'..." % tracer.outfile, 
+            tracer.output()
+            print "Done!"
+            os.system("xview %s &" % tracer.outfile)
+        else:
+            print "No outfile specified. Try -o outputfile "
+    elif tracer.outfile:
+        print "Creating file '%s'..." % tracer.outfile, 
+        tracer.output()
+        print "Done!"
+    if tracer.window:
         tracer.app.mainloop()
+    
