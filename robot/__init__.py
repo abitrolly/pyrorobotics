@@ -135,26 +135,49 @@ class Robot (Drawable):
         if func == None:
             return list
         elif func == 'min':
+            pos = -1
+            posval = 10000
+            for i in range(len(list)):
+                if list[i] < posval:
+                    pos = i
+                    posval = list[i]
+            return (pos, posval)
+        elif func == 'max':
+            pos = -1
+            posval = -10000
+            for i in range(len(list)):
+                if list[i] > posval:
+                    pos = i
+                    posval = list[i]
+            return (pos, posval)        
+        elif func == 'sum':
+            sum = 0
+            for i in list:
+                sum += i
+            return sum 
+        elif func == 'close':
             dist = 10000
             angle = 0
             for i in range(len(list)):
                 if list[i] < dist:
                     dist = list[i]
                     angle = self.senses[sensor]['th'](self.dev, poslist[i])
-            return Vector(dist, angle)
-        elif func == 'max':
+            return (dist, angle)
+        elif func == 'far':
             dist = -10000
             angle = 0
             for i in range(len(list)):
                 if list[i] > dist:
                     dist = list[i]
                     angle = self.senses[sensor]['th'](self.dev, poslist[i])
-            return Vector(dist, angle)
+            return (dist, angle)
         elif func == 'avg':
             dist = 0
             for i in list:
                 dist += i
-            return dist / len(list) 
+            return dist / len(list)
+        else:
+            print "ERROR: unknown function '%s'" % func
             
     def set(self, device = 'robot', data = None, val = None):
 	"""
