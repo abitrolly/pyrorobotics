@@ -25,6 +25,39 @@ from pyro.geometry import Polar, distance
 from pyro.robot.device import deviceDirectoryFormat
 import math, string, time, os
 
+def ellipses(things):
+    if isinstance(things, (type((1,)), type([1,]))):
+        return ellipses_help(things)
+    else:
+        return things
+
+def makePerty(nums):
+    str = "["
+    for i in nums:
+        if i == -1:
+            str += " ... "
+        elif str[-1] not in ["[", " "]:
+            str += ", %s" % i
+        else:
+            str += "%s" % i
+    return str + "]"
+
+def ellipses_help(things):
+    if len(things) < 3:
+        return things
+    if type(things[0]) != type(1):
+        return things
+    done = things[0:3]
+    for i in range(3,len(things)):
+        seq = done[-3:] + [things[i]]
+        if seq[-4] + 3 == seq[-3] + 2 == seq[-2] + 1 == seq[-1]:
+            done[-2:] = [-1, seq[-1]]
+        elif done[-1] + 1 == things[i] and done[-2] == -1:
+            done[-1] = things[i]
+        else:
+            done = done + [things[i]]
+    return makePerty(done)
+
 def expand(part):
     """
     Takes a part of a path and parses it for simple syntax. Expands:
@@ -136,18 +169,21 @@ class Robot:
             pathList.sort()
         for item in pathList:
             # HACK! Is the word range in the item? Alias!
-            if item.find("range") >= 0:
-                retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("robot/range/name")))
+            if item in ["range/", "light/", "ir/", "sonar/", "laser/"]:
+            #if item.find("range") >= 0:
+                retval += ("   " * depth) + ("%s = <alias to %s/>\n" % (item, self.get("robot/%sname" % item)))
                 continue
             if item[0] == "*": # a group (link), do not recur
-                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]), showstars = 1)))
+                things = ellipses(self.get("%s/%s/pos" % (path, item[1:]), showstars = 1))
+                retval += ("   " * depth) + ("%s = %s\n" % (item, things))
                 if item == "*all/":
                     retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
             elif item[-1] == "/": # more things below this
                 retval += ("   " * depth) + ("%s\n" % item)
                 retval += self.getAll("%s/%s" % (path, item), depth + 1)
             else:
-                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s" % (path, item), showstars = 1)))
+                things = ellipses(self.get("%s/%s" % (path, item), showstars = 1))
+                retval += ("   " * depth) + ("%s = %s\n" % (item, things))
         return retval
 
     def _getDevice(self, pathList, showstars = 0):
@@ -361,6 +397,7 @@ class Robot:
                 console.log(console.INFO,"Loading device '%s'..." % deviceName)
                 self.device[deviceName] = item[dev]
                 item[dev].devData["name"] = deviceName
+                #self.devData[dev] = "<alias to %s>" % dev #item[dev]
                 retval.append(deviceName)
                 retval.append( None )
             return retval
