@@ -15,7 +15,7 @@ class SimpleBrain(Brain):
       print "Loading arg: '%s'" % args.get('my_arg')
       self.camera = self.getRobot().startService("FakeCamera")[0]
       self.camera.makeWindow()
-      self.camera.setVisionCallBack( lambda: process(self.camera) )
+      self.camera.setVisionCallBack( lambda self=self: process(self.camera) )
       # initialize your vars here!
       
    # Only method you have to define is the step method:
