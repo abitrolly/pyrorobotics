@@ -738,6 +738,7 @@ class Network:
         Initializes network by calling Connection.initialize() and
         Layer.initialize().
         """
+        self.count = 0
         for connection in self.connections:
             connection.initialize()
         for layer in self.layers:
