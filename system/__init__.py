@@ -17,7 +17,10 @@ def usage():
     print "  -b BRAIN           name of brain.py file to load"
     print "  -o BRAIN_ARGUMENTS (separated by ':', no spaces)"
     print "  -s SIMULATOR       name of simulator to run"
-    print "  -c CONFIGFILE      name of config file to load"
+    print "  -i CONFIGFILE      name of config file to load"
+    print "  -c CAMERA          name of camera.py file to load"
+    print "  -e \"string\"      eval string of commands"
+    print "                     that are ; separated"    
     print ""
 
 def help():
