@@ -683,6 +683,9 @@ class Network:
             if layer == self.layers[i]: # shallow cmp
                 return i
         return -1 # not in list
+    def addLayer(self, name, size, verbosity = 0):
+        layer = Layer(name, size)
+        Network.add(self, layer, verbosity)
     # methods for constructing and modifying a network
     def add(self, layer, verbosity = 0):
         """
@@ -720,9 +723,9 @@ class Network:
         Creates a three layer network with 'input', 'hidden', and
         'output' layers.
         """
-        self.add( Layer('input', inc) )
-        self.add( Layer('hidden', hidc) )
-        self.add( Layer('output', outc) )
+        self.addLayer('input', inc)
+        self.addLayer('hidden', hidc)
+        self.addLayer('output', outc)
         self.connect('input', 'hidden')
         self.connect('hidden', 'output')
     def setLayerVerification(self, value):
@@ -996,16 +999,22 @@ class Network:
         inName layer and outName layer will be auto-associating.
         """
         self.association.append((inName, outName))
-    def mapInput(self, vector1, offset = 0):
+    def mapInput(self, layerName, offset = 0):
         """
-        Adds vector and offset to inputMap.
+        Adds layerName and offset to inputMap.
         """
-        self.inputMap.append((vector1, offset))
-    def mapTarget(self, vector1, offset = 0):
+        self.inputMap.append((layerName, offset))
+    def mapInputs(self, nameOffsetPairs):
+        for pair in nameOffsetPairs:
+            self.mapInput(pair[0], pair[1])
+    def mapTarget(self, layerName, offset = 0):
         """
-        Adds vector and offset to targetMap.
+        Adds layerName and offset to targetMap.
         """
-        self.targetMap.append((vector1, offset))
+        self.targetMap.append((layerName, offset))
+    def mapTargets(self, nameOffsetPairs):
+        for pair in nameOffsetPairs:
+            self.mapTarget(pair[0], pair[1])
 
     # input and target methods
     def randomizeOrder(self):
@@ -1066,8 +1075,8 @@ class Network:
             retval[self.layers[0].name] = self.inputs[pos]
         else: # mapInput set manually
             for vals in self.inputMap:
-                (v1, offset) = vals
-                retval[v1] = self.inputs[pos][offset:offset+self[v1].size]
+                (name, offset) = vals
+                retval[name] = self.inputs[pos][offset:offset+self[name].size]
         if self.verbosity > 1: print "Loading target", pos, "..."
         if len(self.targets) == 0:
             pass # ok, no targets
@@ -1075,8 +1084,8 @@ class Network:
             retval[self.layers[len(self.layers)-1].name] = self.targets[pos]
         else: # set manually
             for vals in self.targetMap:
-                (v1, offset) = vals
-                retval[v1] = self.targets[pos]
+                (name, offset) = vals
+                retval[name] = self.targets[pos]
         return retval
 
     # input, architecture, and target verification
@@ -2122,10 +2131,10 @@ class SRN(Network):
         """
         Creates a three level network with a context layer.
         """
-        self.add(Layer('input', inc))
-        self.addContext(Layer('context', hidc), 'hidden')
-        self.add(Layer('hidden', hidc))
-        self.add(Layer('output', outc))
+        self.addLayer('input', inc)
+        self.addContextLayer('context', hidc, 'hidden')
+        self.addLayer('hidden', hidc)
+        self.addLayer('output', outc)
         self.connect('input', 'hidden')
         self.connect('context', 'hidden')
         self.connect('hidden', 'output')
@@ -2134,12 +2143,15 @@ class SRN(Network):
         Wraps SRN.addThreeLayers() for compatibility.
         """
         self.addThreeLayers(inc, hidc, outc)
+    def addContextLayer(self, name, size, hiddenLayerName='hidden', verbosity=0):
+        layer = Layer(name, size)
+        self.addContext(layer, hiddenLayerName, verbosity)
     def addContext(self, layer, hiddenLayerName = 'hidden', verbosity = 0):
         """
         Adds a context layer. Necessary to keep self.contextLayers dictionary up to date. 
         """
         # better not add context layer first if using sweep() without mapInput
-        self.add(layer, verbosity)
+        SRN.add(self, layer, verbosity)
         if self.contextLayers.has_key(hiddenLayerName):
             raise KeyError, ('There is already a context layer associated with this hidden layer.', \
                              hiddenLayerName)

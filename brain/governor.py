@@ -101,6 +101,39 @@ class Governor:
         """ Loads RAVQ data from a file. """
         self.ravq.loadRAVQFromFile(filename)
 
+    def setBalancedMask(self):
+        """
+        Give each layer an equal weighting, so that all weights sum to one.
+        """
+        layerWeights = {}
+        for layer in self.layers:
+            if layer.kind != 'Hidden':
+                layerWeights[layer.name]= layer.size
+        parts = len(layerWeights)
+        for name in layerWeights:
+            layerWeights[name] = (1.0 / layerWeights[name]) * (1.0 / parts)
+        print "layerWeights:", layerWeights
+        self.setMask(**layerWeights)
+        
+    def setMask(self, **args):
+        """
+        Takes a dictionary of layer names and mask weights.
+        """
+        # Names are sorted to ensure that they are in proper order.
+        argsLayerNames = args.keys()
+        argsLayerNames.sort()
+        maskInput, maskContext, maskOutput = [], [], []
+        for name in argsLayerNames:
+            if self[name].kind == 'Input':
+                maskInput += [args[name]] * self[name].size
+            if self[name].kind == 'Context':
+                maskContext += [args[name]] * self[name].size
+            if self[name].kind == 'Output':
+                maskOutput += [args[name]] * self[name].size
+        self.ravq.setMask( maskInput + maskContext + maskOutput )
+        if self.verbosity:
+            print "mask:", self.ravq.mask
+ 
 class GovernorNetwork(Governor, Network):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
@@ -123,32 +156,13 @@ class GovernorNetwork(Governor, Network):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
 
-    def setMaskWeight(self, iw, ow):
-        i = len(self["input"])
-        o = len(self["output"])
-        parts = []
-        if iw:
-            parts.append( i/float(iw) )
-        else:
-            parts.append( 0 )
-        if ow:
-            parts.append( o/float(ow) )
-        else:
-            parts.append( 0 )
-        big = float(max(*parts))
-        mask = [big/i * iw] * i + [big/o * ow] * o
-        self.ravq.setMask( mask )
-        if self.verbosity:
-            print "mask:", self.ravq.mask
- 
     def addThreeLayers(self, i, h, o):
         Network.addThreeLayers(self, i, h, o)
         if not self.ravq.mask:
-            big = float(max(i, o))
-            mask = [big/i] * i + [big/o] * o
-            self.ravq.setMask( mask )
-            if self.verbosity:
-                print "mask:", self.ravq.mask
+            self.setBalancedMask()
+
+    def networkStep(self, **args):
+        raise AttributeError, "This method has not yet been written"
 
     def setLearning(self, value):
         self.ravq.setAddModels(value)
@@ -182,40 +196,27 @@ class GovernorSRN(Governor, SRN):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
 
-    def setMaskWeight(self, iw, hw, ow):
-        i = len(self["input"])
-        h = len(self["hidden"])
-        o = len(self["output"])
-        parts = []
-        if iw:
-            parts.append( i/float(iw) )
-        else:
-            parts.append( 0 )
-        if hw:
-            parts.append( h/float(hw) )
-        else:
-            parts.append( 0 )
-        if ow:
-            parts.append( o/float(ow) )
-        else:
-            parts.append( 0 )
-        big = float(max(*parts))
-        mask = [big/i * iw] * i + [big/h * hw] * h + [big/o * ow] * o
-        self.ravq.setMask( mask )
-        if self.verbosity:
-            print "mask:", self.ravq.mask
+    def add(self, layer, verbosity=0):
+        raise AttributeError, "Use method addLayer with GovernorSRN"
+
+    def addLayer(self, name, size, verbosity=0):
+        SRN.addLayer(self, name, size, verbosity)
+        self.trainingNetwork.addLayer(name, size, verbosity)
+
+    def addContextLayer(self, name, size, hiddenLayerName = 'hidden', verbosity=0):
+        SRN.addContextLayer(self, name, size, hiddenLayerName, verbosity)
+        self.trainingNetwork.addContextLayer(name, size, hiddenLayerName, verbosity)
+
+    def connect(self, fromName, toName):
+        SRN.connect(self, fromName, toName)
+        self.trainingNetwork.connect(fromName, toName)
 
     def addThreeLayers(self, i, h, o):
         SRN.addThreeLayers(self, i, h, o) 
-        self.trainingNetwork.addThreeLayers(i, h, o) 
         self.trainingNetwork.setLayerVerification(0)
         self.trainingNetwork.shareWeights(self)
         if not self.ravq.mask:
-            big = float(max(i, h, o))
-            mask = [big/i] * i + [big/h] * h + [big/o] * o
-            self.ravq.setMask( mask )
-            if self.verbosity:
-                print "mask:", self.ravq.mask
+            self.setBalancedMask()
                 
     def decayModelVectors(self):
         good = []
@@ -256,17 +257,23 @@ class GovernorSRN(Governor, SRN):
 
     def networkStep(self, **args):
         if self.governing and not self._cv:
-            argLayerNames = args.keys()
-            argLayerNames.sort()
+            # when layers are added one by one, ensure that mask and sharing
+            # are in place
+            if not self.ravq.mask:
+                self.setBalancedMask()
             if self.trainingNetwork.sharedWeights == 0:
                 self.trainingNetwork.setLayerVerification(0)
                 self.trainingNetwork.shareWeights(self)
+            argLayerNames = args.keys()
+            argLayerNames.sort()
             # map the ravq input context and target
             # get all of the context layer's activations:
+            netLayerNames = [layer.name for layer in self.layers]
+            netLayerNames.sort()
             actContext = []
-            for layer in self.layers:
-                if layer.kind == 'Context':
-                    actContext += list(self["context"].activation)
+            for name in netLayerNames:
+                if self[name].kind == 'Context':
+                    actContext += list(self[name].activation)
             # get all of the input layer's values
             # and all of the ouptut layer's targets mentioned in args:
             inputValues = []
@@ -276,29 +283,29 @@ class GovernorSRN(Governor, SRN):
                     inputValues += list(args[layerName])
                 elif self[layerName].kind == 'Output':
                     targetValues += list(args[layerName])
-            vector = inputValues + actContext + targetValues
-            self.map(vector)
+            vectorIn = inputValues + actContext + targetValues
+            self.map(vectorIn)
             # get the next
-            array = self.nextItem()
-            if array == None:
-                array = vector
-            # get the pieces out of array:
+            vectorOut = self.nextItem()
+            if vectorOut == None:
+                vectorOut = vectorIn
+            # get the pieces out of vectorOut:
             govNet = {}
             current = 0
             for layerName in argLayerNames: # from args
                 if self[layerName].kind == 'Input':
                     length = self[layerName].size
-                    govNet[layerName] = array[current:current+length]
+                    govNet[layerName] = vectorOut[current:current+length]
                     current += length
             for layer in self.layers:       # from network
                 if layer.kind == 'Context':
                     length = layer.size
-                    govNet[layer.name] = array[current:current+length]
+                    govNet[layer.name] = vectorOut[current:current+length]
                     current += length
             for layerName in args:          # from args
                 if self[layerName].kind == 'Output':
                     length = self[layerName].size
-                    govNet[layerName] = array[current:current+length]
+                    govNet[layerName] = vectorOut[current:current+length]
                     current += length
             # load them and train training Network
             self.trainingNetwork.step(**govNet)
@@ -349,25 +356,26 @@ if __name__ == '__main__':
     for line in locations:
         targets.append( map(lambda x: float(x), line.strip().split()))
     inSize = len(sensors[0].strip().split())
-    # Weighting each bank of data equally (except for stalled)
-    govMask =  [1] * 16 # 16 sonar sensors
-    govMask += [4] * 4  # 4 colors sensors
-    govMask += [0] * 1  # 1 stalled sensor
-    govMask += [16.0/(inSize/2.0)] * (inSize/2) # context units
-    govMask += [4] * 4  # 4 output units
-    print "inSize is: ", inSize
-    print "govMask is: ", govMask
-    print "length is: ", len(govMask)
-    # The "16" weights the input determining the multiple labels
     # The choice of epsilon and delta may change the required
     # weights. For binary nodes, changing the value will make the vector
     # distance one from every vector with the opposite value in that
     # node. This change is enough if the delta value is less than
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
-    net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
+    net = GovernorSRN(5, 2.1, 0.3, 5, 0.2)
     net.setSequenceType("ordered-continuous")
-    net.addThreeLayers(inSize, inSize/2, 4)
+    net.addLayer("sonar", 16)
+    net.addLayer("color", 4)
+    net.addLayer("stall", 1)
+    net.addContextLayer('context', inSize/2, 'hidden')
+    net.addLayer("hidden", inSize/2)
+    net.addLayer("output", 4)
+    net.connect("sonar", "hidden")
+    net.connect("color", "hidden")
+    net.connect("stall", "hidden")
+    net.connect("context", "hidden")
+    net.connect("hidden", "output")
+    net.mapInputs([['sonar', 0], ['color', 16], ['stall', 17]])
     net.setTargets( targets[:389] ) # 389 = one trip around
     net.setInputs( inputs[:389] ) # has some pauses in there too
     net.setStopPercent(.95)
@@ -379,7 +387,7 @@ if __name__ == '__main__':
         net.learning = 1
     net.setResetEpoch(int(sys.argv[2]))
     net.decay = int(sys.argv[3])
-    print "Goverining is", net.governing
+    print "Governing is", net.governing
     print "Decay is", net.decay
     net.train()
     print net.ravq

@@ -159,6 +159,7 @@ class RAVQ:
         """
         if self.verbosity > 1:
             print "Step:", self.time
+        if self.verbosity > 2:
             print vec
         array = Numeric.array(vec, 'd')
         if self.mask == None:
@@ -226,10 +227,13 @@ class RAVQ:
         """
         self.newModelVector = (None, None)
         self.setMovingAverage()
-        if self.verbosity > 1:
-            print "Moving average:", self.movingAverage
         self.setMovingAverageDistance()
         self.setModelVectorsDistance()
+        if self.verbosity > 2:
+            print "Moving average:", self.movingAverage
+        if self.verbosity > 1:
+            print "Moving average distance: ", self.movingAverageDistance
+            print "Model vectors distance: ", self. modelVectorsDistance
         if self.addModels:
             self.updateModelVectors()
         self.updateWinner()
@@ -262,10 +266,12 @@ class RAVQ:
             name = self.models.names[-1]
             self.newModelVector = (name, self.movingAverage)
             if self.verbosity > 1:
-                print 'Adding model vector', self.movingAverage
+                print '***Adding model vector***'
                 print 'Unique name', name
                 print 'Moving avg dist', self.movingAverageDistance
                 print 'Model vec dist', self.modelVectorsDistance
+            if self.verbosity > 2:
+                print 'New model vector', self.movingAverage
 
     def updateWinner(self):
         """
@@ -393,7 +399,7 @@ class ARAVQ(RAVQ):
         next time step anyway.
         """
         if self.deltaWinner != 'No Winner' and self.learning:
-            if self.verbosity > 0: print "LEARNING: was:", self.models[self.newWinnerIndex].vector, "delta:", self.deltaWinner
+            if self.verbosity > 2: print "LEARNING: was:", self.models[self.newWinnerIndex].vector, "delta:", self.deltaWinner
             self.models[self.newWinnerIndex].vector += self.deltaWinner
         else:
             pass 
