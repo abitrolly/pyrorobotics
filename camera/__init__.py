@@ -197,10 +197,10 @@ class Camera(PyroImage, Service):
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
          w, h = self.width, self.height
-         while w < 310:
-            w, h = map(lambda x: x * 2, (w, h))
+         #while w < 310:
+         #   w, h = map(lambda x: x * 2, (w, h))
          self.canvas = Tkinter.Canvas(self.window, width = w, height = h)
-         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
+         self.canvas.pack({'fill': 'both', 'expand': 'y', 'side': 'bottom'})
          self.canvas.bind("<Button-1>", self.processLeftClickDown)
          self.canvas.bind("<ButtonRelease-1>", self.processLeftClickUp)
          #self.canvas.bind("<Enter>", self.togglePlay)
@@ -265,7 +265,7 @@ class Camera(PyroImage, Service):
          
       self.visible = 1
       self.window.aspect(self.width, self.width, self.height, self.height)
-      self.window.minsize(355, 0)
+      #self.window.minsize(355, 0)
       while self.window.tk.dooneevent(2): pass
 
    def apply(self, command, *args):
