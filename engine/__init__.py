@@ -8,7 +8,7 @@ import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                pyroargs=[], config = {}, worldfile = 0, services = 0):
+                pyroargs=[], config = {}, worldfile = None, services = ['']):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
@@ -34,6 +34,7 @@ class Engine(drawable.Drawable):
       self.config = config
       if self.simfile:
          self.loadSimulator(self.simfile, self.worldfile)
+         time.sleep(2)
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if services != ['']:
