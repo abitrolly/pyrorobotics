@@ -135,8 +135,8 @@ class Robot:
         if isinstance(pathList, (type((1,)), type([1,]))):
             pathList.sort()
         for item in pathList:
-            # HACK!
-            if "range" in item:
+            # HACK! Is the word range in the item? Alias!
+            if item.find("range") >= 0:
                 retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("robot/range/name")))
                 continue
             if item[0] == "*": # a group (link), do not recur
@@ -359,24 +359,18 @@ class Robot:
             for dev in item.keys():
                 deviceName = self.getNextDeviceName(dev)
                 console.log(console.INFO,"Loading device '%s'..." % deviceName)
-                # dictionary of objects:
-                item[dev].startDevice()
-                # if started:
-                if item[dev].getDeviceState() == "started":
-                    self.device[deviceName] = item[dev]
-                    item[dev].devData["name"] = deviceName
-                    retval.append(deviceName)
-                else:
-                    print "device '%s' not available" % deviceName
-                    retval.append( None )
+                self.device[deviceName] = item[dev]
+                item[dev].devData["name"] = deviceName
+                retval.append(deviceName)
+                retval.append( None )
             return retval
         elif item in self.supports: # built-in name
             # deviceBuiltin returns dictionary
             return self.startDevices( self.startDeviceBuiltin(item) )
         elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
-            for item in items:
-                return retval.append( self.startDevice(item) )
+            for i in item:
+                return retval.append( self.startDevice(i) )
             return retval
         else: # from a file
             file = item
