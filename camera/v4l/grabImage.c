@@ -24,11 +24,14 @@ static PyObject *grab_image(PyObject *self, PyObject *args){
   PyObject *buffer, *tuple;
 
   //Expects grab_image(device_name, width, height)
-  if(!PyArg_ParseTuple(args, "siii", &device, &width, &height, &color))
+  if(!PyArg_ParseTuple(args, "siii", &device, &width, &height, &color)){
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to grab_image");
     return NULL;
+  }
 
   image = Cgrab_image(device, width, height, color);
   if (image == NULL){
+    PyErr_SetString(PyExc_IOError, "Error in C function call");
     return NULL;
   }
 
@@ -51,19 +54,24 @@ static PyObject *free_image(PyObject *self, PyObject *args){
 
   //Get the buffer object from the arguments
   if (!PyArg_ParseTuple(args, "iO", &dev, &obj)){
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to free_image");
     return NULL;
   }
 
   //Make sure it's a valid buffer object
-  if (!PyBuffer_Check(obj))
+  if (!PyBuffer_Check(obj)){
+    PyErr_SetString(PyExc_TypeError, "Invalid argument: not a PyBuffer");
     return NULL;
+  }
 
   //Convert the object to a buffer object
   buffer = PyBuffer_FromObject(obj, 0, Py_END_OF_BUFFER);
 
   //This shouldn't be an error if the object passes the previous check
-  if (buffer->ob_type->tp_as_buffer->bf_getreadbuffer == NULL)
+  if (buffer->ob_type->tp_as_buffer->bf_getreadbuffer == NULL){
+    PyErr_SetString(PyExc_TypeError, "Invalid argument: not a readable PyBuffer");
     return NULL;
+  }
 
   //Create an image_cap structure
   image_struct = malloc(sizeof(struct image_cap));
@@ -77,6 +85,7 @@ static PyObject *free_image(PyObject *self, PyObject *args){
   
   if (Cfree_image(image_struct)){
     free(image_struct);
+    PyErr_SetString(PyExc_IOError, "Error in C function call");
     return NULL;
   }
   
@@ -89,14 +98,18 @@ static PyObject *refresh_image(PyObject *self, PyObject *args){
   int dev, w, h, d;
   struct image_cap image_struct;
 
-  if(!PyArg_ParseTuple(args, "iiii", &dev, &w, &h, &d))
+  if(!PyArg_ParseTuple(args, "iiii", &dev, &w, &h, &d)){
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to free_image");
     return NULL;
+  }
 
   image_struct.handle = dev;
   image_struct.bpp = d;
   
-  if(Crefresh_image(&image_struct, w, h))
+  if(Crefresh_image(&image_struct, w, h)){
+    PyErr_SetString(PyExc_IOError, "Error in C function call");
     return NULL;
+  }
 
   return PyInt_FromLong(0L);
 }
