@@ -20,9 +20,10 @@
 """
 
 import pyro.gui.console as console
+import pyro.system as system
 from pyro.geometry import Polar, distance
 from pyro.robot.device import deviceDirectoryFormat
-import math, string, time
+import math, string, time, os
 
 def expand(part):
     """
@@ -102,7 +103,7 @@ class Robot:
         self.devData['timestamp'] = time.time()
         # toplevel:
         self.directory["robot"] = self
-        self.directory["devices"] = DeviceWrapper(self)
+        self.directory["device"] = DeviceWrapper(self)
         # user init:
         self.setup(**kwargs)
 
@@ -346,71 +347,61 @@ class Robot:
         raise AttributeError, "too many devices of type '%s'" % devname
 
     def startDevice(self, item):
-        """ Alias for startDevices(), but returns just 1 name """
-        return self.startDevices(item)
+        return self.startDevices(item)[0]
         
     def startDevices(self, item):
-        """ Load a device: dict, list, or name or filename """
-        import pyro.system as system
-        import os
+        """ Load devices: dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
+            # this is the only one that does anything
             retval = []
             for dev in item.keys():
-                device = self.getNextDeviceName(dev)
-                console.log(console.INFO,"Loading device '%s'..." % device)
-                retval.append(item[dev].startDevice())
+                deviceName = self.getNextDeviceName(dev)
+                console.log(console.INFO,"Loading device '%s'..." % deviceName)
+                # dictionary of objects:
+                item[dev].startDevice()
+                # if started:
                 if item[dev].getDeviceState() == "started":
-                    self.device[device] = item[dev]
+                    self.device[deviceName] = item[dev]
+                    item[dev].devData["name"] = deviceName
+                    retval.append(deviceName)
                 else:
-                    print "device '%s' not available" % device
+                    print "device '%s' not available" % deviceName
                     retval.append( None )
             return retval
-        elif type(item) == type([0,]) or type(item) == type((0,)):
-            # list of devices
+        elif item in self.supports: # built-in name
+            # deviceBuiltin returns dictionary
+            return self.startDevices( self.startDeviceBuiltin(item) )
+        elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
-            for dev in item:
-                retval.append(self.startDevice(dev))
+            for item in items:
+                return retval.append( self.startDevice(item) )
             return retval
-        elif self.supportsDevice(item): # built-in name
-            console.log(console.INFO,"Loading device '%s'..." % item)
-            retval = self.supports[item].startDevice()
-            if self.supports[item].getDeviceState() == "started":
-                device = self.getNextDeviceName(item)
-                self.device[device] = self.supports[item]
-            else:
-                print "device '%s' not available" % item
-            return [retval]
         else: # from a file
             file = item
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                return self.startDevice( system.loadINIT(file, self) )
+                return self.startDevices( system.loadINIT(file, self) )
             elif system.file_exists(os.getenv('PYRO') + \
                                     '/plugins/devices/' + file): 
-                return self.startDevice( system.loadINIT(os.getenv('PYRO') + \
+                return self.startDevices( system.loadINIT(os.getenv('PYRO') + \
                                                    '/plugins/devices/'+ \
                                                    file, self))
             else:
-                print 'Device not found: ' + file
+                print 'Device file not found: ' + file
                 return []
+
+    def startDeviceBuiltin(self, item):
+        """ This method should be overloaded """
+        raise AttributeError, "no such builtin device '%s'" % item
 
     def stopDevice(self, item):
         self.getDevice(self, item).stopDevice()
 
-    def supportsDevice(self, item):
-        return self.supports.has_key(item)
-
     def getDevice(self, item):
         if self.device.has_key(item):
             return self.device[item]
-        else:
-            raise AttributeError, "unknown device '%s'" % item
-
-    def getDeviceDevice(self, item):
-        if self.device.has_key(item):
-            return self.device[item].dev
         else:
             raise AttributeError, "unknown device '%s'" % item
 
@@ -425,9 +416,6 @@ class Robot:
 
     def getSupportedDevices(self):
         return self.supports.keys()
-
-    def hasDevice(self, item):
-        return self.device.has_key(item)
 
     def removeDevice(self, item):
         self.device[item].setVisible(0)
