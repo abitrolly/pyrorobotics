@@ -149,7 +149,7 @@ class gui(Drawable):
          _retval = "error"
          exp2 = string.strip(retval)
          # perhaps could do these once, but could change:
-         self.environment["gui"] = gui
+         self.environment["gui"] = self
          self.environment["self"] = self.engine.brain
          self.environment["engine"] = self.engine
          self.environment["robot"] = self.engine.robot
