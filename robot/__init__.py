@@ -8,10 +8,12 @@
 # -----------------------------
 # Main interfaces:
 # .get()             - interface to robot, sensors
+# .move(), .translate(), .rotate(), .motors(), .stop() - controls
 
 import pyro.gui.console as console
 from pyro.geometry import Polar, distance
-import math, string, types
+from pyro.robot.service import serviceDirectoryFormat
+import math, string, time
 
 # Units of measure for sense, map, and motors:
 # -------------------------------------------
@@ -22,34 +24,6 @@ import math, string, types
 # SCALED - scaled [-1,1]
 # RAW    - right from the sensor
 
-def serviceDirectoryFormat(serviceDict, retdict = 1):
-    """
-    Takes a service directory dictionary and makes it presentable for viewing.
-
-    Also takes a flag to indicate if it should return a dictionary (for * listings)
-    or a list (for regular directory content listing).
-    
-    The function does two things:
-      1. adds a trailing slash to those entries that point to more things
-      2. replaces the objects that they point to with None, when returning a dictionary
-    """
-    if retdict:
-        retval = {}
-    else:
-        retval = []
-    for keyword in serviceDict:
-        if type(serviceDict[keyword]) == types.InstanceType:
-            if retdict:
-                retval[keyword + "/"] = None
-            else:
-                retval.append( keyword + "/")
-        else:
-            if retdict:
-                retval[keyword] = serviceDict[keyword]
-            else:
-                retval.append( keyword )
-    return retval
-
 def expand(part):
     """
     Takes a part of a path and parses it for simple syntax. Expands:
@@ -57,9 +31,10 @@ def expand(part):
     :  slice range
     ,  AND
     """
+    #print "expand=", part
     retvals = []
     if type(part) == type(1):
-        return [part]
+        return part
     elif isinstance(part, (type((1,)), type([1,]))):
         return part
     else:
@@ -82,7 +57,7 @@ def expand(part):
                     retvals.append( s )
         elif s.count("-") == 1:
             rangeVals = map(string.strip, s.split("-"))
-            print "rangeVals", rangeVals
+            #print "rangeVals", rangeVals
             if rangeVals[0].isdigit() and rangeVals[0].isdigit():
                 retvals.extend(range(int(rangeVals[0]), int(rangeVals[1]) + 1))
             else:
@@ -99,7 +74,17 @@ def expand(part):
         return retvals[0]
     else:
         return retvals
-                        
+
+class DeviceWrapper:
+    def __init__(self, robot):
+        self.robot = robot
+
+    def _set(self, path, value):
+        return self.robot._setDevice(path, value)
+
+    def _get(self, path):
+        return self.robot._getDevice(path)
+
 class Robot:
     """
     this be the one.
@@ -109,11 +94,14 @@ class Robot:
         if you extend Robot please call this function!
         If you need to initialize things, call setup()
         """
-        self.service = {}
-        self.supports = {}
-        self.data = {}
-        self.dataFunc = {}
-        self.service["robot"] = self
+        self.directory = {} # toplevel place for paths
+        self.device = {} # what was called services
+        self.supports = {} # keyword list of built-in devices
+        self.data = {} # items in /robot/ path
+        self.dataFunc = {} # function items in /robot/ path
+        # toplevel:
+        self.directory["robot"] = self
+        self.directory["devices"] = DeviceWrapper(self)
         # user init:
         self.setup(**kwargs)
 
@@ -122,12 +110,12 @@ class Robot:
     #    return self.get(path)
 
     def __repr__(self):
-        retval = 'Robot:\n---------------------------------\n'
+        retval = 'Robot properties:\n---------------------------------\n'
         for item in self.get("robot/"):
             if item[-1] == "/": # more things below this
-                retval += "    %s\n" % item
+                retval += "%12s\n" % item
             else:
-                retval += "    %s = %s\n" % (item, self.get("robot/%s" % item))
+                retval += "%12s = %s\n" % (item, self.get("robot/%s" % item))
         return retval
 
     def disconnect(self):
@@ -138,7 +126,35 @@ class Robot:
 
     def inform(self, msg):
         console.log(console.INFO, msg)
-        
+
+    def getAll(self, path = '', depth = 0):
+        retval = ''
+        for item in self.get(path):
+            if item[0] == "*": # a group (link), do not recur
+                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]))))
+                if item == "*all/":
+                    retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,)))
+            elif item[-1] == "/": # more things below this
+                retval += ("   " * depth) + ("%s:\n" % item)
+                retval += self.getAll("%s/%s" % (path, item), depth + 1)
+            else:
+                retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s" % (path, item))))
+        return retval
+
+    def _getDevice(self, pathList):
+        if len(pathList) == 0:
+            return serviceDirectoryFormat(self.device, 0)
+        key = pathList[0]
+        args = pathList[1:]
+        if key in self.device:
+            return self.device[key]._get(args)
+        if key == '*':
+            if args != []:
+                raise AttributeError, "wildcard feature not implemented in directory middle"
+            return serviceDirectoryFormat(self.device, 1) 
+        else:
+            raise AttributeError, "no such directory item '%s'" % key
+
     def _get(self, pathList):
         if len(pathList) == 0:
             tmp = self.data.copy()
@@ -176,16 +192,19 @@ class Robot:
         # parse path parts for dashes, colons, and commas
         finalPath = []
         for part in path:
+            #if isinstance(part, (type((1,)), type([1,]))):
+            #    finalPath.extend( part )
+            #else:
             finalPath.append(expand( part ) )
         if len(finalPath) == 0:
-            return serviceDirectoryFormat(self.service, 0) # toplevel in service
-        elif finalPath[0] in self.service:
-            # pass the command down to robot
-            return self.service[finalPath[0]]._get(finalPath[1:])
+            return serviceDirectoryFormat(self.directory, 0) # toplevel
+        elif finalPath[0] in self.directory:
+            # pass the command down
+            return self.directory[finalPath[0]]._get(finalPath[1:])
         elif finalPath[0] == '*':
-            return serviceDirectoryFormat(self.service, 1)
+            return serviceDirectoryFormat(self.directory, 1)
         else:
-            raise AttributeError, "'%s' is not a service directory of robot" % finalPath[0]
+            raise AttributeError, "'%s' is not a root directory" % finalPath[0]
 
     def _set(self, pathList, value):
         key = pathList[0]
@@ -196,6 +215,14 @@ class Robot:
             return self.dataFunc[key]._set(args, value)
         else:
             raise AttributeError, "no setable directory item '%s'" % key
+
+    def _setDevice(self, pathList, value):
+        key = pathList[0]
+        args = pathList[1:]
+        if key in self.device:
+            return self.device[key]._set(args, value)
+        else:
+            raise AttributeError, "no setable directory item '%s'" % key
         
     def set(self, device, value):
 	"""
@@ -204,11 +231,10 @@ class Robot:
         # remove extra slashes
         while path.count("") > 0:
             path.remove("")
-        if path[0] in self.service: # toplevel in service
-            # pass the command down to robot
-            return self.service[path[0]]._set(path[1:], value)
+        if path[0] in self.directory:
+            return self.directory[path[0]]._set(path[1:], value)
         else:
-            raise AttributeError, "'%s' is not a service directory of robot" % path[0]
+            raise AttributeError, "'%s' is not a root directory" % path[0]
 
     def step(self, dir):
         if dir == 'L':
@@ -237,6 +263,7 @@ class Robot:
         self.move(0, 0)
 
     def _update(self):
+        self.data['datestamp'] = time.time()
         for service in self.getServices():
             if self.getService(service).active:
                 self.getService(service).updateService()
@@ -314,15 +341,13 @@ class Robot:
             retval = []
             for service in item.keys():
                 console.log(console.INFO,"Loading service '%s'..." % service)
-                if self.service.has_key(service):
+                if self.device.has_key(service):
                     print "Service is already running: '%s'" % service
-                    retval.append( self.service[service] )
+                    retval.append( self.device[service] )
                 else:
                     retval.append(item[service].startService())
                 if item[service].getServiceState() == "started":
-                    self.service[service] = item[service]
-                    if service not in self.senses.keys():
-                        self.senses[service] = self.service[service]
+                    self.device[service] = item[service]
                 else:
                     print "service '%s' not available" % service
                     retval.append( None )
@@ -335,14 +360,13 @@ class Robot:
                 retval.append(self.startService(service))
             return retval
         elif self.supportsService(item): # built-in name
-            if self.service.has_key(item):
+            if self.device.has_key(item):
                 print "Service is already running: '%s'" % item
-                return [self.service[item]]
+                return [self.device[item]]
             console.log(console.INFO,"Loading service '%s'..." % item)
             retval = self.supports[item].startService()
             if self.supports[item].getServiceState() == "started":
-                self.service[item] = self.supports[item]
-                self.senses[item] = self.service[item]
+                self.device[item] = self.supports[item]
             else:
                 print "service '%s' not available" % item
             return [retval]
@@ -368,38 +392,38 @@ class Robot:
         return self.supports.has_key(item)
 
     def getService(self, item):
-        if self.service.has_key(item):
-            return self.service[item]
+        if self.device.has_key(item):
+            return self.device[item]
         else:
             raise AttributeError, "unknown service '%s'" % item
 
     def getServiceDevice(self, item):
-        if self.service.has_key(item):
-            return self.service[item].dev
+        if self.device.has_key(item):
+            return self.device[item].dev
         else:
             raise AttributeError, "unknown service '%s'" % item
 
     def getServiceData(self, item, *args):
-        if self.service.has_key(item):
-            return self.service[item].getServiceData(*args)
+        if self.device.has_key(item):
+            return self.device[item].getServiceData(*args)
         else:
             raise AttributeError, "unknown service '%s'" % item
 
     def getServices(self):
-        #return self.service.keys()
+        #return self.device.keys()
         return []
 
     def getSupportedServices(self):
         return self.supports.keys()
 
     def hasService(self, item):
-        return self.service.has_key(item)
+        return self.device.has_key(item)
 
     def removeService(self, item):
-        self.service[item].visible = 0
-        self.service[item].active = 0
-        self.service[item].destroy()
-        del self.service[item]
+        self.device[item].visible = 0
+        self.device[item].active = 0
+        self.device[item].destroy()
+        del self.device[item]
 
     # Message interface:
 
