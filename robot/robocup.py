@@ -2,6 +2,9 @@ from socket import *
 from pyro.robot import Robot
 from pyro.robot.device import Device
 from random import random
+from math import pi, sin, cos
+
+PIOVER180 = pi / 180.0
 
 def lookup(thing):
     """ Returns ASCII, color, width, height """
@@ -238,13 +241,23 @@ class RobocupRobot(Robot):
         self.translate(translate_velocity)
         self.rotate(rotate_velocity)
 
-    def addToImage(self, color, distance, angle, width, height):
-        boxHeight = int((1.0 - min((distance / 100.0), 1.0)) * self.height)
-        col = int(((angle + 45.0) / 90) * self.width)
-        for h in range((self.height - boxHeight) / 2, self.height - (self.height - boxHeight) / 2 + 1):
-            pos = h * self.width + col
-            if  pos > 0 and pos < self.height * self.width * self.depth:
-                self.image[pos] = color
+    def getPoint( self, distance, direction): # meters, angle off center
+        row = self.height - \
+              self.height * cos( direction * PIOVER180 ) * distance/100.0
+        col = self.width/2.0 \
+              + self.width * sin( direction * PIOVER180 ) * distance/100.0
+        if row < 0 or row >= self.height:
+            return None, None # off screen
+        if col < 0 or col >= self.width:
+            return None, None # off screen
+        return (int(col), int(row))
+
+    def lookupLines( self, flagName ):
+        retval = []
+        for lineName in self.lines:
+            if flagName in self.lines[lineName]:
+                retval.append( lineName )
+        return retval
 
     def makeImage(self, see = None):
         if see == None:
@@ -253,15 +266,76 @@ class RobocupRobot(Robot):
         self.height = 30
         self.depth = 1
         self.image = [" "] * self.height * self.width * self.depth
+        self.lines = {"top": ["lt", "ct", "rt"],
+                      "left": ["lt", "glt", "gl", "glb", "lb"],
+                      "bottom": ["lb", "cb", "rb"],
+                      "right": ["rb", "grb", "gr", "grt", "rt"],
+                      "Top": ["tl50", "tl40", "tl30", "tl20", "tl10", "t0",
+                              "tr50", "tr40", "tr30", "tr20", "tr10"],
+                      "Left": ["lt30", "lt20", "lt10", "l0",
+                               "lb30", "lb20", "lb10"],
+                      "Bottom": ["bl50", "bl40", "bl30", "bl20", "bl10", "b0",
+                                 "br50", "br40", "br30", "br20", "br10"],
+                      "Right": ["rt30", "rt20", "rt10", "r0",
+                                "rb30", "rb20", "rb10"],
+                      "center": ["t0", "ct", "c", "cb", "b0"],
+                      "1pleft": ["plt", "plc", "plb"],  
+                      "2pright": ["prt", "prc", "prb"],  
+                      }
+        linePoints = {}
+        for s in self.lines:
+            linePoints[s] = []
         # sort it on distance, further ones first
         see.sort(lambda x,y: cmp(y[1],x[1]))
+        # First, go through and draw lines from flags:
+        for item in see:
+            # item is something like: [['f', 'c'], 14, 36, 0, 0]
+            if len(item) > 2: # otherwise, can't do much without direction
+                if item[0][0] == "f" or item[0][0] == "g": # it's a flag or goal
+                    flagName = ""
+                    for ch in item[0][1:]:
+                        flagName += "%s" % ch
+                    onLines = self.lookupLines( flagName )
+                    for onLine in onLines:
+                        # distance, direction
+                        x, y = self.getPoint( item[1], item[2])
+                        if x != None and y != None:
+                            linePoints[onLine].append( (x, y) )
+        # now, draw the lines:
+        for lineName in linePoints:
+            if len(linePoints[lineName]) > 0:
+                points = linePoints[lineName]
+                for (x,y) in points:
+                    self.image[y * self.width + x] = lineName[0]
+        # now, draw players, ball, and goal
         for item in see:
             if len(item) > 2: # otherwise, can't do much without direction
-                ch, color, width, height = lookup(item[0])
-                distance = item[1]
-                angle = item[2]
+                itemName = ""
+                for ch in item[0]:
+                    itemName += "%s" % ch
+                color = ""
+                if itemName[0] == "p": # it's a player
+                    if len(item[0]) > 1:
+                        if item[0][1] == self.devData["name"]:
+                            color = "Y" # my team player
+                        else:
+                            color = "P" # other team player
+                    else:
+                        color = "?" # some player?
+                elif itemName == "b": # ball
+                    color = "@"
+                elif itemName[0] == "g": # center goal
+                    color = "G"
+                elif itemName == "fgrb" or \
+                     itemName == "fgrt" or \
+                     itemName == "fglb" or \
+                     itemName == "fglt":
+                    color = "G" # WHICH IS MINE?
                 if color:
-                    self.addToImage(ch, distance, angle, width, height)
+                    # draw box proportional to size:
+                    x, y = self.getPoint( item[1], item[2])
+                    if x != None and y != None:
+                        self.image[y * self.width + x] = color
         for y in range(self.height):
             for x in range(self.width):
                 print self.image[y * self.width + x],
