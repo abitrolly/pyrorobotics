@@ -1,3 +1,8 @@
+"""
+Pyro Module for Genetic Program.
+Extension of GA (pyro/brain/ga.py)
+"""
+
 from pyro.brain.ga import *
 import pyro.system.share as share
 from math import pi
@@ -8,18 +13,16 @@ import operator, sys
 ### in gene
 ### FIX: don't use deepcopy
 
-def parse(exp, env):
-    if type(exp) == type( (1,) ):
-        return GPTree(*map(lambda x: parse(x,env), exp))
-    else:
-        return env.env[exp]
+########## Functions for evaluator
 
 def div_func(*operands):
+    """ For protected division. """
     if operands[1] == 0:
         return sys.maxint # not all python's have "infinity"
     else:
         return operands[0] / float(operands[1])
 def ifpos_func(operands, env):
+    """ Special form (lazy evaluation) for if-positive. """
     test_val, if_val, else_val = operands
     test_result = test_val.eval(env)
     if (test_result):
@@ -27,6 +30,7 @@ def ifpos_func(operands, env):
     else:
         return else_val.eval(env)
 def and_func(operands, env):
+    """ Special form (lazy evaluation) for short-circuiting 'and' """
     if len(operands) == 0:
         return 1
     else:
@@ -36,6 +40,7 @@ def and_func(operands, env):
         else:
             return and_func(operands[1:], env)
 def or_func(operands, env):
+    """ Special form (lazy evaluation) for short-circuiting 'or' """
     if len(operands) == 0:
         return 0
     else:
@@ -44,13 +49,18 @@ def or_func(operands, env):
             return 1
         else:
             return or_func(operands[1:], env)
+
+########## End of Functions for evaluator
+
 class Operator:
+    """ Class to hold operator information. """
     def __init__(self, func, operands, type = "regular"):
         self.func = func
         self.operands = operands
         self.type = type
 
 class Environment:
+    """ Class to hold environment information. """
     def __init__(self, dict = {}):
         self.env = dict.copy()
     def update(self, dict):
@@ -81,6 +91,7 @@ class Environment:
         return retvals
         
 class GPTree:
+    """ Main tree structure for GP. """
     def __init__(self, op, *children):
         self.op = op
         self.children = []
@@ -94,6 +105,21 @@ class GPTree:
         self.resetCounts()
     def leaf(self):
         return len(self.children) == 0
+    def totalPoints(self):
+        if self.leaf():
+            total_points = 1 # just self
+        else:
+            total_points = 1 # count self
+            total_points += reduce(operator.add, self.internals, 0)
+            total_points += reduce(operator.add, self.externals, 0)
+        return total_points
+    def terminalPoints(self):
+        if self.genotype.leaf():
+            total_points = 1 # just self
+        else:
+            # don't count self
+            total_points = reduce(operator.add, self.genotype.externals, 0)
+        return total_points
     def getTerminalTree(self, pos):
         if pos == 0 and self.leaf():
             return self
@@ -102,6 +128,16 @@ class GPTree:
             if pos < self.externals[i] + cnt:
                 return self.children[i].getTerminalTree(pos - cnt)
             cnt += self.externals[i]
+    def getPoint(self, pos):
+        if pos == 0:
+            return self
+        offset = 1
+        for i in range(len(self.children)):
+            tp = self.children[i].totalPoints()
+            if pos - offset < tp:
+                return self.children[i].getPoint(pos - offset)
+            offset += tp
+        raise AttributeError, "pos is beyond genotype"
     def __str__(self):
         s = ''
         if self.leaf():
@@ -125,8 +161,7 @@ class GPTree:
             return (reduce(operator.add, self.internals, 1),
                     reduce(operator.add, self.externals, 0))
     def eval(self, env = Environment()):
-        #print "Evaluating:", self, "in", env
-        if self.leaf():
+        if self.op not in env.operators().keys():
             if self.op in env.env:
                 retval = env.env[self.op]
             else:
@@ -134,17 +169,14 @@ class GPTree:
         else:
             if self.op in env.lazyOps().keys():
                 op = env.lazyOps()[self.op].func
-                #print "   apply (lazy):", op, self.children
                 retval = apply(op, (self.children, env))
             elif self.op in env.regularOps().keys():
                 op = env.env[self.op].func
                 results = map(lambda x: x.eval(env), self.children)
-                #print "   apply (regular):", op, results
                 retval = apply(op, results)
             else:
                 # just a terminal
                 retval = env.env[self.op]
-        #print "Evaluated:", retval
         return retval
 
 class GPGene(Gene):
@@ -170,9 +202,6 @@ class GPGene(Gene):
             for i in range( share.env.env[operators[pos]].operands ):
                 treeArgs.append( GPGene(**args).genotype )
             self.genotype = GPTree( *treeArgs )
-            #print self.genotype
-    #def copy(self):
-    #    return self # the func in the env are a problem
     def display(self):
         print self.genotype
     def eval(self, additionalEnv = {}):
@@ -180,56 +209,51 @@ class GPGene(Gene):
         return self.genotype.eval(share.env)
     def mutate(self, mutationRate):
         """
-        Depending on the mutationRate, will mutate particular terminal.
+        Depending on the mutationRate, will mutate particular point.
         """
-        #if self.genotype.leaf():
-        #    total_points = 1
-        #else:
-        #    total_points = 1 # count self
-        #    total_points += reduce(operator.add, self.genotype.internals, 0)
-        #    total_points += reduce(operator.add, self.genotype.externals, 0)
-        if self.genotype.leaf():
-            total_points = 1
-        else:
-            total_points = reduce(operator.add, self.genotype.externals, 0)
-        for i in range(total_points): # WHY IS THIS SO BAD?
+        total_points = self.genotype.totalPoints()
+        for i in range(total_points): 
             if flip(mutationRate):
-                if self.genotype.leaf():
-                    terminal_points = 1
-                else:
-                    terminal_points = reduce(operator.add, self.genotype.externals, 0)
-                rand = int(random.random() * terminal_points)
-                subtree = self.genotype.getTerminalTree(rand) # return Tree
+                rand = int(random.random() * total_points) 
+                subtree = self.genotype.getPoint(rand) # returns a tree
                 temp = GPGene( **self.args)
-                self.replaceTree(subtree, temp.genotype)
-        self.genotype.resetCounts()
-    def replaceTree(self, subtree, temp):
+                if subtree.leaf():
+                    self.replaceTree(subtree, temp.genotype)
+                else: # it is an internal node
+                    # same number of kids, just swap operator then
+                    if len(temp.genotype.children) == len(subtree.children):
+                        self.replaceTree(subtree, temp.genotype, replaceChildren = 0)
+                    else: # bigger or smaller, just replace children in subtree
+                        self.replaceTree(subtree, temp.genotype)
+                self.genotype.resetCounts()
+                total_points = self.genotype.totalPoints()# may change!
+                if i > total_points: break # no need to do more
+    def replaceTree(self, subtree, temp, replaceChildren = 1):
+        """ Replace operator and (optionally) children. """
+        # these are all trees, or list of trees:
         subtree.op = temp.op
-        subtree.children = temp.children
-        subtree.internals = temp.internals
-        subtree.externals = temp.externals
-        del temp
+        if replaceChildren:
+            subtree.children = temp.children
+            subtree.internals = temp.internals
+            subtree.externals = temp.externals
     def crossover(self, parent2, crossoverRate):
-        parent1 = self
-        if parent1.genotype.leaf():
-            term1 = 1
+        if flip(crossoverRate):
+            parent1 = self
+            term1 = parent1.genotype.totalPoints()
+            term2 = parent2.genotype.totalPoints()
+            rand1 = int(term1 * random.random())
+            rand2 = int(term2 * random.random())
+            subtree1 = parent1.genotype.getPoint( rand1 )
+            subtree2 = parent2.genotype.getPoint( rand2 )
+            p1 = deepcopy( parent1 )
+            p2 = deepcopy( parent2 )
+            self.replaceTree(p2, subtree1 )
+            self.replaceTree(p1, subtree2 )
+            p1.genotype.resetCounts()
+            p2.genotype.resetCounts()
+            return p1, p2 # returns new copies for replacement
         else:
-            term1 = reduce(operator.add, parent1.genotype.externals, 0)
-        if parent2.genotype.leaf():
-            term2 = 1
-        else:
-            term2 = reduce(operator.add, parent2.genotype.externals, 0)
-        rand1 = int(term1 * random.random())
-        rand2 = int(term2 * random.random())
-        subtree1 = parent1.genotype.getTerminalTree( rand1 )
-        subtree2 = parent2.genotype.getTerminalTree( rand2 )
-        p1 = deepcopy( parent1 )
-        p2 = deepcopy( parent2 )
-        self.replaceTree(p2, subtree1 )
-        self.replaceTree(p1, subtree2 )
-        p1.genotype.resetCounts()
-        p2.genotype.resetCounts()
-        return p1, p2
+            return self, parent2
                
 # A standard environment:
 env = {'+'  : Operator(operator.add, 2, "regular"),
@@ -239,6 +263,8 @@ env = {'+'  : Operator(operator.add, 2, "regular"),
        'ifpos' : Operator(ifpos_func,3, "lazy"),
        'and'   : Operator(and_func,  2, "lazy"),
        'or'    : Operator(or_func,   2, "lazy"),
+       #'rnd'   : Operator(lambda: random.random(), 0, "regular"),
+       #1: 1, 2:2, 3:3, 4:4,
        }
 
 if __name__ == '__main__':
@@ -254,7 +280,6 @@ if __name__ == '__main__':
                         verbose = 1)
     
         def fitnessFunction(self, pos):
-            #print "Computing Fitness of", self.pop.individuals[pos].genotype
             outputs = [ 0, 1, 1, 0 ] # outputs for XOR
             inputs = [ {'i1' : 0, 'i2' : 0},
                        {'i1' : 0, 'i2' : 1},
@@ -262,10 +287,8 @@ if __name__ == '__main__':
                        {'i1' : 1, 'i2' : 1} ]
             diff = 0
             for i in range(len(inputs)):
-                #print "Computing Fitness with", inputs[i]
                 set, goal = inputs[i], outputs[i]
                 retval = self.pop.individuals[pos].eval(set)
-                #print "result:", retval
                 item  = retval - goal
                 diff += abs(item)
             return max(4 - diff, 0)
