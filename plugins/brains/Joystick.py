@@ -1,20 +1,18 @@
-# A bare brain
-
 from pyro.brain import Brain
 from pyro.tools import joystick
 from time import sleep
 
-class DirectControl(Brain):
+class JoystickControl(Brain):
 
-   def setup(self, **args):
-      self.stick = joystick.Joystick(self.robot)
-      # initialize your vars here!
-      
-   # Only method you have to define is the step method:
+   def setup(self):
+      self.stick = joystick.Joystick()
 
    def step(self):
-      pass
-      #self.quit()
+      self.getRobot().move( self.stick.translate,
+                            self.stick.rotate )
+
+   def destroy(self):
+      self.stick.destroy()
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
@@ -22,5 +20,5 @@ class DirectControl(Brain):
 # -------------------------------------------------------
 
 def INIT(engine):
-   return DirectControl('DirectControl', engine, my_arg = "testing")
+   return JoystickControl('JoystickControl', engine)
       
