@@ -309,9 +309,14 @@ class KheperaRobot(Robot):
         self.sendMsg('O', 'light')  # ambient light
         self.sendMsg('H', 'position')
         self.sendMsg('E', 'speed')
+        self.sendMsg('K', 'stall')  # motor status, used by isStall
+
 
     def isStall(self, dev):
-        return 0
+        if self.senseData['stall'][2] > 3 or self.senseData['stall'][5] > 3:
+            return 1
+        else:
+            return 0
 
     def getX(self, dev):
         return 0.0
