@@ -1,4 +1,5 @@
 from fake import Fake
+import pyro.vision.cvision.vision as vision
 from pyro.camera import Camera, CBuffer
 import re, time, os
 import PIL
@@ -41,7 +42,9 @@ class FakeCamera(Camera):
       currname = self.pattern[:self.match.start()] + \
                  self.fstring % self.current + \
                  self.pattern[self.match.end():]
-      self.cobj = Fake(currname)
+      self.cameraDevice = Fake(currname)
+      self.cobj = vision.Vision()
+      self.cobj.registerCameraDevice(self.cameraDevice)
       self.width = self.cobj.getWidth()
       self.height = self.cobj.getHeight()
       self.depth = self.cobj.getDepth()
@@ -64,7 +67,8 @@ class FakeCamera(Camera):
                currname = self.pattern[:self.match.start()] + \
                           self.fstring % self.current + \
                           self.pattern[self.match.end():]
-               self.cobj.updateMMap(currname)
+               self.cameraDevice.updateMMap(currname)
+               self.cobj.applyFilterList()
                self.current += 1
                self.lastUpdate = currentTime
          else:

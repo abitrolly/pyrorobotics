@@ -16,10 +16,12 @@ Vision::~Vision() {
   delete [] history;
 }
 
-PyObject *Vision::registerCameraDevice(Device device) {
-  image = device.getImage();
-  return initialize(device.getWidth(), device.getHeight(), device.getDepth(),
-		    device.getRGB()[0],device.getRGB()[1],device.getRGB()[2]);
+PyObject *Vision::registerCameraDevice(void *dev) {
+  Device *device = (Device *)dev;
+  printf("device->depth is %d\n", device->getDepth());
+  image = device->getImage();
+  return initialize(device->getWidth(), device->getHeight(), device->getDepth(),
+		    device->getRGB()[0],device->getRGB()[1],device->getRGB()[2]);
 }
 
 PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
@@ -296,8 +298,8 @@ PyObject *Vision::gaussianBlur() {
   return PyInt_FromLong(0L);
 }
 
-PyObject *Vision::grayScale(int value) {
-  int x, y, d;
+PyObject *Vision::grayScale() {
+  int x, y, d, value;
   for (y=0; y<height; y++)
     for(x=0; x<width; x++)
       {
@@ -967,12 +969,7 @@ PyObject *Vision::applyFilters(PyObject *newList) {
       }
       PyList_SetItem(retvals, i, match(i1, i2, i3, i4, i5, i6));
     } else if (strcmp((char *)command, "grayScale") == 0) {
-      i1 = 255;
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: grayScale");
-	return NULL;
-      }
-      PyList_SetItem(retvals, i, grayScale(i1));
+      PyList_SetItem(retvals, i, grayScale());
     } else if (strcmp((char *)command, "threshold") == 0) {
       i1 = 0; i2 = 200;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {

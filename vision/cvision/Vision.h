@@ -53,7 +53,8 @@ public:
   Vision(int w, int h, int d);
   ~Vision();
   PyObject *initialize(int wi, int he, int de, int r, int g, int b);
-  PyObject *registerCameraDevice(Device device);
+  PyObject *registerCameraDevice(void *args);
+  //PyObject *registerCameraDevice(Device device);
   PyObject *superColor(float w1, float w2, float w3,
 		  int outChannel);
   PyObject *matchRange(int lr, int lg, int lb,
@@ -77,7 +78,7 @@ public:
   PyObject *colorHistogram();
   PyObject *trainColor();
   PyObject *gaussianBlur();
-  PyObject *grayScale(int value);
+  PyObject *grayScale();
   PyObject *sobel(int val);
   PyObject *medianBlur(int kernel);
   PyObject *setPlane(int d, int value);
