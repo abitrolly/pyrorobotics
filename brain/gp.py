@@ -5,8 +5,9 @@ import pyro.system.share as share
 class GPGene(Gene):
     def __init__(self, **args):
         self.bias = .6
-        self.constructor = GPGene
         self.fitness = 0.0
+        self.args = args
+        self.mode = -1
         if args.has_key('bias'):
             self.bias = args['bias']
         # higher the bias, more likely to be shallow
@@ -18,6 +19,40 @@ class GPGene(Gene):
             for i in range( share.operands[ share.operators[pos] ] ):
                 self.genotype.append( GPGene(**args).genotype )
 
+    def mutate(self, mode, mutationRate):
+        """
+        Depending on the mutationRate, will mutate particular terminal.
+        """
+        # this is about as hacky as one can get
+        total_points = self.countPoints()
+        terminal_points = self.countPoints('terminal')
+        rand = int(random.random() * (terminal_points - 1)) + 1
+        terms = 0
+        for i in range(1, total_points + 1):
+            subtree = self.getTree(i)
+            if type(subtree) == type('i2'):
+                terms += 1
+                if terms == rand:
+                    randterm = GPGene( **self.args)
+                    newgenotype = self.replaceTree(i, randterm.genotype)
+                    self.genotype = newgenotype
+                    return
+        
+
+    def crossover(self, parent2, crossoverRate):
+        parent1 = self
+        term1 = parent1.countPoints()
+        term2 = parent2.countPoints()
+        rand1 = int(term1 * random.random()) + 1
+        rand2 = int(term2 * random.random()) + 1
+        subtree1 = parent1.getTree( rand1 )
+        subtree2 = parent2.getTree( rand2 )
+        p1 = deepcopy( parent1 )
+        p2 = deepcopy( parent2 )
+        p1.replaceTree(rand1, subtree1 )
+        p2.replaceTree( rand2, subtree2 )
+        return p1, p2
+               
     def eval_tree(self, values, tree = ''):
         if tree == '':
             tree = self.genotype
@@ -89,11 +124,6 @@ class GPGene(Gene):
         else:
             raise "unknownTreetype", tree
 
-    def mutate(self, **args):
-        total_points = self.countPoints()
-        rand = int(random.random() * (total_points - 1)) + 1
-        #self.data = self.replaceSymbol( rand, self.constructor(bias = self.bias).genotype)
-
     def replaceTree( self, pos, subtree ):
         # first, replace symbol at pos with a special marker
         retval1 = self.replaceSymbol(pos, '???')
@@ -112,14 +142,6 @@ class GPGene(Gene):
                 return new
             else:
                 return lyst
-
-    def crossover(self, otherGene, **args):
-        term1 = self.countPoints()
-        term2 = otherGene.countPoints()
-        rand1 = int(term1 * random.random()) + 1
-        rand2 = int(term2 * random.random()) + 1
-        subtree = otherGene.getTree( rand2 )
-        return self.replaceTree( rand1, subtree )
 
     def replaceSymbol(self, pos, replacement = '???'):
         self.replace = 0
@@ -214,42 +236,48 @@ if __name__ == '__main__':
                        'or'    : 2}
     class GP(GA):
         def __init__(self, cnt, **args):
-            GA.__init__(self, Population( cnt, GPGene, **args), **args)
+            GA.__init__(self, Population( cnt, GPGene, bias =.6,
+                                          elitePercent = .1, verbose = 1),
+                        verbose = 1)
     
         def fitnessFunction(self, pos):
-            score = 0
+            diff = 0
             for i in range(len(values)):
                 set, goal = values[i], goals[i]
                 item  = self.pop.individuals[pos].eval_tree(set) - goal
-                score += abs(item)
-            return -score
+                diff += abs(item)
+            return max(4 - diff, 0)
     
         def isDone(self):
-            return self.fitnessFunction(0) == 0
+            fit = self.pop.bestMember.fitness
+            self.pop.bestMember.display()
+            print 
+            return fit == 4
     
-    gp = GP(300, bias = .6, verbose = 1)
+    gp = GP(50)
     gp.evolve()
     print " -----------------------------------------------------------------"
     raw_input("Press enter to continue...")
     class PI_GP(GA):
         def __init__(self, cnt, **args):
-            GA.__init__(self, Population( cnt, GPGene, **args), **args)
-    
+            GA.__init__(self, Population(cnt, GPGene, bias = .6,
+                                         verbose = 1, elitePercent = .1),
+                        verbose = 1, maxGeneration = 25)
         def fitnessFunction(self, pos, pr = 0):
-            val = self.pop.individuals[pos].eval_tree(values) 
-            score  = abs(val - pi)
+            diff = abs(self.pop.individuals[pos].eval_tree(values) - pi)
             if pr:
-                print val
-            return -score
+                self.pop.individuals[pos].display()
+                print
+            return max(pi - diff, 0) 
                 
         def isDone(self):
-            return abs(self.fitnessFunction(0, 1)) < 0.001
+            return abs(self.fitnessFunction(0, 1) - pi) < .001
 
     share.operators = ['+', '-', '*', '/', 'ifpos', 'and', 'or', '+1']
     share.operands['+1'] = 1
     share.terminals = ['1', 'e']
     share.userOperators = {'+1': lambda obj: obj + 1 }
     values = {'1' : 1, 'e' : math.e}
-    gp = PI_GP(1000, bias = .6, verbose = 1)
+    gp = PI_GP(100)
     gp.evolve()
     print " -----------------------------------------------------------------"

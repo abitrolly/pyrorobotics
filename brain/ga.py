@@ -23,7 +23,7 @@
 # --------------------------------------------------------------------------
 
 import RandomArray, Numeric, math, random, time, sys
-from copy import deepcopy, copy
+from copy import deepcopy
 
 def display(v):
     print v,
@@ -55,6 +55,7 @@ class Gene:
         self.bias = 0.5
         self.min = 0 # inclusive
         self.max = 1 # inclusive
+        self.args = args
         if args.has_key('verbose'):
             self.verbose = args['verbose']
         if args.has_key('min'):
@@ -90,6 +91,57 @@ class Gene:
         else:
             raise "unknownMode", self.mode
 
+    def mutate(self, mode, mutationRate):
+        """
+        Depending on the mutationRate, will mutate the genotype.
+        """
+        for i in range(len(self.genotype)):
+            if flip(mutationRate):
+                if self.verbose > 2:
+                    print "mutating at position", i
+                if mode == 'bit': 
+                    self.genotype[i] = not self.genotype[i]
+                elif mode == 'integer': 
+                    r = random.random()
+                    if (r < .5):
+                        self.genotype[i] += 1
+                    else:
+                        self.genotype[i] -= 1
+                elif mode == 'float': 
+                    r = random.random()
+                    if (r < .5):
+                        self.genotype[i] -= random.random()
+                    else:
+                        self.genotype[i] += random.random()
+                else:
+                    raise "unknownMode", mode
+
+    def crossover(self, parent2, crossoverRate):
+        """
+        Depending on the crossoverRate, will return two new children
+        created by crossing over the given parents at a single point,
+        or will return copies of the parents.
+        """
+        parent1 = self
+        geneLength = len(parent1.genotype)
+        if flip(crossoverRate):
+            crosspt = (int)((random.random() * (geneLength - 2)) + 1)
+            if self.verbose > 2:
+                print "crossing over at point", crosspt
+            child1 = parent1.genotype[:crosspt]
+            child1.extend(parent2.genotype[crosspt:])
+            child2 = parent2.genotype[:crosspt]
+            child2.extend(parent1.genotype[crosspt:])
+            new_child1 = Gene(**self.args)
+            new_child2 = Gene(**self.args)
+            new_child1.genotype = child1
+            new_child2.genotype = child2
+            return new_child1, new_child2
+        else:
+            if self.verbose > 2:
+                print "no crossover"
+            return deepcopy(parent1), deepcopy(parent2)
+    
 class Population:
     def __init__(self, cnt, geneConstructor, **args):
         self.sumFitness = 0   
@@ -99,8 +151,6 @@ class Population:
         self.elitePercent = 0.0
         self.bestMember = -1
         self.size = cnt
-        self.geneConstructor = geneConstructor
-        self.args = args
         self.verbose = 0
         if args.has_key('elitePercent'):
             self.elitePercent = args['elitePercent']
@@ -139,54 +189,7 @@ class Population:
             print "selected",
             self.individuals[index].display(),
             print "fitness", self.individuals[index].fitness
-        return self.individuals[index]
-
-    def mutate(self, child, mode, mutationRate):
-        """
-        Depending on the mutationRate, will mutate particular genes
-        in the child.
-        """
-        for i in range(len(child)):
-            if flip(mutationRate):
-                if self.verbose > 2:
-                    print "mutating at position", i
-                if mode == 'bit': 
-                    child[i] = not child[i]
-                elif mode == 'integer': 
-                    r = random.random()
-                    if (r < .5):
-                        child[i] += 1
-                    else:
-                        child[i] -= 1
-                elif mode == 'float': 
-                    r = random.random()
-                    if (r < .5):
-                        child[i] -= random.random()
-                    else:
-                        child[i] += random.random()
-                else:
-                    raise "unknownMode", mode
-    
-    def crossover(self, parent1, parent2, crossoverRate):
-        """
-        Depending on the crossoverRate, will return two new children
-        created by crossing over the given parents at a single point,
-        or will return copies of the parents.
-        """
-        geneLength = len(parent1.genotype)
-        if flip(crossoverRate):
-            crosspt = (int)((random.random() * (geneLength - 2)) + 1)
-            if self.verbose > 2:
-                print "crossing over at point", crosspt
-            child1 = parent1.genotype[:crosspt]
-            child1.extend(parent2.genotype[crosspt:])
-            child2 = parent2.genotype[:crosspt]
-            child2.extend(parent1.genotype[crosspt:])
-            return child1, child2
-        else:
-            if self.verbose > 2:
-                print "no crossover"
-            return parent1.genotype[:], parent2.genotype[:]
+        return deepcopy(self.individuals[index])
 
     def statistics(self):
         """
@@ -214,13 +217,14 @@ class Population:
                 self.eliteMembers.append( current )
                 self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
                 self.eliteMembers = self.eliteMembers[1:]
-        self.bestMember = copy(best)
+        self.bestMember = best
         self.avgFitness = (self.sumFitness * 1.0) / self.size
         if self.verbose > 0:
             print "Fitness: Total", "%7.2f" % self.sumFitness, 
             print "Best", "%5.2f" % best.fitness,
             print "Average", "%5.2f" % self.avgFitness,
             print "Worst", "%5.2f" % worst.fitness
+            print "Elite fitness:", map( lambda x: x.fitness, self.eliteMembers)
 
 class GA:
     """
@@ -294,19 +298,19 @@ class GA:
         while i < self.pop.size - 1:
             parent1 = self.pop.select()
             parent2 = self.pop.select()
-            newpop[i], newpop[i+1] = self.pop.crossover(parent1, parent2, self.crossoverRate)
-            self.pop.mutate(newpop[i], mode, self.mutationRate)
-            self.pop.mutate(newpop[i+1], mode, self.mutationRate)
+            newpop[i], newpop[i+1] = parent1.crossover(parent2, self.crossoverRate)
+            newpop[i].mutate(mode, self.mutationRate)
+            newpop[i+1].mutate(mode, self.mutationRate)
             i += 2
         # For odd sized populations, need to create the last child
         if self.pop.size % 2 == 1:
-            newpop[self.pop.size-1] = self.pop.select().genotype[:]
-            self.pop.mutate(newpop[self.pop.size-1], mode, self.mutationRate)
+            newpop[self.pop.size-1] = deepcopy(self.pop.select())
+            newpop[self.pop.size-1].mutate(mode, self.mutationRate)
         # Copy new generation into population
         elitePositions = map( lambda x: x.position, self.pop.eliteMembers)
         for i in range(self.pop.size):
             if i not in elitePositions:
-                self.pop.individuals[i].genotype = newpop[i][:]
+                self.pop.individuals[i] = newpop[i]
     
     def evolve(self):
         self.generation = 0
@@ -333,7 +337,7 @@ if __name__ == '__main__':
 
     class MaxSumGA(GA):
         def fitnessFunction(self, i):
-            return sum(self.pop.individuals[i].genotype)
+            return max(sum(self.pop.individuals[i].genotype), 0)
         def isDone(self):
             return self.pop.bestMember.fitness > 30
 
