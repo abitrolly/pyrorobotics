@@ -471,7 +471,7 @@ class player:
 	    elif device=='blobfinder': self.blobfinder[index] = \
 	    		((),(),(),(),(),(),(),(),(),(),(),(),(),(),(),(),
 			 (),(),(),(),(),(),(),(),(),(),(),(),(),(),(),())
-	    elif device=='ptz': self.ptz[index] = (0,0,0)
+	    elif device=='ptz': self.ptz[index] = (0,0,0,0,0) # Player 1.5
 	    elif device=='audio': self.audio[index] = (0,0,0,0,0,0,0,0,0,0)
 	    elif device=='fiducial': self.fiducial[index] = ()
 	    elif device=='comms': self.comms[index] = ''
@@ -1441,14 +1441,14 @@ class player:
     # interfaces for the 'ptz' device.
     #--------------------------------------------------------------------------
 
-    def set_ptz(self, pan, tilt, zoom):
+    def set_ptz(self, pan, tilt, zoom, panspeed = 0, tiltspeed = 0):
         """
 	move a camera.
 	"""
 	try:
 	    # send command
-	    header = pack_header(command, 'ptz', size=6)
-	    payload = pack_ptz_command(pan, tilt, zoom)
+	    header = pack_header(command, 'ptz', size=10)
+	    payload = pack_ptz_command(pan, tilt, zoom, panspeed, tiltspeed)
 	    self.__nsend(header+payload)
 	    # NO RESPONSE
 	    if self.debug: print '<sent a ptz command>'

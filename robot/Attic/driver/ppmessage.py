@@ -617,17 +617,19 @@ def unpack_ptz_data(payload):
     """
     decode ptz device data.
     """
-    return struct.unpack('!hhh', payload)
+    return struct.unpack('!hhhhh', payload) # Player 1.5
 
 
-def pack_ptz_command(pan, tilt, zoom): 
+def pack_ptz_command(pan, tilt, zoom, panspeed = 0, tiltspeed = 0): 
     """
     encode ptz command data into a binary string.
     """
-    return struct.pack('!hhh',			# format string
+    return struct.pack('!hhhhh',        	# format string
     		       pan,			# pan
 		       tilt,			# tilt
-		       zoom)			# zoom
+		       zoom,			# zoom
+                       panspeed,                # panspeed
+                       tiltspeed)               # tiltspeed
 
 
 #------------------------------------------------------------------------------
