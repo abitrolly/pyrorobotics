@@ -172,7 +172,10 @@ class gui(Drawable):
    def formatExceptionInfo(self, maxTBlevel=1):
       import sys, traceback
       cla, exc, trbk = sys.exc_info()
-      if cla.__dict__.get("__name__") != None:
+      print "ERROR:", cla, exc
+      if type(exc) == type(""):
+         excName = exc   # one our fake, string exceptions
+      elif cla.__dict__.get("__name__") != None:
          excName = cla.__name__  # a real exception object
       else:
          excName = cla   # one our fake, string exceptions
