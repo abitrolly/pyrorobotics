@@ -1,9 +1,6 @@
 #ifndef __V4LCAP__
 #define __V4LCAP__
 
-
-void *map;
-
 struct image_cap {
   int size;   //Size of the image, in bytes
   int bpp;    //Bits per pixel

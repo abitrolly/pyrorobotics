@@ -36,6 +36,7 @@ struct image_cap* Cgrab_image(char* device, int width,
   int depth;
   int i;
   int curChannel = 1;
+  void * map;
 
   image_struct = malloc(sizeof(struct image_cap));
   if (image_struct == NULL){

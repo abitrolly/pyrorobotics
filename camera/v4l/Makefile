@@ -1,17 +1,36 @@
-SO = .so
-OBJS = grabImage.o v4lcap.o
+
+OBJS = _v4l.so
 
 include ../../Makefile.cfg
+include ../../Makefile.src
 
-grabImage$(SO): $(OBJS)
-	$(LD)  -shared $(OBJS) -o grabImage$(SO)
+CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
+	-D_POSIX_THREAD_SAFE_FUNCTIONS \
+	-D_REENTRANT -DPOSIX \
+	-D__x86__ -D__linux__ \
+	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
+	$(PYTHON_INCLUDE)
+
+LIBDIRS= -L/usr/X11R6/lib
+LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
 
 v4lcap.o: v4lcap.c v4lcap.h
 	$(CC) $(CFLAGS) -c v4lcap.c -o v4lcap.o
 
-grabImage.o: grabImage.c v4lcap.h ../vision/vision.c ../vision/vision.h \
-		../vision/visionMethods.h
-	$(CC) $(PYTHON_INCLUDE) $(CCSHARED) $(CFLAGS) -c grabImage.c
+_v4l.so: v4l.o V4L.o v4lcap.o
+	$(CC) $(CPPFLAGS) -shared v4lcap.o v4l.o V4L.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
+
+V4L.o:: V4L.cpp
+	$(CC) $(CPPFLAGS) -o $@ -c $<
+
+V4L.cc: V4L.i V4L.h
+	swig -python -c++ -o $@ $<
+
+v4l.o: V4L.cc
+	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@
 
 clean::
-	$(RM) *.tga grabImage$(SO) *.o *~
+	$(RM) *~ 
+
+cleanall::
+	$(RM) *.so *.o
