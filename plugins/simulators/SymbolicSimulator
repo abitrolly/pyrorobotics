@@ -1,0 +1,79 @@
+#!/usr/bin/python
+
+"""
+A simple symbloic simulator for symbolic worlds
+"""
+ 
+import SocketServer, sys, Tkinter, threading
+
+class Thread(threading.Thread):
+    def __init__(self, gui):
+        threading.Thread.__init__(self)
+        self.gui = gui
+        self.server = Server(('', port),  Handler, gui)
+
+    def run(self):
+        self.server.handle_request()
+        self.gui.destroy()
+
+class GUI(Tkinter.Toplevel):
+    def __init__(self, root, width, height, worldFile):
+        Tkinter.Toplevel.__init__(self, root)
+        self.root = root
+        self.width = width
+        self.height = height
+        self.worldFile = worldFile
+        self.title("SymbolicServer")
+        self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
+        self.canvas.pack()
+        self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
+        self.thread = Thread(self)
+        self.thread.start()
+        #self.server = Server(('', port),  Handler, self)
+        #self.server.handle_request()
+
+    def destroy(self):
+        self.root.quit()
+
+class Server(SocketServer.TCPServer):
+    def __init__(self, connection, handler, gui):
+        handler.gui = gui
+        SocketServer.TCPServer.__init__(self, connection, handler)
+        #self.allow_reuse_address = 1
+            
+    #def handle_error(self, request, client_address):
+    #    print "error!"
+    
+class Handler(SocketServer.BaseRequestHandler):
+    def handle(self):
+	#"From:", self.client_address
+        done = 0
+        while not done:
+            self.gui.update()
+            request = self.request.recv(10240).strip()
+            # ------------------------------------------
+            # handle request
+            # ------------------------------------------
+            if request == 'worldFile':
+                print self.gui.worldFile
+            elif request == 'quit':
+                done = 1
+            else:
+                # unknown command
+                pass
+            # ------------------------------------------
+            # return request
+            # ------------------------------------------
+            try:
+                self.request.send("ACK: %s\n" % request)
+            except: # broken pipe, etc
+                done = 1
+        self.request.close()
+
+if __name__ == "__main__":
+    port = int(sys.argv[1])
+    worldFile = sys.argv[2]
+    root = Tkinter.Tk()
+    root.withdraw()
+    gui = GUI(root, 400, 200, worldFile)
+    gui.mainloop()
