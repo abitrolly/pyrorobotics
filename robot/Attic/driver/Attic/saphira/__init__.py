@@ -52,6 +52,20 @@ class SaphiraSenseDriver(driver.Driver):
         
         console.log(console.INFO,'saphira sense drivers loaded')
 
+    def mToSenseUnits(self, val):
+        if self.senseUnits == ROBOTS:
+            return val / 0.5 # Pioneer is about .5 meters diameter
+        elif self.senseUnits == MM:
+            return val / 1000.0
+        elif self.senseUnits == CM:
+            return (val) / 100.0 # cm
+        elif self.senseUnits == METERS:
+            return (val) 
+        elif self.senseUnits == SCALED:
+            print "WARNING: Pioneer senseUnits is SCALED?"
+            # FIX: should we have maxvalue? Force [0,1]?
+            return val / 0.5
+
     def getSonarAll(self, dev):
         vector = [0] * Saphira_getSonarCount(dev)
         for i in range(Saphira_getSonarCount(dev)):

@@ -67,7 +67,7 @@ class KheperaRobot(Robot):
         self.senses['range'] = {}
         self.senses['range']['all'] = self.getIRRangeAll
         self.senses['range']['count'] = lambda self: 8
-        self.senses['range']['maxvalue'] = lambda self: 60.0
+        self.senses['range']['maxvalue'] = lambda self: self.mmToSenseUnits(60.0)
 	self.senses['ir']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
@@ -288,17 +288,31 @@ class KheperaRobot(Robot):
             return -180.0
         elif pos == 7:
             return 180.0
-    
+
+    def mmToSenseUnits(self, val):
+        if self.senseUnits == ROBOTS:
+            return val / 55.0 # khepera is 55mm diameter
+        elif self.senseUnits == MM:
+            return val
+        elif self.senseUnits == CM:
+            return (val) / 10.0 # cm
+        elif self.senseUnits == METERS:
+            return (val) / 100.0 # meters
+        elif self.senseUnits == SCALED:
+            print "WARNING: khepera senseUnits is SCALED?"
+            # FIX: should we have maxvalue? Force [0,1]?
+            return val / 55.0
+        
     def getLightRange(self, dev, pos):
-        return (self.senseData['light'][pos] / 511.0) * 200.0 # mm
+        return self.mmToSenseUnits((self.senseData['light'][pos] / 511.0) * 200.0)
 
     def getIRRange(self, dev, pos):
-        return ((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0 # mm
+        return self.mmToSenseUnits(((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0) # mm
 
     def getIRRangeAll(self, dev):
         vector = [0] * self.get('ir', 'count')
         for i in range(self.get('ir', 'count')):
-            vector[i] = ((1023.0 - self.senseData['ir'][i]) / 1023.0) * 60.0
+            vector[i] = self.mmToSenseUnits(((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0)
         return vector
 
     def getIRFlag(self, dev, pos):
@@ -316,11 +330,15 @@ class KheperaRobot(Robot):
 
     def adjustSpeed(dev):
         # This will send new motor commands based on the
-        # robot's lastTranslate and lastRotate settings
+        # robot's lastTranslate and lastRotate settings.
+        # Khepera has differential drive, so compute each
+        # side motor commands:
         left  = int((dev.lastTranslate * dev.translateFactor - \
                      dev.lastRotate * dev.rotateFactor))
         right  = int((dev.lastTranslate * dev.translateFactor + \
                       dev.lastRotate * dev.rotateFactor))
+        # FIX: add acceleration, and assume that adjustSpeed
+        # is bing continuously called.
         dev.sendMsg('D,%i,%i' % (left, right))
         
     def _move(self, dev, trans, rotate):
