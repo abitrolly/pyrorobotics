@@ -32,9 +32,10 @@ class Robot (Drawable):
     """
     this be the one.
     """
-    def __init__(self, name = None, type = None):
+    def __init__(self, name = None, type = None, **kwargs):
         """
         if you extend Robot please call this function!
+        If you need to initialize things, call setup()
         """
         Drawable.__init__(self, name)
         console.log(console.INFO,'Creating Robot');
@@ -46,7 +47,7 @@ class Robot (Drawable):
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
         # user init:
-        self.setup()
+        self.setup(**kwargs)
 
     def __repr__(self):
         return "Robot name = '%s', type = '%s'" % (self.name, self.type)
@@ -316,9 +317,9 @@ class Robot (Drawable):
     def getServiceData(self, item):
         raise "NoSuchService", item
         
-    def setup(self):
+    def setup(self, **kwargs):
         """
-        Gets called from __init__ so users don't have to call parent
+        Is called from __init__ so users don't have to call parent
         constructor and all the gory details.
         """
         pass
