@@ -8,7 +8,7 @@ import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                brainargs=[], config = {}, camerafile = 0):
+                brainargs=[], config = {}, camerafile = 0, worldfile = 0):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
@@ -25,6 +25,10 @@ class Engine(drawable.Drawable):
          self.camerafile = camerafile
       else:
          self.camerafile = ''
+      if worldfile != None:
+         self.worldfile = worldfile
+      else:
+         self.worldfile = ''
       if simfile != None:
          self.simfile = simfile
       else:
@@ -32,7 +36,7 @@ class Engine(drawable.Drawable):
       self.brainargs = brainargs
       self.config = config
       if self.simfile:
-         self.loadSimulator(self.simfile)
+         self.loadSimulator(self.simfile, self.worldfile)
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if self.camerafile:
@@ -73,7 +77,7 @@ class Engine(drawable.Drawable):
          #reload(file)
          #reload(self.brainfile)
 
-   def loadSimulator(self,file):
+   def loadSimulator(self,file, worldfile):
       console.log(console.INFO,'Loading ' + file)
       import os, string
       options = string.split(file)
@@ -81,7 +85,8 @@ class Engine(drawable.Drawable):
          os.system(file + " &")
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/simulators/' + options[0]):
-         os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + " &")
+         os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + \
+                                     " " + worldfile + " &")
       else:
          raise 'Simulator file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
