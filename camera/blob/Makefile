@@ -30,7 +30,7 @@ blob.o: Blob.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Blob.cc -o $@
 
 clean::
-	$(RM) *~ Blob.cc blob.py
+	$(RM) *~ 
 
 cleanall::
-	$(RM) *.so *.o
+	$(RM) *.so *.o Blob.cc blob.py
