@@ -11,7 +11,7 @@ include Makefile.src
 tar: pyro-$(PYRO_VERSION).tgz
 
 pyro-$(PYRO_VERSION).tgz: Makefile
-	mkdir tars
+	mkdir tars || true
 	mv *.tgz tars/ || true
 	make clean; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude CVS --exclude tars --exclude test --exclude examples/som --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
 
