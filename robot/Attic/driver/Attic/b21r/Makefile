@@ -20,14 +20,16 @@ CPPFLAGS = -Wall -Wno-unused -DNTSC -D_POSIX_THREADS \
 	-D__OSVERSION__=2 -frepo -D USINGTHREADS -DLINUX -D_GNU_SOURCE\
 	$(PYTHON_INCLUDE) $(MOBILITY_INC) -Iinclude -g
 
-B21R_OBJS = obj/B21R.o obj/loadable_B21R.o obj/Sonar.o \
+B21R_OBJS = obj/B21R.o obj/Sonar.o obj/b21r.o \
 	obj/Laser.o obj/Tactile.o obj/Robot.o obj/Sensor.o obj/Vector.o
 
 #*******************************************************
 #*************** These are the main targets ************
 #*******************************************************
 
-_lowlevel.so: lowlevel.o obj/b21r.o $(B21R_OBJS) 
+all:: _lowlevel.so
+
+_lowlevel.so: lowlevel.o $(B21R_OBJS) 
 	$(CC) $(CPPFLAGS) -shared $^ $(SAPHIRA_LIB) $(LIBDIRS) -o $@ $(LIBS) -lomnithread -L /usr/local/mobility-b-1.1.7-rh6.0/tools/lib -L/usr/local/mobility-b-1.1.7-rh6.0/lib/ -lmby -lomniORB2 -ltcpwrapGK -lmbybase -lIIW -lNMEA -lidlmby -lmbybxxbase -lmbycfr -lmbyserial -lmbyuser -lrFlex3 -lreflex -lreflex2 -lomniDynamic2 -lomniLC
 
 lowlevel.o: lowlevel.cc
