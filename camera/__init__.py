@@ -268,10 +268,8 @@ class Camera(PyroImage, Service):
          self.app.withdraw()
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
-         self.im = self.getImage()
-         self.image = ImageTk.PhotoImage(self.im)
-         self.label = Tkinter.Label(self.window, image=self.image, bd=0)
-         self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+         self.canvas = Tkinter.Canvas(self.window)
+         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
       self.visible = 1
       while self.window.tk.dooneevent(2): pass
@@ -281,9 +279,18 @@ class Camera(PyroImage, Service):
       self.window.withdraw()
       
    def updateWindow(self):
+      self.canvas.delete("image")
       self.im = self.getImage()
+      self.im = self.im.resize( (self.window.winfo_width() - 2, 
+                                 self.window.winfo_height() - 2),
+                                Image.BILINEAR )
       self.image = ImageTk.PhotoImage(self.im)
-      self.label.configure(image = self.image)
+      self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
+                               tag="image")
+      self.canvas.create_rectangle(1, 1,
+                                   self.window.winfo_width() - 2,
+                                   self.window.winfo_height() - 2, tag="image")
+      self.canvas.pack()
       while self.window.tk.dooneevent(2): pass
 
    def startService(self):
