@@ -1,5 +1,8 @@
 from pyro.camera import *
 from grabImage import *
+from UserString import UserString
+import types
+import sys
 
 class V4LGrabber(Camera):
    """
@@ -18,7 +21,7 @@ class V4LGrabber(Camera):
    """
    def __init__(self, width, height, depth = 3, device = '/dev/video0'):
       """
-      Currently, if depth is any number other than 3, an exception
+      Currently, if depth is any number other than 1 or 3, an exception
       will be raised.  I plan on implementing various color depths soon.
 
       Device should be the name of the capture device in the /dev directory.
@@ -39,8 +42,9 @@ class V4LGrabber(Camera):
       #handle is the file handle for device
       #it needs to get passed back to refresh
       #and free
-      self.size, self.depth, self.handle, self.data = \
+      self.size, self.depth, self.handle, self.cbuf = \
                  grab_image(device, width, height, self.color)
+      self.data = CBuffer(self.cbuf)
 
    def _update(self):
       """
@@ -55,7 +59,7 @@ class V4LGrabber(Camera):
       This deconstructor method makes sure that the mmap is freed before the
       Camera is deleted.
       """
-      free_image(self.handle, self.data)
+      free_image(self.handle, self.cbuf)
 
    def center(self):
       """Not supported by this camera"""
@@ -94,8 +98,35 @@ class V4LGrabber(Camera):
       file.write("%c%c" % (self.height & 0xFF, self.height >> 8)) #Height
       file.write("%c" % (self.depth)) #bpp
       file.write("\x20") #attributes
-      file.write(self.data)
+      file.write(self.cbuf)
       file.close
+
+class CBuffer:
+   """
+   A private buffer class to transmute the CBuffer we get in V4LGrabber.data
+   into something that looks like a Python list.
+   """
+   def __init__(self, cbuf):
+      self.data = cbuf
+
+   def __getitem__(self, key):
+      if isinstance(key, types.SliceType):
+         if key.stop == sys.maxint:
+            stop = len(self)
+         else:
+            stop = key.stop
+         return struct.unpack("B" * (stop - key.start),
+                            self.data[key.start:stop])
+      else:
+         return struct.unpack("B", self.data[key])[0]
+
+   def __len__(self):
+      return len(self.data)
+
+   def __str__(self):
+      return str(self[:])
+
+   
 
 if __name__ == "__main__":
    from grabImage import *
