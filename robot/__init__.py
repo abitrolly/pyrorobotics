@@ -151,7 +151,7 @@ class Robot (Drawable):
         self.act('move_now', translate, rotate)
 
     def stop(self):
-        self.act('move_now', 0, 0)
+        self.act('move', 0, 0)
 
     def translate(self, val):
         self.act('translate', val)
