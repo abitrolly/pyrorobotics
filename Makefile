@@ -8,7 +8,7 @@ include Makefile.cfg
 
 # Failing subdir: robot/driver/testc
 
-SUBDIRS = vision/cvision camera/fake camera/blob $(CONFIGDIRS) 
+SUBDIRS =  $(CONFIGDIRS) 
 
 everything: system/version.py all bin/pyro plugins/simulators/KheperaSimulator compile 
 
