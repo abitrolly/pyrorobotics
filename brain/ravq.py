@@ -145,6 +145,11 @@ class RAVQ:
             return 0
         else:
             return self.counters[Numeric.argmin(self.counters)]
+    def getMinimumVector(self):
+        if self.models == []:
+            return []
+        else:
+            return self.models[Numeric.argmin(self.counters)]
     def getTotalCount(self):
         if self.counters == []:
             return 0
