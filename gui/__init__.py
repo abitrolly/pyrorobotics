@@ -31,13 +31,7 @@ class gui(Drawable):
       self.history_pointer = 0
       self.MAXHISTORY = 50
       self.environment = {}
-      self.lastBrainDir = ''
-      self.lastMapDir = ''
-      self.lastViewDir = ''
-      self.lastServiceDir = ''
-      self.lastSimDir = ''
-      self.lastRobotDir = ''
-      self.lastSimWorldDir = ''
+      self.lastDir = {}
       if file_exists(os.getenv('HOME') + "/.pyrohist"):
          fp = open(os.getenv('HOME') + "/.pyrohist", "r")
          self.history = map( string.strip, fp.readlines())
@@ -276,35 +270,35 @@ class gui(Drawable):
       self.engine.reset()
       
    def loadBrain(self):
-      f = self.fileloaddialog("brains","*.py", self.lastBrainDir)
+      f = self.fileloaddialog("brains","*.py", self.lastDir.get("brain", ''))
       self.redraw()
       if f != '':
-         self.lastBrainDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["brain"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.engine.loadBrain(f)
          self.redraw()
 
    def loadMap(self):
-      f = self.fileloaddialog("maps","*.py", self.lastMapDir)
+      f = self.fileloaddialog("maps","*.py", self.lastDir.get("map", ''))
       self.redraw()
       if f != '':
-         self.lastMapDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["map"] = string.join(f.split('/')[:-1],'/')
          self.engine.loadMap(f)
          self.redraw()
 
    def loadView(self):
-      f = self.fileloaddialog("views","*.py", self.lastViewDir)
+      f = self.fileloaddialog("views","*.py", self.lastDir.get("view", ''))
       self.redraw()
       if f != '':
-         self.lastViewDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["view"] = string.join(f.split('/')[:-1],'/')
          self.engine.loadView(f)
          self.redraw()
 
    def loadService(self):
-      f = self.fileloaddialog("services","*.py", self.lastServiceDir)
+      f = self.fileloaddialog("services","*.py",self.lastDir.get("service",''))
       self.redraw()
       if f != '':
-         self.lastServiceDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["service"] = string.join(f.split('/')[:-1],'/')
          if self.engine != 0 and self.engine.robot != 0:
             self.engine.robot.startService(f)
             self.redraw()
@@ -317,27 +311,27 @@ class gui(Drawable):
 
    def loadSim(self, worldfile = ''):
       pyropath = os.getenv('PYRO')
-      f = self.fileloaddialog("simulators","*",self.lastSimDir)
+      f = self.fileloaddialog("simulators","*",self.lastDir.get("sim", ''))
       self.redraw()
       if f != '':
-         self.lastSimDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')
          if worldfile == '':
             simulatorName = f.split('/')[-1]
-            if self.lastSimWorldDir == '':
-               self.lastSimWorldDir = "%s/plugins/worlds/%s/" % (pyropath, simulatorName)
-            worldfile = self.fileloaddialog("worlds","*.world", self.lastSimWorldDir )
-                                            
+            worldfile = self.fileloaddialog("worlds","*.world",
+                                            self.lastDir.get("%s-world" % simulatorName,
+                                                             "%s/plugins/worlds/%s/" %
+                                                             (pyropath, simulatorName)))
          if worldfile != '':
-            self.lastSimWorldDir = string.join(worldfile.split('/')[:-1],'/')
+            self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
             self.engine.worldfile = worldfile
             os.system(f + " " + worldfile + " &")
          self.redraw()
          
    def loadRobot(self):
-      f = self.fileloaddialog("robots","*.py", self.lastRobotDir)
+      f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))
       self.redraw()
       if f != '':
-         self.lastRobotDir = string.join(f.split('/')[:-1],'/')
+         self.lastDir["robot"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.freeRobot()
          self.engine.loadRobot(f)
