@@ -87,7 +87,7 @@ class Engine(drawable.Drawable):
       if self.config.get("pyro", "gui") == 'TTY':
          guiflag = '-g'
       if system.file_exists(options[0]):
-         os.system(file + " &")
+         os.system(file + " " + guiflag + " " + worldfile + " &")
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/simulators/' + options[0]):
          os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + \
