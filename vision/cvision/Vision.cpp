@@ -930,11 +930,12 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
       for(i=0; i<height; i++ )
 	for(j=0; j<width; j++)
 	  for(k=0;k<size;k++) {
-	    if(blobdata[j][i] == maxIndex[k]) {
-	      Image[(i * width + j) * depth + offset] = 0;
-	      Image[(i * width + j) * depth + mark1] = 255;
-	      Image[(i * width + j) * depth + mark2] = 0;
-	    }
+	    // change the color of the matching pixels:
+	    //	    if(blobdata[j][i] == maxIndex[k]) {
+	    //Image[(i * width + j) * depth + offset] = 0;
+	    //Image[(i * width + j) * depth + mark1] = 255;
+	    //Image[(i * width + j) * depth + mark2] = 0;
+	    //}
 	    if(bloblist[maxIndex[k]].mass > 0 )
 	      if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
 		  (i == bloblist[maxIndex[k]].ul.y || i == bloblist[maxIndex[k]].lr.y)) ||
