@@ -544,7 +544,10 @@ class Robot:
         if (feature in self.devData["supportedFeatures"]):
             return 1
         else:
-            raise ImportError, "feature not supported by this robot: '%s'" % feature
+            for dev in self.device:
+                if self.device[dev].devData["type"] == feature:
+                    return 1
+            raise ImportError, "robot does not currently have '%s' loaded." % feature
 
     def hasA(self, dtype):
         for dev in self.device:
