@@ -615,7 +615,7 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
-        self.sweepReportRate = 500
+        self.sweepReportRate = 1000
         self.crossValidationCorpus = ()
         self.crossValidationReportLayers = []
         self.crossValidationSampleRate = 0
@@ -891,7 +891,7 @@ class Network:
         when epoch % sweepReportRate == 0.  there is a cross
         validation data set.
         """
-        self.reportRate = value
+        self.sweepReportRate = value
     def setMaxRandom(self, value):
         """
         Sets the maxRandom Layer attribute for each layer to value.Specifies
