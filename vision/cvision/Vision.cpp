@@ -18,7 +18,6 @@ Vision::~Vision() {
 
 PyObject *Vision::registerCameraDevice(void *dev) {
   Device *device = (Device *)dev;
-  printf("device->depth is %d\n", device->getDepth());
   image = device->getImage();
   return initialize(device->getWidth(), device->getHeight(), device->getDepth(),
 		    device->getRGB()[0],device->getRGB()[1],device->getRGB()[2]);
@@ -461,49 +460,37 @@ Blob *Vision::initBlob(Blob *b) {
   b->lr.y = 0;
   b->cm.x = 0;
   b->cm.y = 0;
-  b->next = 0;
-  
+  b->next = 0;  
   return(b);
 }
 
 Blob *Vision::initBlob( Blob *b, int y, int x )
 {
-
   b->mass = 1;
-  
   b->ul.x=x;
   b->ul.y=y;
   b->lr.x=x;
   b->lr.y=y;
-
   b->cm.x=x;
   b->cm.y=y;
-  
   b->next = 0;
-
   return (b);
 }
 
 Blob *Vision::addPixel( Blob *b, int y,int x )
 {
-
   if( x < b->ul.x )
-    b->ul.x = x;
-  
+    b->ul.x = x;  
   if( x > b->lr.x )
     b->lr.x = x;
-  
   if( y < b->ul.y )
     b->ul.y = y;
-  
   if( y > b->lr.y )
     b->lr.y = y;
-  
   /* not correct */
   /*b->cm.x =( (float)(b->mass * b->cm.x + x) / (float)(b->mass+1) );
     b->cm.y =( (float)(b->mass * b->cm.y + y) / (float)(b->mass+1) );*/
   b->mass++;
-  
   return (b);
 }
 
@@ -529,10 +516,8 @@ void Vision::joinBlob( Blob *self, Blob *other )
 	(self->mass + other->mass));
 	self->cm.y=( (self->mass * self->cm.y + other->mass * other->cm.y)/
 	(self->mass + other->mass));
-      */
-      
-      self->mass += other->mass;
-      
+      */ 
+      self->mass += other->mass;      
       other->mass = 0;
     }
 }
@@ -574,7 +559,8 @@ int Vision::getBlobArea( Blob *b )
 */
 
 
-void Vision::sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size)
+void Vision::sortBlobs(int sortMethod, Blob bloblist[], 
+		       int indexes[], int size)
 {
   int i,j;
   int rankTable[MAXBLOBS];
@@ -611,7 +597,6 @@ void Vision::sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size)
   
 }
 
-
 PyObject *Vision::blobify(int inChannel, int low, int high, 
 			  int sortmethod, 
 			  int size, int drawBox)
@@ -639,15 +624,13 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   int maxIndex[5]={0};
   int **blobdata;
   blobdata = new int*[width];
-  for (i = 0; i < width; i++)
+  for (i = 0; i < width; i++) {
     blobdata[i] = new int[height];
-
-  //[240][384]={0};
+    for (j = 0; j < height; j++)
+      blobdata[i][j] = 0;
+  }
   
-  printf("Starting blobify...\n");
-
   unsigned char *ImagePtr;
-  PyObject *tuple;
   
   if(inChannel == BLUE)
     {
@@ -672,7 +655,6 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   
   ImagePtr = Image;
 
-  printf("Starting blobify 2...\n");
   /*build the blobmap and construct unjoined Blob objects*/
   for(h=0;h<height;h++)
     {
@@ -680,17 +662,14 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	{
 	  if(*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high )
 	    {  
-	      printf("matching pixel at (%d, %d)\n", w, h); // 62, 0
 	      if(h == 0 && w == 0)
 		{ /*in upper left corner - new blob */
-		  
-		    initBlob(&bloblist[count],h,w);
-		    blobdata[w][h]= count;
-		    count++;
+		  initBlob(&bloblist[count],h,w);
+		  blobdata[w][h]= count;
+		  count++;
 		}
 	      else if(w == 0)/*if in first col */
 		{
-		 
 		  if( blobdata[w][h-1] != 0 )
 		    {
 		      addPixel(&bloblist[blobdata[w][h-1]],h,w);
@@ -712,7 +691,6 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		    }
 		  else  /* left is off -- new blob */
 		    {
-		      printf("adding new blob count = %d...", count);
 		      initBlob(&bloblist[count], h,w);
 		      blobdata[w][h]=count;
 		      count++;
@@ -721,7 +699,6 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	      
 	      else if( blobdata[w-1][h] != 0 && blobdata[w][h-1] != 0 )
 		{
-		  
 		  /*
 		    see if the pixel to left and on the top are the same blob and add 
 		    this new pixel to the blob if they are 
@@ -770,19 +747,17 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	}
     }
 
-  sortBlobs(sortmethod, bloblist, maxIndex,size);
-
-  ImagePtr = Image;
+  sortBlobs(sortmethod, bloblist, maxIndex, size);
 
   if(drawBox)
     {
       for(i=0; i<height; i++ )
-	for(j=0; j<width; j++,ImagePtr+=3 )
+	for(j=0; j<width; j++)
 	  for(k=0;k<size;k++) {
 	    if(blobdata[j][i] == maxIndex[k]) {
-	      *(Image+offset) = high;
-	      *(Image+mark1) = 0;
-	      *(Image+mark2) = 0;
+	      Image[(i * width + j) * depth + offset] = 0;
+	      Image[(i * width + j) * depth + mark1] = 255;
+	      Image[(i * width + j) * depth + mark2] = 0;
 	    }
 	    if(bloblist[maxIndex[k]].mass > 0 )
 	      if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
@@ -790,13 +765,14 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		 ((j == bloblist[maxIndex[k]].ul.x || j == bloblist[maxIndex[k]].lr.x) &&
 		  (i >= bloblist[maxIndex[k]].ul.y && i <= bloblist[maxIndex[k]].lr.y)))
 		{
-		  *(Image+offset) = 255;
-		  *(Image+mark1) = 255;
-		  *(Image+mark2) = 255;
+		  Image[(i * width + j) * depth + offset] = 255;
+		  Image[(i * width + j) * depth + mark1] = 255;
+		  Image[(i * width + j) * depth + mark2] = 255;
 		}
 	  }
     }      
- 
+  
+  PyObject *tuple;
 
   switch(size)
     {
@@ -1012,6 +988,15 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	return NULL;
       }
       PyList_SetItem(retvals, i, inverse(i1));
+    } else if (strcmp((char *)command, "blobify") == 0) {
+      i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1;
+      // inChannel, low, high, sortmethod 0 = mass, 1 = area, return blobs, 
+      // drawBox
+      if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: blobify");
+	return NULL;
+      }
+      PyList_SetItem(retvals, i, blobify(i1, i2, i3, i4, i5, i6));
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;

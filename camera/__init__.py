@@ -8,7 +8,7 @@ import PIL.PpmImagePlugin
 import Image, ImageTk, types
 
 def listFilter(allArgs):
-   print "CAMERA.addFilter('%s'," % allArgs[0],
+   print "camera.addFilter('%s'," % allArgs[0],
    for a in allArgs[1]:
       print a, ",",
    print ")"
@@ -272,7 +272,10 @@ class Camera(PyroImage, Service):
                  ('Add', [['blur edges', lambda: self.addFilter( "meanBlur") ],
                           ['detect edges', lambda: self.addFilter( "sobel") ],
                           ['gray scale', lambda: self.addFilter("grayScale")],
-                          ['blobify red', lambda: self.addFilter("blobify", 0)],
+                          None,
+                          ['blobify red', lambda: self.addFilter("blobify", 0, 255, 255, 0, 1, 1)],
+                          ['blobify green', lambda: self.addFilter("blobify", 1, 255, 255, 0, 1, 1)],
+                          ['blobify blue', lambda: self.addFilter("blobify", 2, 255, 255, 0, 1, 1)],
                           None,
                           ['clear red', lambda: self.addFilter("setPlane", 0)],
                           ['clear green', lambda: self.addFilter("setPlane", 1)],
@@ -305,7 +308,7 @@ class Camera(PyroImage, Service):
 
    def apply(self, command, *args):
       if type(command) == type(""):
-         self.vision.applyFilters( [(command, args)] )
+         return self.vision.applyFilters( [(command, args)] )
       else:
          raise "Improper format for apply()"
 
@@ -315,7 +318,7 @@ class Camera(PyroImage, Service):
       Example: cam.addFilter( "superColor", 3)
       """
       self.vision.addFilter( (command, args) )
-      listFilter( (command, args) )
+      #listFilter( (command, args) )
       if not self.active:
          # if paused, apply it once, and update
          #Camera.__dict__[command](self, *args)
