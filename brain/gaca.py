@@ -4,15 +4,15 @@ from ga import *
 
 class GACA(GA):
     def __init__(self, cnt, **args):
-        GA.__init__(self, Population( cnt, Gene, **args))
-        #GA.__init__(self, makeRandomPop(100, 2 ** 7, 0, -1))
-        self.lattice = Lattice(height = 500)
         self.rules = Rules()
+        self.lattice = Lattice(height = 500)
+        GA.__init__(self, Population( cnt, Gene, **args), **args)
+        #GA.__init__(self, makeRandomPop(100, 2 ** 7, 0, -1))
         self.integer = 1
         self.crossoverPercent = .8
 
     def fitnessFunction(self, genePos):
-        self.rules.data[0] = self.pop[genePos].data
+        self.rules.data[0] = self.pop.individuals[genePos].genotype
         totalSteps = 0
         testCases = 100.0
         method = 'correct' # 'complexity'
@@ -56,4 +56,4 @@ class GACA(GA):
 if __name__ == '__main__':
     ga = GACA(100, size = 2 ** 7, mode = 'bit')
     ga.evolve()
-    ga.pop[0].display()
+    ga.pop.indiviuals[0].display()
