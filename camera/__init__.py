@@ -89,7 +89,7 @@ class Camera(PyroImage, Device):
       self.devData["filters"] = self.getFilterList()
 
    def preGet(self, keyword):
-      if keyword == ["grayscale"]:
+      if keyword == "grayscale":
          self.devData["grayscale"] = self.getGrayScale()
       else:
          self.devData["image"] = self.data
