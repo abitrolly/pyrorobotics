@@ -130,18 +130,23 @@ class Layer:
     def setActivations(self, value):
         for i in range(self.size):
             self.activation[i] = value
-    def copyActivations(self, arr):
+    def copyActivations(self, arr, rest_value = 0.0):
         for i in range(self.size):
-            self.activation[i] = arr[i]
+            if i < len(arr):
+                self.activation[i] = arr[i]
+            else: # arr is short; fill with rest_value
+                self.activation[i] = rest_value
     def getTarget(self):
         return toArray(self.target)
     def setTarget(self, value):
         for i in range(self.size):
             self.target[i] = value
-    def copyTarget(self, arr):
+    def copyTarget(self, arr, rest_value = 0.0):
         for i in range(self.size):
-            self.target[i] = arr[i]
-
+            if i < len(arr):
+                self.target[i] = arr[i]
+            else: # arr is short; fill with rest_value
+                self.target[i] = rest_value
 # A neural Network connection between layers
 
 class Connection:
