@@ -409,3 +409,9 @@ class Robot (Drawable):
         constructor and all the gory details.
         """
         pass
+
+    def enableMotors(self):
+        pass
+
+    def disableMotors(self):
+        pass
