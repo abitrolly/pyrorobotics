@@ -83,6 +83,10 @@ class AriaRobot(Robot):
 	self.update() 
         self.inform("Done loading Aria robot.")
 
+    def move(self, dev, translate_velocity, rotate_velocity):
+        dev.setVel((int)(translate_velocity * 1100.0))
+        dev.setVel2((int)(rotate_velocity * 75.0))
+
     def getStallValue(self, dev):
         return dev.getStallValue()
 
@@ -197,12 +201,13 @@ class AriaRobot(Robot):
         Aria.init()
         self.dev = ArRobot()
         self.conn = ArTcpConnection()
-        print "Opening port %d..." % (8000 + getuid())
-        self.conn.setPort("%d" % (8000 + getuid()))
+        print "Attempting to open TCP port at localhost:%d..." % (8000 + getuid())
+        self.conn.setPort("localhost", 8000 + getuid())
         self.dev.setDeviceConnection(self.conn)
         if (self.dev.blockingConnect() != 1):
             # could not connect to TCP; let's try a serial one
             # this is a real robot
+            print "Attempting to open Serial TTY port..."
             self.conn = ArSerialConnection()
             self.conn.setPort()
             self.dev.setDeviceConnection(self.conn)
