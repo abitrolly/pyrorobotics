@@ -96,7 +96,7 @@ class PyroImage:
       self.width = newImage.width
       self.height = newImage.height
       
-   def getShrunkenImage(self, xscale=0.5, yscale='unset'):
+   def getShrunkenImage(self, xscale=0.5, yscale='unset', mode='average'):
       """
       return a shrunken version of the current image
       if used without arguments, will return a 1/2 scale image
@@ -112,14 +112,19 @@ class PyroImage:
       ypixels = int(1/yscale)
       for y in range(newImage.height):
          for x in range(newImage.width):
-            for y1 in range(y*ypixels,(y+1)*ypixels):
-               for x1 in range(x*xpixels,(x+1)*xpixels):
-                  val1 = self.getVal(x1,y1)
-                  val2 = newImage.getVal(x,y)
-                  newval = tuple(map(lambda x,y: x+y, val1, val2))
-                  newImage.setVal(x,y,newval)
-            val = newImage.getVal(x,y)
-            newval = tuple(map(lambda x,xp=xpixels,yp=ypixels: x/(xp*yp), val))
+            if(mode == 'average'):
+               for y1 in range(y*ypixels,(y+1)*ypixels):
+                  for x1 in range(x*xpixels,(x+1)*xpixels):
+                     val1 = self.getVal(x1,y1)
+                     val2 = newImage.getVal(x,y)
+                     newval = tuple(map(lambda x,y: x+y, val1, val2))
+                     newImage.setVal(x,y,newval)
+               val = newImage.getVal(x,y)
+               newval = tuple(map(lambda x,xp=xpixels,yp=ypixels: x/(xp*yp), val))
+            elif(mode == 'sample'):
+               newval=self.getVal(x*xpixels,y*ypixels)
+            else:
+               raise "unrecognized mode '" + mode + "'"
             newImage.setVal(x,y,newval)
       return newImage
 
@@ -780,9 +785,18 @@ if __name__ == '__main__':
    print "Do you want to run test 2.25: image shrinking? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      newimage = image.getShrunkenImage()
-      newimage.saveToFile("shrunken.ppm")
-      print "Done! To see output, use 'xv shrunken.ppm'"
+      from time import clock
+      tavg = clock()
+      newimage = image.getShrunkenImage(mode='average')
+      tavg = clock() - tavg
+      newimage.saveToFile("shrunken_avg.ppm")
+      tsmp = clock()
+      newimage = image.getShrunkenImage(mode='sample')
+      tsmp = clock() - tsmp
+      newimage.saveToFile("shrunken_smp.ppm")
+      print "calc time for mode 'average': %f" %(tavg)
+      print "calc time for mode 'sample': %f" %(tsmp)
+      print "Done! To see output, use 'xv shrunken...'"
    else:
       print "skipping..."
    print "Do you want to run test 2.5: create a filtered image, save to file? ",
@@ -790,7 +804,6 @@ if __name__ == '__main__':
       print "Running..."
       newimage = image.getColorFilter(1,.5,0)
       newimage.saveToFile("testorange.ppm")
-      #image.display()
       print "Done! To see output, use 'xv testorange.ppm'"
    else:
       print "skipping..."
@@ -799,7 +812,6 @@ if __name__ == '__main__':
       print "Running..."
       newimage.resetToColor(0,.5,1)
       newimage.saveToFile("testturquoise.ppm")
-      #image.display()
       print "Done! To see output, use 'xv testturquoise.ppm'"
    else:
       print "skipping..."      
