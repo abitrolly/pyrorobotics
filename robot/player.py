@@ -57,13 +57,11 @@ class PlayerRobot(Robot):
         self.senses['sonar']['type'] = lambda dev: 'range'
         
         # location of sensors' hits:
-        # FIX: where are these computed in Player?
-        self.senses['sonar']['x'] = lambda dev, pos: 0.0
-        self.senses['sonar']['y'] = lambda dev, pos: 0.0
+        self.senses['sonar']['x'] = lambda dev, pos: self.localXDev(dev, pos)
+        self.senses['sonar']['y'] = lambda dev, pos: self.localYDev(dev, pos)
         self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
         self.senses['sonar']['value'] = lambda dev, pos: self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar')
-        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2.99, 'sonar')
-        #         self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
+        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2990, 'sonar')
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
         
         # location of origin of sensors:
@@ -94,33 +92,13 @@ class PlayerRobot(Robot):
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
         self.senses['self'] = self.senses['robot']
-        
-        #         console.log(console.INFO,'aria sense drivers loaded')
-        
+
         self.controls['move'] = self.moveDev
         self.controls['translate'] = self.translateDev
         self.controls['rotate'] = self.rotateDev
         self.controls['update'] = self.updateDev
         #self.controls['localize'] = self.localizeDev
-        
-        #         console.log(console.INFO,'aria control drivers loaded')
-        #         self.SanityCheck()
-        #         self.dev.runAsync(1)
-        # 	self.update() 
-        #         self.inform("Done loading Aria robot.")
-        
-        #     def getSonarX(self, pos):
-        #         x = self.dev.getSonarReading(pos).getLocalX() 
-        #         y = self.dev.getSonarReading(pos).getLocalY()
-        #         return (COSDEG90RADS * x - SINDEG90RADS * y)
-        
-        #     def getSonarY(self, pos):
-        #         x = self.dev.getSonarReading(pos).getLocalX() 
-        #         y = self.dev.getSonarReading(pos).getLocalY() 
-        #         return -(SINDEG90RADS * x - COSDEG90RADS * y)
-        
-        #     def setGripper(self, dev, option):
-        #         pass
+        console.log(console.INFO,'Player control drivers loaded')
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)
@@ -142,6 +120,18 @@ class PlayerRobot(Robot):
                       0,
                       rotate_velocity * 75.0)
         
+    def localXDev(self, dev, pos):
+        thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
+        dist = self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar')
+        x = self.rawToUnits(dev, self.sonarGeometry[pos][0], 'sonar')
+        return cos(thr) * dist
+
+    def localYDev(self, dev, pos):
+        thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180
+        dist = self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar')
+        y = self.rawToUnits(dev, self.sonarGeometry[pos][1], 'sonar') 
+        return sin(thr) * dist
+
     def getX(self, dev):
         return self.x
 
@@ -239,7 +229,6 @@ class PlayerRobot(Robot):
             #y2, x2, z2 = -self.get('sonar', 'ox', i), \
             #             -self.get('sonar', 'oy', i), \
             #             self.get('sonar', 'oz', i)
-            # Those above values are off!
             # FIXME: what are the actual positions of sensor x,y?
             x2, y2, z2 = 0, 0, z1
             arc    = self.get('sonar', 'arc', i) # in radians
@@ -267,13 +256,6 @@ class PlayerRobot(Robot):
         
     def disconnect(self):
         print "Disconnecting..."
-        #         self.dev.disconnect()
-        
-        #     def getSonarRangeDev(self, dev, pos):
-        #         return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
-        
-        #     def getSonarMaxRange(self, dev):
-        #         return self.rawToUnits(dev, 2.99, 'sonar')
 
     def rawToUnits(self, dev, raw, name):
         raw = raw / 1000.0
