@@ -109,7 +109,7 @@ public:
   PyObject *setImage(int newImage);
   PyObject *backup();
   PyObject *restore();
-  PyObject *motion(int threshold);
+  PyObject *motion(int threshold, int outChannel);
   PyObject *rotate();
   PyObject *getMenu();
   PyObject *swapPlanes(int d1, int d2);

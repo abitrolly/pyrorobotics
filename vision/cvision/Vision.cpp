@@ -1133,7 +1133,7 @@ PyObject *Vision::restore() {
   return copy(1); // 0 backup, 1 restore
 }
 
-PyObject *Vision::motion(int threshold) { 
+PyObject *Vision::motion(int threshold, int outChannel) { 
   static unsigned char *motion = new unsigned char[width * height * depth];
   static unsigned char *temp = new unsigned char[width * height * depth];
   for (int w = 0; w < width; w++) {
@@ -1141,13 +1141,12 @@ PyObject *Vision::motion(int threshold) {
       int totalDiff = 0;
       for (int d = 0; d < depth; d++) {
 	totalDiff += abs(Image[(h * width + w) * depth + d] - motion[(h * width + w) * depth + d]);
+	// set it black:
+	temp[(h * width + w) * depth + d] = 0;
       }
-      for (int d = 0; d < depth; d++) {
-	if (totalDiff/3 > threshold)
-	  temp[(h * width + w) * depth + d] = 255;
-	else
-	  temp[(h * width + w) * depth + d] = 0;
-      }
+      // mark the outChannel bright if qualifies:
+      if (totalDiff/3 > threshold)
+	temp[(h * width + w) * depth + rgb[outChannel]] = 255;
     }
   }
   memcpy(motion, Image, width * height * depth);
@@ -1246,7 +1245,7 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
   PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
-  PyList_Append(menu, Py_BuildValue("sssi", "Detect", "Motion", "motion", 30));
+  PyList_Append(menu, Py_BuildValue("sssii", "Detect", "Motion", "motion", 30, 0));
 
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Match", "By Tolerance", "match", 0, 0, 0, 30, 0));
   PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Match", "By Range", "matchRange", 0, 0, 0, 255, 255, 255, 0));
@@ -1376,11 +1375,12 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     retval = restore();
   } else if (strcmp((char *)command, "motion") == 0) {
     i1 = 30; 
-    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+    i2 = 0;
+    if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
       PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: motion");
       return NULL;
     }
-    retval = motion(i1);
+    retval = motion(i1, i2);
   } else if (strcmp((char *)command, "threshold") == 0) {
     i1 = 0; i2 = 200;
     if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
