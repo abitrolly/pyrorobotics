@@ -354,7 +354,8 @@ class GLgui(gui):
          self.bitmapString(1, self.height - 30, "    %.2f" % self.engine.robot.get('robot', 'x'), (1, 0, 0))
          self.bitmapString(1, self.height - 60, "    %.2f" % self.engine.robot.get('robot', 'y'), (1, 0, 0))
          self.bitmapString(1, self.height - 90, "      %.2f" % self.engine.robot.get('robot', 'th'), (1, 0, 0))
-         self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
+         if self.engine.robot.get('self', 'stall'):
+            self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
       else:
          self.bitmapString(1, self.height - 30, "    0.0", (1, 0, 0))
          self.bitmapString(1, self.height - 60, "    0.0", (1, 0, 0))
