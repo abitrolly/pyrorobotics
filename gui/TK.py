@@ -146,6 +146,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.status.pack(side="top", expand = "yes", fill="both")
       self.textframe.pack(side="top", fill="both")
       self.redirectToWindow()
+      #self.tk_focusFollowsMouse()
+      self.commandEntry.focus_force()
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def showAll(self):
@@ -169,6 +171,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # create a command 
       self.commandEntry = Tkinter.Entry(self.commandFrame)
       self.commandEntry.bind('<Return>', self.CommandReturnKey)
+      self.commandEntry.bind('<Tab>', self.CommandTabKey)
       self.commandEntry.bind('<Control-p>', self.CommandPreviousKey)
       self.commandEntry.bind('<Control-n>', self.CommandNextKey)
       self.commandEntry.bind('<Up>', self.CommandPreviousKey)
@@ -257,6 +260,67 @@ class TKgui(Tkinter.Toplevel, gui):
             self.commandEntry.insert(0, self.history[self.history_pointer])
       else:
          print 'No more commands!', chr(7)
+
+   def CommandTabKey(self, event):
+      from string import strip
+      command = strip(self.commandEntry.get())
+      if len(command) > 0:
+         if command[-1] == ".":
+            command = command[:-1]
+      if self.engine.brain:
+         self.environment["self"] = self.engine.brain
+      else:
+         self.environment["self"] = BrainStem(self.engine.robot)
+      self.environment["engine"] = self.engine
+      self.environment["robot"] = self.engine.robot
+      self.environment["brain"] = self.engine.brain
+      succeed = 0
+      try:
+         exec("_methods = %s/help\")" % command) in self.environment
+         print "Help: ----------------------------------------------------"
+         print self.environment["_methods"]
+      except:
+         pass
+      try:
+         if '"' in command:
+            exec("_methods = %s\")" % command) in self.environment
+            succeed = 1
+         elif "'" in command:
+            exec("_methods = %s\')" % command) in self.environment
+            succeed = 1
+      except:
+         pass
+      if succeed:
+         prettyMethods = self.environment["_methods"]
+         if (type(prettyMethods) != type([]) and
+             type(prettyMethods) != type((1,))):
+            prettyMethods = [prettyMethods]
+      else:
+         try:
+            exec("_methods = dir(%s)" % command) in self.environment
+            succeed = 1
+         except:
+            pass
+         if succeed:
+            methods = self.environment["_methods"]
+            prettyMethods = [m for m in methods if m[0] != "_"]
+         else:
+            prettyMethods = ["Nothing appropriate"]
+      cnt = 1
+      print "Completion data: -----------------------------------------"
+      for item in prettyMethods:
+         try:
+            print "%-20s " % item,
+         except:
+            print item
+         if cnt % 3 == 0:
+            print
+         cnt += 1
+      self.commandEntry.focus()
+      if cnt % 3 != 1:
+         print
+      print "----------------------------------------------------------"
+      return "break" # drops the tab from propagating
 
    def CommandReturnKey(self, event):
       from string import strip

@@ -43,6 +43,7 @@ class gui:
       self.history_pointer = 0
       self.MAXHISTORY = 50
       self.environment = {}
+      self.environment["gui"] = self
       self.lastDir = {}
       if file_exists(os.getenv('HOME') + "/.pyrohist"):
          fp = open(os.getenv('HOME') + "/.pyrohist", "r")
@@ -158,7 +159,6 @@ class gui:
          _retval = "error"
          exp2 = string.strip(retval)
          # perhaps could do these once, but could change:
-         self.environment["gui"] = self
          if self.engine.brain:
             self.environment["self"] = self.engine.brain
          else:
