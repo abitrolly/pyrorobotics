@@ -25,7 +25,6 @@ struct image_cap* Cgrab_image(char* device, int width,
   struct video_channel    *vc;
   //char* buf;
   void *image;
-  void *map;
   int dev;
   int depth;
   int i;
@@ -74,7 +73,7 @@ struct image_cap* Cgrab_image(char* device, int width,
             vcap.minwidth,
             vcap.minheight);
   }
-                                                                                  /* queries the video device for the channel information
+  /* queries the video device for the channel information
      - channel
      - name
      - tuners
