@@ -1,133 +1,206 @@
-""" A Governor Self-regulating Network
+"""
 
-Designed to give the power of offline learning to online learning
+Governor code for self regulating networks.
 
 """
 
-from pyro.brain.VisConx.VisRobotConx import *
-from pyro.brain.conx import *
-from pyro.brain.psom.vis import *
-from pyro.brain.ravq import *
+import pyro.brain.ravq
+import random
 
+class Governor:
 
-class Governor(Network, VisPsom):
-    """ A Neural Network Class with SOM Regulator. """
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, bufferSize = 50, mask = []):
+        # ravq
+        self.ravq = pyro.brain.ravq.RAVQ(size, epsilon, delta)
+        self.ravq.setHistory(0)
+        self.ravq.setAddModels(1)
+        if not mask == []: 
+            self.ravq.setMask(mask)
 
-    def __init__(self, inputSize, hiddenSize, outputSize):
-        """ Constructor for Governor Class """
-        Network.__init__(self, "Governor Network")
-        VisPsom.__init__(self, xdim = 1, ydim = 3, dim = inputSize + outputSize)
-        self.addThreeLayers( inputSize, hiddenSize, outputSize)
+        # buffer 
+        self.buffer = []
+        self.bufferSize = bufferSize
+        self.bufferIndex = 0
 
-    def train(self):
-        """ Overload network train to sample first with SOM, then train"""
-        # train som on input + target pair
-        dim = self.getLayer("input").size + self.getLayer("output").size
-        dset = dataset(dim = dim )
-        # init_vector = vector([.0] * dim), dim = dim )
-        for i in range( len( self.inputs) ):
-            dset.addvec( vector(self.inputs[i] + self.targets[i]) )
-        dset.display()
-        self.init_training(0.02, 1.0, 5000) #len(self.inputs))
-        print "Training SOM..."
-        self.train_from_dataset( dset, mode = 'rand' )
-        # test: just train on the model vectors:
-        ins = [ ]
-        outs = [ ]
-        for x in range(self.xdim):
-            for y in range(self.ydim):
-                modelvector = self.get_model_vector(point(x = x, y = y))
-                #ins.append( map(round, modelvector[0:self.getLayer("input").size] ))
-                ins.append( modelvector[0:self.getLayer("input").size] )
-                #outs.append( map(round, modelvector[self.getLayer("output").size:] ))
-                outs.append( modelvector[self.getLayer("output").size:] )
-        print "ins :", ins
-        print "outs:", outs
-        self.setInputs( ins )
-        self.setTargets( outs)
-        print "Training Network..."
-        Network.train(self)
-
-class RAVQGovernor:
-    def __init__(self, network, ravq, threshold):
-        self.net = network
-        self.ravq = ravq
-        self.threshold = threshold
-    def setLearning(self):
-        count = self.ravq.getWinnerCount()
-        if count > self.threshold:
-            return 0
+    def process(self, vector):
+        self.ravq.input(vector)
+        if self.ravq.getNewWinner(): 
+            if len(self.buffer) >= self.bufferSize:
+                self.buffer = self.buffer[1:] + [vector]
+            else:
+                self.buffer.append(vector)
+        if len(self.buffer) > 0: 
+            array = self.buffer[self.bufferIndex]
+            self.bufferIndex = (self.bufferIndex + 1) % len(self.buffer)
+            return array
         else:
-            return 1
-    def setEpsilon(self):
-        return self.net.epsilon
-    def step(self, inputs, targets):
-        self.ravq.input(inputs + targets)
-        self.net.setLearning(self.setLearning())
-        self.net.setEpsilon(self.setEpsilon())
-        return self.net.step(input = inputs, output = targets)
-        
-        
-if __name__ == '__main__':
-    rnet = Governor(4, 2, 4)
-    rnet.setInputs([[1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
-                    [1, 0, 0, 0],
+            return vector
 
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 1, 0, 0],
+    def __len__(self):
+        return len(self.ravq.models)
 
-                    [0, 0, 1, 0],
-                    [0, 0, 0, 1],
-                    ])
-
-    rnet.setTargets([[1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     [1, 0, 0, 0],
-                     
-                     [0, 1, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 1, 0, 0],
-                     
-                     [0, 0, 1, 0],
-                     [0, 0, 0, 1],
-                     ])
-    rnet.setTolerance(.2)
-    # do/don't do:
-    rnet.train()
-    rnet.setInputs([[1, 0, 0, 0],
-                    [0, 1, 0, 0],
-                    [0, 0, 1, 0],
-                    [0, 0, 0, 1],
-                    ])
-    rnet.setTargets([[1, 0, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, 1, 0],
-                     [0, 0, 0, 1],
-                     ])
-    #Network.train(rnet)
-    rnet.setLearning(0)
-    rnet.setInteractive(1)
-    rnet.sweep()
-
+    def query(self):
+        return str(self.ravq)
     
+    def save(self, filename):
+        self.ravq.saveRAVQToFile(filename)
+
+    def load(self, filename):
+        self.ravq.loadRAVQFromFile(filename)
+
+
+class AdaptiveGovernor(Governor):
+
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, bufferSize = 50, mask = []):
+        # ravq
+        self.ravq = pyro.brain.ravq.ARAVQ(size, epsilon, delta, alpha)
+        self.ravq.setHistory(0)
+        self.ravq.setAddModels(1)
+        if not mask == []: 
+            self.ravq.setMask(mask)
+
+        # buffer 
+        self.buffer = []
+        self.bufferSize = bufferSize
+        self.bufferIndex = 0
+
+class BalancingGovernor(Governor):
+
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, depth = 5, mask = []):
+        # ravq
+        self.ravq = pyro.brain.ravq.ARAVQ(size, epsilon, delta, alpha)
+        self.ravq.setHistory(1)
+        self.ravq.setHistorySize(depth)
+        self.ravq.setAddModels(1)
+        if not mask == []: 
+            self.ravq.setMask(mask)
+        self.index = -1
+
+    def process(self, vector):
+        self.ravq.input(vector)
+        if self.ravq.getHistoryLength() is 0:
+            return vector
+        else:
+            self.index = (1 + self.index) % self.ravq.getHistoryLength()
+            return self.ravq.getHistory(self.index)
+
+    # Definition borrowed from conx.py: I want to randomize the order
+    # of training across the buffers periodically, but when to do so
+    # is yet another parameter, so this is not yet implimented.
     
+    def randomIndices(self, number):
+        """
+        random list generator
+        """
+        self.indices = [0] * number
+        flag = [0] * number
+        for i in range(number):
+            pos = int(random.random() * number)
+            while (flag[pos] == 1):
+                pos = int(random.random() * number)
+            flag[pos] = 1
+            self.indices[pos] = i   
+
+class DiscreteGovernor:
+
+    def __init__(self, sampleDelay, bufferSize):
+        self.delay = sampleDelay
+        self.counter = 0
+
+        # buffer 
+        self.buffer = []
+        self.bufferSize = bufferSize
+        self.bufferIndex = 0
+
+    def process(self, vector):
+        if self.counter % self.delay == 0: 
+            if len(self.buffer) >= self.bufferSize:
+                self.buffer = self.buffer[1:] + [vector]
+            else:
+                self.buffer.append(vector)
+        self.counter += 1
+        if len(self.buffer) > 0: 
+            array = self.buffer[self.bufferIndex]
+            self.bufferIndex = (self.bufferIndex + 1) % len(self.buffer)
+            return array
+        else:
+            return vector
+
+    def query(self):
+        pass
+    
+    def save(self, filename):
+        pass
+
+    def load(self, filename):
+        pass
+        
+
+class RandomGovernor:
+
+    # for random sampling
+    def flip(self):
+        """
+        Flip a biased coin.
+        """
+        return random.random() <= self.probability
+
+
+    def exponential(self):
+        """
+        Sample from discrete exponential distribution.
+        """
+        value = random.expovariate(1.0/10.0)
+        return int(value)
+
+    def waitTime(self):
+        """
+        Discrete distribution based on histogram data.
+        """
+        listp = [ 0.00595745,  0.0093617,   0.02553191,  0.04425532, 0.05787234,  0.08085106,
+                  0.14382979,  0.2212766,   0.31829787, 0.39744681, 0.46893617,  0.53531915,
+                  0.61531915,  0.70468085,  0.7787234 ,  0.85361702, 0.90468085,  0.92851064,
+                  0.94808511,  0.95744681,  0.96255319,  0.96510638, 0.97361702,  0.98297872,
+                  0.9906383 ,  0.99659574,  1.00]
+
+        
+        randomnumber = random.random()
+        for i in range(len(listp)):
+            if randomnumber < listp[i]:
+                break
+        return i
+
+    def __init__(self, probability, bufferSize):
+        self.probability = probability
+
+        # buffer 
+        self.buffer = []
+        self.bufferSize = bufferSize
+        self.bufferIndex = 0
+        self.wait = self.waitTime()
+
+    def process(self, vector):
+        if self.wait is 0:
+            self.wait = self.waitTime() # reset wait
+            if len(self.buffer) >= self.bufferSize:
+                self.buffer = self.buffer[1:] + [vector]
+            else:
+                self.buffer.append(vector)
+        else:
+            self.wait -= 1 # decrement wait
+        # decide what to return
+        if len(self.buffer) > 0: 
+            array = self.buffer[self.bufferIndex]
+            self.bufferIndex = (self.bufferIndex + 1) % len(self.buffer)
+            return array
+        else:
+            return vector
+
+    def query(self):
+        pass
+    
+    def save(self, filename):
+        pass
+
+    def load(self, filename):
+        pass
