@@ -28,6 +28,7 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
   int dev;
   int depth;
   int i;
+  int curChannel = 1;
 
   image_struct = malloc(sizeof(struct image_cap));
   if (image_struct == NULL){
@@ -142,7 +143,6 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     return NULL;
     }*/
 
-  int curChannel = 1;
   vc[curChannel].channel = 1;
   vc[curChannel].norm = 1; // this seems to be necessary (?)
   if(ioctl(dev, VIDIOCSCHAN, &(vc[curChannel])) < 0){
