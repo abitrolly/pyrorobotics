@@ -7,7 +7,7 @@
 from pyro.brain.psom import *
 from Tkinter import *
 import struct
-import ImageTk
+from PIL import ImageTk
 import pyro.gui.plot.hinton
 
 class VisVector:
