@@ -152,7 +152,7 @@ class Rules(Matrix):
         for c in range( length):
             self.apply(lat, c)
             if lat.data[c] == lat.data[c + 1]:
-                return c
+                return c + 1
         return length
 
 class Lattice(Matrix):
