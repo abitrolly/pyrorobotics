@@ -98,4 +98,18 @@ int b21r :: move(double translate, double rotate) {
   return (dev->SetVelos(translate, rotate));
 }
 
+double b21r :: getX() {
+  return dev->getActualX();
+}
 
+double b21r :: getY() {
+  return dev->getActualY();
+}
+
+double b21r :: getTh() {
+  return dev->getActualDegth();
+}
+
+double b21r :: getThr() {
+  return dev->getActualRadth();
+}

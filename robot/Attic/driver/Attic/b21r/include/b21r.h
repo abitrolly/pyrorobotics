@@ -32,6 +32,10 @@ class b21r
     PyObject *getSonarHigh(void);
     PyObject *getSonarLow(void);
     int move(double translate, double rotate);
+    double getX();
+    double getY();
+    double getTh();
+    double getThr();
     B21R   *dev;
 };
 

@@ -7,7 +7,7 @@ from time import *
 from pyro.brain import *
 from pyro.brain.behaviors.fsm import State
 
-class BehaviorBasedBrain (Brain):
+class BehaviorBasedBrain(Brain):
    """
    This is the main engine that runs collections of behaviors (states).
    Usually, you create once of these per robot.
