@@ -116,12 +116,8 @@ x11_include_dir = ask("5. Where is the X11 include directory?",
                       locate = "/usr/X11")
 
 included_packages = ask_yn("\n6. Options:", [
-    #('camera/bt848',"BT848 camera"),
-    #('geometry', "Test Geometry C code"),
-    #('gui/3DArray', "Test 3D Array Code"),
-    #('robot/driver/grid', "Test C Grid"),
-    #('robot/driver/video', "Test Video"),
     ('camera/v4l', "Video for Linux (v4l)"),
+    ('camera/bt848', "BT848 Video (old Pioneers)"),
     ('brain/psom brain/psom/csom_src/som_pak-dev',
      "Self-organizing Map (SOM)"),
     ('tools/cluster', "Cluster Analysis Tool"),

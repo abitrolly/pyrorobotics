@@ -12,8 +12,8 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE)
 
-LIBDIRS= -L/usr/X11R6/lib
-LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
+LIBDIRS= 
+LIBS= -lstdc++ -ldl -lpthread
 
 _v4l.so: v4l.o V4L.o
 	$(CC) $(CPPFLAGS) -shared v4l.o V4L.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)

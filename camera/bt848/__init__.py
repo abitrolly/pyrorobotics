@@ -24,7 +24,7 @@ class BT848Camera(Camera):
       self.cbuf=None
       try:
          self.cameraDevice = BT848(device, width, height, depth)
-	 # self.cameraDevice.setRGB( 2, 1, 0)
+	 self.cameraDevice.setRGB( 2, 1, 0)
       except:
          print "bt848: grab_image failed!"
       # connect vision system: --------------------------
