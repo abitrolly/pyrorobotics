@@ -1,0 +1,28 @@
+
+unit_length "m"			# All units are in meters
+#resolution 0.02
+
+#GUI settings
+gui
+(
+  size [220.0 270.0]
+  origin [1.0  2.0]
+  scale .02		# 1 pixel = 0.01 meters
+)
+
+box (
+        size [2.0 4.0]
+        color "black"
+        pose [1.0 2.0 0]
+   )
+
+
+include "sparko.inc"
+sparko
+(
+  color "red"
+  name "Pioneer"
+  port 6665
+  pose [1.0 2.0 -90]
+  truth()
+)
