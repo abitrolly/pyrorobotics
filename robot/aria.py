@@ -228,7 +228,7 @@ class AriaSonar(AriaSensor):
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         elif self.params.getNumSonar() > 16:
-            print "Pyro warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar())
+            print "Pyro warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar()
             self.groups = {'all': range(self.params.getNumSonar())}
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
