@@ -8,14 +8,14 @@ include Makefile.cfg
 
 # Failing subdir: robot/driver/testc
 
-SUBDIRS = $(CONFIGDIRS)
+SUBDIRS = $(CONFIGDIRS) camera/fake
 
 ifeq ($(SAPHIRA),)
 else
 SUBDIRS += lib robot/driver/saphira 
 endif
 
-everything: system/version.py all bin/pyro plugins/simulators/Khepera compile
+everything: system/version.py all bin/pyro plugins/simulators/Khepera compile 
 
 include Makefile.src
 

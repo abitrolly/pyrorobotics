@@ -16,36 +16,4 @@ struct image_cap *Cgrab_image(char* device, int width, int height,
 int Crefresh_image(struct image_cap *image_struct, int width, int height);
 int Cfree_image(struct image_cap *image_struct);
 
-
-typedef struct bitmap
-{
-  int height;
-  int width;
-  int depth;
-  unsigned int data[384][240];
-  int *equivList;
-}Bitmap;
-
-
-typedef struct point{
-  int x;
-  int y;
-} Point;
-
-
-typedef struct blob{
-
-  Point ul;
-  Point lr;
-  Point cm;
-
-  int mass;
-  int next;
-}Blob;
-
-
-
-
-
-
 #endif
