@@ -65,6 +65,11 @@ class PlayerService(Service):
             raise ServiceError, "Function 'setPose' is not available for service '%s'" % self.name
 
 class PlayerCommService(PlayerService):
+
+    def __init__(self, dev, name):
+        PlayerService.__init__(self, dev, name)
+        self.messages = []
+    
     def sendMessage(self, message):
         if self.dev.comms == {}:
             print "Need to startService('comm') in robot: message not sent"
@@ -80,6 +85,12 @@ class PlayerCommService(PlayerService):
         # reset queue:
         self.messages = []
         return tmp
+
+    def updateService(self):
+        for i in self.dev.comms:
+            msg = self.dev.get_comms()
+            if msg:
+                self.messages.append( msg )
 
 class PlayerPTZService(PlayerService):
 
@@ -156,10 +167,9 @@ class PlayerBase(Robot):
         self.th = 0.0
         self.thr = 0.0
         self.stall = 0
-        self.messages = []
         self.noise = .05 # 5 % noise
         self.supports["blob"] = PlayerService(self.dev, "blobfinder")
-        self.supports["comm"] = PlayerService(self.dev, "comms")
+        self.supports["comm"] = PlayerCommService(self.dev, "comms")
         self.supports["gripper"] = PlayerGripperService(self.dev, "gripper")
         self.supports["power"] = PlayerService(self.dev, "power")
         self.supports["position"] = PlayerService(self.dev, "position")
@@ -239,13 +249,6 @@ class PlayerBase(Robot):
         self.th = pos[2] # degrees
         self.thr = self.th * PIOVER180
         self.stall = stall
-        try:
-            if self.dev.comms[0] != '':
-                for i in self.dev.comms:
-                    self.messages.append(self.dev.get_comms())
-        except:
-            # comms interface not on
-            pass
         
     def getOptions(self): # overload 
         pass
