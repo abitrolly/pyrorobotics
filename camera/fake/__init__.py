@@ -49,10 +49,6 @@ class FakeCamera(Camera):
       self.depth = self.vision.getDepth()
       self.cbuf = self.vision.getMMap()
       # -------------------------------------------------
-      if self.depth == 8:
-         self.color = 0
-      else:
-         self.color = 1
       self.data = CBuffer(self.cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"

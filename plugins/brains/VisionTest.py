@@ -4,8 +4,8 @@ from pyro.brain import Brain
 from time import sleep
 
 def process(self):
-   self.addFilter('match', 255 , 166 , 120 , )
-   self.addFilter('match', 132 , 52 , 46 , )
+   self.apply('match', 255 , 166 , 120 , )
+   self.apply('match', 132 , 52 , 46 , )
    #self.apply("match", ) 
    #camera.apply("maxBlobs", 0, 1, 255, "mass") 
 

@@ -915,6 +915,7 @@ PyObject *suppliesFilters() {
 
 PyObject *Vision::copyOriginal() {
   memcpy(original, Image, width * height * depth);
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::applyFilters(PyObject *newList) {

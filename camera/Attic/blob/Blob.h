@@ -6,8 +6,8 @@
 class Blob : public Device {
 
  public:
-  Blob(char filename[]);
-  PyObject *updateMMap(char filename[]);
+  Blob(int w, int h, int d);
+  PyObject *updateMMap(PyObject *blobData);
 };
 
 #endif
