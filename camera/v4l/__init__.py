@@ -101,8 +101,8 @@ class V4LGrabber(Camera):
       if self.color:
          file.write("\x02") #type 2, uncompressed color
       else:
-         file.write("\x03") #type 3, uncompress greyscale
-      file.write("xxxxx") #Color Map (3-7); data is ignored
+         file.write("\x03") #type 3, uncompressed greyscale
+      file.write("\x00"*5) #Color Map (3-7); data is ignored
       file.write("\x00\x00") #X Origin
       file.write("\x00\x00") #Y Origin
       file.write("%c%c" % (self.width & 0xFF, self.width >> 8)) #Width
