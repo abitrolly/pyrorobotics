@@ -174,7 +174,6 @@ class GovernorSRN(Governor, SRN):
                      verbosity = verbosity)
         self.trainingNetwork = SRN(name = "Governed Training SRN",
                                    verbosity = verbosity)
-        self.trainingNetwork.setMomentum(0)
         self.trainingNetwork.setInitContext(0)
         self.setInitContext(0)
         self.learning = 0
@@ -290,17 +289,13 @@ class GovernorSRN(Governor, SRN):
                                       context=context)
         return Network.step(self, **args)
 
-    def setEpsilon(self, value):
-        self.trainingNetwork.setEpsilon(value)
-        SRN.setEpsilon(self, value)
+    def setEpsilon(self, liveEpsilon, govEpsilon):
+        SRN.setEpsilon(self, liveEpsilon)
+        self.trainingNetwork.setEpsilon(govEpsilon)
 
-    def setTolerance(self, value):
-        self.trainingNetwork.setTolerance(value)
-        SRN.setTolerance(self, value)
-
-    def setMomentum(self, value):
-        self.trainingNetwork.setMomentum(value)
-        SRN.setMomentum(self, value)
+    def setMomentum(self, liveMomentum, govMomentum):
+        SRN.setMomentum(self, liveMomentum)
+        self.trainingNetwork.setMomentum(govMomentum)
 
     def setSequenceType(self, value):
         self.trainingNetwork.setSequenceType(value)
