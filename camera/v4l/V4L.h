@@ -36,7 +36,7 @@ class V4L : public Vision
 
  public:
 
-  void updateMMap(void);
+  PyObject *updateMMap(void);
   void init(void);
   void swap_rgb24(char *mem, int n); 
 
