@@ -215,11 +215,7 @@ class gui(Drawable):
       self.redraw()
       if f != '':
          self.engine.loadBrain(f)
-         try:
-            self.textArea['Brain:'].config(text = self.engine.brainfile)
-            self.redraw()
-         except: # not that kind of GUI
-            pass
+         self.redraw()
 
    def loadPlot(self):
       f = self.fileloaddialog("plots","*.py")
@@ -237,21 +233,13 @@ class gui(Drawable):
       if f != '':
          import os
          os.system(f + " " + worldfile + " &")
-         try:
-            self.textArea['Simulator:'].config(text = worldfile)
-            self.redraw()
-         except: # not that kind of GUI
-            pass
+         self.redraw()
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py")
       self.redraw()
       if f != '':
          self.engine.loadRobot(f)
-         try:
-            self.textArea['Robot:'].config(text = self.engine.robotfile)
-         except:
-            pass
          self.redraw()
 
    def loadCamera(self):
@@ -259,11 +247,7 @@ class gui(Drawable):
       self.redraw()
       if f != '':
          self.engine.loadCamera(f)
-         try:
-            self.textArea['Camera:'].config(text = self.engine.camerafile)
-            self.redraw()
-         except: # not that kind of GUI
-            pass
+         self.redraw()
 
    def freeRobot(self):
       self.engine.freeRobot()

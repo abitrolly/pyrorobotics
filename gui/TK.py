@@ -82,13 +82,13 @@ class TKgui(gui):
       for entry in menu:
          self.mBar.tk_menuBar(self.makeMenu(entry[0],entry[1]))
 
-      # if show main buttons:
-      if 1: # FIX: add a preference about showing buttons someday
-         toolbar = Tkinter.Frame(self.frame)
-         toolbar.pack(side=Tkinter.TOP, fill='both', expand = 1)
-         Tkinter.Label(toolbar, text="Brain:").pack(side="left")
-         for b in button1:
-            Tkinter.Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
+      toolbar = Tkinter.Frame(self.frame)
+      toolbar.pack(side=Tkinter.TOP, fill='both', expand = 1)
+      Tkinter.Label(toolbar, text="Brain:").pack(side="left")
+      self.goButtons = {}
+      for b in button1:
+         self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],width=6,command=b[1])
+         self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
 
       self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
       self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)
@@ -126,23 +126,30 @@ class TKgui(gui):
       self.textframe.pack(side = "bottom", fill = "x")
 
       # Display:
-      self.loadables = [ ('Simulator:', self.loadSim, self.editWorld),
-                         ('Robot:', self.loadRobot, self.editRobot),
-                         ('Camera:', self.loadCamera, self.editCamera),
-                         ('Brain:', self.loadBrain, self.editBrain),
+      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld),
+                         ('button', 'Robot:', self.loadRobot, self.editRobot),
+                         ('button', 'Camera:', self.loadCamera, self.editCamera),
+                         ('button', 'Brain:', self.loadBrain, self.editBrain),
+                         ('status', 'Pose:', '', ''),
                         ]
-      self.displayArea = {}
+      self.buttonArea = {}
       self.textArea = {}
       for item in self.loadables:
-         load, loadit, editit = item
+         type, load, loadit, editit = item
          tempframe = Tkinter.Frame(self.frame)
-         self.displayArea[load] = Tkinter.Button(tempframe, text = load,
-                                              width=10, command = loadit)
-         self.displayArea[load].pack(side=Tkinter.LEFT)
-         self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right")
+         if type == 'button':
+            self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
+                                                    width=10, command = loadit,
+                                                    state='disabled')
+            self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right", state='disabled')
+         elif type == 'status':
+            self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
+            self.textArea[load] = Tkinter.Label(tempframe, width=55, justify="left")
+         self.buttonArea[load].pack(side=Tkinter.LEFT)
          self.textArea[load].pack(side=Tkinter.RIGHT, fill="x")
          tempframe.pack(side = "top", anchor = "n", fill = "x")
-
+      self.buttonArea["Robot:"]["state"] = 'normal'
+      self.buttonArea["Simulator:"]["state"] = 'normal'
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def openBrainWindow(self):
@@ -257,6 +264,8 @@ class TKgui(gui):
       print "Brain file:\t%s" % self.engine.brainfile
       print "Brain:\t\t%s" % self.engine.brain
       print "Robot:\t\t%s" % self.engine.robot
+      print "Worldfile:\t\t%s" % self.engine.worldfile
+      print "Camerafile:\t\t%s" % self.engine.camerafile
       print "-------------------------------------------------------------"
 
    def editBrain(self):
@@ -309,31 +318,65 @@ class TKgui(gui):
             if needToUpdateState:
                try: self.engine.robot.update()
                except: pass
-            #try:
             self.redrawWindowBrain()
-            try:
-               if self.engine.robot != 0:
-                  if self.engine.robot.get('self', 'stall'):
-                     bump = "[BUMP!]"
-                  else:
-                     bump = ''
-                  self.textArea['Config:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
-                                          % (self.engine.robot.get('robot', 'x'),
-                                             self.engine.robot.get('robot', 'y'),
-                                             self.engine.robot.get('robot', 'th'),
-                                             bump))
-            except:
-               pass
+            if self.textArea['Brain:']["text"] != self.engine.brainfile:
+               self.textArea['Brain:'].config(text = self.engine.brainfile)
+            if self.textArea['Simulator:']["text"] != self.engine.worldfile:
+               self.textArea['Simulator:'].config(text = self.engine.worldfile)
+            if self.textArea['Robot:']["text"] != self.engine.robotfile:
+               self.textArea['Robot:'].config(text = self.engine.robotfile)
+            if self.textArea['Camera:']["text"] != self.engine.camerafile:
+               self.textArea['Camera:'].config(text = self.engine.camerafile)
+            # enable?
+            if self.textArea["Brain:"]["text"]:
+               self.textArea["Brain:"]["state"] = 'normal'
+            else:
+               self.textArea["Brain:"]["state"] = 'disable'
+            if self.textArea["Simulator:"]["text"]:
+               self.textArea["Simulator:"]["state"] = 'normal'
+            else:
+               self.textArea["Simulator:"]["state"] = 'disable'
+            if self.textArea["Robot:"]["text"]:
+               self.textArea["Robot:"]["state"] = 'normal'
+            else:
+               self.textArea["Robot:"]["state"] = 'disable'
+            if self.textArea["Camera:"]["text"]:
+               self.textArea["Camera:"]["state"] = 'normal'
+            else:
+               self.textArea["Camera:"]["state"] = 'disable'
+            # Buttons?
+            if self.textArea["Robot:"]["text"]:
+               self.buttonArea["Camera:"]["state"] = 'normal'
+               self.buttonArea["Brain:"]["state"] = 'normal'
+               self.goButtons['Reload']["state"] = 'normal'
+            else:
+               self.buttonArea["Camera:"]["state"] = 'disable'
+               self.buttonArea["Brain:"]["state"] = 'disable'
+               self.goButtons['Reload']["state"] = 'disable'               
+            if self.textArea["Brain:"]["text"]:
+               self.goButtons['Run']["state"] = 'normal'
+               self.goButtons['Step']["state"] = 'normal'
+               self.goButtons['Stop']["state"] = 'normal'
+            else:
+               self.goButtons['Run']["state"] = 'disable'
+               self.goButtons['Step']["state"] = 'disable'
+               self.goButtons['Stop']["state"] = 'disable'               
+            if self.engine.robot != 0:
+               if self.engine.robot.get('self', 'stall'):
+                  bump = "[BUMP!]"
+               else:
+                  bump = ''
+               self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                                             % (self.engine.robot.get('robot', 'x'),
+                                                self.engine.robot.get('robot', 'y'),
+                                                self.engine.robot.get('robot', 'th'),
+                                                bump))
             try:
                self.engine.robot.camera.updateWindow()
             except:
                pass
             while self.win.tk.dooneevent(2): pass
-            #except:
-            #   print "Exiting main loop...", self.done
-            #   self.done = 1
             sleep(self.update_interval)
-         #self.win.mainloop()
 
    def fileloaddialog(self, filetype, skel):
       from string import replace
