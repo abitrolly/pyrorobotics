@@ -62,13 +62,15 @@ class VisConxBase:
 
         #options for displaying node activations
         Tkinter.Label(self.root, text="Node Activations:").grid(col=0,row=6,sticky=Tkinter.W)
-        self.activButton = Tkinter.Checkbutton(self.root, text="Examine Node Activations", command=self.createActivDiag)
+        self.activButton = Tkinter.Checkbutton(self.root, text="Examine Node Activations", command=self.handleActivDiag)
         self.activButton.grid(col=1,row=6,sticky=Tkinter.W)
 
         self.root.update_idletasks()
         
     #overloaded methods from Network/SRN
     def train(self):
+        if self.activDiag:
+            self.handleActivDiag()
         self.activButton.config(state=Tkinter.DISABLED)
         tssErr = 1.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
         self.resetCount = 1
@@ -230,17 +232,17 @@ class VisConxBase:
             archDiag = ArchDiag.ArchDiag(self.root, self.netStruct)
             
     #handlers for activations diagram
-    def createActivDiag(self):
+    def handleActivDiag(self):
         if not self.activDiag:
             try:
                 self.activDiag = ActivationsDiag.ActivDiag(self.root,self.netStruct)
             except:
-                tkMessageBox.showerror("Activtions Display Error", "You must set inputs and outputs using setInputs and setOutputs before using the activation display")
+                tkMessageBox.showerror("Activtions Display Error", "You must have called setInputs and setOutputs before using the activation display.")
                 self.activDiag.destroy()
                 self.activDiag = None
                 self.activButton.deselect()
             else:
-                self.activDiag.protocol("WM_DELETE_WINDOW", self.createActivDiag)
+                self.activDiag.protocol("WM_DELETE_WINDOW", self.handleActivDiag)
         else:
             self.activDiag.destroy()
             self.activDiag = None
