@@ -12,7 +12,7 @@
 """
 import Numeric, math, random, time, sys, signal, operator
 
-version = "6.16"
+version = "7.0"
 
 def loadNetworkFromFile(filename):
     """
@@ -599,6 +599,7 @@ class Network:
         self.targets = []
         self.orderedInputs = 0
         self.loadOrder = []
+        self.loadOrderID = []
         self.learning = 1
         self.momentum = 0.9
         self.resetEpoch = 5000
@@ -621,6 +622,7 @@ class Network:
         self.crossValidationSampleFile = "sample.cv"
         self.patterns = {}
         self.patterned = 0 # used for file IO with inputs and targets
+        self.sharedWeights = 0
 
     # general methods
     def path(self, startLayer, endLayer):
@@ -720,6 +722,8 @@ class Network:
         Changes layer size. Newsize must be greater than zero.
         """
         # for all connection from to this layer, change matrix:
+        if self.sharedWeights:
+            print "Warning: shared weights broken!"
         for connection in self.connections:
             if connection.fromLayer.name == layername:
                 connection.changeSize(  newsize, connection.toLayer.size )
@@ -739,6 +743,8 @@ class Network:
         Initializes network by calling Connection.initialize() and
         Layer.initialize(). self.count is set to zero.
         """
+        if self.sharedWeights:
+            print "Warning: shared weights broken!"
         self.count = 0
         for connection in self.connections:
             connection.initialize()
@@ -930,7 +936,11 @@ class Network:
         """
         self.orderedInputs = value
         if self.orderedInputs:
-            self.loadOrder = range(len(self.inputs))
+            self.loadOrder = [0] * len(self.inputs)
+            self.loadOrderID = [0] * len(self.inputs)
+            for i in range(len(self.inputs)):
+                self.loadOrder[i] = self.getData(i)
+                self.loadOrderID[i] = i
     def verifyArguments(self, arg):
         """
         Verifies that arguments to setInputs and setTargets are appropriately formatted.
@@ -951,7 +961,11 @@ class Network:
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
         self.inputs = inputs
-        self.loadOrder = range(len(self.inputs)) # not random
+        self.loadOrder = [0] * len(self.inputs)
+        self.loadOrderID = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = self.getData(i)
+            self.loadOrderID[i] = i
         # will randomize later, if need be
     def setOutputs(self, outputs):
         """
@@ -989,12 +1003,16 @@ class Network:
         """
         flag = [0] * len(self.inputs)
         self.loadOrder = [0] * len(self.inputs)
+        self.loadOrderID = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
             pos = int(random.random() * len(self.inputs))
             while (flag[pos] == 1):
                 pos = int(random.random() * len(self.inputs))
             flag[pos] = 1
-            self.loadOrder[pos] = i   
+            # ( {"input": ([.1, .2],0) }, {"output"...} )
+            self.loadOrder[pos] = self.getData(i)
+            self.loadOrderID[pos] = i
+
     def copyVector(self, vector1, vec2, start):
         """
         Copies vec2 into vector1 being sure to replace patterns if
@@ -1027,32 +1045,30 @@ class Network:
         if self.verbosity > 4:
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
-    def loadInput(self, pos, start = 0):
+    def getData(self, pos):
         """
-        Loads input at pos. Used with self.setInputs().
+        Returns dictionary with input and target given pos. 
         """
+        retval = {}
         if pos >= len(self.inputs):
-            raise IndexError, ('loadInput() pattern beyond range.', pos)
-        if self.verbosity > 0: print "Loading input", pos, "..."
+            raise IndexError, ('getData() pattern beyond range.', pos)
+        if self.verbosity > 0: print "Getting input", pos, "..."
         if len(self.inputMap) == 0:
-            self.copyActivations(self.layers[0], self.inputs[pos], start)
+            retval[self.layers[0].name] = self.inputs[pos]
         else: # mapInput set manually
             for vals in self.inputMap:
                 (v1, offset) = vals
-                self.copyActivations(self.getLayer(v1), self.inputs[pos], offset)
-    def loadTarget(self, pos, start = 0):
-        """
-        Loads target at pos. Used with self.setTargets().
-        """
-        if pos >= len(self.targets):
-            return  # there may be no target 
+                retval[v1] = self.inputs[pos]
         if self.verbosity > 1: print "Loading target", pos, "..."
-        if len(self.targetMap) == 0:
-            self.copyTargets(self.layers[len(self.layers)-1], self.targets[pos], start)
+        if len(self.targets) == 0:
+            pass # ok, no targets
+        elif len(self.targetMap) == 0:
+            retval[self.layers[len(self.layers)-1].name] = self.targets[pos]
         else: # set manually
             for vals in self.targetMap:
                 (v1, offset) = vals
-                self.copyTargets(self.getLayer(v1), self.targets[pos], offset)
+                retval[v1] = self.targets[pos]
+        return retval
 
     # input, architecture, and target verification
     def verifyArchitecture(self):
@@ -1153,11 +1169,8 @@ class Network:
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
-                if not self.learnDuringSequence and self.sequenceLength > 0: # FIX: be more specific here
-                    pass
-                else:
-                    raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
-                                       (layer.name, layer.type))
+                raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
+                                   (layer.name, layer.type))
             else:
                 layer.resetActivationFlag()
     def verifyTargets(self):
@@ -1234,15 +1247,86 @@ class Network:
         print "----------------------------------------------------"
         if totalCount > 0:
             print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                  (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
+                  (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
             if self.crossValidationReportRate and len(self.crossValidationCorpus) > 0:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                      (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
+    def sweep(self):
+        """
+        Runs through entire dataset. 
+        Returns TSS error, total correct, and total count.
+        """
+        if self.loadOrder == []:
+            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs \
+            are properly set.', self.loadOrder)
+        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
+        if not self.orderedInputs:
+            self.randomizeOrder()
+        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        i = 0 
+        for datum in self.loadOrder:
+            if self.verbosity > 0 or self.interactive:
+                print "-----------------------------------Pattern #", self.loadOrderID[i] + 1
+            (error, correct, total) = self.step( **datum )
+            tssError += error
+            totalCorrect += correct
+            totalCount += total
+            if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
+                self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
+            i += 1
+        if self.learning and self.batch:
+            self.change_weights() # batch mode, otherwise change weights in step
+        return (tssError, totalCorrect, totalCount)
+
+    def step(self, **args):
+        """
+        Network.step()
+        Does a single step. Calls propagate(), backprop(), and
+        change_weights() if learning is set.
+        Format for parameters: <layer name> = <activation/target list>
+        
+        """
+        # First, copy the values into either activations or targets:
+        for key in args:
+            layer = self.getLayer(key)
+            if layer.type == 'Input':
+                layer.copyActivations(args[key])
+            elif layer.type == 'Output':
+                layer.copyTargets(args[key])
+            elif layer.type == 'Context':
+                layer.copyActivations(args[key])
+            else:
+                raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
+        # Next, take care of any Auto-association, and copy
+        # activations to targets
+        for aa in self.association:
+            (inName, outName) = aa
+            inLayer = self.getLayer(inName)
+            if not inLayer.type == 'Input':
+                raise LayerError, ('Associated input layer not type \'Input\'.', \
+                                   inLayer.type)
+            outLayer = self.getLayer(outName)
+            if not outLayer.type == 'Output':
+                raise LayerError, ('Associated output layer not type \'Output\'.', \
+                                   outLayer.type)
+            outLayer.copyTargets(inLayer.activation)
+        # Propagate activation through network:
+        self.propagate()
+        # Compute error, and back prop it:
+        (error, correct, total) = self.backprop() # compute_error()
+        if self.verbosity > 2 or self.interactive:
+            self.display()
+            if self.interactive:
+                self.prompt()
+        # if learning is true, and need to update weights here:
+        if self.learning and not self.batch:
+            self.change_weights() # else change weights in sweep
+        return (error, correct, total)
     def sweepCrossValidation(self):
         """
         sweepCrossValidation() will go through each of the crossvalidation input/targets.
@@ -1286,105 +1370,11 @@ class Network:
             dict = eval( line )
             self.crossValidationCorpus.append( dict )
         fp.close()
-    def sweep(self):
-        """
-        Runs through entire dataset. Must call setInputs(),
-        setTargets(), and associate() methods to initialize all inputs
-        and targets for the entire dataset before calling
-        propagate() and backprop() (possibly without learning). Returns TSS error,
-        total correct, and total count.
-        """
-        if self.loadOrder == []:
-            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs \
-            are properly set.', self.loadOrder)
-        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
-        if not self.orderedInputs:
-            self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
-        for i in self.loadOrder:
-            if self.verbosity > 0 or self.interactive:
-                print "-----------------------------------Pattern #", i + 1
-            self.preprop(i)
-            self.propagate()
-            (error, correct, total) = self.backprop() # compute_error()
-            tssError += error
-            totalCorrect += correct
-            totalCount += total
-            if self.verbosity > 2 or self.interactive:
-                self.display()
-            if self.interactive:
-                self.prompt()
-            self.postprop(i)
-            sys.stdout.flush()
-            if self.learning and not self.batch:
-                self.change_weights()
-            if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
-                self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
-        if self.learning and self.batch:
-            self.change_weights() # batch
-        return (tssError, totalCorrect, totalCount)
     def cycle(self):
         """
         Alternate to sweep().
         """
         return self.sweep()
-
-    # pre and post prop methods for sweep
-    def preprop(self, pattern, step = 0):
-        """
-        Used to initialize the network before
-        propagation. Specifically, preprop() loads input activations
-        and target values for pattern and step respectively. Likewise,
-        preprop() loads target values. Preprop also initializes
-        auto-association.
-        """
-        self.loadInput(pattern, step*self.layers[0].size)
-        self.loadTarget(pattern, step*self.layers[len(self.layers)-1].size)
-        for aa in self.association:
-            (inName, outName) = aa
-            inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Associated input layer not type \'Input\'.', \
-                                   inLayer.type)
-            outLayer = self.getLayer(outName)
-            if not outLayer.type == 'Output':
-                raise LayerError, ('Associated output layer not type \'Output\'.', \
-                                   outLayer.type)
-            outLayer.copyTargets(inLayer.activation)
-    def postprop(self, pattern, sequence = 0):
-        """
-        Any necessary post propagation changes go here.
-        """
-        pass
-
-    # step method 
-    def step(self, **args):
-        """
-        Does a single step. Calls propagate(), backprop(), and
-        change_weights() if learning is set. Use
-        self.copyActivations() to set inputs and self.copyTargets() to
-        set targets according to values passed to step via
-        **args. Must pass associated targets manually. Format for parameters:
-        <layer name> = <activation/target list>
-        
-        """
-        for item in args.items():
-            layer = self.getLayer(item[0])
-            if layer.type == 'Input':
-                layer.copyActivations(item[1])
-            elif layer.type == 'Output':
-                layer.copyTargets(item[1])
-            else:
-                raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
-        self.propagate()
-        (error, correct, total) = self.backprop() # compute_error()
-        if self.verbosity > 2 or self.interactive:
-            self.display()
-            if self.interactive:
-                self.prompt()
-        if self.learning:
-            self.change_weights()
-        return (error, correct, total)
 
     # propagation methods
     def prop_from(self, startLayers):
@@ -1464,7 +1454,7 @@ class Network:
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 layer.dbias = layer.epsilon * layer.bed + self.momentum * layer.dbias
-                layer.bias = layer.bias + layer.dbias
+                layer.bias += layer.dbias
                 layer.bed = layer.bed * 0.0
                 dw_count += len(layer.dbias)
                 dw_sum += Numeric.add.reduce(abs(layer.dbias))
@@ -1472,7 +1462,8 @@ class Network:
             if connection.fromLayer.active and connection.toLayer.active:
                 toLayer = connection.toLayer
                 connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
-                connection.weight = connection.weight + connection.dweight
+                #connection.weight = connection.weight + connection.dweight
+                connection.weight += connection.dweight
                 connection.wed = connection.wed * 0.0
                 #toLayer.dbias = toLayer.epsilon * toLayer.bed + \
                 #                self.momentum * toLayer.dbias
@@ -1763,7 +1754,7 @@ class Network:
             fp.close()
         # give some help:
         print "To load network:"
-        print "   % python -i %s " % (basename + ".py")
+        print "   %% python -i %s " % (basename + ".py")
         print "   >>> network.train() # for example"
         print "--- OR ---"
         print "   % python"
@@ -1810,7 +1801,11 @@ class Network:
         Loads inputs from file. Patterning is lost.
         """
         self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
-        self.loadOrder = range(len(self.inputs))
+        self.loadOrder = [0] * len(self.inputs)
+        self.loadOrderID = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = self.getData(i)
+            self.loadOrderID[i] = i
     def saveInputsToFile(self, filename):
         """
         Saves inputs to file.
@@ -1874,7 +1869,11 @@ class Network:
             self.inputs.append(self.patternVector(data[0:icnt]))
             self.targets.append(self.patternVector(data[icnt:]))
             line = fp.readline()
-        self.loadOrder = range(len(self.inputs))
+        self.loadOrder = [0] * len(self.inputs)
+        self.loadOrderID = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = self.getData(i)
+            self.loadOrderID[i] = i
 
     # patterning
     def replacePatterns(self, vector):
@@ -1993,6 +1992,17 @@ class Network:
                     return 1
             except:
                 return 0
+    def shareWeights(self, network):
+        """
+        Share weights with another network of the same topology. Connection
+        is broken after a randomize or change of size.
+        """
+        self.sharedWeights = 1
+        network.sharedWeights = 1
+        for c in range(len(self.connections)):
+            self.connections[c].weight = network.connections[c].weight
+        for l in range(len(self.layers)):
+            self.layers[l].bias   = network.layers[l].bias
 
 class SRN(Network):
     """
@@ -2006,9 +2016,7 @@ class SRN(Network):
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self, name = name, verbosity = verbosity)
-        self.sequenceLength = 1
         self.learnDuringSequence = 0
-        self.autoSequence = 1 # auto detect length of sequence from input size
         self.prediction = []
         self.initContext = 1
         self.contextCopying = 1
@@ -2020,17 +2028,6 @@ class SRN(Network):
         Sets prediction between an input and output layer.
         """
         self.prediction.append((inName, outName))
-    def setAutoSequence(self, value):
-        """
-        Automatically determines the length of a sequence. Length of
-        input / Number of input nodes.
-        """
-        self.autoSequence = value
-    def setSequenceLength(self, value):
-        """
-        Manually sets self.sequenceLength.
-        """
-        self.sequenceLength = value
     def setInitContext(self, value):
         """
         Clear context layer between sequences.
@@ -2092,7 +2089,7 @@ class SRN(Network):
             context.setActivations(value)
     def propagate(self):
         """
-        Clears context layer the first time.
+        Clears context layer the first time in sweep (or first step).
         """
         if self.count == 0:
             self.clearContext()
@@ -2103,7 +2100,8 @@ class SRN(Network):
         Network.propagate(self)
     def backprop(self):
         """
-        Extends backprop() from Network to automatically deal with context layers.
+        Extends backprop() from Network to automatically deal with context
+        layers. Copies the contexts, if contextCopying is true.
         """
         retval = Network.backprop(self)
         if self.contextCopying:
@@ -2111,104 +2109,68 @@ class SRN(Network):
         return retval
     def step(self, **args):
         """
+        SRN.step()
         Extends network step method by automatically copying hidden
         layer activations to the context layer.
         """
+        # take care of any params other than layer names:
+        # three ways to clear context:
+        # 1. force it to right now with arg clearContext = 1:
         if args.has_key('clearContext'):
             if args['clearContext']:
                 self.clearContext()
+            else:
+                # you must know what you are doing; let it slide
+                self["context"].activationSet = 1
             del args['clearContext']
-        return Network.step(self, **args)
-    def preprop(self, pattern, step):
-        """
-        Extends preprop() by adding support for clearing context layers
-        and predicting.
-        """
-        if self.sequenceLength > 1:
-            if step == 0 and self.initContext:
-                self.clearContext()
-        else: # if seq length is one, you better be doing ordered
-            if pattern == 0 and self.initContext:
-                self.clearContext()
-        Network.preprop(self, pattern, step) # must go here, consider raam example
-        for p in self.prediction:
-            (inName, outName) = p
-            inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
-            outLayer = self.getLayer(outName)
-            if not outLayer.type == 'Output':
-                raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
-            if self.sequenceLength == 1:
-                position = (pattern + 1) % len(self.inputs)
-                outLayer.copyTargets(self.inputs[position])
-            else:
-                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.inputs[pattern]))
-                self.copyTargets(outLayer, self.inputs[pattern], start)
-    def postprop(self, patnum, step):
-        """
-        Do any necessary post propagation here.
-        """
-        Network.postprop(self, patnum, step)
-    def sweep(self):
-        """
-        Enables sequencing over Network.sweep().
-        """
-        if self.loadOrder == []:
-            raise SRNError, ('No loadOrder. Make sure inputs are properly loaded and set.', self.loadOrder)
-        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
-        if not self.orderedInputs:
-            self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
-        for i in self.loadOrder:
-            if self.autoSequence:
-                self.sequenceLength = len(self.replacePatterns(self.inputs[i])) / self.layers[0].size
+        # 2. have initContext be true; 3. first time of first pattern
+        elif self.initContext:
+            self.clearContext()
+        # replace all patterns
+        for key in args:
+            args[key] = self.replacePatterns( args[key] )
+        # This should really loop over each arg that is kind Input
+        # For now, just assumes an "input" layer
+        if not args.has_key("input"):
+            return Network.step(self, **args)
+        # The rest of this assumes at least an "input" parameter!
+        # compute length of sequence:
+        sequenceLength = len(args["input"]) / self["input"].size
+        patternLength = self["input"].size
+        learning = self.learning
+        totalRetvals = (0.0, 0, 0) # error, correct, total
+        for step in range(sequenceLength):
             if self.verbosity > 0 or self.interactive:
-                print "-----------------------------------Pattern #", i + 1
-            if self.sequenceLength <= 0:
-                raise SRNError, ('Sequence length is invalid.', self.sequenceLength)
-            if self.sequenceLength == 1 and self.learnDuringSequence:
-                raise SRNError, ('Learning during sequence but sequence length is one.', \
-                                 (self.sequenceLength, self.learnDuringSequence))
-            for s in range(self.sequenceLength):
-                if self.verbosity > 0 or self.interactive:
-                    print "Step #", s + 1
-                self.preprop(i, s)
-                self.propagate()
-                if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
-                    # don't update error or count
-                    # accumulate history without learning in context layer
-                    pass 
+                print "-----------------------------------Step #", step + 1
+            offset = step * patternLength
+            dict = {}
+            dict["input"] = args["input"][offset:offset+patternLength]
+            if args.has_key("output"):
+                dict["output"] = args["output"][offset:offset+patternLength]
+            # get info for predicition -------------------------
+            for p in self.prediction:
+                (inName, outName) = p
+                inLayer = self.getLayer(inName)
+                if not inLayer.type == 'Input':
+                    raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
+                outLayer = self.getLayer(outName)
+                if not outLayer.type == 'Output':
+                    raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
+                if step == sequenceLength - 1: # last one
+                    start = 0 # wrap arround
                 else:
-                    (error, correct, total) = self.backprop() # compute_error()
-                    tssError += error
-                    totalCorrect += correct
-                    totalCount += total
-                if self.verbosity > 0 or self.interactive:
-                    print 'After propagation ...........................................'
-                    self.display()
-                    if self.interactive:
-                        self.prompt()
-                # the following could be in this loop, or not
-                self.postprop(i, s)
-                if self.sequenceLength > 1:
-                    if self.learning and self.learnDuringSequence:
-                        self.change_weights()
-                # else, do nothing here
-                sys.stdout.flush()
-            if self.sequenceLength > 1:
-                if self.learning and not self.learnDuringSequence:
-                    self.change_weights()
-            else:
-                if self.learning and not self.batch:
-                    self.change_weights()
-        if self.sequenceLength == 1:
-            if self.learning and self.batch:
-                self.change_weights() # batch
-        return (tssError, totalCorrect, totalCount)
+                    start = (step + 1) * inLayer.size
+                dict[outName] = args[inName][start:start+patternLength]
+            # end predicition code -----------------------------
+            if step < sequenceLength - 1: # not the last one
+                if not self.learnDuringSequence:
+                    self.learning = 0
+            retvals = Network.step(self, **dict)
+            self.learning = learning # in case we turned it off
+            totalRetvals = map(lambda x,y: x+y, totalRetvals, retvals)
+        return totalRetvals
 
 if __name__ == '__main__':
-
     # Con-x: Sample Networks
     # (c) 2001, D.S. Blank
     # Bryn Mawr College
@@ -2244,14 +2206,14 @@ if __name__ == '__main__':
         net.setPatterns( {"one" : [0, 0, 0], "two" :  [1, 1, 1]} )
         print net.getPattern("one")
         print net.getPattern("two")
-        print "Replacing patterns..."
+        print "Replacing patterns... (should return [0, 0, 0, 1, 1, 1])"
         print net.replacePatterns(["one", "two"])
         net.setInputs([ "one", "two" ])
-        net.loadInput(0)
+        net.copyActivations(net["input"], net.inputs[0])
         net.resetFlags()
         print "one is: ",
         print net["input"].getActivations()
-        net.loadInput(1)
+        net.copyActivations(net["input"], net.inputs[1])
         net.resetFlags()
         print "two is: ",
         print net["input"].getActivations()
@@ -2262,11 +2224,11 @@ if __name__ == '__main__':
         print "Testing replacePatterns and patternVector..."
         print net.replacePatterns(net.inputs[0])
         print net.patternVector(net.replacePatterns(net.inputs[0]))
-        net.loadInput(0)
+        net.copyActivations(net["input"], net.inputs[0])
         net.resetFlags()
         print "0 1 0 is: ",
         print net["input"].getActivations()
-        net.loadInput(1)
+        net.copyActivations(net["input"], net.inputs[1])
         print "1 1 1 is: ",
         print net["input"].getActivations()
         print "Reverse look up of .2, .3, .2 is ", net.getWord([.2, .3, .2])
@@ -2761,13 +2723,13 @@ if __name__ == '__main__':
         else:
             print "No exception caught."
 
-    if ask("Do you want to test loadInput exception?"):
+    if ask("Do you want to test load exception?"):
         print "Creating a 3-3-3 network..."
         n = Network()
         n.addThreeLayers(3,3,3)
-        print "Calling loadInput()..."
+        print "Loading input..."
         try:
-            n.loadInput(0)
+            n.copyActivations(n["input"], n.inputs[0])
         except IndexError, err:
             print err
         else:
@@ -2781,7 +2743,7 @@ if __name__ == '__main__':
         n.associate('hidden','output')
         print "Attempting to associate hidden and output layers..."
         try:
-            n.preprop(0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2790,7 +2752,7 @@ if __name__ == '__main__':
         n.associate('input','hidden')
         print "Attempting to associate input and hidden layers..."
         try:
-            n.preprop(0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2802,7 +2764,7 @@ if __name__ == '__main__':
         n.predict('hidden','output')
         print "Attempting to predict hidden and output layers..."
         try:
-            n.preprop(0,0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2811,7 +2773,7 @@ if __name__ == '__main__':
         n.predict('input','hidden')
         print "Attempting to predict input and hidden layers..."
         try:
-            n.preprop(0,0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2883,23 +2845,6 @@ if __name__ == '__main__':
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.setLearnDuringSequence(1)
-        print "Sequence length is one and learnDuringSequence is set..."
-        try:
-            n.sweep()
-        except SRNError, err:
-            print err
-        else:
-            print "No exception caught."
-        print "Sequence length is set to -1 and sweep() is called..."
-        n.setLearnDuringSequence(0)
-        n.setSequenceLength(-1)
-        n.setAutoSequence(0)
-        try:
-            n.sweep()
-        except SRNError, err:
-            print err
-        else:
-            print "No exception caught."
 
     if ask("Do you want to test verifyArchitecture()?"):
         print "Creating normal 3-3-3 architecture..."
@@ -2997,25 +2942,25 @@ if __name__ == '__main__':
         print "Creating 2-2-1 network..."
         n = Network()
         n.addThreeLayers(2,2,1)
-        n.setInteractive(1)
+        #n.setInteractive(1)
         print "Using step with arguments..."
         n.step(input = [1.0,0.0], output = [1.0])
+        print "Using step without arguments..."
         n.getLayer('input').copyActivations([1.0,1.0])
         n.getLayer('output').copyTargets([0.0])
-        print "Using step without arguments..."
         n.step()
         print "Creating SRN Network..."
         n = SRN()
         n.addSRNLayers(3,3,3)
-        n.setInteractive(1)
+        #n.setInteractive(1)
         print "Using step with arguments..."
         n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], clearContext = 1)
         n.step(input = [0.0,1.0,1.0], output = [0.0, 1.0, 1.0], clearContext = 0)
-        print "Using step withoutarguments..."
+        print "Using step without arguments..."
         n.getLayer('input').copyActivations([1.0,0.0,0.0])
         n.getLayer('output').copyTargets([1.0, 0.0, 0.0])
-        n.clearContext()
-        n.step() 
+        # n.clearContext() will be done if self.initContext
+        n.step() # if you don't want context cleared, clearContext = 0
 
     if ask("Additional tests?"):
         n = Network()
