@@ -20,8 +20,8 @@ class TKgui(gui):
       self.width = width
       self.height = height
       self.genlist = 0
-      self.root = Tkinter.Tk()
-      self.frame = Tkinter.Frame(self.root)
+      self.win = Tkinter.Tk()
+      self.frame = Tkinter.Frame(self.win)
       self.frame.pack(side = 'top')
       self.windowBrain = 0
       self.lastRun = 0
@@ -38,8 +38,8 @@ class TKgui(gui):
                        ]),
               ('Simulators',[['Load...', lambda x = self.engine.worldfile: self.loadSim(x)]]),
               ('Robot',[['Load...',self.loadRobot],
-                        ['Unload',self.freeRobot]]),
-              #                        ['Load Camera...',self.loadCamera]]),
+                        ['Unload',self.freeRobot],
+                        ['Load Camera...',self.loadCamera]]),
               ('Brain',[['Load...',self.loadBrain],
                         ['Unload',self.freeBrain],
                         ['Brain View', self.openBrainWindow]]),
@@ -86,7 +86,7 @@ class TKgui(gui):
             Tkinter.Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
 
       self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
-      self.win = self.frame
+      self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)
 
       self.commandFrame = Tkinter.Frame(self.frame)
       self.commandFrame['relief'] = 'raised'
