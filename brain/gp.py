@@ -99,7 +99,8 @@ class GPGene(Gene):
             if operand2 != 0:
                 return operand1 / operand2
             else:
-                return 0.0
+                #return 0.0
+                return sys.maxint
         elif mylist[0] == 'ifpos':
             testExp = self.eval_tree(values, mylist[1])
             if testExp > 0:
