@@ -59,7 +59,7 @@ class Engine(drawable.Drawable):
                               '/plugins/simulators/' + options[0]):
          os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + " &")
       else:
-         raise 'Robot file not found: ' + file
+         raise 'Simulator file not found: ' + file
 
    def loadRobot(self,file):
       import os
@@ -67,13 +67,13 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.robot = system.loadINIT(file)
          self.robotfile = file
+         self.robot = system.loadINIT(file)
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/robots/' + file): 
+         self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
          self.robot = system.loadINIT(os.getenv('PYRO') + \
                                       '/plugins/robots/' + file)
-         self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
       else:
          raise 'Robot file not found: ' + file
       self.append(self.robot)
@@ -86,13 +86,13 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.brain = system.loadINIT(file, self.robot)
          self.brainfile = file
+         self.brain = system.loadINIT(file, self.robot)
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
+         self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
          self.brain = system.loadINIT(os.getenv('PYRO') + \
                                       '/plugins/brains/' + file, self.robot)
-         self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
       else:
          raise 'File not found: ' + file
       # FIX: currently, brain is not a drawable
