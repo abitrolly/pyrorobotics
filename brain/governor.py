@@ -13,7 +13,7 @@ class Governor(Network, VisPsom):
     def __init__(self, inputSize, hiddenSize, outputSize):
         """ Constructor for Governor Class """
         Network.__init__(self, "Governor Network")
-        VisPsom.__init__(self, xdim = 2, ydim = 3, dim = inputSize + outputSize)
+        VisPsom.__init__(self, xdim = 1, ydim = 3, dim = inputSize + outputSize)
         self.addThreeLayers( inputSize, hiddenSize, outputSize)
 
     def train(self):

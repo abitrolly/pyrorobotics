@@ -2,6 +2,9 @@
 class WindowError(AttributeError):
     """ Service Window Error """
 
+class ServiceError(AttributeError):
+    """ Used to signal service problem """
+
 class Service:
     """ A basic service class """
 

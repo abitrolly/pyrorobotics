@@ -11,13 +11,7 @@ DEG90RADS = 0.5 * pi
 COSDEG90RADS = cos(DEG90RADS) / 1000.0
 SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
-from pyro.robot.service import Service
-
-class ServiceError(AttributeError):
-    """ Used to signal service problem """
-
-class TypeError(AttributeError):
-    """ Used to signal type problem """
+from pyro.robot.service import Service, ServiceError
 
 class PlayerService(Service):
     def __init__(self, dev, name):
