@@ -1,5 +1,5 @@
 
-PYRO=/home/dblank/pyro
+PYRO=/usr/local/pyro
 PYTHON_INCLUDE=-I/usr/include/python2.2
 
 OBJS = _myvision.so
