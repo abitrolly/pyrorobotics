@@ -114,6 +114,7 @@ class Layer:
         self.maxActivation = 1
         self.minTarget = 0
         self.maxTarget = 1
+        self.verify = 1
     def initialize(self, epsilon):
         """
         Initializes important node values to zero for each node in the
@@ -223,7 +224,7 @@ class Layer:
             maxvalue = self.activation[maxpos]
         elif type == 'target':
             # note that backprop() resets self.targetSet flag
-            if self.targetSet == 0:
+            if self.verify and self.targetSet == 0:
                 raise LayerError, \
                       ('getWinner() called with \'target\' but target has not been set.', \
                        self.targetSet)
@@ -334,7 +335,7 @@ class Layer:
         """
         Sets all activations to the value of the argument. Value should be in the range [0,1].
         """
-        if not self.activationSet == 0:
+        if self.verify and not self.activationSet == 0:
             raise LayerError, \
                   ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
         if (value < self.minActivation or value > self.maxActivation) and self.kind == 'Input':
@@ -351,7 +352,7 @@ class Layer:
             raise LayerError, \
                   ('Mismatched activation size and layer size in call to copyActivations()', \
                    (len(array), self.size))
-        if not self.activationSet == 0:
+        if self.verify and not self.activationSet == 0:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet) 
@@ -375,7 +376,7 @@ class Layer:
         """
         Sets all targets the the value of the argument. This value must be in the range [0,1].
         """
-        if not self.targetSet == 0:
+        if self.verify and not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
         if value > self.maxActivation or value < self.minActivation:
@@ -391,7 +392,7 @@ class Layer:
             raise LayerError, \
                   ('Mismatched target size and layer size in call to copyTargets()', \
                    (len(array), self.size))
-        if not self.targetSet == 0:
+        if self.verify and not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
@@ -694,6 +695,9 @@ class Network:
         self.add( Layer('output', outc) )
         self.connect('input', 'hidden')
         self.connect('hidden', 'output')
+    def setLayerVerification(self, value):
+        for layer in self.layers:
+            layer.verify = value
     def changeLayerSize(self, layername, newsize):
         """
         Changes layer size. Newsize must be greater than zero.
@@ -1126,7 +1130,7 @@ class Network:
         activations have been set.
         """
         for layer in self.layers:
-            if layer.type == 'Input' and layer.active and not layer.activationSet:
+            if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
                 raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
                                    (layer.name, layer.type))
             else:
@@ -1137,7 +1141,7 @@ class Network:
         been set.
         """
         for layer in self.layers:
-            if layer.type == 'Output' and layer.active and not layer.targetSet:
+            if layer.verify and layer.type == 'Output' and layer.active and not layer.targetSet:
                 raise LayerError, ('Targets are not set and verifyTargets() was called.',\
                                    (layer.name, layer.type))
             else:
@@ -2046,6 +2050,10 @@ class SRN(Network):
         """
         if self.count == 0:
             self.clearContext()
+        if not self.contextCopying:
+            for layer in self.layers:
+                if layer.kind == "Context":
+                    layer.activationSet = 1
         Network.propagate(self)
     def backprop(self):
         """
@@ -2054,10 +2062,6 @@ class SRN(Network):
         retval = Network.backprop(self)
         if self.contextCopying:
             self.copyHiddenToContext() # must go after error computation
-        else:
-            for layer in self.layers:
-                if layer.kind == "Context":
-                    layer.activationSet = 1
         return retval
     def step(self, **args):
         """
