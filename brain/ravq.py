@@ -142,6 +142,15 @@ class RAVQ:
         self.mask = Numeric.array(mask, 'd')
     def getWinnerCount(self):
         return self.winnerCount
+    def getHistorySize(self):
+        return self.historySize
+    def getHistoryLength(self):
+        # used to limit flat searches of history with getHistory()
+        return self.historySize * len(self.history) 
+    def getHistory(self, index):
+        # index into self.history, index into self.history[i], check this logic?
+        i,j = index % len(self.history), index / len(self.history)
+        return self.history[i][j]
     def getWinnerTotalCount(self):
         if self.counters == []:
             return 0
@@ -166,6 +175,8 @@ class RAVQ:
         self.verbosity = value
     def setHistory(self, value):
         self.recordHistory = value
+    def setHistorySize(self, value):
+        self.historySize = value
     def setTolerance(self, value):
         self.tolerance = value
     def setAddModels(self, value):
@@ -466,7 +477,7 @@ if __name__ == '__main__':
             
     bitlist = makeBitList()
     ravq = RAVQ(4, 2.1, 1.1)
-    ravq.setHistory(0)
+    ravq.setHistory(1)
     cnt = 0
     for bits in bitlist:
         ravq.addLabel(str(cnt), bits)
