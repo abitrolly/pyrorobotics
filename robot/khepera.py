@@ -4,7 +4,7 @@ from pyro.system.share import config
 from pyro.robot import *
 from pyro.robot.device import *
 #from pyro.system.SerialConnection import *
-from pyro.system.serial import *
+#from pyro.system.serial import *
 import pyro.robot.driver as driver
 import pyro.gui.console as console
 import string, array, math #, termios
@@ -172,21 +172,24 @@ class LightSensor(IRSensor):
 class SerialSimulator:
     def __init__(self):
         self.p = ksim.initControl()
-        self.last_msg = ''
+        self.last_msg = []
         
     def writeline(self, msg, newline = "\n"):
-        self.last_msg = ksim.sendMessage(self.p, msg)
+        self.last_msg.append(ksim.sendMessage(self.p, msg))
         sleep(.01)  # for some reason it seems as if python doesn't block
 		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
-        return self.last_msg 
+        if len(self.last_msg): return self.last_msg.pop(0)
+        return ''
 
     def readlines(self):
-        return [self.last_msg]
+        retval = []
+        while len(self.last_msg) > 0: retval.append(self.last_msg.pop(0))
+        return retval
 
     def inWaiting(self):
-        return 0
+        return len(self.last_msg)
     
 class KheperaRobot(Robot):
     def __init__(self,
