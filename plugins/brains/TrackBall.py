@@ -6,11 +6,16 @@ class TrackBall(Brain):
         self.cam = self.getDevice( self.hasA("camera") )
         self.ptz = self.getDevice( self.hasA("ptz") )
         self.ptz.setPose(0, 0, 0)
-        print "Brain: make sure you set a Blobify Filter before running."
+        #self.cam.addFilter("match",220,27,46,)
+        #self.cam.addFilter("match",143,24,28,)
+        #self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
+
+    def destroy(self):
+        self.cam.clearFilters()
 
     def step(self):
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1: # need a match, and blobify at least
+        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
             if len(results[-1][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[-1][0]
                 if area > 25:
@@ -40,11 +45,6 @@ class TrackBall(Brain):
                 
             else:
                 self.ptz.center() #print "searching..."
-        else:
-            print "Brain: I added a Blobify Filter for you!"
-            self.cam.addFilter("match",220,27,46,)
-            self.cam.addFilter("match",143,24,28,)
-            self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
 
 def INIT(engine):
     engine.robot.requires("ptz")
