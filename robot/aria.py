@@ -2,7 +2,7 @@
 
 from pyro.robot import *
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
-     ArRobotParams, ArGripper
+     ArRobotParams, ArGripper, ArSonyPTZ
 from math import pi, cos, sin
 from os import getuid
 
@@ -115,8 +115,124 @@ class AriaRobot(Robot):
         y = self.dev.getSonarReading(pos).getLocalY() 
         return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
-    def setGripper(self, dev, option):
-        pass
+#    def setGripper(self, dev, option):
+#        pass
+
+    ## Methods for gripper from Aria
+
+    def gripOpen(self):
+        ArGripper(self.dev).gripOpen()
+
+    def gripClose(self):
+        ArGripper(self.dev).gripClose()
+
+    def gripStop(self):
+        ArGripper(self.dev).gripStop()
+
+    def liftUp(self):
+        ArGripper(self.dev).liftUp()
+
+    def liftDown(self):
+        ArGripper(self.dev).liftDown()
+
+    def liftStop(self):
+        ArGripper(self.dev).liftStop()
+
+    def gripperStore(self):
+        ArGripper(self.dev).gripperStore()
+
+    def gripperDeploy(self):
+        ArGripper(self.dev).gripperDeploy()
+
+    def gripperHalt(self):
+        ArGripper(self.dev).gripperHalt()
+
+    def getGripState(self):
+        return ArGripper(self.dev).getGripState()
+
+    def getBreakBeamState(self):
+        return ArGripper(self.dev).getBreakBeamState()
+
+    def isGripMoving(self):
+        return ArGripper(self.dev).isGripMoving()
+
+    def isLiftMoving(self):
+        return ArGripper(self.dev).isLiftMoving()
+
+    def isLiftMaxed(self):
+        return ArGripper(self.dev).isLiftMaxed()
+
+    ## Methods for moving camera
+
+    def pan(self, numDegrees):
+        ArSonyPTZ(self.dev).pan(numDegrees)
+
+    def panRel(self, numDegrees):
+        ArSonyPTZ(self.dev).panRel(numDegrees)
+
+    def tilt(self, numDegrees):
+        ArSonyPTZ(self.dev).tilt(numDegrees)
+
+    def tiltRel(self, numDegrees):
+        ArSonyPTZ(self.dev).tiltRel(numDegrees)        
+
+    def panTilt(self, panDeg, tiltDeg):
+        ArSonyPTZ(self.dev).panTilt(panDeg, tiltDeg)
+
+    def panTiltRel(self, panDeg, tiltDeg):
+        ArSonyPTZ(self.dev).panTiltRel(panDeg, tiltDeg)        
+
+    def centerCamera(self):
+        ArSonyPTZ(self.dev).panTilt(0,0)
+
+    def zoom(self, numDegrees):
+        ArSonyPTZ(self.dev).zoom(numDegrees)
+
+    def zoomRel(self, numDegrees):
+        ArSonyPTZ(self.dev).zoomRel(numDegrees)
+
+    def getPan(self):
+        return ArSonyPTZ(self.dev).getPan()
+        
+    def getTilt(self):
+        return ArSonyPTZ(self.dev).getTilt()
+        
+    def getZoom(self):
+        return ArSonyPTZ(self.dev).getZoom()
+
+    def getRealPan(self):
+        return ArSonyPTZ(self.dev).getRealPan()
+        
+    def getRealTilt(self):
+        return ArSonyPTZ(self.dev).getRealTilt()
+        
+    def getRealZoom(self):
+        return ArSonyPTZ(self.dev).getRealZoom()
+
+    def canGetRealPanTilt(self):
+        return ArSonyPTZ(self.dev).canGetRealPanTilt()
+    
+    def canGetRealZoom(self):
+        return ArSonyPTZ(self.dev).canGetRealZoom()
+
+    def getMaxPosPan(self):
+        return ArSonyPTZ(self.dev).getMaxPosPan()
+
+    def getMaxNegPan(self):
+        return ArSonyPTZ(self.dev).getMaxNegPan()
+
+    def getMaxPosTilt(self):
+        return ArSonyPTZ(self.dev).getMaxPosTilt()
+
+    def getMaxNegTilt(self):
+        return ArSonyPTZ(self.dev).getMaxNegTilt()
+
+    def getMaxZoom(self):
+        return ArSonyPTZ(self.dev).getMaxZoom()
+
+    def getMinZoom(self):
+        return ArSonyPTZ(self.dev).getMinZoom()
+
 
     def translateDev(self, dev, translate_velocity):
         dev.setVel((int)(translate_velocity * 1100.0))
@@ -304,3 +420,5 @@ if __name__ == '__main__':
     #myrobot.translate(.2)
     #myrobot.translate(.0)
     #myrobot.disconnect()
+
+
