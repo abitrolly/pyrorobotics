@@ -117,24 +117,25 @@ class gui(Drawable):
             self.inform("Need to load a brain first!")
       else:
          # elif len(retval) > 0 and retval[0] == "!":
-         exp1 = "self.inform( repr(" + string.strip(retval) + ") )"
+         exp1 = "_retval = " + string.strip(retval)
          exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
          engine = self.engine
          gui = self
-         self = robot
-         self.inform(">>> " + string.strip(retval))
+         self = brain
+         print ">>> ",
+         print retval
          try:
             exec exp1
+            print _retval
          except:
             try:
                exec exp2
-               self.inform("Ok")
+               print "Ok"
             except:
                import sys
-               if sys.exc_value != None:
-                  self.inform(sys.exc_value)
+               print sys.exc_value
          self = gui
          #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0

@@ -1,4 +1,4 @@
-# A bare brain
+# A bare brain with a Local Perceptual View
 
 from pyro.brain import Brain
 from random import random
@@ -6,10 +6,12 @@ from time import sleep
 from pyro.map.lps import LPS
 
 class SimpleBrain(Brain):
-   # Only method you have to define is the step method:
-
    def setup(self):
-      self.lps = LPS( 20, 20 ) # create the Local Perceptiual Space window
+      self.lps = LPS( 20, 20, widthMM = 14000, heightMM = 14000 )
+      # create the Local Perceptiual Space window
+
+   def destroy(self):
+      self.lps.destroy()
 
    def step(self):
       robot = self.getRobot()
