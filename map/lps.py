@@ -2,6 +2,9 @@ import Tkinter
 from math import cos, sin, pi, sqrt
 
 class LPS(Tkinter.Tk):
+   """
+   GUI for visualizing the local perceptual space of a robot.
+   """
    def __init__(self, cols, rows, value = 0.5,
                 width = 200, height = 200,
                 widthMM = 7000, heightMM = 7000):
@@ -13,23 +16,16 @@ class LPS(Tkinter.Tk):
       self.rows = rows
       self.widthMM = widthMM
       self.heightMM = heightMM
-      self.xScaleMM = self.widthMM / self.cols
-      self.yScaleMM = self.heightMM / self.rows
-      self.xScale = self.width / self.cols
-      self.yScale = self.height / self.rows
+      self.colScaleMM = self.widthMM / self.cols
+      self.rowScaleMM = self.heightMM / self.rows
+      self.colScale = self.width / self.cols
+      self.rowScale = self.height / self.rows
       self.reset()
       self.step = 0
       self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
       self.bind("<Configure>", self.changeSize)
-      self.canvas.bind("<B1-Motion>", self.increaseCell)
-      self.canvas.bind("<B2-Motion>", self.middleCell)
-      self.canvas.bind("<B3-Motion>", self.decreaseCell)
-      self.canvas.bind("<Button-1>", self.increaseCell)
-      self.canvas.bind("<Button-2>", self.middleCell)
-      self.canvas.bind("<Button-3>", self.decreaseCell)
-      self.canvas.bind("<KeyPress-q>", self.close)
       self.canvas.pack()
-      self.protocol('WM_DELETE_WINDOW',self.close)
+      self.protocol('WM_DELETE_WINDOW', self.close)
       self.update_idletasks()
 
    def reset(self, value = 0.5):
@@ -38,30 +34,12 @@ class LPS(Tkinter.Tk):
       self.label = [['' for col in range(self.cols)]
                     for row in range(self.rows)]
 
-   def increaseCell(self, event):
-      y = event.x
-      x = event.y
-      self.grid[int(x / self.xScale)][int(y / self.yScale)] = 1.0
-      self.redraw()
-
-   def middleCell(self, event):
-      y = event.x
-      x = event.y
-      self.grid[int(x / self.xScale)][int(y / self.yScale)] = 0.5
-      self.redraw()
-
-   def decreaseCell(self, event):
-      y = event.x
-      x = event.y
-      self.grid[int(x / self.xScale)][int(y / self.yScale)] = 0.0
-      self.redraw()
-
    def changeSize(self, event):
       self.width = self.winfo_width() - 2
       self.height = self.winfo_height() - 2
       self.canvas.configure(width = self.width, height = self.height)
-      self.xScale = self.width / self.cols
-      self.yScale = self.height / self.rows
+      self.colScale = self.width / self.cols
+      self.rowScale = self.height / self.rows
       self.redraw()
 
    def color(self, value, maxvalue):
@@ -73,42 +51,63 @@ class LPS(Tkinter.Tk):
       self.withdraw()
       self.update_idletasks()
 
-   def setArc(self, th, dist, offx = 0, offy = 0, label = '', arc = 0.5):
-      originMM = self.widthMM / 2.0, self.heightMM / 2.0
-      xhit = cos(th) * dist + offx
-      yhit = sin(th) * dist - offy
-      xpos = int((originMM[0] + xhit) / self.xScaleMM)
-      ypos = int((originMM[1] - yhit) / self.yScaleMM)
-      self.label[ypos][xpos] = label
-      self.grid[ypos][xpos] = 1.0
-
    def plotSensor(self, robot, item):
-      units = robot.get('sonar', 'units')
-      robot.set('sonar', 'units', 'METERS')
+      """
+      Point (0,0) is located at the center of the robot.
+      Point (offx, offy) is the location of the sensor on the robot.
+      Theta is angle of the sensor hit relative to heading 0.
+      Dist is the distance of the hit from the sensor.
+      Given these values, need to calculate the location of the hit
+      relative to the center of the robot (xhit, yhit).  
+
+                    .(xhit, yhit)
+                   /
+                  / 
+                 /  
+           dist /   
+               /    
+              /     
+             /theta 
+            .-------
+           (offx, offy)
+        
+      .-->heading 0
+      (0,0)
+      
+      """
+      originalUnits = robot.get(item, 'units')
+      robot.set(item, 'units', 'METERS')
       for i in range(robot.get(item, 'count')):
          offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
-         dist = robot.get(item, 'value', i)
-         angle = robot.get(item, 'th', i)
+         print offx, offy
+         dist = robot.get(item, 'value', i) 
+         theta = robot.get(item, 'th', i)
          if dist < robot.get(item, 'maxvalue'):
-            self.setArc(angle, dist * 1000, offx = offx, offy = offy,
-                        label = "%d" % i)
-      robot.set('sonar', 'units', units)
+            dist *= 1000
+            originMM = self.widthMM / 2.0, self.heightMM / 2.0
+            xhit = cos(theta) * dist + offx
+            yhit = sin(theta) * dist - offy
+            xpos = int((originMM[0] + xhit) / self.colScaleMM)
+            ypos = int((originMM[1] - yhit) / self.rowScaleMM)
+            self.label[ypos][xpos] = "%d" % i
+            self.grid[ypos][xpos] = 1.0
+      robot.set(item, 'units', originalUnits)
 
    def redraw(self):
       maxval = 1
       for i in range(self.rows):
          for j in range(self.cols):
-            self.canvas.create_rectangle(int(j * self.xScale),
-                                         int(i * self.yScale),
-                                         int((j + 1) * self.xScale),
-                                         int((i + 1) * self.yScale),
+            self.canvas.create_rectangle(int(j * self.colScale),
+                                         int(i * self.rowScale),
+                                         int((j + 1) * self.colScale),
+                                         int((i + 1) * self.rowScale),
                                          width = 0,
                                          fill=self.color(self.grid[i][j],
                                                          maxval),
                                          tag = "cell%d" % self.step)
             if self.label[i][j]:
-               self.canvas.create_text(int((j + .5) * self.xScale),
-                                       int((i + .5) * self.yScale),
+               self.canvas.create_text(int((j + .5) * self.colScale),
+                                       int((i + .5) * self.rowScale),
                                        text = self.label[i][j],
                                        fill="yellow",
                                        tag = "cell%d" % self.step)
