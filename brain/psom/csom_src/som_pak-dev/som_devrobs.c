@@ -203,8 +203,29 @@ struct data_entry *make_data_entry(float *points) {
   return make_data_entry_weighted_masked(points, 1, NULL, 0, 0);
 }
 
-/* Returns 0 if label setting is successful, 0 otherwise. */
-int label_data_entry(struct data_entry *entry, char **label) {
+/* Returns 0 if label setting is successful, 1 otherwise.
+ * The difference between add_label and set_label is that 
+ * set_label removes all labels previously associated with
+ * the entry before setting the new label.
+ */
+int set_label_data_entry(struct data_entry *entry, char **label) {
+  int i;
+  
+  if(label) {
+    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
+      //printf("Added: %c\n", label[i][0]);
+      set_entry_label(entry, find_conv_to_ind(label[i]));
+    }
+    return 0;
+  }
+  return 1;
+}
+
+/* Returns 0 if adding a label is successful, 1 otherwise. 
+ * add_label simply adds a label to the entry; any previous
+ * associations remain the same. 
+ */
+int add_label_data_entry(struct data_entry *entry, char **label) {
   int i;
 
   if(label) {
@@ -217,6 +238,10 @@ int label_data_entry(struct data_entry *entry, char **label) {
   return 1;
 }
 
+/* Clears all labels associated with the entry */
+void clear_labels_data_entry(struct data_entry *entry) {
+  clear_entry_labels(entry);
+}
 
 /* ------------------ training session initialization functions ---------- */
 

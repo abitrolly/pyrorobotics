@@ -265,7 +265,8 @@ if __name__ == "__main__":
    def pause():
       print "Press [Enter] to continue...",
       raw_input();
-   mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
+   #mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
+   mysom = VisPsom(file='ex.cod')
    mydataset = dataset(file='ex.dat')
    mysom.init_training(0.02,4.0,5000)
    mysom.train_from_dataset(mydataset)

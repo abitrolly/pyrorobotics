@@ -20,6 +20,27 @@ csom.set_globals()  # neither worry about nor change this
                     # doug, trust me, this sets global parameters that
                     # are invariant from som to som
 
+class PsomError(AttributeError):
+    """
+    PsomError class
+    """
+
+class VectorError(AttributeError):
+    """
+    VectorError
+    """
+
+class DatasetError(AttributeError):
+    """
+    DatasetError
+    """
+
+class PointError(AttributeError):
+    """
+    PointError
+    """
+
+
 # Hacks added to replace the ptrset, ptrvalue, ptrcreate functions from pointer.i
 # which has been deprecated with SWIG 1.3.  cpointer.i is the new SWIG pointer library
 # now.  Need to find a better way to determine C.
@@ -709,6 +730,8 @@ class vector:
 	        the size of the c array.
 	point : this param should remain 'unset' for data vectors, but for model vectors
 	        this represents its coordinates in the som.
+        label : list of integers or strings to be associated with a vector.
+                e.g. ['X'], [1, 45], ['ab', 'C3'], etc.
         
         Note: Typically, all a user need worry about is the elts parameter.
 
@@ -719,6 +742,8 @@ class vector:
 	   >>> mysom.train(vector([7,2.5,0.2],mask=[1,0,0])
 	   -- the first element of the vector (i.e. 7) will be ignored when computing the
 	      winning model vector.
+        3. To map a vector with a label:
+           >>> mysom.map(vector([7,2.5,0.2],label=['X',2,'ab','C4']))
 	"""
 	def __init__(self, elts='unset', weight=1, mask='NULL', entry='unset',
 		     dim='unset', point='unset', label='NULL'):
@@ -737,8 +762,8 @@ class vector:
 				if (len(mask) != dim):
 					raise "Mismatched dimensions of vector (len %s) and mask (len %s)" % (dim,len(mask))
 				# make sure mask is a binary list
-				for i in range(len(mask)):
-					if(mask[i] != 0 and mask[i] != 1):
+				for item in mask:
+					if(item != 0 and item != 1):
 						raise "invalid mask: %s.  mask must be a binary list" % mask
 				c_mask = list_to_arr(mask, "short") # convert mask list into a c array of shorts
 
@@ -748,8 +773,8 @@ class vector:
 				# convert every elt in label (python list) to a string,
 				# storing it in str_label, a new python list of strings.
 				str_label = []
-				for i in range(len(label)):
-					str_label.append(str(label[i]))
+				for item in label:
+					str_label.append(str(item))
 
 				# Null-terminate the list of strings. this is needed to determine
 				# the array size in make_data_entry_weighted_masked() in som_devrobs.c
@@ -811,8 +836,8 @@ class vector:
 	"""
 	vector: set_label()
 	-------------------
-	Sets the label associated with the vector.  See vector constructor for more
-	info.
+	Associates a vector with the given label.  Removes all labels previously
+        associated with the vector.
 	"""
 	def set_label(self,label='NULL'):
 		c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
@@ -821,26 +846,70 @@ class vector:
 		# convert every elt in label (python list) to a string,
 		# storing it in str_label, a new python list of strings.
 		str_label = []
-		for i in range(len(label)):
-			str_label.append(str(label[i]))
+		for item in label:
+			str_label.append(str(item))
 			
 		# Null-terminate the list of strings. this is needed to determine
 		# the array size in make_data_entry_weighted_masked() in som_devrobs.c
 		str_label.append(str(0)) 
 		
 		# Convert list of strings into a c array of character pointers.
-		# Note: each elt in c_str_label is a char pointer.  So, c_str_label is the equivalent
-		# of C's char **.
+		# Note: each elt in c_str_label is a char pointer.  So, c_str_label is the
+                # equivalent of C's char **.
 		c_str_label = list_to_arr(str_label, "char")
 		
-		csom.label_data_entry(self.entry, c_str_label)
+		csom.set_label_data_entry(self.entry, c_str_label)
 		self.label = label
+        
+	"""
+	vector: add_label()
+	-------------------
+	Associates a vector with the given label.  All labels previously
+        associated with the vector remain unchanged.
+	"""
+	def add_label(self,label='NULL'):
+		c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
+		if(label == 'NULL'):
+			raise 'No label provided'
+		# convert every elt in label (python list) to a string,
+		# storing it in str_label, a new python list of strings.
+		str_label = []
+		for item in label:
+			str_label.append(str(item))
+			
+		# Null-terminate the list of strings. this is needed to determine
+		# the array size in make_data_entry_weighted_masked() in som_devrobs.c
+		str_label.append(str(0)) 
 		
+		# Convert list of strings into a c array of character pointers.
+		# Note: each elt in c_str_label is a char pointer.  So, c_str_label is the
+                # equivalent of C's char **.
+		c_str_label = list_to_arr(str_label, "char")
+		
+		csom.add_label_data_entry(self.entry, c_str_label)
+                
+                if(self.label == 'NULL'):
+                    # no labels previously associated with this vector 
+                    self.label = label
+                else:
+                    # add to the labels associated with this vector
+                    for item in label: 
+                        self.label.append(item)
+
+        """
+        vector: clear_label()
+        ---------------------
+        Removes all labels associated with the vector.
+        """
+        def clear_label(self):
+            csom.clear_labels_data_entry(self.entry)
+            self.label = 'NULL'
+        
 	"""
 	vector: get_label()
 	-------------------
-	Returns the label list associated with the vector.  See vector constructor
-	for more info.
+	Returns the label list associated with the vector or 'NULL'
+        if no labels are associated with this vector.
 	"""
 	def get_label(self):
 		return self.label
@@ -956,12 +1025,14 @@ class dataset:
 	"""
 	dataset: addvec()
 	-----------------
+        Adds a vector to the dataset.
 	"""
 	def addvec(self, vec):
 		csom.addto_dataset(self.data, vec.entry)
 	"""
 	dataset: rewind()
 	-----------------
+        Rewinds the dataset.
 	"""
 	def rewind(self):
 		entry = csom.rewind_entries(self.data, self.p)
@@ -969,6 +1040,7 @@ class dataset:
 	"""
 	dataset: next()
 	---------------
+        Get the next entry in the dataset and return it as a vector.
 	"""
 	def next(self):
 		entry = csom.next_entry(self.p)
@@ -976,6 +1048,8 @@ class dataset:
 	"""
 	dataset: get()
 	--------------
+        Get the data entry at position given by index, and return
+        it as a vector.
 	"""
 	def get(self, index):
 		if(index >= self.n_vectors()):
@@ -989,6 +1063,7 @@ class dataset:
 	"""
 	dataset: load_from_file()
 	-------------------------
+        Given a filename, this function reloads the dataset from the file.
 	"""
 	def load_from_file(self,file):
 		csom.close_entries(self.data)
@@ -997,18 +1072,21 @@ class dataset:
 	"""
 	dataset: save_to_file()
 	-----------------------
+        Given a filename, this function saves the dataset to the file.
 	"""
 	def save_to_file(self,file):
 		csom.write_entries(self.data)
 	"""
 	dataset: n_vectors()
 	--------------------
+        Returns the number of entries in the dataset.
 	"""
 	def n_vectors(self):
 		return csom.entries_num_entries_get(self.data)
 	"""
 	dataset: display()
 	------------------
+        Displays the entire dataset.
 	"""
 	def display(self):
 		csom.print_dataset(self.data)			
@@ -1229,15 +1307,24 @@ if(__name__ == '__main__'):
 	vecs = []
 	vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))
 	vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
-	vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0], label=['X']))
+	vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0],
+                           label=['X', 13, 'ab', 'C4']))
 	vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
 	
 	mydataset = dataset(vecs[0])
 	print "Adding vectors to dataset, displaying mask and labels"
 	for i in range(1,4):
 		mydataset.addvec(vecs[i])
-		vecs[i].set_label([i]) # test set_label()
+		vecs[i].add_label([i]) # test add_label()
 		print i, vecs[i].get_mask(), vecs[i].get_label() # test get_mask() and get_label()
+                if(i == 2):
+                    vecs[i].clear_label() # test clear_label()
+                    print "Labels on vector %s removed" % i
+                    print i, vecs[i].get_mask(), vecs[i].get_label() 
+                if(i == 3):
+                    vecs[i].set_label([4]) # test set_label()
+                    print "Label on vector %s changed to 4" % i
+                    print i, vecs[i].get_mask(), vecs[i].get_label() 
 		
 	print "\nDisplaying dataset..."
 	mydataset.display()

@@ -58,9 +58,11 @@ int addto_dataset(struct entries *data, struct data_entry *entry);
 struct data_entry *make_data_entry_weighted_masked(float *points, 
 			short weight, short *mask, int dim, char **label);
 struct data_entry *make_data_entry(float *points);
-int label_data_entry(struct data_entry *entry, char **label);
 
-
+/* --------------------- label manipulation functions ----------------- */
+int set_label_data_entry(struct data_entry *entry, char **label);
+int add_label_data_entry(struct data_entry *entry, char **label);
+void clear_labels_data_entry(struct data_entry *entry);
 
 /* ------------------ training session initialization functions ---------- */
 
