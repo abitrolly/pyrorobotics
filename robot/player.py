@@ -32,43 +32,48 @@ class PlayerRobot(Robot):
                           'back-left' : (12, 13, 14), 
                           'back' : (11, 12),
                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        self.z = 0
+        self.z = 0.0
+        self.y = 0.0
+        self.x = 0.0
         self.senses = {}
         simulated = self.simulated
 	# robot senses (all are functions):
-        #         self.senses['robot'] = {}
-        #         self.senses['robot']['simulator'] = lambda dev, x = simulated: x
-        #         self.senses['robot']['stall'] = lambda dev: dev.getStallValue()
-        #         self.senses['robot']['x'] = self.getX
-        #         self.senses['robot']['y'] = self.getY
-        #         self.senses['robot']['z'] = self.getZ
-        #         self.senses['robot']['th'] = self.getTh # in degrees
-        #         self.senses['robot']['thr'] = self.getThr # in radians
-        # 	self.senses['robot']['type'] = lambda dev: dev.getRobotType()
-        #         self.senses['robot']['units'] = lambda dev: 'METERS'
-        #         self.senses['robot']['name'] = lambda dev, x = name: name
+        self.senses['robot'] = {}
+        self.senses['robot']['simulator'] = lambda dev, x = simulated: x
+        self.senses['robot']['stall'] = lambda dev: self.stall
+        self.senses['robot']['x'] = self.getX
+        self.senses['robot']['y'] = self.getY
+        self.senses['robot']['z'] = self.getZ
+        self.senses['robot']['th'] = self.getTh # in degrees
+        self.senses['robot']['thr'] = self.getThr # in radians
+        self.senses['robot']['type'] = lambda dev: 'Player'
+        self.senses['robot']['units'] = lambda dev: 'METERS'
+        self.senses['robot']['name'] = lambda dev, x = name: name
         
-        # 	self.senses['sonar'] = {}
-        # 	self.senses['sonar']['count'] = lambda dev: dev.getNumSonar()
-        # 	self.senses['sonar']['type'] = lambda dev: 'range'
+        self.senses['sonar'] = {}
+        self.sonarGeometry = self.dev.get_sonar_geometry()
+        self.sonarAngles = map(lambda lst: lst[2], self.sonarGeometry)
+        self.senses['sonar']['count'] = lambda dev: len(self.sonarGeometry)
+        self.senses['sonar']['type'] = lambda dev: 'range'
         
-        # 	# location of sensors' hits:
-        #         self.senses['sonar']['x'] = lambda dev, pos: self.getSonarX(pos)
-        #         self.senses['sonar']['y'] = lambda dev, pos: self.getSonarY(pos)
-        # 	self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
-        #         self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
-        #         self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2.99, 'sonar')
+        # location of sensors' hits:
+        # FIX: where are these computed in Player?
+        self.senses['sonar']['x'] = lambda dev, pos: 0.0
+        self.senses['sonar']['y'] = lambda dev, pos: 0.0
+        self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
+        self.senses['sonar']['value'] = lambda dev, pos: self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar')
+        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2.99, 'sonar')
         #         self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
-        #         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
+        self.senses['sonar']['units'] = lambda dev: "ROBOTS"
         
-        # 	# location of origin of sensors:
-        #         self.senses['sonar']['ox'] = lambda dev, pos: self.params.getSonarX(pos)
-        #         self.senses['sonar']['oy'] = lambda dev, pos: self.params.getSonarY(pos)
-        # 	self.senses['sonar']['oz'] = lambda dev, pos: 0.03
-        #         self.senses['sonar']['th'] = lambda dev, pos: self.params.getSonarTh(pos) * PIOVER180 # self.light_th
+        # location of origin of sensors:
+        self.senses['sonar']['ox'] = lambda dev, pos: self.rawToUnits(dev, self.sonarGeometry[pos][0], 'sonar')
+        self.senses['sonar']['oy'] = lambda dev, pos: self.rawToUnits(dev, self.sonarGeometry[pos][1], 'sonar')
+        self.senses['sonar']['oz'] = lambda dev, pos: 0.03 # meters
+        self.senses['sonar']['th'] = lambda dev, pos: self.sonarGeometry[pos][2] * PIOVER180 
         #         # in radians:
-        #         self.senses['sonar']['arc'] = lambda dev, pos, \
-        #                                       x = (7.5 * PIOVER180) : x
+        self.senses['sonar']['arc'] = lambda dev, pos, \
+                                      x = (7.5 * PIOVER180) : x
         
         #         if self.params.haveFrontBumpers() or self.params.haveRearBumpers():
         #             # bumper sensors
@@ -86,17 +91,17 @@ class PlayerRobot(Robot):
         # 	self.senses['gripper'] = {}
         #         self.senses['gripper']['type'] = lambda dev: 'special'
         
-        #         # Make a copy, for default:
-        #         self.senses['range'] = self.senses['sonar']
-        #         self.senses['self'] = self.senses['robot']
+        # Make a copy, for default:
+        self.senses['range'] = self.senses['sonar']
+        self.senses['self'] = self.senses['robot']
         
         #         console.log(console.INFO,'aria sense drivers loaded')
         
-        #         self.controls['move'] = self.moveDev
-        #         self.controls['translate'] = self.translateDev
-        #         self.controls['rotate'] = self.rotateDev
-        #         self.controls['update'] = self.update
-        #         self.controls['localize'] = self.localize
+        self.controls['move'] = self.moveDev
+        self.controls['translate'] = self.translateDev
+        self.controls['rotate'] = self.rotateDev
+        self.controls['update'] = self.updateDev
+        #self.controls['localize'] = self.localizeDev
         
         #         console.log(console.INFO,'aria control drivers loaded')
         #         self.SanityCheck()
@@ -117,24 +122,25 @@ class PlayerRobot(Robot):
         #     def setGripper(self, dev, option):
         #         pass
         
-        #     def translateDev(self, dev, translate_velocity):
-        #         dev.setVel((int)(translate_velocity * 1100.0))
-        
-        #     def rotateDev(self, dev, rotate_velocity):
-        #         dev.setRotVel((int)(rotate_velocity * 75.0))
-        
-        #     def moveDev(self, dev, translate_velocity, rotate_velocity):
-        #         dev.setVel((int)(translate_velocity * 1100.0))
-        #         dev.setRotVel((int)(rotate_velocity * 75.0))
-        
-        #     def translate(self, translate_velocity):
-        #         self.dev.setVel((int)(translate_velocity * 1100.0))
-        
-        #     def rotate(self, rotate_velocity):
-        #         self.dev.setRotVel((int)(rotate_velocity * 75.0))
-        
+    def translate(self, translate_velocity):
+        self.translateDev(self.dev, translate_velocity)
+
+    def translateDev(self, dev, translate_velocity):
+        dev.set_speed(translate_velocity * 1100.0, None, None)
+
+    def rotate(self, rotate_velocity):
+        self.rotateDev(self.dev, rotate_velocity)
+
+    def rotateDev(self, dev, rotate_velocity):
+        dev.set_speed(None, None, rotate_velocity * 75.0)
+
     def move(self, translate_velocity, rotate_velocity):
-        self.dev.set_speed(translate_velocity * 1100.0, 0, rotate_velocity * 75.0)
+        self.moveDev(self.dev, translate_velocity, rotate_velocity)
+
+    def moveDev(self, dev, translate_velocity, rotate_velocity):
+        dev.set_speed(translate_velocity * 1100.0,
+                      0,
+                      rotate_velocity * 75.0)
         
     def getX(self, dev):
         return self.x
@@ -150,16 +156,19 @@ class PlayerRobot(Robot):
     
     def getThr(self, dev):
         return self.thr
-    
+
     def update(self):
-        data = self.dev.get_position()
-        print data
-        pos, speeds, unknown = data
+        self.updateDev(self.dev)
+    
+    def updateDev(self, dev):
+        data = dev.get_position()
+        pos, speeds, stall = data
         # (xpos, ypos, th), (xspeed, yspeed, rotatespeed), stall
         self.x = pos[0] / 1000.0
         self.y = pos[1] / 1000.0
-        self.th = pos[2]
+        self.th = pos[2] # degrees
         self.thr = self.th * PIOVER180
+        self.stall = stall
         
     def _draw(self, options, renderer): # overloaded from robot
         #self.setLocation(self.senses['robot']['x'], \
@@ -258,32 +267,33 @@ class PlayerRobot(Robot):
         
     def disconnect(self):
         print "Disconnecting..."
-#         self.dev.disconnect()
+        #         self.dev.disconnect()
+        
+        #     def getSonarRangeDev(self, dev, pos):
+        #         return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
+        
+        #     def getSonarMaxRange(self, dev):
+        #         return self.rawToUnits(dev, 2.99, 'sonar')
 
-#     def getSonarRangeDev(self, dev, pos):
-#         return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
-
-#     def getSonarMaxRange(self, dev):
-#         return self.rawToUnits(dev, 2.99, 'sonar')
-
-#     def rawToUnits(self, dev, raw, name):
-#         if name == 'sonar':
-#             val = min(max(raw, 0.0), 2.99)
-#         else:
-#             raise 'InvalidType', "Type is invalid"
-#         if self.senses[name]['units'](dev) == "ROBOTS":
-#             return val / 0.75 # Pioneer is about .5 meters diameter
-#         elif self.senses[name]['units'](dev) == "MM":
-#             return val * 1000.0
-#         elif self.senses[name]['units'](dev) == "CM":
-#             return (val) * 100.0 # cm
-#         elif self.senses[name]['units'](dev) == "METERS" or \
-#              self.senses[name]['units'](dev) == "RAW":
-#             return (val) 
-#         elif self.senses[name]['units'](dev) == "SCALED":
-#             return val / 2.99
-#         else:
-#            raise 'InvalidType', "Units are set to invalid type"
+    def rawToUnits(self, dev, raw, name):
+        raw = raw / 1000.0
+        if name == 'sonar':
+            val = min(max(raw, 0.0), 2.99)
+        else:
+            raise 'InvalidType', "Type is invalid"
+        if self.senses[name]['units'](dev) == "ROBOTS":
+            return val / 0.75 # Pioneer is about .5 meters diameter
+        elif self.senses[name]['units'](dev) == "MM":
+            return val * 1000.0
+        elif self.senses[name]['units'](dev) == "CM":
+            return (val) * 100.0 # cm
+        elif self.senses[name]['units'](dev) == "METERS" or \
+                 self.senses[name]['units'](dev) == "RAW":
+            return (val) 
+        elif self.senses[name]['units'](dev) == "SCALED":
+            return val / 2.99
+        else:
+            raise 'InvalidType', "Units are set to invalid type"
 
     
 if __name__ == '__main__':
