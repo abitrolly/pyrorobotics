@@ -5,29 +5,9 @@ from Python
 """
 
 from pyro.robot import Robot
+from pyro.robot.device import Device
 from socket import *
 import struct, time, sys
-
-def readMenu(listener, cnt):
-    print "Reading %d menu entries..." % cnt
-    retval = {}
-    for line in range(cnt):
-        # TODO: what are these?
-        x = listener.readUntil() # a number?
-        y = listener.readUntil() # a number?
-        try:
-            x, y = int(x), int(y)
-        except:
-            print "error:", (x, y)
-        item = listener.readUntil() # item name
-        explain = listener.readUntil() # explain
-        if item[0] == "#":   # on
-            retval[item[1:]] = [x, y, "on", explain]
-        elif item[0] == "-": # off
-            retval[item[1:]] = [x, y, "off", explain]
-        else:                # off
-            retval[item] = [x, y, "off", explain]
-    return retval
 
 def makeControlCommand(control, amt):
     # HEAD: control is tilt 't', pan 'p', or roll 'r'
@@ -71,14 +51,23 @@ class Listener:
     def runConnect(self):
         self.attempts = 0
         if (self.attempts == 0):
-            print "[",self.port,"] connecting ...";
+            print >> sys.stderr, "[",self.port,"] connecting ...",
         try:
             if self.protocol == "UDP":
                 self.s = socket(AF_INET, SOCK_DGRAM) # udp socket
             elif self.protocol == "TCP":
                 self.s = socket(AF_INET, SOCK_STREAM) # udp socket
-            self.s.connect((self.host,self.port)) # connect to server
-            print "[",self.port,"] connected"
+            done = 0
+            while not done:
+                try:
+                    self.s.connect((self.host,self.port)) # connect to server
+                    done = 1
+                except KeyboardInterrupt:
+                    print >> sys.stderr, "aborted!"
+                    return
+                except:
+                    print >> sys.stderr, ".",
+            print >> sys.stderr, "connected!"
         except IOError, e:
             print e
         self.attempts+=1
@@ -101,8 +90,53 @@ class Listener:
         retval = self.s.send(message)
         return retval
 
-class AiboRobot(Robot):
+class AiboHead(Device):
+    def __init__(self, robot):
+        Device.__init__(self, "ptz")
+        self.robot = robot
+        # Turn on head remote control if off:
+        if self.robot.menuData["TekkotsuMon"]["Head Remote Control"][2] == "off":
+            print "Turning on 'Head Remote Control'..."
+            self.robot.menu_control.s.send( "2\n")
+        time.sleep(1) # pause for a second
+        self.dev   = Listener(10052, self.robot.host) # head movement
 
+    def tilt(self, amt):
+        # tilt: 0 to -1 (straight ahead to down)
+        # see HeadPointListener.java
+        self.dev.write( makeControlCommand('t', amt)) 
+
+    def pan(self, amt):
+        # pan: -1 to 1 (right to left)
+        # see HeadPointListener.java
+        self.dev.write( makeControlCommand('p', amt)) 
+
+    def roll(self, amt):
+        # roll: 0 to 1 (straight ahead, to up (stretched))
+        self.dev.write( makeControlCommand('r', amt))
+
+def readMenu(listener, cnt):
+    # print "Reading %d menu entries..." % cnt
+    retval = {}
+    for line in range(cnt):
+        # TODO: what are these?
+        x = listener.readUntil() # a number?
+        y = listener.readUntil() # a number?
+        try:
+            x, y = int(x), int(y)
+        except:
+            print "error:", (x, y)
+        item = listener.readUntil() # item name
+        explain = listener.readUntil() # explain
+        if item[0] == "#":   # on
+            retval[item[1:]] = [x, y, "on", explain]
+        elif item[0] == "-": # off
+            retval[item[1:]] = [x, y, "off", explain]
+        else:                # off
+            retval[item] = [x, y, "off", explain]
+    return retval
+
+class AiboRobot(Robot):
     def __init__(self, host):
         Robot.__init__(self)
         self.host = host
@@ -117,20 +151,13 @@ class AiboRobot(Robot):
             command = self.menu_control.readUntil()
             while command in ["refresh", "pop", "push"]:
                 command = self.menu_control.readUntil()
-            print "Reading menu '%s'..." % command
+            # print "Reading menu '%s'..." % command
             menuCount = int(self.menu_control.readUntil()) # Options count
             self.menuData[command] = readMenu(self.menu_control, menuCount)
             menuRead = command
         # --------------------------------------------------
         # Turn on raw image server if off:
         #TODO: may not need to do this; just: "!root\n", "#Name of Option\n"
-        if self.menuData["TekkotsuMon"]["RawCamServer"][2] == "off":
-            print "Turning on 'RawCamServer'..."
-            self.menu_control.s.send( "0\n")
-        # Turn on head remote control if off:
-        if self.menuData["TekkotsuMon"]["Head Remote Control"][2] == "off":
-            print "Turning on 'Head Remote Control'..."
-            self.menu_control.s.send( "2\n")
         # Turn on walk remote control:
         if self.menuData["TekkotsuMon"]["Walk Remote Control"][2] == "off":
             print "Turning on 'Walk Remote Control'..."
@@ -166,12 +193,12 @@ class AiboRobot(Robot):
         #                           and current pid values to port 10032
         # 8 EStop Remote Control
 
-        print "Aibo servers starting..."
+        #print "Aibo servers starting..."
         # TODO: what are these for:
         #wsjoints_port   =10031
         #wspids_port     =10032
+        time.sleep(1) # let the servers get going...
         self.walk_control     = Listener(10050, self.host) # walk command
-        self.head_control     = Listener(10052, self.host) # head movement
         self.estop_control    = Listener(10053, self.host) # head movement
         # C code will handle image:
         #self.rawimage_data    = Listener(10011, self.host) # raw_image
@@ -179,19 +206,15 @@ class AiboRobot(Robot):
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
 
-        # Example movements:
-        # TODO: This will be a device
-        # HEAD:
-        # tilt: 0 to -1 (straight ahead to down)
-        # pan: -1 to 1 (right to left)
-        # roll: 0 to 1 (straight ahead, to up (stretched))
-        #head_control.write( makeControlCommand('t', -.4)) # see HeadPointListener.java
-        #head_control.write( makeControlCommand('p', .75)) # or  HeadPointGUI.java
-        #head_control.write( makeControlCommand('r', 0))
         servers = {}
         for item in self.menuData["TekkotsuMon"]:
             servers[item] = self.menuData["TekkotsuMon"][item][2] # on or off
         self.devData["servers"] = servers # allows robot.get("robot/servers"); returns dictionary
+        self.devData["builtinDevices"] = [ "ptz" ]
+
+    def startDeviceBuiltin(self, item):
+        if item == "ptz":
+            return {"ptz": AiboHead(self)}
 
     def connect(self):
         self.estop_control.s.send("start\n")
@@ -232,63 +255,6 @@ class AiboRobot(Robot):
         menuSorted.sort()
         for item in menuSorted:
             print "   %s: \"%s\"" % (item, self.menuData[menu][item][2])
-
-    def stepVision(self):
-        # this will go into a vision device; see RoboCupCamera, for example
-        ## Got type=TekkotsuImage
-        ## Got format=0
-        ## Got compression=1
-        ## Got newWidth=104
-        ## Got newHeight=80
-        ## Got timest=121465
-        ## Got frameNum=3185
-        header = rawimage_data.read(4, 'bbbb')  # \r\0\0\0
-        type = rawimage_data.readUntil(chr(0)) # "TekkotsuImage"
-        print "type:", type
-        format = rawimage_data.read()
-        print "format:", format
-        compression = rawimage_data.read()
-        print "compression:", compression
-        newWidth = rawimage_data.read()
-        print "newWidth:", newWidth
-        newHeight = rawimage_data.read()
-        print "newHeight:", newHeight
-        timeStamp = rawimage_data.read()
-        print "timeStamp:", timeStamp
-        frameNum = rawimage_data.read()
-        print "frameNum:", frameNum
-        unknown1 = rawimage_data.read()
-        print "unknown1:", unknown1
-        ## Got creator=FbkImage
-        ## Got chanwidth=104
-        ## Got chanheight=80
-        ## Got layer=3
-        ## Got chan_id=0
-        ## Got fmt=JPEGColor
-        ## read JPEG: len=2547
-        creator = rawimage_data.readUntil(chr(0)) # creator
-        print "creator:", creator
-        chanWidth = rawimage_data.read()
-        print "chanWidth:", chanWidth
-        chanHeight = rawimage_data.read()
-        print "chanHeight:", chanHeight
-        layer = rawimage_data.read()
-        print "layer:", layer
-        chanID = rawimage_data.read()
-        print "chanID:", chanID
-        chanWidth = rawimage_data.read()
-        print "chanWidth:", chanWidth
-        fmt = rawimage_data.readUntil(chr(0)) # fmt
-        print "fmt:", fmt
-        size = rawimage_data.read()
-        print "Reading image %d bytes..." % size
-        image = [0 for x in range(size)]
-        for x in range(size):
-            # Can't seem to read it all at once, cause it
-            # isn't ready? Need to read exactly size bytes.
-            image[x] = rawimage_data.s.recvfrom(1)
-        # TODO: The image is in JPEG format. Need to uncompress into RGB
-        # and get into a shared memory segment for Pyro vision
 
 #TODO:
 

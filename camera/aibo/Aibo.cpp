@@ -12,7 +12,7 @@ long convert(char *buff) {
   return retval;
 }
 
-PyObject *Aibo::updateMMap() {
+PyObject *Aibo::updateMMap(int decompress) {
   char *header, *type, *creator, *fmt, *image_buffer;
   long format, compression, newWidth, newHeight, timeStamp, frameNum, unknown1;
   long chanWidth, chanHeight, layer, chanID, unknown2, size;
@@ -24,6 +24,7 @@ PyObject *Aibo::updateMMap() {
   // Got newHeight=80
   // Got timest=121465
   // Got frameNum=3185
+  //printf("receiving...\n");
   header = sock->read(4);  // \r\0\0\0
   type = sock->readUntil((char)0); // "TekkotsuImage"
   //printf("type: %s\n", type);
@@ -71,12 +72,17 @@ PyObject *Aibo::updateMMap() {
     printf("New Aibo image size: %d x %d; %ld\n", width, height, size);
     return PyInt_FromLong(0);
   }
-  if (size > 0 && size < 10000) {
-    jpeg_decompress((unsigned char *)image, (width * height * depth), 
-		    (unsigned char *)image_buffer, (int) size);
-    return PyInt_FromLong(size);
-  } else {
-    printf("Aibo camera bad JPEG size: %ld\n", size);
+  if (decompress) {
+    if (size > 0 && size < 10000) {
+      //printf("decompressing...\n");
+      jpeg_decompress((unsigned char *)image, (width * height * depth), 
+		      (unsigned char *)image_buffer, (int) size);
+      //printf("done!\n");
+      return PyInt_FromLong(size);
+    } else {
+      printf("Aibo camera bad JPEG size: %ld\n", size);
+      return PyInt_FromLong(0);
+    }
   }
   return PyInt_FromLong(0);
 }
@@ -88,6 +94,6 @@ Aibo::Aibo(char *hostname) {
   // set width, height 0 to trigger automatically:
   width = 0;
   height = 0;
-  updateMMap(); // this will set height and width automatically
+  updateMMap(0); // this will set height and width automatically
   initialize(width, height, depth, 0, 1, 2); // create some space
 }

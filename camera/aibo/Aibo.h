@@ -7,7 +7,7 @@
 class Aibo : public Device {
  public:
   Aibo(char *hostname);
-  PyObject *updateMMap();
+  PyObject *updateMMap(int decompress);
   Socket *sock;
 };
 

@@ -48,11 +48,11 @@ int Socket::write(char *message) {
 char *Socket::readUntil(char stop) {
   static char retval[MAXBUFSIZE];
   int numbytes = 0;
-  char ch;
+  char ch[5];
   int pos = 0;
   numbytes = recv(sock, &ch, 1, 0);
-  while (ch != stop && numbytes == 1 && pos < MAXBUFSIZE) {
-    retval[pos++] = ch;
+  while (ch[0] != stop && numbytes == 1 && pos < MAXBUFSIZE) {
+    retval[pos++] = ch[0];
     numbytes = recv(sock, &ch, 1, 0);
   }
   retval[pos] = 0; // end of string
