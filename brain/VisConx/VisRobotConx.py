@@ -51,7 +51,8 @@ class RobotGUIBase(VisConxBase.VisConxBase):
         return (error,correct, total)
 
     def updateGUI(self):
-        self.root.update()
+        if self.root:
+            self.root.update()
             
 class VisRobotNetwork(RobotGUIBase, Network):
     def __init__(self):
