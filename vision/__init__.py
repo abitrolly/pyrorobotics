@@ -61,8 +61,8 @@ class PyroImage:
       while (x < self.width * self.height):
          for i in range(self.depth):
             c = fp.read(1)
-            r = float(struct.unpack('h', c + '\x00')[0]) / float(irange)
-            self.data[x * self.depth + i] = r
+            r = float(struct.unpack('h', c + '\x00')[0]) #/ float(irange)
+            self.data[x * self.depth + i] = int(r)
          x += 1
 
    def saveToFile(self, filename):
@@ -146,7 +146,7 @@ class PyroImage:
             r = self.data[(w + h * self.width) * self.depth + 0]
             g = self.data[(w + h * self.width) * self.depth + 1]
             b = self.data[(w + h * self.width) * self.depth + 2]
-            data[w + h * self.width] = (r + g + b) / 3.0
+            data[w + h * self.width] = int((r + g + b) / 3.0)
       return data
 
    def getColorFilter(self, r, g, b):
@@ -180,8 +180,8 @@ class PyroImage:
                r = self.data[(w + h * self.width) * self.depth + 0]
                g = self.data[(w + h * self.width) * self.depth + 1]
                b = self.data[(w + h * self.width) * self.depth + 2]               
-               if int(((r + g + b) / 3 ) * 9):
-                  line += "%d" % int(((r + g + b) / 3 ) * 9)
+               if int(((r + g + b) / 3 )/255.0 * 9):
+                  line += "%d" % int(((r + g + b) / 3 )/255.0 * 9)
                else:
                   line += '.'
             print line; line = ''
@@ -191,7 +191,7 @@ class PyroImage:
          for h in range(self.height):
             for w in range(self.width):
                r = self.data[(w + h * self.width) * self.depth + 0]
-               if int(r * 9):
+               if int(r/255.0 * 9):
                   line += "%d" % int(r * 9)
                else:
                   line += '.'
@@ -327,9 +327,7 @@ class PyroImage:
 
       # set alternate mode permutations to usable modes
       if mode == 'gr/b' or mode == 'br/g' or mode == 'bg/r':
-         temp = cutoff
-         cutoff = cutoff2
-         cutoff2 = temp
+         cutoff, cutoff2 = cutoff2, cutoff
          if mode == 'gr/b':
             mode = 'rg/b'
          elif mode == 'br/g':
@@ -344,7 +342,7 @@ class PyroImage:
          for h in range(bitmap.height):
             for w in range(bitmap.width):
                if grayImage.get(w, h) > cutoff:
-                  bitmap.set(w, h, 1)
+                  bitmap.set(w, h, 255)
                else:
                   bitmap.set(w, h, 0)
       elif mode == 'rg/b' or mode == 'rb/g' or mode == 'gb/r':
@@ -363,11 +361,11 @@ class PyroImage:
          bitmap = Bitmap(self.width,self.height)
          for h in range(bitmap.height):
             for w in range(bitmap.width):
-               d = self.get(w,h,o_d)   # denominator
+               d = float(self.get(w,h,o_d))   # denominator
                if d == 0:
                   d = 0.01
                if self.get(w,h,o_n1)/d > cutoff and self.get(w,h,o_n2)/d > cutoff2:
-                  bitmap.set(w, h, 1)
+                  bitmap.set(w, h, 255)
                else:
                   bitmap.set(w, h, 0)
       else:
@@ -408,10 +406,10 @@ class PyroImage:
                       self.get(x - 1, y + 1, c) * mask[6] + \
                       self.get(x    , y + 1, c) * mask[7] + \
                       self.get(x + 1, y + 1, c) * mask[8] ) / float(z)
-               val = min(max(val, 0), 1)
+               val = min(max(val, 0), 255)
                if val > threshold:
                   if bit:
-                     data.set(x,y,1,c)
+                     data.set(x,y,255,c)
                   else:
                      data.set(x,y,val,c)
       return data
@@ -777,8 +775,8 @@ if __name__ == '__main__':
       print "Running..."
       image = PyroImage(0, 0)
       image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
-      image.saveToFile("test.ppm")
-      print "Done! To see output, use 'xv test.ppm'"
+      image.saveToFile("test2.ppm")
+      print "Done! To see output, use 'xv test2.ppm'"
    else:
       print "skipping..."
    print "Do you want to run test 2.25: image shrinking? ",
@@ -788,39 +786,41 @@ if __name__ == '__main__':
       tavg = clock()
       newimage = image.getShrunkenImage(mode='average')
       tavg = clock() - tavg
-      newimage.saveToFile("shrunken_avg.ppm")
+      newimage.saveToFile("test2.25_avg.ppm")
       tsmp = clock()
       newimage = image.getShrunkenImage(mode='sample')
       tsmp = clock() - tsmp
-      newimage.saveToFile("shrunken_smp.ppm")
+      newimage.saveToFile("test2.25_smp.ppm")
       print "calc time for mode 'average': %f" %(tavg)
       print "calc time for mode 'sample': %f" %(tsmp)
-      print "Done! To see output, use 'xv shrunken...'"
+      print "Done! To see output, use 'xv test2.25_*.ppm'"
    else:
       print "skipping..."
    print "Do you want to run test 2.5: create a filtered image, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       newimage = image.getColorFilter(1,.5,0)
-      newimage.saveToFile("testorange.ppm")
-      print "Done! To see output, use 'xv testorange.ppm'"
+      newimage.saveToFile("test2.5.ppm")
+      print "Done! To see output, use 'xv test2.5.ppm'"
    else:
       print "skipping..."
    print "Do you want to run test 2.75: reset to a solid color, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      newimage.resetToColor(0,.5,1)
-      newimage.saveToFile("testturquoise.ppm")
-      print "Done! To see output, use 'xv testturquoise.ppm'"
+      newimage.resetToColor(0,128,255)
+      newimage.saveToFile("test2.75.ppm")
+      print "Done! To see output, use 'xv test2.75.ppm'"
    else:
       print "skipping..."      
    print "Do you want to run test 3: create a grayscale image, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
+      image = PyroImage(0, 0)
+      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
       image.grayScale()
-      image.saveToFile("testgray.ppm")
+      image.saveToFile("test3.ppm")
       #image.display()
-      print "Done! To see output, use 'xv testgray.ppm'"
+      print "Done! To see output, use 'xv test3.ppm'"
    else:
       print "skipping..."
 
@@ -829,13 +829,15 @@ if __name__ == '__main__':
       print "Running..."
       image = PyroImage(0, 0)
       image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
-      image.saveToFile("yellowObject.ppm")
-      mybitmap = image.getBitmap(4.0, mode='rg/b')
-      mybitmap.saveToFile("yellowObjectBitmap.ppm")
+      image.saveToFile("test3.01a.ppm")
+      mybitmap = image.getBitmap(8.0, mode='rg/b')
+      mybitmap.saveToFile("test3.01b.ppm")
+      mybitmap = image.getBitmap(70, mode='brightness')
+      mybitmap.saveToFile("test3.01c.ppm")
       myblobdata = Blobdata(mybitmap)
       myblobdata.sort("wacky")
-      print "original image: yellowObject.ppm"
-      print "bitmapped image: yellowObjectBitmap.ppm"
+      print "original image: test3.01a.ppm"
+      print "bitmapped image: test3.01b.ppm"
       print "dominant blob:"
       myblobdata.bloblist[0].display()
       print ""
@@ -853,9 +855,11 @@ if __name__ == '__main__':
          from struct import *
          c = ''
          for x in range(len(image.data)):
-            c += pack('h', image.data[x] * 255.0)[0]
+            #c += pack('h', image.data[x] * 255.0)[0]
+            c += pack('h', image.data[x])[0]
          i = PIL.PpmImagePlugin.Image.fromstring('RGB', (image.width, image.height),c)
          if getenv('DISPLAY'): i.show()
+         else: print "set DISPLAY to see"
          print "Done!"
       except:
          print "Failed! Probably you don't have PIL installed"
@@ -864,17 +868,15 @@ if __name__ == '__main__':
    print "Do you want to run test 5: convert Bitmap to PIL image, and display it using xv? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      try:
-         import PIL.PpmImagePlugin
-         from struct import *
-         c = ''
-         for x in range(len(bitmap.data)):
-            c += pack('h', bitmap.data[x] * 255.0)[0]
-         i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
-         if getenv('DISPLAY'): i.show()
-         print "Done!"
-      except:
-         print "Failed! Probably you don't have PIL installed"
+      import PIL.PpmImagePlugin
+      from struct import *
+      c = ''
+      for x in range(len(bitmap.data)):
+         c += pack('h', bitmap.data[x] * 255.0)[0]
+         #c += pack('h', bitmap.data[x])[0]
+      i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
+      if getenv('DISPLAY'): i.show()
+      print "Done!"
    else:
       print "skipping..."
    print "Do you want to run test 6: create a TK window, and display PPM from file or PyroImage? ",
@@ -894,10 +896,10 @@ if __name__ == '__main__':
                   self.image = ImageTk.PhotoImage(im)
                   Label.__init__(self, master, image=self.image, bd=0)
          root = Tk()
-         filename = 'test.ppm'
+         filename = getenv('PYRO') + "/vision/snaps/som-1.ppm"
          root.title(filename)
-         #im = Image.open(filename)
-         im = i
+         im = Image.open(filename)
+         #im = i
          UI(root, im).pack()
          root.mainloop()
          print "Done!"
@@ -932,26 +934,7 @@ if __name__ == '__main__':
    else:
       print "skipping..."
 
-   print "test 9 uses an obselete filter method and so we will skip it"
-   """
-   print "Do you want to run test 9: create a filter bitmap of an image? ",
-   if sys.stdin.readline().lower()[0] == 'y':
-      print "Running..."
-      image = PyroImage()
-      image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
-      filter = image.filter(.65, .35, .22, .01) # r, g, b, threshold
-      filter.saveToFile("filter.ppm")
-      blobs = Blobdata(filter)
-      blobs.sort("area")
-      blobs.display()
-      #blob = filter.blobify()
-      #blob.display()
-      print "Done! View filter bitmap with 'xv filter.ppm'"
-   else:
-      print "skipping..."
-   """
-      
-   print "Do you want to run test 10: find motion in 10 frames? ",
+   print "Do you want to run test 9: find motion in 10 frames? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       from pyro.camera.fake import FakeCamera
@@ -964,19 +947,19 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
-   print "Do you want to run test 11: find edges in bitmap? ",
+   print "Do you want to run test 10: find edges in bitmap? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       image = PyroImage(0,0)
       image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
       image.grayScale()
-      mask = image.convolve(edge, 1, .5)
+      mask = image.convolve(edge, 1, 128)
       #mask = mask.convolve(fill, 1)
-      print "Here is your final image"
-      mask.saveToFile('convolve.ppm')
+      print "Your final image is in test10.ppm"
+      mask.saveToFile('test10.ppm')
    else:
       print "skipping..."
-   print "Do you want to run test 12: do person ID test with histograms? ",
+   print "Do you want to run test 11: do person ID test with histograms? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       hists = [0] * 8

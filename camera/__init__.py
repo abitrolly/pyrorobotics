@@ -24,7 +24,7 @@ class Camera(PyroImage):
       """
       #raise "The Camera._update  method should be overloaded!"
 
-   def update(self, detectMotion = 0, threshold = 0.1):
+   def update(self, detectMotion = 0, threshold = 25):
       """
       Update method for getting next sequence from a video camera.
       Also can detectMotion.
