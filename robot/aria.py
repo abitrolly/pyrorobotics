@@ -328,7 +328,28 @@ class AriaSonar(AriaSensor):
                            'back-left' : (12, 13, 14), 
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        elif self.params.getNumSonar() > 16:
+        elif self.params.getNumSonar() == 32:
+            # may really only be 24!
+            # 0  - 7  front, bottom
+            # 8  - 15 back, bottom
+            # 16 - 23 front, top 
+            # 24 - 31 back , top 24   25 26   27 28   29 30  31 (FIX: add these to back groups)
+            self.groups = {'all': range(32),
+                           'front': (3, 4, 19, 20),
+                           'front-left' : (1,2,3, 17, 18, 19),
+                           'front-right' : (4, 5, 6, 20, 21, 22),
+                           'front-all' : (1,2, 3, 4, 5, 6, 17, 18, 19, 20, 21, 22),
+                           'left' : (0, 15, 16), 
+                           'right' : (7, 8, 23), 
+                           'left-front' : (0, 16), 
+                           'right-front' : (7, 23),
+                           'left-back' : (15,),
+                           'right-back' : (8,),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        else:
             print "Pyro warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar()
             self.groups = {'all': range(self.params.getNumSonar())}
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
@@ -417,7 +438,7 @@ class AriaBumper(AriaSensor):
         self.devData['units']    = "RAW"
         self.devData["all"]   = self.getBumpersAll()
         self.devData["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
-        #self.groups = {'all': range(self.devData["count"])}
+        self.groups = {'all': range(self.devData["count"])}
         self.subDataFunc['pos']     = lambda pos: pos
         self.subDataFunc['value']   = self.getBumpers
         self.startDevice()
