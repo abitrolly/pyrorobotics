@@ -600,7 +600,6 @@ class Network:
         self.targets = []
         self.orderedInputs = 0
         self.loadOrder = []
-        self.loadOrderID = []
         self.learning = 1
         self.momentum = 0.9
         self.resetEpoch = 5000
@@ -939,10 +938,8 @@ class Network:
         self.orderedInputs = value
         if self.orderedInputs:
             self.loadOrder = [0] * len(self.inputs)
-            self.loadOrderID = [0] * len(self.inputs)
             for i in range(len(self.inputs)):
-                self.loadOrder[i] = self.getData(i)
-                self.loadOrderID[i] = i
+                self.loadOrder[i] = i
     def verifyArguments(self, arg):
         """
         Verifies that arguments to setInputs and setTargets are appropriately formatted.
@@ -964,10 +961,8 @@ class Network:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
-        self.loadOrderID = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
-            self.loadOrder[i] = self.getData(i)
-            self.loadOrderID[i] = i
+            self.loadOrder[i] = i
         # will randomize later, if need be
     def setOutputs(self, outputs):
         """
@@ -1005,15 +1000,12 @@ class Network:
         """
         flag = [0] * len(self.inputs)
         self.loadOrder = [0] * len(self.inputs)
-        self.loadOrderID = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
             pos = int(random.random() * len(self.inputs))
             while (flag[pos] == 1):
                 pos = int(random.random() * len(self.inputs))
             flag[pos] = 1
-            # ( {"input": ([.1, .2],0) }, {"output"...} )
-            self.loadOrder[pos] = self.getData(i)
-            self.loadOrderID[pos] = i
+            self.loadOrder[pos] = i
 
     def copyVector(self, vector1, vec2, start):
         """
@@ -1276,20 +1268,21 @@ class Network:
         if not self.orderedInputs:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
-        i = 0 
-        for datum in self.loadOrder:
+        cnt = 0
+        for i in self.loadOrder:
             if self.verbosity > 0 or self.interactive:
-                print "-----------------------------------Pattern #", self.loadOrderID[i] + 1
+                print "-----------------------------------Pattern #", self.loadOrder[i] + 1
+            datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
             (error, correct, total) = self.step( **datum )
             tssError += error
             totalCorrect += correct
             totalCount += total
-            if (i + 1) % self.sweepReportRate == 0:
+            if (cnt + 1) % self.sweepReportRate == 0:
                 print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
-                      (i + 1, tssError, totalCorrect * 1.0 / totalCount)
+                      (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
             if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
                 self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
-            i += 1
+            cnt += 1
         if self.learning and self.batch:
             self.change_weights() # batch mode, otherwise change weights in step
         return (tssError, totalCorrect, totalCount)
@@ -1812,9 +1805,7 @@ class Network:
         """
         self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
         self.loadOrder = [0] * len(self.inputs)
-        self.loadOrderID = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
-            self.loadOrder[i] = self.getData(i)
             self.loadOrderID[i] = i
     def saveInputsToFile(self, filename):
         """
@@ -1880,10 +1871,8 @@ class Network:
             self.targets.append(self.patternVector(data[icnt:]))
             line = fp.readline()
         self.loadOrder = [0] * len(self.inputs)
-        self.loadOrderID = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
-            self.loadOrder[i] = self.getData(i)
-            self.loadOrderID[i] = i
+            self.loadOrder[i] = i
 
     # patterning
     def replacePatterns(self, vector):
