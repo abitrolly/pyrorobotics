@@ -1169,8 +1169,7 @@ class Network:
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
-                raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
-                                   (layer.name, layer.type))
+                raise LayerError, "Inputs are not set and verifyInputs() was called on layer '%s'." % layer.name
             else:
                 layer.resetActivationFlag()
     def verifyTargets(self):
@@ -1220,8 +1219,11 @@ class Network:
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
         self.resetCount = 1
-        while totalCount != 0 and \
-              totalCorrect * 1.0 / totalCount < self.stopPercent:
+        if len(self.crossValidationCorpus) > 0:
+            useCVtoStop = 1
+        else:
+            useCVtoStop = 0
+        while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or useCVtoStop):
             (tssErr, totalCorrect, totalCount) = self.sweep()
             rmsErr = math.sqrt(tssErr / totalCount)
             if self.epoch % self.reportRate == 0:
@@ -1233,6 +1235,9 @@ class Network:
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent:
+                    self.epoch += 1
+                    break
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
                     print "Reset limit reached; ending without reaching goal"
@@ -2017,7 +2022,7 @@ class SRN(Network):
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self, name = name, verbosity = verbosity)
-        self.learnDuringSequence = 0
+        self.learnDuringSequence = 1
         self.prediction = []
         self.initContext = 1
         self.contextCopying = 1
@@ -2081,7 +2086,7 @@ class SRN(Network):
             if self.verbosity > 2: print 'Context layer before copy: ', item[1].activation
             item[1].copyActivations(self.getLayer(item[0]).activation)
             if self.verbosity > 2: print 'Context layer after copy: ', item[1].activation
-    def clearContext(self, value = .5):
+    def setContext(self, value = .5):
         """
         Clears the context layer by setting context layer to (default) value 0.5. 
         """
@@ -2090,10 +2095,8 @@ class SRN(Network):
             context.setActivations(value)
     def propagate(self):
         """
-        Clears context layer the first time in sweep (or first step).
+        Sets error flags and propogates.
         """
-        if self.count == 0:
-            self.clearContext()
         if not self.contextCopying:
             for layer in self.layers:
                 if layer.kind == "Context":
@@ -2115,25 +2118,27 @@ class SRN(Network):
         layer activations to the context layer.
         """
         # take care of any params other than layer names:
-        # three ways to clear context:
-        # 1. force it to right now with arg clearContext = 1:
-        if args.has_key('clearContext'):
-            if args['clearContext']:
-                self.clearContext()
-            else:
-                # you must know what you are doing; let it slide
-                self["context"].activationSet = 1
-            del args['clearContext']
-        # 2. have initContext be true; 3. first time of first pattern
+        # two ways to clear context:
+        # 1. force it to right now with arg initContext = 1:
+        if args.has_key('initContext'):
+            if args['initContext']:
+                self.setContext()
+            del args['initContext']
+        # 2. have initContext be true
         elif self.initContext:
-            self.clearContext()
+            self.setContext()
+        # if initContext is off, then we assume user knows that,
+        # so we reset the flags on all context layers:
+        if self.initContext == 0:
+            for context in self.contextLayers.values():
+                context.activationSet = 1
         # replace all patterns
         for key in args:
             args[key] = self.replacePatterns( args[key] )
         # This should really loop over each arg that is kind Input
         # For now, just assumes an "input" layer
         if not args.has_key("input"):
-            return Network.step(self, **args)
+            return self.networkStep(self, **args)
         # The rest of this assumes at least an "input" parameter!
         # compute length of sequence:
         sequenceLength = len(args["input"]) / self["input"].size
@@ -2962,13 +2967,12 @@ if __name__ == '__main__':
         n.addSRNLayers(3,3,3)
         #n.setInteractive(1)
         print "Using step with arguments..."
-        n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], clearContext = 1)
-        n.step(input = [0.0,1.0,1.0], output = [0.0, 1.0, 1.0], clearContext = 0)
+        n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], initContext = 1)
+        n.step(input = [0.0,1.0,1.0], output = [0.0, 1.0, 1.0], initContext = 0)
         print "Using step without arguments..."
         n.getLayer('input').copyActivations([1.0,0.0,0.0])
         n.getLayer('output').copyTargets([1.0, 0.0, 0.0])
-        # n.clearContext() will be done if self.initContext
-        n.step() # if you don't want context cleared, clearContext = 0
+        n.step() # if you don't want context cleared, initContext = 0
 
     if ask("Additional tests?"):
         n = Network()
