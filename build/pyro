@@ -130,14 +130,14 @@ if pyro.startup_check():
     share.config = c
     if services == None:
         services = ""
-    # need to make root here
-    if window == "TK":
-        import Tkinter
-        import pyro.system.share as share
-        if not share.gui:
-            print "Making gui..."
-            share.gui = Tkinter.Tk()
-            share.gui.withdraw()
+    ## need to make root here
+    #if window == "TK":
+    #    import Tkinter
+    #    import pyro.system.share as share
+    #    if not share.gui:
+    #        print "Making gui..."
+    #        share.gui = Tkinter.Tk()
+    #        share.gui.withdraw()
     eng = Engine(robotfile, brainfile, simulator,
                  pyroargs, c, worldfile, services.split(",") )
     if window == 'GL':
@@ -145,8 +145,11 @@ if pyro.startup_check():
         gui = GLgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TK':
+	import Tkinter
         from pyro.gui.TK import TKgui
-        gui = TKgui(share.gui, eng)
+	root = Tkinter.Tk()
+	root.withdraw()
+        gui = TKgui(eng, root)
         gui.redraw = gui.redraw
     elif window == 'TTY':
         gui = pyro.gui.gui("tty gui", {}, eng)
