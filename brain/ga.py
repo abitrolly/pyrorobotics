@@ -116,16 +116,20 @@ class Gene:
                     r = random.random()
                     if (r < .33):
                         self.genotype[i] += round(random.random() * self.maxStep)
+                        self.genotype[i] = min(self.genotype[i], self.max) 
                     elif (r < .67):
                         self.genotype[i] -= round(random.random() * self.maxStep)
+                        self.genotype[i] = max(self.genotype[i], self.min) 
                     else:
                         self.genotype[i] = round(random.random() * (self.max - self.min + 1)) + self.min
                 elif self.mode == 'float': 
                     r = random.random()
                     if (r < .33):
                         self.genotype[i] += (random.random() * self.maxStep)
+                        self.genotype[i] = min(self.genotype[i], self.max) 
                     elif (r < .67):
                         self.genotype[i] -= (random.random() * self.maxStep)
+                        self.genotype[i] = max(self.genotype[i], self.min) 
                     else:
                         self.genotype[i] = (random.random() * (self.max - self.min)) + self.min
                 elif self.mode == 'char':
