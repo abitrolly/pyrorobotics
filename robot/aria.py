@@ -3,10 +3,13 @@
 from pyro.robot import *
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams
-from math import pi
+from math import pi, cos, sin
 from os import getuid
 
 PIOVER180 = pi / 180.0
+DEG90RADS = 0.5 * pi
+COSDEG90RADS = cos(DEG90RADS) / 1000.0
+SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
 class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
@@ -51,18 +54,18 @@ class AriaRobot(Robot):
 	self.senses['sonar']['type'] = lambda dev: 'range'
 
 	# location of sensors' hits:
-        self.senses['sonar']['ox'] = 0 # self.light_ox
-        self.senses['sonar']['oy'] = lambda dev, pos: 0 # self.light_oy
-	self.senses['sonar']['oz'] = lambda dev, pos: 0.03 # meters
+        self.senses['sonar']['x'] = lambda dev, pos: self.getSonarX(pos)
+        self.senses['sonar']['y'] = lambda dev, pos: self.getSonarY(pos)
+	self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
         self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
         self.senses['sonar']['maxvalue'] = lambda dev: 0 # self.getSonarMaxRange
         self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
 
 	# location of origin of sensors:
-        self.senses['sonar']['x'] = lambda dev, pos: self.params.getSonarX(pos)
-        self.senses['sonar']['y'] = lambda dev, pos: self.params.getSonarY(pos)
-	self.senses['sonar']['z'] = lambda dev, pos: 0.03
+        self.senses['sonar']['ox'] = lambda dev, pos: self.params.getSonarX(pos)
+        self.senses['sonar']['oy'] = lambda dev, pos: self.params.getSonarY(pos)
+	self.senses['sonar']['oz'] = lambda dev, pos: 0.03
         self.senses['sonar']['th'] = lambda dev, pos: 0 # self.light_th
         # in radians:
         self.senses['sonar']['arc'] = lambda dev, pos, \
@@ -103,6 +106,16 @@ class AriaRobot(Robot):
         self.dev.runAsync(1)
 	self.update() 
         self.inform("Done loading Aria robot.")
+
+    def getSonarX(self, pos):
+        x = self.dev.getSonarReading(pos).getX()
+        y = self.dev.getSonarReading(pos).getY()
+        return (COSDEG90RADS * x - SINDEG90RADS * y)
+
+    def getSonarY(self, pos):
+        x = self.dev.getSonarReading(pos).getX()
+        y = self.dev.getSonarReading(pos).getY()
+        return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
     def setGripper(self, dev, option):
         pass
