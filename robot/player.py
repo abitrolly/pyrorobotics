@@ -87,7 +87,7 @@ class PlayerRobot(PlayerBase):
         self.dev = player('localhost', port=self.port)
         print "Device: ", self.dev
         self.dev.start('position')
-        #self.dev.start('sonar')
+        self.dev.start('sonar')
         self.localize(0.0, 0.0, 0.0)
         
         #     def localize(self, x = 0.0, y = 0.0, th = 0.0):
