@@ -35,7 +35,7 @@ class LPS(TkMap):
       run  = hitx - origx
       if abs(run) < 0.1:
          run = 0
-      steps = round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM)))
+      steps = int(round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM))))
       if steps == 0:
          self.setGridLocation(hitx, hity, 1.0, label)
          return
