@@ -1,4 +1,4 @@
-export PYROVERSION = 0.7.6
+export PYROVERSION = 0.7.7
 export PYRODEFINE = -DPYRO_VER=\"$(PYRO)\"
 export SAPHIRA=/usr/local/saphira/ver62
 export PYTHONINCLUDE=-I/usr/local/include/python2.0

@@ -35,8 +35,8 @@ class GLgui(gui):
               ('robot',[['load',self.loadRobot],
                         ['free',self.freeRobot]]),
               ('brain',[['load',self.loadBrain],
-                        ['free',self.freeBrain]]),
-              ('view', [['brain', self.viewBrain]]),
+                        ['free',self.freeBrain],
+                        ['view', self.viewBrain]]),
               # ['robot', self.viewRobot]
               ('help',[['about',system.usage]])
               ]
