@@ -12,7 +12,7 @@
 
 import pyro.gui.console as console
 from pyro.geometry import Polar, distance
-from pyro.robot.service import serviceDirectoryFormat
+from pyro.robot.device import deviceDirectoryFormat
 import math, string, time
 
 # Units of measure for sense, map, and motors:
@@ -149,7 +149,7 @@ class Robot:
 
     def _getDevice(self, pathList, showstars = 0):
         if len(pathList) == 0:
-            return serviceDirectoryFormat(self.device, 0)
+            return deviceDirectoryFormat(self.device, 0)
         key = pathList[0]
         args = pathList[1:]
         if key in self.device:
@@ -157,7 +157,7 @@ class Robot:
         if key == '*':
             if args != []:
                 raise AttributeError, "wildcard feature not implemented in directory middle"
-            return serviceDirectoryFormat(self.device, 1) 
+            return deviceDirectoryFormat(self.device, 1) 
         else:
             raise AttributeError, "no such directory item '%s'" % key
 
@@ -165,7 +165,7 @@ class Robot:
         if len(pathList) == 0:
             tmp = self.devData.copy()
             tmp.update( self.devDataFunc )
-            return serviceDirectoryFormat(tmp, 0)
+            return deviceDirectoryFormat(tmp, 0)
         key = pathList[0]
         args = pathList[1:]
         if key in self.devData:
@@ -177,7 +177,7 @@ class Robot:
                 raise AttributeError, "wildcard feature not implemented in directory middle"
             tmp = self.devData.copy()
             tmp.update( self.devDataFunc )
-            return serviceDirectoryFormat(tmp, 1) 
+            return deviceDirectoryFormat(tmp, 1) 
         else:
             raise AttributeError, "no such directory item '%s'" % key
 
@@ -204,12 +204,12 @@ class Robot:
             #else:
             finalPath.append(expand( part ) )
         if len(finalPath) == 0:
-            return serviceDirectoryFormat(self.directory, 0) # toplevel
+            return deviceDirectoryFormat(self.directory, 0) # toplevel
         elif finalPath[0] in self.directory:
             # pass the command down
             return self.directory[finalPath[0]]._get(finalPath[1:], showstars)
         elif finalPath[0] == '*':
-            return serviceDirectoryFormat(self.directory, 1)
+            return deviceDirectoryFormat(self.directory, 1)
         else:
             raise AttributeError, "'%s' is not a root directory" % finalPath[0]
 
@@ -274,9 +274,9 @@ class Robot:
 
     def _update(self):
         self.devData['timestamp'] = time.time()
-        for service in self.getServices():
-            if self.getService(service).getActive():
-                self.getService(service).updateService()
+        for device in self.getDevices():
+            if self.getDevice(device).getActive():
+                self.getDevice(device).updateDevice()
 
     # Need to define these:
 
@@ -336,99 +336,99 @@ class Robot:
     def getDistanceToPoint(self, x, y):
         return distance(x, y, self.get('robot/x'), self.get('robot/y'))
 
-    # ------------------------- Service functions:
+    # ------------------------- Device functions:
 
-    def startServices(self, item):
-        """ Alias for startService() """
-        return self.startService(item)
+    def startDevices(self, item):
+        """ Alias for startDevice() """
+        return self.startDevice(item)
         
-    def startService(self, item):
-        """ Load a service: dict, list, or name or filename """
+    def startDevice(self, item):
+        """ Load a devvice: dict, list, or name or filename """
         import pyro.system as system
         import os
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
             retval = []
-            for service in item.keys():
-                console.log(console.INFO,"Loading service '%s'..." % service)
-                if self.device.has_key(service):
-                    print "Service is already running: '%s'" % service
-                    retval.append( self.device[service] )
+            for device in item.keys():
+                console.log(console.INFO,"Loading device '%s'..." % device)
+                if self.device.has_key(device):
+                    print "Device is already running: '%s'" % device
+                    retval.append( self.device[device] )
                 else:
-                    retval.append(item[service].startService())
-                if item[service].getServiceState() == "started":
-                    self.device[service] = item[service]
+                    retval.append(item[device].startDevice())
+                if item[device].getDeviceState() == "started":
+                    self.device[device] = item[device]
                 else:
-                    print "service '%s' not available" % service
+                    print "device '%s' not available" % device
                     retval.append( None )
             return retval
         elif type(item) == type([0,]) or \
              type(item) == type((0,)):
-            # list of services
+            # list of devices
             retval = []
-            for service in item:
-                retval.append(self.startService(service))
+            for device in item:
+                retval.append(self.startDevice(device))
             return retval
-        elif self.supportsService(item): # built-in name
+        elif self.supportsDevice(item): # built-in name
             if self.device.has_key(item):
-                print "Service is already running: '%s'" % item
+                print "Device is already running: '%s'" % item
                 return [self.device[item]]
-            console.log(console.INFO,"Loading service '%s'..." % item)
-            retval = self.supports[item].startService()
-            if self.supports[item].getServiceState() == "started":
+            console.log(console.INFO,"Loading device '%s'..." % item)
+            retval = self.supports[item].startDevice()
+            if self.supports[item].getDeviceState() == "started":
                 self.device[item] = self.supports[item]
             else:
-                print "service '%s' not available" % item
+                print "device '%s' not available" % item
             return [retval]
         else: # from a file
             file = item
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                return self.startService( system.loadINIT(file, self) )
+                return self.startDevice( system.loadINIT(file, self) )
             elif system.file_exists(os.getenv('PYRO') + \
-                                    '/plugins/services/' + file): 
-                return self.startService( system.loadINIT(os.getenv('PYRO') + \
-                                                   '/plugins/services/'+ \
+                                    '/plugins/devices/' + file): 
+                return self.startDevice( system.loadINIT(os.getenv('PYRO') + \
+                                                   '/plugins/devices/'+ \
                                                    file, self))
             else:
-                print 'Service not found: ' + file
+                print 'Device not found: ' + file
                 return []
 
-    def stopService(self, item):
-        self.getService(self, item).stopService()
+    def stopDevice(self, item):
+        self.getDevice(self, item).stopDevice()
 
-    def supportsService(self, item):
+    def supportsDevice(self, item):
         return self.supports.has_key(item)
 
-    def getService(self, item):
+    def getDevice(self, item):
         if self.device.has_key(item):
             return self.device[item]
         else:
-            raise AttributeError, "unknown service '%s'" % item
+            raise AttributeError, "unknown device '%s'" % item
 
-    def getServiceDevice(self, item):
+    def getDeviceDevice(self, item):
         if self.device.has_key(item):
             return self.device[item].dev
         else:
-            raise AttributeError, "unknown service '%s'" % item
+            raise AttributeError, "unknown device '%s'" % item
 
-    def getServiceData(self, item, *args):
+    def getDeviceData(self, item, *args):
         if self.device.has_key(item):
-            return self.device[item].getServiceData(*args)
+            return self.device[item].getDeviceData(*args)
         else:
-            raise AttributeError, "unknown service '%s'" % item
+            raise AttributeError, "unknown device '%s'" % item
 
-    def getServices(self):
+    def getDevices(self):
         return self.device.keys()
 
-    def getSupportedServices(self):
+    def getSupportedDevices(self):
         return self.supports.keys()
 
-    def hasService(self, item):
+    def hasDevice(self, item):
         return self.device.has_key(item)
 
-    def removeService(self, item):
+    def removeDevice(self, item):
         self.device[item].setVisible(0)
         self.device[item].setActive(0)
         self.device[item].destroy()
