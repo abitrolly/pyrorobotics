@@ -22,7 +22,9 @@ class KheperaRobot(Robot):
         self.dev = self # pointer to self
         self.sensorGroups = {'front' : [(2, 'ir'), (3, 'ir')], 
                              'front-left' : [(0, 'ir'), (1, 'ir')], 
-                             'front-right' : [(4, 'ir'), (5, 'ir')], 
+                             'front-right' : [(4, 'ir'), (5, 'ir')],
+                             'front-all' : [(1, 'ir'), (2, 'ir'),
+                                            (3, 'ir'), (4, 'ir')], 
                              'left' : [(0, 'ir')], 
                              'right' : [(5, 'ir')], 
                              'back-left' : [(7, 'ir')], 

@@ -22,17 +22,17 @@ class Avoid (Behavior):
             return 1
 
     def update(self):
-        FTOLERANCE = 35
-        LTOLERANCE = 35
-        RTOLERANCE = 35
+        FTOLERANCE = 1.0
+        LTOLERANCE = 1.0
+        RTOLERANCE = 1.0
         
         # Normally :
         #self.IF(1, 'translate', .2) 
         #self.IF(1, 'rotate', 0)
         
-        left = self.getRobot().getMin('ir', 'range', (0, 1)).distance
-        front = self.getRobot().getMin('ir', 'range', (2, 3)).distance
-        right = self.getRobot().getMin('ir', 'range', (4, 5)).distance
+        left = self.getRobot().getSensorGroup('min', 'left')[1]
+        front = self.getRobot().getSensorGroup('min', 'front')[1]
+        right = self.getRobot().getSensorGroup('min', 'right')[1]
         
         if (left < LTOLERANCE and right < RTOLERANCE):
             #self.getRobot().move(0, .2)

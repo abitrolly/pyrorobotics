@@ -32,8 +32,8 @@ class Avoid (Behavior):
         close_dist = self.getRobot().getMin().distance 
         close_angl = self.getRobot().getMin().angle / math.pi
         print "Closest distance is:", close_dist
-        self.IF(Fuzzy(40.0, 60.0) << close_dist, 'translate', 0)
-        self.IF(Fuzzy(40.0, 60.0) << close_dist, 'rotate', \
+        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
+        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'rotate', \
                 -self.direction(close_angl) * 1)
 
 class state1 (State):

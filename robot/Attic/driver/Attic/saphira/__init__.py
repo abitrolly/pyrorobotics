@@ -47,7 +47,7 @@ class SaphiraSenseDriver(driver.Driver):
         self.senses['sonar']['ox'] = Saphira_sonar_x
 	self.senses['sonar']['oy'] = Saphira_sonar_y
 	self.senses['sonar']['oz'] = lambda self, pos: 0.25 # meters
-	self.senses['sonar']['th'] = Saphira_sonar_th
+	self.senses['sonar']['th'] = Saphira_sonar_th # radians
         # in radians:
         self.senses['sonar']['arc'] = lambda self, pos, \
                                       x = (5 * math.pi / 180) : x

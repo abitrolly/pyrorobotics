@@ -34,8 +34,8 @@ class Avoid (Behavior):
         self.IF(1, 'translate', .2) 
         self.IF(1, 'rotate', 0)
 
-        close_dist = self.getRobot().getMin('all', 'range', range(7)).distance 
-        close_angl = self.getRobot().getMin('all', 'range', range(7)).angle / math.pi
+        close_dist = self.getRobot().getSensorGroup('min', 'front-all')[1]
+        close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / math.pi
         print "Closest distance is:", close_dist
         self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
         self.IF(Fuzzy(1.0, 3.0) << close_dist, 'rotate', \

@@ -26,7 +26,7 @@ class Vehicle(Brain):
 
 def INIT(robot):
    if robot.type != 'khepera':
-      raise "Robot should be a Khepera"
-   print "OK"
+      raise "Robot should have light sensors!"
+   print "OK: robot has light sensors."
    return Vehicle('Braitenberg', robot)
       
