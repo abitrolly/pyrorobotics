@@ -7,12 +7,15 @@ import Tkinter
 import PIL.PpmImagePlugin
 import Image, ImageTk, types
 
+def display(item):
+   print item
+
 def listFilter(allArgs):
-   print 'camera.apply("%s",' % allArgs[0],
+   retval = 'camera.apply("%s",' % allArgs[0]
    if len(allArgs) > 1:
       for a in allArgs[1]:
-         print a, ",",
-   print ")"
+         retval += str(a) + ","
+   return retval + ")"
 
 def makeArgList(item):
    if type(item) == type(""):
@@ -84,7 +87,8 @@ class Camera(PyroImage, Service):
       self.app = 0
       self.title = title
       self.filterMode = 1
-      self.callback = None
+      self.callbackList = []
+      self.callbackTextList = []
       self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
       self.maxBlob = self.blob[0]
 
@@ -233,9 +237,11 @@ class Camera(PyroImage, Service):
          print "moved:", self.movedPixelCount
 
    def updateOnce(self):
+      oldActive = self.active
       self.active = 1
       self.update()
-      self.active = 0
+      self.processAll()
+      self.active = oldActive
 
    def getImage(self):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
@@ -250,7 +256,7 @@ class Camera(PyroImage, Service):
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
          w, h = self.width, self.height
-         while w < 200:
+         while w < 310:
             w, h = map(lambda x: x * 2, (w, h))
          self.canvas = Tkinter.Canvas(self.window, width = w, height = h)
          self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
@@ -267,12 +273,11 @@ class Camera(PyroImage, Service):
                            ['Play', lambda self=self: self.setActive(1)],
                            ['Update', lambda self=self: self.updateOnce()],
                            ]),
-                 ('Filter', [['List filters', self.listFilterList],
+                 ('Filter', [['List filters', self.listCallbackList],
                              ['Toggle filter mode', self.toggleFilterMode],
                              None,
-                             ['Clear last filter', self.popFilterList],
-                             ['Clear all filters', lambda self=self: self.setFilterList( [] )],
-                             ['Clear callback function', lambda self=self: self.setCallback( None )],
+                             ['Clear last filter', self.popCallbackList],
+                             ['Clear all filters', lambda self=self: self.clearCallbackList( )],
                              ]),
                  ('Add', [['blur edges', lambda self=self: self.addFilter( "meanBlur") ],
                           ['detect edges', lambda self=self: self.addFilter( "sobel") ],
@@ -317,17 +322,21 @@ class Camera(PyroImage, Service):
       else:
          raise "Improper format for apply()"
 
-   def addFilter(self, command, *args):
+   def addFilter(self, func, *args):
       """
       Add a filter to the filter list.
       Example: cam.addFilter( "superColor", 3)
       """
-      self.vision.addFilter( (command, args) )
-      #listFilter( (command, args) )
+      import inspect
+      if type(func) == type(""):
+         self.callbackList.append( lambda self: self.apply(func, *args))
+         self.callbackTextList.append( listFilter( (func, args) ))
+      else:
+         self.callbackList.append( func )
+         self.callbackTextList.append( inspect.getsource( func ))
       if not self.active:
          # if paused, apply it once, and update
-         #Camera.__dict__[command](self, *args)
-         self.vision.applyFilters( [(command, args)] )
+         self.processAll()
 
    def setActive(self, val):
       self.active = val
@@ -346,9 +355,9 @@ class Camera(PyroImage, Service):
       menu['menu'] = menu.filemenu
       return menu
 
-   def listFilterList(self):
+   def listCallbackList(self):
       print "Filters:"
-      map(listFilter, self.vision.getFilterList())
+      map(display, self.callbackTextList)
 
    def togglePlay(self, event):
       self.active = not self.active
@@ -404,18 +413,26 @@ class Camera(PyroImage, Service):
    def updateService(self):
       self.update()
 
-   def setCallback(self, callback):
+   def popCallbackList(self):
+      if len(self.callbackList) > 0:
+         self.callbackList.pop()
+         self.callbackTextList.pop()
+      if not self.active:
+         self.updateOnce()
+
+   def clearCallbackList(self):
       # callback is a function that has first param
       # as self (ie, the visionSystem object)
-      self.callback = callback
-      if self.active == 0:
-         self.update()
+      self.callbackList = []
+      self.callbackTextList = []
+      if not self.active:
+         self.updateOnce()
 
    def processAll(self):
       if self.filterMode:
          self.vision.applyFilterList()
-         if self.callback:
-            self.callback(self)
+         for filterFunc in self.callbackList:
+            filterFunc(self)
 
 if __name__ == '__main__':
    cam = Camera(100, 80)
