@@ -1225,7 +1225,10 @@ class Network:
             useCVtoStop = 0
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or useCVtoStop):
             (tssErr, totalCorrect, totalCount) = self.sweep()
-            rmsErr = math.sqrt(tssErr / totalCount)
+            if totalCount != 0:
+                rmsErr = math.sqrt(tssErr / totalCount)
+            else:
+                print "Warning: sweep didn't do anything!"
             if self.epoch % self.reportRate == 0:
                 print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)

@@ -152,12 +152,12 @@ if __name__ == '__main__':
     locations = locationfile.readlines()
     locationfile.close()
     sensorfile.close()
-    # set RAVQ parameters
-    govEpsilon = 0.2
-    delta = 0.8
-    alpha = .9 # 0.02
-    ravqBuffer = 5
-    govBuffer = 5
+    inputs = []
+    for line in sensors:
+        inputs.append( map(lambda x: float(x), line.strip().split()))
+    targets = []
+    for line in locations:
+        targets.append( map(lambda x: float(x), line.strip().split()))
     # The "16" weights the input determining the multiple labels
     # The choice of epsilon and delta may change the required
     # weights. For binary nodes, changing the value will make the vector
@@ -165,25 +165,20 @@ if __name__ == '__main__':
     # node. This change is enough if the delta value is less than
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
-    inSize = len(map(lambda x: float(x), sensors[0].rstrip().split()))
-    govMask = [1] * (inSize - 1) + [16] + [inSize/4] * 4
     # create network
-    net = GovernorSRN(ravqBuffer, govEpsilon, delta, govBuffer, alpha)
+    inSize = len(sensors[0].strip().split())
+    govMask = [1] * (inSize - 1) + [16] + [inSize/(inSize/2)] * (inSize/2) + [inSize/4] * 4
+    net = GovernorSRN(5, 2.1, 0.3, 5, 0.2)
     net.addThreeLayers(inSize, inSize/2, 4)
-    # the output will code the robots current region
-    # network:
-    # defaults - but here explicit
-    net.setBatch(0)
-    net.setInteractive(0)
-    net.setVerbosity(0)
-    # learning parameters
-    net.setEpsilon(0.2)
-    net.setMomentum(0.9)
-    net.setTolerance(0.05)
-    net.setLearning(1)
-    # initialize network
-    #net.initialize()
+    net.setInputs( inputs )
+    net.setTargets( targets )
+    net.setReportRate(1)
+    net.governing = 1
+    #net.setVerbosity(1)
+    print "This takes a while..."
     net.train()
+print net.ravq
+net.setLearning(0)
+net.setInteractive(1)
+# run with -i to see net
 
-
-# plot map with: gnuplot: splot "datafile" matrix with pm3d
