@@ -743,36 +743,6 @@ class Blobdata:
 if __name__ == '__main__':
    from os import getenv
    import sys
-
-   raise "this filter() method is obselete\n" \
-         "use getColorFilter() combined with getBitMap() instead"
-   """
-   from pyro.camera.fake import FakeCamera
-   camera = FakeCamera()
-   camera.update()
-   camera.update()
-   for x in range(10):
-      camera.update()
-      camera.motionMap.display()
-      print "avg color of motion:", camera.motion.avgColor(camera)
-   print "Done!"
-   exit
-   """
-
-   """
-   image = PyroImage(0, 0)
-   image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
-   image.cropPixels(5)
-   image.saveToFile("test.ppm")
-   bitmap = image.getBitmap(4.0, mode='rg/b')
-   bitmap.saveToFile("bitmap.ppm")
-   blobdata = Blobdata(bitmap)
-   blobdata.sort("wacky")
-   for i in range(4):
-      blobdata.bloblist[i].display()
-      print ""
-   """
-   
    
    bitmap = Bitmap(20, 15)
    bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
@@ -944,6 +914,9 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
+
+   print "test 9 uses an obselete filter method and so we will skip it"
+   """
    print "Do you want to run test 9: create a filter bitmap of an image? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
@@ -959,6 +932,8 @@ if __name__ == '__main__':
       print "Done! View filter bitmap with 'xv filter.ppm'"
    else:
       print "skipping..."
+   """
+      
    print "Do you want to run test 10: find motion in 10 frames? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
