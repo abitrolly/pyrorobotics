@@ -1,25 +1,11 @@
 # Pyro - Python Robotics Config Script
-
-# What version of Python do you want to build Pyro for?
-# Leave empty if your python binary is just "python"
-PYTHON_VERSION=2.1
-
-# Where is this version of Python's include files?
-PYTHON_INCLUDE=-I/usr/local/include/python2.1 -I/usr/include/python2.1 -I/usr/local/include/python2 -I/usr/include/python2 -I/usr/local/include/python -I/usr/include/python -I/usr/local/include/python2.2 -I/usr/include/python2.2
-
-
-# Where is Saphira? Leave empty if you don't want to build
-# Saphira-related items.
-SAPHIRA=/usr/local/saphira/ver62
-
-# Where are X11 files (such as X11 include directory)?
-X11_DIR = /usr/X11
+# Please edit Makefile.cfg
 
 # -----------------------------------------------------
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYRO_VERSION = 0.8.9
+PYRO_VERSION = 0.8.10
 PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean cleanall all
@@ -40,6 +26,7 @@ endif
 
 cleanall:: 
 	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
+
 ifeq ($(SUBDIRS),)
 else
 	@for i in $(SUBDIRS); do\
