@@ -126,7 +126,7 @@ class Robot (Drawable):
             list = []
             for i in self.sensorSet[pos]:
                 list.append(self.senses[device][data](self.dev, i))
-            return self.applyFunc(device, pos, list, func)
+            return self.applyFunc(device, self.sensorSet[pos], list, func)
         else:
             print "Error: pos is wrong type!"
             return None
