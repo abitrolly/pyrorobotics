@@ -32,7 +32,7 @@ class occupancyGrid(Tkinter.Tk):
       self.width = self.cols * self.colScale
       self.height = self.rows * self.rowScale
       self.infinity = 1e5000
-      self.bigButNotInfinity = self.rows * self.cols 
+      self.bigButNotInfinity = 5000
       self.value= [[self.infinity for col in range(self.cols)]
                    for row in range(self.rows)]
       self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
@@ -160,9 +160,8 @@ class occupancyGrid(Tkinter.Tk):
 
    def tooTight(self, row, col, i, j):
       """ Check to see if you aren't cutting a corner next to an obstacle."""
-      if self.value[row + i][col] == 1e5000 or \
-         self.value[row][col + j] == 1e5000:
-         return 1
+      return self.value[row + i][col] == 1e5000 or \
+                 self.value[row][col + j] == 1e5000:
 
    def planPath(self, start, goal, iterations):
       """
@@ -225,9 +224,7 @@ class occupancyGrid(Tkinter.Tk):
                      nextRow = row+i
                      nextCol = col+j
          if nextRow == -1:
-            print "No such path!"
-            self.redraw(self.value)
-            return None
+            raise "NoPathExists"
          steps += 1
          row = nextRow
          col = nextCol
