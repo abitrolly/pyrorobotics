@@ -1,27 +1,3 @@
-# Standalone functions:
-#    Fixed randomArray to return values in proper range
-# In Network class:
-#    Added a class variable called prediction which operates like association
-#    Added a method predict which operates like associate to do prediction
-#    Updated preprop to process predictions
-#    Updated preprop to pass step*length of pattern to loading methods
-#    Updated loadTarget to include start in the call to copyVector
-#    Added a class variable called resetLimit
-#    Added a method setResetLimit
-#    Updated train to check when resetCount==resetLimit and stops training
-#    Removed associationCount, not used and can be determined from length
-#    Added a class variable orderedInput, when this is true should not
-#      randomize the order of the inputs
-#    Added a method setOrderedInput
-#    Updated sweep method to include an if check for orderedInput
-#    Updated sweep method to move postprop call--was not showing correct
-#      context layer values due to its placement
-# In SRN class:
-#    Added a method addSRNLayers
-#    Updated preprop to check if sequenceLength>1 before initializing context
-#    Updated postprop to always copy hidden to context
-#    Updated preprop to init context on first pattern if no sequence
-
 # ------------------------------------------------
 # An Artificial Neural Network System Implementing
 # Backprop, and Quickprop
@@ -31,7 +7,7 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "5.7"
+version = "5.8"
 
 def randomArray(size, max):
     """
@@ -541,7 +517,8 @@ class Network:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
     def step(self):
-        self.init_slopes() 
+        if self.learning:
+            self.init_slopes() 
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 0 or self.interactive:
@@ -636,7 +613,8 @@ class Network:
     def backprop(self):
         self.reset_error()
         retval = self.compute_error()
-        self.compute_wed()
+        if self.learning:
+            self.compute_wed()
         return retval
     def change_weights(self):
         qp_shrink_factor = self.qp_mu / (1.0 + self.qp_mu);
