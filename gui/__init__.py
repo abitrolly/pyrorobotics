@@ -34,6 +34,7 @@ class gui:
       Child classes should do initialization pertaining to the creation
       of the GUI in the constructor.
       """
+      self.watcher = None
       self.triedToStop = 0
       self.alreadyCleanedUp = 0
       self.engine = engine
@@ -81,6 +82,15 @@ class gui:
             done = 1
             continue
          done = self.processCommand(retval)
+
+   def makeWatcher(self):
+      pass
+      #self.watcher = FIX: set a list to eval
+      
+   def watch(self, exp):
+      if self.watcher == None:
+         self.makeWatcher()
+      self.watcher.watch(exp)
 
    def processCommand(self, retval):
       retval = retval.replace("\n", "")
@@ -146,13 +156,15 @@ class gui:
             self.engine.reset()
          else:
             self.inform("Need to load a brain first!")
-      elif retval == "inspect":
-         import pyro.gui.inspector as Inspector
-         import pyro.system.share as share
-         share.brain = self.engine.brain
-         share.robot = self.engine.robot
-         share.engine = self.engine
-         inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
+      elif retval[:5] == "watch":
+         if self.engine.brain:
+            self.environment["self"] = self.engine.brain
+         else:
+            self.environment["self"] = BrainStem(self.engine.robot)
+         self.environment["engine"] = self.engine
+         self.environment["robot"] = self.engine.robot
+         self.environment["brain"] = self.engine.brain
+         self.watch(retval[5:].strip())
       else:
          # elif len(retval) > 0 and retval[0] == "!":
          exp1 = """_retval = """ + string.strip(retval)

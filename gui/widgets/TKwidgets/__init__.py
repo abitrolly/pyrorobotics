@@ -163,7 +163,7 @@ class AlertDialog(ModalDialog):
                 textbox.insert(0, default)
 		textbox.pack({'expand':'no', 'side':'right', 'fill':'x'})
                 self.textbox[text] = textbox
-
+                return textbox
 ####
 #	Class ErrorDialog
 #
@@ -232,6 +232,41 @@ class AskDialog(AlertDialog):
       self.CreateButton("Cancel", self.CancelPressed)
       for (text, default) in self.qlist:
          self.CreateTextBox(text, width=30, default=default)
+
+class Watcher(Tkinter.Toplevel):
+   def __init__(self, root):
+      Tkinter.Toplevel.__init__(self, root)
+      self.winfo_toplevel().title("Pyro Variable Watcher")
+      self.data = []
+      self.textbox = {}
+
+   def watch(self, exp):
+      textbox = self.CreateTextBox(exp, width=30, default="")
+      self.data.append( (exp, textbox))
+
+   def update(self, locals):
+      for exp, textbox in self.data:
+         try:
+            value = eval(exp, locals)
+         except:
+            value = "undefined"
+         textbox.delete(0, 'end')
+         textbox.insert(0, value)
+
+   def CreateTextBox(self, text, width = 30, default = ""):
+      frame = Tkinter.Frame(self)
+      frame.pack({'expand':'yes', 'side' :'top', 'pady' :'2', 
+                  'fill' :'x'})
+      frame['relief'] = 'raised'
+      frame['bd']	 = '2'
+      label = Tkinter.Label(frame)
+      label['text'] = text
+      label.pack({'side':'left', 'expand':'no', 'anchor':'w',
+                  'fill':'none'})
+      textbox = Tkinter.Entry(frame, width=width, bg="white")
+      textbox.insert(0, default)
+      textbox.pack({'expand':'no', 'side':'right', 'fill':'x'})
+      return textbox
 
 ####
 #	Class MessageDialog

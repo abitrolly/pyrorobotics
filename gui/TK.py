@@ -71,6 +71,7 @@ class TKgui(Tkinter.Toplevel, gui):
       menu = [('File',[['New brain...', self.newBrain],
                        None,
                        ['Editor',self.editor],
+                       ['Variable Watcher', self.makeWatcher],
                        ['Exit',self.cleanup] 
                        ]),
               ('Window', [['Open all device windows', self.makeWindows],
@@ -431,6 +432,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.engine.robot.update()
          #except: pass
       self.redrawWindowBrain()
+      if self.watcher:
+         self.watcher.update(self.environment)
       # -----------------------
       if self.engine.robot != 0:
          if self.engine.robot.get('/robot/stall'):
@@ -648,13 +651,8 @@ class TKgui(Tkinter.Toplevel, gui):
       menu['menu'] = menu.filemenu
       return menu
 
-   def inspector(self):
-      import pyro.gui.inspector as Inspector
-      import pyro.system.share as share
-      share.brain = self.engine.brain
-      share.robot = self.engine.robot
-      share.engine = self.engine
-      inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
+   def makeWatcher(self):
+      self.watcher = TKwidgets.Watcher(self)
 
    def clearMessages(self):
       self.status.config(state='normal')
