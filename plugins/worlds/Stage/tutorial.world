@@ -1,0 +1,78 @@
+# A simple world for a pioneer robot
+
+unit_length "m"			# All units are in meters
+resolution .01
+gui
+(
+	size [520 520]		# the width and height of GUI in pixels
+	origin [2.5 2.5]	# Where in the GUI the origin is at
+	scale .01		# 1 pixel = 0.01 meters
+)
+
+# This box is the world boundary. The robot lives inside it.
+box
+(
+	size [5.0 5.0]
+	color "black"
+	pose [2.5 2.5 0.0]
+)
+
+# This is the blue box in the upper-left corner
+box
+(
+	size [0.75 0.75]
+	color "blue"
+	pose [0.375 4.625 0]
+)
+
+# This is the center wall (vertical)
+box
+(
+	size [.01 2.28]
+	color "red"
+	pose [2.50 1.125 0]
+)
+
+# This is the horizontal wall (doorway to the smaller room)
+box
+(
+	size [1.27 0.1]
+	color "red"
+	pose [3.13 2.31 0]
+)
+# The walls of the smaller room are green
+box
+(
+	size [1.25 0.01]
+	color "green"
+	pose [3.14 2.25 0]
+)
+# This is the center wall (vertical)
+box
+(
+	size [.01 2.25]
+	color "green"
+	pose [2.52 1.125 0]
+)
+box
+(
+	size [.01 2.25]
+	color "green"
+	pose [4.98 1.125 0]
+)
+box
+(
+	size [2.5 0.01]
+	color "green"
+	pose [3.75 0.02 0]
+)
+
+# Your excellency, the robot itself
+include "sparko.inc"
+sparko
+(
+	color "red"
+	name "Pioneer"
+	port 6666
+	pose [2.0 1.25 0]
+)
