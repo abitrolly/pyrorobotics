@@ -7,7 +7,7 @@ import pyro.system as system
 import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
-   def __init__(self, robotfile = 0, brainfile = 0, simfile = 0):
+   def __init__(self, robotfile = 0, brainfile = 0, simfile = 0, brainargs=[]):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
@@ -18,7 +18,9 @@ class Engine(drawable.Drawable):
          self.loadSimulator(simfile)
       if robotfile != 0:
          self.loadRobot(robotfile)
-      if brainfile != 0:
+      if brainargs != [] and brainfile != 0:
+         self.loadBrain(brainfile, brainargs)
+      elif brainfile != 0:
          self.loadBrain(brainfile)
 
    def reset(self):
@@ -98,7 +100,7 @@ class Engine(drawable.Drawable):
       console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
 
-   def loadBrain(self,file):
+   def loadBrain(self,file, args=None):
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
       import os
@@ -107,12 +109,20 @@ class Engine(drawable.Drawable):
          file = file + '.py'
       if system.file_exists(file):
          self.brainfile = file
-         self.brain = system.loadINIT(file, self.robot)
+         if args:
+            self.brain = system.loadINIT(file, self.robot, args=args)
+         else:
+            self.brian = system.loadINIT(file, self.robot)
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
-         self.brain = system.loadINIT(os.getenv('PYRO') + \
-                                      '/plugins/brains/' + file, self.robot)
+         if args:
+            self.brain = system.loadINIT(os.getenv('PYRO') + \
+                                         '/plugins/brains/' + file,
+                                         self.robot, args=args)
+         else:
+            self.brain = system.loadINIT(os.getenv('PYRO') + \
+                                         '/plugins/brains/' + file, self.robot)
       else:
          raise 'File not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
