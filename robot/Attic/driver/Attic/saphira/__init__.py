@@ -59,9 +59,9 @@ class SaphiraSenseDriver(driver.Driver):
         if self.senses['sonar']['units'](dev) == "ROBOTS":
             return val / 0.75 # Pioneer is about .5 meters diameter
         elif self.senses['sonar']['units'](dev) == "MM":
-            return val / 1000.0
+            return val * 1000.0
         elif self.senses['sonar']['units'](dev) == "CM":
-            return (val) / 100.0 # cm
+            return (val) * 100.0 # cm
         elif self.senses['sonar']['units'](dev) == "METERS" or \
              self.senses['sonar']['units'](dev) == "RAW":
             return (val) 
