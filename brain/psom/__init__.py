@@ -202,7 +202,13 @@ class psom:
 		else:
 			raise "mode " + mode + " not yet implemented.  sorry"
 		levels = arr_to_list(float_levels,self.xdim*self.ydim)
-		return activations(self.xdim,self.ydim,levels,self.topol)
+		return levels
+
+	def get_xy(self, mylist, x, y):
+		"""
+		allows x,y addressing of a list representation of a matrix
+		"""
+		return mylist[x + y * self.xdim]
 
 	def save_to_file(self, file):
 		codes = csom.teach_params_codes_get(self.params)
@@ -212,6 +218,16 @@ class psom:
 		codes = csom.teach_params_codes_get(self.params)
 		csom.print_dataset(codes)
 
+	def display_activations(self,levels='unset'):
+		if(levels == 'unset'):
+			levels = self.get_activations('gaussian')
+		for j in range(0,self.ydim):
+			if(j % 2 == 1 and self.topol=='hexa'):
+				print "  ",
+			for i in range(0,self.xdim):
+				index = i + j * self.xdim
+				print "%.2f" % (levels[index]),
+			print ""
 
 
 
@@ -358,41 +374,6 @@ class dataset:
 
 
 
-class activations:
-	"""
-	really just an elaborate float array when you think about it...
-	most of the real work is done in psom.get_activations()
-	in any case, this class is used to communicate SRN-appropriate activation
-	levels of the som after each mapping
-	"""
-	def __init__(self, xdim, ydim, levels=[], topol='hexa'):
-		self.xdim=xdim
-		self.ydim=ydim
-		self.levels=levels
-		if(levels == []):
-			for i in range(0,xdim*ydim):
-				self.levels.append(0.0)
-		self.topol=topol
-
-	def get(self, x, y):
-		index = x + y * self.xdim
-		return levels[index]
-	def __getitem__(self, key):
-		return levels[key]
-	def __len__(self):
-		return len(levels)
-	
-	def display(self):
-		for j in range(0,self.ydim):
-			if(j % 2 == 1 and self.topol=='hexa'):
-				print "  ",
-			for i in range(0,self.xdim):
-				index = i + j * self.xdim
-				print "%.2f" % (self.levels[index]),
-			print ""
-
-
-
 class point:
 	"""
 	simple x,y coordinate holder
@@ -407,7 +388,6 @@ class point:
 		return ptr
 	def display(self):
 		print "(%d,%d)" % (self.x,self.y)
-
 
 
 
@@ -476,10 +456,10 @@ if(__name__ == '__main__'):
 	print "training session completed in", ttime, "seconds"
 	print "last vector produces the following gaussian SRN activations:"
 	myact = mysom.get_activations('gaussian',2.0)
-	myact.display()
+	mysom.display_activations(myact)
 	print "last vector produces the following error-based SRN activations:"
 	myact = mysom.get_activations('error')
-	myact.display()
+	mysom.display_activations(myact)
 	print "output written to file \"test2.cod\""
 	print "test 2 successfully completed"
 
@@ -499,10 +479,10 @@ if(__name__ == '__main__'):
 	print "training session completed in", ttime, "seconds"
 	print "last vector produces the following gaussian SRN activations:"
 	myact = mysom.get_activations('gaussian',2.0)
-	myact.display()
+	mysom.display_activations(myact)
 	print "last vector produces the following error-based SRN activations:"
 	myact = mysom.get_activations('error')
-	myact.display()
+	mysom.display_activations(myact)
 	print "output written to file \"test3b.cod\""
 	print "test 3 successfully completed"
 
@@ -534,16 +514,16 @@ if(__name__ == '__main__'):
 
 	print "last mapping produces the following bubble srn activations:"
 	myact = mysom.get_activations()
-	myact.display()
+	mysom.display_activations(myact)
 	print "last mapping produces the following gaussian srn activations:"
 	myact = mysom.get_activations('gaussian',2.0)
-	myact.display()
+	mysom.display_activations(myact)
 	print "fixed-window error-based srn activations:"
 	myact = mysom.get_activations('error',emin=5.0,emax=25.0)
-	myact.display()
+	mysom.display_activations(myact)
 	print "dynamic error-based srn activations:"
 	myact = mysom.get_activations('error')
-	myact.display()
+	mysom.display_activations(myact)
 
 	mysom.save_to_file("test4.cod")
 	print "output written to \"test4.cod\""
