@@ -355,8 +355,8 @@ class AriaSonar(AriaSensor):
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
         self.subDataFunc['oz']    = lambda pos: 0.03
-        self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
-        self.subDataFunc['thr']    = lambda pos: self.params.getSonarTh(pos)
+        self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) # degrees
+        self.subDataFunc['thr']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
         self.subDataFunc['x']     = lambda pos: self.dev.getSonarReading(pos).getLocalX()
         self.subDataFunc['y']     = lambda pos: self.dev.getSonarReading(pos).getLocalY()
