@@ -214,7 +214,7 @@ class KheperaRobot(Robot):
                     except:
                         pass
                 if port == None:
-                    port = "/dev/ttyS1"
+                    port = "/dev/ttyS0"
                 if rate == None:
                     rate = 38400
             else:

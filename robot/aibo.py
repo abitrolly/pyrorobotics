@@ -234,18 +234,18 @@ class AiboRobot(Robot):
     def translate(self, amount):
         self.walk_control.write( makeControlCommand('t', amount)) 
 
-    def straife(self, amount):
+    def strafe(self, amount):
         self.walk_control.write( makeControlCommand('s', amount)) 
         
     def move(self, translate, rotate):
         # WALK:
         # forward: -1 to 1 (backward to forward)
         # rotate: -1 to 1 (right to left)
-        # straife (side-to-side) -1 to 1 :(right to left)
+        # strafe (side-to-side) -1 to 1 :(right to left)
         #walk_control.write( makeControlCommand('f', -.3)) # see MechaController.java
         #walk_control.write( makeControlCommand('s', .25)) # or  WalkGUI.java
         #walk_control.write( makeControlCommand('r', -1)) 
-        # TODO: what move command is straife?
+        # TODO: what move command is strafe?
         self.walk_control.write( makeControlCommand('f', translate)) 
         self.walk_control.write( makeControlCommand('r', rotate)) 
 
@@ -262,3 +262,8 @@ class AiboRobot(Robot):
 # 2. How to change gait? Running? Walking? On knees?
 # 3. Create vision C code wrapper (see RobocupCamera as example)
 # 4. Make a "virtual range sensor" from vision
+
+# Aibo 3D: Listens to aibo3d control commands coming in from port 10051
+
+# World State Serializer: Sends sensor information to port 10031 and
+# current pid values to port 10032

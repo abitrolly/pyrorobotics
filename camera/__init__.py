@@ -219,10 +219,6 @@ class Camera(PyroImage, Device):
       self.updateWindow()
       self.setActive(oldActive)
 
-   def getImage(self):
-      return PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                                 (self.width, self.height),
-                                                 self.cbuf, 'raw', self.format)
    def makeFilterMenu(self, data):
       menu = []
       lastCat = ""
@@ -425,6 +421,10 @@ class Camera(PyroImage, Device):
       self.setVisible(0)
       self.window.withdraw()
       
+   def getImage(self):
+      return PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                 (self.width, self.height),
+                                                 self.cbuf, 'raw', self.format)
    def updateWindow(self):
       if self.getVisible():
          now = time.time()
@@ -442,11 +442,11 @@ class Camera(PyroImage, Device):
          self.image = ImageTk.PhotoImage(self.im)
          self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
                                   tag="image")
-         self.canvas.create_rectangle(1, 1,
-                                      self.getCanvasWidth(),
-                                      self.getCanvasHeight(),
-                                      tag="image")
-         self.canvas.pack()
+         #self.canvas.create_rectangle(1, 1,
+         #                             self.getCanvasWidth(),
+         #                             self.getCanvasHeight(),
+         #                             tag="image")
+         #self.canvas.pack()
          while self.window.tk.dooneevent(2): pass
 
    def startDevice(self):
