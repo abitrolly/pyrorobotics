@@ -21,12 +21,20 @@ class NNBrain(Brain):
       self.net.setQuickProp(0)
       self.net.setEpsilon(0.5)
       self.net.setMomentum(.975)
+      self.net.setLearning(1)
+      self.counter = 0
+      self.doneLearning = 0
       self.maxvalue = self.getRobot().get('range', 'maxvalue')
 
    def scale(val):
       return (val / self.maxvalue)
    
    def step(self):
+      if not self.doneLearning:
+         if self.counter > 2000:
+            print "Done Learning!"
+            self.net.setLearning(0)
+            self.doneLearning = 1
       # First, set inputs and targets:
       ins = map(self.scale, self.getRobot().get('range', 'all'))
       self.net.setInputs([ ins ])
@@ -56,6 +64,7 @@ class NNBrain(Brain):
       rotate = (self.net.getLayer('output').activation[1] - .5) / 2.0
       #print "Move    : trans =", trans, "rotate =", rotate
       self.getRobot().move(trans, rotate)
+      self.counter += 1
 
 def INIT(robot):
    return NNBrain('NNBrain', robot)
