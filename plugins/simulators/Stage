@@ -4,7 +4,8 @@ if [ $# -eq 0 ]
 then
     world="/usr/local/stage/worlds/everything.world"
 else
-    world="$1"
+    # if $1 = "-g" $ 2 = "world", otherwise rest is ignored
+    world="$1 $2 /usr/local/stage/worlds/everything.world"
 fi
 export PATH=$PATH:/usr/local/stage/bin:/usr/local/player/bin
 stage $world &
