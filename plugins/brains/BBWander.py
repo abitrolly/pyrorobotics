@@ -10,8 +10,6 @@ import time
 
 class Avoid (Behavior):
     def init(self): # called when created
-        self.Effects('translate', .3) 
-        self.Effects('rotate', .3)
         self.lasttime = time.mktime(time.localtime())
         self.count = 0
 
@@ -35,16 +33,19 @@ class Avoid (Behavior):
         # Normally :
         close_dist = self.getRobot().getSensorGroup('min', 'front-all')[1]
         close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / (math.pi)
-        print "Closest distance =", close_dist, "angle =", close_angl
-        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'translate', 0.0)
-        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'translate', .2)
-        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'rotate', self.direction(close_angl, close_dist))
-        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'rotate', 0.0)
+        #print "Closest distance =", close_dist, "angle =", close_angl
+        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'translate', 0.0, "TooClose")
+        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'translate', .2, "Ok")
+        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'rotate', self.direction(close_angl, close_dist), "TooClose")
+        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'rotate', 0.0, "Ok")
 
 class state1 (State):
     def init(self):
         #self.add(StraightBehavior(1))
-        self.add(Avoid(1))
+        self.add(Avoid(1, {'translate': .3, 'rotate': .3}))
+        #self.Effects('translate', .3) 
+        #self.Effects('rotate', .3)
+
         print "initialized state", self.name
 
 def INIT(robot): # passes in robot, if you need it
