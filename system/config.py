@@ -48,14 +48,26 @@ class Configuration:
         cp = ConfigParser.ConfigParser()
         if file_exists( environ['PYRO'] + "/.pyro"): # $PYRO?
             self.processFile( environ['PYRO'] + "/.pyro", cp)
+        if file_exists( environ['PYRO'] + "/pyro.ini"): # $PYRO?
+            self.processFile( environ['PYRO'] + "/pyro.ini", cp)
         if file_exists( environ['PYRO'] +
-                        "/.pyro-" + environ['HOSTNAME']): # $PYRO-HOSTNAME?
+                        "/.pyro-" + environ['HOSTNAME']):
+            # $PYRO-HOSTNAME?
             self.processFile( environ['PYRO'] +
                               "/.pyro-" + environ['HOSTNAME'], cp)
+        if file_exists( environ['PYRO'] +
+                        "/pyro-" + environ['HOSTNAME'] + ".ini"):
+            # $PYRO-HOSTNAME?
+            self.processFile( environ['PYRO'] +
+                              "/pyro-" + environ['HOSTNAME'] + ".ini", cp)
         if file_exists( environ['HOME'] + "/.pyro"): # home dir?
             self.processFile( environ['HOME'] + "/.pyro", cp)
+        if file_exists( environ['HOME'] + "/pyro.ini"): # home dir?
+            self.processFile( environ['HOME'] + "/pyro.ini", cp)
         if file_exists(".pyro"): # current dir?
             self.processFile( ".pyro", cp)
+        if file_exists("pyro.ini"): # current dir?
+            self.processFile( "pyro.ini", cp)
         if file and file_exists(file):
             self.processFile( file, cp)
 
