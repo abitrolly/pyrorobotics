@@ -283,10 +283,10 @@ class CBuffer:
 
 
 class FakeCamera(V4LGrabber):
-"""
-A fake camera.  This will emulate a V4LGrabber, but instead of
-accessing the hardware, it will load a series of images from file.
-"""
+   """
+   A fake camera.  This will emulate a V4LGrabber, but instead of
+   accessing the hardware, it will load a series of images from file.
+   """
    def __init__(self, pattern, start = 0, limit = -1, char = "?"):
       """
       pattern is a filename with indicators on where to put digits for the
