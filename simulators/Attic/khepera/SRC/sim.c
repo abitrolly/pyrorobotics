@@ -390,12 +390,12 @@ int main(int argc,char *argv[]) {
       case RUN_ROBOT:
        //DisplayComment(context,"running Khepera");
        CancelCursor();
-       //DisplayComment(context,"running simulated Khepera");
+       DisplayComment(context,"running simulated Khepera");
 			 while (UnpressButton(context,button)==FALSE) {
 				 if(!queryflag && (shm_in[0] != '\0')) {
 					 queryflag = TRUE;
 					 MessageRobotDeal(context, shm_in, shm_out);
-					 DisplayComment(context, shm_out);
+					 //DisplayComment(context, shm_out);
 				 }
 				 MessageRobotRun(context);
 				 if(queryflag && (shm_in[0] == '\0')) {
@@ -404,6 +404,7 @@ int main(int argc,char *argv[]) {
 				 }
 			 }
 			 RunRobotStop(robot);
+			 DisplayComment(context,"simulated Khepera stopped");
 			 PointerCursor();
 			 break;
 
