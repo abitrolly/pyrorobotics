@@ -95,6 +95,8 @@ class GPTree:
     def __init__(self, op, *children):
         self.op = op
         self.children = []
+        self.root = None
+        self.depth = 0
         for child in children:
             if not isinstance(child, GPTree):
                 self.children.append(GPTree(child))
@@ -148,10 +150,14 @@ class GPTree:
                 s += " %s" % child
             s += ")"
         return s
-    def resetCounts(self):
+    def resetCounts(self, root = None, depth = 0):
         i = 0
+        self.root = root
+        self.depth = depth
+        if root == None:
+            root = self
         for child in self.children:
-            internal, ext = child.resetCounts()
+            internal, ext = child.resetCounts(root, depth + 1)
             self.internals[i] = internal
             self.externals[i] = ext
             i += 1
@@ -209,7 +215,7 @@ class GPGene(Gene):
         return self.genotype.eval(share.env)
     def mutate(self, mutationRate):
         """
-        Depending on the mutationRate, will mutate particular point.
+        Changes points based on mutationRate.
         """
         total_points = self.genotype.totalPoints()
         for i in range(total_points): 
@@ -228,15 +234,8 @@ class GPGene(Gene):
                 self.genotype.resetCounts()
                 total_points = self.genotype.totalPoints()# may change!
                 if i > total_points: break # no need to do more
-    def replaceTree(self, subtree, temp, replaceChildren = 1):
-        """ Replace operator and (optionally) children. """
-        # these are all trees, or list of trees:
-        subtree.op = temp.op
-        if replaceChildren:
-            subtree.children = temp.children
-            subtree.internals = temp.internals
-            subtree.externals = temp.externals
     def crossover(self, parent2, crossoverRate):
+        """ Make two new genotypes, or return the old ones."""
         if flip(crossoverRate):
             parent1 = self
             term1 = parent1.genotype.totalPoints()
@@ -254,6 +253,14 @@ class GPGene(Gene):
             return p1, p2 # returns new copies for replacement
         else:
             return self, parent2
+    def replaceTree(self, subtree, temp, replaceChildren = 1):
+        """ Replace operator and (optionally) children. """
+        # these are all trees, or list of trees:
+        subtree.op = temp.op
+        if replaceChildren:
+            subtree.children = temp.children
+            subtree.internals = temp.internals
+            subtree.externals = temp.externals
                
 # A standard environment:
 env = {'+'  : Operator(operator.add, 2, "regular"),
@@ -270,8 +277,6 @@ env = {'+'  : Operator(operator.add, 2, "regular"),
 if __name__ == '__main__':
     share.env = Environment(env)
     share.env.update( {'i1':0, 'i2':0} )
-    exp = GPTree('+', GPTree('-', GPTree('-', GPTree('-', 'i1', 'i2'), 'i1'), 'i1'), GPTree('ifpos', 'i1', GPTree('ifpos', GPTree('/', 'i2', 'i2'), 'i1', 'i2'), GPTree('*', GPTree('*', 'i1', 'i2'), GPTree('or', 'i1', 'i2'))))
-
     class GP(GA):
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, bias =.6, 
@@ -320,7 +325,7 @@ if __name__ == '__main__':
             return abs(self.fitnessFunction(0, 1) - pi) < .001
     share.env = Environment(env)
     share.env.update( {'+1': Operator(lambda obj: obj + 1, 1, "regular"),
-                       '1': 1,
+                       '1/2': .5,
                        'e': math.e } )
     gp = PI_GP(100)
     gp.evolve()
