@@ -628,8 +628,6 @@ class Network:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
             self.preprop(i)
-            self.verifyInputs()
-            self.verifyTargets()
             self.propagate()
             (error, correct, total) = self.backprop() # compute_error()
             tssError += error
@@ -652,7 +650,7 @@ class Network:
         if self.learning and self.batch:
             self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
-    def step(self):
+    def step():
         self.epoch += 1
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
@@ -728,6 +726,7 @@ class Network:
             raise 'NoNetworkLayersError', self.layerCount
         if self.connectionCount == 0:
             raise 'NoNetworkConnectionsError', self.connectionCount
+        self.verifyInputs() # better have inputs set
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # Initialize netinput:
         for n in range(self.layerCount):
@@ -762,6 +761,7 @@ class Network:
                    connect.toLayer.name, "[", i, "] = ", \
                    connect.toLayer.netinput[i]
     def backprop(self):
+        self.verifyTargets() # better have targets set
         retval = self.compute_error()
         if self.learning:
             self.compute_wed()
@@ -792,6 +792,7 @@ class Network:
             if self.connection[i].fromLayer.name == fromName and \
                self.connection[i].toLayer.name == toName:
                 return self.connection[i].weight
+        raise 'ConnectionNotFoundError', (fromName, toName)
     def freeze(self, fromName, toName):
         for i in range(self.connectionCount):
             if self.connection[i].fromLayer.name == fromName and \
@@ -938,7 +939,7 @@ class Network:
             if self.connection[c].toLayer.name == lto and \
                self.connection[c].fromLayer.name == lfrom:
                 return self.connection[c]
-        return 0
+        raise 'ConnectionNotFoundError', (lto, lfrom)
     def saveNetworkToFile(self, filename):
         import pickle
         basename = filename.split('.')[0]
@@ -1090,6 +1091,7 @@ class SRN(Network):
         self.connect('context', 'hidden')
         self.connect('hidden', 'output')
     def addContext(self, layer, verbosity = 0):
+        # better not add context layer first
         self.add(layer, verbosity)
         self.contextLayer = layer
     def clearContext(self):
@@ -1140,8 +1142,6 @@ class SRN(Network):
                 if self.verbosity > 0 or self.interactive:
                     print "Step #", s + 1
                 self.preprop(i, s)
-                self.verifyInputs()
-                self.verifyTargets()
                 self.propagate()
                 if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
                     pass # don't update error or count - accumulate history without learning in context layer
