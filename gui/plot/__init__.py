@@ -46,7 +46,7 @@ class GeneralPlot:
                                          history * stepLength, self.height))
 #                           xScrollIncrement=self.stepLength
       self.canvas.pack()
-      self.dump.pack()
+      self.dump()
 
    def dump(self):
       print self.history
