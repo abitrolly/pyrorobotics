@@ -120,6 +120,9 @@ class Camera(PyroImage, Service):
    def saveFilters(self):
       pass
 
+   def saveImage(self):
+      self.vision.saveImage("pyro-vision.ppm");
+
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
       Save a copy of the image to disk, in TGA format (Gimp and display
@@ -206,6 +209,8 @@ class Camera(PyroImage, Service):
          menu = [('File',[['Load Filters...',self.loadFilters],
                           ['Save Filters...', self.saveFilters],
                           None,
+                          ['Save Image...', self.saveImage],
+                          None,
                           ['Close',self.hideWindow] 
                           ]),
                  ('View', [['Pause', lambda self=self: self.setActive(0)],
@@ -274,7 +279,7 @@ class Camera(PyroImage, Service):
       """
       import inspect
       if type(func) == type(""):
-         self.callbackList.append( lambda self: self.apply(func, *args))
+         self.callbackList.append( lambda self=self, func=func, args=args: self.apply(func, *args))
          self.callbackTextList.append( listFilter( (func, args) ))
       else:
          self.callbackList.append( func )

@@ -133,6 +133,7 @@ public:
   int getBlobArea( Blob *b );
   void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
   PyObject *copy(int);
+  void swapPlanes(int d1, int d2);
 };
 
 #endif

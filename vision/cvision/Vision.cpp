@@ -225,14 +225,11 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
 }
 
 PyObject *Vision::saveImage(char *filename) {
-  int w, h;
   int i, j;
-  unsigned char *p;
   FILE *fptr;
-  
-  p=Image;  
-  
-  if ((fptr=fopen(filename, "w+"))==NULL)
+  if (0 != rgb[0])
+    swapPlanes(0, rgb[0]);
+  if ((fptr=fopen(filename, "wb+"))==NULL)
     {
       PyErr_SetString(PyExc_TypeError, 
 		      "Unable to open file");
@@ -240,17 +237,12 @@ PyObject *Vision::saveImage(char *filename) {
     }
   else
     {
-      fprintf(fptr, "P3\n%d %d\n 255\n", w, h);
-      
-      for (i=0; i<h; i++) {
-	for (j=0; j<w; j++) {
-	  fprintf(fptr, "%d %d %d\n", *(p+2), *(p+1), *p); 
-	  p += 3;  
-	}
-      }
-      fprintf(fptr,"\n");
+      fprintf(fptr, "P6\n%d %d\n 255\n", width, height);
+      fwrite(Image, (width * height * depth), 1, fptr);
       fclose(fptr);
     }
+  if (0 != rgb[0])
+    swapPlanes(0, rgb[0]);
   return Py_BuildValue("");
 } 
 
@@ -1218,3 +1210,12 @@ PyObject *Vision::applyFilters(PyObject *newList) {
   return retvals;
 }
 
+void Vision::swapPlanes(int d1, int d2) {
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      unsigned int temp = Image[(h * width + w) * depth + d1];
+      Image[(h * width + w) * depth + d1] = Image[(h * width + w) * depth + d2];
+      Image[(h * width + w) * depth + d2] = temp;
+    }
+  }
+}
