@@ -3,7 +3,7 @@
 void utilTest(){
   float v2d_0[2] = {1,2};
   float v2d_1[2] = {3,4};
-  int failure;
+  int failure = 0;
 
   iprintln("Util");
   iup();
