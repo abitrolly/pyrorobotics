@@ -1020,8 +1020,44 @@ PyObject *suppliesFilters() {
 }
 */
 
-PyObject *Vision::copyOriginal() {
-  memcpy(original, Image, width * height * depth);
+PyObject *Vision::backup() { 
+  return copy(0); // 0 backup, 1 restore
+}
+
+PyObject *Vision::restore() { 
+  return copy(1); // 0 backup, 1 restore
+}
+
+PyObject *Vision::motion() { 
+  static unsigned char *motion = new unsigned char[width * height * depth];
+  static unsigned char *temp = new unsigned char[width * height * depth];
+  int threshold = 30;
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      int totalDiff = 0;
+      for (int d = 0; d < depth; d++) {
+	totalDiff += abs(Image[(h * width + w) * depth + d] - motion[(h * width + w) * depth + d]);
+      }
+      for (int d = 0; d < depth; d++) {
+	if (totalDiff/3 > threshold)
+	  temp[(h * width + w) * depth + d] = 255;
+	else
+	  temp[(h * width + w) * depth + d] = 0;
+      }
+    }
+  }
+  memcpy(motion, Image, width * height * depth);
+  memcpy(Image, temp, width * height * depth);
+  return Py_BuildValue("");
+}
+
+PyObject *Vision::copy(int fromto) { // 0 backup, 1 restore
+  static unsigned char *backup = new unsigned char[width * height * depth];
+  if (fromto == 0) { // backup
+    memcpy(backup, Image, width * height * depth);
+  } else if (fromto == 1) { // restore
+    memcpy(Image, backup, width * height * depth);
+  }
   return PyInt_FromLong(0L);
 }
 
@@ -1110,6 +1146,12 @@ PyObject *Vision::applyFilters(PyObject *newList) {
       PyList_SetItem(retvals, i, matchRange(i1, i2, i3, i4, i5, i6, i7));
     } else if (strcmp((char *)command, "grayScale") == 0) {
       PyList_SetItem(retvals, i, grayScale());
+    } else if (strcmp((char *)command, "backup") == 0) {
+      PyList_SetItem(retvals, i, backup());
+    } else if (strcmp((char *)command, "restore") == 0) {
+      PyList_SetItem(retvals, i, restore());
+    } else if (strcmp((char *)command, "motion") == 0) {
+      PyList_SetItem(retvals, i, motion());
     } else if (strcmp((char *)command, "threshold") == 0) {
       i1 = 0; i2 = 200;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {

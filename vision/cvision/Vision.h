@@ -104,7 +104,9 @@ public:
   PyObject *setRGB(int r, int g, int b); 
 
   PyObject *setImage(int newImage);
-  PyObject *copyOriginal();
+  PyObject *backup();
+  PyObject *restore();
+  PyObject *motion();
 
  protected:
   unsigned char *Image; // current image (image, original, workspace)
@@ -129,6 +131,7 @@ public:
   int getBlobHeight( Blob *b );
   int getBlobArea( Blob *b );
   void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
+  PyObject *copy(int);
 };
 
 #endif
