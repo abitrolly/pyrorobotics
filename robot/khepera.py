@@ -45,20 +45,17 @@ class IRSensor(Device):
         self.subDataFunc['thr']    = lambda pos: self.th(pos) * PIOVER180
         self.subDataFunc['arc']   = lambda pos: (15 * PIOVER180)
         self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
+        self.subDataFunc['group']   = self.getGroupNames
         self.subDataFunc['x'] = self.hitX
         self.subDataFunc['y'] = self.hitY
 	self.subDataFunc['z'] = self.hitZ
 	self.subDataFunc['value'] = self.getIRRange
-        #self.subDataFunc['all'] = self.getIRRangeAll
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
-	self.subDataFunc['flag'] = self.getIRFlag
         self.startDevice()    
 
     def __len__(self):
         return self.devData["count"]
     def getSensorValue(self, pos):
-        return SensorValue(self, self.getIRRange(pos), pos,
+        return SensorValue(self, self.getVal(pos), pos,
                            (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
     
     def postSet(self, keyword):
@@ -122,34 +119,29 @@ class IRSensor(Device):
         elif pos == 7:
             return 180.0
 
-    def getIRRange(self, pos):
+    def getVal(self, pos):
         try:
-            data = self.devData["maxvalueraw"] - \
-                   (self.dev.senseData['ir'][pos] / 1023.0 * 6.0)
+            return (1023 - self.dev.senseData['ir'][pos])/1023.0 * 6.0
         except:
-            print "not enough sensor data"
-            return 0.0
-        data = max(min(data, self.devData["maxvalueraw"]), 0)
+            return 0
+
+    def getIRRange(self, pos):
+        data = self.getVal(pos)
         return self.rawToUnits(data)
 
     def hitX(self, pos):
         # convert to x,y relative to robot
-        data = self.getIRRange(pos)
-        dist = self.rawToUnits(data)
+        dist = self.getVal(pos)
         angle = (-self.th(pos)  - 90.0) / 180.0 * math.pi
         return dist * math.cos(angle)
         
     def hitY(self, pos):
         # convert to x,y relative to robot
-        data = self.getIRRange(pos)
-        dist = self.rawToUnits(data)
+        dist = self.getVal(pos)
         angle = (-self.th(pos) - 90.0) / 180.0 * math.pi
         return dist * math.sin(angle)
 
     def hitZ(self, pos): return 0.0
-
-    def getIRFlag(self, pos):
-        return 0
 
 class LightSensor(IRSensor):
     def __init__(self, dev):
@@ -159,7 +151,6 @@ class LightSensor(IRSensor):
         self.devData["maxvalueraw"] = 511.0
         self.devData['maxvalue'] = self.devData["maxvalueraw"]
 	self.subDataFunc['value'] = self.getLightRange
-	self.subDataFunc['flag'] = self.getIRFlag
 
     def __len__(self):
         return self.devData["count"]

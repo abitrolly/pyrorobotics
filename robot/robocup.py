@@ -8,13 +8,12 @@ TODO: need localize that would triangulate from flags/landmarks OR
 """
 from socket import *
 from pyro.robot import Robot
-from pyro.robot.device import Device
+from pyro.robot.device import Device, SensorValue
 from random import random
 from time import sleep
-from math import pi, sin, cos
+from math import sin, cos
 import threading
-
-PIOVER180 = pi / 180.0
+from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class ReadUDP(threading.Thread):
     """

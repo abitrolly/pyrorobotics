@@ -9,7 +9,6 @@ try:
     import ArAudio
 except:
     ArAudio = 0
-from math import pi, cos, sin
 from os import getuid
 import time
 

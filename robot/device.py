@@ -197,7 +197,7 @@ class Device:
         if units == "RAW":
             return raw
         elif units == "SCALED":
-            return raw / self.devData["maxvalueraw"]
+            return raw / float(self.devData["maxvalueraw"])
         # else, it is in some metric unit.
         # now, get it into meters:
         if self.devData["rawunits"].upper() == "MM":
