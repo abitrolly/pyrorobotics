@@ -17,7 +17,7 @@ class GUI(Tkinter.Toplevel):
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.world = {"A": "Dirty", "B": "Clean"}
+        self.world = {"A": "dirty", "B": "clean"}
         self.location = "A"
         self.dirtFilename = os.environ["PYRO"] + "/images/dirt.gif" 
         self.vacFilename = os.environ["PYRO"] + "/images/vac.gif" 
@@ -41,10 +41,10 @@ class GUI(Tkinter.Toplevel):
                 self.location = 'A'
             retval = "ok"
         elif request == 'suck':
-            self.world[self.location] = "Clean"
+            self.world[self.location] = "clean"
             retval = "ok"
         elif request == 'dump':
-            self.world[self.location] = "Dirty"
+            self.world[self.location] = "dirty"
             retval = "ok"
         elif request == 'location':
             retval = self.location
@@ -74,9 +74,9 @@ class GUI(Tkinter.Toplevel):
             self.canvas.create_image(0, 0, image = self.vacImageTk, anchor=Tkinter.NW)
         else:
             self.canvas.create_image(200, 0, image = self.vacImageTk, anchor=Tkinter.NW)
-        if self.world["A"] == "Dirty":
+        if self.world["A"] == "dirty":
             self.canvas.create_image(0, 100, image = self.dirtImageTk, anchor=Tkinter.NW)
-        if self.world["B"] == "Dirty":
+        if self.world["B"] == "dirty":
             self.canvas.create_image(200, 100, image = self.dirtImageTk, anchor=Tkinter.NW)
 
         self.canvas.create_line(200, 0, 200, 200, width = 2, fill = "black")
