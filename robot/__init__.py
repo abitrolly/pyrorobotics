@@ -133,7 +133,7 @@ class Robot:
         self.devData = {} # items in /robot/ path
         self.devDataFunc = {} # function items in /robot/ path
         self.devData['timestamp'] = time.time()
-        self.devData['_help'] = "The main robot object. Access the last loaded devices here, plus all of the robot-specific fields (such as x, y, and th). Use robot.move(translate, rotate) to move the robot."
+        self.devData['.help'] = "The main robot object. Access the last loaded devices here, plus all of the robot-specific fields (such as x, y, and th). Use robot.move(translate, rotate) to move the robot."
         self.devData["supports"] = [] # list of built-in devices
         # toplevel:
         self.directory["robot"] = self
@@ -241,7 +241,7 @@ class Robot:
             help = "Devices are where all of the peripheral attachments can be located. For example, if the robot has a set of sonar sensors, you'll find the device at robot.get('devices/sonar0'). You'll also find the same information at robot.get('robot/sonar'). Sometimes, there may be more than one device. So you may see 'devices/camera0' and 'devices/camera1' for example."
         else:
             try:
-                help = self.get(path, "_help")
+                help = self.get(path, ".help")
             except:
                 help = "No such help available"
         return help
