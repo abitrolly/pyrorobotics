@@ -60,7 +60,7 @@ def file_exists(file_name):
     else:
         return exists(file_name)
     
-def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
+def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     print "Loading INIT '%s'..." % filename
     path = filename.split("/")
     modulefile = path.pop() # module name
@@ -78,13 +78,13 @@ def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
 
     sys.path = oldpath
     if brain is 0:
-        if robot is 0:
+        if engine is 0:
             return userspace.INIT()
         else:
             if args:
-                return userspace.INIT(robot, args)
+                return userspace.INIT(engine, args)
             else:
-                return userspace.INIT(robot)
+                return userspace.INIT(engine)
     else:
-        return userspace.INIT(robot, brain)
+        return userspace.INIT(engine, brain)
 
