@@ -1,6 +1,6 @@
 import Numeric, math
 
-version = '1.1'
+version = '1.2'
 
 # general functions
 def averageVector(V):
@@ -12,7 +12,7 @@ def averageVector(V):
 def euclideanDistance(x, y, mask):
     """
     Takes two Numeric vectors as arguments.
-    d(x, y) = Sum[i = 1 to |x|]{(x_i - y_i) ^ 2}
+    d(x, y) = sqrt(Sum[i = 1 to |x|]{(x_i - y_i) ^ 2 * mask_i})
     """
     return math.sqrt(Numeric.add.reduce( ((x - y)  ** 2) * mask))
 
@@ -47,12 +47,18 @@ def stringArray(a, newline = 1, width = 0):
     return s
 
 def logBaseTwo(value):
+    """
+    Returns integer ceil of log_2 of value.
+    """
     if value < 2:
         return 1
     else:
         return int(math.ceil(math.log(value)/math.log(2)))
 
 def makeOrthogonalBitList(maxbits = 8):
+    """
+    Used in autolabelling ravq vectors.
+    """
     retval = []
     for i in range(maxbits):
         retval.append(dec2bin(2 ** i, maxbits))
@@ -97,12 +103,13 @@ class RAVQ:
         self.movingAverageDistance = -1
         self.modelVectorsDistance = -1
         self.winner = 'No Winner'
-        self.winnerIndex = -1
-        self.oldWinnerIndex = -1
+        self.newWinnerIndex = -1
+        self.previousWinnerIndex = -1
         self.verbosity = 0
         self.labels = {}
         self.recordHistory = 0
-        self.history = {} # time indexed list of winners
+        self.history = [] # last inputs to map to each model vector
+        self.historySize = 5
         self.tolerance = delta
         self.counters = []
         self.addModels = 1
@@ -139,7 +146,7 @@ class RAVQ:
         if self.counters == []:
             return 0
         else:
-            return self.counters[self.winnerIndex]
+            return self.counters[self.newWinnerIndex]
     def getMinimumCount(self):
         if self.counters == []:
             return 0
@@ -215,18 +222,27 @@ class RAVQ:
         if min == []:
             self.winner = 'No Winner'
         else:
-            self.oldWinnerIndex= self.winnerIndex
-            self.winnerIndex = Numeric.argmin(min)
-            if self.oldWinnerIndex == self.winnerIndex:
+            self.previousWinnerIndex= self.newWinnerIndex
+            self.newWinnerIndex = Numeric.argmin(min)
+            if self.previousWinnerIndex == self.newWinnerIndex:
                 self.winnerCount += 1
             else:
                 self.winnerCount = 0
-            self.winner = self.models[self.winnerIndex]
-            self.counters[self.winnerIndex] += 1
+            self.winner = self.models[self.newWinnerIndex]
+            self.counters[self.newWinnerIndex] += 1
             self.totalCount += 1
     def updateHistory(self):
         if self.recordHistory and self.winner != 'No Winner':
-            self.history[str(self.time)] = self.winner[:]
+            # new model vector so we initialize new history list
+            if len(self.history) < len(self.models):
+                self.history.append([self.buffer[len(self.buffer)-1]])
+            # previous model vector, but corresponding history list is not full
+            elif len(self.history[self.newWinnerIndex]) < self.historySize:
+                self.history[self.newWinnerIndex].append(self.buffer[len(self.buffer)-1])
+            # previous model vector, history list is full
+            else:
+                self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
+                                                    [self.buffer[ len(self.buffer)-1]]
     def distanceMap(self):
         map = []
         for x, y in [(x,y) for x in self.models for y in self.models]:
@@ -322,14 +338,11 @@ class RAVQ:
         if not self.recordHistory:
             return ''
         s = "History:\n"
-        for i in range(self.time):
-            s += "Time: " + str(i) + "\n"
-            if self.history.has_key(str(i)):
-                s += "Winner: " + stringArray(self.history[str(i)])
-                s += "Label: " + self.getLabel(self.history[str(i)]) + "\n"
-            else:
-                s += "No Winner\n"
-            s += "----------------------------------------------------------\n"
+        for pair in zip(self.models,self.history):
+            s += "Model:\n" + stringArray(pair[0])
+            s += "Input History:\n"
+            for l in pair[1]:
+                s += stringArray(l)
         return s
 
     # labels!
@@ -374,23 +387,12 @@ class RAVQ:
             return 0
         else:
             return 1
-
-##     def labelSize(self, mode = 'binary'):
-##         if mode == 'binary':
-##             return logBaseTwo(len(self.models))
-##         elif mode == 'orthogonal':
-##             return len(self.models)
-##         else:
-##             print "Unsupported mode!"
-
     def labelSize(self):
         max = 0
         for l in self.labels:
             if len(l) > max:
                 max = len(l)
         return max
-            
-
     def autoLabel(self, mode = 'binary'):
         """
         Label model vectors with strings.
@@ -419,8 +421,6 @@ class RAVQ:
                 print 'Unsupported mode...not making labels.'
         else:
             print 'No models. Labels cannot be made.'
-            
-        
 
 class ARAVQ(RAVQ):
     """
@@ -453,7 +453,8 @@ class ARAVQ(RAVQ):
         next time step anyway.
         """
         if self.deltaWinner != 'No Winner' and self.learning:
-            self.models[self.winnerIndex] = self.models[self.winnerIndex] + self.deltaWinner
+            self.models[self.newWinnerIndex] = self.models[self.newWinnerIndex] + \
+                                               self.deltaWinner
         else:
             pass 
     def process(self):
@@ -475,9 +476,9 @@ if __name__ == '__main__':
     print ravq
 
     ravq = ARAVQ(4, 2.1, 1.1, .2)
-    ravq.setHistory(0)
+    ravq.setHistory(1)
     cnt = 0
-    ravq.setMask([2,2,1,1,1,1,1,1])
+    ravq.setMask([8,8,1,1,1,1,1,1])
     for bits in bitlist:
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
