@@ -13,5 +13,5 @@ echo 'Khepera Simulator Started'
 fi
 # wait till pyro stops
 while ps --noheaders $pyropid; do sleep 1; done > /dev/null
-# then kill kepera sim
+# then kill khepera sim
 kill $spid
