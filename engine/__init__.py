@@ -55,7 +55,7 @@ class Engine(drawable.Drawable):
          self.brain.pleaseQuit()
          time.sleep(.1) # give it time to stop
          #self.robot = system.loadINIT(self.robotfile, redo = 1)
-         self.brain = system.loadINIT(self.brainfile, self.robot, 1)
+         self.brain = system.loadINIT(self.brainfile, self, 1)
 
    def resetFirstAttempts(self):
       self.pleaseStop()
@@ -108,7 +108,7 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.plot.append(system.loadINIT(file, self.robot, 0, self.brain))
+         self.plot.append(system.loadINIT(file, self, 0, self.brain))
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/plots/' + file): 
          self.plot.append(system.loadINIT(os.getenv('PYRO') + \
@@ -166,19 +166,19 @@ class Engine(drawable.Drawable):
       if system.file_exists(file):
          self.brainfile = file
          if args:
-            self.brain = system.loadINIT(file, self.robot, args=args)
+            self.brain = system.loadINIT(file, self, args=args)
          else:
-            self.brain = system.loadINIT(file, self.robot)
+            self.brain = system.loadINIT(file, self)
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
          if args:
             self.brain = system.loadINIT(os.getenv('PYRO') + \
                                          '/plugins/brains/' + file,
-                                         self.robot, args=args)
+                                         self, args=args)
          else:
             self.brain = system.loadINIT(os.getenv('PYRO') + \
-                                         '/plugins/brains/' + file, self.robot)
+                                         '/plugins/brains/' + file, self)
       else:
          raise 'File not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
