@@ -284,8 +284,8 @@ class FileDialog(ModalDialog):
 		self.listBoxFrame = Tkinter.Frame(self.top)
 		self.listBoxFrame['relief'] = 'raised'
 		self.listBoxFrame['bd']	 = '2'
-		self.listBoxFrame.pack({'expand':'yes', 'side' :'top',
-			'pady' :'2', 'padx': '0', 'fill' :'both'})
+		self.listBoxFrame.pack({'expand':'no', 'side' :'top',
+			'pady' :'2', 'padx': '0', 'fill' :'x'})
 		self.CreateDirListBox()
 		self.CreateFileListBox()
 		self.UpdateListBoxes()
@@ -304,6 +304,18 @@ class FileDialog(ModalDialog):
 		self.fileNameEntry["relief"] = "ridge"
 		self.fileNameEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
 		self.fileNameEntry.bind('<Return>', self.FileNameReturnKey)
+
+                # help text:
+                helpFrame = Tkinter.Frame(self.top)
+                scrollBar = Tkinter.Scrollbar(helpFrame, {'orient':'vertical'})
+                scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
+                self.helpText = Tkinter.Text(helpFrame, state="disabled",
+                                             yscroll = scrollBar.set,
+                                             height = 5, width = 50)
+                self.helpText.pack({'expand':'yes', 'side' :'top', 
+                                    'pady' :'1','fill' :'both'})
+                helpFrame.pack({'side':'top', 'expand':'yes', 'fill':'both'})
+                scrollBar['command'] = self.helpText.yview
 
 		#	buttons - ok, filter, cancel
 
@@ -324,6 +336,12 @@ class FileDialog(ModalDialog):
 		button = Tkinter.Button(self.buttonFrame)
 		button["text"] = "Cancel"
 		button["command"] = self.CancelPressed
+		button["width"] = 8
+		button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+
+		button = Tkinter.Button(self.buttonFrame)
+		button["text"] = "Edit"
+		button["command"] = self.EditPressed
 		button["width"] = 8
 		button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
 
@@ -412,13 +430,30 @@ class FileDialog(ModalDialog):
 
 	def DoSelection(self, event):
 		from posixpath import join
+                import string
 		lb = event.widget
 		field = self.fileNameEntry
 		field.delete(0, Tkinter.AtEnd())
 		field.insert(0, join(self.cwd_print(), lb.get(lb.nearest(event.y))))
                 lb.select_clear(0, "end")
                 lb.select_anchor(lb.nearest(event.y))
-
+                # ------------------------------------
+                # Get some help from the file
+                # this could be the __docs__ string from
+                # the module, but that would require us to load it
+                # and that seems like not a good idea. Maybe better
+                # to get data from a text file, or top of .py file
+                if field.get()[-3:] == ".py":
+                   fp = open(field.get(), "r")
+                   lines = fp.readlines()
+                   stringlines = string.join(lines, '')
+                   fp.close()
+                else:
+                   stringlines = "No help yet available for this file"
+                self.helpText.config(state='normal')
+                self.helpText.delete(1.0, 'end')
+                self.helpText.insert('end', stringlines )
+                self.helpText.config(state='disabled')
 
 	def DoDoubleClickDir(self, event):
 		from posixpath import join
@@ -456,6 +491,15 @@ class FileDialog(ModalDialog):
 
 	def CancelPressed(self):
 		self.TerminateDialog(0)
+
+        def EditPressed(self):
+           import os
+           filename = self.fileNameEntry.get()
+           if os.getenv("EDITOR"): 
+              editor = os.getenv("EDITOR")
+           else:
+              editor = "emacs"
+           os.system("%s %s &" % (editor, filename))
 
 	def GetFileName(self):
 		return self.fileNameEntry.get()

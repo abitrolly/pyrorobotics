@@ -1,7 +1,7 @@
-# --------------------------------------------------------
-# A Braitenberg Vehicle
-# D.S. Blank
-# --------------------------------------------------------
+"""
+A Braitenberg Vehicle for the Khepera
+D.S. Blank
+"""
 
 # import some additional libraries:
 
