@@ -32,9 +32,7 @@ class Avoid (Behavior):
             self.lasttime =  time.mktime(time.localtime())
         else:
             self.count += 1
-            
         # Normally :
-
         close_dist = self.getRobot().getSensorGroup('min', 'front-all')[1]
         close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / (math.pi)
         print "Closest distance =", close_dist, "angle =", close_angl
