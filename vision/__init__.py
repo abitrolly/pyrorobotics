@@ -87,43 +87,41 @@ class PyroImage:
 
 
    def shrink(self, xscale=0.5, yscale='unset'):
-		"""
-		shrink the current image using getShrunkenImage()
-		"""
-		newImage = self.getShrunkenImage(xscale,yscale)
-		self.data = newImage.data
-		self.depth = newImage.depth
-		self.width = newImage.width
-		self.height = newImage.height
-
+      """
+      shrink the current image using getShrunkenImage()
+      """
+      newImage = self.getShrunkenImage(xscale,yscale)
+      self.data = newImage.data
+      self.depth = newImage.depth
+      self.width = newImage.width
+      self.height = newImage.height
+      
    def getShrunkenImage(self, xscale=0.5, yscale='unset'):
-		"""
-		return a shrunken version of the current image
-		if used without arguments, will return a 1/2 scale image
-		if yscale is unspecified, the image is uniformly scaled
-		currently you get wacky results unless you use scale values that
-		fit evenly into 1.0 (i recommend 0.5, 0.333, 0.25, 0.125 ...)
-		"""
-		if yscale=='unset':
-			yscale = xscale
-		newImage = PyroImage(int(xscale*self.width), int(yscale*self.height), 
-												self.depth)
-		xpixels = int(1/xscale)
-		ypixels = int(1/yscale)
-		for y in range(newImage.height):
-			for x in range(newImage.width):
-				for y1 in range(y*ypixels,(y+1)*ypixels):
-					for x1 in range(x*xpixels,(x+1)*xpixels):
-						val1 = self.getVal(x1,y1)
-						val2 = newImage.getVal(x,y)
-						newval = tuple(map(lambda x,y: x+y, val1, val2))
-						newImage.setVal(x,y,newval)
-				val = newImage.getVal(x,y)
-				newval = tuple(map(lambda x, xp=xpixels, yp=ypixels: x/(xp*yp), val))
-				newImage.setVal(x,y,newval)
-		return newImage
-
-
+      """
+      return a shrunken version of the current image
+      if used without arguments, will return a 1/2 scale image
+      if yscale is unspecified, the image is uniformly scaled
+      currently you get wacky results unless you use scale values that
+      fit evenly into 1.0 (i recommend 0.5, 0.333, 0.25, 0.125 ...)
+      """
+      if yscale=='unset':
+         yscale = xscale
+      newImage = PyroImage(int(xscale*self.width), int(yscale*self.height), 
+                           self.depth)
+      xpixels = int(1/xscale)
+      ypixels = int(1/yscale)
+      for y in range(newImage.height):
+         for x in range(newImage.width):
+            for y1 in range(y*ypixels,(y+1)*ypixels):
+               for x1 in range(x*xpixels,(x+1)*xpixels):
+                  val1 = self.getVal(x1,y1)
+                  val2 = newImage.getVal(x,y)
+                  newval = tuple(map(lambda x,y: x+y, val1, val2))
+                  newImage.setVal(x,y,newval)
+            val = newImage.getVal(x,y)
+            newval = tuple(map(lambda x,xp=xpixels,yp=ypixels: x/(xp*yp), val))
+            newImage.setVal(x,y,newval)
+      return newImage
 
    def grayScale(self):
       """
@@ -146,8 +144,6 @@ class PyroImage:
             b = self.data[(w + h * self.width) * self.depth + 2]
             data[w + h * self.width] = (r + g + b) / 3.0
       return data
-   
-
 
    def getColorFilter(self, r, g, b):
       """
@@ -168,8 +164,6 @@ class PyroImage:
             blue = self.get(w,h,2)*b
             newimage.set(w,h,blue,2)
       return newimage
-
-
 
    def display(self):
       """
@@ -241,11 +235,10 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-
-   """
-   reset the image to a specified color
-   """
    def resetToColor(self,r,g,b):
+      """
+      reset the image to a specified color
+      """
       if self.depth == 1:
          raise "cannot set color for a depth 1 image"
       for h in range(self.height):
@@ -254,25 +247,20 @@ class PyroImage:
             self.set(w,h,g,1)
             self.set(w,h,b,2)
 
-
-
    def incr(self, x, y, offset = 0):
       """
       Method to increment a pixel value. offset is r, g, b (0, 1, 2)
       """
       self.data[(x + y * self.width) * self.depth + offset] += 1
 
-
-
-
-   """
-   cropPixels()
-   ------------
-   crops pixels in the amount specified from left, top, right, and bottom
-   if unspecified, right is assumed to be the same as left and bottom the
-   same as top.  if top is unspecified it is assumed to be the same as left
-   """
    def cropPixels(self, l, t='unset', r='unset', b='unset'):
+      """
+      cropPixels()
+      ------------
+      crops pixels in the amount specified from left, top, right, and bottom
+      if unspecified, right is assumed to be the same as left and bottom the
+      same as top.  if top is unspecified it is assumed to be the same as left
+      """
       if t == 'unset':
          t = l
       if r == 'unset':
@@ -312,28 +300,24 @@ class PyroImage:
                self.set(w,h,0,1)
                self.set(w,h,0,2)                              
 
-
-
-
-   """
-   getBitmap()
-   -----------
-   constructs a bitmap from the image based on one of four modes
-   ----------------------
-   the default mode is 'brightness', which only keeps pixels of the
-   brightness specified by cutoff (here cutoff2 is ignored)
-   ----------------------
-   the remaining modes construct bitmaps based on ratioing
-   ('rg/b', 'rb/g', and 'gb/r', with support for the reverse permutation of
-   the first two letters)
-   this is most easily explained with an example, take 'rg/b':
-   at each pixel, we keep it only if r/b > cutoff and if g/b > cutoff2
-   if cutoff2 is unspecified, it is set to cutoff
-   cutoff always applies to the first color and cutoff2 to the second
-   (so if you do 'gr/b' cutoff applies to g and cutoff2 to r)
-   """
-   
    def getBitmap(self, cutoff, cutoff2='unset', mode='brightness'):
+      """
+      getBitmap()
+      -----------
+      constructs a bitmap from the image based on one of four modes
+      ----------------------
+      the default mode is 'brightness', which only keeps pixels of the
+      brightness specified by cutoff (here cutoff2 is ignored)
+      ----------------------
+      the remaining modes construct bitmaps based on ratioing
+      ('rg/b', 'rb/g', and 'gb/r', with support for the reverse permutation of
+      the first two letters)
+      this is most easily explained with an example, take 'rg/b':
+      at each pixel, we keep it only if r/b > cutoff and if g/b > cutoff2
+      if cutoff2 is unspecified, it is set to cutoff
+      cutoff always applies to the first color and cutoff2 to the second
+      (so if you do 'gr/b' cutoff applies to g and cutoff2 to r)
+      """
       if cutoff2 == 'unset':
          cutoff2 = cutoff
 
@@ -385,33 +369,6 @@ class PyroImage:
       else:
          raise "unrecognized mode", mode
       return bitmap
-
-
-
-   """
-   i am keeping this in here for posterity's sake and to avoid pissing anyone
-   off who wrote it.  well, i am sort of keeping this in here...
-   """
-   def filter(self, r, g, b, threshold):
-      raise "this filter() method is obselete\n" \
-            "use getColorFilter() combined with getBitMap() instead"
-      """
-      bitmap = Bitmap(self.width, self.height)
-      for i in range( bitmap.width):
-         for j in range( bitmap.height):
-            redDiff = (self.get(i, j, 0) - r) ** 2
-            greenDiff = (self.get(i, j, 1) - g) ** 2
-            blueDiff = (self.get(i, j, 2) - b) ** 2
-            finalval = 0
-            if redDiff < threshold and \
-               greenDiff < threshold and \
-               blueDiff < threshold:
-               finalval = 1
-            bitmap.set(i, j, finalval, 0)
-      return bitmap
-      """
-
-
 
    def histogram(self, cols = 20, rows = 20, initvals = 0):
       """
