@@ -7,9 +7,6 @@ class SimpleBrain(Brain):
 
    def setup(self, **args):
       print "Loading arg: '%s'" % args.get('my_arg')
-      pose = self.robot.dev.getPose()
-      pose.setPose(5000, 5000, 5)
-      self.robot.dev.moveTo(pose)
       # initialize your vars here!
       
    # Only method you have to define is the step method:
