@@ -93,28 +93,15 @@ class MatrixHinton(Tkinter.Toplevel):
         if not fromAxisLabel=="":
             Tkinter.Label(self, text=fromAxisLabel, bg=self.OUTSIDE_COL).grid(row=2,col=1)
             
-        #scaling selection buttons
-        self.byArea=Tkinter.IntVar()
-        self.byArea.set(1)        
-        buttonFrame = Tkinter.Frame(self, bg=self.OUTSIDE_COL)
-        Tkinter.Label(buttonFrame, bg=self.OUTSIDE_COL, text="Scale by:").grid(col=0,row=1, sticky=Tkinter.W)
-        self.areaButton = Tkinter.Radiobutton(buttonFrame, text="Area", bg=self.OUTSIDE_COL, activebackground=self.OUTSIDE_COL, \
-                                              highlightthickness=0, variable=self.byArea, value=1, command=self.updateScaling, state=Tkinter.ACTIVE)
-        self.areaButton.grid(col=0,row=2, sticky=Tkinter.W)
-        self.areaButton.invoke()
-        sideButton = Tkinter.Radiobutton(buttonFrame, text="Side Length", bg=self.OUTSIDE_COL, activebackground=self.OUTSIDE_COL, \
-                                         highlightthickness=0, variable=self.byArea, value=0,command=self.updateScaling)
-        sideButton.grid(col=0,row=3, sticky=Tkinter.W)
-
         #show values checkbox
+        buttonFrame = Tkinter.Frame(self, bg="white")
         self.showValues = Tkinter.IntVar()
         self.showValues.set(0)
-        Tkinter.Label(buttonFrame, bg=self.OUTSIDE_COL, text="Options:").grid(col=0, row=4, sticky=Tkinter.W)
+        Tkinter.Label(buttonFrame, bg=self.OUTSIDE_COL, text="Options:").grid(col=0, row=1, sticky=Tkinter.W)
         self.valueButton = Tkinter.Checkbutton(buttonFrame, text="Show Values", bg=self.OUTSIDE_COL, activebackground=self.OUTSIDE_COL, \
                                                highlightthickness=0, variable=self.showValues, command=self.updateLabels)
-        self.valueButton.grid(col=0, row=5, sticky=Tkinter.W)
-        buttonFrame.grid(col=2, row=1, rowspan=2, sticky=Tkinter.N)
-                         
+        self.valueButton.grid(col=0, row=1, sticky=Tkinter.W)
+        buttonFrame.grid(col=1, row=3, columnspan=2, sticky=Tkinter.N)
 
         diagFrame = Tkinter.Frame(self, bg="white")
         #create the specific data labels
@@ -128,7 +115,7 @@ class MatrixHinton(Tkinter.Toplevel):
         for i in xrange(len(weightMatrix)):
             tempRectList = []
             for j in xrange(len(weightMatrix[i])):
-                tempRectList += [HintonBlock(diagFrame, blockSize, self.weightMatrix[i][j], self.maxAbs, areaScaling=self.byArea)]
+                tempRectList += [HintonBlock(diagFrame, blockSize, self.weightMatrix[i][j], self.maxAbs)]
                 tempRectList[-1].grid(col=i+1, row=j)
             self.rectMatrix += [tempRectList]
         diagFrame.grid(row=1,col=1)

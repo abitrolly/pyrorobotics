@@ -52,6 +52,7 @@ class TwoDimPlot(Tkinter.Toplevel):
         for xLoc in xrange (self.plotWidth/self.xNumTicks, self.plotWidth+1, self.plotWidth/self.xNumTicks):
             self.xAxisCanvas.create_line(xLoc, 0, xLoc, self.TICK_LENGTH)
             self.xTickLabels += [self.xAxisCanvas.create_text(xLoc, self.TICK_LENGTH, anchor=Tkinter.N, text="%.2g"%(xLoc*self.xMax/self.plotWidth))]
+
         self.xAxisCanvas.create_line(0,0,self.plotWidth,0)
         self.xAxisCanvas.grid(row=2, col=2, columnspan=2)
         # end x axis ticks and tick labels
@@ -160,9 +161,7 @@ class TwoDimPlot(Tkinter.Toplevel):
         """
         Relabels the x axis.  Useful if the scaling of the x axis changes.
         """
-        newLabels = [0]*self.xNumTicks
-        for i in xrange(0, self.xNumTicks):
-            newLabels[i] = self.xMax*float(i+1)/self.xNumTicks
+        newLabels = [self.xMax*float(i+1)/self.xNumTicks for i in xrange(self.xNumTicks)]
         for i in xrange(len(self.xTickLabels)):
             self.xAxisCanvas.itemconfig(self.xTickLabels[i], text="%.2g"%(newLabels[i]))
 
@@ -208,7 +207,15 @@ class TwoDimPlot(Tkinter.Toplevel):
                 if self.plotArea.type(item) == "line":
                     self.plotArea.itemconfig(item, fill="black")
             self.linesOn = 1
-            
+
+    def clearData(self):
+        self.plotData = []
+        self.xMax = 1.0
+        self.yMax = 1.0
+        self.relabelXAxis()
+        self.relabelYAxis()
+        self.redrawAll()
+        
 if __name__ == "__main__":
     test = TwoDimPlot(Tkinter.Tk(), plotName="TestPlot",xTitle="XLabel", yTitle="YLabel", plotHeight=556, plotWidth=647)
     for i in xrange(20):
