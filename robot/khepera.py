@@ -79,7 +79,7 @@ class KheperaRobot(Robot):
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda self: 'khepera'
-        self.senses['robot']['units'] = lambda self: 'CM'
+        self.senses['robot']['units'] = lambda self: 'ROBOTS'
 
 	self.senses['robot']['name'] = lambda self: 'khepera-1'
 
