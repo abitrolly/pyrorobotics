@@ -11,7 +11,6 @@ class CameraThread(threading.Thread):
     A camera thread class, because Aibo feeds it to us
     as fast as we can eat em!
     """
-        
     def __init__(self, runable):
         """
         Constructor, setting initial variables
@@ -44,7 +43,7 @@ class AiboCamera(Camera):
       """
       """
       self.robot = robot
-      self.robot.setRemoteControl("RawCamServer", "on")
+      self.robot.setRemoteControl("Raw Cam Server", "on")
       time.sleep(1)
       self.cameraDevice = Aibo( self.robot.host )
       # connect vision system: --------------------------
