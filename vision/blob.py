@@ -139,9 +139,16 @@ class Camera(Image):
       Update method for getting next sequence in simulated video camera.
       This will loop when it gets to the end.
       """
-      if not file_exists("/usr/local/pyro/vision/snaps/som-%d.ppm" % self.count):
+      from os import getenv
+      pyrodir = getenv('PYRO')
+      
+      if not file_exists(pyrodir + "/vision/snaps/som-%d.ppm" % self.count):
          self.count = 0
-      self.loadFromFile("/usr/local/pyro/vision/snaps/som-%d.ppm" % self.count)
+      if not file_exists(pyrodir + "/vision/snaps/som-%d.ppm" % self.count):
+         import sys
+         print "Can't find $PYRO/vision/snaps/ images!"
+         sys.exit(1)
+      self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
 
 class Bitmap(Image):
@@ -250,7 +257,9 @@ if __name__ == '__main__':
    blob.display()
    # test 2
    image = Image(0, 0)
-   image.loadFromFile("/usr/local/pyro/vision/snaps/som-1.ppm")
+   from os import getenv
+   pyrodir = getenv('PYRO')
+   image.loadFromFile(pyrodir + "/vision/snaps/som-1.ppm")
    image.saveToFile("test.ppm")
    image.grayScale()
    image.saveToFile("testgray.ppm")
