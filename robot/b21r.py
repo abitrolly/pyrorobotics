@@ -23,20 +23,16 @@ class B21RRobot(Robot):
         self.stallHistorySize = 5
         self.stallHistory = [0] * self.stallHistorySize
         self.sensorSet = {'all': range(180),
-                          'front' : range(70, 110), 
-                          'front-left' : range(135, 180), 
-                          'front-right' :range (0, 45),
+                          'front' : range(80, 100), 
+                          'front-left' : range(90, 135), 
+                          'front-right' :range (45,90),
                           'front-all' : range(45, 135),
-                          'left' : (0, ), 
-                          'right' : (5, ), 
-                          'left-front' : (0, ), 
-                          'right-front' : (5, ), 
-                          'left-back' : (7, ), 
-                          'right-back' : (6, ), 
-                          'back-left' : (7, ), 
-                          'back-right' : (6, ), 
-                          'back-all' : (6, 7), 
-                          'back' : (6, 7)} 
+                          'left' : range(135,180),
+                          'right' : range(45), 
+                          'back-left' : (), 
+                          'back-right' : (), 
+                          'back-all' : (), 
+                          'back' : ()} 
         self.senseData = {}
         self.lastTranslate = 0
         self.lastRotate = 0
@@ -49,16 +45,16 @@ class B21RRobot(Robot):
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
         self.senses['robot']['z'] = self.getZ
-        self.senses['robot']['radius'] = lambda self: 55.0 # in MM
+        self.senses['robot']['radius'] = lambda self: 6000.0 # in MM
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda self: 'b21r'
-        self.senses['robot']['units'] = lambda self: 'CM'
+        self.senses['robot']['units'] = lambda self: 'METERS'
 
 	self.senses['robot']['name'] = lambda self, x = name: x
 
 	self.senses['sonar'] = {}
-	self.senses['sonar']['count'] = lambda self: 8
+	self.senses['sonar']['count'] = lambda self: 16
 	self.senses['sonar']['type'] = lambda self: 'range'
 
 	# location of sensors' hits:
@@ -100,8 +96,7 @@ class B21RRobot(Robot):
 	self.senses['laser']['oz'] = lambda self, pos: 0.03 # meters
 	self.senses['laser']['th'] = self.laser_th
         # in radians:
-        self.senses['laser']['arc'] = lambda self, pos, \
-                                      x = (15 * math.pi / 180) : x
+        self.senses['laser']['arc'] = lambda self, pos : 1
 
         self.senses['self'] = self.senses['robot']
         self.senses['range'] = self.senses['laser']
@@ -272,7 +267,7 @@ class B21RRobot(Robot):
         elif units == 'METERS':
             return mm / 1000.0
         elif units == 'ROBOTS':
-            return mm / 8000
+            return mm / 6000
         
     def rawToUnits(self, dev, raw, name, units = None):
         if units == None:
@@ -286,7 +281,7 @@ class B21RRobot(Robot):
         else:
             raise 'InvalidType', "Type is invalid"
         if units == "ROBOTS":
-            return mm / 8000.0 # b21r is about 8000mm diameter
+            return mm / 6000.0 # b21r is about 6000mm diameter
         elif units == "MM":
             return mm
         elif units == "RAW":
