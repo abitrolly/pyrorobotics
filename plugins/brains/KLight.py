@@ -12,10 +12,13 @@ from math import fabs
 
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
+   def __init__(self, name, robot):
+      Brain.__init__(self, name, robot)
+      self.getRobot().set('light', 'units', 'SCALED')
 
    def step(self):
-       left = self.robot.get('light', 'value', 1)  # Khepera specific
-       right = self.robot.get('light', 'value', 4) # Khepera specific
+       left = self.robot.get('light', 1)  # Khepera specific
+       right = self.robot.get('light', 4) # Khepera specific
 
        print "Right:", right, "Left:", left
 
