@@ -306,9 +306,9 @@ class FakeCamera(V4LGrabber):
       #replace characters
       self.fstring = "%%0%dd" % len(self.match.group())
       self.current = start
-      currname = self.pattern[:self.match.start()] + \ #$`
+      currname = self.pattern[:self.match.start()] + \ #$
                  self.fstring % self.current + \       #the substitution
-                 self.pattern[self.match.end():]       #$'
+                 self.pattern[self.match.end():]       #$
       self.width, self.height, self.depth, self.cbuf = fake_grab_image(currname)
       if self.depth == 8:
          self.color = 0
