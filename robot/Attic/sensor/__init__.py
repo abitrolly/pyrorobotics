@@ -1,9 +1,13 @@
 """ All sensors should derive from here. """
 
+import types
+
 class Sensor:
     """
     Base class for all sensors.
     """
+    RAWUNITS = ["MM", "CM", "METERS"]
+    UNITS = ["SCALED", "ROBOTS"] + RAWUNITS
     def __init__(self):
         self.units = "ROBOTS"
         self.data = []
@@ -20,10 +24,14 @@ class Sensor:
     def getMaxValue(self):       # in rawUnits
         return self.maxValue
     def setRawUnits(self, units):
+        if units not in Sensor.RAWUNITS:
+            raise ValueError
         self.rawUnits = units
     def getRawUnits(self):
         return self.rawUnits
     def setUnits(self, units):
+        if units not in Sensor.UNITS:
+            raise ValueError
         self.units = units # reporting units
     def getUnits(self):
         return self.units
@@ -57,18 +65,21 @@ class Sensor:
             raise TypeError, "'%s' is not a valid unit type" % self.rawUnits
     # --------------------------------------------------
     def getType(self):
-        pass
+        raise NotImplementedError
     def getX(self):
-        pass
+        return 0.0
     def getY(self):
-        pass
+        return 0.0
     def getZ(self):
         return 0.0
     def update(self):
-        pass
+        raise NotImplementedError
     def draw(self, renderer = None, options = {}):
         pass
-        
+    def check(self):
+        # call those things that can raise and exception:
+        self.getType()
+        self.update()
     
 class RangeSensor(Sensor):
     """
@@ -76,56 +87,70 @@ class RangeSensor(Sensor):
     """
     def __init__(self):
         Sensor.__init__(self)
-
+        self.rangeData = []
     def getCount(self):
-        pass
-    def getMaxValue(self):
-        pass
-    def getUnits(self):
-        pass
+        raise NotImplementedError
     def getData(self):
-        pass
+        raise NotImplementedError
     def getDataByPos(self, pos):
-        pass
-    
+        raise NotImplementedError
     def getXHitByPos(self, pos):
-        pass
+        raise NotImplementedError
     def getYHitByPos(self, pos):
-        pass
+        raise NotImplementedError
     def getZHitByPos(self, pos):
-        pass
-    
+        raise NotImplementedError
     def getXOrigByPos(self, pos):
-        pass
+        raise NotImplementedError
     def getYOrigByPos(self, pos):
-        pass
+        raise NotImplementedError
     def getZOrigByPos(self, pos):
-        pass
-
+        raise NotImplementedError
     def getThetaByPos(self, pos):
-        pass
+        raise NotImplementedError
     def getArcByPos(self, pos):
-        pass
+        raise NotImplementedError
+
+    def check(self):
+        Sensor.check(self)
+        self.getCount()
+        self.getMaxValue()
+        self.getUnits()
+        self.getData()
+        self.getDataByPos(0)
+        self.getXHitByPos(0)
+        self.getYHitByPos(0)
+        self.getZHitByPos(0)
+        self.getXOrigByPos(0)
+        self.getYOrigByPos(0)
+        self.getZOrigByPos(0)
+        self.getThetaByPos(0)
+        self.getArcByPos(0)
+
 
 if __name__ == '__main__':
 
     s = Sensor()
-    s.setRobotDiameter(34)
-    s.setMaxValue(50)
+    s.setRobotDiameter(10)
+    s.setMaxValue(25)
+    print "Robot diameter is", s.robotDiameter
+    print "MaxValue is", s.maxValue
     for rawunits in ("METERS", "MM", "CM"):
         s.setRawUnits(rawunits)
         for units in ("METERS", "MM", "CM", "ROBOTS", "SCALED"):
             s.setUnits(units)
-            print "raw", rawunits, "units", units
-            print 12, rawunits, "is", s.rawToUnits(12), units
-            print 12, rawunits, "is", s.rawToUnits(12, "METERS"), "METERS"
-            print 12, rawunits, "is", s.rawToUnits(12, "CM"), "CM"
-            print 12, rawunits, "is", s.rawToUnits(12, "MM"), "MM"
-            print 12, rawunits, "is", s.rawToUnits(12, "ROBOTS"), "ROBOTS"
-            print 12, rawunits, "is", s.rawToUnits(12, "SCALED"), "SCALED"
-            print 12, "MM", "is", s.mmToUnits(12, "METERS"), "METERS"
-            print 12, "MM", "is", s.mmToUnits(12, "CM"), "CM"
-            print 12, "MM", "is", s.mmToUnits(12, "MM"), "MM"
-            print 12, "MM", "is", s.mmToUnits(12, "ROBOTS"), "ROBOTS"
-            print 12, "MM", "is", s.mmToUnits(12, "SCALED"), "SCALED"
+            val = 5
+            print "raw = ", rawunits, "units = ", units
+            print val, rawunits, "is", s.rawToUnits(val), units
+            print val, rawunits, "is", s.rawToUnits(val, "METERS"), "METERS"
+            print val, rawunits, "is", s.rawToUnits(val, "CM"), "CM"
+            print val, rawunits, "is", s.rawToUnits(val, "MM"), "MM"
+            print val, rawunits, "is", s.rawToUnits(val, "ROBOTS"), "ROBOTS"
+            print val, rawunits, "is", s.rawToUnits(val, "SCALED"), "SCALED"
+            print val, "MM", "is", s.mmToUnits(val, "METERS"), "METERS"
+            print val, "MM", "is", s.mmToUnits(val, "CM"), "CM"
+            print val, "MM", "is", s.mmToUnits(val, "MM"), "MM"
+            print val, "MM", "is", s.mmToUnits(val, "ROBOTS"), "ROBOTS"
+            print val, "MM", "is", s.mmToUnits(val, "SCALED"), "SCALED"
             print "==========================================="
+    #s.check()
