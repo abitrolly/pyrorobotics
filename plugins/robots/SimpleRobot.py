@@ -9,7 +9,7 @@ class SimpleRobot(Robot):
     # This method handles the engine when it tries to stop
     # the robot. 
     def act(self, action = '', value1 = '', value2 = ''):
-        print "Acting: action =", action, "v1 =", value1, "v2 =", value2
+        #print "Acting: action =", action, "v1 =", value1, "v2 =", value2
         pass
     
     def __init__(self):

@@ -5,7 +5,7 @@
 # with a rule for building it, and a cleanall rule for, well, cleaining
 
 LIB=csom_src
-TARGET=csom.so
+TARGET=_csom.so
 
 # -----------------------
 
@@ -17,7 +17,7 @@ $(LIB)/$(TARGET):
 	(cd $(LIB) && make $(TARGET))
 
 clean::
-	rm -f $(TARGET)
+	$(RM) $(TARGET) 
 
 cleanall::
 	(make clean && cd $(LIB) && make cleanall)

@@ -11,8 +11,8 @@ def file_exists(file_name):
 
 def ask(question, default, filecheck = 1):
    done = 0
+   print "-------------------------------------------------------------------"
    while not done:
-      print "-----------------------"
       print question
       print '[' + default + ']: ',
       retval = raw_input()

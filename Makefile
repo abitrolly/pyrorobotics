@@ -48,7 +48,3 @@ plugins/simulators/Khepera: build/Khepera Makefile
 	cat build/Khepera >> plugins/simulators/Khepera
 	chmod a+x plugins/simulators/Khepera
 
-cleanall::
-	$(RM) Makefile.cfg
-	rm -rf `find . | grep \.pyc$$`
-	rm -rf `find . | grep ~$$`

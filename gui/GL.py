@@ -33,7 +33,7 @@ class GLgui(gui):
       self.history = []
       self.history_pointer = 0
       self.lasttime = 0
-      self.update_interval = 0.33
+      self.update_interval = 0.10
       self.update_interval_detail = 1.0
 
       #store the gui structure in something nice insted of python code
@@ -55,6 +55,10 @@ class GLgui(gui):
                         ['Right',self.stepRight],
                         ['Stop',self.stopEngine],
                         ['Update',self.update]
+                        ]),
+              ('View', [['Fast Update 10/sec',self.fastUpdate],
+                        ['Medium Update 3/sec',self.mediumUpdate],
+                        ['Slow Update 1/sec',self.slowUpdate]
                         ]),
               ('Help',[['Help',system.help],
                        ['Usage',system.usage],
@@ -118,6 +122,15 @@ class GLgui(gui):
       self.status.pack(side=BOTTOM, fill=X)
       self.init()
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def fastUpdate(self):
+      self.update_interval = 0.10
+
+   def mediumUpdate(self):
+      self.update_interval = 0.33
+
+   def slowUpdate(self):
+      self.update_interval = 1.0
 
    def update(self):
       if self.engine != 0:
@@ -264,7 +277,8 @@ class GLgui(gui):
             try:
                self.win.tkRedraw()
                while self.win.tk.dooneevent(2): pass
-            except: self.done = 1
+            except:
+               self.done = 1
             sleep(self.update_interval)
       else:
          self.win.mainloop()
@@ -327,6 +341,8 @@ class GLgui(gui):
    def redraw(self, win = 0):
       glClearColor(0.5, 0.5, 0.5, 0)
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+      #glLoadIdentity()
+      #self.resize(self.width, self.height)
       f = GenericStream()
       r = StreamRenderer(f)
       self.draw({}, r)
@@ -334,6 +350,21 @@ class GLgui(gui):
       s = StreamTranslator(f, GLRenderer())
       s.process()
       f.close()
+      self.textView()
+      self.bitmapString(1, self.height - 30, "X:", (0, 0, 0))
+      self.bitmapString(1, self.height - 60, "Y:", (0, 0, 0))
+      self.bitmapString(1, self.height - 90, "Th:", (0, 0, 0))
+      if self.engine != 0 and self.engine.robot != 0:
+         self.bitmapString(1, self.height - 30, "    %.2f" % self.engine.robot.get('robot', 'x'), (1, 0, 0))
+         self.bitmapString(1, self.height - 60, "    %.2f" % self.engine.robot.get('robot', 'y'), (1, 0, 0))
+         self.bitmapString(1, self.height - 90, "      %.2f" % self.engine.robot.get('robot', 'th'), (1, 0, 0))
+      else:
+         self.bitmapString(1, self.height - 30, "    0.0", (1, 0, 0))
+         self.bitmapString(1, self.height - 60, "    0.0", (1, 0, 0))
+         self.bitmapString(1, self.height - 90, "      0.0", (1, 0, 0))
+      # ----------------------------------------------------------
+      # This doesn't get updated as often:
+      # ----------------------------------------------------------      
       current = time()
       if current - self.lasttime < self.update_interval_detail: return
       self.lasttime = current
@@ -346,6 +377,20 @@ class GLgui(gui):
             #Window's closed; remove the plot from the redraw list
             print "Removing"
             self.engine.plot.remove(p)
+
+   def textView(self):
+      glViewport(0,0,self.width,self.height)
+      glMatrixMode(GL_PROJECTION)
+      glLoadIdentity()
+      glOrtho(0.0, self.width - 1.0, 0.0, self.height - 1.0, -1.0, 1.0)
+      glMatrixMode(GL_MODELVIEW)
+      glLoadIdentity()
+
+   def bitmapString(self, x, y, str, color):
+      glColor3fv(color)
+      glRasterPos2f(x, y)
+      for i  in range(len(str)):
+         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(str[i]))
 
 if __name__ == '__main__':
    gui = GLgui(Engine())

@@ -12,7 +12,7 @@
 # OBJDIR is the relative path to your c project directory to the
 #   interface project directory
 
-OBJS=csom.so
+OBJS=_csom.so
 INTERFACE=som_pak.i
 MYOBJS:=som_devrobs.o lvq_pak.o som_rout.o datafile.o fileio.o version.o labels.o
 OBJLIB=som_pak-dev
@@ -42,7 +42,7 @@ $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && make $(@F)) 
 
 clean::
-	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core
+	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core csom.py
 
 cleanall::
 	(make clean && cd $(OBJLIB) && make clean)
