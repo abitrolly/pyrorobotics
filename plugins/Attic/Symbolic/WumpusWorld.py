@@ -127,6 +127,8 @@ class GUI(Tkinter.Toplevel):
             retval = "%d" % self.arrow
         elif request == 'score':
             retval = "%d" % self.score
+        elif request == 'alive':
+            retval = "%d" % (not self.dead)
         elif request == 'reset':
             self.initWorld()
             retval = "ok"
