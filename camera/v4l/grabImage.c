@@ -509,10 +509,13 @@ int getBlobArea( Blob *b )
   return( getBlobWidth( b ) * getBlobHeight( b ) );
 }
 
+/* not correct, 1 pixel is very dense.  */
+/*
 float getBlobDensity( Blob *b )
 {
   return( (float)b->mass / (float)getBlobArea( b ) );
 }
+*/
 
 static PyObject *blobify(PyObject *self, PyObject *args)
 {
@@ -546,7 +549,7 @@ static PyObject *blobify(PyObject *self, PyObject *args)
   PyObject *tuple;
   
   if(!PyArg_ParseTuple(args, "iiiiiii", &channel, &low, 
-		       &high, &sortmethod,&drawBox, &width, &height))
+		       &high, &sortmethod, &drawBox, &width, &height))
     {
       PyErr_SetString(PyExc_TypeError, "Invalid arguments to blobify");
       return NULL;
@@ -691,15 +694,16 @@ static PyObject *blobify(PyObject *self, PyObject *args)
 	  if(getBlobArea(&bloblist[n]) > getBlobArea(&bloblist[maxBlobIndex]))
 	    maxBlobIndex=n;
       break;
-  
-    case 2: /* Max Density */
-      for(n=1;n<MAXBLOBS;n++)
-	if(bloblist[n].mass != 0)
+      /*  
+	  case 2: /* Max Density *
+	  for(n=1;n<MAXBLOBS;n++)
+	  if(bloblist[n].mass != 0)
 	  if(getBlobDensity(&bloblist[n]) > getBlobDensity(&bloblist[maxBlobIndex]))
-	    maxBlobIndex=n;
-      break;
-  }
-  
+	  maxBlobIndex=n;
+	  break;
+	  }
+      */
+      
   image=map;
   if(drawBox)
     {
@@ -1109,7 +1113,6 @@ static PyObject *gaussian_blur(PyObject *self, PyObject *args)
   return PyInt_FromLong(0L);
 
 } 
-
 
 static PyObject *save_image(PyObject *self, PyObject *args)
 {
