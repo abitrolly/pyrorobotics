@@ -231,6 +231,12 @@ class gui(Drawable):
       f = self.fileloaddialog("simulators","*")
       self.redraw()
       if f != '':
+         if worldfile == '':
+            if f[-5:] == 'Stage':
+               worldfile = self.fileloaddialog("worlds","*", "/usr/local/stage/worlds")
+            elif f[-4:] == 'Aria':
+               worldfile = self.fileloaddialog("worlds","*", "/usr/local/Aria/worlds")
+         self.engine.worldfile = worldfile
          import os
          os.system(f + " " + worldfile + " &")
          self.redraw()

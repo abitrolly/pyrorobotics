@@ -329,38 +329,59 @@ class TKgui(gui):
                self.textArea['Camera:'].config(text = self.engine.camerafile)
             # enable?
             if self.textArea["Brain:"]["text"]:
-               self.textArea["Brain:"]["state"] = 'normal'
+               if self.textArea["Brain:"]["state"] == 'disabled':
+                  self.textArea["Brain:"]["state"] = 'normal'
             else:
-               self.textArea["Brain:"]["state"] = 'disable'
+               if self.textArea["Brain:"]["state"] != 'disabled':
+                  self.textArea["Brain:"]["state"] = 'disabled'
             if self.textArea["Simulator:"]["text"]:
-               self.textArea["Simulator:"]["state"] = 'normal'
+               if self.textArea["Simulator:"]["state"] == 'disabled':
+                  self.textArea["Simulator:"]["state"] = 'normal'
             else:
-               self.textArea["Simulator:"]["state"] = 'disable'
+               if self.textArea["Simulator:"]["state"] != 'disabled':
+                  self.textArea["Simulator:"]["state"] = 'disabled'
             if self.textArea["Robot:"]["text"]:
-               self.textArea["Robot:"]["state"] = 'normal'
+               if self.textArea["Robot:"]["state"] == 'disabled':
+                  self.textArea["Robot:"]["state"] = 'normal'
             else:
-               self.textArea["Robot:"]["state"] = 'disable'
+               if self.textArea["Robot:"]["state"] != 'disabled':
+                  self.textArea["Robot:"]["state"] = 'disabled'
             if self.textArea["Camera:"]["text"]:
-               self.textArea["Camera:"]["state"] = 'normal'
+               if self.textArea["Camera:"]["state"] == 'disabled':
+                  self.textArea["Camera:"]["state"] = 'normal'
             else:
-               self.textArea["Camera:"]["state"] = 'disable'
+               if self.textArea["Camera:"]["state"] != 'disabled':
+                  self.textArea["Camera:"]["state"] = 'disabled'
             # Buttons?
             if self.textArea["Robot:"]["text"]:
-               self.buttonArea["Camera:"]["state"] = 'normal'
-               self.buttonArea["Brain:"]["state"] = 'normal'
-               self.goButtons['Reload']["state"] = 'normal'
+               if self.buttonArea["Camera:"]["state"] == 'disabled':
+                  self.buttonArea["Camera:"]["state"] = 'normal'
+               if self.buttonArea["Brain:"]["state"] == 'disabled':
+                  self.buttonArea["Brain:"]["state"] = 'normal'
+               if self.goButtons['Reload']["state"] == 'disabled':
+                  self.goButtons['Reload']["state"] = 'normal'
             else:
-               self.buttonArea["Camera:"]["state"] = 'disable'
-               self.buttonArea["Brain:"]["state"] = 'disable'
-               self.goButtons['Reload']["state"] = 'disable'               
+               if self.buttonArea["Camera:"]["state"] != 'disabled':
+                  self.buttonArea["Camera:"]["state"] = 'disabled'
+               if self.buttonArea["Brain:"]["state"] != 'disabled':
+                  self.buttonArea["Brain:"]["state"] = 'disabled'
+               if self.goButtons['Reload']["state"] != 'disabled':
+                  self.goButtons['Reload']["state"] = 'disabled'
             if self.textArea["Brain:"]["text"]:
-               self.goButtons['Run']["state"] = 'normal'
-               self.goButtons['Step']["state"] = 'normal'
-               self.goButtons['Stop']["state"] = 'normal'
+               if self.goButtons['Run']["state"] == 'disabled':
+                  self.goButtons['Run']["state"] = 'normal'
+               if self.goButtons['Step']["state"] == 'disabled':
+                  self.goButtons['Step']["state"] = 'normal'
+               if self.goButtons['Stop']["state"] == 'disabled':
+                  self.goButtons['Stop']["state"] = 'normal'
             else:
-               self.goButtons['Run']["state"] = 'disable'
-               self.goButtons['Step']["state"] = 'disable'
-               self.goButtons['Stop']["state"] = 'disable'               
+               if self.goButtons['Run']["state"] != 'disabled':
+                  self.goButtons['Run']["state"] = 'disabled'
+               if self.goButtons['Step']["state"] != 'disabled':
+                  self.goButtons['Step']["state"] = 'disabled'
+               if self.goButtons['Stop']["state"] != 'disabled':
+                  self.goButtons['Stop']["state"] = 'disabled'
+            # -----------------------
             if self.engine.robot != 0:
                if self.engine.robot.get('self', 'stall'):
                   bump = "[BUMP!]"
@@ -378,13 +399,16 @@ class TKgui(gui):
             while self.win.tk.dooneevent(2): pass
             sleep(self.update_interval)
 
-   def fileloaddialog(self, filetype, skel):
+   def fileloaddialog(self, filetype, skel, startdir = ''):
       from string import replace
       import pyro
       from os import getcwd, getenv, chdir
       retval = ""
       cwd = getcwd()
-      chdir(pyro.pyrodir() + "/plugins/" + filetype)
+      if startdir == '':
+         chdir(pyro.pyrodir() + "/plugins/" + filetype)
+      else:
+         chdir(startdir)
       d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel)
       if d.Show() == 1:
          doc = d.GetFileName()
