@@ -652,30 +652,25 @@ static PyObject *blobify(PyObject *self, PyObject *args)
     {
       for(i=0; i<height; i++ )
 	for(j=0; j<width; j++,image+=3 )
-	  for(k=0;k<size;k++)
-	    {
-	      if(blobdata[i][j] == maxIndex[k])
-	      {
-		*(image+offset) = high;
-		*(image+mark1) = 0;
-		*(image+mark2) = 0;
-		
-	      }
-	  
-	      if(bloblist[maxIndex[k]].mass > 0 )
-		if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
-		    (i == bloblist[maxIndex[k]].ul.y || i == bloblist[maxIndex[k]].lr.y)) ||
-		   ((j == bloblist[maxIndex[k]].ul.x || j == bloblist[maxIndex[k]].lr.x) &&
-		    (i >= bloblist[maxIndex[k]].ul.y && i <= bloblist[maxIndex[k]].lr.y)))
-		  {
-		    *(image+offset) = 255;
-		    *(image+mark1) = 255;
-		    *(image+mark2) = 255;
-		  }
+	  for(k=0;k<size;k++) {
+	    if(blobdata[i][j] == maxIndex[k]) {
+	      *(image+offset) = high;
+	      *(image+mark1) = 0;
+	      *(image+mark2) = 0;
 	    }
-    }
-  
-
+	    if(bloblist[maxIndex[k]].mass > 0 )
+	      if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
+		  (i == bloblist[maxIndex[k]].ul.y || i == bloblist[maxIndex[k]].lr.y)) ||
+		 ((j == bloblist[maxIndex[k]].ul.x || j == bloblist[maxIndex[k]].lr.x) &&
+		  (i >= bloblist[maxIndex[k]].ul.y && i <= bloblist[maxIndex[k]].lr.y)))
+		{
+		  *(image+offset) = 255;
+		  *(image+mark1) = 255;
+		  *(image+mark2) = 255;
+		}
+	  }
+    }      
+ 
 
   switch(size)
     {
@@ -744,6 +739,28 @@ static PyObject *blobify(PyObject *self, PyObject *args)
   return tuple; 
 }  
 
+
+void draw_rectange(PyObject *self, PyObject *args) {
+
+  int x1, y1, x1, y1;
+  int fill, red, green, blue;
+  int height, width;
+  unsigned char *image;
+
+  if(!PyArg_ParseTuple(args, "iiiiiiiiii", &x1, &y1, &x2, &y2, 
+		       &width, &height, &red, &green, &blue, &fill)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to draw_rectangle");
+    return NULL;
+  }
+  image = map;
+  for(int i=0; i<height; i++ ) {
+    for(int j=0; j<width; j++,image+=3 ) {
+      *(image+offset) = 255;
+      *(image+mark1) = 255;
+      *(image+mark2) = 255;
+    }
+  }
+}
 
 static PyObject *mean_blur(PyObject *self, PyObject *args)
 {
