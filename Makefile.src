@@ -1,0 +1,46 @@
+# author: Douglas Blank
+
+# What version of Python do you want to build Pyro for?
+PYTHON_VERSION=2.1
+
+# Where is this version of Python?
+PYTHON_INCLUDE=-I/usr/include/python$(PYTHON_VERSION)
+
+# Where is Saphira? Leave empty if you don't want to build
+# Saphira-related items.
+SAPHIRA=/usr/local/saphira/ver62
+
+# Where are X11 files (such as include directory)?
+X11_DIR = /usr/X11
+
+# -----------------------------------------------------
+# You shouldn't need to change anything below this line
+# -----------------------------------------------------
+
+PYRO_VERSION = 0.8.3
+PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
+
+.PHONY: $(SUBDIRS) clean cleanall all
+
+all:: $(SUBDIRS) $(OBJS)
+
+$(SUBDIRS):
+	(cd $@; $(MAKE))
+
+clean:
+	- $(RM) *.o *.bak core *~
+ifeq ($(SUBDIRS),)
+else
+	@for i in $(SUBDIRS); do\
+		(cd $$i; $(MAKE) clean); \
+	done
+endif
+
+cleanall: 
+	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
+ifeq ($(SUBDIRS),)
+else
+	@for i in $(SUBDIRS); do\
+		(cd $$i; $(MAKE) cleanall); \
+	done
+endif
