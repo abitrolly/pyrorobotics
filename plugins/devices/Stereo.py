@@ -4,17 +4,17 @@ from pyro.camera.v4l import V4LGrabber
 from pyro.vision.cvision import VisionSystem
 
 def INIT(robot):
-    if robot.get("self", "name") == "Aria":
+    if robot.get("/robot/name") == "Aria":
         # Pioneers. You may have to set channel by hand to one that works
         ch = 0 # channel
     else:
         # For framegrabbers:
         # Channel -  0: television; 1: composite; 2: S-Video
         ch = 1 # channel
-    return {"video0" : V4LGrabber( 160, 120, device = "/dev/video0",
+    return {"camera" : V4LGrabber( 160, 120, device = "/dev/video0",
                                   channel = ch,
                                   visionSystem = VisionSystem()),
-	    "video1" : V4LGrabber( 160, 120, device = "/dev/video1",
+	    "camera" : V4LGrabber( 160, 120, device = "/dev/video1",
                                   channel = ch,
                                   visionSystem = VisionSystem())}
 

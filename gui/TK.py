@@ -7,9 +7,6 @@ from pyro.system.version import *
 from pyro.engine import *
 import pyro.system as system
 import pyro.system.share as share
-from pyro.gui.drawable import *
-from pyro.gui.renderer.tk import *
-from pyro.gui.renderer.streams import *
 
 # A TK gui
 
@@ -88,8 +85,8 @@ class TKgui(Tkinter.Toplevel, gui):
       button1 = [('Step',self.stepEngine),
                  ('Run',self.runEngine),
                  ('Stop',self.stopEngine),
-                 ('Reload',self.resetEngine),
-                 ('View', self.openBrainWindow)
+                 ('Reload Brain',self.resetEngine),
+                 #('View', self.openBrainWindow)
                  ]
 
       # create menu
@@ -106,9 +103,9 @@ class TKgui(Tkinter.Toplevel, gui):
       # create a command text area:
       self.makeCommandArea()
       # Display:
-      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld),
-                         ('button', 'Robot:', self.loadRobot, self.editRobot),
-                         ('button', 'Brain:', self.loadBrain, self.editBrain),
+      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld, False),
+                         ('button', 'Robot:', self.loadRobot, self.editRobot, self.showAll),
+                         ('button', 'Brain:', self.loadBrain, self.editBrain, self.openBrainWindow),
                         ]
       self.buttonArea = {}
       self.textArea = {}
@@ -124,11 +121,12 @@ class TKgui(Tkinter.Toplevel, gui):
          self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = "yes", anchor="n")
       toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "no")
       ## ----------------------------------
-      self.makeRow(('status', 'Pose:', '', ''))
+      self.makeRow(('status', 'Pose:', '', '', False))
       ## ----------------------------------
       self.textframe = Tkinter.Frame(self.frame)
       self.textframe.pack(side="top", expand = "yes", fill="both")
-      self.status = Tkinter.Text(self.textframe, width = 40, height = 10,
+      # could get width from config
+      self.status = Tkinter.Text(self.textframe, width = 60, height = 10,
                                  state='disabled', wrap='word')
       self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
       self.status.configure(yscroll=self.scrollbar.set)
@@ -138,6 +136,10 @@ class TKgui(Tkinter.Toplevel, gui):
       self.textframe.pack(side="top", fill="both")
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def showAll(self):
+      if self.engine and self.engine.robot:
+         print self.engine.robot.getAll()
 
    def makeWindows(self):
       objs = self.engine.robot.getDevices()
@@ -165,13 +167,18 @@ class TKgui(Tkinter.Toplevel, gui):
       # ---------------------------------      
 
    def makeRow(self, item):
-      type, load, loadit, editit = item
+      type, load, loadit, editit, viewit = item
       tempframe = Tkinter.Frame(self.frame)
       if type == 'button':
          self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
                                                  width = 10, command = loadit,
                                                  state='disabled')
          self.textArea[load] = Tkinter.Button(tempframe, command=editit, justify="right", state='disabled')
+         if viewit:
+            self.buttonArea["View " + load] = Tkinter.Button(tempframe, text = "View",
+                                                 width = 10, command = viewit,
+                                                 state='disabled')
+            self.buttonArea["View " + load].pack(side=Tkinter.RIGHT, fill = "none", expand = "no", anchor="n")
       elif type == 'status':
          self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
          self.textArea[load] = Tkinter.Label(tempframe, justify="left")
@@ -353,9 +360,13 @@ class TKgui(Tkinter.Toplevel, gui):
       if self.textArea["Brain:"]["text"]:
          if self.textArea["Brain:"]["state"] == 'disabled':
             self.textArea["Brain:"]["state"] = 'normal'
+         if self.buttonArea['View Brain:']["state"] == 'disabled':
+            self.buttonArea['View Brain:']["state"] = 'normal'
       else:
          if self.textArea["Brain:"]["state"] != 'disabled':
             self.textArea["Brain:"]["state"] = 'disabled'
+         if self.buttonArea['View Brain:']["state"] != 'disabled':
+            self.buttonArea['View Brain:']["state"] = 'disabled'
       if self.textArea["Simulator:"]["text"]:
          if self.textArea["Simulator:"]["state"] == 'disabled':
             self.textArea["Simulator:"]["state"] = 'normal'
@@ -365,19 +376,23 @@ class TKgui(Tkinter.Toplevel, gui):
       if self.textArea["Robot:"]["text"]:
          if self.textArea["Robot:"]["state"] == 'disabled':
             self.textArea["Robot:"]["state"] = 'normal'
+         if self.buttonArea['View Robot:']["state"] == 'disabled':
+            self.buttonArea['View Robot:']["state"] = 'normal'
       else:
          if self.textArea["Robot:"]["state"] != 'disabled':
             self.textArea["Robot:"]["state"] = 'disabled'
+         if self.buttonArea['View Robot:']["state"] != 'disabled':
+            self.buttonArea['View Robot:']["state"] = 'disable'
       # Buttons?
-      if self.textArea["Robot:"]["text"]:
+      if self.textArea["Robot:"]["text"]: # have a robot!
          if self.menuButtons['Robot']["state"] == 'disabled':
             self.menuButtons['Robot']["state"] = 'normal'
          #if self.menuButtons['Load']["state"] == 'disabled':
          #   self.menuButtons['Load']["state"] = 'normal'
          if self.buttonArea["Brain:"]["state"] == 'disabled':
             self.buttonArea["Brain:"]["state"] = 'normal'
-         if self.goButtons['Reload']["state"] == 'disabled':
-            self.goButtons['Reload']["state"] = 'normal'
+         if self.goButtons['Reload Brain']["state"] == 'disabled':
+            self.goButtons['Reload Brain']["state"] = 'normal'
       else:
          if self.menuButtons['Robot']["state"] != 'disabled':
             self.menuButtons['Robot']["state"] = 'disabled'
@@ -385,8 +400,8 @@ class TKgui(Tkinter.Toplevel, gui):
          #   self.menuButtons['Load']["state"] = 'disabled'
          if self.buttonArea["Brain:"]["state"] != 'disabled':
             self.buttonArea["Brain:"]["state"] = 'disabled'
-         if self.goButtons['Reload']["state"] != 'disabled':
-            self.goButtons['Reload']["state"] = 'disabled'
+         if self.goButtons['Reload Brain']["state"] != 'disabled':
+            self.goButtons['Reload Brain']["state"] = 'disabled'
       if self.textArea["Brain:"]["text"]:
          if self.goButtons['Run']["state"] == 'disabled':
             self.goButtons['Run']["state"] = 'normal'
@@ -394,10 +409,10 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Step']["state"] = 'normal'
          if self.goButtons['Stop']["state"] == 'disabled':
             self.goButtons['Stop']["state"] = 'normal'
-         if self.goButtons['Reload']["state"] == 'disabled':
-            self.goButtons['Reload']["state"] = 'normal'
-         if self.goButtons['View']["state"] == 'disabled':
-            self.goButtons['View']["state"] = 'normal'
+         if self.goButtons['Reload Brain']["state"] == 'disabled':
+            self.goButtons['Reload Brain']["state"] = 'normal'
+         #if self.goButtons['View']["state"] == 'disabled':
+         #   self.goButtons['View']["state"] = 'normal'
       else:
          if self.goButtons['Run']["state"] != 'disabled':
             self.goButtons['Run']["state"] = 'disabled'
@@ -405,10 +420,10 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Step']["state"] = 'disabled'
          if self.goButtons['Stop']["state"] != 'disabled':
             self.goButtons['Stop']["state"] = 'disabled'
-         if self.goButtons['Reload']["state"] != 'disabled':
-            self.goButtons['Reload']["state"] = 'disabled'
-         if self.goButtons['View']["state"] != 'disabled':
-            self.goButtons['View']["state"] = 'disabled'
+         if self.goButtons['Reload Brain']["state"] != 'disabled':
+            self.goButtons['Reload Brain']["state"] = 'disabled'
+         #if self.goButtons['View']["state"] != 'disabled':
+         #   self.goButtons['View']["state"] = 'disabled'
       self.after(self.update_interval,self.generalUpdate)
       
    def run(self, command = []):

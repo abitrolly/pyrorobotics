@@ -1,4 +1,4 @@
-# A Base Camera class
+""" A Base Camera class """
 
 from pyro.vision import PyroImage
 from pyro.robot.device import Device
@@ -41,6 +41,9 @@ class CBuffer:
       else:
          return struct.unpack("B", self.data[key])[0]
 
+   def sort(self):
+      pass
+
    def __setitem__(self, key, value):
       if isinstance(key, types.SliceType):
          if key.stop > len(self):
@@ -81,19 +84,23 @@ class Camera(PyroImage, Device):
       self.lastWindowUpdate = 0
       self.updateWindowInterval = 1.0 # update window once a second
       self.update() # call it once to initialize
+      self.printFormat["image"] = "<image>"
+      self.printFormat["grayscale"] = "<image>"
       self.devData["image"] = self.data
       self.devData["grayscale"] = []
       self.devData["height"] = self.height
       self.devData["width"] = self.width
       self.devData["depth"] = self.depth
-      self.devData["filters"] = self.getFilterList()
+      self.devData["filters"] = self.callbackTextList
 
    def preGet(self, keyword):
+      #print "preGet", keyword
       if keyword == "grayscale":
          self.devData["grayscale"] = self.getGrayScale()
+      elif keyword == "image":
+         self.devData["image"] = self.data[:]
       else:
-         self.devData["image"] = self.data
-         self.devData["filters"] = self.getFilterList()
+         self.devData["filters"] = self.callbackTextList
 
    def setFilterList(self, filterList):
       """
@@ -415,7 +422,7 @@ class Camera(PyroImage, Device):
       return "Ok"
 
    def getDeviceData(self):
-      return self.data
+      return self.data[:]
 
    def getDeviceState(self):
       return self.devData["state"]

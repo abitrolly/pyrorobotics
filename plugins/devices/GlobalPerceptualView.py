@@ -43,4 +43,4 @@ def INIT(robot):
     robot.set('range', 'units', units)
     gps = GPSService(robot, lps, share.gui, maxrange=rangeMaxMM, cols=500, rows=500,
                      heightMM = sizeMM * 10, widthMM = sizeMM * 10)
-    return {"GlobalPerceptualView": gps}
+    return {"view": gps}

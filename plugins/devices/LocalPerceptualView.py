@@ -37,4 +37,4 @@ def INIT(robot):
     # Reset our unit of measure
     robot.set('range', 'units', units)
     lps = LPSService(robot, share.gui, 20, 20, widthMM = sizeMM, heightMM = sizeMM)
-    return {"LocalPerceptualView": lps}
+    return {"view": lps}

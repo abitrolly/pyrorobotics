@@ -5,13 +5,13 @@ import time
 class BlobCamera(Camera):
    """
    """
-   def __init__(self, robot, depth = 3, interval = 1.0,
+   def __init__(self, robot, camera = "camera0", depth = 3, interval = 1.0,
                 visionSystem = None):
       """
       """
       self.robot = robot
-      self.robot.startService('blob')
-      self.blobData = self.robot.getServiceData('blob')
+      self.deviceName = self.robot.startDevice('blob')
+      self.blobData = self.robot.getDeviceData(self.blobName)
       if len(self.blobData[0]) == 2: 
          self.width, self.height = self.blobData[0]
       else:
@@ -39,7 +39,7 @@ class BlobCamera(Camera):
    def _update(self):
       currentTime = time.time()
       if currentTime - self.lastUpdate > self.interval:
-         blobdata = self.robot.getServiceData('blob')[1]
+         blobdata = self.robot.getDeviceData('blob')[1]
          self.cameraDevice.updateMMap(blobdata)
          self.processAll()
          self.lastUpdate = currentTime

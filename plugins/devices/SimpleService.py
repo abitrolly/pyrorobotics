@@ -1,6 +1,6 @@
 # A Simple Service
 
-from pyro.robot.service import Service
+from pyro.robot.device import Device
 
 def INIT(robot):
-    return {"simple": Service()}
+    return {"simple": Device()}

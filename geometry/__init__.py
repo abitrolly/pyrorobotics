@@ -11,6 +11,10 @@
 
 import math
 TOLERANCE = .0001
+PIOVER180 = math.pi / 180.0
+DEG90RADS = 0.5 * math.pi
+COSDEG90RADS = math.cos(DEG90RADS) / 1000.0
+SINDEG90RADS = math.sin(DEG90RADS) / 1000.0
 
 def distance(x1, y1, x2, y2):
     return math.sqrt( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
