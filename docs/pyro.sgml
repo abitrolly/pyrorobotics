@@ -1,0 +1,636 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+<book>
+  <bookinfo>
+    <title>Pyro</title>
+    <subtitle>Robotics Control System in Python</subtitle>
+    <authorgroup>
+      <author>
+	<firstname>Douglas</firstname><surname>Blank</surname><honorific>Dr</honorific>
+      </author>
+      <author>
+	<firstname>Jim</firstname><surname>Gage</surname>
+      </author>
+      <author>
+	<firstname>Jared</firstname><surname>Hudson</surname>
+      </author>
+      <author>
+	<firstname>Brian</firstname><surname>Mashburn</surname>
+      </author>
+    </authorgroup>
+    <copyright><year>2000</year>
+      <holder>University of Arkansas Artificial Intelligence Lab</holder>
+    </copyright>
+    <legalnotice> 
+      <para>This document and the the XRCL code is released under the GPL license. 
+For more details please see: http://www.gnu.org/copyleft/gpl.html</para>
+    </legalnotice>
+    <productname>XRCL</productname>
+    <date>May 10, 2000</date>
+    <releaseinfo>XRCL version 0.5.0</releaseinfo>
+  </bookinfo>
+  <preface><title>How it started</title>
+    <para>As the power of computers increases rapidly and simple robots are more and more
+accesible, the universities began to be more interested in 
+the field of robotics and artificial intelligence.
+Like many others, University of Arkansas followed the thrend and founded its on AI lab directed
+by Dr. Blank. </para>
+    <para>The robots that we have all come with propietary programs for controlling it. 
+But the problem was that these didn't allow us to do everything we want and as they were 
+closed source we had no way of modifying them. For this reason we decided that we need
+to a system that will allow us all the flexibillity we need. This is how XRCL has been born.
+</para>
+    <para>As you see from the version number there is quite a lot to do, but it is 
+powerfull enough for the beginning. In the near future we plan to enhance it even more.</para>
+  </preface>
+  
+
+  <chapter> 
+    <title>Introduction</title>
+    <para>In this article there will be references to two categories of developers: 
+      <glosslist>
+	<glossentry>
+	  <glossterm>Behavior developers</glossterm>
+	  <glossdef><para>Developers who want to work on creating 
+behaviors: programs written in XRCL that control the robot.</para></glossdef>
+	</glossentry>
+	<glossentry>
+	  <glossterm>System developers</glossterm>
+	  <glossdef><para>Developers who want to work on the XRCL system, they are writting 
+the tools used by the behavior developers.</para></glossdef>
+	</glossentry>
+      </glosslist> </para>
+    <para>This chapter should include:</para>
+    <itemizedlist>
+      <listitem><para>a general description of XRCL </para></listitem>
+      <listitem><para>a description of Elektro/SimBot </para></listitem>
+      <listitem><para>a description of Pioneer</para></listitem>
+      <listitem><para>a general description of computer hardware: ai,stations,
+wireless net,..</para></listitem>
+    </itemizedlist>
+    <section><title>General Description of XRCL</title>
+<para>XRCL (pronounced <emphasis>zircle</emphasis>) is a relatively simple,
+modern language and environment designed to allow robotics researchers
+to share ideas by sharing code. It is an open sources project,
+protected by the GNU Copyleft. That means that any projects built on
+top of XRCL must be given back to the robotics community. This also
+means that you have complete freedom to the source code, and can alter
+it in any manner you wish.</para>
+<para>
+XRCL is actually two things: a proposed language specification, and an
+environment for interpreting that language. Our hope is that the
+creation of a language specification will encourage researchers to
+work together by sharing ideas via code. </para>
+<para>
+Our vision of the XRCL language is a cross between XML and C++, but
+you really don't need to know either to start using the system. The
+system is designed to be easy to use for the novice roboticists, but
+extendible for the advanced researcher. We have built the first
+version of a XRCL environment, but we hope that this is just a
+starting place. </para>
+<para>
+This document describes everything that we know about XRCL so far. If
+you would like to join the development efforts, or just keep abreast
+of the developments, we welcome you to join the XRCL mailing list.
+You can join by sending an email to 
+<ulink url="mailto:dblank@comp.uark.edu">Dr. Douglas Blank</ulink></para>
+
+</section>
+  </chapter>
+  
+
+
+
+  <chapter> 
+    <title>Configuration</title>
+<para>
+The system is is developed using CVS - <emphasis>a system that allows 
+several people to work on a project at the same time.</emphasis>
+If you want to work with XRCL you must know at least the basic commands.
+</para>
+<section><title>Basic CVS commands</title>
+<para>
+CVS is a revision control system. Here are some basic instructions for
+using CVS with XRCL. </para>
+<para>
+<itemizedlist>
+<listitem><para>The first time you start working with XRCL you need to type: 
+<screen>cvs checkout xrcl</screen> You must type this while you are in
+ your home directory (it's not acceptable to be in a subdirectory of your home directory). 
+This will make a copy of the XRCL sources in your home directory.</para></listitem>
+<listitem><para>After the first time, you'll type <screen>cvs update xrcl</screen> 
+that will update your copy with the chnages made by the others.</para></listitem>
+<listitem><para>If you have new files, use <screen>cvs add xrcl/dir/filename.ext</screen> 
+where dir and filename.ext is the location of the files. 
+This works <emphasis> only </emphasis> with files. 
+If you want to add directories you must use cvs import(not described here). 
+Also for importing binary files(images,..) you must use 
+<screen>cvs add -kb xrcl/dir/filename.txt</screen> </para></listitem>
+<listitem><para>If you want to send your modifications to the main repository,
+in order for everybody to be able to take advantage of them type 
+<screen>cvs commit xrcl</screen></para></listitem>
+</itemizedlist></para>
+<para>
+Observation: All the previous examples imply that you use them from your home directory. 
+But if you are in &tilde;/xrcl you don't need to type xrcl any longer 
+so the update command will look like: <screen>cvs update</screen> </para>
+<para>
+If you need to do more complex things like using branches, import, ... 
+or you did something wrong, the easy way is to contact <emphasis>Ciprian</emphasis>, 
+the hard way is to read the CVS documentation.</para>
+<para>
+For more info, type <command>man cvs</command>. For full documentation, see 
+<ulink url="http://ai.uark.edu/xrcl/cvs">the local CVS documentation</ulink>
+</para>
+</section>
+
+<section><title>Behavior developers who plan to work on the ai.uark.edu server</title>
+<para>
+For the moment we don't have a released version of the new XRCL engine (which uses states). 
+This means that you'll have to follow the instructions of a system developer. 
+</para>
+</section>
+
+<section><title>System developers who plan to work on the ai.uark.edu server</title>
+<para>
+The first time you must do this: 
+<screen>cd ~
+cvs checkout xrcl
+develop
+make moc_files
+make
+</screen>
+From now on whenever you log in or you open another shell you'll have to type only 
+<screen>develop</screen> This is  very important, because otherwise you'll be using 
+the last released version of XRCl and not the version you are working on. 
+If you don't want to type <command>develop</command> every time you launch a new shell 
+or if you are afraid you might forget about it, you might consider adding these lines 
+to the end of your <filename>.bashrc</filename>
+<screen>XRCL_HOME=~/xrcl
+PATH=$XRCL_HOME/bin:$PATH
+cd $XRCL_HOME  
+</screen></para></section>
+
+<section><title>System developers who plan to work on their own computer</title>
+<para>You must install <application>SSH 1</application> on your Linux machine 
+and then add the following lines at the end of your <filename>.bashrc</filename> 
+(substitute <emphasis>username</emphasis> with your username on ai.uark.edu)
+<screen>export CVSROOT=:ext:username@ai.uark.edu:/usr/local/dev/cvs
+export CVS_RSH=ssh 
+export XRCL_HOME=~/xrcl
+PATH=~/xrcl/bin:$PATH
+</screen></para>
+<para> 
+After you take care of these settings the fact that you use the cvs repository 
+on ai.uark.edu will be completely transparent. The only difference is that you 
+have will to type the pasword for the account on ai every time you launch a cvs command. 
+<emphasis>SSH supports "auto-login" but you'll have to read the SSH documentation.</emphasis></para> 
+<para>The first time you must do this: 
+<screen>cd ~
+cvs checkout xrcl
+make moc_files
+make
+</screen>
+All the other commands are exactly like the ones you use when you work directly on ai.uark.edu
+</para></section>
+
+<section><title>Several guidelines for development</title>
+<para>
+Every developer has unrestricted access to the CVS, but this doesn't mean that you must abuse it. 
+The following are some proposed some suggestions/rules that should improve the efficiency of team work
+(but Dr. Blank has the last word):
+<itemizedlist>
+<listitem><para><emphasis>Do not</emphasis> modify the CVS directly 
+(i.e. going into $CVSROOT).</para></listitem>
+<listitem><para><emphasis>Do not</emphasis> commit sources that don't compile.
+Before commiting do a <command>cvs update</command> and then do a <command>make</command> 
+in order to make sure that your code compiles with the latest changes.</para></listitem> 
+<listitem><para>Write explicit logs when you do major changes.</para></listitem>
+<listitem><para>Do not lock the files, unless you have a very good reason.</para></listitem> 
+<listitem><para>If you are planning to add a new feature by yourself, then work on your 
+own copy and commit when you have a stable code. If <emphasis>more than one developer</emphasis> 
+ wants to work on a new feature, different from the main development, they must make a new branch. 
+If you are in this situation please talk with <emphasis>Ciprian</emphasis>.</para></listitem>
+</itemizedlist></para>
+</section>
+
+<section><title>The Makefile</title>
+<para>
+All the make commands are launched from ~/xrcl. Until now the <filename>Makefile</filename> was
+in ~/xrcl/src, but the one which is there is outdated and it will be soon removed.
+</para>  
+<important><para>The first time when you do a checkout, or after you erase your whole XRCL copy
+you'll have to do <command>make moc_files</command> before typing <command>make</command>. 
+If you forget you'll have to erase your XRCL copy <command>rm -rf ~/xrcl</command> and start all 
+over again.</para></important>
+<itemizedlist>
+<listitem><para>If you want to compile only the simulator do <screen>make</screen></para></listitem> 
+<listitem><para>If you want to compile b21r do <screen>make b21r</screen></para></listitem> 
+<listitem><para>If you want to compile pioneer <screen>make pioneer</screen></para></listitem> 
+<listitem><para>If you want to compile all the robots do<screen>make all</screen></para></listitem> 
+<listitem><para>If you want to compile and install the documentation on ai do
+ <screen>make docs</screen>You will have to be on ai.uark.edu to do this because
+docbook is not installed on the workstations</para></listitem> 
+</itemizedlist>
+</section>
+
+
+  </chapter>
+  
+
+
+
+<chapter><title>Description of XRCL</title>
+<para>
+This section describes XRCL, the Extendible Robot Control Language
+and system.</para>
+<para><emphasis> 
+&copy; 2000 <ulink url="http://dangermouse.uark.ed">Douglas
+S. Blank</ulink><ulink url="http://www.uark.edu">University of
+Arkansas</ulink></emphasis></para> 
+<para><emphasis>Protected by the <ulink url="http://www.gnu.org">GNU
+Copyleft</ulink>. This is Open Source software.</emphasis></para>
+<section><title>Overview</title>
+<section><title>Design</title>
+<para>
+The XRCL system is a hybrid system consisting of reactive fuzzy logic
+"behaviors" on one end, and global "finite state machines" on the
+other.</para> 
+<para>
+On the low-level end, you will write fuzzy rules, such as:
+<programlisting>
+IF too_close_to_wall THEN Speed STOP;
+IF ! too_close_to_wall THEN Speed FAST;
+</programlisting></para>
+<para>
+These fuzzy rules are packaged up in little nuggets called
+"behaviors". Behaviors are nothing more than a collection of fuzzy
+rules and supporting calculations, like above.</para>
+<para>
+On the other end, we have what is called "finite state machines" (or
+FSM) which are really just graphs of nodes and arrows. The nodes
+(which we will call "states") represent a set of behaviors, and the
+arrows represent transitions from one state to another. The
+transitions are composed of rules (possibly fuzzy ones) that instruct
+the control engine when to leave one state, and enter another. </para>
+<para>
+The fuzzy rules tell the robot how to deal with low-level things like
+what to do as an obstacle approaches. The FSM outlines the overall
+plan the robot is to follow. </para>
+<para>
+We hope that between fuzzy rules, behaviors, and states, that you have
+enough power to have the robot do what you want. </para>
+</section>
+<section><title>Format</title>
+<para>
+To express all of this functionality, we decided to wrap it up in a
+language that looks like HTML and C++. It is actually XML, an
+extension of current HTML. A XRCL controller is made up of a file of
+tags that define all of the behaviors and states necessary for making
+a robot do what you want it to do. Here is a sample...  </para>
+</section>
+</section>
+
+<section><title>Fuzzy Logic</title>
+<section><title>Logic</title>
+<para>
+Traditional logic allows us to deduce things from truth
+statements. For example, given:
+<programlisting>
+IF too_close_to_wall THEN Speed STOP;
+IF ! too_close_to_wall THEN Speed FAST;
+</programlisting>
+we could then determine how fast a robot should go. That is, if
+too_close_to_wall is TRUE, then speed will be STOP, but if
+too_close_to_wall is FALSE, then speed will be FAST. Traditional logic
+can takes us quite far, but it is quite rigid. </para>
+<para>
+How do we figure out what too_close is? Our robot might jerk to FAST
+when it gets away from things, but then jerk to a STOP when it gets
+close to an object. If you interpret these rules with "crisp" logic,
+then it really only says what to do at a particular point: it says to
+stop when you get a certain distance from an object. It really isn't
+much of a controller at all. How would the robot get going again? </para>
+<para>
+In XRCL, we use logic with a slight twist: instead of requiring
+absolute truth and falseness, we allow <emphasis> shades </emphasis> of
+truth. Likewise, if a statement is only partially true, then the rule
+only has partial consequences. In this manner, if we approach a wall,
+too_close_to_wall becomes slightly true, and the speed of the robot
+slows down just a tad. This way, these two rules above say quite a bit
+about what to do in many circumstances. Now, we have quite a
+controller! </para>
+</section>
+
+<section><title>Format</title>
+<para>
+To create a fuzzy variable in XRCL, you must first give a range. Let's
+say we want to consider values between 0 and 1, in a domain named
+too_close. We would write:
+<programlisting>
+Fuzzy too_close(0, 1);
+</programlisting>
+We will use this fuzzy variable as a method of fuzzifying values. We
+do this using the special operators &lt;&lt; (which we call "down")
+and &gt;&gt; (which we call "up"). For example:
+<programlisting>
+Fuzzy too_close(0, 1);
+printf("fuzzify %f UP with too_close is %f\n", .2, too_close >> .2);
+printf("fuzzify %f DOWN with too_close is %f\n", .2, too_close << .2);
+</programlisting>
+These lines will take the value, .2, and fuzzify it in the range 0 to
+1. First, let's examine the UP. The UP operator &gt;&gt; says to
+interprete the range with the true side on the right. Since we
+defined too_close as a range between 0 and 1, 1 will represent true,
+as is standard. </para>
+<para>
+We compute where .2 is on the scale of 0 to 1, and we see that it is
+at .2. So, the UP statement above will print out ".2". </para>
+<para>
+On the other hand, the DOWN operator says to interpret the true side
+on the left. If we do that, we see that .2 is very close to the
+totally true 0. And indeed, the DOWN line prints out ".8". </para>
+<para>
+To test this out, here is a little program:
+
+<programlisting>
+// file: fuzzytest.cpp in $XRCL_HOME
+#include "include/Fuzzy.h"
+
+main() {
+  Fuzzy too_close(0, 1);
+  printf("fuzzify %f UP with too_close is %f\n", .2, too_close >> .2);
+  printf("fuzzify %f UP with too_close is %f\n", .2, .2 >> too_close);
+  printf("fuzzify %f DOWN with too_close is %f\n", .2, too_close << .2);
+}
+</programlisting>
+
+You can compile with:
+
+<screen>
+% g++ fuzzytest.cpp obj/Fuzzy.o -o fuzzytest
+</screen>
+And run with "./fuzzytest". Here is the output:
+
+<screen>
+fuzzify 0.200000 UP with too_close is 0.200000
+fuzzify 0.200000 DOWN with too_close is 0.800000
+</screen>
+
+A good way to think of the UP and DOWN operator is that they point to
+the direction of TRUE, and that the direction always points "up the
+hill". </para>
+<para>
+What happens outside the range? Whatever is greater than 1, in this
+example, will be whatever the value 1 has. Likewise, whatever is less
+than 0, will take on the value that 0 has. </para>
+<para>
+One can also change the range a fuzzy variable controls. Consider:
+
+<programlisting>
+// file: fuzzytest.cpp in $XRCL_HOME
+#include "include/Fuzzy.h"
+#include &lt;iostream.h&gt;
+
+main() {
+  Fuzzy fuzz(10, 100);
+
+  Fuzzy x = (fuzz << -40);
+  cout << ((double)x) << "\n";
+
+  x = (fuzz <<  26);
+  cout << ((double)x) << "\n";
+
+  x = (fuzz >>  83);
+  cout << ((double)x) << "\n";
+
+  x = (fuzz >> 200);
+  cout << ((double)x) << "\n";
+
+  x = (fuzz >> -40);
+  cout << ((double)x) << "\n";
+}
+</programlisting>
+
+Can you guess the answers? Come on. Give it a shot. Make your guess
+before looking!  answer1.txt.... </para>
+<para>
+One other variation, one can switch the range numbers:
+<programlisting>
+// file: fuzzytest.cpp in $XRCL_HOME
+#include "include/Fuzzy.h"
+
+main() {
+  Fuzzy too_close(5, 1);
+
+  printf("fuzzify %f UP with too_close is %f\n", 4.0, too_close >> 4.0);
+}
+</programlisting>
+
+Consider this the same as above, except the number line has been
+changed. What does this give?  answer2.txt....</para>
+<para>
+HINTS: the fuzzification number is always on the right. </para>
+</section>
+</section>
+
+</chapter>
+
+
+
+
+  <chapter> 
+    <title>Behaviors</title>
+<section><title>Format</title>
+<para>
+First, let's take a look at the major parts of a behavior:
+<programlisting>
+&lt;BEHAVIOR name="FindAngle"&gt;
+ 
+  &lt;ARG name="test" default_value="1.0" type="double"&gt; 
+
+  &lt;MEMBERS&gt;
+       #define FRONTDISTANCE  5
+       public: bool finish;
+  &lt;/MEMBERS&gt;
+
+  &lt;ACTIVATE&gt;
+       finish = false;
+  &lt;/ACTIVATE&gt;
+  
+  &lt;UPDATE&gt;
+       Fuzzy fuzzify(.5, FRONTDISTANCE); // meters
+       double distance = elektro->LowSonar.degGetReading(0);
+       TurnEffect(0.0);
+       SpeedEffect(1.0);
+       // too close
+       IF (fuzzify << distance) THEN Speed xcSLOW;
+       // open skies!
+       IF !(fuzzify << distance) THEN Speed xcFAST;
+       finish = true;
+  &lt;UPDATE&gt;
+
+&lt;/BEHAVIOR&gt;
+</programlisting></para>
+<para>
+When you write a behavior, you want to pit two opposing forces at odds
+with each other. In that way, they define the ends of the spectrum,
+fuzziness will take care of the middle ground. </para>
+<para>
+HINT: you can put as many fuzzy rules in a behavior as you want, but
+they are easier to manage when they tackle only a single aspect of the
+problem. </para>
+</section>
+    
+  </chapter>
+  
+
+
+
+  <chapter> <title>States</title>
+<section><title>State Machine</title>
+<para>
+A state machine is made up of states. Each state must identify what
+behaviors it is composed of. 
+<programlisting>
+&lt;state name="Start_state" initial="yes"&gt;
+  &lt;beh type="Bump_behavior" name="bump"&gt;&lt;/beh&gt;
+  &lt;beh type="FindAngle" name="rotate"&gt;&lt;/beh&gt;
+  
+  &lt;ENTER&gt;
+    double momentum;
+    double angle = elektro-&gt;polGetMax().t;    
+    if (angle&gt;3.14) angle=angle-2*3.14;   
+    fprintf(stderr,"angle state %f; ",angle);  
+    if ( angle &lt; 0 ) momentum = -0.50;
+    if ( angle &gt;= 0 ) momentum = 0.50;
+    fprintf(stderr, "OnActivate Start_state\n");
+  &lt;/ENTER&gt;
+  
+  &lt;EXIT&gt;
+    fprintf(stderr, "deactivating Start_state\n");
+  &lt;/EXIT&gt;
+  
+  &lt;transitions&gt;
+    if ( rotate.finish ) {
+      GotoState("Move_state");
+      fprintf(stderr, "\ngoto another state\n");
+    }
+    fprintf(stderr, "ST");
+  &lt;/transitions&gt;
+  &lt;setargs&gt;
+  &lt;/setargs&gt;
+&lt;/state&gt;
+&lt;state name="Move_state"&gt;
+  &lt;beh name="advance" type="MoveAhead"&gt;&lt;/beh&gt;
+&lt;enter&gt;
+    fprintf(stderr, "OnActivate Move_state\n");
+&lt;/enter&gt;
+  
+&lt;exit&gt;
+    fprintf(stderr, "deactivating Move_state\n");
+&lt;/exit&gt;
+  
+&lt;transitions&gt;
+    if ( advance.closewall ) {
+      GotoState("ChangeDirection", "-.5");
+    }
+    fprintf(stderr, "MT");
+&lt;/transitions&gt;
+  &lt;setargs&gt;
+  &lt;/setargs&gt;
+&lt;/state&gt;
+
+&lt;state name="ChangeDirection"&gt;
+&lt;arg name="stateparam" default_value="100.0" type="double" /&gt;
+&lt;members&gt;
+  public: double maxdistance;
+&lt;/members&gt;
+  &lt;beh name="advance" type="MoveAhead" /&gt;
+  &lt;beh name="bump" type="Bump_behavior" /&gt;
+  &lt;beh name="rotate" type="FindAngle" args="maxdistance"/&gt;
+  &lt;enter&gt;
+    maxdistance = 0;
+    double searchangle,  momentum;
+    for (searchangle=0; searchangle &lt; FRONTANGLE; searchangle+=1) {
+      if ( elektro-&gt;LowSonar.degGetReading(searchangle) &gt; maxdistance ) {
+	maxdistance = elektro-&gt;LowSonar.degGetReading(searchangle);
+	momentum = 0.50;
+      }
+    }  
+    for (searchangle=3.14*2 ; searchangle &gt; 3.14*2-FRONTANGLE; searchangle-=1) {
+      if ( elektro-&gt;LowSonar.degGetReading(searchangle) &gt; maxdistance ) {
+	maxdistance = elektro-&gt;LowSonar.degGetReading(searchangle);
+	momentum = -0.50;
+      }
+    }  
+    fprintf(stderr, "OnActivate ChangeDirection\n");
+  &lt;/enter&gt;
+  
+  &lt;exit&gt;
+    fprintf(stderr, "deactivate ChangeDirection\n");
+  &lt;/exit&gt;
+  
+  &lt;transitions&gt;
+    if ( maxdistance &gt; FRONTDISTANCE ) {
+      GotoState("Start_state");
+    }
+    if ( rotate.finish ) {
+      GotoState("Move_state");
+    }
+    fprintf(stderr, "CT");
+  &lt;/transitions&gt;
+  &lt;setargs&gt; 
+  &lt;/setargs&gt;
+&lt;/state&gt;
+
+&lt;state name="Count_state"&gt;
+  &lt;beh type="Count" name="Countbeh" /&gt;
+  &lt;enter&gt;
+    fprintf(stderr,"Count state activated\n");
+  &lt;/enter&gt;
+  &lt;exit&gt;
+    fprintf(stderr,"Count state deactivated\n");
+  &lt;/exit&gt;
+&lt;/state&gt;
+</programlisting></para>
+</section>
+
+  </chapter>
+
+
+  
+  <chapter> 
+    <title>Examples</title>
+    <para></para>
+  </chapter>
+  
+  <chapter> 
+    <title>Reference for functions used in robots/engine</title>
+    <para></para>
+  </chapter>
+  
+  <chapter> 
+    <title>Links to other usefull documentation</title>
+    <para></para>
+  </chapter>
+
+  <appendix><title>Answers</title>
+<para>Answer for the first problem
+<screen>
+1
+0.822222
+0.811111
+1
+0      
+Were you close?
+</screen></para>
+<para>Answer for the second problem
+<screen>
+fuzzify 4 UP with too_close is 0.250000
+
+Make sense?
+</screen></para>
+</appendix>
+  
+</book>
+

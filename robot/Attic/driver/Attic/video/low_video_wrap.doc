@@ -1,0 +1,8 @@
+low_videomodule.c
+
+[ Python Module : low_video ]
+
+
+setPrefs(fd,xres,yres)
+        [ returns int  ]
+

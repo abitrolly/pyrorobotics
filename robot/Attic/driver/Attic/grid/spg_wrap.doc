@@ -1,0 +1,51 @@
+spgmodule.cc
+
+[ Python Module : spg ]
+
+
+1.  class SpacePerceptionGrid
+=============================
+[ created from class SpacePerceptionGrid ]
+
+positive means hard
+
+new_SpacePerceptionGrid(w,h,low,high,overshoot)
+        [ Constructor: returns SpacePerceptionGrid * ]
+
+delete_SpacePerceptionGrid(SpacePerceptionGrid *)
+        [ Destructor: returns void  ]
+
+SpacePerceptionGrid_update(SpacePerceptionGrid *,xsrc,ysrc,xdst,ydst,angle,delta,hit)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_decay(SpacePerceptionGrid *,dec)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_reset(SpacePerceptionGrid *)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_recenter(SpacePerceptionGrid *,x,y)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_getref(SpacePerceptionGrid *)
+        [ Member : returns float ** ]
+
+SpacePerceptionGrid_copyregion(SpacePerceptionGrid *,a,b,x,y,w,h)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_get(SpacePerceptionGrid *,x,y)
+        [ Member : returns float  ]
+        protected:
+
+SpacePerceptionGrid_updateGridPoint(SpacePerceptionGrid *,x,y,delta)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_updateGridRow(SpacePerceptionGrid *,y,xmin,xmax,delta)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_updateGridLine(SpacePerceptionGrid *,p0,p1,delta)
+        [ Member : returns void  ]
+
+SpacePerceptionGrid_updateGridTriangle(SpacePerceptionGrid *,p0,p1,p2,delta)
+        [ Member : returns void  ]
+

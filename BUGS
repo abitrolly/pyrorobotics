@@ -1,0 +1,5 @@
+1. GL is not seen on startup. Tk needs to make room for it.
+2. GL will not render until a cover or mouse event selects it.
+3. Drawable is drawing items multiple times
+4. Brain can not extend Drawable because thread and lists seem to
+be incompatible (both use self.data?)

@@ -1,0 +1,13 @@
+echo Setting PYTHONPATH...
+#export PYTHONPATH=/usr/lib/python2.1:/usr/lib/python2.1/lib-tk:/local/lib/python2.1/lib-dynload/:/usr/lib/python2.1/site-packages/:$HOME:/usr/lib/python1.5/lib-dynload/:/usr/local/lib/python2.1/lib-dynload/
+export PYTHONPATH=/usr/lib/python2.1:/usr/lib/python2.1/lib-tk:/local/lib/python2.1/lib-dynload/:/usr/lib/python2.1/site-packages/:$HOME:/usr/local/lib/python2.1/lib-dynload/
+echo Setting PYRO...
+export PYRO=$HOME/pyro
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PYRO/geometry
+echo Setting SAPHIRA...
+export SAPHIRA=/usr/local/saphira/ver62/
+export SAPHIRA_COMPIPE=/tmp/dblank
+echo Setting ARIA...
+export ARIA=/usr/local/Aria
+export PATH=$PATH:/usr/local/Aria/bin
+export PYTHONSTARTUP=$HOME/.python 

@@ -1,0 +1,44 @@
+Pyro Robotics Control System
+Users' Manual
+
+1. Getting Started
+
+Linux, Python, X
+
+1.1. Checklist
+
+a. Is the pyro environment variable defined?
+
+After your system administrator has installed Pyro, you need to make
+sure that you can run it.
+
+% env | grep PYRO
+
+If you see something like:
+
+PYRO=/usr/local/pyro
+
+then your are ready for the next test. If you didn't see something
+like the above, then you will need to define the PYRO environment
+variable. You do that with the following command:
+
+% export PYRO=/usr/local/pyro
+
+if /usr/local/pyro is where Pyro is installed.
+
+b. Is pyro in your path?
+
+Now, if you type:
+
+% pyro
+
+at the command prompt, a graphics window should appear. If not, you
+will need to issue:
+
+% export PATH=$PATH:$PYRO/bin
+
+Then you should be able to run the Pyro program. If it does not work,
+or gives an error, please tell your systems administrator to see the
+Pyro Developers Manual.
+
+2. A Simple Robot

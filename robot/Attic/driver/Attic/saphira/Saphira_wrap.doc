@@ -1,0 +1,126 @@
+lowlevelmodule.cc
+
+[ Python Module : lowlevel ]
+
+
+1.  class SFData
+================
+[ created from class SFData ]
+
+
+SFData_x_set(SFData *,double )
+SFData_x_get(SFData *)
+        [ Member data: returns double  ]
+
+SFData_y_set(SFData *,double )
+SFData_y_get(SFData *)
+        [ Member data: returns double  ]
+
+SFData_z_set(SFData *,double )
+SFData_z_get(SFData *)
+        [ Member data: returns double  ]
+
+SFData_range_set(SFData *,double )
+SFData_range_get(SFData *)
+        [ Member data: returns double  ]
+
+SFData_flag_set(SFData *,int )
+SFData_flag_get(SFData *)
+        [ Member data: returns int  ]
+
+2.  class Saphira
+=================
+[ created from class Saphira ]
+
+
+new_Saphira()
+        [ Constructor: returns Saphira * ]
+
+delete_Saphira(Saphira *)
+        [ Destructor: returns void  ]
+
+Saphira__getSonarRange(Saphira *,pos)
+        [ Member : returns double  ]
+
+Saphira__getSonarXCoord(Saphira *,num)
+        [ Member : returns double  ]
+
+Saphira__getSonarYCoord(Saphira *,num)
+        [ Member : returns double  ]
+
+Saphira_getSonarRange(Saphira *,pos)
+        [ Member : returns double  ]
+
+Saphira_getSonarXCoord(Saphira *,num)
+        [ Member : returns double  ]
+
+Saphira_getSonarYCoord(Saphira *,num)
+        [ Member : returns double  ]
+
+Saphira_SonarData_set(Saphira *,SFData *)
+Saphira_SonarData_get(Saphira *)
+        [ Member data: returns SFData * ]
+
+Saphira_getX(Saphira *)
+        [ Member : returns double  ]
+
+Saphira_getY(Saphira *)
+        [ Member : returns double  ]
+
+Saphira_getZ(Saphira *)
+        [ Member : returns double  ]
+
+Saphira_getTh(Saphira *)
+        [ Member : returns double  ]
+
+Saphira_getThr(Saphira *)
+        [ Member : returns double  ]
+
+Saphira_Disconnect(Saphira *)
+        [ Member : returns int  ]
+
+Saphira_Connect(Saphira *,sim_robot)
+        [ Member : returns int  ]
+
+Saphira_Move(Saphira *,translate_velocity,rotate_velocity)
+        [ Member : returns int  ]
+
+Saphira_Rotate(Saphira *,rotate_velocity)
+        [ Member : returns int  ]
+
+Saphira_Translate(Saphira *,translate_velocity)
+        [ Member : returns int  ]
+
+Saphira_IsStall(Saphira *)
+        [ Member : returns int  ]
+
+Saphira_UpdatePosition(Saphira *)
+        [ Member : returns int  ]
+
+Saphira_UpdateReading(Saphira *,num)
+        [ Member : returns void  ]
+
+Saphira_UpdateReadings(Saphira *)
+        [ Member : returns void  ]
+
+Saphira_Localize(Saphira *,x,y,th)
+        [ Member : returns void  ]
+
+Saphira_getSonarCount(Saphira *)
+        [ Member : returns int  ]
+
+Saphira_setSonarFlag(Saphira *,pos,val)
+        [ Member : returns void  ]
+
+Saphira_getSonarFlag(Saphira *,num)
+        [ Member : returns int  ]
+
+Saphira_sonar_th(Saphira *,pos)
+        [ Member : returns double  ]
+
+Saphira_sonar_x(Saphira *,pos)
+        [ Member : returns double  ]
+
+Saphira_sonar_y(Saphira *,pos)
+        [ Member : returns double  ]
+

@@ -1,0 +1,113 @@
+<html>
+
+<body bgcolor=white>
+
+<h1>Experiments with a Self-Organizing Map</h1>
+
+<hr>
+
+The following experiments were performed using <a
+href=../html/>Pyro</a>, part of a library for robotics and AI research
+using Python. Source links can be found below. <p>
+
+The goal of this test was to train a SOM on the pixels of an image, to
+see how the SOM would self-organize the colors. <p>
+
+First, we need an image, such as: <p>
+
+<img src=stephbot.jpg> <p>
+
+However, this image contains many pixels. To make this easier, let's
+just take a portion of that image to train the SOM. So, selecting a
+portion that appears to capture the full range of colors gives: <p>
+
+<img src=stephbot-partial.jpg> <p>
+
+Now, we need to decide how big, and what dimensions to make the SOM. I
+decided that a 10 by 10 map will suffice. Each pixel was represented
+as an RGB color triplet.<p>
+
+I'm not sure what type of function to use in updating the weights, so
+I made up one based on the "mexican hat" function. I used Euclidian
+distance rather than hexagonal or grid, with a shrinking radius over
+the course of the run. <p>
+
+To speed things up, I only did a run of 10 steps. To see how the map
+is forming, I redisplay the larger picture. However, instead of
+plotting the regular RGB color pixel, I use the SOM to classify the
+color triplet, and then plot the classification as a color. <p>
+
+The classification color is determined by its position on the map. As
+there are two dimensions to the map, I made one dimension be the amout
+of red, and the other be the amout of green. <p>
+
+Each SOM image (on left) is shown next to the original (on right). <p>
+
+Step 1: <p>
+
+<img src=som-1.gif>
+<img src=stephbot2.jpg> <p>
+
+This may be most recognizable picture in the set. But notice that
+there is a fair amout of yellow, which is the center of the map.<p>
+
+Step 2: <p>
+
+<img src=som-2.gif>
+<img src=stephbot2.jpg> <p>
+
+This next step pushes the classifications more to the corners (pure
+red and pure green). <p>
+
+Step 3: <p>
+
+<img src=som-3.gif>
+<img src=stephbot2.jpg> <p>
+
+Now, some yellow enters back into the classifications.<p>
+
+Step 4: <p>
+
+<img src=som-4.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 5: <p>
+
+<img src=som-5.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 6: <p>
+
+<img src=som-6.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 7: <p>
+
+<img src=som-7.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 8: <p>
+
+<img src=som-8.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 9: <p>
+
+<img src=som-9.gif>
+<img src=stephbot2.jpg> <p>
+
+Step 10: <p>
+
+<img src=som-10.gif>
+<img src=stephbot2.jpg> <p>
+
+<hr>
+
+You can find the source for these experients <a href=__init__.py>here</a>.
+
+<hr>
+
+<i>D.S. Blank</i>
+
+</body>
+</html>

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+SRIsim -w office.wld local 
