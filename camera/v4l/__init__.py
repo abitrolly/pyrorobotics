@@ -2,10 +2,10 @@ from pyro.camera import *
 from grabImage import *
 from UserString import UserString
 import types
-import sys
+import sys, os
 
+import Tkinter
 import PIL.PpmImagePlugin
-from Tkinter import *
 import Image, ImageTk
 import time
 
@@ -54,6 +54,7 @@ class V4LGrabber(Camera):
       #and free
       self.handle=None
       self.cbuf=None
+      print device, width, height, self.color
       self.size, self.depth, self.handle, self.cbuf = \
                  grab_image(device, width, height, self.color)
       self.depth /= 8
@@ -118,23 +119,25 @@ class V4LGrabber(Camera):
       file.close
 
    def makeWindow(self):
-      self.root = Tk()
-      im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                               (self.width, self.height),
-                                               self.cbuf, 'raw', "BGR")
-      self.image = ImageTk.PhotoImage(im)
-      label = Label(self.root, image=self.image, bd=0)
-      label.pack({'fill':'both', 'expand':1, 'side': 'left'})
-      while 1:
-         im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                                  (self.width, self.height),
-                                                  self.cbuf, 'raw', "BGR")
-         self.image = ImageTk.PhotoImage(im)
-         while self.root.tk.dooneevent(2): pass
-         time.sleep(.5)
-         print ".",
-         sys.stdout.flush()
-         self.update()
+      self.window = Tkinter.Tk()
+      while self.window.tk.dooneevent(2): pass
+      self.window.wm_title("pyro@%s: Camera View" \
+                           % os.getenv('HOSTNAME') )
+      self.im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                    (self.width, self.height),
+                                                    self.cbuf, 'raw', "BGR")
+      self.image = ImageTk.PhotoImage(self.im)
+      self.label = Tkinter.Label(self.window, image=self.image, bd=0)
+      self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+
+   def updateWindow(self):
+      self.update()
+      while self.window.tk.dooneevent(2): pass
+      self.im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                    (self.width, self.height),
+                                                    self.cbuf, 'raw', "BGR")
+      self.image = ImageTk.PhotoImage(self.im)
+      self.label.configure(image = self.image)
 
 class CBuffer:
    """
@@ -164,25 +167,10 @@ class CBuffer:
 if __name__ == "__main__":
    cam = V4LGrabber(384, 240)
 
-   if 0:
-      cam.makeWindow()
-
    if 1:
-      root = Tk()
-      im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                               (cam.width, cam.height),
-                                               cam.cbuf, 'raw', "BGR")
-      image = ImageTk.PhotoImage(im)
-      label = Label(root, image=image, bd=0)
-      label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+      cam.makeWindow()
       while 1:
-         while root.tk.dooneevent(2): pass
-         cam.update()
-         im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                                  (cam.width, cam.height),
-                                                  cam.cbuf, 'raw', "BGR")
-         image = ImageTk.PhotoImage(im)
-         label.configure(image = image)
+         cam.updateWindow()
 
    if 0:
       print "Testing frames per/second:",
