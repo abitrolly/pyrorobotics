@@ -1,15 +1,15 @@
 from pyro.map import Map
 import Tkinter
+from math import cos, sin
 import pyro.gui.widgets.TKwidgets as TKwidgets
 import pyro.system as system
 import pyro.gui.console as console
 
 class TkMap(Map, Tkinter.Tk):
     """ Map with Tkinter GUI functions """
-
     def __init__(self, cols, rows, value,
-                 width, height,
-                 widthMM, heightMM, title, menu = None, keybindings = []):
+                 width, height, widthMM, heightMM,
+                 title, menu = None, keybindings = []):
         """ TkMap extends Map and Tkinter """
         Map.__init__(self, cols, rows, widthMM, heightMM)
         Tkinter.Tk.__init__(self)
@@ -35,6 +35,12 @@ class TkMap(Map, Tkinter.Tk):
         self.canvas.focus_set()
         self.canvas_width_diff = int(self.winfo_width()) - int(self.canvas["width"])
         self.canvas_height_diff = int(self.winfo_height()) - int(self.canvas["height"])
+
+    def addText(self, x, y, label):
+        x_pos = (float(x)/self.colScaleMM) * self.colScale
+        y_pos = self.height - ((float(y)/self.rowScaleMM) * self.rowScale)
+        self.canvas.create_oval(x_pos-1, y_pos-1, x_pos+1, y_pos+1, fill="black")
+        self.canvas.create_text(x_pos+2, y_pos, text=label, anchor="w")
 
     def addKeyBindings(self, keybindings):
         """ Bind keys and mice events to the canvas """
@@ -130,9 +136,21 @@ class TkMap(Map, Tkinter.Tk):
     def saveMap(self):
         pass
 
+class TkSimpleMap(TkMap):
+    def __init__(self, x_meter, y_meter, title = "Simple Map"):
+        TkMap.__init__(self, 1, 1, 0,
+                       x_meter * 50, y_meter * 50, # pixels
+                       x_meter * 1000, y_meter * 1000, # MM
+                       title)
+    def addText(self, x, y, label):
+        TkMap.addText(self, x * 1000, y * 1000, label)
+
 if __name__ == '__main__':
     print "Testing TkMap()..."
-    map = TkMap(8, 10, .5, 200, 200, 500, 1000, "Sample Map")
+    map = TkMap(8, 10, .5,
+                200, 500,
+                200, 500,
+                "Sample Map")
     map.display()
     map.reset()
     map.display()
@@ -148,4 +166,12 @@ if __name__ == '__main__':
     map.display()
     print "All done!"
     map.application = 1
+    for x in range(0, 200, 10):
+        map.addText( x, x*5/float(2), "%d" % x)
     map.mainloop()
+
+    map = TkSimpleMap(2, 5, "Testing Map")
+    for x in range(0, 2000, 100):
+        map.addText( x/1000.0, (x/1000.0)*5/float(2), "%d" % x)
+    map.mainloop()
+    
