@@ -422,9 +422,17 @@ class FileDialog(ModalDialog):
 		# '*' will list recurively, we don't want that.
 		if filter == '*':
 			filter = ''
-		cmd = "/bin/ls " + os.path.join(cwd, filter) + \
-                      " | /bin/grep -v __init__.py"
-		cmdOutput = getoutput(cmd)
+                if os.name in ['nt', 'dos', 'os2'] :
+                   cmd = "dir /b \"" + os.path.join(cwd, filter) + "\""
+                   pipe = os.popen(cmd + ' 2>&1', 'r')
+                   cmdOutput = pipe.read()
+                   pipe.close()
+                elif os.name in ['posix']:
+                   cmd = "/bin/ls " + os.path.join(cwd, filter) + \
+                         " | /bin/grep -v __init__.py"
+                   cmdOutput = getoutput(cmd)
+                else:
+                   raise AttributeError, "your OS (%s) is not supported" % os.name
 		files = splitfields(cmdOutput, "\n")
                 files.sort()
 		for i in range(len(files)):

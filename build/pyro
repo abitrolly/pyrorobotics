@@ -1,29 +1,51 @@
-# pyro/bin/pyro is automatically generated!
+# pyro/bin/pyro is automatically generated from pyro/build/pyro!
 # -----------------------------------
 # Pyro - robotics control system in Python
 
 import os 
 import sys 
-# Where are we? Add ../../cwd to our PYTHON search path
-if sys.argv[0][0] == '/':
-    cwd = sys.argv[0]
+# Where are we? Compute cwd 
+# ----------------------------------------------------
+if os.name in ['nt', 'dos', 'os2']:
+    if sys.argv[0][1] == ':' and sys.argv[0][2] == '\\':
+        cwd = sys.argv[0]
+    else:
+        cwd = os.getcwd() + '\\' + sys.argv[0]
+elif os.name in ['posix']:
+    if sys.argv[0][0] == '/':
+        cwd = sys.argv[0]
+    else:
+        cwd = os.getcwd() + '/' + sys.argv[0]
 else:
-    cwd = os.getcwd() + '/' + sys.argv[0]
+    raise AttributeError, "your OS (%s) is not supported" % os.name
+# ----------------------------------------------------
+# Add cwd to our PYTHON search path
+# ----------------------------------------------------
 (binpath,spare) = os.path.split(cwd) # peel off pyro filename
 (pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
 sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
 sys.path.append("/usr/local/Aria/python") # add Aria
+# ----------------------------------------------------
+# Make sure environment is setup:
+# ----------------------------------------------------
+if os.name in ['nt', 'dos', 'os2']:
+    os.environ['EDITOR'] = 'notepad'
+    os.putenv('EDITOR', 'notepad')
+    os.environ['HOME'] = pyropath
+    os.putenv('HOME', pyropath)
+    os.environ['HOSTNAME'] = os.getenv('COMPUTERNAME')
+    os.putenv('HOSTNAME', os.getenv('COMPUTERNAME'))
+elif os.name in ['posix']:
+    if os.environ.has_key('LD_LIBRARY_PATH'):
+        newlibpath = os.environ['LD_LIBRARY_PATH'] + (':' + pyropath + '/lib')
+    else:
+        newlibpath = (pyropath + '/lib')
+    os.environ['LD_LIBRARY_PATH'] = newlibpath
+    os.putenv('LD_LIBRARY_PATH', newlibpath)
 if not os.environ.has_key('PYRO'):
     os.environ['PYRO'] = pyropath
     os.putenv('PYRO', pyropath )
-if os.environ.has_key('LD_LIBRARY_PATH'):
-    newlibpath = os.environ['LD_LIBRARY_PATH'] + (':' + pyropath + '/lib')
-else:
-    newlibpath = (pyropath + '/lib')
-os.environ['LD_LIBRARY_PATH'] = newlibpath
-os.putenv('LD_LIBRARY_PATH', newlibpath)
-
 try:
     from pyro.system import share
     from pyro.engine import *

@@ -346,7 +346,12 @@ class gui:
             self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          self.engine.worldfile = worldfile
          pyroPID = os.getpid()
-         os.system(f + (" %d " % pyroPID) + worldfile + " &")
+         if os.name in ['nt', 'dos', 'os2'] :
+            os.system("start "+ (" %d " % pyroPID) + worldfile + " &")
+         elif os.name in ['posix']:
+            os.system(f + (" %d " % pyroPID) + worldfile + " &")
+         else:
+            raise AttributeError, "your OS (%s) is not supported" % os.name
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))
