@@ -556,13 +556,14 @@ class PlayerRobot(Robot):
 
     def update(self):
         self._update()
-        pos, speeds, stall = self.dev.get_position()
-        # (xpos, ypos, th), (xspeed, yspeed, rotatespeed), stall
-        self.devData["x"] = pos[0] / 1000.0
-        self.devData["y"] = pos[1] / 1000.0
-        self.devData["th"] = pos[2] # degrees
-        self.devData["thr"] = pos[2] * PIOVER180
-        self.devData["stall"] = stall
+        if self.hasA("position"):
+            pos, speeds, stall = self.dev.get_position()
+            # (xpos, ypos, th), (xspeed, yspeed, rotatespeed), stall
+            self.devData["x"] = pos[0] / 1000.0
+            self.devData["y"] = pos[1] / 1000.0
+            self.devData["th"] = pos[2] # degrees
+            self.devData["thr"] = pos[2] * PIOVER180
+            self.devData["stall"] = stall
         
     def localize(self, x = 0, y = 0, th = 0):
         """

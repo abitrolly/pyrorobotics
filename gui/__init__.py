@@ -167,7 +167,7 @@ class gui:
             print _retval
       return 0
 
-   def formatExceptionInfo(self, maxTBlevel=1):
+   def formatExceptionInfo(self, maxTBlevel=10):
       import sys, traceback
       cla, exc, trbk = sys.exc_info()
       print "ERROR:", cla, exc
@@ -182,6 +182,10 @@ class gui:
       except KeyError:
          excArgs = ("<no args>",)
       excTb = traceback.format_tb(trbk, maxTBlevel)
+      # FIX: This is only the errors back four lines!
+      # how do you get them before that?
+      #for err in excTb:
+      #   print err
       return "%s: %s %s" % (excName, excArgs[0], "in command line")
 
    def redraw(self):
