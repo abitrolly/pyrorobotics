@@ -1,4 +1,5 @@
 from pyro.brain.ga import *
+import pyro.system.share as share
 
 class GPGene(Gene):
     def __init__(self, **args):
@@ -8,11 +9,11 @@ class GPGene(Gene):
             self.bias = args['bias']
         # higher the bias, more likely to be shallow
         if (random.random() < self.bias):
-            self.data = terminals[ int(random.random() * len(terminals))]
+            self.data = share.terminals[ int(random.random() * len(share.terminals))]
         else:
-            pos = int(random.random() * len(operators)) 
-            self.data = [operators[ pos ], ]
-            for i in range( operands[ operators[pos] ] ):
+            pos = int(random.random() * len(share.operators)) 
+            self.data = [share.operators[ pos ], ]
+            for i in range( share.operands[ share.operators[pos] ] ):
                 self.data.append( GPGene(**args).data )
 
     def eval_tree(self, values, tree = ''):
@@ -20,7 +21,7 @@ class GPGene(Gene):
             tree = self.data
         if type(tree) == type('string') and values.has_key(tree):
             return values[tree]
-        elif type(tree) == type( [1,]) and type(tree[0]) == type('s') and operands.has_key( tree[0] ):
+        elif type(tree) == type( [1,]) and type(tree[0]) == type('s') and share.operands.has_key( tree[0] ):
             return self.applyOpList( values, tree )
         else:
             raise "unknownTreeType", tree
@@ -55,11 +56,11 @@ class GPGene(Gene):
     def depth(self, tree = ''):
         if tree == '':
             tree = self.data
-        if tree in terminals:
+        if tree in share.terminals:
             return 0
-        elif tree[0] in operators:
+        elif tree[0] in share.operators:
             max_depth = 0
-            for o in range(1, operands[ tree[0] ] + 1):
+            for o in range(1, share.operands[ tree[0] ] + 1):
                 deep = self.depth(tree[o])
                 if deep > max_depth:
                     max_depth = deep
@@ -105,17 +106,17 @@ class GPGene(Gene):
     
     def replaceSymbolHelper(self, pos, tree, replacement):
         self.replace += 1
-        if tree in terminals:
+        if tree in share.terminals:
             if self.replace == pos:
                 return replacement
             else:
                 return tree
-        elif tree[0] in operators:
+        elif tree[0] in share.operators:
             if self.replace == pos:
                 return replacement
             else:
                 retval = [tree[0], ]
-                for i in range(operands[ tree[0] ]):
+                for i in range(share.operands[ tree[0] ]):
                     retval.append( self.replaceSymbolHelper(pos, tree[i + 1], replacement))
                 return retval
         else:
@@ -126,15 +127,15 @@ class GPGene(Gene):
         return self.getTreeHelper(self.data, pos)
 
     def getTreeHelper(self, tree, pos):
-        if tree in terminals:
+        if tree in share.terminals:
             self.points += 1
             if self.points == pos:
                 return tree
-        elif tree[0] in operators:
+        elif tree[0] in share.operators:
             self.points += 1
             if self.points == pos:
                 return tree
-            for o in range(1, operands[ tree[0] ] + 1):
+            for o in range(1, share.operands[ tree[0] ] + 1):
                 retval = self.getTreeHelper(tree[o], pos)
                 if self.points >= pos:
                     return retval
@@ -147,13 +148,13 @@ class GPGene(Gene):
         return self.points
 
     def countPoint(self, tree, what = 'all'):
-        if tree in terminals:
+        if tree in share.terminals:
             if what == 'all' or what == 'terminal':
                 self.points += 1
-        elif tree[0] in operators:
+        elif tree[0] in share.operators:
             if what == 'all' or what == 'operator':
                 self.points += 1
-            for o in range(1, operands[ tree[0] ] + 1):
+            for o in range(1, share.operands[ tree[0] ] + 1):
                 self.countPoint(tree[o], what)
         else:
             raise "unknownTreetype", tree
@@ -161,19 +162,19 @@ class GPGene(Gene):
     def display(self, tree = ''):
         if tree == '':
             tree = self.data
-        if tree in terminals:
+        if tree in share.terminals:
             print tree,
-        elif tree[0] in operators:
+        elif tree[0] in share.operators:
             print "(%s " % tree[0],
-            for o in range(1, operands[ tree[0] ] + 1):
+            for o in range(1, share.operands[ tree[0] ] + 1):
                 self.display(tree[o])
             print ")",
         else:
             raise "unknownTreetype", tree
 
 
-if __name__ == '__main__2':
-    terminals = ['i1', 'i2']
+if __name__ == '__main__':
+    share.terminals = ['i1', 'i2']
     # inputs for XOR:
     values = [ {'i1' : 0, 'i2' : 0},
                {'i1' : 0, 'i2' : 1},
@@ -181,12 +182,12 @@ if __name__ == '__main__2':
                {'i1' : 1, 'i2' : 1} ]
     goals = [ 0, 1, 1, 0 ] # outputs for XOR
     # These go together:
-    operators = ['+', '-', '*', '/']
+    share.operators = ['+', '-', '*', '/']
     # how many operands (arguments):
-    operands  = {'+'   : 2,
-                 '-'   : 2,
-                 '*'   : 2,
-                 '/'   : 2 }
+    share.operands  = {'+'   : 2,
+                       '-'   : 2,
+                       '*'   : 2,
+                       '/'   : 2 }
 
     class GP(GA):
         def __init__(self, cnt, **args):
@@ -207,7 +208,6 @@ if __name__ == '__main__2':
     gp.evolve()
     print " -----------------------------------------------------------------"
 
-if __name__ == '__main__':
     class PI_GP(GA):
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, **args))
@@ -222,13 +222,13 @@ if __name__ == '__main__':
         def isDoneFunction(self):
             return self.fitnessFunction(0, 1) == 0
 
-    operators = ['+', '-', '*', '/']
+    share.operators = ['+', '-', '*', '/']
     # how many operands (arguments):
-    operands  = {'+'   : 2,
-                 '-'   : 2,
-                 '*'   : 2,
-                 '/'   : 2 }
-    terminals = ['s0', 's1']
+    share.operands  = {'+'   : 2,
+                       '-'   : 2,
+                       '*'   : 2,
+                       '/'   : 2 }
+    share.terminals = ['s0', 's1']
     values = {'s0' : 0.1, 's1' : 0.2}
     gp = PI_GP(1000, bias = .6)
     gp.evolve()
