@@ -97,11 +97,107 @@ class PlayerCommService(PlayerService):
 
 class PlayerPTZService(PlayerService):
 
-    def setPose(self, pan, tilt, zoom):
+    def __init__(self, dev, name):
+        PlayerService.__init__(self, dev, name)
+        self.origPose = (0, 0, 120)
+
+    def init(self):
+        self.setPose( self.origPose )
+
+    def setPose(self, *args):
+        if len(args) == 3:
+            pan, tilt, zoom = args[0], args[1], args[2]
+        elif len(args[0]) == 3:
+            pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
+        else:
+            raise AttributeError, "setPose takes pan, tilt, and zoom"
         return self.dev.set_ptz(pan, tilt, zoom)
 
     def getPose(self):
         return self.dev.get_ptz()
+
+    def pan(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(numDegrees, ptz[1], ptz[2])
+
+    def panRel(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0] + numDegrees, ptz[1], ptz[2])
+
+    def tilt(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0], numDegrees, ptz[2])
+
+    def tiltRel(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0], ptz[1] + numDegrees, ptz[2])
+
+    def panTilt(self, panDeg, tiltDeg):
+        ptz = self.getPose()
+        return self.dev.set_ptz(panDeg, tiltDeg, ptz[2])
+
+    def panTiltRel(self, panDeg, tiltDeg):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
+
+    def centerCamera(self):
+        return self.setPose( self.origPose )
+
+    def zoom(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0], ptz[1], numDegrees)
+
+    def zoomRel(self, numDegrees):
+        ptz = self.getPose()
+        return self.dev.set_ptz(ptz[0], ptz[1], ptz[2] + numDegrees)
+
+    def getPan(self):
+        ptz = self.getPose()
+        return ptz[0]
+        
+    def getTilt(self):
+        ptz = self.getPose()
+        return ptz[1]
+        
+    def getZoom(self):
+        ptz = self.getPose()
+        return ptz[2]
+
+    def getRealPan(self):
+        ptz = self.getPose()
+        return ptz[0]
+        
+    def getRealTilt(self):
+        ptz = self.getPose()
+        return ptz[1]
+        
+    def getRealZoom(self):
+        ptz = self.getPose()
+        return ptz[2]
+
+    def canGetRealPanTilt(self):
+        return 1
+
+    def canGetRealZoom(self):
+        return 1
+
+    def getMaxPosPan(self):
+        return 100
+
+    def getMaxNegPan(self):
+        return -100
+
+    def getMaxPosTilt(self):
+        return 30
+
+    def getMaxNegTilt(self):
+        return -30
+
+    def getMaxZoom(self):
+        return 10
+
+    def getMinZoom(self):
+        return 120
 
 class PlayerGripperService(PlayerService):
     # Gripper functions
