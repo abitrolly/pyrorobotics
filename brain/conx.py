@@ -304,7 +304,7 @@ class Layer:
         if (self.type == 'Output'):
             string += toStringArray('Target    ', self.target, self.displayWidth)
         string += toStringArray('Activation', self.activation, self.displayWidth)
-        if (self.type != 'Input' and self.verbosity > 0):
+        if (self.type != 'Input' and self.verbosity > 1):
             string += toStringArray('Error     ', self.error, self.displayWidth)
         if (self.verbosity > 4 and self.type != 'Input'):
             string +=  toStringArray('bias      ', self.bias, self.displayWidth)
@@ -322,7 +322,7 @@ class Layer:
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
-        if (self.type != 'Input' and self.verbosity > 0):
+        if (self.type != 'Input' and self.verbosity > 1):
             displayArray('Error     ', self.error, self.displayWidth)
         if (self.verbosity > 4 and self.type != 'Input'):
             print "    ", ; displayArray('bias', self.bias)
@@ -391,7 +391,8 @@ class Layer:
             if not self.warningIssued:
                 print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                       (self.name, self.targetSet)
-            self.warningIssued = 1
+                print "(Warning will not be issued again)"
+                self.warningIssued = 1
         if value > self.maxActivation or value < self.minActivation:
             raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
@@ -409,7 +410,8 @@ class Layer:
             if not self.warningIssued:
                 print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                       (self.name, self.targetSet)
-            self.warningIssued = 1
+                print "(Warning will not be issued again)"
+                self.warningIssued = 1
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
             raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
         self.target = array
@@ -498,7 +500,7 @@ class Connection:
         """
         Displays connection information to the screen.
         """
-        if self.toLayer.verbosity > 0:
+        if self.toLayer.verbosity > 4:
             print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
             for j in range(self.toLayer.size):
                 print self.toLayer.name, "[", j, "]",
@@ -519,25 +521,25 @@ class Connection:
                     print self.dweight[i][j],
                 print ''
             print ''
-        print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
-        print "             ",
-        for j in range(self.toLayer.size):
-            print self.toLayer.name, "[", j, "]",
-        print ''
-        for i in range(self.fromLayer.size):
-            print self.fromLayer.name, "[", i, "]", ": ",
+        if self.toLayer.verbosity > 2:
+            print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
+            print "             ",
             for j in range(self.toLayer.size):
-                print self.weight[i][j],
+                print self.toLayer.name, "[", j, "]",
             print ''
-        print ''
-
+            for i in range(self.fromLayer.size):
+                print self.fromLayer.name, "[", i, "]", ": ",
+                for j in range(self.toLayer.size):
+                    print self.weight[i][j],
+                print ''
+            print ''
     # string method
     def toString(self):
         """
         Connection information as a string.
         """
         string = ""
-        if self.toLayer.verbosity > 0:
+        if self.toLayer.verbosity > 4:
             string += "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n" 
             string += "            "
             for j in range(self.toLayer.size):
@@ -560,17 +562,18 @@ class Connection:
                     string +=  "              " + str(self.dweight[i][j])
                 string += '\n'
             string += '\n'
-        string += "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n"
-        string += "            "
-        for j in range(self.toLayer.size):
-            string += "        "  + self.toLayer.name+ "["+ str(j)+ "]"
-        string += '\n'
-        for i in range(self.fromLayer.size):
-            string += self.fromLayer.name+ "["+ str(i)+ "]"+ ": "
+        if self.toLayer.verbosity > 2:
+            string += "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n"
+            string += "            "
             for j in range(self.toLayer.size):
-                string +=  "    " + str(self.weight[i][j])
+                string += "        "  + self.toLayer.name+ "["+ str(j)+ "]"
             string += '\n'
-        string += '\n'
+            for i in range(self.fromLayer.size):
+                string += self.fromLayer.name+ "["+ str(i)+ "]"+ ": "
+                for j in range(self.toLayer.size):
+                    string +=  "    " + str(self.weight[i][j])
+                string += '\n'
+            string += '\n'
         return string
     
 class Network:
@@ -1000,7 +1003,7 @@ class Network:
         """
         vector2 = self.replacePatterns(vec2)
         length = min(len(vector1), len(vector2))
-        if self.verbosity > 1:
+        if self.verbosity > 4:
             print "Copying Vector: ", vector2[start:start+length]
         p = 0
         for i in range(start, start + length):
@@ -1012,7 +1015,7 @@ class Network:
         patterns if necessary.
         """
         vector = self.replacePatterns(vec)
-        if self.verbosity > 1:
+        if self.verbosity > 4:
             print "Copying Activations: ", vector[start:start+layer.size]
         layer.copyActivations(vector[start:start+layer.size])
     def copyTargets(self, layer, vec, start = 0):
@@ -1021,7 +1024,7 @@ class Network:
         if necessary.
         """
         vector = self.replacePatterns(vec)
-        if self.verbosity > 1:
+        if self.verbosity > 4:
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
     def loadInput(self, pos, start = 0):
@@ -1307,7 +1310,7 @@ class Network:
             tssError += error
             totalCorrect += correct
             totalCount += total
-            if self.verbosity > 0 or self.interactive:
+            if self.verbosity > 2 or self.interactive:
                 self.display()
             if self.interactive:
                 self.prompt()
@@ -1375,7 +1378,7 @@ class Network:
                 raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
-        if self.verbosity > 0 or self.interactive:
+        if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
                 self.prompt()
@@ -1481,7 +1484,8 @@ class Network:
                 #dw_sum += Numeric.add.reduce(abs(layer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
-            self.display()
+            if self.verbosity > 2:
+                self.display()
         return (dw_count, dw_sum)
 
     def ce_init(self):
@@ -1997,11 +2001,11 @@ class SRN(Network):
     adds support for sequencing, prediction, and context layers.
     """
     # constructor
-    def __init__(self):
+    def __init__(self, name = "Simple Recurrent Network", verbosity = 0):
         """
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
-        Network.__init__(self)
+        Network.__init__(self, name = name, verbosity = verbosity)
         self.sequenceLength = 1
         self.learnDuringSequence = 0
         self.autoSequence = 1 # auto detect length of sequence from input size

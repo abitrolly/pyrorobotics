@@ -7,22 +7,10 @@ Governor code for self regulating networks.
 from pyro.brain.conx import *
 from pyro.brain.ravq import ARAVQ, euclideanDistance
 
-class GovernorNetwork(Network):
+class Governor:
     """
     A Network + RAVQ. 
     """
-    def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6, historySize = 5, alpha = 0.02,
-                 mask = [], verbosity = 0):
-        # network:
-        Network.__init__(self, name = "Governed Network", verbosity = verbosity)
-        # ravq
-        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
-        self.ravq.setAddModels(1)
-        self.ravq.setVerbosity(verbosity)
-        self.histogram = {}
-        if not mask == []: 
-            self.ravq.setMask(mask)
-
     def incompatibility(self):
         """
         For each model, how different is it from each of the buffer items? Returns list of
@@ -96,9 +84,36 @@ class GovernorNetwork(Network):
         """ Loads RAVQ data from a file. """
         self.ravq.loadRAVQFromFile(filename)
 
+class GovernorNetwork(Governor, Network):
+    def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
+                 historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
+        # network:
+        Network.__init__(self, name = "Governed Network",
+                         verbosity = verbosity)
+        # ravq
+        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
+        self.ravq.setAddModels(1)
+        self.ravq.setVerbosity(verbosity)
+        self.histogram = {}
+        if not mask == []: 
+            self.ravq.setMask(mask)
+
+class GovernorSRN(Governor, SRN): 
+    def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
+                 historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
+        # network:
+        SRN.__init__(self, name = "Governed Simple Recurrent Network",
+                     verbosity = verbosity)
+        # ravq
+        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
+        self.ravq.setAddModels(1)
+        self.ravq.setVerbosity(verbosity)
+        self.histogram = {}
+        if not mask == []: 
+            self.ravq.setMask(mask)
+
 if __name__ == '__main__':
     import os, gzip
-
     # read in experimental training data
     locationfile = gzip.open('location.dat.gz', 'r')
     sensorfile = gzip.open('sensors.dat.gz', 'r')
@@ -106,42 +121,35 @@ if __name__ == '__main__':
     locations = locationfile.readlines()
     locationfile.close()
     sensorfile.close()
-
+    # set RAVQ parameters
     govEpsilon = 0.2
     delta = 0.8
     alpha = .9 # 0.02
     ravqBuffer = 5
     govBuffer = 5
-
     # The "16" weights the input determining the multiple labels
-    
     # The choice of epsilon and delta may change the required
     # weights. For binary nodes, changing the value will make the vector
     # distance one from every vector with the opposite value in that
     # node. This change is enough if the delta value is less than
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
-    
     inSize = len(map(lambda x: float(x), sensors[0].rstrip().split()))
     govMask = [1] * (inSize - 1) + [16] + [inSize/4] * 4
-    #govMask = [1] * (inSize - 1) + [0] + [inSize/4] * 4
     # create network
     net = GovernorNetwork(ravqBuffer, govEpsilon, delta, govBuffer, alpha, govMask)
-
     net.addThreeLayers(inSize, inSize/2, 4)
     # the output will code the robots current region
-
+    # network:
     # defaults - but here explicit
     net.setBatch(0)
     net.setInteractive(0)
     net.setVerbosity(0)
-      
     # learning parameters
     net.setEpsilon(0.2)
     net.setMomentum(0.9)
     net.setTolerance(0.05)
     net.setLearning(1)
-      
     # initialize network
     net.initialize()
     totalSteps = 0
@@ -188,19 +196,19 @@ if __name__ == '__main__':
         print "Distance map:\n"
         print net.ravq.distanceMapAsString()
         print "*" * 50
-print "Testing..."
-net.setLearning(0)
-epochTSS = 0
-epochCorrect = 0
-epochCount = 0
-for i in range(5000):  
-    sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
-    locationlist = map(lambda x: float(x), locations[i].rstrip().split())
-    array = sensorlist + locationlist
-    error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
-    epochTSS += error
-    epochCorrect += correct
-    epochCount += total
-print "OVERALL Error: %9.4f Correct: %9.4f" % (epochTSS, epochCorrect/float(epochCount))
+    print "Testing..."
+    net.setLearning(0)
+    epochTSS = 0
+    epochCorrect = 0
+    epochCount = 0
+    for i in range(5000):  
+        sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
+        locationlist = map(lambda x: float(x), locations[i].rstrip().split())
+        array = sensorlist + locationlist
+        error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
+        epochTSS += error
+        epochCorrect += correct
+        epochCount += total
+    print "OVERALL Error: %9.4f Correct: %9.4f" % (epochTSS, epochCorrect/float(epochCount))
 
 # plot map with: gnuplot: splot "datafile" matrix with pm3d
