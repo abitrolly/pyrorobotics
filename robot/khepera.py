@@ -44,6 +44,10 @@ class KheperaRobot(Robot):
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.dev = self # pointer to self
+        self.stallTolerance = 0.25
+        self.stallHistoryPos = 0
+        self.stallHistorySize = 5
+        self.stallHistory = [0] * self.stallHistorySize
         self.sensorSet = {'all': range(8),
                           'front' : (2, 3), 
                           'front-left' : (0, 1), 
@@ -329,11 +333,25 @@ class KheperaRobot(Robot):
         self.sendMsg('H', 'position')
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
+        """
+        The 'K' message returns 6 numbers dealing with the status of the
+        motors.  The 3rd and 6th are error codes representing the left and
+        right motors, respectively.  The represent the difference
+        between the desired speed and the actual speed.
+        """
+        # ----------- start compute stall
+        self.stallHistory[self.stallHistoryPos] = 0
+        if self.currSpeed[0] != 0:
+            err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
+            if err < .25:
+                self.stallHistory[self.stallHistoryPos] = 1
+        if self.currSpeed[1] != 0:
+            err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
+            if err < .25:
+                self.stallHistory[self.stallHistoryPos] = 1
+        # ----------- end compute stall
+        self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
         self.deadReckon()
-#        if self.isStall():
-#            print "STALLED"
-#        else:
-#            print "."
 
     def deadReckon(self):
         """
@@ -376,22 +394,9 @@ class KheperaRobot(Robot):
         self.th = self.thr * (180.0 / math.pi)
 
     def isStall(self, dev = 0):
-        """
-        The 'K' message returns 6 numbers dealing with the status of the
-        motors.  The 3rd and 6th are error codes representing the left and
-        right motors, respectively.  The represent the difference
-        between the desired speed and the actual speed.
-        """
-        if self.currSpeed[0] != 0:
-            err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
-            if err < .25:
-                return 1
-        if self.currSpeed[1] != 0:
-            err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
-            if err < .25:
-                return 1
-        else:
-            return 0
+        stalls = float(reduce(lambda x, y: x + y, self.stallHistory))
+        # if greater than % of last history is stall, then stall
+        return (stalls / self.stallHistorySize) > 0.5
 
     def getX(self, dev):
         return self.mmToUnits(self.x, self.senses['robot']['units'](dev))

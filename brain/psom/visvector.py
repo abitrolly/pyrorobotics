@@ -34,7 +34,7 @@ class IRVisVector(VisVector):
    def __init__(self, vector, title="", opts = (0, 0)):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
-      self.app = Tkinter.Tk()
+      self.app = Tk()
       self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.win.title(title)
