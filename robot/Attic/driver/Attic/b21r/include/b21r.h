@@ -25,6 +25,7 @@ class b21r
     int    UpdatePosition        (void);
     int    SetVelos              (double,double);
     void Disconnect(void);
+    void initSkirtPose(void);
     
  private:
     B21R   *dev;

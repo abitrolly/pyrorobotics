@@ -47,6 +47,7 @@ class B21R : public Robot
     double GetMaxDist         (void);
     double getPower              (void);
     void Disconnect(void);
+    void initSkirtPose(void);
 
     /*--- Public Variables ---*/
 

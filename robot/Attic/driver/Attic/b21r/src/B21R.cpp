@@ -7,7 +7,7 @@
 
 B21R :: B21R(int argc, char **argv) : Robot(argc, argv)
 {
-  RUN_SKIRTPOSE = 1;
+  RUN_SKIRTPOSE = 0;
   //if (strcmp(xrcl::get_option(argc, argv, "-cameras", "off"), "on") == 0) {
   //  CameraMover = new B21RCamMover();
   //}
@@ -72,46 +72,47 @@ int B21R :: RobotControlModuleInit(void)
     }
   fprintf( stderr, "Done\n" );
 
-    /*------------------ SKIRTPOSE MODULE -----------------------*/
-
-    fprintf( stderr, "Attaching to \'%s/SkirtPose\' ...\n",
-	     RobotName );
-    sprintf(PathName, "%s/SkirtPose", RobotName);
-    ptempObj = pHelper->find_object(PathName);
-    try
-      {
-	pSkirtState = MobilityActuator::ActuatorState::_duplicate(MobilityActuator::ActuatorState::_narrow(ptempObj));
-      }
-    catch (...) {
-      return(NEGONE);
+  /*------------------ SKIRTPOSE MODULE -----------------------*/
+  
+  fprintf( stderr, "Attaching to \'%s/SkirtPose\' ...\n",
+	   RobotName );
+  sprintf(PathName, "%s/SkirtPose", RobotName);
+  ptempObj = pHelper->find_object(PathName);
+  try
+    {
+      pSkirtState = MobilityActuator::ActuatorState::_duplicate(MobilityActuator::ActuatorState::_narrow(ptempObj));
     }
-    fprintf( stderr, "Done...\n" );
-
-    fprintf( stderr, "RUN_SKIRTPOSE: %d\n",
-	     RUN_SKIRTPOSE);
-
-  if ( RUN_SKIRTPOSE ) {
-    SkirtPose = 2 * PI;
-    // Set initial postition of robot
-    UpdatePosition();
-    SetVelos(0,0.8);
-    int counter = 0;
-    while (SkirtPose > 0.2 || SkirtPose < 0.1) {
-      UpdatePosition();
-      if (counter % 68 == 0) {
-	fprintf(stderr,"\n[Skirt %.2f]",SkirtPose);
-      } else fprintf(stderr, ".");
-      SetVelos(0,0.8);
-      counter++;
-    }
+  catch (...) {
+    return(NEGONE);
   }
+  fprintf( stderr, "Done...\n" );
+  
+  if ( RUN_SKIRTPOSE ) {
+    initSkirtPose();
+  }	
 
-    SetVelos(0,0.0);
-    UpdatePosition();
+  SetVelos(0,0.0);
+  UpdatePosition();
   
   // Everything is OK!!
   fprintf( stderr, "OK.\n" );
   return(ZERO);
+}
+
+void B21R :: initSkirtPose(void) {
+  SkirtPose = 2 * PI;
+  // Set initial postition of robot
+  UpdatePosition();
+  SetVelos(0,0.8);
+  int counter = 0;
+  while (SkirtPose > 0.2 || SkirtPose < 0.1) {
+    UpdatePosition();
+    if (counter % 68 == 0) {
+      fprintf(stderr,"\n[Skirt %.2f]",SkirtPose);
+    } else fprintf(stderr, ".");
+    SetVelos(0,0.8);
+    counter++;
+  }
 }
 
 /*--------------- Class B21R SensorInit --------------------*/
