@@ -221,6 +221,7 @@ class Network:
         self.orderedInput = 0
         self.loadOrder = []
         self.learning = 1
+        self.initContext = 1
         self.momentum = 0.9
         self.resetEpoch = 1000
         self.resetCount = 0
@@ -240,7 +241,6 @@ class Network:
         self.tolerance = 0.4
         self.interactive = 0
         self.epsilon = 0.1
-        self.learning = 1
         self.reportRate = 25
     def arrayify(self):
         gene = []
@@ -279,6 +279,8 @@ class Network:
         self.tolerance = value
     def setLearning(self, value):
         self.learning = value
+    def setInitContext(self, value):
+        self.initContext = value
     def setMomentum(self, value):
         self.momentum = value
     def setResetLimit(self, value):
@@ -871,11 +873,11 @@ class SRN(Network):
     def preprop(self, patnum, step):
         Network.preprop(self, patnum, step)
         if self.sequenceLength > 1:
-            if step == 0:
+            if step == 0 and self.initContext:
                 self.getLayer('context').activation = \
                     Numeric.ones(self.getLayer('context').size, 'f') * .5
         else: # if seq length is one, you better be doing ordered
-            if patnum == 0:
+            if patnum == 0 and self.initContext:
                 self.getLayer('context').activation = \
                     Numeric.ones(self.getLayer('context').size, 'f') * .5
     def postprop(self, patnum, step):
