@@ -37,15 +37,9 @@ class Avoid (Behavior):
         close_dist = self.getRobot().getMin('all', 'range', range(7)).distance 
         close_angl = self.getRobot().getMin('all', 'range', range(7)).angle / math.pi
         print "Closest distance is:", close_dist
-        if self.getRobot().type == 'khepera':
-            self.IF(Fuzzy(40.0, 60.0) << close_dist, 'translate', 0)
-            self.IF(Fuzzy(40.0, 60.0) << close_dist, 'rotate', \
-                    -self.direction(close_angl) * 1)
-        else: # saphira, others:
-            self.IF(float(Fuzzy(.2, 2.0) << close_dist), 'translate', 0)
-            self.IF(Fuzzy(0.0, 0.5) << close_dist, 'rotate', \
-                    -self.direction(close_angl) * 1)
-            
+        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
+        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'rotate', \
+                -self.direction(close_angl) * 1)
 
 class state1 (State):
     def init(self):

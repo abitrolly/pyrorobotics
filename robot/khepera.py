@@ -67,6 +67,7 @@ class KheperaRobot(Robot):
         self.senses['range'] = {}
         self.senses['range']['all'] = self.getIRRangeAll
         self.senses['range']['count'] = lambda self: 8
+        self.senses['range']['type'] = lambda self: 'abstract'
         self.senses['range']['maxvalue'] = lambda self: self.mmToSenseUnits(60.0)
 	self.senses['ir']['flag'] = self.getIRFlag
 
