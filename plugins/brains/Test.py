@@ -1,12 +1,14 @@
 # A bare brain
 
 from pyro.brain import Brain
+from pyro.robot.playerpuck import *
 
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
 
    def __init__(self, engine):
       Brain.__init__(self, "SimpleBrain", engine)
+      self.puck = PlayerPuck("puck1", 8000)
 
    def step(self):
       #self.robot.move(0, -.2) # negative is to the right!
