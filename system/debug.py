@@ -1,115 +1,103 @@
-"""
-debug - multiline prompt
-"""
+import code
+import readline
+import atexit
+import os
+import sys
 import signal
+from traceback import print_exc as print_exc
+from traceback import extract_stack
 
-prompt = compile("""
-try:
-    _prompt
-    _recursion = 1
-except:
-    _recursion = 0
-if not _recursion:
-    from traceback import print_exc as print_exc
-    from traceback import extract_stack
-    _stack = extract_stack()
-    _frame = [frame]
-    thisFrame = frame
-    while 1:
-        try:
-            _frame.append(thisFrame.f_back)
-            thisFrame = thisFrame.f_back
-        except:
-            break
-    _frame.reverse()
-    _frame.append(None)
-    _frame.append(None)
-    _currentPos = -3
-    _prompt = {'print_exc':print_exc, 'inp':'','inp2':'','co':''}
-    _lastPos = 0
-    while 1:
-        if _lastPos != _currentPos:
-            _lastPos = _currentPos
-            _a_es, _b_es, _c_es, _d_es = extract_stack()[_currentPos]
-            if _c_es == '?':
-                _c_es = '__main__'
-            else:
-                _c_es += '()' 
-            print '\\ndebug in %s at %s:%s  -  continue with CTRL-D' % (_c_es, _a_es, _b_es)
-        try:
-            _prompt['inp']=raw_input('>>> ')
-            if not _prompt['inp']:
-                continue
-            if _prompt['inp'][-1] == chr(4): 
+class PyroDebugger(code.InteractiveConsole):
+    def __init__(self, filename="<console>",
+                 histfile=os.path.expanduser("~/.pyrohist"),
+                 frame=None):
+        code.InteractiveConsole.__init__(self, locals=frame.f_locals)
+        self.init_history(histfile)
+        self.stack = extract_stack()
+        self.frames = [frame]
+        thisFrame = frame
+        while 1:
+            try:
+                self.frames.append(thisFrame.f_back)
+                thisFrame = thisFrame.f_back
+            except:
                 break
-            if _prompt['inp'] == "up":
-                _currentPos -= 1
-                frame = _frame[_currentPos]
-                continue
-            elif _prompt['inp'] == "down":
-                _currentPos += 1
-                frame = _frame[_currentPos]
-                continue
-            elif _prompt['inp'] == "top":
-                _currentPos = -len(_frame) + 1
-                frame = _frame[_currentPos]
-                continue
-            elif _prompt['inp'] == "bot":
-                _currentPos = -3
-                frame = _frame[_currentPos]
-                continue
-            code = compile(_prompt['inp'],'<prompt>','single')
-            exec(code, frame.f_globals, frame.f_locals)
-        except EOFError:
-            print
-            break
-        except SyntaxError:
-            while 1:
-                _prompt['inp']+=chr(10)
-                try:
-                    _prompt['inp2']=raw_input('... ')
-                    if _prompt['inp2']:
-                        if _prompt['inp2'][-1] == chr(4): 
-                            print
-                            break
-                        _prompt['inp']=_prompt['inp']+_prompt['inp2']
-                    _prompt['co']=compile(_prompt['inp'],'<prompt>','exec')
-                    if not _prompt['inp2']:
-                        if _prompt['co'] == "up":
-                            _currentPos -= 1
-                            frame = _frame[_currentPos]
-                            continue
-                        elif _prompt['co'] == "down":
-                            _currentPos += 1
-                            frame = _frame[_currentPos]
-                            continue
-                        elif _prompt['co'] == "top":
-                            _currentPos = -len(_frame) + 1
-                            frame = _frame[_currentPos]
-                            continue
-                        elif _prompt['co'] == "bot":
-                            _currentPos = -3
-                            frame = _frame[_currentPos]
-                            continue
-                        exec(_prompt['co'], frame.f_globals, frame.f_locals)
-                        break
-                    continue
-                except EOFError:
-                    print
-                    break
-                except:
-                    if _prompt['inp2']: 
-                        continue
-                    _prompt['print_exc']()
-                    break
-        except:
-            _prompt['print_exc']()
-    print 'continuing...'
-    # delete the prompts stuff at the end
-    del _prompt
-""", '<prompt>', 'exec')
+        self.frames.reverse()
+        self.frames.append(None)
+        self.frames.append(None)
+        self.currentPos = -3
+        self.lastPos = -3
+        self.initDisplay = 0
+
+    def displayTrace(self):
+        maxFuncName = 0
+        c = 1
+        for i in range(-len(self.frames) + 1, -3 + 1):
+            a_es, b_es, c_es, d_es = self.stack[i]
+            maxFuncName = max(maxFuncName, len(c_es))
+        for i in range(-len(self.frames) + 1, -3 + 1):
+            a_es, b_es, c_es, d_es = self.stack[i]
+            if c_es == '?':
+                c_es = '__main__'
+            else:
+                c_es += '()'
+            if self.currentPos + len(self.frames) == c:
+                pointer = ">"
+            else:
+                pointer = " "
+            nameFormat = ("%" + ("%d" % (maxFuncName + 2))) + "s"
+            print (" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es)
+            c += 1
+        print
+
+    def displayHelp(self):
+        print "Commands: up, down, top, bottom, help, quit, <CONTROL+D> to continue"
+        print "          or any Python expression. Try: dir() for current stack vars."
+
+    def init_history(self, histfile):
+        readline.parse_and_bind("tab: complete")
+        if hasattr(readline, "read_history_file"):
+            try:
+                readline.read_history_file(histfile)
+            except IOError:
+                pass
+            atexit.register(self.save_history, histfile)
+
+    def save_history(self, histfile):
+        readline.write_history_file(histfile)
+
+    def raw_input(self, prompt):
+        if not self.initDisplay or self.currentPos != self.lastPos:
+            self.displayTrace()
+            self.displayHelp()
+            self.initDisplay = 1
+            self.lastPos = self.currentPos
+        return code.InteractiveConsole.raw_input(self, prompt)
+
+    def push(self, line):
+        if line in ["up", "down", "top", "bottom"]:
+            if line == "up":
+                self.currentPos -= 1
+            elif line == "down":
+                self.currentPos += 1
+            elif line == "top":
+                self.currentPos = -len(self.frames) + 1
+            elif line == "bot":
+                self.currentPos = -3
+            if self.currentPos >= -len(self.frames) + 1 and \
+               self.currentPos <= -3:
+                self.locals = self.frames[self.currentPos].f_locals
+            else:
+                self.currentPos = self.lastPos
+            return
+        if line == "quit":
+            sys.exit(1)
+        return code.InteractiveConsole.push(self, line)
 
 def handler(signum, frame):
-    exec prompt
+    console = PyroDebugger(frame=frame)
+    console.interact()
+    print "\nContinuing..."
 signal.signal(signal.SIGTSTP, handler) # suspend
 
+print "PyroDebugger is installed. Press <CONTROL+Z> to activate."
