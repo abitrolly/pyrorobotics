@@ -321,18 +321,23 @@ class KheperaRobot(Robot):
         self.deadReckon()
 
     def deadReckon(self):
-        """ Called after each little update in position """
+        """
+        Called after each little update in position.
+        Based on code from Adam R. Bockrath
+        http://www.dcs.qmul.ac.uk/~adamb/FIRA171.pdf
+        """
         # get wheel positions:
         w0 = self.senseData['position'][0]
         w1 = self.senseData['position'][1]
         if w0 == self.w0 and w1 == self.w1:
+            # no difference to compute
             return
         # get diff:
-        delta_w0 = (w0 - self.w0) * 0.08 # mm FIX?
+        delta_w0 = (w0 - self.w0) * 0.08 # mm 
         delta_w1 = (w1 - self.w1) * 0.08 # mm
         print "delta w0, w1:", delta_w0, delta_w1
         # get diff / diameter of wheel base, in mm:
-        delta_thr   = (delta_w1 - delta_w0) / .6445
+        delta_thr   = (delta_w1 - delta_w0) / 644.5
         # average diff (dist):
         delta_dist = (delta_w0 + delta_w1) / 2.0
         # compute change in x, y:
@@ -340,7 +345,7 @@ class KheperaRobot(Robot):
         delta_y = delta_dist * math.sin(self.thr + delta_thr/2.0)
         print "delta x, y:", delta_x, delta_y
         if delta_thr != 0:
-            delta_x *= (2.0 * math.cos(delta_thr/2.0) / delta_thr)
+            delta_x *= (2.0 * math.sin(delta_thr/2.0) / delta_thr)
             delta_y *= (2.0 * math.sin(delta_thr/2.0) / delta_thr)
         # update everything:
         # FIX: I think that this needs to be subtracted for our th?
