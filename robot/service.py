@@ -4,6 +4,7 @@ class Service:
     def __init__(self):
         self.active = 1
         self.visible = 0
+        self.dev = 0
         self.state = "stopped"
 
     def startService(self):
