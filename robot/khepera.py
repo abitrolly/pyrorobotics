@@ -58,18 +58,15 @@ class KheperaRobot(Robot):
 	self.senses['ir']['count'] = lambda self: 8
 	self.senses['ir']['type'] = lambda self: 'range'
 
-	self.senses['light'] = {}
-	self.senses['light']['count'] = lambda self: 8
-	self.senses['light']['type'] = lambda self: 'measure'
-
 	# location of sensors' hits:
 	self.senses['ir']['x'] = self.getIRXCoord
 	self.senses['ir']['y'] = self.getIRYCoord
 	self.senses['ir']['z'] = lambda self, pos: 0.25
 	self.senses['ir']['value'] = self.getIRRange
         self.senses['ir']['all'] = self.getIRRangeAll
-        self.senses['ir']['maxvalue'] = lambda self, x = self.mmToSenseUnits(60.0): x
+        self.senses['ir']['maxvalue'] = lambda self: 60.0 # in mm
 	self.senses['ir']['flag'] = self.getIRFlag
+        self.senses['ir']['units'] = "ROBOTS"
 
 	# location of origin of sensors:
         self.senses['ir']['ox'] = self.light_ox
@@ -81,6 +78,12 @@ class KheperaRobot(Robot):
                                       x = (5 * math.pi / 180) : x
         # Make a copy, for default:
         self.senses['range'] = self.senses['ir']
+
+	self.senses['light'] = {}
+	self.senses['light']['count'] = lambda self: 8
+	self.senses['light']['type'] = lambda self: 'measure'
+        self.senses['light']['maxvalue'] = lambda self: 200
+        self.senses['light']['units'] = "RAW"
 
         # location of sensors' hits:
         self.senses['light']['x'] = self.getIRXCoord
@@ -292,32 +295,42 @@ class KheperaRobot(Robot):
         elif pos == 7:
             return 180.0
 
-    def mmToSenseUnits(self, val):
-        if self.senseUnits == "ROBOTS":
-            return val / 55.0 # khepera is 55mm diameter
-        elif self.senseUnits == "MM":
-            return val
-        elif self.senseUnits == "RAW":
-            return val # FIX: rearrange so that this does return raw
-        elif self.senseUnits == "CM":
-            return (val) / 10.0 # cm
-        elif self.senseUnits == "METERS":
-            return (val) / 100.0 # meters
-        elif self.senseUnits == "SCALED":
-            print "WARNING: khepera senseUnits is SCALED?"
-            # FIX: should we have maxvalue? Force [0,1]?
-            return val / 55.0
-        
-    def getLightRange(self, dev, pos):
-        return self.mmToSenseUnits((self.senseData['light'][pos] / 511.0) * 200.0)
-
     def getIRRange(self, dev, pos):
-        return self.mmToSenseUnits(((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0) # mm
+        raw = self.senseData['ir'][pos]
+        mm = ((1023.0 - raw) / 1023.0) * 60.0
+        if self.senses['ir']['units'] == "ROBOTS":
+            return mm / 55.0 # khepera is 55mm diameter
+        elif self.senses['ir']['units'] == "MM":
+            return mm
+        elif self.senses['ir']['units'] == "RAW":
+            return raw 
+        elif self.senses['ir']['units'] == "CM":
+            return mm / 10.0 # cm
+        elif self.senses['ir']['units'] == "METERS":
+            return mm / 100.0 # meters
+        elif self.senses['ir']['units'] == "SCALED":
+            return mm / self.senses['ir']['maxvalue'] 
+
+    def getLightRange(self, dev, pos):
+        raw = self.senseData['light'][pos]
+        mm = (raw / 511.0) * 200.0
+        if self.senses['light']['units'] == "ROBOTS":
+            return mm / 55.0 # khepera is 55mm diameter
+        elif self.senses['light']['units'] == "MM":
+            return mm
+        elif self.senses['light']['units'] == "RAW":
+            return raw 
+        elif self.senses['light']['units'] == "CM":
+            return mm / 10.0 # cm
+        elif self.senses['light']['units'] == "METERS":
+            return mm / 100.0 # meters
+        elif self.senses['light']['units'] == "SCALED":
+            return mm / self.senses['light']['maxvalue'] 
 
     def getIRRangeAll(self, dev):
         vector = [0] * self.get('ir', 'count')
         for i in range(self.get('ir', 'count')):
-            vector[i] = self.mmToSenseUnits(((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0)
+            vector[i] = self.getIRRange(dev, i)
         return vector
 
     def getIRFlag(self, dev, pos):

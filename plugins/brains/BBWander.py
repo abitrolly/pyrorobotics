@@ -15,11 +15,14 @@ class Avoid (Behavior):
         self.lasttime = time.mktime(time.localtime())
         self.count = 0
 
-    def direction(self, value):
-        if value < 0:
-            return -1
+    def direction(self, dir, dist):
+        if dist < 1.0:
+            if dir < 0.0:
+                return 1.0 - dir
+            else:
+                return -1.0 - dir
         else:
-            return 1
+            return 0.0
 
     def update(self):
         if self.count == 50:
@@ -31,15 +34,14 @@ class Avoid (Behavior):
             self.count += 1
             
         # Normally :
-        self.IF(1, 'translate', .2) 
-        self.IF(1, 'rotate', 0)
 
         close_dist = self.getRobot().getSensorGroup('min', 'front-all')[1]
-        close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / math.pi
-        print "Closest distance is:", close_dist
-        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
-        self.IF(Fuzzy(1.0, 3.0) << close_dist, 'rotate', \
-                -self.direction(close_angl) * 1)
+        close_angl = self.getRobot().getSensorGroup('min', 'front-all')[2] / (math.pi)
+        print "Closest distance =", close_dist, "angle =", close_angl
+        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'translate', 0.0)
+        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'translate', .2)
+        self.IF(Fuzzy(0.0, 1.5) << close_dist, 'rotate', self.direction(close_angl, close_dist))
+        self.IF(Fuzzy(0.0, 1.5) >> close_dist, 'rotate', 0.0)
 
 class state1 (State):
     def init(self):
