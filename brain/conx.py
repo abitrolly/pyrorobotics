@@ -1632,6 +1632,33 @@ class Network:
         fp.close()
         print "To load file:\npython -i %s " % (basename + ".py")
         print ">>> network.train()"
+    def newloadInputsFromFile(self, filename, cols = None, rows = 0,
+                           delim = ' '):
+        # fix rows
+       fp1 = open(filename, "r")
+       line1 = fp1.readline()
+       lineno = 1
+       lastLength = None
+       data = []
+       while line1:
+          if lineno % rows == 0:
+             linedata1 = [float(x) for x in line1.strip().split(delim)]
+
+             if cols == None: # get em all
+                newdata = linedata1
+             else: # just get some cols
+                newdata = []
+                for i in cols:
+                   newdata.append( linedata1[i] )
+             if lastLength == None or len(newdata) == lastLength:
+                data.append( newdata )
+             else:
+                raise "DataFormatError", "line = %d" % lineno
+             lastLength = len(newdata)
+          lineno += 1
+          line1 = fp1.readline()    
+       fp1.close()
+       return data
     def loadInputsFromFile(self, filename, columns = 0):
         """
         Loads inputs from file. We lose patterning.
