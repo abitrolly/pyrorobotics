@@ -140,7 +140,6 @@ if pyro.startup_check():
     elif window == 'CURSES':
         from pyro.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)
-    gui.engine.postinit()
     if evalcommand != "":
         evalcommand = evalcommand.split(';')
     else:
