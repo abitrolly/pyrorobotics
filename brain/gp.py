@@ -16,32 +16,6 @@ operands  = {'+'   : 2,
              '*'   : 2,
              '/'   : 2 }
 
-def symbolReplacement(tree, pos, constructor, bias):
-    global current
-    current = 1
-    return symbolReplacementHelp(tree, pos, constructor, bias)
-
-def symbolReplacementHelp(tree, pos, constructor, bias):
-    global current
-    if tree in terminals:
-        if pos == current:
-            return constructor(bias = bias).data # make some new data
-        else:
-            return tree
-    elif tree[0] in operators:
-        if pos == current:
-            rand = operators[int(random.random() * len(operators))]
-            templist = [rand, ]
-        else:
-            templist = [tree[0], ]
-        for o in range(1, operands[ tree[0] ] + 1):
-            current += 1
-            templist.append( symbolReplacementHelp(tree[o], pos, constructor, bias))
-        return templist
-    else:
-        raise "unknownTreetype", tree
-
-
 class GPGene(Gene):
     def __init__(self, **args):
         self.bias = .6
@@ -92,7 +66,7 @@ class GPGene(Gene):
             else:
                 return 0.0
         else:
-            raise "unknownOperator"
+            raise "unknownOperator: ", mylist[0]
 
     def depth(self, tree = ''):
         if tree == '':
@@ -107,46 +81,61 @@ class GPGene(Gene):
                     max_depth = deep
             return 1 + max_depth
         else:
-            raise "unknownTreetype"
+            raise "unknownTreetype", tree
 
     def mutate(self, **args):
         total_points = self.countPoints()
         rand = int(random.random() * (total_points - 1)) + 1
-        self.data = symbolReplacement( self.data, rand,
-                                       self.constructor, self.bias)
+        #self.data = self.replaceSymbol( rand, self.constructor(bias = self.bias).data)
+
+    def replaceTree( self, pos, subtree ):
+        # first, replace symbol at pos with a special marker
+        retval1 = self.replaceSymbol(pos, '???')
+        # next, recurse through, find it and replace with subtree
+        retval2 = self.replaceTreeHelper(retval1, '???', subtree)
+        return retval2
+
+    def replaceTreeHelper(self, lyst, old, new):
+        if type(lyst) == type([1,]):
+            retval = []
+            for i in range(len(lyst)):
+                retval.append(self.replaceTreeHelper( lyst[i], old, new))
+            return retval
+        else:
+            if lyst == old:
+                return new
+            else:
+                return lyst
 
     def crossover(self, otherGene, **args):
-        term1 = self.countPoints('all')
-        term2 = otherGene.countPoints('all')
+        term1 = self.countPoints()
+        term2 = otherGene.countPoints()
         rand1 = int(term1 * random.random()) + 1
         rand2 = int(term2 * random.random()) + 1
         subtree = otherGene.getTree( rand2 )
-        #return self.replaceTree( rand_term )
-        return subtree
+        return self.replaceTree( rand1, subtree )
 
-#     def replaceTree(self, pos, newtree):
-#         self.replace = 0
-#         return self.replaceTreeHelper(pos, newtree)
-
-#     def replaceTreeHelper(self, pos, newtree):
-#         self.replace += 1
-#         tree = self.getTree(self.replace)
-#         if tree in terminals:
-#             if self.replace == pos:
-#                 return newtree
-#             else:
-#                 return tree
-#         elif tree[0] in operators:
-#             if self.replace == pos:
-#                 self.replace += len( flatten( tree ))
-#                 return newtree
-#             else:
-#                 retval = [tree[0], ]
-#                 for i in range( operands[ tree[0] ] ):
-#                     retval.append( self.getTree(i + self.replace))
-#                 return retval
-#         else:
-#            raise "unknownTreetype"
+    def replaceSymbol(self, pos, replacement = '???'):
+        self.replace = 0
+        return self.replaceSymbolHelper(pos, self.data, replacement)
+    
+    def replaceSymbolHelper(self, pos, tree, replacement):
+        self.replace += 1
+        if tree in terminals:
+            if self.replace == pos:
+                return replacement
+            else:
+                return tree
+        elif tree[0] in operators:
+            if self.replace == pos:
+                return replacement
+            else:
+                retval = [tree[0], ]
+                for i in range(operands[ tree[0] ]):
+                    retval.append( self.replaceSymbolHelper(pos, tree[i + 1], replacement))
+                return retval
+        else:
+            raise "unknownTreetype", tree
 
     def getTree(self, pos):
         self.points = 0
@@ -166,7 +155,7 @@ class GPGene(Gene):
                 if self.points >= pos:
                     return retval
         else:
-            raise "unknownTreetype"
+            raise "unknownTreetype", tree
 
     def countPoints(self, what = 'all'):
         self.points = 0
@@ -183,7 +172,7 @@ class GPGene(Gene):
             for o in range(1, operands[ tree[0] ] + 1):
                 self.countPoint(tree[o], what)
         else:
-            raise "unknownTreetype"
+            raise "unknownTreetype", tree
 
     def display(self, tree = ''):
         if tree == '':
@@ -196,7 +185,7 @@ class GPGene(Gene):
                 self.display(tree[o])
             print ")",
         else:
-            raise "unknownTreetype"
+            raise "unknownTreetype", tree
 
 class GP(GA):
     def __init__(self, cnt, **args):
@@ -213,7 +202,7 @@ class GP(GA):
     def isDoneFunction(self):
         return self.fitnessFunction(0) == 0
 
-class PIGP(GA):
+class PI_GP(GA):
     def __init__(self, cnt, **args):
         GA.__init__(self, Population( cnt, GPGene, **args))
 
@@ -228,10 +217,11 @@ class PIGP(GA):
         return self.fitnessFunction(0, 1) == 0
 
 if __name__ == '__main__':
-    #gp = GP(300, bias = .6)
-    #gp.evolve()
-    # --------------------------------
+    gp = GP(300, bias = .6)
+    gp.evolve()
+    print " -----------------------------------------------------------------"
     terminals = ['s0', 's1']
     values = {'s0' : 0.1, 's1' : 0.2}
-    gp = PIGP(1000, bias = .6)
+    gp = PI_GP(1000, bias = .6)
     gp.evolve()
+    print " -----------------------------------------------------------------"
