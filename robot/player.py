@@ -137,8 +137,8 @@ class PlayerRobot(PlayerBase):
         self.senses['sonar']['x'] = lambda dev, pos: self.localXDev(dev, pos)
         self.senses['sonar']['y'] = lambda dev, pos: self.localYDev(dev, pos)
         self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
-        self.senses['sonar']['value'] = lambda dev, pos: self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar')
-        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2990, 'sonar')
+        self.senses['sonar']['value'] = lambda dev, pos: self.rawToUnits(dev, self.dev.sonar[0][pos], 'sonar', self.noise)
+        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2990, 'sonar', 0)
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
         
         # location of origin of sensors:
