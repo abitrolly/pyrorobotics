@@ -56,6 +56,28 @@ class V4LGrabber(Camera):
       self.rgb = (2, 1, 0) # offsets to BGR
       self.data = CBuffer(self.cbuf)
 
+
+      # lockCamera is used for processing in place -- if 0, refresh_image
+      # will update the image; if 1, processing is occuring on the
+      # buffer, so refresh_image will not update
+      self.lockCamera = 0
+
+      # puts a sleep in the update function to slow down video
+      # to beable to see the video screen update.
+      # sleeptime tells how long to sleep for.
+      self.sleepFlag = 0
+      self.sleepTime = 2
+      
+      self.min_x = width
+      self.min_y = height
+      self.max_x = 0
+      self.max_y = 0
+      #self.cm_x = 0
+      #self.cm_y = 0
+      self.mass  = 0
+
+
+
    def _update(self):
       """
       Since data is mmaped to the capture card, all we have to do is call
@@ -65,6 +87,107 @@ class V4LGrabber(Camera):
          refresh_image(self.handle, self.width, self.height, self.depth*8)
       except:
          print "v4l: refresh_image failed"
+
+
+
+
+   def saveImage(self, filename="image.ppm"):
+      save_image(self.width, self.height, filename)      
+
+
+   def colorFilterOneTol(self, red, green, blue, tol=30, channel=1):
+      color_filter(red-tol, green-tol, blue-tol,
+                   red+tol, green+tol, blue+tol,
+                   channel, self.width, self.height)
+      self.sleepCheck()
+      
+
+   def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30, channel=1):
+      color_filter(red-t1, green-t2, blue-t3,
+                   red+t1, green+t2, blue+t3,
+                   channel, self.width, self.height)
+      self.sleepCheck();
+
+
+
+   def colorFilterHiLow(self, lred, lgreen, lblue,
+                        hred,hgreen,hblue, channel=1):
+      color_filter(lred, lgreen, lblue,hred, hgreen, hblue,
+                   channel,self.width, self.height)
+      self.sleepCheck();
+
+
+
+   def maxBlob(self, channel, low_threshold, high_threshold, drawBox=1):
+      self.min_x, self.min_y, self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,0,drawBox,self.width, self.height);
+      print "Min x: %d  Min y: %d  Max x: %d  Max y: %d  Mass: %d" % (self.min_x, self.min_y, self.max_x, self.max_y,self.mass)
+      self.sleepCheck();
+
+
+   def meanBlur(self, kernel=3):
+      mean_blur(kernel, self.width, self.height)
+      self.sleepCheck()
+
+   def superColor(self, percent_red, percent_green, percent_blue, channel):
+      super_color(percent_red, percent_green, percent_blue,
+                  tolerance,channel, self.width, self.height)
+      self.sleepCheck()
+
+   def superRed(self):
+      super_red(self.width, self.height)
+      self.sleepCheck()
+
+   def superBlue(self):
+      super_blue(self.width, self.height)
+      self.sleepCheck()
+
+   def superGreen(self):
+      super_green(self.width, self.height)
+      self.sleepCheck()
+
+   def superYellow(self):
+      super_yellow(self.width, self.height)            
+      self.sleepCheck()
+
+   def superWhite(self):
+      super_white(self.width, self.height)
+      self.sleepCheck()
+
+   def gaussianBlur(self):
+      gaussian_blur(self.width, self.height)
+      self.sleepCheck()
+
+   def sleepCheck(self):
+      if(self.sleepFlag):
+         sleep(self.sleepTime)
+
+
+
+
+   def trainColor(self):
+      red = 0
+      green = 0
+      blue = 0
+
+      #train it over 5 frames and take average of colors of those frames
+      #for i in range(0,5):
+      #   refresh_image(self.handle, self.width, self.height, self.depth*8, 0)
+
+      #only do over one frame incase filtering has been done on the frame.
+      #maybe have students just take the average over 5 in their code.?
+      self.histRed, self.histGreen, self.histBlue = train_color(self.width,
+                                                                self.height);
+      #red = red + self.histRed
+      #green = green + self.histGreen
+      #blue = blue + self.histBlue
+      
+      #self.histRed = red 
+      #self.histGreen = green 
+      #self.histBlue = blue 
+      
+      #print "Done Training"
+
+
 
    def __del__(self):
       """
