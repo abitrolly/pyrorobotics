@@ -368,7 +368,7 @@ class KheperaRobot(Robot):
     def getTh(self, dev):
         return self.th
 
-    def getTh(self, dev):
+    def getThr(self, dev):
         return self.thr
 
     def getIRMaxRange(self, dev):
