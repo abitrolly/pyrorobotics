@@ -314,7 +314,7 @@ void SolveEffectors(struct Context *context) {
   noise2 = 0.9 + (double)Rnd(200)/1000.0;
   noise3 = 0.95 + (double)Rnd(100)/1000.0;
   delta_direction = (double)(robot->Motor[0].Value - robot->Motor[1].Value);
-  delta_direction /= (200.0*SPEED_FACTOR);
+  delta_direction /= (100.0*SPEED_FACTOR);
   delta_direction *= noise3;
   robot->Alpha += delta_direction;
   NormRad(robot->Alpha);
