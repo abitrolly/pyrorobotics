@@ -65,8 +65,8 @@ class edge (State):
         x = self.getRobot().get('robot', 'x')
         y = self.getRobot().get('robot', 'y')
         dist = distance( self.startX, self.startY, x, y) 
-        print "actual = (%f, %f) start = (%f, %f); dist = %f" \
-              % (x, y, self.startX, self.startY, dist)
+        #print "actual = (%f, %f) start = (%f, %f); dist = %f" \
+        #      % (x, y, self.startX, self.startY, dist)
         if dist > 1.0:
             self.goto('turn')
 
@@ -80,7 +80,7 @@ class turn (State):
 
     def update(self):
         th = self.getRobot().get('robot', 'th')
-        print "actual = %f start = %f" % (th, self.th)
+        #print "actual = %f start = %f" % (th, self.th)
         if angleAdd(th, - self.th) > 90: 
             self.goto('edge')
 
