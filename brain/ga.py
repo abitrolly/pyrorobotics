@@ -185,7 +185,7 @@ if __name__ == '__main__':
 
     # Here is a test to evolve the weights/biases in a neural network
     # that solves the XOR problem:
-    from pyro.conx import *
+    from pyro.brain.conx import *
 
     n = Network()
     n.add( Layer('input', 2) )
@@ -205,16 +205,16 @@ if __name__ == '__main__':
                   [1.0],
                   [0.0]])
 
-    n.setVerbose(0)
+    n.setVerbosity(0)
 
     def fitnessFunc(gene):
         n.unArrayify(gene)
-        error, correct = n.sweep()
+        error, correct, count = n.sweep()
         return -error
 
     def isDoneFunc(genes):
         n.unArrayify(genes[0])
-        error, correct = n.sweep()
+        error, correct, count = n.sweep()
         return correct == 4
         
     g = n.arrayify()

@@ -10,14 +10,14 @@ class SaphiraRobot(Robot):
         self.inform("Loading Saphira robot interface...")
         Saphira_Connect(self.dev, simulator) # connect to what?
         Robot.load_drivers(self) # queries robot
-        self.sensorGroups = {'front' : [3, 4], \ 
-                             'front-left' : [4, 5, 6], \ 
-                             'front-right' : [1, 2, 3], \ 
-                             'left' : [0, 15], \ 
-                             'right' : [7, 8], \ 
-                             'back-left' : [9, 10, 11], \ 
-                             'back-right' : [12, 13, 14], \ 
-                             'back' : [11, 12]} 
+        self.sensorGroups = {'front' : [3, 4], \
+                             'front-left' : [4, 5, 6], \
+                             'front-right' : [1, 2, 3], \
+                             'left' : [0, 15], \
+                             'right' : [7, 8], \
+                             'back-left' : [9, 10, 11], \
+                             'back-right' : [12, 13, 14], \
+                             'back' : [11, 12]}
         self.senses['robot']['simulator'] = lambda self, x = simulator: x
 	self.update() # Saphira_UpdatePosition(self.dev)
         self.inform("Done loading lobot.")

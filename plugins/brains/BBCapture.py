@@ -1,34 +1,132 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<HTML>
- <HEAD>
-  <TITLE>Index of /~dblank/pyro/plugins/brains</TITLE>
- </HEAD>
- <BODY>
-<H1>Index of /~dblank/pyro/plugins/brains</H1>
-<PRE><IMG SRC="/icons/blank.gif" ALT="     "> <A HREF="?N=D">Name</A>                    <A HREF="?M=A">Last modified</A>       <A HREF="?S=A">Size</A>  <A HREF="?D=A">Description</A>
-<HR>
-<IMG SRC="/icons/back.gif" ALT="[DIR]"> <A HREF="/~dblank/pyro/plugins/">Parent Directory</A>        27-Mar-2002 09:32      -  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBCapture.py">BBCapture.py</A>            29-Mar-2002 16:57     4k  
-<IMG SRC="/icons/unknown.gif" ALT="[   ]"> <A HREF="BBCapture.pyc">BBCapture.pyc</A>           29-Mar-2002 16:57     6k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBGoto.py">BBGoto.py</A>               28-Mar-2002 22:46     2k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBOffice.py">BBOffice.py</A>             29-Mar-2002 12:06     7k  
-<IMG SRC="/icons/unknown.gif" ALT="[   ]"> <A HREF="BBOffice.pyc">BBOffice.pyc</A>            28-Mar-2002 17:03    14k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBSquare.py">BBSquare.py</A>             28-Mar-2002 15:53     3k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBTest.py">BBTest.py</A>               25-Mar-2002 21:57     4k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBTest2.py">BBTest2.py</A>              25-Mar-2002 21:57     4k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBWander.py">BBWander.py</A>             29-Mar-2002 15:09     2k  
-<IMG SRC="/icons/unknown.gif" ALT="[   ]"> <A HREF="BBWander.pyc">BBWander.pyc</A>            29-Mar-2002 15:09     3k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="BBWanderAndCapture.py">BBWanderAndCapture.py</A>   29-Mar-2002 16:07     3k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="Braitenberg.py">Braitenberg.py</A>          25-Mar-2002 21:57     1k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="Develop.py">Develop.py</A>              25-Mar-2002 21:57     6k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="KLight.py">KLight.py</A>               25-Mar-2002 21:57     1k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="SOMAA.py">SOMAA.py</A>                25-Mar-2002 21:57     4k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="SOMWander.py">SOMWander.py</A>            25-Mar-2002 21:57     4k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="SimpleBrain.py">SimpleBrain.py</A>          29-Mar-2002 16:02     2k  
-<IMG SRC="/icons/unknown.gif" ALT="[   ]"> <A HREF="SimpleBrain.pyc">SimpleBrain.pyc</A>         29-Mar-2002 16:02     2k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="Test.py">Test.py</A>                 25-Mar-2002 21:57     1k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="Wander.py">Wander.py</A>               25-Mar-2002 21:57     1k  
-<IMG SRC="/icons/p.gif" ALT="[   ]"> <A HREF="__init__.py">__init__.py</A>             25-Mar-2002 21:57     0k  
-</PRE><HR>
-<ADDRESS>Apache/1.3.20 Server at emergent.brynmawr.edu Port 80</ADDRESS>
-</BODY></HTML>
+# A Behavior-based system
+
+from pyro.brain.fuzzy import *
+from pyro.brain.behaviors import *
+from pyro.brain.behaviors.core import *  # Stop
+
+import math
+from random import random
+import time
+
+class Avoid (Behavior):
+    def init(self): # called when created
+        self.Effects('translate', .1) 
+        self.Effects('rotate', .1)
+        self.lasttime = time.mktime(time.localtime())
+        self.count = 0
+
+    def direction(self, value):
+        if value < 0:
+            return -1
+        else:
+            return 1
+
+    def update(self):
+        FTOLERANCE = 35
+        LTOLERANCE = 35
+        RTOLERANCE = 35
+        
+        # Normally :
+        #self.IF(1, 'translate', .2) 
+        #self.IF(1, 'rotate', 0)
+        
+        left = self.getRobot().getMin('ir', 'range', (0, 1)).distance
+        front = self.getRobot().getMin('ir', 'range', (2, 3)).distance
+        right = self.getRobot().getMin('ir', 'range', (4, 5)).distance
+        
+        if (left < LTOLERANCE and right < RTOLERANCE):
+            #self.getRobot().move(0, .2)
+            self.IF(1, 'rotate', .2)
+            self.IF(1, 'translate', 0)
+            #sleep(.5)
+        elif (left < LTOLERANCE):
+            #self.getRobot().move(0, -.2)
+            self.IF(1, 'rotate', -.2)
+            self.IF(1, 'translate', 0)
+        elif (right < RTOLERANCE):
+            #self.getRobot().move(0, .2)
+            self.IF(1, 'rotate', .2)
+            self.IF(1, 'translate', 0)
+        elif (front < FTOLERANCE):
+            if random() < .5:
+                #self.getRobot().move(0, .2)
+                self.IF(1, 'rotate', .2)
+                self.IF(1, 'translate', 0)
+            else:
+                #self.getRobot().move(0, .2)
+                self.IF(1, 'rotate', .2)
+                self.IF(1, 'translate', 0)
+        else:
+            #self.getRobot().move(.2, 0)
+            self.IF(1, 'translate', .2)
+            self.IF(1, 'rotate', 0)
+
+class state1 (State):
+    def init(self):
+        self.add(Avoid(1))
+        print "initialized state", self.name
+
+    def onActivate(self):
+        self.count = 0
+
+    def update(self):
+        print "State 1"
+        if self.count == 0:
+            self.goto("state2")
+        else:
+            self.count += 1
+
+class state2 (State):
+    def init(self):
+        self.add(StopBehavior(1))
+        print "initialized state", self.name
+
+    def update(self):
+        print "State 2"
+        # save the current readings
+        self.behaviorEngine.history[1]['speed'] = self.behaviorEngine.robot.senseData['speed']
+        self.behaviorEngine.history[1]['ir'] = self.behaviorEngine.robot.senseData['ir']
+        self.goto("state3")
+
+class state3 (State):
+    def init(self):
+        print "initialized state", self.name
+        self.count = 0
+
+    def onActivate(self):
+        self.count += 1
+
+    def update(self):
+        print "State 3"
+        self.behaviorEngine.camera.snap("som4/snap-%d.pgm" % self.count) # can name the file right here
+        # save IR, motors
+        fp = open("som4/snap-%d.dat" % self.count, "w")
+        fp.write("translate=%f\n" % self.behaviorEngine.history[2]['translate'])
+        fp.write("rotate=%f\nspeed=" % self.behaviorEngine.history[2]['rotate'])
+        for s in self.behaviorEngine.history[2]['speed']:
+            fp.write("%d " % s)
+        fp.write("\nir=")
+        for s in self.behaviorEngine.history[2]['ir']:
+            fp.write("%d " % s)
+        fp.write("\n")
+        fp.close()
+        self.goto("state1")
+
+def INIT(robot): # passes in robot, if you need it
+    brain = BehaviorBasedBrain({'translate' : robot.translate, \
+                                'rotate' : robot.rotate, \
+                                'update' : robot.update }, robot)
+    # add a few states:
+    brain.add(state1()) # non active
+    brain.add(state2()) # non active
+    brain.add(state3()) # non active
+
+    # activate a state:
+    brain.activate('state1') # could have made it active in constructor
+    brain.init()
+
+    import pyro.camera
+    brain.camera = pyro.camera.Camera()
+
+    return brain
+
