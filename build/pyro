@@ -2,6 +2,7 @@
 # -----------------------------------
 # Pyro - robotics control system in Python
 
+from pyro.system import share
 import os 
 import sys 
 # Where are we? Add ../../cwd to our PYTHON search path
@@ -31,6 +32,7 @@ brainfile = 0
 window = 'GL'
 brainargs = []
 simulator = 0
+configfile = 0
 
 def basichelp():
     print "You may need to define the PYRO environment variable. Try:"
@@ -50,12 +52,13 @@ except:
 
 def process_options():
     import getopt, sys, string
-    global robotfile, brainfile, window, simulator, brainargs
+    global robotfile, brainfile, window, simulator, brainargs, configfile
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hl:g:s:o:", \
+                                   "r:b:hg:s:o:c:", \
                                    ["robot", "brain", "help", \
-                                    "load", "gui", "sim", "brain-args"])
+                                    "load", "gui", "sim", "brain-args",\
+                                    "config"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -65,8 +68,6 @@ def process_options():
         if o in ("-h", "--help"):
             pyro.system.usage()
             sys.exit(1)
-        elif o in ("-l", "--load"):
-            pass
         elif o in ("-g", "--gui"):
             window = string.upper(a)
         elif o in ("-r", "--robot"):
@@ -77,11 +78,34 @@ def process_options():
             brainfile = a
 	elif o in ("-o", "--brain-args"):
             brainargs = a.split(":")
+	elif o in ("-c", "--config"):
+            configfile = a
 
 if pyro.startup_check():
     import pyro.system
+    from pyro.system.config import Configuration
     process_options()
-    eng = Engine(robotfile, brainfile, simulator, brainargs)
+    c = Configuration(configfile)
+    if configfile:
+        c.put('config', 'file', configfile)
+    if not robotfile:
+        robotfile = c.get('robot', 'file')
+    else:
+        c.put('robot', 'file', robotfile)
+    if not simulator:
+        simulator = c.get('simulator', 'file')
+    else:
+        c.put('simulator', 'file', simulator)
+    if not brainfile:
+        brainfile = c.get('brain', 'file')
+    else:
+        c.put('brain', 'file', brainfile)
+    if not brainargs:
+        brainargs = c.get('brain', 'args')
+    else:
+        c.put('brain', 'args', brainargs)
+    share.config = c
+    eng = Engine(robotfile, brainfile, simulator, brainargs, c)
     if window == 'GL':
         from pyro.gui.GL import *
         gui = GLgui(eng)
