@@ -406,7 +406,6 @@ class PlayerRobot(Robot):
         self.devData["th"] = 0.0
         self.devData["thr"] = 0.0
         self.devData["noise"] = .05 # 5 % noise
-        self.devData["datestamp"] = time.time()
         # Can we get these from player?
         self.devData["radius"] = 0.25
         self.devData["type"] = "Player"
