@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<gz:world 
+  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
+  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
+  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
+  xmlns:params='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
+
+  <params:GlobalParams>
+    <stepTime>0.005</stepTime>
+    <gravity>0.0 0.0 -9.8</gravity>
+  </params:GlobalParams>
+
+  <model:LightSource>
+    <id>light1</id>
+    <xyz>-10.0 +10.0 10.0</xyz>
+  </model:LightSource>
+
+  <model:ObserverCam>
+    <id>userCam0</id>
+    <xyz>-2.084 0.135 0.871</xyz>
+    <rpy>0 11 2</rpy>
+    <window>
+      <title>Gazebo1</title>
+      <size>640 480</size>
+    </window>
+  </model:ObserverCam>
+
+  <model:GroundPlane>
+    <id>ground1</id>
+    <cfm>0.00001</cfm>
+  </model:GroundPlane>
+
+  <model:SimpleSolid>
+    <xyz>0 0 0.25</xyz>
+    <shape>box</shape>
+    <size>2 2 0.50</size>
+    <color>1.0 1.0 1.0</color>
+    <mass>10000</mass>
+    <cfm>0.00001</cfm>
+  </model:SimpleSolid>
+
+  <model:SegwayRMP>
+    <id>robot1</id>
+    <xyz>0 0 0.70</xyz>
+    <rpy>0 0 45</rpy>
+    <model:SickLMS200>
+      <id>laser1</id>
+      <xyz>0 0 0.85</xyz> 
+    </model:SickLMS200>
+  </model:SegwayRMP>
+
+</gz:world>

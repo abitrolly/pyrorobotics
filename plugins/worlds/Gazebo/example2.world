@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<gz:world 
+  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
+  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
+  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
+  xmlns:params='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
+
+  <params:GlobalParams>
+    <gravity>0.0 0.0 -9.8</gravity>
+  </params:GlobalParams>
+
+  <model:GroundPlane>
+    <id>ground1</id>
+  </model:GroundPlane>
+
+  <model:MapExtruder>
+    <id>map1</id>
+    <xyz>0 0 0</xyz>
+    <imageFile>example2.png</imageFile> <!-- Image to extrude -->
+    <threshold>200</threshold> <!-- Intensity threshold indicating a wall -->
+    <scale>0.1</scale> <!-- Scale the world -->
+    <height>1</height> <!-- Height of the walls -->
+    <width>0.1</width> <!-- Width or Thickness of the walls -->
+    <color>0.666 0.137 0.043</color> <!-- Wall color -->
+    <errBound>5</errBound> <!-- Amount of allowable error -->
+  </model:MapExtruder>
+
+  <model:Pioneer2AT>
+    <id>robot1</id>
+    <xyz>-0.5 0.0 0.5</xyz>
+    <model:SickLMS200>
+      <id>laser1</id>
+      <xyz>0.15 0 0.20</xyz>
+    </model:SickLMS200>
+  </model:Pioneer2AT>
+
+</gz:world>
+

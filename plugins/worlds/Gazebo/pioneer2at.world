@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+
+<gz:world 
+  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
+  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
+  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
+  xmlns:params='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
+
+  <params:GlobalParams>
+    <gravity>0.0 0.0 -9.8</gravity> <!-- Gravity vector -->
+  </params:GlobalParams>
+
+  <model:ObserverCam>
+    <id>userCam0</id>
+
+    <xyz>-0.917 -1.370 1.338</xyz>
+    <rpy>0 27 32</rpy>
+
+    <updatePeriod>0.100</updatePeriod>
+    <shadeModel>smooth</shadeModel>
+    <polygonMode>fill</polygonMode>
+    <displayRays>true</displayRays>
+
+    <lens>
+      <hfov>60</hfov>
+      <vfov>60</vfov>
+      <nearClip>0.10</nearClip>
+      <farClip>10.0</farClip>
+    </lens>
+    <window>
+      <title>Observer</title>
+      <size>640 480</size>
+      <pos>0 0</pos>
+    </window>
+  </model:ObserverCam>
+
+  <model:LightSource>
+    <id>light0</id>
+    <xyz>-5.0 -5.0 10.0</xyz>
+    <ambientColor>0.2 0.2 0.2 1.0</ambientColor>
+    <diffuseColor>1.0 1.0 1.0 1.0</diffuseColor>
+    <attenuation>1.0 0.00 0.0</attenuation>
+  </model:LightSource>
+
+  <model:GroundPlane>
+    <id>ground1</id>
+    <color>1 1 1</color>
+  </model:GroundPlane>
+
+  <model:Pioneer2AT>
+    <id>robot1</id>
+    <xyz>0 0.0 0.5</xyz>
+    <model:SickLMS200>
+      <id>laser1</id>
+      <xyz>0.15 0 0.20</xyz>
+    </model:SickLMS200>
+  </model:Pioneer2AT>
+
+  <model:SimpleSolid>
+    <xyz> 2.0 0.0 .25 </xyz>
+    <shape>box</shape>
+    <size>1.10 1.10 .5</size>
+    <color>0.0 1.0 0</color>     
+  </model:SimpleSolid>
+
+  <model:SimpleSolid>
+    <xyz> 1 1 0.25 </xyz>
+    <shape>sphere</shape>
+    <size>0.70</size>
+    <color>0.0 0.0 0.5</color>     
+  </model:SimpleSolid>
+
+</gz:world>
+

@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+
+<gz:world 
+  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
+  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
+  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
+  xmlns:param='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'
+  xmlns:ui='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
+
+  <param:Global>
+    <gravity>0.0 0.0 -9.8</gravity>
+  </param:Global>
+
+  <model:ObserverCam>
+    <id>userCam0</id>
+
+    <xyz>17 -22 54 </xyz>
+    <rpy>0 40 125</rpy>
+
+    <updatePeriod>.03</updatePeriod>
+    <displayLaser>false</displayLaser>
+
+    <lens>
+      <hfov>60</hfov>
+      <nearClip>0.1</nearClip>
+      <farClip>1000.0</farClip>
+    </lens>
+
+    <shadeModel>smooth</shadeModel>
+    <polygonMode>fill</polygonMode>
+
+    <window>
+      <title>Gazebo1</title>
+      <size>640 480</size>
+      <pos> 100 100</pos>
+    </window>
+  </model:ObserverCam>
+
+  <model:LightSource>
+    <id>0</id>
+    <xyz>0.0 0.0 50.0</xyz>
+    <ambientColor>0.1 0.1 0.1 1.0</ambientColor>
+    <diffuseColor>0.8 0.8 0.8 1.0</diffuseColor>
+    <attenuation>1.0 0.00 0.0</attenuation>
+  </model:LightSource>
+
+  <model:SimpleSolid>
+    <xyz>-10.0 00.0 25.1</xyz>
+    <shape>sphere</shape>
+    <size>0.50</size>
+    <color>1 0 0</color>
+  </model:SimpleSolid>
+
+  <model:Pioneer2AT>
+    <id>robot1</id>
+    <xyz>-20.0 -10.0 26.3</xyz>
+    <rpy>0.0 0.0 30.0</rpy>
+  </model:Pioneer2AT>
+
+  <model:Terrain>
+    <xyz> 0.0 0.0 0.0 </xyz>
+    <dataFile>terrain.png</dataFile>
+    <elevationScale>30</elevationScale>
+    <vertexSpacing>1</vertexSpacing>
+    <color>0.2 0.7 0.0 1.0</color>
+    <texture2D>grid.ppm</texture2D>
+    <textureRepeat>100.0 100.0</textureRepeat>
+  </model:Terrain>
+
+</gz:world>
+

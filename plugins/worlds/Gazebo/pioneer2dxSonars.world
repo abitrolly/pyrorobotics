@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+
+<gz:world 
+  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
+  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
+  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
+  xmlns:params='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
+
+  <params:GlobalParams>
+    <gravity>0.0 0.0 -9.8</gravity>
+  </params:GlobalParams>
+
+  <model:ObserverCam>
+    <id>usercam1</id>
+    <xyz>-0.685 -2.5 1.1</xyz>
+    <rpy>0.0 10.0 56.0</rpy>
+    <updatePeriod>0.1</updatePeriod>
+    <displayRays>false</displayRays>
+    <window>
+      <title>Gazebo1</title>
+      <size>640 480</size>
+      <xyz>0 0</xyz>
+    </window>
+  </model:ObserverCam>
+
+  <model:LightSource>
+    <id>light1</id>
+    <xyz>0 0 10</xyz>
+  </model:LightSource>
+
+  <model:MapExtruder>
+    <id>map1</id>
+    <xyz>1 1 0</xyz>
+    <imageFile>example2.png</imageFile>
+    <threshold>200</threshold>
+    <scale>0.05</scale>
+    <height>2.0</height>
+    <width>0.1</width>
+    <color>"0.0 1.0 0.0"</color>
+  </model:MapExtruder>
+
+  <model:GroundPlane>
+    <id>ground1</id>
+    <texture2D>grid.ppm</texture2D>
+  </model:GroundPlane>
+
+  <model:Pioneer2DX>
+    <id>robot1</id>
+    <xyz>-0.35 0 0.25</xyz>
+    <rpy>0 0 0</rpy>
+       
+    <model:Pioneer2Sonars>
+      <id>sonars1</id>
+    </model:Pioneer2Sonars>
+    
+    <model:SickLMS200>
+      <id>laser1</id>
+      <xyz>0.0 0 0.101</xyz> 
+      <rayCount>91</rayCount>
+      <rangeCount>361</rangeCount>
+    </model:SickLMS200>
+
+  </model:Pioneer2DX>
+  
+  <model:SimpleSolid> 
+      <xyz>2.0 0.0 0.35</xyz>
+      <shape>box</shape>
+      <size>0.7 0.7 0.7</size>
+      <color>1 0 0</color>
+    </model:SimpleSolid>
+  
+</gz:world>
