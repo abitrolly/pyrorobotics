@@ -7,7 +7,7 @@ class Fake : public Vision {
 
  public:
   Fake(char filename[]);
-  void updateMMap(char filename[]);
+  PyObject *updateMMap(char filename[]);
 };
 
 #endif

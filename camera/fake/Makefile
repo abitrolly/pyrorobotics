@@ -16,14 +16,14 @@ LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
 _fake.so: fake.o Fake.o ../vision/Vision.o
 	$(CC) $(CPPFLAGS) -shared fake.o Fake.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
 
-Fake.o:: Fake.cpp Fake.h
-	$(CC) $(CPPFLAGS) -o $@ -c $<
+Fake.o:: Fake.cpp Fake.h ../vision/Vision.o
+	$(CC) $(CPPFLAGS) -o $@ -c Fake.cpp
 
 Fake.cc: Fake.i Fake.h ../vision/Vision.o
-	swig -python -c++ -o Fake.cc $<
+	swig -python -c++ -o Fake.cc Fake.i
 
-fake.o: Fake.cc
-	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@
+fake.o: Fake.cc ../vision/Vision.o
+	$(CC) -c $(PYTHON_INCLUDE) Fake.cc -o $@
 
 clean::
 	$(RM) *~ 

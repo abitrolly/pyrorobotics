@@ -32,13 +32,13 @@ Fake::Fake(char filename[]) {
   updateMMap(filename);
 }
 
-void Fake::updateMMap(char filename[]) {
+PyObject *Fake::updateMMap(char filename[]) {
   int w, h, num;
   FILE *theFile;
   theFile = fopen(filename, "r");
   if (!theFile){
     PyErr_SetString(PyExc_IOError, "Fake: Error loading file");
-    return;
+    return NULL;
   }
   fscanf(theFile, "P%d\n%d %d\n%*d\n", &num, &w, &h);
   if (w != width || h != height || 
@@ -46,7 +46,7 @@ void Fake::updateMMap(char filename[]) {
       (num != 5 && depth != 3)){
     PyErr_SetString(PyExc_IOError, "Fake: can't change image type or size");
     fclose(theFile);
-    return;
+    return NULL;
   }
   if (num == 5) {
     fread(image, 1, w * h, theFile);
@@ -56,6 +56,6 @@ void Fake::updateMMap(char filename[]) {
   width = w;
   height = h;
   fclose(theFile);
-  applyFilterList();
+  return applyFilterList();
 }
 

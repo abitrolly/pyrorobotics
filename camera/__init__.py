@@ -8,6 +8,11 @@ import Tkinter
 import PIL.PpmImagePlugin
 import Image, ImageTk, types
 
+def makeArgList(item):
+   if type(item) == type(""):
+      return (item, )
+   return (item[0], item[1:])
+
 class BlobData:
    def __init__(self, width, height):
       self.min_x = width
@@ -86,12 +91,29 @@ class Camera(PyroImage, Service):
 
       self.update() # call it once to initialize
 
+   def addFilter(self, *filter):
+      """
+      Add a filter to the filter list.
+      Example: cam.addFilter( "superColor", 3)
+      """
+      self.cobj.addFilter( makeArgList(filter) )
+
    def setFilterList(self, filterList):
       """
       Filters take the form: ("name", (args))
-      Example: [ ("superColor" (1, -1, -1, 0)), ("meanBlur", (3,)) ] 
+      Example: cam.setFilterList([("superColor",1,-1,-1,0),("meanBlur",3)]) 
       """
-      self.cobj.setFilterList( filterList)
+      myList = map(makeArgList, filterList)
+      self.cobj.setFilterList(myList)
+
+   def clear(self, channel, value = 0):
+      self.cobj.clear( channel, value)
+
+   def delFilter(self, pos):
+      self.cobj.filterList.pop(pos)
+
+   def getFilterList(self):
+      return self.cobj.filterList
 
    def saveImage(self, filename="image.ppm"):
       self.cobj.saveImage(filename)      
@@ -265,9 +287,12 @@ class Camera(PyroImage, Service):
    def updateWindow(self):
       self.canvas.delete("image")
       self.im = self.getImage()
-      self.im = self.im.resize( (self.window.winfo_width() - 2, 
-                                 self.window.winfo_height() - 2),
-                                Image.BILINEAR )
+      try:
+         self.im = self.im.resize( (self.window.winfo_width() - 2, 
+                                    self.window.winfo_height() - 2),
+                                   Image.BILINEAR )
+      except:
+         print "error: could not resize window"
       self.image = ImageTk.PhotoImage(self.im)
       self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
                                tag="image")

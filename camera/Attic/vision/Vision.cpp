@@ -68,7 +68,16 @@ PyObject *Vision::get(int w, int h) {
   }
 }
 
-void Vision::superColor(float w1, float w2, float w3, int outChannel) {
+void Vision::clear(int channel, int value) {
+  for (int w=0; w<width; w++) {
+    for (int h=0; h<height; h++) {
+      image[(h * width + w) * depth + rgb[channel]] = value;
+    }
+  }
+}
+
+void Vision::superColor(float w1, float w2, float w3, 
+			int outChannel) {
   float weight[3] = {w1, w2, w3};
   for (int w=0; w<width; w++) {
     for (int h=0; h<height; h++) {
@@ -76,8 +85,8 @@ void Vision::superColor(float w1, float w2, float w3, int outChannel) {
       for (int d = 0; d < depth; d++) {
 	// compute brightness as sum of values * weight
 	brightness += (int) (image[(h * width + w) * depth + rgb[d]] * weight[rgb[d]]);
-	// blacken pixel:
-	image[(h * width + w) * depth + rgb[d]] = 0;
+	// blacken other pixels:
+	// image[(h * width + w) * depth + rgb[d]] = 0;
       }
       if (brightness > 0)
 	// reset outChannel pixel to brightness level:
@@ -268,7 +277,7 @@ PyObject *Vision::sobel(int thresh) {
       tempy = (a+b+c) - (f+g+h);
       if( tempy < 0 ) tempy = -1*tempy;
 
-      gc = (unsigned int) sobscale * sqrt(tempx*tempx+tempy*tempy);
+      gc = (unsigned int) (sobscale * sqrt(tempx*tempx+tempy*tempy));
       gc = offset+gc;
       gc = (gc>255)? 0 : 255 - gc;
 
@@ -749,45 +758,23 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 }  
 
 PyObject *Vision::setFilterList(PyObject *newList) {
-  int i1, i2, i3, i4, i5, i6;
-  float f1, f2, f3, f4, f5, f6;
-  PyObject *command;
-  PyObject *filter, *list;
   if (!PyList_Check(newList)) {
     PyErr_SetString(PyExc_TypeError, "Invalid list to setFilters");
     return NULL;
   }
-  filterList = PyList_New( PyList_Size(newList) );
-  for (int i = 0; i < PyList_Size(newList); i++) {
-    filter = PyList_GetItem(newList, i);
-    if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
-      PyErr_SetString(PyExc_TypeError, "Invalid filter list name to setFilters");
-      return NULL;
-    }
-    // process filters here:
-    if (strcmp((char *)command, "superColor") == 0) {
-      if (!PyArg_ParseTuple(list, "fffi", &f1, &f2, &f3, &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid setFilters: superColor");
-	return NULL;
-      }
-      PyList_SetItem(filterList, i, Py_BuildValue("s(fffi)", command, f1, f2, f3, i1));
-    } else if (strcmp((char *)command, "meanBlur") == 0) {
-      if (!PyArg_ParseTuple(list, "i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid setFilters: meanBlur");
-	return NULL;
-      }
-      PyList_SetItem(filterList, i, Py_BuildValue("s(i)", command, i1));
-    } else if (strcmp((char *)command, "sobel") == 0) {
-      if (!PyArg_ParseTuple(list, "i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid setFilters: sobel");
-	return NULL;
-      }
-      PyList_SetItem(filterList, i, Py_BuildValue("s(i)", command, i1));
-    } else {
-      PyErr_SetString(PyExc_TypeError, "Invalid command to setFilters");
-      return NULL;
-    }
-  }
+  Py_DECREF(filterList);
+  filterList = newList;
+  Py_INCREF(filterList);
+  return Py_BuildValue("");
+}
+
+PyObject *Vision::addFilter(PyObject *newFilter) {
+  //if (!PyList_Check(newFilter)) {
+  //  PyErr_SetString(PyExc_TypeError, "Invalid filter to addFilter");
+  //  return NULL;
+  //}
+  Py_INCREF(newFilter);
+  PyList_Append(filterList, newFilter);
   return Py_BuildValue("");
 }
 
@@ -806,29 +793,39 @@ PyObject *Vision::applyFilters(PyObject *newList) {
   }
   for (int i = 0; i < PyList_Size(newList); i++) {
     filter = PyList_GetItem(newList, i);
-    if (!PyArg_ParseTuple(filter, "sO", &command, &list)) {
+    if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
       PyErr_SetString(PyExc_TypeError, "Invalid filter list name to applyFilters");
       return NULL;
     }
     // process filters here:
     if (strcmp((char *)command, "superColor") == 0) {
-      if (!PyArg_ParseTuple(list, "fffi", &f1, &f2, &f3, &i1)) {
+      f1 = 1.0, f2 = -1.0, f3 = -1.0, i1 = 0;
+      if (!PyArg_ParseTuple(list, "|fffi", &f1, &f2, &f3, &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
 	return NULL;
       }
       superColor(f1, f2, f3, i1);
     } else if (strcmp((char *)command, "meanBlur") == 0) {
-      if (!PyArg_ParseTuple(list, "i", &i1)) {
+      i1 = 3;
+      if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: meanBlur");
 	return NULL;
       }
       meanBlur(i1);
     } else if (strcmp((char *)command, "sobel") == 0) {
-      if (!PyArg_ParseTuple(list, "i", &i1)) {
+      i1 = 1;
+      if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: sobel");
 	return NULL;
       }
       sobel(i1);
+    } else if (strcmp((char *)command, "clear") == 0) {
+      i1 = 0; i2 = 0;
+      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: clear");
+	return NULL;
+      }
+      clear(i1, i2);
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;

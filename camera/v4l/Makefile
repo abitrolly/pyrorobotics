@@ -17,14 +17,14 @@ LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
 _v4l.so: v4l.o V4L.o
 	$(CC) $(CPPFLAGS) -shared v4l.o V4L.o ../vision/Vision.o $(LIBDIRS) -o $@ $(LIBS)
 
-V4L.o:: V4L.cpp
-	$(CC) $(CPPFLAGS) -o $@ -c $<
+V4L.o:: V4L.cpp ../vision/Vision.o
+	$(CC) $(CPPFLAGS) -o $@ -c V4L.cpp
 
-V4L.cc: V4L.i V4L.h
-	swig -python -c++ -o $@ $<
+V4L.cc: V4L.i V4L.h ../vision/Vision.o
+	swig -python -c++ -o $@ V4L.i
 
-v4l.o: V4L.cc
-	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@
+v4l.o: V4L.cc ../vision/Vision.o
+	$(CC) -c $(PYTHON_INCLUDE) V4L.cc -o $@
 
 clean::
 	$(RM) *~ 

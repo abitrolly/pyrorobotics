@@ -70,6 +70,7 @@ public:
   void grayScale(int value);
   PyObject *sobel(int val);
   void medianBlur(int kernel);
+  void clear(int channel, int value);
 
   Blob *initBlob(Blob *b);
   Blob *initBlob( Blob *b, int y, int x );
@@ -84,6 +85,7 @@ public:
 			    int sortmethod, 
 			    int size, int drawBox);
   PyObject *applyFilters(PyObject *filterList);
+  PyObject *addFilter(PyObject *newFilter);
   PyObject *applyFilterList();
   PyObject *setFilterList(PyObject *filterList);
   PyObject *filterList;
