@@ -22,8 +22,8 @@
 #    the fitness function must return a non-negative value.  
 # --------------------------------------------------------------------------
 
-import RandomArray, Numeric, math, random, time, sys
-from copy import deepcopy
+import RandomArray, Numeric, math, random, time, sys, string
+from copy import deepcopy, copy
 
 def display(v):
     print v,
@@ -91,7 +91,7 @@ class Gene:
 
     def display(self):
         if self.mode == 'bit' or self.mode == 'integer': 
-            map(lambda v: display(int(v)), self.genotype)
+            print string.join(map(lambda v: `int(v)`, self.genotype), "")
         elif self.mode == 'float':
             map(lambda v: display("%3.2f" % v), self.genotype)
         else:
@@ -284,6 +284,13 @@ class GA:
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
         self.origPop = population
+        if self.verbose > 0:
+            print "crossoverRate  = %.3f" % self.crossoverRate
+            print "mutationRate   = %.3f" % self.mutationRate
+            print "populationSize = %d" % self.origPop.size
+            print "elitePercent   = %.3f" % self.origPop.elitePercent
+            print "maxGeneration  = %d" % self.maxGeneration
+            print "================================================================================"
         self.reInitialize()
 
     def reInitialize(self):
@@ -291,7 +298,7 @@ class GA:
         self.initialize()
 
     def initialize(self):
-        self.applyFitnessFunction()
+        self.applyFitnessFunction() 
         if self.verbose > 0:
             print "-" * 60
             print "Initial population"
@@ -309,7 +316,7 @@ class GA:
 
     def applyFitnessFunction(self):
         for i in range( len(self.pop.individuals) ):
-            self.pop.individuals[i].fitness = self.fitnessFunction(i)
+            self.pop.individuals[i].fitness = self.fitnessFunction(i) # PROBLEM!
 
     def setSeed(self, value):
         self.seed1 = value
