@@ -12,17 +12,22 @@
 
 #include "v4lcap.h"
 
+#define verbose 1
+
 struct image_cap* Cgrab_image(char* device, int width, int height, int color){
   //struct video_window  vidwin;
   struct video_mbuf    vidmbuf;
   struct video_mmap    vidmmap;
   //struct video_picture vidpict;
   struct image_cap    *image_struct;
+  struct video_capability vcap;
+  struct video_channel    *vc;
   //char* buf;
   void *image;
   void *map;
   int dev;
   int depth;
+  int i;
 
   image_struct = malloc(sizeof(struct image_cap));
   if (image_struct == NULL){
@@ -36,6 +41,70 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     perror("Cgrab_image, device Open error");
     return NULL;
   }
+
+  // ----------------------------------------------------------------
+  // Additional hints from Swarthmore's Vision Module
+  // by Bruce Maxwell
+  // ----------------------------------------------------------------
+
+  /* queries the video device to find out its capabilities
+      - name
+      - type
+      - channels
+      - audios
+      - maxwidth
+      - maxheight
+      - minwidth
+      - minheight
+  */
+  if(ioctl(dev, VIDIOCGCAP, &vcap)<0){
+    perror("VIDIOCGCAP");
+    exit(-1);
+  }
+ 
+  if (verbose) {
+    fprintf(stderr,"Video Capture Device Name : %s\n",
+            vcap.name);
+    fprintf(stderr,"Maximum size (w, h): (%d, %d)\n",
+            vcap.maxwidth,
+            vcap.maxheight);
+    fprintf(stderr,"Minimum size (w, h): (%d, %d)\n",
+            vcap.minwidth,
+            vcap.minheight);
+  }
+                                                                                  /* queries the video device for the channel information
+     - channel
+     - name
+     - tuners
+     - flags (channel has a tuner (1), channel has audio (2))
+     - type (tv (1), camera (2))
+     - norm (set by channel)
+  */
+  vc = (struct video_channel *)malloc(sizeof(struct video_channel) * vcap.channels);
+  if(vc == NULL) {
+    fprintf(stderr, "OpenVideoDevice: Unable to allocate memory\n");
+    return(NULL);
+  }
+
+  for (i=0; i < vcap.channels; i++){
+    vc[i].channel = i;
+    if(ioctl(dev, VIDIOCGCHAN, &(vc[i]))<0){
+      perror("VIDIOCGCHAN");
+      exit(-1);
+    }
+    
+    if (verbose) {
+      fprintf(stderr,"Video Source (%d) Name : %s\n",i, vc[i].name);
+      fprintf(stderr, "Flags %d, type %d, norm %d\n",
+              (int)vc[i].flags,
+              (int)vc[i].type,
+              (int)vc[i].norm);
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // End of hints from SVM
+  // ----------------------------------------------------------------
 
   //Request Memory map
   if (ioctl (dev, VIDIOCGMBUF, &vidmbuf)) {
@@ -51,7 +120,6 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     close(dev);
     return NULL;
   }
-
 
   switch (color){
   case 0: //No color
@@ -73,6 +141,15 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     close(dev);
     return NULL;
     }*/
+
+  int curChannel = 1;
+  vc[curChannel].channel = 1;
+  vc[curChannel].norm = 1; // this seems to be necessary (?)
+  if(ioctl(dev, VIDIOCSCHAN, &(vc[curChannel])) < 0){
+    perror("VIDIOCSCHAN");
+    munmap(map, vidmbuf.size);
+    return(NULL);
+  }
 
   //Start caputring
   if (ioctl(dev, VIDIOCMCAPTURE, &vidmmap)){
