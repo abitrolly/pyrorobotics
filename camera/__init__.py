@@ -386,7 +386,7 @@ class Camera(PyroImage, Service):
          self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
                                   tag="image")
          self.canvas.create_rectangle(1, 1,
-                                      self.getCanvasWidth()
+                                      self.getCanvasWidth(),
                                       self.getCanvasHeight(),
                                       tag="image")
          self.canvas.pack()
