@@ -255,6 +255,56 @@ class GovernorSRN(Governor, SRN):
                 self.Print("After decay  : %d" % len(self.ravq.models))
         return retval
 
+    def trainFromBuffers(self):
+        vectorOut = self.nextItem()
+        if vectorOut == None:
+            return None
+        # get the pieces out of vectorOut:
+        govNet = {}
+        current = 0
+        for layer in self.layers:       # from network
+            if layer.kind == 'Input':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        for layer in self.layers:       # from network
+            if layer.kind == 'Context':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        for layer in self.layers:       # from network
+            if layer.kind == 'Output':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        # load them and train training Network
+        return self.trainingNetwork.step(**govNet)
+
+    def trainFromModelVectors(self):
+        vectorOut = self.models.nextItem()
+        if vectorOut == None:
+            return None
+        # get the pieces out of vectorOut:
+        govNet = {}
+        current = 0
+        for layer in self.layers:       # from network
+            if layer.kind == 'Input':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        for layer in self.layers:       # from network
+            if layer.kind == 'Context':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        for layer in self.layers:       # from network
+            if layer.kind == 'Output':
+                length = layer.size
+                govNet[layer.name] = vectorOut[current:current+length]
+                current += length
+        # load them and train training Network
+        return self.trainingNetwork.step(**govNet)
+
     def networkStep(self, **args):
         if self.governing and not self._cv:
             # when layers are added one by one, ensure that mask and sharing
