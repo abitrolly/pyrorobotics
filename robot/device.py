@@ -1,5 +1,6 @@
 import pyro.robot
-import types, random
+import types, random, exceptions
+from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0): 
     """
@@ -53,11 +54,46 @@ class DeviceGetError(AttributeError):
 class DeviceSetError(AttributeError):
     """ Used to signal device set problem: item is not setable """
 
-class PositionObject:
-    def __ini__(self):
-        pass
-    def distance(self, **args):
-        return 0.343
+class SensorValue:
+    """ Used in new Python range sensor interface """
+    def __init__(self, device, value, pos=None,
+                 geometry=None, noise=0.0):
+        """
+        device - an object with rawToUnits, hitX, hitY, hitZ methods
+        value - the rawvalue of the device
+        pos - the ID of this sensor
+        geometry - (origin x, origin y, origin z, th in degrees) of ray
+        noise - percentage of noise to add to reading
+        """
+        self.device = device
+        self.value = value
+        self.pos = pos
+        self.geometry = geometry
+        self.noise = noise
+    def distance(self, unit=None): # defaults to current unit of device
+        return self.device.rawToUnits(self.value,
+                                      self.noise,
+                                      unit)        
+    def angle(self, unit="degrees"):
+        if self.geometry == None:
+            return None
+        if unit.lower() == "radians":
+            return self.geometry[3] * PIOVER180 # radians
+        elif unit.lower() == "degrees":
+            return self.geometry[3]
+        else:
+            raise AttributeError, "invalid unit = '%s'" % unit
+    def position(self):
+        if self.geometry == None: return (None, None, None)
+        x = self.geometry[0]
+        y = self.geometry[1]
+        z = self.geometry[2] 
+        return (x, y, z)
+    def hit(self):
+        x = self.device.hitX(self.pos)
+        y = self.device.hitY(self.pos)
+	z = self.device.hitZ(self.pos) 
+        return (x, y, z)
 
 class Device:
     """ A basic device class """
@@ -84,9 +120,18 @@ class Device:
             self.makeWindow()
         self.setup()
 
-    def getPositionObject(self, pos):
-        """ Should be overloaded by device implementations. """
+    def getSensorValue(self, pos):
+        """
+        Should be overloaded by device implementations to return a
+        SensorValue object.
+        """
         return None
+
+    def __iter__(self):
+        """ Used to iterate through values of device """
+        for pos in range(len(self)):
+            yield self.getSensorValue(pos)
+        raise exceptions.StopIteration
 
     def __getitem__(self, item):
         if type(item) == types.StringType:
@@ -94,19 +139,19 @@ class Device:
                 positions = self.__dict__["groups"][item]
                 retval = []
                 for p in positions:
-                    retval.append( self.getPositionObject(p) )
+                    retval.append( self.getSensorValue(p) )
                 return retval
             else: # got a string, but it isn't a group name
                 raise AttributeError, "invalid device groupname '%s'" % item
         elif type(item) == types.IntType:
-            return self.getPositionObject(item)
+            return self.getSensorValue(item)
         elif type(item) == types.SliceType:
             retval = []
             step = 1
             if item.step:
                 step = item.step
             for p in range(item.start, item.stop, step):
-                retval.append( self.getPositionObject(p) )
+                retval.append( self.getSensorValue(p) )
             return retval
         else:
             raise AttributeError, "invalid device[%s]" % item

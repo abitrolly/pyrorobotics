@@ -3,49 +3,13 @@
 from pyro.system.share import config
 from pyro.robot import *
 from pyro.robot.device import *
-#from pyro.system.SerialConnection import *
 from pyro.system.serial import *
 import pyro.robot.driver as driver
 import pyro.gui.console as console
-import string, array, math #, termios
+import string, array, math 
 from time import sleep
-import exceptions
 from pyro.simulators.khepera.CNTRL import _ksim as ksim
-
-PIOVER180 = math.pi / 180.0
-DEG90RADS = 0.5 * math.pi
-COSDEG90RADS = math.cos(DEG90RADS) / 1000.0
-SINDEG90RADS = math.sin(DEG90RADS) / 1000.0
-
-class DevicePosition:
-    def __init__(self, device, value, pos, geometry):
-        self.device = device
-        self.value = value
-        self.pos = pos
-        self.geometry = geometry
-    def distance(self, unit=None): # defaults to current setting
-        return self.device.rawToUnits(self.value,
-                                      0.0,
-                                      unit)        
-    def angle(self, unit="degrees"):
-        if self.geometry == None:
-            return 0.0
-        if unit.lower() == "radians":
-            return self.th(self.pos) * PIOVER180 # radians
-        elif unit.lower() == "degrees":
-            return self.th(pos)
-        else:
-            raise AttributeError, "invalid unit = '%s'" % unit
-    def position(self):
-        x = self.geometry[0]
-        y = self.geometry[1]
-        z = self.geometry[2]
-        return (x, y, z)
-    def hit(self):
-        x = self.device.getIRXCoord(self.device.dev, self.pos)
-        y = self.device.getIRYCoord(self.device.dev, self.pos)
-	z = self.geometry[2]
-        return (x, y, z)
+from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class IRSensor(Device):
     def __init__(self, dev, type = "ir"):
@@ -76,15 +40,15 @@ class IRSensor(Device):
                        'back' : (6, 7)} 
         self.subDataFunc['ox']    = self.ox
         self.subDataFunc['oy']    = self.oy
-        self.subDataFunc['oz']    = lambda pos: 0.03
+        self.subDataFunc['oz']    = lambda pos: 0.0
         self.subDataFunc['th']    = self.th
         self.subDataFunc['thr']    = lambda pos: self.th(pos) * PIOVER180
         self.subDataFunc['arc']   = lambda pos: (15 * PIOVER180)
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
-        self.subDataFunc['x'] = lambda pos: self.getIRXCoord(self.dev, pos)
-        self.subDataFunc['y'] = lambda pos: self.getIRYCoord(self.dev, pos)
-	self.subDataFunc['z'] = lambda pos: 0.03
+        self.subDataFunc['x'] = self.hitX
+        self.subDataFunc['y'] = self.hitY
+	self.subDataFunc['z'] = self.hitZ
 	self.subDataFunc['value'] = self.getIRRange
         #self.subDataFunc['all'] = self.getIRRangeAll
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
@@ -93,14 +57,9 @@ class IRSensor(Device):
 
     def __len__(self):
         return self.devData["count"]
-    def __iter__(self):
-        for pos in range(len(self)):
-            yield DevicePosition(self, self.getIRRange(pos), pos,
-                                 (self.ox(pos), self.oy(pos), 0.03))
-        raise exceptions.StopIteration
-    def getPositionObject(self, pos):
-        return DevicePosition(self, self.getIRRange(pos), pos,
-                              (self.ox(pos), self.oy(pos), 0.03))
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.getIRRange(pos), pos,
+                           (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
     
     def postSet(self, keyword):
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
@@ -173,20 +132,22 @@ class IRSensor(Device):
         data = max(min(data, self.devData["maxvalueraw"]), 0)
         return self.rawToUnits(data)
 
-    def getIRXCoord(self, dev, pos):
+    def hitX(self, pos):
         # convert to x,y relative to robot
         data = self.getIRRange(pos)
         dist = self.rawToUnits(data)
         angle = (-self.th(pos)  - 90.0) / 180.0 * math.pi
         return dist * math.cos(angle)
         
-    def getIRYCoord(self, dev, pos):
+    def hitY(self, pos):
         # convert to x,y relative to robot
         data = self.getIRRange(pos)
         dist = self.rawToUnits(data)
         angle = (-self.th(pos) - 90.0) / 180.0 * math.pi
         return dist * math.sin(angle)
-    
+
+    def hitZ(self, pos): return 0.0
+
     def getIRFlag(self, pos):
         return 0
 
@@ -202,14 +163,9 @@ class LightSensor(IRSensor):
 
     def __len__(self):
         return self.devData["count"]
-    def __iter__(self):
-        for pos in range(len(self)):
-            yield DevicePosition(self, self.dev.senseData['light'][pos], pos,
-                                 (self.ox(pos), self.oy(pos), 0.03))
-        raise exceptions.StopIteration
-    def getPositionObject(self, pos):
-        return DevicePosition(self, self.dev.senseData['light'][pos], pos,
-                              (self.ox(pos), self.oy(pos), 0.03))
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.dev.senseData['light'][pos], pos,
+                           (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
     
     def postSet(self, kw):
         self.devData['maxvalue'] = self.devData["maxvalueraw"]

@@ -4,44 +4,9 @@ from pyro.robot import *
 from math import pi, cos, sin
 from os import getuid
 from pyro.robot.driver.player import *
-import time, exceptions
-
-PIOVER180 = pi / 180.0
-DEG90RADS = 0.5 * pi
-COSDEG90RADS = cos(DEG90RADS) / 1000.0
-SINDEG90RADS = sin(DEG90RADS) / 1000.0
-
-from pyro.robot.device import Device, DeviceError
-
-class PlayerDevicePosition:
-    def __init__(self, device, array, position, geometry):
-        self.device = device
-        self.array = array
-        self.pos = position
-        self.geometry = geometry
-    def distance(self, unit=None): # defaults to current setting
-        return self.device.rawToUnits(self.array[self.pos],
-                                      self.device.devData["noise"],
-                                      unit)        
-    def angle(self, unit="degrees"):
-        if self.geometry == None:
-            return 0.0
-        if unit.lower() == "radians":
-            return self.geometry[self.pos][2] * PIOVER180 # radians
-        elif unit.lower() == "degrees":
-            return self.geometry[self.pos][2]
-        else:
-            raise AttributeError, "invalid unit = '%s'" % unit
-    def position(self):
-        x = self.geometry[self.pos][0]
-        y = self.geometry[self.pos][1]
-        z = self.device.rawToUnits(300) # rawunits
-        return (x, y, z)
-    def hit(self):
-        x = self.device.getX(self.pos)
-        y = self.device.getY(self.pos)
-	z = self.device.rawToUnits(300) # rawunits
-        return (x, y, z)
+import time
+from pyro.robot.device import Device, DeviceError, SensorValue
+from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class PlayerDevice(Device):
     def __init__(self, dev, type, groups = {}):
@@ -142,37 +107,40 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['thr']   = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
         self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] # degrees
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
-        self.subDataFunc['x']     = self.getX
-        self.subDataFunc['y']     = self.getY
-	self.subDataFunc['z']     = lambda pos: self.rawToUnits(300) # rawunits
+        self.subDataFunc['x']     = self.hitX
+        self.subDataFunc['y']     = self.hitY
+	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.sonar[0][pos], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
 
     def __len__(self):
         return len(self.dev.sonar[0])
-    def __iter__(self):
-        for pos in range(len(self)):
-            yield PlayerDevicePosition(self, self.dev.sonar[0], pos, self.sonarGeometry)
-        raise exceptions.StopIteration
-    def getPositionObject(self, pos):
-        return PlayerDevicePosition(self, self.dev.sonar[0], pos, self.sonarGeometry)
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.dev.sonar[0][pos], pos,
+                           (self.sonarGeometry[pos][0],
+                            self.sonarGeometry[pos][1],
+                            0.03,
+                            self.sonarGeometry[pos][2]),
+                           self.devData["noise"])
 
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
-    def getX(self, pos):
+    def hitX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180 # + 90
         dist = self.rawToUnits(self.dev.sonar[0][pos])
         x = self.rawToUnits(self.sonarGeometry[pos][0])
         return cos(thr) * dist
 
-    def getY(self, pos):
+    def hitY(self, pos):
         thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180 # - 90
         dist = self.rawToUnits(self.dev.sonar[0][pos])
         y = self.rawToUnits(self.sonarGeometry[pos][1])
         return sin(thr) * dist
+    def hitZ(self, pos):
+        return .03
 
 class PlayerLaserDevice(PlayerDevice):
     def __init__(self, dev, name):
@@ -224,39 +192,38 @@ class PlayerLaserDevice(PlayerDevice):
         # FIX: the index here should come from the "index"
         self.subDataFunc['th']    = lambda pos: self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos) # in degrees
         self.subDataFunc['arc']   = lambda pos: self.dev.laser[0][0][2] # in degrees
-        self.subDataFunc['x']     = self.getX
-        self.subDataFunc['y']     = self.getY
-	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['x']     = self.hitX
+        self.subDataFunc['y']     = self.hitY
+	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos], self.devData["noise"]) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
     def __len__(self):
         return len(self.dev.laser[0][1])
-    def __iter__(self):
-        for pos in range(len(self)):
-            yield PlayerDevicePosition(self, self.dev.laser[0][1], pos,
-                                       self.laserGeometry)
-        raise exceptions.StopIteration
-    def getPositionObject(self, pos):
-        return PlayerDevicePosition(self, self.dev.laser[0][1], pos,
-                                    self.laserGeometry)
-
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.dev.laser[0][1][pos], pos,
+                           (self.laserGeometry[0][0],
+                            self.laserGeometry[0][1],
+                            0.03, # meters Z
+                            self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)),
+                           self.devData["noise"])
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
 
-    def getX(self, pos):
-        thr = (self.laserGeometry[pos][2] + 90.0) * PIOVER180
+    def hitX(self, pos):
+        th = self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)
+        thr = th * PIOVER180
         dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
-        x = self.laserGeometry[pos][0]
         return cos(thr) * dist
-
-    def getY(self, pos):
-        thr = (self.laserGeometry[pos][2] - 90.0) * PIOVER180
+    def hitY(self, pos):
+        th = self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)
+        thr = th * PIOVER180
         dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
-        y = self.laserGeometry[pos][1]
         return sin(thr) * dist
+    def hitZ(self, pos):
+        return 0.03 # meters
 
 class PlayerCommDevice(PlayerDevice):
 

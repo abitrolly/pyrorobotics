@@ -180,13 +180,21 @@ class RobocupLaserDevice(Device):
         self.subDataFunc['th']    = lambda pos: pos - 45 # in degrees
         self.subDataFunc['thr']   = lambda pos: (pos - 45) * PIOVER180 
         self.subDataFunc['arc']   = lambda pos: 1
-        self.subDataFunc['x']     = self.getX
-        self.subDataFunc['y']     = self.getY
-	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['x']     = self.hitX
+        self.subDataFunc['y']     = self.hitY
+	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.getVal(pos), self.devData["noise"]) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
+    def __len__(self):
+        return self.devData["count"]
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.getVal(pos), pos,
+                           (0.0,
+                            0.0,
+                            0.03,
+                            pos - 45))
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
@@ -219,16 +227,16 @@ class RobocupLaserDevice(Device):
                     
     def getVal(self, pos):
         return self.values[pos] # zero based, from right
-
-    def getX(self, pos):
+    def hitX(self, pos):
         thr = (pos - 45.0) * PIOVER180
         dist = self.getVal(pos) # METERS
         return cos(thr) * dist
-
-    def getY(self, pos):
+    def hitY(self, pos):
         thr = (pos - 45.0) * PIOVER180
         dist = self.getVal(pos) # METERS
         return sin(thr) * dist
+    def hitZ(self, pos):
+        return 0.03
 
 class RobocupRobot(Robot):
     """ A robot to interface with the Robocup simulator. """

@@ -2,7 +2,7 @@
 
 from pyro.robot import *
 from pyro.geometry import *
-from pyro.robot.device import Device, DeviceError
+from pyro.robot.device import Device, DeviceError, SensorValue
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4, ArSick
 try:
@@ -355,17 +355,31 @@ class AriaSonar(AriaSensor):
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
         self.subDataFunc['oz']    = lambda pos: 0.03
-        self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) # degrees
-        self.subDataFunc['thr']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
+        self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) / PIOVER180
+        self.subDataFunc['thr']    = lambda pos: self.params.getSonarTh(pos)
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
-        self.subDataFunc['x']     = lambda pos: self.dev.getSonarReading(pos).getLocalX()
-        self.subDataFunc['y']     = lambda pos: self.dev.getSonarReading(pos).getLocalY()
-	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['x']     = self.hitX 
+        self.subDataFunc['y']     = self.hitY
+	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.getSonarRange(pos))
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
         self.startDevice()
 
+    def hitX(self,pos):
+        return self.dev.getSonarReading(pos).getLocalX()
+    def hitY(self,pos):
+        return self.dev.getSonarReading(pos).getLocalY()
+    def hitZ(self,pos):
+        return 0.03
+    def __len__(self):
+        return self.params.getNumSonar()
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.dev.getSonarRange(pos), pos,
+                           (self.params.getSonarX(pos),
+                            self.params.getSonarY(pos),
+                            0.03,
+                            self.params.getSonarTh(pos)))
     def postSet(self, keyword):
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
@@ -429,27 +443,34 @@ class AriaLaser(AriaSensor):
                        'back-all': []}
         # for each laser pos:
         self.subDataFunc['oz']    = lambda pos: 0.03
-        self.subDataFunc['th']    = lambda pos: self.params.getLaserTh(pos) * PIOVER180
-        self.subDataFunc['thr']    = self.params.getLaserTh
+        self.subDataFunc['th']    = lambda pos: self.params.getLaserTh(pos) / PIOVER180
+        self.subDataFunc['thr']    = self.params.getLaserTh # radians
         self.subDataFunc['arc']   = lambda pos: 1.0
-        self.subDataFunc['x']     = lambda pos: self.getX
-        self.subDataFunc['y']     = lambda pos: self.getY
-	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['x']     = self.hitX
+        self.subDataFunc['y']     = self.hitY
+	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.getRange(pos))
         self.subDataFunc['pos']   = lambda pos: pos
         self.startDevice()
 
+    def __len__(self):
+        return self.devData["count"]
+    def getSensorValue(self, pos):
+        return SensorValue(self, self.getRange(pos), pos,
+                           (self.params.getLaserX(pos),
+                            self.params.getLaserY(pos),
+                            0.03,
+                            self.params.getLaserTh(pos) / PIOVER180))
     def updateDevice(self):
         self.readings = self.dev.getRawReadingsAsVector()
-
     def getRange(self, pos):
         return self.readings[pos].getRange()
-
-    def getX(self, pos):
+    def hitX(self, pos):
         return self.readings[pos].getSensorX()
-
-    def getY(self, pos):
+    def hitY(self, pos):
         return self.readings[pos].getSensorY()
+    def hitZ(self, pos):
+        return 0.03
 
     def postSet(self, keyword):
         self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
