@@ -31,18 +31,18 @@ def fitness(sol):
 
 class GAQueens(GA):
     def fitnessFunction(self, genePos):
-        return fitness( self.pop[genePos].data)
+        return fitness( self.pop.individuals[genePos].genotype)
                 
-    def isDoneFunction(self):
+    def isDone(self):
         self.pop[0].display()
-        fit = fitness( self.pop[0].data)
+        fit = fitness( self.pop.individuals[0].genotype)
         print "Best Fitness:", fit
-        return fit == len(self.pop[0].data)
+        return fit == len(self.pop.individuals[0].genotype)
 
 class MyGene(Gene):
     def display(self):
-        for row in range(len(self.data)):
-            for col in self.data:
+        for row in range(len(self.genotype)):
+            for col in self.genotype:
                 if col == row:
                     print "X",
                 else:
@@ -50,8 +50,8 @@ class MyGene(Gene):
             print ""
 
 if __name__ == '__main__':    
-    ga = GAQueens(Population(1000, MyGene, size = 100, mode = 'integer', max = 100))
-    ga.evolve(0)
+    ga = GAQueens(Population(300, MyGene, size = 16, mode = 'integer', max = 16, verbose = 1))
+    ga.evolve()
 
 # after 83 generations:
 # mygene = MyGene(size = 16)
