@@ -3,20 +3,21 @@ from pyro.robot import Robot
 from pyro.robot.device import Device
 from random import random
 
-def lookupColor(thing):
+def lookup(thing):
+    """ Returns ASCII, color, width, height """
     if thing[0] == 'f': # flag
-        return "F", "red"
+        return "F", "red", 1, 10
     elif thing[0] == 'b': # ball
-        return "B", "white"
+        return "B", "white", 3, 3
     elif thing[0] == 'l': # line
-        return None, None
+        return None, None, None, None
     elif thing[0] == 'p': # player
-        return "P", "yellow"
+        return "P", "yellow", 3, 3
     elif thing[0] == 'g': # goal
-        return "G", "blue" # FIX: make my goal different
+        return "G", "blue", 1, 10 # FIX: make my goal different
     else:
         print "unknown thing:", thing
-        return None, None
+        return None, None, None, None
 
 def makeDict(pairs):
     """ Turns list of [name, value] pairs into a dict {name: value, ...} or {name: [values], ...}"""
@@ -194,7 +195,7 @@ class RobocupRobot(Robot):
                     self.devData[msg[0]] = msg[2:]
                     self.devData["%s:time" % msg[0]] = msg[1]
                 else:
-                    print "need to handle '%s'" % msg[0], msg
+                    print "unhandled message in robocup.py: '%s'" % msg[0], msg
                 self.messageHandler(msg)
             else:
                 return
@@ -237,24 +238,30 @@ class RobocupRobot(Robot):
         self.translate(translate_velocity)
         self.rotate(rotate_velocity)
 
-    def addToImage(self, color, distance, angle):
+    def addToImage(self, color, distance, angle, width, height):
         boxHeight = int((1.0 - min((distance / 100.0), 1.0)) * self.height)
         col = int(((angle + 45.0) / 90) * self.width)
         for h in range((self.height - boxHeight) / 2, self.height - (self.height - boxHeight) / 2 + 1):
-            self.image[h * self.width + col] = color
+            pos = h * self.width + col
+            if  pos > 0 and pos < self.height * self.width * self.depth:
+                self.image[pos] = color
 
-    def makeImage(self, see):
+    def makeImage(self, see = None):
+        if see == None:
+            see = self.get("robot/see")
         self.width = 40
         self.height = 30
         self.depth = 1
-        self.image = [0] * self.height * self.width * self.depth
+        self.image = [" "] * self.height * self.width * self.depth
+        # sort it on distance, further ones first
+        see.sort(lambda x,y: cmp(y[1],x[1]))
         for item in see:
             if len(item) > 2: # otherwise, can't do much without direction
-                ch, color = lookupColor(item[0])
+                ch, color, width, height = lookup(item[0])
                 distance = item[1]
                 angle = item[2]
                 if color:
-                    self.addToImage(ch, distance, angle)
+                    self.addToImage(ch, distance, angle, width, height)
         for y in range(self.height):
             for x in range(self.width):
                 print self.image[y * self.width + x],
