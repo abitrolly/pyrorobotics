@@ -502,7 +502,7 @@ class KheperaRobot(Robot):
         dev.lastRotate = value
         dev.adjustSpeed()
     
-    def localize(self, x, y, thr):
+    def localize(self, x = 0.0, y = 0.0, thr = 0.0):
         self.x = x
         self.y = y
         self.thr = thr
