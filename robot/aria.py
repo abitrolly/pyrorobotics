@@ -117,6 +117,21 @@ class AriaPTZService(AriaService):
         # this should NOT happen until the robot is connected:
         self.dev.init()
         
+    def setPose(self, *args):
+        if len(args) == 3:
+            pan, tilt, zoom = args[0], args[1], args[2]
+        elif len(args[0]) == 3:
+            pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
+        else:
+            raise AttributeError, "setPose takes pan, tilt, and zoom"
+        retval1 = self.pan(pan)
+        retval2 = self.pan(tilt)
+        retval3 = self.pan(zoom)
+        return [retval1, retval2, retval3]
+
+    def getPose(self):
+        return [self.getPan(), self.getTilt(), self.getZoom()]
+
     ## Methods for moving camera
 
     def pan(self, numDegrees):
