@@ -44,6 +44,9 @@ class Gene:
         self.data = []
         self.mode = 'float'
         self.bias = 0.5
+        self.max = 1 # inclusive
+        if args.has_key('max'):
+            self.max = args['max']
         if args.has_key('mode'):
             self.mode = args['mode']
         if args.has_key('bias'):
@@ -52,7 +55,7 @@ class Gene:
             if self.mode == 'bit':
                 self.data.append( random.random() < self.bias)
             elif self.mode == 'integer':
-                self.data.append( random.random() < self.bias)
+                self.data.append( math.floor(random.random() * (self.max + 1)))
             elif self.mode == 'float':
                 self.data.append( random.random() * 2.0 - 1.0)
             else:
