@@ -45,6 +45,39 @@ def stringArray(a, newline = 1, width = 0):
     if newline:
         s += '\n'
     return s
+
+def logBaseTwo(value):
+    return int(math.ceil(math.log(value)/math.log(2)))
+
+def makeOrthogonalBitList(maxbits = 8):
+    retval = []
+    for i in range(maxbits):
+        retval.append(dec2bin(2 ** i, maxbits))
+    return retval
+
+def makeBitList(maxbits = 8): 
+    """ 
+    This version is much more flexible as it relies on a general function 
+    that takes any number and converts it to binary. You can make any 
+    size bit representation that you want: 
+    makeBitList(2) will give you: [[0, 0], [0, 1], [1, 0], [1, 1]] 
+    for example. Defaults to 8 bits. 
+    """ 
+    retval = [] 
+    for i in range((2 ** maxbits)): 
+        retval.append( dec2bin(i, maxbits) ) 
+    return retval 
+
+def dec2bin(val, maxbits = 8): 
+    """ 
+    A decimal to binary converter. Returns bits in a list. 
+    """ 
+    retval = [] 
+    for i in range(maxbits - 1, -1, -1): 
+        bit = int(val / (2 ** i)) 
+        val = (val % (2 ** i)) 
+        retval.append(bit) 
+    return retval 
     
 class RAVQ:
     """
@@ -64,7 +97,7 @@ class RAVQ:
         self.winnerIndex = -1
         self.verbosity = 0
         self.labels = {}
-        self.recordHistory = 1
+        self.recordHistory = 0
         self.history = {} # time indexed list of winners
         self.tolerance = delta
         self.counters = []
@@ -198,7 +231,8 @@ class RAVQ:
         if dict.has_key('logName'):
             self.log = open(dict['logName'], 'a') 
         self.__dict__.update(dict)
-            
+
+    # logging methods
     def logHistory(self, labels = 1, tag = 'None'):
         """
         Writes time winner label tag to file in four column format.
@@ -283,6 +317,32 @@ class RAVQ:
         else:
             return 1
 
+    def autoLabel(self, mode = 'binary'):
+        """
+        Label model vectors with strings.
+        """
+        if mode == 'binary':
+            labels = makeBitList(logBaseTwo(len(self.models)))
+            if self.verbosity > 1: print labels
+            if self.verbosity > 1: print self.labels
+            for x in range(len(self.models)):
+                self.addLabel(''.join([str(y) for y in labels[x]]), self.models[x])
+        elif mode == 'orthogonal':
+            labels = makeOrthogonalBitList(len(self.models))
+            if self.verbosity > 1: print labels
+            if self.verbosity > 1: print self.labels
+            for x in range(len(self.models)):
+                self.addLabel(''.join([str(y) for y in labels[x]]), self.models[x])
+        elif mode == 'decimal':
+            if self.verbosity > 1: print labels
+            if self.verbosity > 1: print self.labels
+            for x in range(len(self.models)):
+                self.addLabel(str(x), self.models[x])
+        else:
+            print 'Unsupported mode...not making labels.'
+            
+        
+
 class ARAVQ(RAVQ):
     """
     Extends RAVQ as described in Linaker and Niklasson.
@@ -323,31 +383,6 @@ class ARAVQ(RAVQ):
         self.learn()
         
 if __name__ == '__main__':
-
-    def makeBitList(maxbits = 8): 
-        """ 
-        This version is much more flexible as it relies on a general function 
-        that takes any number and converts it to binary. You can make any 
-        size bit representation that you want: 
-        makeBitList(2) will give you: [[0, 0], [0, 1], [1, 0], [1, 1]] 
-        for example. Defaults to 8 bits. 
-        """ 
-        retval = [] 
-        for i in range((2 ** maxbits)): 
-            retval.append( dec2bin(i, maxbits) ) 
-        return retval 
- 
-    def dec2bin(val, maxbits = 8): 
-        """ 
-        A decimal to binary converter. Returns bits in a list. 
-        """ 
-        retval = [] 
-        for i in range(maxbits - 1, -1, -1): 
-            bit = int(val / (2 ** i)) 
-            val = (val % (2 ** i)) 
-            retval.append(bit) 
-        return retval 
-
             
     bitlist = makeBitList()
     ravq = RAVQ(4, 2.1, 1.1)
@@ -370,9 +405,3 @@ if __name__ == '__main__':
 
     print ravq
     
-##     ravq.saveRAVQToFile('test.pck')
-##     import pickle
-##     fp = open('test.pck')
-##     ravq = pickle.load(fp)
-##     fp.close()
-##     print ravq
