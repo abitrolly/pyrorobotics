@@ -11,11 +11,12 @@ class FakeFile:
 class PCAPlot:
     def __init__(self, eigenfile, namefile = None, debug = 0,
                  dimensions = 2, title = None, datatitle = None,
-                 showpoints = 1, showlabels = 1):
+                 showpoints = 1, showlabels = 1, components = [0, 1, 2]):
         self.gp = Gnuplot.Gnuplot(debug = debug)
         self.dimensions = dimensions
         self.showpoints = showpoints
         self.showlabels = showlabels
+        self.components = components
         # read in eigenvalues, names
         efp = open(eigenfile, "r")
         if namefile:
@@ -32,15 +33,15 @@ class PCAPlot:
             if dimensions == 2:
                 if label and showlabels:
                     self.gp('set label "%s" at %f,%f' %
-                            (label, float(data[0]), float(data[1])))
-                dataset.append( (float(data[0]), float(data[1])))
+                            (label, float(data[self.components[0]]), float(data[self.components[1]])))
+                dataset.append( (float(data[self.components[0]]), float(data[self.components[1]])))
             elif dimensions == 3:
                 if label and showlabels:
                     self.gp('set label "%s" at %f,%f,%f' %
-                            (label, float(data[0]),
-                             float(data[1]), float(data[2])))
-                dataset.append( (float(data[0]), float(data[1]),
-                                     float(data[2])))
+                            (label, float(data[self.components[0]]),
+                             float(data[self.components[1]]), float(data[self.components[2]])))
+                dataset.append( (float(data[self.components[0]]), float(data[self.components[1]]),
+                                     float(data[self.components[2]])))
             else:
                 raise "DimensionError", \
                       "cannot handle dimensions of %d" % dimensions
