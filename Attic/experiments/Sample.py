@@ -20,7 +20,7 @@ class Sample(Brain):
             self.file[name] = open(name + ".dat", "w")
             if name == 'bumper':
                 self.getRobot().startService('bumper')
-            current = self.getValue(name)
+            current = self.getValue(name, 0)
             self.file[name].write(str(len(current)) + '\n')
         self.count = 0
         
@@ -34,10 +34,11 @@ class Sample(Brain):
             self.getRobot().stop()
             print "done collecting samples"
 
-    def getValue(self, name):
+    def getValue(self, name, moveit = 1):
         if name == 'wheel':
             translate, rotate = random.random()*2-1, random.random()*2-1
-            self.getRobot().move(translate, rotate)
+            if moveit:
+                self.getRobot().move(translate, rotate)
             time.sleep(0.25)
             return (translate+1)/2.0, (rotate+1)/2.0
         elif name == 'bumper':
