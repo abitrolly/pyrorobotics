@@ -298,7 +298,7 @@ class TKgui(Tkinter.Toplevel, gui):
    def newBrain(self):
       import os
       for i in range(1, 100):
-         myfile = "MyBrain%d.py" % i
+         myfile = "~/MyBrain%d.py" % i
          if not exists(myfile):
             break
       os.system( "cp " + os.getenv("PYRO") + ("/build/brainTemplate.py %s" % myfile))
