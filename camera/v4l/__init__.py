@@ -1,9 +1,7 @@
 from v4l import V4L      # cameraDevice
 from pyro.camera import Camera, CBuffer
-import types, sys, os
-import time
 
-class V4LGrabber(Camera):
+class V4LCamera(Camera):
    """
    A Wrapper class for the C fuctions that capture data from the Camera.
    It uses the Video4linux API, and the image is kept in memory through
@@ -41,6 +39,7 @@ class V4LGrabber(Camera):
       if title == None:
 	 title = self.device
       Camera.__init__(self, width, height, depth, title = title)
+      self.devData["subtype"] = "video4linux"
       self.data = CBuffer(self.cbuf)
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
