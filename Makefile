@@ -5,7 +5,7 @@ include Makefile.cfg
 
 SUBDIRS = camera/bt848 geometry gui/3DArray robot/driver/grid \
 	robot/driver/video camera/v4l brain/psom tools/cluster \
-	simulators/khepera
+	brain/psom/csom_src/som_pak-dev simulators/khepera
 
 # Failing subdir: robot/driver/testc
 
