@@ -1,10 +1,11 @@
 from PIL import ImageTk
 from Tkinter import *
 from math import *
-from pyro.gui import drawable
+#from pyro.gui import drawable
 import struct
 
-class KheperaViewer(drawable.Drawable):
+#class KheperaViewer(drawable.Drawable):
+class KheperaViewer:
    """
    A class to view all the sensor data of the Khepera at once.
    """
@@ -27,8 +28,7 @@ class KheperaViewer(drawable.Drawable):
       else:
          #inscribe the image in the circle representing the robot
          self.radius = int(sqrt((imageSize[0]/2)**2 + (imageSize[1]/2)**2)) + 3
-         
-
+      
       self.maxVals = {
          "ir" : 60.0/55.0, #going to assume that ir units are Robots for now
          "light" : 200.0,  #???
@@ -38,8 +38,15 @@ class KheperaViewer(drawable.Drawable):
          bg = 'blue'
       else:
          bg = 'white'
+      bg = 'blue'
       self.canvas = Canvas(self.win, height = self.rad(7),
                            width = self.rad(7), bg = bg)
+      if imageSize:
+         self.photo = ImageTk.PhotoImage("L", imageSize)
+         self.camera_view = self.canvas.create_image(self.rad(3.5),
+                                                     self.rad(3.5),
+                                                     image=self.photo,
+                                                     tags = 'camera')
       
       self.circle = self.canvas.create_oval(self.rad(2.5),
                                             self.rad(2.5),
@@ -97,12 +104,7 @@ class KheperaViewer(drawable.Drawable):
                                       extent = light_startextents[i][1])
          self.light_circle.append(arc)
 
-      if imageSize:
-         self.photo = ImageTk.PhotoImage("L", imageSize)
-         self.camera_view = self.canvas.create_image(self.rad(3.5),
-                                                     self.rad(3.5),
-                                                     tags = 'camera',
-                                                     image=self.photo)
+                                                     
       if color:
          fill='white'
       else:
@@ -123,7 +125,6 @@ class KheperaViewer(drawable.Drawable):
       self.canvas.tag_lower('ir', 'circle')
       self.canvas.tag_lower('light', 'ir')
       self.canvas.pack()
-
 
    def update(self, ir, light, motor, vision = None):
       """
@@ -179,6 +180,14 @@ class KheperaViewer(drawable.Drawable):
       return int(val * self.radius)
    
 if __name__ == "__main__":
+   print "Testing w/vision:"
+   kv = KheperaViewer((20, 10))
+   a = [int(x*(200.0/255.0)) for x in range(200)]
+   
+   kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
+             [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 199.0],
+             [.3, 0],a)
+   raw_input()
    print "Trying w/o vision (color):"
    kv = KheperaViewer(None)
    kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
@@ -203,11 +212,4 @@ if __name__ == "__main__":
              [.9, .75])
    raw_input()
    
-   print "Testing w/vision:"
-   kv = KheperaViewer((20, 10))
-   a = [int(x*(200.0/255.0)) for x in range(200)]
-   
-   kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
-             [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 199.0],
-             [.3, 0],a)
-   raw_input()
+
