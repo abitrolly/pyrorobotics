@@ -1,0 +1,43 @@
+CC = gcc
+CXX = gcc
+PYTHONINCLUDE = -I/usr/include/python2.0
+
+BASEDIR=/home/dblank/pyro/stuff
+
+INCLUDEFLAGS = -I${BASEDIR}
+CFLAGS = -Werror -Wall -g ${INCLUDEFLAGS} ${DEFINES}
+CXXFLAGS = ${CFLAGS} 
+LDFLAGS = -L${BASEDIR}/lib ${LIB:lib%.so=-l%} -lm
+
+GLLDFLAGS = -L/usr/X11R6/lib -lGL -lGLU
+C++LDFLAGS = -lstdc++
+
+%module.c : %.i %.h %.c
+	swig -python -o $@  $<
+
+%module.cc : %.i %.h %.cc
+	swig -python -c++ -o $@  $<
+
+%module.o : %module.c
+	$(CC) -c ${PYTHONINCLUDE} ${INCLUDEFLAGS} -o $@ $<
+
+%module.o : %module.cc
+	$(CC) -c ${PYTHONINCLUDE} ${INCLUDEFLAGS} -o $@ $<
+
+%module.so : %module.o
+	$(CC) -nodefaultlibs -nostdlib -shared ${LDFLAGS} -o $@ $<
+	cp $@ ../lib
+
+lib%.so : lib%.o
+	$(CC) -nodefaultlibs -nostdlib -shared -o $@ $^
+	cp $@ ../lib
+
+
+all : ${OBJ} ${LIB} ${BIN} ${LIB:lib%.so=%module.so}
+
+clean :
+	rm -f $(OBJ) $(LIB) $(MODULE) $(BIN) *~
+
+${BIN} : ${LIB}
+
+${LIB:lib%.so=%module.so}  : ${LIB} 
