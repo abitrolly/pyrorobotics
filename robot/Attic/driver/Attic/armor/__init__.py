@@ -196,6 +196,11 @@ class ArmorControlDriver(driver.Driver):
       self.controls['RElbow Rot']     = self.RElbowR
       self.controls['RElbow Pron']    = self.RElbowP
       self.controls['RWrist Rot']     = self.RWristR
+      
+      #Pyro has no support for controllers that are binary in nature
+      #This might be a good addition.  It would be useful for blinking
+      #lights, etc.  These controllers aren't *really* binary, so it
+      #doesn't really matter here.
       self.controls['RIndex Flex']    = self.RIndexF
       self.controls['RIndex Curl']    = self.RIndexC
       self.controls['RPinky Flex']    = self.RPinkyF

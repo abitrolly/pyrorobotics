@@ -1,3 +1,5 @@
+from math import floor
+
 class ArmorLowlevel:
    def __init__(self):
       self.touchArray = []
@@ -54,6 +56,8 @@ class ArmorLowlevel:
    def incSense(self, type, n, val):
       if type == 'rot':
          self.rotArray[n] += val
+         if not (0 <= self.rotArray[n] < 1):
+            self.rotArray[n] -= floor(self.rotArray[n])
       elif type == 'touch':
          self.touchArray[n] += val
       else:
@@ -61,8 +65,8 @@ class ArmorLowlevel:
 
    def incSenseByName(self, type, name, val):
       if type == 'rot':
-         self.rotArray[self.rotNames[name]] += val
+         self.incSense(type, self.rotNames[name], val)
       elif type == 'touch':
-         self.touchArray[self.touchNames[name]] += val
+         self.incSense(type, self.touchNames[name], val)
       else:
          raise KeyError, type + " not a type of sensor for Armor."
