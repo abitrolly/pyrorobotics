@@ -201,6 +201,7 @@ class KheperaRobot(Robot):
         Robot.__init__(self) # robot constructor
         self.buffer = ''
         self.debug = 0
+        self.pause = 0.1
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"
@@ -246,6 +247,8 @@ class KheperaRobot(Robot):
                           'o' : 'light',
                           'k' : 'stall',
                           'e' : 'speed',
+                          'b' : 'version',
+                          'j' : 'extensionDevices',
                           't1b'  : 'gripper software',
                           't1f'  : 'gripper resistivity',
                           't1g'  : 'gripper beam state',
@@ -276,6 +279,8 @@ class KheperaRobot(Robot):
             self.sendMsg('H') # position
         else:
             self.senseData["position"] = 0, 0
+            self.sendMsg('B') # version
+            self.sendMsg('j') # extensionDevices
         self.x = 0.0
         self.y = 0.0
         self.thr = 0.0
@@ -319,11 +324,10 @@ class KheperaRobot(Robot):
         self.stop()
 
     def sendMsg(self, msg):
-        #if self.sc.inWaiting() == 0:
         if self.debug: print "DEBUG: sendMsg:", msg
         self.sc.writeline(msg, self.newline)
-        #else:
-        #    self.readData()
+        if self.devData["subtype"] == "Hemisson":
+            sleep(self.pause)
 
     def readData(self):
         if self.sc.inWaiting() == 0: return

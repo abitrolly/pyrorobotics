@@ -173,7 +173,8 @@ class AiboRobot(Robot):
         self.walk_control     = Listener(10050, self.host) # walk command
         self.head_control     = Listener(10052, self.host) # head movement
         self.estop_control    = Listener(10053, self.host) # head movement
-        self.rawimage_data    = Listener(10011, self.host) # raw_image
+        # C code will handle image:
+        #self.rawimage_data    = Listener(10011, self.host) # raw_image
         time.sleep(1) # let all of the servers get going...
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
