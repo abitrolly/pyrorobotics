@@ -13,6 +13,7 @@ else:
 (pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
 sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
+sys.path.append("/usr/local/Aria/python") # add Aria
 if not os.environ.has_key('PYRO'):
     os.environ['PYRO'] = pyropath 
 if os.environ.has_key('LD_LIBRARY_PATH'):
