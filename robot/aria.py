@@ -235,17 +235,17 @@ class AriaSonar(AriaSensor):
         elif self.params.getNumSonar() > 16:
             raise AttributeError, ("Need to define sensor groups for sonars "
                                    "with %d sensors" % self.params.getNumSonar())
-        self.devDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
-        self.devDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
-        self.devDataFunc['oz']    = lambda pos: 0.03
-        self.devDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
-        self.devDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
-        self.devDataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
-        self.devDataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
-	self.devDataFunc['z']     = lambda pos: 0.03 # meters
-        self.devDataFunc['value'] = lambda pos: self.getSonarRange(pos)
-        self.devDataFunc['pos']   = lambda pos: pos
-        self.devDataFunc['group']   = lambda pos: self.getGroupNames(pos)
+        self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
+        self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
+        self.subDataFunc['oz']    = lambda pos: 0.03
+        self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
+        self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
+        self.subDataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
+        self.subDataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
+	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['value'] = lambda pos: self.getSonarRange(pos)
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
 
     def getSonarRange(self, pos):
         return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
@@ -296,14 +296,14 @@ class AriaLaser(AriaSensor):
         #elif self.params.getNumSonar() > 181:
         #    raise AttributeError, ("Need to define sensor groups for lasers "
         #                           "with %d sensors" % self.params.getNumSonar())
-        self.devDataFunc['oz']    = lambda pos: 0.03
-        self.devDataFunc['th']    = lambda pos: pos
-        self.devDataFunc['arc']   = lambda pos: 1.0
-        self.devDataFunc['x']     = lambda pos: self.params.getLaserX()
-        self.devDataFunc['y']     = lambda pos: self.params.getLaserX()
-	self.devDataFunc['z']     = lambda pos: 0.03 # meters
-        self.devDataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
-        self.devDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['oz']    = lambda pos: 0.03
+        self.subDataFunc['th']    = lambda pos: pos
+        self.subDataFunc['arc']   = lambda pos: 1.0
+        self.subDataFunc['x']     = lambda pos: self.params.getLaserX()
+        self.subDataFunc['y']     = lambda pos: self.params.getLaserX()
+	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
+        self.subDataFunc['pos']   = lambda pos: pos
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
@@ -346,8 +346,8 @@ class AriaBumper(AriaSensor):
         elif self.params.getNumSonar() > 10:
             raise AttributeError, ("Need to define sensor groups for bumpers "
                                    "with %d sensors" % self.devData["count"])
-        self.devDataFunc['pos']   = lambda pos: pos
-        self.devDataFunc['value']   = lambda pos: pos
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['value']   = lambda pos: pos
 
 ##     def getBumpersPosDev(self, dev, pos):
 ##         return self.getBumpersDev(dev)[pos]
