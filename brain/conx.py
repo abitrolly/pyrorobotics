@@ -109,7 +109,7 @@ class Layer:
         self.active = 1
         self.maxRandom = 0.1
         self.initialize()
-    def initialize(self):
+    def initialize(self, epsilon):
         """
         Initializes important node values to zero for each node in the
         layer (target, error, activation, dbias, delta, netinput, bed).
@@ -122,7 +122,8 @@ class Layer:
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
         self.bed = Numeric.zeros(self.size, 'f')
-        self.epsilon = Numeric.ones(self.size, "f") * 0.1 # default epsilon value for all units
+        # default epsilon value for all units
+        self.epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.targetSet = 0
         self.activationSet = 0
     def randomize(self):
@@ -726,7 +727,7 @@ class Network:
         for connection in self.connections:
             connection.initialize()
         for layer in self.layers:
-            layer.initialize()
+            layer.initialize(self.epsilon)
     def resetFlags(self):
         """
         Resets layer flags for activation and target.
