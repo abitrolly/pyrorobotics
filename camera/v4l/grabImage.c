@@ -7,6 +7,8 @@
 #define RED      2
 #define MAXBLOBS 2000
 
+#define SWAP(a,b) { int itemp=(a);(a)=(b);(b)=itemp;}
+
 /*********
  * Arguments: (string device_name,
  *             int width,
@@ -1329,13 +1331,105 @@ static PyObject *sobel(PyObject *self, PyObject *args)
   return PyInt_FromLong(0L);
 }
 
+int getMiddleIndex(int median[4][400], int kernel)
+{
+  
+  int i,j;
+  int rankTable[400];
+  
+  
+  for(i=0; i<kernel*kernel; i++)
+    rankTable[i] = i;
+  
+  for(i=0; i < kernel*kernel; i++)
+    for(j=i+1; j< kernel*kernel; j++)
+      if(median[3][rankTable[i]] > median[3][rankTable[j]])
+	SWAP(rankTable[i],rankTable[j]);
+  
+  return(rankTable[(int)((kernel*kernel)/2)]);
+}
 
+static PyObject *median_blur(PyObject *self, PyObject *args)
+{
+  int width,height,kernel,mid;
+  int w,h,i,j,x, moveVal, offset, temp=0;
+  int median[4][400]={-1};  /*enough for 20x20(huge) Kernel */
+  int intensity = 3;
+  int depth = 3;
+  unsigned char *image, *out, *outptr;
+  unsigned char *ptr;
+  
+  if(!PyArg_ParseTuple(args, "iii", &kernel, &width, &height))
+    {
+      PyErr_SetString(PyExc_TypeError, "Invalid arguments to mean_blur");
+      return NULL;
+    }
 
+  out = (unsigned char *)malloc(sizeof(char)*width*height*depth);
 
-/*************************  END HISTOGRAM.C ********************/
+  if(kernel <= 0)
+    kernel = 1;
+  else if(kernel % 2 == 0) 
+    kernel--;
+  
+  x=(int)kernel/2;
+  
+  moveVal = x*width+x;
 
+  image = map+(moveVal)*3;
+  outptr = out+(moveVal)*3;
+  
+  for (j=0;j<height*width*depth;j++)
+    out[j]=0;
 
+  offset = 0;
 
+  for(h=x;h<height-x;h++)
+    {
+      for(w=x;w<width-x;w++,image+=3,outptr+=3)
+	{
+	  ptr=image-(moveVal)*3;
+	  temp=0;
+	 
+	  /* find middle color of surrouding pixels */
+	  for(i=0;i<kernel;i++)
+	    {
+	      for(j=0;j<kernel;j++,ptr+=3,temp++)
+		{
+		  median[BLUE][temp]  = *(ptr);
+		  median[GREEN][temp] = *(ptr+1);
+		  median[RED][temp]  = *(ptr+2);
+		  median[intensity][temp]=0.3*(*(ptr+2)) + 0.59*(*(ptr+1)) + 0.11*(*(ptr));
+		}
+	      /* bring ptr to next row */
+	      ptr=ptr-(kernel*3);
+	      ptr=ptr+width*3; /* bring ptr to next row */
+	    }
+	  
+	  /* get median intensity index */
+	  mid=getMiddleIndex(median, kernel);
+
+	  *outptr = median[BLUE][mid];
+	  *(outptr+1) = median[GREEN][mid];
+	  *(outptr+2) = median[RED][mid];
+
+	}
+    }
+
+  image = map;
+  outptr = out;
+  for (j=0;j<height;j++)
+    for (i=0;i<width;i++)
+      for(offset=0;offset<depth;offset++)
+	image[(i+j*width)*depth+offset] = outptr[(i+j*width)*depth+offset] ;
+
+  free(out);
+
+  
+  return PyInt_FromLong(0L);
+    
+  
+}
 
 
 static PyMethodDef grabImageMethods[] = {
@@ -1352,6 +1446,7 @@ static PyMethodDef grabImageMethods[] = {
   {"blobify", blobify, METH_VARARGS, "Compute max blob in place"},
   {"train_color", train_color, METH_VARARGS, "Get the best fitting color"},
   {"mean_blur", mean_blur, METH_VARARGS, "Perform Mean blur in place"},
+  {"median_blur", median_blur, METH_VARARGS, "Perform Median blur in place"},
   {"gaussian_blur",gaussian_blur,METH_VARARGS,"Perform gaussianBlur in place"},
   {"train_color", train_color, METH_VARARGS, "Trains on a specific color"},
   {"save_image", save_image, METH_VARARGS, "Saves the buffer to a ppm image"},
