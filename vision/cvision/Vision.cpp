@@ -13,8 +13,6 @@ Vision::Vision(int wi, int he, int de) {
 
 Vision::~Vision() {
   delete [] image;
-  //delete [] workspace;
-  //delete [] original;
 }
 
 PyObject *Vision::registerCameraDevice(void *dev) {
@@ -42,10 +40,6 @@ PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   height = he;
   depth = de;
   setRGB(r, g, b);
-  //workspace = new unsigned char [width * height * depth];
-  //original = new unsigned char [width * height * depth];
-  //memset(original, 0, width * height * depth);
-  //memset(workspace, 0, width * height * depth);
   filterList = PyList_New(0);
   // set the current image to:
   Image = image;
@@ -186,10 +180,9 @@ PyObject *Vision::match(int r, int g, int b, int tolerance,
 PyObject *Vision::matchRange(int lr, int lg, int lb, 
 			     int hr, int hg, int hb,
 			     int outChannel) {
-  int matches;
+  int matches = 0;
   for(int h=0;h<height;h++) {
     for(int w=0;w<width;w++) {
-      matches = 0;
       if (
 	  (lr == -1 || 
 	   (Image[(h * width + w) * depth + rgb[RED]] >= lr && 
@@ -205,6 +198,7 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
 	  ) {
 	/* maybe add a normalizer here so the outputs are 
 	   between 100-255ish for more varied usage? */
+	matches++;
 	if (outChannel == ALL) {
 	  for (int d = 0; d < depth; d++) {
 	    Image[(h * width + w) * depth + d ] = 255;
@@ -220,7 +214,7 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
       }
     }
   }
-  return Py_BuildValue("");
+  return Py_BuildValue("i", matches);
 }
 
 PyObject *Vision::saveImage(char *filename) {
@@ -270,51 +264,75 @@ PyObject *Vision::drawRect(int x1, int y1, int x2, int y2,
   return PyInt_FromLong(0L);
 }
 
-PyObject *Vision::colorHistogram() {
-  return Py_BuildValue("");
-}
-
-PyObject *Vision::trainColor(int x1, int y1, int x2, int y2, int bins) {
+PyObject *Vision::histogram(int x1, int y1, int x2, int y2, int bins) {
+  int b, d;
+  long int **binCnt;
+  long int **binAvg;
+  long int *maxAvg;
+  long int *maxCnt;
   // DON'T ASSUME THAT bin count won't change. Reallocate these.
   // OR make a maximum size, and just leave them here.
-  /*
-  int **binCnt = new int[depth][bins];
-  int **binAvg = new int[depth][bins];
-  int *maxAvg = new int[depth];
-  int b, d;
+  binCnt = new long int *[depth];
+  binAvg = new long int *[depth];
+  maxAvg = new long int[depth];
+  maxCnt = new long int[depth];
   for (d = 0; d < depth; d++) {
+    binCnt[d] = new long int[bins];
+    binAvg[d] = new long int[bins];
     maxAvg[d] = 0;
+    maxCnt[d] = 0;
     for (b = 0; b < bins; b++) {
       binCnt[d][b] = 0;
       binAvg[d][b] = 0;
     }
   }
-  for (int h = x1; h <= x2; h++) {
-    for (int w = y1; w <= y2; w++) {
+  // First, make a histogram:
+  for (int w = x1; w <= x2; w++) {
+    for (int h = y1; h <= y2; h++) {
       for (int d = 0; d < depth; d++) {
-	binAvg[d][ Image[(h * width + w) * depth + d] / 255 * bins ] += Image[(h * width + w) * depth + d];
-	binCnt[d][ Image[(h * width + w) * depth + d] / 255 * bins ]++;
+	int bin = int(Image[(h * width + w) * depth + d] / 256.0 * bins);
+	binAvg[d][ bin ] += Image[(h * width + w) * depth + d];
+	binCnt[d][ bin ]++;
       }
     }
   }
+  // Compute avg, and remember best:
   for (d = 0; d < depth; d++) {
     for (b = 0; b < bins; b++) {
-      binAvg[d][b] /= binCnt[d][b];
-      if (binAvg[d][b] > maxAvg[d]) {
+      if (binCnt[d][b]) {
+	binAvg[d][b] /= binCnt[d][b];
+      }
+      if (binCnt[d][b] > maxCnt[d]) {
 	maxAvg[d] = binAvg[d][b];
+	maxCnt[d] = binCnt[d][b];
       }
     }
   }
-  Py_Object *retval = Py_BuildValue("iii", 
-				    maxAvg[rgb[0]], 
-				    maxAvg[rgb[1]], 
-				    maxAvg[rgb[2]]);
+  PyObject *histList = PyList_New( bins );
+  for (int i = 0; i < bins; i++) {
+    PyList_SetItem(histList, i, Py_BuildValue("(iii)(iii)", 
+					      binAvg[rgb[0]][i], 
+					      binAvg[rgb[1]][i], 
+					      binAvg[rgb[2]][i],
+					      binCnt[rgb[0]][i], 
+					      binCnt[rgb[1]][i], 
+					      binCnt[rgb[2]][i] ));
+  }
+  PyObject *retval = Py_BuildValue("O(iii)", 
+				   histList,
+				   maxAvg[rgb[0]],
+				   maxAvg[rgb[1]],
+				   maxAvg[rgb[2]] );
+  // clean up
+  for (d = 0; d < depth; d++) {
+    delete [] binCnt[d];
+    delete [] binAvg[d];
+  }
   delete [] binCnt;
   delete [] binAvg;
   delete [] maxAvg;
+  delete [] maxCnt;
   return retval;
-  */
-  return Py_BuildValue("");
 }
 
 PyObject *Vision::grayScale() {
@@ -720,19 +738,21 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   int minBlobNum=0, maxBlobNum=0;
 
   int maxIndex[5]={0};
-  int **blobdata;
+  static int **blobdata;
   static int initialized = 0;
   if (!initialized) {
     // ASSUMES height and width don't change!
     blobdata = new int*[width];
     for (i = 0; i < width; i++) {
       blobdata[i] = new int[height];
-      for (j = 0; j < height; j++)
-	blobdata[i][j] = 0;
     }
     initialized = 1;
   }
-  
+  // Always need to initilize to zero
+  for (i = 0; i < width; i++) {
+    for (j = 0; j < height; j++)
+      blobdata[i][j] = 0;
+  }
   unsigned char *ImagePtr;
   
   if(inChannel == BLUE)
@@ -875,72 +895,17 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	  }
     }      
   
-  PyObject *tuple;
+  PyObject *tuple = PyTuple_New( size );
 
-  switch(size)
-    {
-    case 1:
-      tuple = Py_BuildValue("iiiii",bloblist[maxIndex[0]].ul.x,
-			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
-			    bloblist[maxIndex[0]].ul.x,bloblist[maxIndex[0]].mass);
-      break;
-	   
-    case 2:
-      tuple = Py_BuildValue("iiiiiiiiii",bloblist[maxIndex[0]].ul.x,
-			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
-			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
-			    bloblist[maxIndex[1]].ul.x,
-			    bloblist[maxIndex[1]].ul.y,bloblist[maxIndex[1]].lr.x,
-			    bloblist[maxIndex[1]].lr.y,bloblist[maxIndex[1]].mass);
-      break;
-    
-    case 3:
-      tuple = Py_BuildValue("iiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
-			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
-			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
-			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
-			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
-			    bloblist[maxIndex[1]].mass,
-			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
-			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
-			    bloblist[maxIndex[2]].mass);
-      break;
-
-    case 4:
-      tuple = Py_BuildValue("iiiiiiiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
-			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
-			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
-			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
-			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
-			    bloblist[maxIndex[1]].mass,
-			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
-			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
-			    bloblist[maxIndex[2]].mass,
-			    bloblist[maxIndex[3]].ul.x,bloblist[maxIndex[3]].ul.y,
-			    bloblist[maxIndex[3]].lr.x,bloblist[maxIndex[3]].lr.y,
-			    bloblist[maxIndex[3]].mass);
-
-      break;
-
-    case 5:
-      tuple = Py_BuildValue("iiiiiiiiiiiiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
-			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
-			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
-			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
-			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
-			    bloblist[maxIndex[1]].mass,
-			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
-			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
-			    bloblist[maxIndex[2]].mass,
-			    bloblist[maxIndex[3]].ul.x,bloblist[maxIndex[3]].ul.y,
-			    bloblist[maxIndex[3]].lr.x,bloblist[maxIndex[3]].lr.y,
-			    bloblist[maxIndex[3]].mass,
-			    bloblist[maxIndex[4]].ul.x,bloblist[maxIndex[4]].ul.y,
-			    bloblist[maxIndex[4]].lr.x,bloblist[maxIndex[4]].lr.y,
-			    bloblist[maxIndex[4]].mass);
-      break;
-    }
-  /* got blob coordinates, return them. */  
+  for (i = 0; i < size; i++) {
+    PyTuple_SetItem(tuple, i, 
+		    Py_BuildValue("iiiii",
+				  bloblist[maxIndex[i]].ul.x,
+				  bloblist[maxIndex[i]].ul.y,
+				  bloblist[maxIndex[i]].lr.x,
+				  bloblist[maxIndex[i]].ul.x,
+				  bloblist[maxIndex[i]].mass));
+  }
   return tuple; 
 }  
 
@@ -1105,19 +1070,10 @@ PyObject *Vision::copy(int fromto) { // 0 backup, 1 restore
   return PyInt_FromLong(0L);
 }
 
-PyObject *Vision::applyFilters(PyObject *newList) {
+PyObject *Vision::applyFilter(PyObject *filter) {
   int i1, i2, i3, i4, i5, i6, i7;
   float f1, f2, f3, f4, f5, f6, f7;
-  PyObject *command;
-  PyObject *filter, *list;
-
-  if (!PyList_Check(newList)) {
-    PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
-    return NULL;
-  }
-  PyObject *retvals = PyList_New( PyList_Size(newList) );
-  for (int i = 0; i < PyList_Size(newList); i++) {
-    filter = PyList_GetItem(newList, i);
+  PyObject *command, *list, *retval;
     if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
       PyErr_SetString(PyExc_TypeError, "Invalid filter list name to applyFilters");
       return NULL;
@@ -1129,87 +1085,87 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, superColor(f1, f2, f3, i1));
+      retval = superColor(f1, f2, f3, i1);
     } else if (strcmp((char *)command, "scale") == 0) {
       f1 = 1.0, f2 = 1.0, f3 = 1.0;
       if (!PyArg_ParseTuple(list, "|fff", &f1, &f2, &f3)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: scale()");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, scale(f1, f2, f3));
+      retval = scale(f1, f2, f3);
     } else if (strcmp((char *)command, "meanBlur") == 0) {
       i1 = 3;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: meanBlur");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, meanBlur(i1));
+      retval = meanBlur(i1);
     } else if (strcmp((char *)command, "medianBlur") == 0) {
       i1 = 3;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: medianBlur");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, medianBlur(i1));
+      retval = medianBlur(i1);
     } else if (strcmp((char *)command, "gaussianBlur") == 0) {
-      PyList_SetItem(retvals, i, gaussianBlur());
+      retval = gaussianBlur();
     } else if (strcmp((char *)command, "sobel") == 0) {
       i1 = 1;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: sobel");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, sobel(i1));
+      retval = sobel(i1);
     } else if (strcmp((char *)command, "setPlane") == 0) {
       i1 = 0; i2 = 0;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, setPlane(i1, i2));
+      retval = setPlane(i1, i2);
     } else if (strcmp((char *)command, "drawRect") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = ALL;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, drawRect(i1, i2, i3, i4, i5, i6));
+      retval = drawRect(i1, i2, i3, i4, i5, i6);
     } else if (strcmp((char *)command, "match") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
       if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match()");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, match(i1, i2, i3, i4, i5));
+      retval = match(i1, i2, i3, i4, i5);
     } else if (strcmp((char *)command, "matchRange") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 255; i5 = 255; i6 = 255, i7 = 0;
       if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4,&i5,&i6,&i7)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchRange()");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, matchRange(i1, i2, i3, i4, i5, i6, i7));
+      retval = matchRange(i1, i2, i3, i4, i5, i6, i7);
     } else if (strcmp((char *)command, "grayScale") == 0) {
-      PyList_SetItem(retvals, i, grayScale());
+      retval = grayScale();
     } else if (strcmp((char *)command, "backup") == 0) {
-      PyList_SetItem(retvals, i, backup());
+      retval = backup();
     } else if (strcmp((char *)command, "restore") == 0) {
-      PyList_SetItem(retvals, i, restore());
+      retval = restore();
     } else if (strcmp((char *)command, "motion") == 0) {
-      PyList_SetItem(retvals, i, motion());
+      retval = motion();
     } else if (strcmp((char *)command, "threshold") == 0) {
       i1 = 0; i2 = 200;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: threshold");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, threshold(i1, i2));
+      retval = threshold(i1, i2);
     } else if (strcmp((char *)command, "inverse") == 0) {
       i1 = 0;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: inverse");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, inverse(i1));
+      retval = inverse(i1);
     } else if (strcmp((char *)command, "blobify") == 0) {
       i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1;
       // inChannel, low, high, sortmethod 0 = mass, 1 = area, return blobs, 
@@ -1218,13 +1174,33 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: blobify");
 	return NULL;
       }
-      PyList_SetItem(retvals, i, blobify(i1, i2, i3, i4, i5, i6));
+      retval = blobify(i1, i2, i3, i4, i5, i6);
+    } else if (strcmp((char *)command, "histogram") == 0) {
+      i1 = 0; i2 = 0; i3 = width - 1; i4 = height - 1; i5 = 8;
+      // x1, y1, x2, y2, bins
+      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: histogram");
+	return NULL;
+      }
+      retval = histogram(i1, i2, i3, i4, i5);
     } else {
-      PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
+      PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilter");
       return NULL;
     }
-  }
+    return retval;
+}
 
+PyObject *Vision::applyFilters(PyObject *newList) {
+  PyObject *filter;
+  if (!PyList_Check(newList)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
+    return NULL;
+  }
+  PyObject *retvals = PyList_New( PyList_Size(newList) );
+  for (int i = 0; i < PyList_Size(newList); i++) {
+    filter = PyList_GetItem(newList, i);
+    PyList_SetItem(retvals, i, applyFilter( filter ));
+  }
   return retvals;
 }
 

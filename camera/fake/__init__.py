@@ -71,8 +71,16 @@ class FakeCamera(Camera):
          self.mBar.tk_menuBar(self.makeMenu(self.mBar,
                                             "Options",
                                             [["Freeze", self.freezeFrame],
-                                             ["UnFreeze", self.unFreezeFrame]]))
+                                             ["UnFreeze", self.unFreezeFrame],
+                                             None,
+                                             ["Fast update", lambda self=self: self.setInterval(0)],
+                                             ["Medium update", lambda self=self: self.setInterval(1)],
+                                             ["Slow update", lambda self=self: self.setInterval(5)],
+                                             ]))
          self.optionsInitialized = 1
+
+   def setInterval(self, value):
+      self.interval = value
 
    def freezeFrame(self):
       if self.oldStart == None:

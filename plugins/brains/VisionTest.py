@@ -4,20 +4,19 @@ def process(camera):
    camera.apply('match', 158 , 71 , 48 , )
    camera.apply('match', 225 , 129 , 89 , )
    camera.apply('match', 188 , 109 , 68 , )
-   camera.apply("superColor", )
-   retval = camera.apply("blobify", )
-   camera.userData = retval
+   camera.userData = camera.apply("blobify", 0)
 
 class VisionBrain(Brain):
-
    def setup(self):
       self.camera = self.getRobot().startService("FakeCamera")[0]
       self.camera.makeWindow()
-      # callback is a function that takes one arg, the camera
+      self.camera.userData = []
       self.camera.addFilter( process )
       
    def step(self):
+      # do something with the camera processed data:
       print self.camera.userData
             
 def INIT(engine):
    return VisionBrain('SimpleBrain', engine)
+

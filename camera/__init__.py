@@ -88,6 +88,7 @@ class Camera(PyroImage, Service):
       self.title = title
       self.filterMode = 1
       self.callbackList = []
+      self.filterReturnValue = []
       self.callbackTextList = []
       self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
       self.maxBlob = self.blob[0]
@@ -260,7 +261,8 @@ class Camera(PyroImage, Service):
             w, h = map(lambda x: x * 2, (w, h))
          self.canvas = Tkinter.Canvas(self.window, width = w, height = h)
          self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
-         self.canvas.bind("<1>", self.processLeftClick)
+         self.canvas.bind("<Button-1>", self.processLeftClickDown)
+         self.canvas.bind("<ButtonRelease-1>", self.processLeftClickUp)
          #self.canvas.bind("<Enter>", self.togglePlay)
          #self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
@@ -324,7 +326,7 @@ class Camera(PyroImage, Service):
 
    def apply(self, command, *args):
       if type(command) == type(""):
-         return self.vision.applyFilters( [(command, args)] )
+         return self.vision.applyFilter( (command, args) )
       else:
          raise "Improper format for apply()"
 
@@ -339,10 +341,14 @@ class Camera(PyroImage, Service):
          self.callbackTextList.append( listFilter( (func, args) ))
       else:
          self.callbackList.append( func )
-         self.callbackTextList.append( inspect.getsource( func ))
+         try:
+            self.callbackTextList.append( inspect.getsource( func ))
+         except:
+            self.callbackTextList.append( "[User Defined Function]" )
       if not self.active:
          # if paused, apply it once, and update
          self.processAll()
+      return len(self.callbackList) - 1
 
    def setActive(self, val):
       self.active = val
@@ -373,11 +379,20 @@ class Camera(PyroImage, Service):
       if not self.active:
          self.updateOnce()
 
-   def processLeftClick(self, event):
+   def processLeftClickDown(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
-      x, y = x * self.width, y * self.height
-      rgb = self.vision.get(int(x), int(y))
-      self.addFilter("match", rgb[0], rgb[1], rgb[2]) 
+      self.lastX, self.lastY = int(x * self.width), int(y * self.height)
+
+   def processLeftClickUp(self, event):
+      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = int(x * self.width), int(y * self.height)
+      if (x == self.lastX and y == self.lastY):
+         rgb = self.vision.get(int(x), int(y))
+         print 'camera.addFilter("match", %d, %d, %d)' % (rgb[0], rgb[1], rgb[2])
+         return self.addFilter("match", rgb[0], rgb[1], rgb[2])
+      else:
+         print 'camera.addFilter("histogram", %d, %d, %d, %d, 8)' % (self.lastX, self.lastY, x, y)
+         return self.addFilter("histogram", self.lastX, self.lastY, x, y, 8)
 
    def hideWindow(self):
       self.visible = 0
@@ -437,8 +452,9 @@ class Camera(PyroImage, Service):
    def processAll(self):
       if self.filterMode:
          self.vision.applyFilterList()
+         self.filterReturnValue = []
          for filterFunc in self.callbackList:
-            filterFunc(self)
+            self.filterReturnValue.append( filterFunc(self) )
 
 if __name__ == '__main__':
    cam = Camera(100, 80)

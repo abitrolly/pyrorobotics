@@ -81,14 +81,14 @@ public:
   PyObject *saveImage(char *filename);
   PyObject *getMMap();
 
-  PyObject *colorHistogram();
-  PyObject *trainColor(int x1, int y1, int x2, int y2, int bins);
+  PyObject *histogram(int x1, int y1, int x2, int y2, int bins);
   PyObject *grayScale();
   PyObject *sobel(int val);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
 			    int size, int drawBox);
+  PyObject *applyFilter(PyObject *filter);
   PyObject *applyFilters(PyObject *filterList);
   PyObject *addFilter(PyObject *newFilter);
   PyObject *applyFilterList();
