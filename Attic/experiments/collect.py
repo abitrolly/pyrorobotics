@@ -86,7 +86,6 @@ class Collect(Brain):
                 self.blockedFront = 0
                 return [.2,0]
     
-
     def scaleSonar(self,ls):
         myl = []
         for val in ls:

@@ -50,7 +50,7 @@ for i in xrange(4999):
                 makeVector(modelCamera.point.y, 15)
 
    saveListToFile(currVector + goalVector, inputfile)
-   translate = (5 * (currMotor[0] - .5) + .5)
-   saveListToFile([translate, currMotor[1] ], targetfile)
+   exaggeratedTrans = (5 * (currMotor[0] - .5) + .5)
+   saveListToFile([exaggeratedTrans, currMotor[1] ], targetfile)
    assert( 0.0 <= translate <= 1.0)
 
