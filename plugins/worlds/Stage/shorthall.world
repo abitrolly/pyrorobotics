@@ -3,19 +3,18 @@ resolution 0.02
 
 include "pioneer.inc"
 
-
 #GUI settings
 window
 (
   size [357.000 489.000]
-  center [1.0  2.0]
+  center [1.000  2.000]
   scale 0.011		# 1 pixel = 0.01 meters
 )
 
 model 
 (
         size [2.0 4.0]
-        color "black"
+        color "white"
         pose [1.000 2.000 0.000]
 )
 
@@ -24,5 +23,5 @@ pioneer2dx
   color "red"
   name "Pioneer"
   port 6665
-  pose [1.061 2.024 89.996]
+  pose [1.000 2.000 90.000]
 )

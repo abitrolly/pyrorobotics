@@ -60,9 +60,13 @@ class PlayerDevice(Device):
             raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.name
 
 class PlayerSimulationDevice(PlayerDevice):
-    def moveObjectTo(self, name, x, y, deg):
+    def setPose(self, name, x, y, deg):
         th = deg * PIOVER180
         self.handle.set_pose2d(name, x, y, th)
+    def getPose(self, name):
+        x, y,th = playerc.doublep(), playerc.doublep(), playerc.doublep()
+        self.handle.get_pose2d(name, x, y, th)
+        return x.value(), y.value(), th.value() / PIOVER180
 
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client, name):
