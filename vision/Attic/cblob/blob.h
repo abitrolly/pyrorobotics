@@ -46,14 +46,14 @@ struct playerblob{
   
 
 void Blob_init(struct blob* theBlob, struct point* pixel);
-void Blob_init(struct blob* theBlob, int x, int y); 
+void Blob_init_xy(struct blob* theBlob, int x, int y); 
 void Blob_addpixel(struct blob* theBlob, struct point* pixel);
-void Blob_addpixel(struct blob* theBlob, int x, int y);
+void Blob_addpixel_xy(struct blob* theBlob, int x, int y);
 void Blob_joinblob(struct blob* theBlob, struct blob* other);
 
 void Bitmap_init(struct bitmap* map, int w, int h);
-void Bitmap_set(struct bitmap* map, int x, int y, char in);
-char Bitmap_get(struct bitmap* map, int x, int y);
+void Bitmap_set(struct bitmap* map, int x, int y, unsigned char in);
+unsigned char Bitmap_get(struct bitmap* map, int x, int y);
 void Bitmap_del(struct bitmap* map);
   
 void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
