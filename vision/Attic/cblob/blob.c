@@ -220,16 +220,18 @@ void Blobdata_del(struct blobdata* data){
 struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
   int i;
   float h, s, v;
+  int red, green, blue;
   struct bitmap* bmp = (struct bitmap*) malloc(sizeof(struct bitmap));
   Bitmap_init(bmp, width, height);
   if (image->bpp == 24){
-    for (i = 0; i < image->size; i += 3){
-      /* NEED TO DEFINE image_cap:
-	 rmRGBtoHSV(((float) (void *)image->data[i+2])/255.0,
-	 ((float) (void *)image->data[i+1])/255.0,
-	 ((float) (void *)image->data[i])/255.0,
-	 &h, &s, &v);
-      */
+    for (i = 0; i < image->size; i += 3) {
+      red  = ((int *)image->data)[i + 2];
+      green= ((int *)image->data)[i + 1];
+      blue = ((int *)image->data)[i + 0];
+      rmRGBtoHSV(red/255.0,
+		 green/255.0,
+		 blue/255.0,
+		 &h, &s, &v);
       if (v > BITMAP_CUTOFF){
 	bmp->data[i/3] = 1;
       }
@@ -238,12 +240,10 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
     }
   } else if (image->bpp == 8){
     for (i = 0; i < image->size; i++){
-      /* FIX: define image_cap: 
-	 if (image->data[i] > (int)BITMAP_CUTOFF*255)
-	 bmp->data[i] = 1;
-	 else
-	 bmp->data[i] = 0;
-      */
+      if (((int *)image->data)[i] > (int)BITMAP_CUTOFF*255)
+	bmp->data[i] = 1;
+      else
+	bmp->data[i] = 0;
     }
   }
 }

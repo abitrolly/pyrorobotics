@@ -11,7 +11,6 @@
 //Given a bitmap, computes an (x,y) offset (row-major)
 //#define bm_offset(bm, x, y)  x*bm->width + y
 
-
 struct point{
   int x;
   int y;
