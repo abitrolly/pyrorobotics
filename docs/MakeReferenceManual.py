@@ -1,7 +1,7 @@
 import os, string
 
-prefix = "docs"
-fp = open("reference.txt", "r")
+prefix = "docs/wiki"
+fp = open("docs/reference.txt", "r")
 line = fp.readline().strip()
 while line:
     print line, "..."
