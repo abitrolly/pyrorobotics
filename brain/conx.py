@@ -1284,42 +1284,6 @@ class Network:
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
-    def sweep(self):
-        """
-        Runs through entire dataset. 
-        Returns TSS error, total correct, and total count.
-        """
-        if self.loadOrder == []:
-            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
-        if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
-            raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
-        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
-        if not self.orderedInputs:
-            self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
-        cnt = 0
-        if self.saveResults:
-            self.results = [(0,0,0) for x in self.loadOrder]
-        for i in self.loadOrder:
-            if self.verbosity > 0 or self.interactive:
-                print "-----------------------------------Pattern #", self.loadOrder[i] + 1
-            datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
-            (error, correct, total) = self.step( **datum )
-            if self.saveResults:
-                self.results[i] = (error, correct, total)
-            tssError += error
-            totalCorrect += correct
-            totalCount += total
-            if (cnt + 1) % self.sweepReportRate == 0:
-                print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
-                      (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
-            if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
-                self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
-            cnt += 1
-        if self.learning and self.batch:
-            self.change_weights() # batch mode, otherwise change weights in step
-        return (tssError, totalCorrect, totalCount)
-
     def step(self, **args):
         """
         Network.step()
@@ -1364,6 +1328,41 @@ class Network:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
         return (error, correct, total)
+    def sweep(self):
+        """
+        Runs through entire dataset. 
+        Returns TSS error, total correct, and total count.
+        """
+        if self.loadOrder == []:
+            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
+        if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
+            raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
+        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
+        if not self.orderedInputs:
+            self.randomizeOrder()
+        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        cnt = 0
+        if self.saveResults:
+            self.results = [(0,0,0) for x in self.loadOrder]
+        for i in self.loadOrder:
+            if self.verbosity > 0 or self.interactive:
+                print "-----------------------------------Pattern #", self.loadOrder[i] + 1
+            datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
+            (error, correct, total) = self.step( **datum )
+            if self.saveResults:
+                self.results[i] = (error, correct, total)
+            tssError += error
+            totalCorrect += correct
+            totalCount += total
+            if (cnt + 1) % self.sweepReportRate == 0:
+                print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
+                      (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
+            if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
+                self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
+            cnt += 1
+        if self.learning and self.batch:
+            self.change_weights() # batch mode, otherwise change weights in step
+        return (tssError, totalCorrect, totalCount)
     def sweepCrossValidation(self):
         """
         sweepCrossValidation() will go through each of the crossvalidation input/targets.
@@ -2260,7 +2259,6 @@ class SRN(Network):
         """
         return Network.step(self, **args)
     def sweepCrossValidation(self):
-        self.setContext()
         return Network.sweepCrossValidation(self)
 
 if __name__ == '__main__':
