@@ -449,10 +449,10 @@ if __name__ == '__main__':
         ga.reInitialize()
         ga.initGenesFromFile("bestsumga.genes", 1, 0)
         ga.evolve()
-        print "Press enter to Test init from file (load 1 no mutate, full)...",
+        print "Press enter to Test init from file (load 1, with mutate, full)...",
         sys.stdin.readline()
         ga.reInitialize()
-        ga.initGenesFromFile("bestsumga.genes", 1, 0, 1)
+        ga.initGenesFromFile("bestsumga.genes", mutate = 1, full = 1)
         ga.evolve()
     print 
 
