@@ -88,9 +88,6 @@ class V4LGrabber(Camera):
       except:
          print "v4l: refresh_image failed"
 
-
-
-
    def saveImage(self, filename="image.ppm"):
       save_image(self.width, self.height, filename)      
 
@@ -142,40 +139,57 @@ class V4LGrabber(Camera):
       mean_blur(kernel, self.width, self.height)
       self.sleepCheck()
 
-   def superColor(self, percent_red, percent_green, percent_blue, channel):
-      super_color(percent_red, percent_green, percent_blue,
-                  tolerance,channel, self.width, self.height)
+   def superColor(self, color, channel, lighten=0):
+
+      if(channel < 0 or channel > 3):
+         print "Invalid Color Channel to Super Color"
+         return;
+
+      #incoming is RGB, Buffer is BGR
+      if(channel == 0):
+         channel = 2
+      elif(channel == 2):
+         channel = 0;
+
+      if(cmp(color.lower(), "red") == 0):
+         print "in super red"
+         super_red(channel,lighten,self.width,self.height)
+      elif(cmp(color.lower(), "green") == 0):
+         print "in super green"
+         super_green(channel,lighten,self.width,self.height)
+      elif(cmp(color.lower(), "blue") == 0):
+         print "in super blue"
+         super_blue(channel,lighten,self.width,self.height)
+##       elif(cmp(color.lower(), "magenta") == 0):
+##          print "in super magenta"
+##          super_magenta(channel,lighten,self.width,self.height)
+##       elif(cmp(color.lower(), "yellow") == 0):
+##          print "in super yellow"
+##          super_yellow(channel,lighten,self.width,self.height)
+##       elif(cmp(color.lower(), "cyan") == 0):
+##          print "in super cyan"         
+##          super_cyan(channel,lighten,self.width,self.height)      
+      else:
+         print "Invalid Super Color"
+         
       self.sleepCheck()
 
-   def superRed(self):
-      super_red(self.width, self.height)
-      self.sleepCheck()
-
-   def superBlue(self):
-      super_blue(self.width, self.height)
-      self.sleepCheck()
-
-   def superGreen(self):
-      super_green(self.width, self.height)
-      self.sleepCheck()
-
-   def superYellow(self):
-      super_yellow(self.width, self.height)            
-      self.sleepCheck()
-
-   def superWhite(self):
-      super_white(self.width, self.height)
-      self.sleepCheck()
 
    def gaussianBlur(self):
       gaussian_blur(self.width, self.height)
       self.sleepCheck()
 
+   def edgeDetection(self):
+      sobel(1, self.width, self.height)
+      self.sleepCheck()
+
+   def toGreyScale(self):
+      grey_scale(3, self.width, self.height)
+      self.sleepCheck()
+
    def sleepCheck(self):
       if(self.sleepFlag):
          sleep(self.sleepTime)
-
-
 
 
    def trainColor(self):
