@@ -63,9 +63,9 @@ class BehaviorBasedBrain (Brain):
       for d in self.desires:
          if total[d[1]] != 0:
             if d[1] in control.keys():
-               control[d[1]] += d[2]/total[d[1]] * d[0]
+               control[d[1]] += d[2]/total[d[1]] * d[0] * d[5]
             else:
-               control[d[1]] = d[2]/total[d[1]] * d[0]
+               control[d[1]] = d[2]/total[d[1]] * d[0] * d[5]
       for c in self.controls.keys():
          if c in control.keys():
             # set that controller to act with a value
@@ -189,17 +189,18 @@ class State:
             for r in b.rules:
                if total[r[1]] != 0:
                   if r[1] in portion.keys():
-                     portion[r[1]] += r[0]/total[r[1]] * r[2]
+                     portion[r[1]] += r[0]/total[r[1]] #* r[2]
                   else:
                      if total[r[1]]:
-                        portion[r[1]] = r[0]/total[r[1]] * r[2]
+                        portion[r[1]] = r[0]/total[r[1]] #* r[2]
             for p in portion.keys():
                # truth, controller, amount, beh name, state name
                self.behaviorEngine.desires.append([portion[p], \
                                                    p, \
                                                    b.effects[p], \
                                                    b.name, \
-                                                   b.state.name])
+                                                   b.state.name,
+                                                   r[2]])
       self.update()
 
    def getRobot(self):
