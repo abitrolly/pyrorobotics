@@ -16,7 +16,7 @@ class TrackBall(Brain):
                 if area > 25:
                     centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
                     pose = self.ptz.pose # p,t,z,r
-                    print "center:", (centerX, centerY)
+                    #print "center:", (centerX, centerY)
                     # ---------------------------------
                     diff = (centerX - (self.cam.width/2))
                     if abs(diff) < (.05 * self.cam.width):
