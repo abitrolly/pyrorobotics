@@ -232,7 +232,7 @@ class VisConxBase:
     class ConnectionHinton(Hinton.MatrixHinton):
         def __init__(self, parent, edge):
             self.edge = edge
-            Hinton.MatrixHinton.__init__(self, parent, "Connection from %s to %s" % (edge.fromVer.name, edge.toVer.name), \
+            Hinton.MatrixHinton.__init__(self, parent, "Weights from %s to %s" % (edge.fromVer.name, edge.toVer.name), \
                                      edge.connection.weight, fromAxisLabel="From\n%s" % (edge.fromVer.name), \
                                          toAxisLabel="To\n%s" % (edge.toVer.name))
 

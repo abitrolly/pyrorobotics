@@ -4,8 +4,9 @@ import tkMessageBox
 
 class TwoDimPlot(Tkinter.Toplevel):
     TICK_LENGTH = 7
+    TICK_SPACING = 75
 
-    def __init__(self, parent, plotName=" ", xTitle=" ", yTitle=" ", xMax=1.0, yMax=1.0, plotWidth=500, plotHeight=375, closeCallback=Tkinter.Toplevel.destroy):
+    def __init__(self, parent, plotName=" ", xTitle=" ", yTitle=" ", xMax=1.0, yMax=1.0, plotWidth=300, plotHeight=225, closeCallback=Tkinter.Toplevel.destroy):
         Tkinter.Toplevel.__init__(self, parent)
         self.plotData = []
         self.plotName = plotName
@@ -14,10 +15,10 @@ class TwoDimPlot(Tkinter.Toplevel):
         self.xMax = xMax
         self.yMax = yMax
         self.linesOn = 1
-        self.plotWidth = (plotWidth//100)*100
-        self.plotHeight = (plotHeight//100)*100
-        self.xNumTicks = self.plotWidth//100
-        self.yNumTicks = self.plotHeight//100
+        self.plotWidth = plotWidth - (plotWidth % self.TICK_SPACING)
+        self.plotHeight = plotHeight - (plotHeight % self.TICK_SPACING)
+        self.xNumTicks = self.plotWidth//self.TICK_SPACING
+        self.yNumTicks = self.plotHeight//self.TICK_SPACING
 
         #---- BEGIN GUI SETUP ----
 
@@ -58,7 +59,7 @@ class TwoDimPlot(Tkinter.Toplevel):
         # end x axis ticks and tick labels
         
         #begin y axis ticks and tick labels
-        yCanvasWidth = 60
+        yCanvasWidth = 50
         self.yTickLabels = []
         self.yAxisCanvas = Tkinter.Canvas(self, bg="white", height=self.plotHeight+25, width=yCanvasWidth, highlightthickness=0)
         for yLoc in xrange(25, self.plotHeight+25, self.plotHeight/self.yNumTicks):
