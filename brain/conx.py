@@ -1,5 +1,3 @@
-# Proposed changes
-
 # Standalone functions:
 #    Fixed randomArray to return values in proper range
 # In Network class:
@@ -347,9 +345,12 @@ class Network:
                                        self.ACTPRIME(connect.toLayer.activation[i])
             # FIX? do I need to update to->bias_slope[i] here?
             for j in range(connect.fromLayer.size):
-                connect.fromLayer.error[j] += (connect.toLayer.delta[i] * connect.weight[i][j])
-                connect.slope[i][j] += (connect.toLayer.delta[i] * connect.fromLayer.activation[j])
-                connect.toLayer.bias_slope[i] += (connect.toLayer.delta[i] * connect.fromLayer.activation[j])
+                connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
+                                               connect.weight[i][j])
+                connect.slope[i][j] += (connect.toLayer.delta[i] * \
+                                        connect.fromLayer.activation[j])
+                connect.toLayer.bias_slope[i] += (connect.toLayer.delta[i] * \
+                                                  connect.fromLayer.activation[j])
     def ACTPRIME(self, act):
         if self.symmetric:
             return ((0.25 - act * act) + self.sigmoid_prime_offset)
@@ -358,7 +359,9 @@ class Network:
     def cw_process(self, connect):
         for i in range(connect.toLayer.size):
             for j in range(connect.fromLayer.size):
-                connect.wed[i][j] = connect.wed[i][j] + (connect.toLayer.delta[i] * connect.fromLayer.activation[j])
+                connect.wed[i][j] = connect.wed[i][j] + \
+                                    (connect.toLayer.delta[i] * \
+                                     connect.fromLayer.activation[j])
     def compute_wed(self):
         for x in range(self.connectionCount):
             self.cw_process( self.connection[x] )
@@ -873,41 +876,28 @@ class SRN(Network):
         Network.postprop(self, patnum, step)
         self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
 
+
 if __name__ == '__main__':
-    # Con-x: Sample XOR Network
+    # Con-x: Sample Networks
     # (c) 2001, D.S. Blank
     # Bryn Mawr College
     # http://emergent.brynmawr.edu/
 
-    # from pyro.brain.conx import *
-
     n = Network()
-
-    #n.add( Layer('input', 2) )
-    #n.add( Layer('hidden', 2) )
-    #n.add( Layer('output', 1) )
-
-    #n.connect('input', 'hidden')
-    #n.connect('hidden', 'output')
-
     n.addThreeLayers(2, 2, 1)
-
     n.setInputs([[0.0, 0.0],
                  [0.0, 1.0],
                  [1.0, 0.0],
                  [1.0, 1.0]])
-
     n.setOutputs([[0.0],
                   [1.0],
                   [1.0],
                   [0.0]])
-
     n.setReportRate(100)
 
-    # Run the network till it learns all patterns:
     print "Do you want to run an XOR BACKPROP network in BATCH mode? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        print "Backprop: ............................................."
+        print "XOR Backprop batch mode: .............................."
         n.setBatch(1)
         n.reset()
         n.setQuickProp(0)
@@ -917,7 +907,7 @@ if __name__ == '__main__':
 
     print "Do you want to run an XOR BACKPROP network in NON-BATCH mode? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        print "Backprop: ............................................."
+        print "XOR Backprop non-batch mode: .........................."
         n.setBatch(0)
         n.initialize()
         n.setQuickProp(0)
@@ -927,50 +917,76 @@ if __name__ == '__main__':
 
     print "Do you want to run an XOR QUICKPROP network? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        print "Quickprop: ............................................"
+        print "XOR Quickprop: ........................................"
         n.reset()
         n.setBatch(1)
         n.setQuickProp(1)
         n.train()
 
-    print "Do you want to train a sequential XOR SRN? ",
+    print "Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2? ",
     if sys.stdin.readline().lower()[0] == 'y':
+        print "SRN ..................................................."
+        print "It is not possible to perfectly predict the sequences"
+        print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
+        print "follow."
         n = SRN()
-        # Sequence is automatically used when the input pattern is
-        # larger than the input layer: 1 input, but input pattern has
-        # two elements
-        n.add( Layer('input', 1) )
-        n.add( Layer('context', 4) )
-        n.add( Layer('hidden', 4) )
-        n.add( Layer('output', 1) )
-
-        n.connect('input', 'hidden')
-        n.connect('context', 'hidden')
-        n.connect('hidden', 'output')
-
-        n.setInputs([[0.0, 0.0],
-                     [0.0, 1.0],
-                     [1.0, 0.0],
-                     [1.0, 1.0]])
-
-        n.setOutputs([[0.0],
-                      [1.0],
-                      [1.0],
-                      [0.0]])
-
-        n.setReportRate(50)
-        n.setResetEpoch(5000)
-        n.reset()
+        n.addSRNLayers(3,2,3)
+        n.predict('input','output')
+        seq1 = [1,0,0, 0,1,0, 0,0,1]
+        seq2 = [1,0,0, 0,0,1, 0,1,0]
+        n.setInputs([seq1, seq2])
+        n.setLearnDuringSequence(1)
+        n.setReportRate(75)
         n.setQuickProp(0)
-        n.setEpsilon(.1)
-        n.setMomentum(.9)
-        n.setInteractive(0)
+        n.setEpsilon(0.1)
+        n.setMomentum(0)
         n.setBatch(1)
-        n.setTolerance(.3)
-
+        n.setTolerance(0.25)
+        n.setStopPercent(0.7)
+        n.setResetEpoch(2000)
+        n.setResetLimit(0)
         n.train()
-        n.setInteractive(1)
-        n.sweep()
+
+    print "Do you want to auto-associate on 3 bit binary patterns? "
+    if sys.stdin.readline().lower()[0] == 'y':
+        print "Auto-associate .........................................."
+        n = Network()
+        n.addThreeLayers(3,2,3)
+        n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
+        n.associate('input','output')
+        n.setReportRate(25)
+        n.setQuickProp(0)
+        n.setEpsilon(0.1)
+        n.setMomentum(0.9)
+        n.setBatch(1)
+        n.setTolerance(0.25)
+        n.setStopPercent(0.9)
+        n.setResetEpoch(1000)
+        n.setResetLimit(2)
+        n.train()
+
+    print "Do you want to train a network to both predict and auto-associate? "
+    if sys.stdin.readline().lower()[0] == 'y':
+        print "SRN and auto-associate ..................................."
+        n = SRN()
+        n.addSRNLayers(3,3,3)
+        n.add(Layer('assocInput',3))
+        n.connect('hidden', 'assocInput')
+        n.associate('input', 'assocInput')
+        n.predict('input', 'output')
+        n.setInputs([[1,0,0, 0,1,0, 0,0,1, 0,0,1, 0,1,0, 1,0,0]])
+        n.setLearnDuringSequence(1)
+        n.setReportRate(25)
+        n.setQuickProp(0)
+        n.setEpsilon(0.1)
+        n.setMomentum(0.3)
+        n.setBatch(1)
+        n.setTolerance(0.1)
+        n.setStopPercent(0.7)
+        n.setResetEpoch(2000)
+        n.setResetLimit(0)
+        n.setOrderedInput(1)
+        n.train()
 
     print "Do you want to see (and save) the final network? ",
     if sys.stdin.readline().lower()[0] == 'y':
