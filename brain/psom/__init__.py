@@ -151,7 +151,7 @@ class psom:
 	def logging_set(self, mode='unset', type='unset', dir='unset', prefix='unset',
 		padding='unset', format='unset'):
 		"""
-		use this to turn logging on and to initialize logging settings
+		use this to initialize logging settings
 		mode specifies what kind of data vectors are logged -- those that
 		are trained ('train'), those that are mapped ('map'), or 'both'
 		type can be 'dir' or 'file'; 'dir' will create a separate file for
