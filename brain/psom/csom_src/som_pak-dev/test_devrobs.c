@@ -182,6 +182,7 @@ int main() {
       printf("%.3f ", levels[j+i*codes->xdim]);
     printf("\n");
   }
+  /* FIX:
   printf("    produces the fixed-window error-based SRN activations:\n");
   levels = get_levels_by_error(params, sample, erange);
   for(i=0;i<codes->ydim;i++) {
@@ -200,7 +201,7 @@ int main() {
       printf("%.3f ", levels[j+i*codes->xdim]);
     printf("\n");
   }
-
+  */
   close_entries(codes);
   //  close_entries(data);
   // cannot close data because points# and mask are constant size arrays
