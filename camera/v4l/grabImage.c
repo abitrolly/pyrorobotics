@@ -123,84 +123,125 @@ static PyObject *refresh_image(PyObject *self, PyObject *args){
 
 static PyObject *super_red(PyObject *self, PyObject *args)
 {
-  int w, h;
+  int w, h, channel,m1,m2, lighten;
   int i, j, temp;
   unsigned char *p;
-
-  if(!PyArg_ParseTuple(args, "ii", &w, &h)){
+  
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
     PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_red");
     return NULL;
   }
-
+  
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+  
   p=map;
-
+  
   for (i=0; i<h; i++) {
     for (j=0; j<w; j++) {
       temp = *(p+2) - (*(p+1) + *p);
+      
       if (temp<0)
-	*(p+2) = 0;
-      else
-	*(p+2) = 255;
-      *(p+1) = 0;
-      *p = 0;
+	*(p+channel) = 0;
+      
+      else{
+	if(lighten)
+	  {
+	    if(temp+60 > 255)
+	      temp = 195;
+	    *(p+channel) = temp+60;
+	  }
+	else
+	  *(p+channel) = temp;
+      }
+      *(p+m1) = 0;
+      *(p+m2) = 0;
       p += 3;
     }
   }
-
+  
   return PyInt_FromLong(0L);
 }  
 
 static PyObject *super_blue(PyObject *self, PyObject *args)
 {
-  int w, h;
+  int w, h, channel, m1, m2, lighten;
   int i, j, temp;
   unsigned char *p;
 
-  if(!PyArg_ParseTuple(args, "ii", &w, &h)){
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
     PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_blue");
     return NULL;
   }
 
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+  
   p=map;
 
   for (i=0; i<h; i++) {
     for (j=0; j<w; j++) {
       temp = *p - (*(p+1) + *(p+2));
       if (temp<0)
-	*p = 0;
+	*(p+channel) = 0;
+      
       else
-	*p = temp;
-      *(p+1) = 0;
-      *(p+2) = 0;
+	{
+	  if(lighten)
+	    {
+	      if(temp+60 > 255)
+		temp = 195;
+	      *(p+channel) = temp+60;
+	    }
+	  else
+	    *(p+channel) = temp;
+	}
+      
+      *(p+m1) = 0;
+      *(p+m2) = 0;
       p += 3;
     }
   }
-
+  
   return PyInt_FromLong(0L);
 }  
 
 static PyObject *super_green(PyObject *self, PyObject *args)
 {
-  int w, h;
+  int channel, w, h, m1,m2, lighten;
   int i, j, temp;
   unsigned char *p;
-
-  if(!PyArg_ParseTuple(args, "ii", &w, &h)){
+  
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
     PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_green");
     return NULL;
   }
-
+  
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+  
   p=map;
-
+  
   for (i=0; i<h; i++) {
     for (j=0; j<w; j++) {
       temp = *(p+1) - (*p + *(p+2));
       if (temp<0)
-	*(p+1) = 0;
+	*(p+channel) = 0;
+
       else
-	*(p+1) = temp;
-      *p = 0;
-      *(p+2) = 0;
+	{
+	  if(lighten)
+	    {
+	      if(temp+60 > 255)
+		temp = 195;
+	      *(p+channel) = temp+60;
+	    }
+	  else
+	    *(p+channel) = temp;
+	}
+      
+      *(p+m1) = 0;
+      *(p+m2) = 0;
       p += 3;
     }
   }
@@ -208,127 +249,140 @@ static PyObject *super_green(PyObject *self, PyObject *args)
   return PyInt_FromLong(0L);
 }  
 
-static PyObject *super_yellow(PyObject *self, PyObject *args)
+static PyObject *super_magenta(PyObject *self, PyObject *args)
 {
-  int w, h;
+  int w, h, channel, m1, m2, lighten;
   int i, j, temp;
   unsigned char *p;
 
-  if(!PyArg_ParseTuple(args, "ii", &w, &h)){
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_yello");
+    return NULL;
+  }
+
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+
+  p=map;
+
+  for (i=0; i<h; i++) {
+    for (j=0; j<w; j++) {
+      temp = (*p + *(p+2))/2 - *(p+1);
+      /*temp = *(p+2) - *(p+1);*/
+      
+      if (temp<0)
+	*(p+channel) = 0;
+      
+      else
+	{
+	  if(lighten)
+	    {
+	      if(temp+60 > 255)
+		temp = 195;
+	      *(p+channel) = temp+60;
+	    }
+	  else
+	    *(p+channel) = temp;
+	}
+      
+      *(p+m1) = 0;
+      *(p+m2) = 0;
+      p += 3;
+    }
+  }
+  
+  return PyInt_FromLong(0L);
+}  
+
+
+static PyObject *super_yellow(PyObject *self, PyObject *args)
+{
+  int w, h, channel, m1, m2, lighten;
+  int i, j, temp;
+  unsigned char *p;
+  
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
+    PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_yellow");
+    return NULL;
+  }
+  
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+  
+  p=map;
+  
+  for (i=0; i<h; i++) {
+    for (j=0; j<w; j++) {
+      temp =(int)((*(p+1)*2/3 + *(p+2)*1/3)/2 - *p);
+      /*temp = *(p+1) - *p;*/
+      
+      if (temp<0)
+	*(p+channel) = 0;
+
+      else
+	{
+	  if(lighten)
+	    {
+	      if(temp+60 > 255)
+		temp = 195;
+	      *(p+channel) = temp+60;
+	    }
+	  else
+	    *(p+channel) = temp;
+	}
+
+      *(p+m1) = 0;
+      *(p+m2) = 0;
+      p += 3;
+    }
+  }
+  
+  return PyInt_FromLong(0L);
+}  
+
+
+static PyObject *super_cyan(PyObject *self, PyObject *args)
+{
+  int w, h, channel, m1, m2, lighten;
+  int i, j, temp;
+  unsigned char *p;
+
+  if(!PyArg_ParseTuple(args, "iiii", &channel, &lighten, &w, &h)){
     PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_yellow");
     return NULL;
   }
 
+  m1=(channel+1)%3;
+  m2=(channel+2)%3;
+
   p=map;
 
   for (i=0; i<h; i++) {
     for (j=0; j<w; j++) {
-      /*      temp = *(p+1) - (*p + *(p+2));*/
-      temp = *(p+1) - *p;
+      temp = (*p + *(p+1))/2 - *(p+2);
+      /*temp = *(p+2) - *p;*/
+
       if (temp<0)
-	*(p+1) = 0;
+	*(p+channel) = 0;
+
       else
-	*(p+1) = temp;
-      *p = 0;
-      *(p+2) = 0;
-      p += 3;
-    }
-  }
-  
-  return PyInt_FromLong(0L);
-}  
-
-static PyObject *super_white(PyObject *self, PyObject *args)
-{
-  int w, h;
-  int i, j, temp;
-  unsigned char *p;
-  
-  if(!PyArg_ParseTuple(args, "ii", &w, &h)){
-    PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_white");
-    return NULL;
-  }
-  
-  p=map;
-  
-  for (i=0; i<h; i++) {
-    for (j=0; j<w; j++) {
-      if (!((*p > 240) && (*(p+1)>240) && (*(p+2)>240)))
 	{
-	  *p = 0; *(p+1) = 0; *(p+2) = 0;
+	  if(lighten)
+	    {
+	      if(temp+60 > 255)
+		temp = 195;
+	      *(p+channel) = temp+60;
+	    }
+	  else
+	    *(p+channel) = temp;
 	}
+
+      *(p+m1) = 0;
+      *(p+m2) = 0;
       p += 3;
     }
   }
   
-  return PyInt_FromLong(0L);
-}  
-
-static PyObject *super_color(PyObject *self, PyObject *args)
-{
-  int keep_red, keep_green, keep_blue, channel, w, h;
-  int i, j, temp, max, a, b, c;
-  float red_mult, green_mult, blue_mult;
-  unsigned char *p;
-  
-  if(!PyArg_ParseTuple(args, "iiiiii", &keep_red, 
-		       &keep_green, &keep_blue, &channel, &w, &h))
-    {
-      PyErr_SetString(PyExc_TypeError, "Invalid arguments to super_color");
-      return NULL;
-    }
-  
-  p=map;
-  
-  /* find max channel -- that's the one that will be subtracted from*/
-  if ((keep_red>=keep_green) && (keep_red>=keep_blue))
-    {
-      red_mult = ((float)keep_red)/100.0;
-      green_mult = -(100.0-((float)keep_green))/100.0;
-      blue_mult = -(100.0-((float)keep_blue))/100.0;
-    }
-  else if ((keep_green>=keep_red) && (keep_green>=keep_blue))
-    {
-      red_mult = -(100.0-(float)keep_red)/100.0;
-      green_mult = ((float)keep_green)/100.0;
-      blue_mult = -(100.0-((float)keep_blue))/100.0;
-    }
-  else
-    {
-      red_mult = -(100.0-((float)keep_red))/100.0;
-      green_mult = -(100.0-((float)keep_green))/100.0;
-      blue_mult = ((float)keep_blue)/100.0;
-    }
-
-  /* a, b, and c are offsets for pointer arithmetic */
-  if (channel == RED)
-    {
-      a=2; b=0; c=1;
-    }
-  else if (channel == GREEN)
-    {
-      a=1; b=0; c=2;
-    }
-  else /*channel == BLUE */
-    {
-      a=0; b=1; c=2;
-    }
-
-  for (i=0; i<h; i++) {
-    for (j=0; j<w; j++) {
-      temp = (int)(*(p+2)*red_mult + *(p+1)*green_mult + *p*blue_mult);
-
-      /* Floor of temp is 0 */
-      if (temp<0) temp =0;
-      
-      *(p+a) = temp;
-      *(p+b) = 0;
-      *(p+c) = 0;
-
-      p += 3;
-    }
-  }
-
   return PyInt_FromLong(0L);
 }  
 
@@ -703,6 +757,7 @@ static PyObject *blobify(PyObject *self, PyObject *args)
 	  }
       */
     }
+      
   image=map;
   if(drawBox)
     {
@@ -1153,6 +1208,128 @@ static PyObject *save_image(PyObject *self, PyObject *args)
   return PyInt_FromLong(0L);
 }
 
+void greyscale( unsigned int depth, unsigned int width, unsigned int height )
+{
+  unsigned char *image;
+  unsigned int x, y, value;
+ 
+  image = map;
+
+  for (y=0; y<height; y++)
+    for(x=0; x<width; x++)
+    {
+      value = (int)(image[(x+y*width)*depth]+image[(x+y*width)*depth+1]+image[(x+y*width)*depth+2])/3;
+
+      image[(x+y*width)*depth]=   value;
+      image[(x+y*width)*depth+1]= value;
+      image[(x+y*width)*depth+2]= value;
+    }
+
+}
+
+
+static PyObject *grey_scale(PyObject *self, PyObject *args) 
+{
+  unsigned int width;
+  unsigned int height;
+  unsigned int depth;
+
+  if(!PyArg_ParseTuple(args, "iii", &depth, &width, &height) ) 
+  {
+    PyErr_SetString(PyExc_TypeError, 
+		    "Invalid arguments to saveImageInBuffer");
+    return;
+  }
+  
+  greyscale( depth, width, height );
+  
+  return PyInt_FromLong(0L);
+
+}
+
+
+/* calculates sobel operator in x direction */
+static PyObject *sobel(PyObject *self, PyObject *args) 
+{
+  unsigned int i, j, tempx, tempy, height, width, thresh, offset, depth=3;
+  unsigned char *image;
+  unsigned char *out;
+  
+  unsigned int a,b,d,f,g,z,c,e,h,gc, sobscale;
+
+  if(!PyArg_ParseTuple(args, "iii", &thresh, &width, &height) ) 
+  {
+    PyErr_SetString(PyExc_TypeError, 
+		    "Invalid arguments to saveImageInBuffer");
+    return;
+  }
+
+
+  out = (unsigned char *)malloc(sizeof(char)*width*height*depth);
+    
+  image = map;
+  
+  for (j=0;j<height*width*depth;j++)
+    out[j]=0;
+
+  offset = 0;
+  sobscale = 1;
+
+  i = j = 0;
+  
+  for (j=0;j<height-2;j++)
+  {
+    a = image[(j*width+i)*depth];
+    b = image[(j*width+(i+1))*depth];
+    d = image[((j+1)*width+i)*depth];
+    f = image[((j+2)*width+i)*depth];
+    g = image[((j+2)*width+(i+1))*depth];
+    z = image[(j*width+i)*depth];
+    
+    for (i=0;i<width-2;i++) 
+    {
+      c = image[(j*width+(i+2))*depth];
+      e = image[((j+1)*width+(i+2))*depth];
+      h = image[((j+2)*width+(i+2))*depth];
+
+      tempx = (a+d+f) - (c+e+h);
+      if( tempx < 0 ) tempx = -1*tempx;
+      
+      tempy = (a+b+c) - (f+g+h);
+      if( tempy < 0 ) tempy = -1*tempy;
+
+      gc = sobscale * sqrt(tempx*tempx+tempy*tempy);
+      gc = offset+gc;
+      gc = (gc>255)? 0 : 255 - gc;
+
+      out[(j*width+i)*depth] = gc;
+      out[(j*width+i)*depth+1] = gc;
+      out[(j*width+i)*depth+2] = gc;
+
+      a=b;
+      b=c;
+      d=z;
+      f=g;
+      g=h;
+      z=e;
+
+    }
+    i=0;
+
+  }
+
+  image = map;
+  for (j=0;j<height;j++)
+    for (i=0;i<width;i++)
+      for(offset=0;offset<depth;offset++)
+	image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
+
+  free(out);
+ 
+  return PyInt_FromLong(0L);
+}
+
+
 
 
 /*************************  END HISTOGRAM.C ********************/
@@ -1165,13 +1342,12 @@ static PyMethodDef grabImageMethods[] = {
   {"grab_image", grab_image, METH_VARARGS, "Grab an image from the camera"},
   {"free_image", free_image, METH_VARARGS, "Free memory from a grabbed image"},
   {"refresh_image", refresh_image, METH_VARARGS, "Refresh the image"},
-
   {"super_red", super_red, METH_VARARGS, "Compute super red in place"},
   {"super_blue", super_blue, METH_VARARGS, "Compute super blue in place"},
   {"super_green", super_green, METH_VARARGS, "Compute super green in place"},
-  {"super_yellow", super_yellow, METH_VARARGS, "Compute super yellow in place"},
-  {"super_white", super_white, METH_VARARGS, "Compute super white in place"},
-  {"super_color", super_color, METH_VARARGS, "Compute super color in place"},
+  {"super_magenta",super_magenta,METH_VARARGS,"Compute super magenta in place"},
+  {"super_cyan",super_yellow, METH_VARARGS, "Compute super cyan in place"},
+  {"super_yellow",super_yellow, METH_VARARGS, "Compute super yellow in place"},
   {"color_filter", color_filter, METH_VARARGS, "Compute color filter in place"},
   {"blobify", blobify, METH_VARARGS, "Compute max blob in place"},
   {"train_color", train_color, METH_VARARGS, "Get the best fitting color"},
@@ -1179,6 +1355,8 @@ static PyMethodDef grabImageMethods[] = {
   {"gaussian_blur",gaussian_blur,METH_VARARGS,"Perform gaussianBlur in place"},
   {"train_color", train_color, METH_VARARGS, "Trains on a specific color"},
   {"save_image", save_image, METH_VARARGS, "Saves the buffer to a ppm image"},
+  {"sobel", sobel, METH_VARARGS, "Performs simple edge detection"},
+  {"grey_scale", grey_scale, METH_VARARGS, "Performs simple edge detection"},
   {NULL, NULL, 0, NULL}
 };
 
