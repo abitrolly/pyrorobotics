@@ -51,6 +51,7 @@ class V4LGrabber(Camera):
       self.cbuf=None
       self.size, self.depth, self.handle, self.cbuf = \
                  grab_image(device, width, height, self.color)
+      self.depth /= 8
       self.data = CBuffer(self.cbuf)
 
    def _update(self):
@@ -58,7 +59,7 @@ class V4LGrabber(Camera):
       Since data is mmaped to the capture card, all we have to do is call
       refresh.
       """
-      refresh_image(self.handle, self.width, self.height, self.depth)
+      refresh_image(self.handle, self.width, self.height, self.depth*8)
 
    def __del__(self):
       """
@@ -106,7 +107,7 @@ class V4LGrabber(Camera):
       file.write("\x00\x00") #Y Origin
       file.write("%c%c" % (self.width & 0xFF, self.width >> 8)) #Width
       file.write("%c%c" % (self.height & 0xFF, self.height >> 8)) #Height
-      file.write("%c" % (self.depth)) #bpp
+      file.write("%c" % (self.depth*8)) #bpp
       file.write("\x20") #attributes
       file.write(self.cbuf)
       file.close
@@ -121,7 +122,7 @@ class CBuffer:
 
    def __getitem__(self, key):
       if isinstance(key, types.SliceType):
-         if key.stop == sys.maxint:
+         if key.stop > len(self):
             stop = len(self)
          else:
             stop = key.stop
