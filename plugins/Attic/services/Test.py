@@ -1,13 +1,6 @@
-# A Simple Map
+# A Simple Service
 
+from pyro.robot.service import Service
 
-def INIT(engine):
-    # Fix: need start goal positions too
-    grid = [[0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0],            
-            [0, 0, 1, 0, 0, 0, 0],            
-            [0, 0, 1, 0, 0, 0, 0],            
-            [0, 0, 1, 0, 0, 0, 0],            
-            [0, 0, 1, 0, 0, 0, 0],            
-            [0, 0, 1, 0, 0, 0, 0]]
-    return grid
+def INIT(robot):
+    return {"test": Service()}

@@ -250,19 +250,13 @@ class gui(Drawable):
          self.engine.loadView(f)
          self.redraw()
 
-   def loadDevice(self):
-      f = self.fileloaddialog("devices","*.py")
-      self.redraw()
-      if f != '':
-         self.engine.loadDevice(f)
-         self.redraw()
-
    def loadService(self):
       f = self.fileloaddialog("services","*.py")
       self.redraw()
       if f != '':
-         self.engine.loadService(f)
-         self.redraw()
+         if self.engine != 0 and self.engine.robot != 0:
+            self.engine.robot.loadService(f)
+            self.redraw()
 
    def freeBrain(self):
       self.engine.pleaseStop()

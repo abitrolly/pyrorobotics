@@ -46,7 +46,6 @@ class TKgui(gui):
                           ['Clear Messages', self.clearMessages]
                           ]),
               ('Load',[['Map...',self.loadMap],
-                       ['Device...',self.loadDevice],
                        ['Service...',self.loadService],
                        ['View...',self.loadView]
                        ]),

@@ -11,6 +11,21 @@ DEG90RADS = 0.5 * pi
 COSDEG90RADS = cos(DEG90RADS) / 1000.0
 SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
+from pyro.robot.service import Service
+
+class PlayerService(Service):
+    def __init__(self, dev, item):
+        Service.__init__(self)
+        self.dev = dev
+        self.item = item
+
+    def start(self):
+        self.dev.start(self.item)
+        time.sleep(1)
+
+    def stop(self):
+        self.dev.stop(self.item)
+
 class PlayerBase(Robot):
     def __init__(self, name = "Player", port = 6665):
         Robot.__init__(self, name, "player") # robot constructor
@@ -27,6 +42,9 @@ class PlayerBase(Robot):
         self.stall = 0
         self.messages = []
         self.noise = .05 # 5 % noise
+        self.supports["blob"] = PlayerService(self.dev, "blobfinder")
+        self.supports["communication"] = PlayerService(self.dev, "comms")
+        self.supports["gripper"] = PlayerService(self.dev, "gripper")
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)
@@ -148,19 +166,19 @@ class PlayerBase(Robot):
         self.messages = []
         return tmp
 
-    def startService(self, item):
-        self.dev.start(item)
-        print "Starting service '%s'..." % item
-        time.sleep(1)
+    #def startService(self, item):
+    #    self.dev.start(item)
+    #    print "Starting service '%s'..." % item
+    #    time.sleep(1)
 
-    def stopService(self, item):
-        self.dev.stop(item)
+    #def stopService(self, item):
+    #    self.dev.stop(item)
 
-    def hasService(self, item):
-        return item in dir(self.dev) and self.dev.__dict__[item] != {}
+    #def hasService(self, item):
+    #    return item in dir(self.dev) and self.dev.__dict__[item] != {}
 
-    def getServiceData(self, item):
-        return self.dev.__dict__[item][0]
+    #def getServiceData(self, item):
+    #    return self.dev.__dict__[item][0]
 
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
@@ -212,6 +230,10 @@ class PlayerBase(Robot):
 
     def isLiftMaxed(self):
         return self.dev.is_lift_up() # ok
+
+    # Gripper functions
+    #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
+
     
 if __name__ == '__main__':
     myrobot = PlayerBase()
