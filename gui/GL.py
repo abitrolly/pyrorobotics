@@ -65,7 +65,6 @@ class GLgui(gui):
       
       button1 = [('Step',self.stepEngine),
                  ('Reload',self.resetEngine),
-                 ('Refresh',self.refresh),
                  ('Run',self.runEngine),
                  ('Edit', self.editBrain),
                  ('Stop',self.stopEngine)]
@@ -80,9 +79,9 @@ class GLgui(gui):
       # if show main buttons:
       if 1: # FIX: add a preference about showing buttons someday
          toolbar = Frame(self.frame)
-         toolbar.pack(side=TOP, fill=X)
+         toolbar.pack(side=TOP, fill='both', expand = 1)
          for b in button1:
-            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
+            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2,fill=X, expand = 1)
 
       if self.graphicsMode == 1: # GL
          self.win = Opengl(master = self.frame, width = width, \
