@@ -1,7 +1,7 @@
 import Numeric, math, random
 from pyro.tools.circularlist import CircularList
 
-version = '1.3'
+version = '1.4'
 
 class ModelList(CircularList):
     def __init__(self, bucketSize=5):
@@ -279,6 +279,7 @@ class RAVQ:
                 self.winnerCount = 0
             winner = self.models[self.newWinnerIndex]
             winner.counter += 1
+            #if winner.maxSize != -1:
             winner.addItem(self.buffer[0])
             self.winner = winner.vector
     def distanceMap(self):
@@ -340,27 +341,16 @@ class RAVQ:
             for b in m.contents:
                 sum += euclideanDistance(m.vector, b, self.mask)
             totalIncompatibility += sum
-            s += "     Count: %d Buffers: %d Incompatibility: %f\n" % (m.counter, len(m.contents), sum)
+            s += "     Count: %d Buffer size: %d Incompatibility: %f\n" % (m.counter, len(m.contents), sum)
             totalCount += m.counter
             cnt += 1            
-        return ("%d Model vectors:\n" % cnt) + s + "Total model vectors : %d\nTotal mapped vectors: %d\nTotal incompatibility: %f\n" % \
+        return ("%d Model vectors:\n" % cnt) + s + "Total model vectors  : %d\nTotal mapped vectors : %d\nTotal incompatibility: %f\n" % \
                (cnt, totalCount, totalIncompatibility)
     def bufferString(self):
         s = "Buffer:\n"
         for array in self.buffer:
             s += stringArray(array)
         return s
-    def compare(self, v1, v2):
-        """
-        Compares two values. Returns 1 if all values are withing
-        self.tolerance of each other.
-        """
-        if len(v1) != len(v2):
-            return 0
-        elif euclideanDistance(v1,v2, self.mask) > self.tolerance:
-            return 0
-        else:
-            return 1
 
 class ARAVQ(RAVQ):
     """
