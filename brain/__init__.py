@@ -1,22 +1,15 @@
 # a basic brain class
 
-
 import thread
 import threading
 import time
 import pyro.gui.console
-#from pyro.gui.drawable import Drawable
 
-#PYTHON ERROR: Brain should be subclass of Drawable, but that stores
-#its data in "self.data", and that is where thread gets its hash value
-#name.
+class Brain(threading.Thread): 
 
-class Brain(threading.Thread): #, Drawable):
-
-    def __init__(self, name = 'brain', engine = 0):
+    def __init__(self, name = 'brain', engine = 0, **kwargs):
         threading.Thread.__init__(self)
         self.lastRun = time.time() # seconds
-        #Drawable.__init__(self, name)
         self.name = name
         self.engine = engine
         if engine:
@@ -29,7 +22,7 @@ class Brain(threading.Thread): #, Drawable):
         if self.robot != 0:
             self.robot.localize()
         # user setup:
-        self.setup()
+        self.setup(**kwargs)
         # start the thread:
         self.start()
 
@@ -142,7 +135,7 @@ class Brain(threading.Thread): #, Drawable):
     def step(self):
         print "need to override pyro.brain.Brain.step()."
 
-    def setup(self):
+    def setup(self, **kwargs):
         """
         User init method
         """

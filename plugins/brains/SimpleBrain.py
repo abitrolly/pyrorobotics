@@ -3,6 +3,11 @@
 from pyro.brain import Brain
 
 class SimpleBrain(Brain):
+
+   def setup(self, **args):
+      print args.get('my_arg')
+      # initialize your vars here!
+      
    # Only method you have to define is the step method:
 
    def step(self):
@@ -18,9 +23,9 @@ class SimpleBrain(Brain):
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
-# Takes one param (the robot), and returns a Brain object:
+# Takes one param (an engine), and returns a Brain object:
 # -------------------------------------------------------
 
 def INIT(engine):
-   return SimpleBrain('SimpleBrain', engine)
+   return SimpleBrain('SimpleBrain', engine, my_arg = "testing")
       
