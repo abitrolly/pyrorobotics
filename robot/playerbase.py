@@ -295,6 +295,42 @@ class PlayerBase(Robot):
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
 
+    def connect(self):
+        self.dev = player('localhost', port=self.port)
+        print "Device: ", self.dev
+        self.dev.start('position')
+        self.localize(0.0, 0.0, 0.0)
+        
+        self.sensorSet = {}
+
+        self.z = 0.0
+        self.y = 0.0
+        self.x = 0.0
+        self.senses = {}
+        simulated = self.simulated
+	# robot senses (all are functions):
+        self.senses['robot'] = {}
+        self.senses['robot']['simulator'] = lambda dev, x = simulated: x
+        self.senses['robot']['stall'] = lambda dev: self.stall
+        self.senses['robot']['x'] = self.getX
+        self.senses['robot']['y'] = self.getY
+        self.senses['robot']['z'] = self.getZ
+        self.senses['robot']['radius'] = lambda self: 250.0 # in MM
+        self.senses['robot']['th'] = self.getTh # in degrees
+        self.senses['robot']['thr'] = self.getThr # in radians
+        self.senses['robot']['type'] = lambda dev: 'Player'
+        self.senses['robot']['units'] = lambda dev: 'METERS'
+        self.senses['robot']['name'] = lambda dev, x = self.name: x
+        
+        # Make a copy, for default:
+        self.senses['self'] = self.senses['robot']
+
+        self.controls['move'] = self.moveDev
+        self.controls['translate'] = self.translateDev
+        self.controls['rotate'] = self.rotateDev
+        self.controls['update'] = self.updateDev
+        #self.controls['localize'] = self.localizeDev
+        console.log(console.INFO,'Player control drivers loaded')
     
 if __name__ == '__main__':
     myrobot = PlayerBase()
