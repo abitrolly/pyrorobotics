@@ -1,4 +1,5 @@
-
+# pyro/bin/pyro is automatically generated!
+# -----------------------------------
 # Pyro - robotics control system in Python
 
 import os 
@@ -13,8 +14,11 @@ print "cwd=", cwd
 (pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
 sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
-os.environ['PYRO'] = pyropath
-os.environ['LD_LIBRARY_PATH'] += (':' + pyropath + '/lib')
+os.environ['PYRO'] = pyropath # overwrite, if exists
+if os.environ.has_key('LD_LIBRARY_PATH'):
+    os.environ['LD_LIBRARY_PATH'] += (':' + pyropath + '/lib')
+else:
+    os.environ['LD_LIBRARY_PATH'] = (pyropath + '/lib')
 
 try:
     from pyro.engine import *
