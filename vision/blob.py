@@ -136,7 +136,7 @@ class PyroImage:
       """
       Creates a histogram.
       """
-      histogram = PyroImage(rows, cols, 1)
+      histogram = Histogram(rows, cols)
       for h in range(self.height):
          for w in range(self.width):
             r = self.get(w, h, 0)
@@ -150,7 +150,7 @@ class PyroImage:
             bg = min(blue/green, 9)
             histogram.incr(rg, bg)
       return histogram
-                        
+
 class Camera(PyroImage):
    """
    A Fake camera class. Simulates live vision. Call update() to get image.
@@ -176,6 +176,31 @@ class Camera(PyroImage):
       self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
 
+class Histogram(PyroImage):
+   """
+   Histogram class. Based on Image, but has methods for display.
+   """
+   def __init__(self, width, height, init_val = 0):
+      PyroImage.__init__(self, width, height, 1, init_val) # 1 bit depth
+
+   def display(self):
+      """
+      Display bitmap ASCII art.
+      """
+      maxval = 0
+      for h in range(self.height):
+         for w in range(self.width):
+            maxval = max(maxval, self.data[w + h * self.width])
+      for h in range(self.height):
+         for w in range(self.width):
+            if maxval:
+               print "%d" % int(self.data[w + h * self.width]/float(maxval) * 9.0),
+            else:
+               print '.',
+         print ''
+      print ''
+
+                        
 class Bitmap(PyroImage):
    """
    Bitmap class. Based on Image, but has methods for blobs, etc.
@@ -267,6 +292,7 @@ if __name__ == '__main__':
    import sys
    print "Do you want to run test 1: create bitmap, blobify, and display results? ",
    if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
       bitmap = Bitmap(20, 15)
       bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
                     1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
@@ -286,74 +312,106 @@ if __name__ == '__main__':
       bitmap.display()
       blob = bitmap.blobify()
       blob.display()
+      print "Done!"
+   else:
+      print "skipping..."
    print "Do you want to run test 2: create image from file, save it back out? ",
    if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
       image = PyroImage(0, 0)
       image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
       image.saveToFile("test.ppm")
-      print "All done! To see output, use 'xv test.ppm'"
+      print "Done! To see output, use 'xv test.ppm'"
+   else:
+      print "skipping..."
    print "Do you want to run test 3: create a grayscale image, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
       image.grayScale()
       image.saveToFile("testgray.ppm")
       #image.display()
-      print "All done! To see output, use 'xv testgray.ppm'"
+      print "Done! To see output, use 'xv testgray.ppm'"
+   else:
+      print "skipping..."
    print "Do you want to run test 4: convert PyroImage to PIL image, and display it using xv? ",
    if sys.stdin.readline().lower()[0] == 'y':
-      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
-      import PIL.PpmImagePlugin
-      from struct import *
-      c = ''
-      for x in range(len(image.data)):
-         c += pack('h', image.data[x] * 255.0)[0]
-      i = PIL.PpmImagePlugin.Image.fromstring('RGB', (image.width, image.height),c)
-      if getenv('DISPLAY'): i.show()
+      print "Running..."
+      try:
+         image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+         import PIL.PpmImagePlugin
+         from struct import *
+         c = ''
+         for x in range(len(image.data)):
+            c += pack('h', image.data[x] * 255.0)[0]
+         i = PIL.PpmImagePlugin.Image.fromstring('RGB', (image.width, image.height),c)
+         if getenv('DISPLAY'): i.show()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have PIL installed"
+   else:
+      print "skipping..."
    print "Do you want to run test 5: convert Bitmap to PIL image, and display it using xv? ",
    if sys.stdin.readline().lower()[0] == 'y':
-      import PIL.PpmImagePlugin
-      from struct import *
-      c = ''
-      for x in range(len(bitmap.data)):
-         c += pack('h', bitmap.data[x] * 255.0)[0]
-      i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
-      if getenv('DISPLAY'): i.show()
+      print "Running..."
+      try:
+         import PIL.PpmImagePlugin
+         from struct import *
+         c = ''
+         for x in range(len(bitmap.data)):
+            c += pack('h', bitmap.data[x] * 255.0)[0]
+         i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
+         if getenv('DISPLAY'): i.show()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have PIL installed"
+   else:
+      print "skipping..."
    print "Do you want to run test 6: create a TK window, and display PPM from file or PyroImage? ",
    if getenv('DISPLAY') and sys.stdin.readline().lower()[0] == 'y':
-      from Tkinter import *
-      import Image, ImageTk
-      class UI(Label):
-         def __init__(self, master, im):
-            if im.mode == "1":
-               # bitmap image
-               self.image = ImageTk.BitmapImage(im, foreground="white")
-               Label.__init__(self, master, image=self.image, bg="black", bd=0)
-            else:
-               # photo image
-               self.image = ImageTk.PhotoImage(im)
-               Label.__init__(self, master, image=self.image, bd=0)
-      root = Tk()
-      filename = 'test.ppm'
-      root.title(filename)
-      #im = Image.open(filename)
-      im = i
-      UI(root, im).pack()
-      root.mainloop()
+      print "Running..."
+      try:
+         from Tkinter import *
+         import Image, ImageTk
+         class UI(Label):
+            def __init__(self, master, im):
+               if im.mode == "1":
+                  # bitmap image
+                  self.image = ImageTk.BitmapImage(im, foreground="white")
+                  Label.__init__(self, master, image=self.image, bg="black", bd=0)
+               else:
+                  # photo image
+                  self.image = ImageTk.PhotoImage(im)
+                  Label.__init__(self, master, image=self.image, bd=0)
+         root = Tk()
+         filename = 'test.ppm'
+         root.title(filename)
+         #im = Image.open(filename)
+         im = i
+         UI(root, im).pack()
+         root.mainloop()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have Tkinter or ImageTk installed"
    else:
       print "skipping..."
    print "Do you want to run test 7: create a camera view, and display 10 frames in ASCII? ",
    if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
       image = Camera()
       for x in range(10):
          image.update()
          image.display()
+      print "Done!"
    else:
       print "skipping..."
    print "Do you want to run test 8: create a histogram of the image? ",
    if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
       image = Camera()
       image.update()
       histogram = image.histogram()
       histogram.display()
+      print "Done!"
    else:
       print "skipping..."
       
