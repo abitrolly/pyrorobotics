@@ -14,6 +14,13 @@
 
 #define verbose 1
 
+
+/**************
+ * For use by fake_grab_image and fake_refresh.
+ * This is going to assume that the file is the right
+ * size, and that all the memory is already malloced
+ * and all that.  Use at your own risk
+ **************/
 struct image_cap* Cgrab_image(char* device, int width, 
 			      int height, int color, int select_channel){
   //struct video_window  vidwin;
