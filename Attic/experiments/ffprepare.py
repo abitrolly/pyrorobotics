@@ -1,7 +1,7 @@
 import pyro.brain.psom as psom
 
 dataPoints = 5000
-measure = 10
+measureSize = 10  # must be even
 inputfile = open("ffinputs.dat", "w")
 targetfile = open("fftargets.dat", "w")
 
@@ -26,24 +26,49 @@ def makeVector(pos, len):
    retval[pos] = 1.0
    return retval
 
-motorVector = [0] * measure
-sensoryVector = [0] * measure
-for i in xrange(dataPoints / measure):
-    for m in range(measure):
-        sonarData  = map( float, sonar.readline().split() )
-        cameraData = map( float, camera.readline().split() )
-        modelSonar  = somSonar.map(psom.vector( sonarData ))
-        modelCamera = somCamera.map(psom.vector(cameraData ))
-        motorVector[m]  = map( float, motors.readline().split() )
-        sensoryVector[m] = makeVector(modelSonar.point.x, 20) + \
-                           makeVector(modelSonar.point.y, 15) + \
-                           makeVector(modelCamera.point.x, 20) + \
-                           makeVector(modelCamera.point.y, 15)
-    goalVector = sensoryVector[measure - 1][35:]
-    for m in range(measure - 1):
-        saveListToFile(sensoryVector[m] + goalVector, inputfile)
-        exaggeratedTrans = (5 * (motorVector[m][0] - .5) + .5)
-        saveListToFile([exaggeratedTrans, motorVector[m][1] ], targetfile)
-        assert( 0.0 <= exaggeratedTrans <= 1.0)
-    saveListToFile(sensoryVector[measure - 1] + goalVector, inputfile)
+def fillSecondHalf(sensoryVectors, motorVectors):
+    mid = len(sensoryVectors) / 2
+    for i in range(mid, len(sensoryVectors)):
+        sonarData  = map(float, sonar.readline().split())
+        cameraData = map(float, camera.readline().split())
+        modelSonar  = somSonar.map(psom.vector(sonarData))
+        modelCamera = somCamera.map(psom.vector(cameraData))
+        sensoryVectors[i] = makeVector(modelSonar.point.x, 20) + \
+                            makeVector(modelSonar.point.y, 15) + \
+                            makeVector(modelCamera.point.x, 20) + \
+                            makeVector(modelCamera.point.y, 15)
+
+        motorData = map(float, motors.readline().split())
+        motorVectors[i] = motorData
+
+def shiftToFirstHalf(sensoryVectors, motorVectors):
+    mid = len(sensoryVectors) / 2
+    for i in range(mid):
+        sensoryVectors[i] = sensoryVectors[i + mid]
+        motorVectors[i] = motorVectors[i + mid]
+
+def generateTrainingData(sensoryVectors, motorVectors):
+    size = len(sensoryVectors)
+    goalVector = sensoryVectors[size - 1][35:]
+    for i in range(size - 1):
+        sensoryVector = sensoryVectors[i]
+        saveListToFile(sensoryVector + goalVector, inputfile)
+        translate = motorVectors[i][0]
+        rotate = motorVectors[i][1]
+        exaggeratedTrans = (5 * (translate - .5) + .5)
+        motorVector = [exaggeratedTrans, rotate]
+        saveListToFile(motorVector, targetfile)
+        assert(0.0 <= exaggeratedTrans <= 1.0)
+    saveListToFile(sensoryVectors[size - 1] + goalVector, inputfile)
     saveListToFile([0, 0], targetfile)
+
+
+sensoryVectors = [0] * measureSize
+motorVectors = [0] * measureSize
+numMeasures = dataPoints / measureSize
+
+fillSecondHalf(sensoryVectors, motorVectors)
+for i in range(2 * numMeasures - 1):
+    shiftToFirstHalf(sensoryVectors, motorVectors)
+    fillSecondHalf(sensoryVectors, motorVectors)
+    generateTrainingData(sensoryVectors, motorVectors)
