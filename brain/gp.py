@@ -229,8 +229,8 @@ if __name__ == '__main__':
                        '-'   : 2,
                        '*'   : 2,
                        '/'   : 2 }
-    share.terminals = ['s0', 's1']
-    values = {'s0' : 1, 's1' : 2}
+    share.terminals = ['1', 'e']
+    values = {'1' : 1, 'e' : math.e}
     gp = PI_GP(1000, bias = .6)
     gp.evolve()
     print " -----------------------------------------------------------------"

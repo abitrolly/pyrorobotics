@@ -58,6 +58,7 @@ class Layer:
         self.logFile = ''
         self._logPtr = 0
         self.bepsilon = 0.1
+        self.active = 1
         self.initialize()
     def initialize(self):
         self.randomize()
@@ -138,6 +139,18 @@ class Layer:
                 self.activation[i] = rest_value
     def getTarget(self):
         return toArray(self.target)
+    def getTSSError(self):
+        return sum(map(lambda (n): n ** 2, self.error))
+    def getCorrect(self, tolerance):
+        sum = 0
+        for i in range( self.size ):
+            if abs(self.target[i] - self.activation[i]) < tolerance:
+                sum += 1
+        return sum
+    def setActive(self, value):
+        self.active = value
+    def getActive(self):
+        return self.active
     def setTarget(self, value):
         for i in range(self.size):
             self.target[i] = value
@@ -592,19 +605,20 @@ class Network:
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # Initialize netinput:
         for n in range(propfrom, self.layerCount):
-            if (self.layer[n].type != 'Input'):
+            if (self.layer[n].type != 'Input' and self.layer[n].active):
                 for i in range(self.layer[n].size):
                     self.layer[n].netinput[i] = self.layer[n].bias[i]
         # For each connection, in order:
         for n in range(propfrom, self.layerCount):
-            for c in range(self.connectionCount):
-                if (self.connection[c].toLayer.name == self.layer[n].name):
-                    self.prop_process(self.connection[c]) # propagate!
-            if (self.layer[n].type != 'Input'):
-                for i in range(self.layer[n].size):
-                    self.layer[n].activation[i] = self.activationFunction(self.layer[n].netinput[i])
+            if self.layer[n].active:
+                for c in range(self.connectionCount):
+                    if (self.connection[c].toLayer.name == self.layer[n].name):
+                        self.prop_process(self.connection[c]) # propagate!
+                if (self.layer[n].type != 'Input'):
+                    for i in range(self.layer[n].size):
+                        self.layer[n].activation[i] = self.activationFunction(self.layer[n].netinput[i])
         for n in range(propfrom, self.layerCount):
-            if self.layer[n].log:
+            if self.layer[n].log and self.layer[n].active:
                 self.layer[n].writeLog()
     def prop_process(self, connect):
         if self.verbosity > 5:
@@ -682,6 +696,10 @@ class Network:
             if self.connection[i].fromLayer.name == fromName and \
                self.connection[i].toLayer.name == toName:
                 self.connection[i].frozen = 0
+    def getTSSError(self, layerName):
+        return self.getLayer(layerName).getTSSError()
+    def getCorrect(self, layerName):
+        return self.getLayer(layerName).getCorrect(self.tolerance)
     def toString(self):
         output = ""
         for i in range(self.layerCount):

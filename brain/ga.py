@@ -44,7 +44,10 @@ class Gene:
         self.data = []
         self.mode = 'float'
         self.bias = 0.5
+        self.min = 0 # inclusive
         self.max = 1 # inclusive
+        if args.has_key('min'):
+            self.min = args['min']
         if args.has_key('max'):
             self.max = args['max']
         if args.has_key('mode'):
@@ -55,9 +58,9 @@ class Gene:
             if self.mode == 'bit':
                 self.data.append( random.random() < self.bias)
             elif self.mode == 'integer':
-                self.data.append( math.floor(random.random() * (self.max + 1)))
+                self.data.append( math.floor(random.random() * (self.max - self.min + 1)) + self.min)
             elif self.mode == 'float':
-                self.data.append( random.random() * 2.0 - 1.0)
+                self.data.append( random.random() * (self.max - self.min + 1) + self.min)
             else:
                 raise "unknownMode", self.mode
 
@@ -75,9 +78,15 @@ class Gene:
         """
         Takes another gene, produces a mixture, and returns it.
         """
-        crosspoint = int(random.random() * len(self.data))
-        temp = self.data[:crosspoint]
-        temp.extend(otherGene.data[crosspoint:])
+        if (random.random() < .5): # single point
+            crosspoint = int(random.random() * len(self.data))
+            temp = self.data[:crosspoint]
+            temp.extend(otherGene.data[crosspoint:])
+        else: # uniform
+            temp = self.data[:] # copy self
+            for i in range(len(self.data)):
+                if random.random() < .5: # from other
+                    temp[i] = otherGene.data[i]
         return temp
 
     def display(self):
@@ -95,20 +104,20 @@ class Gene:
             self.data[pos] = not self.data[pos]
         elif self.mode == 'integer': 
             r = random.random()
-            if (r < .25):
+            if (r < .33):
                 self.data[pos] += 1
-            else:
+            elif (r < .66):
                 self.data[pos] -= 1
+            else:
+                self.data[pos] = math.floor(random.random() * (self.max - self.min + 1)) + self.min
         elif self.mode == 'float': 
             r = random.random()
-            if (r < .25):
+            if (r < .33):
                 self.data[pos] -= random.random()
-            elif (r < .50):
+            elif (r < .66):
                 self.data[pos] += random.random()
-            elif (r < .75):
-                self.data[pos] = random.random()
             else:
-                self.data[pos] = -random.random()
+                self.data[pos] = random.random() * (self.max - self.min + 1) + self.min
         else:
             raise "unknownMode", self.mode
         
@@ -305,7 +314,7 @@ if __name__ == '__main__':
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = NNGA(300)
+        ga = NNGA(750)
         ga.evolve()
         ga.network.unArrayify(ga.pop.data[0].data)
         ga.network.setInteractive(1)
