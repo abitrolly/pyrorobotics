@@ -163,8 +163,7 @@ class psom:
 		dim = csom.entries_dimension_get(codes)
 		return vector(entry=entry,dim=dim,point=point)
 
-	def get_activations(self,mode='bubble',radius=1.0,
-																		emin='unset',emax='unset'):
+	def get_activations(self,mode='bubble',radius=1.0):
 		"""
 		looking at SRN activation levels:
 		after calling map(), train(), or train_from_dataset(),
@@ -172,15 +171,16 @@ class psom:
 		corresponding to the appropriate activation levels.
 		This can either be done based on simple bubble or gaussian neighborhoods,
 		or (as suggested by doug) by assigning activation weight according to
-		error in mapping to each corresponding model vector.  this can either be
-		done with a dynamically calculated error window, or a user-defined
-		error window.
+		error in mapping to each corresponding model vector.  in the latter,
+		the radius is taken as a tolerance parameter, and should vary 0.0 to 1.0;
+		0.0 will look a lot like bubble activation and 1.0 will have pretty much
+		every node activated to at least some degree)
 		some examples:
 		>>> mysom.train(myvec)
 		>>> myact = mysom.get_activations('bubble',2.0)
 		>>> myact = mysom.get_activations('gaussian',3.0)
 		>>> myact = mysom.get_activations('error')
-		>>> myact = mysom.get_activations('error',emin=0.0,emax=1.0)
+		>>> myact = mysom.get_activations('error',0.25)
 		note that error values are always >= 0.0
 		"""
 
@@ -192,13 +192,8 @@ class psom:
 			float_levels = csom.get_activation_levels(self.params,
 						self.last.point.asIntPtr(), radius, mode)
 		elif(mode == 'error'):
-			if(emin == 'unset'):
-				fptr = "NULL"
-			else:
-				fptr = csom.ptrcreate("float",0.0,2)
-				csom.ptrset(fptr,emin,0)
-				csom.ptrset(fptr,emax,1)
-			float_levels = csom.get_levels_by_error(self.params,self.last.entry,fptr)
+			float_levels = csom.get_levels_by_error(self.params,
+																					self.last.entry,radius)
 		else:
 			raise "mode " + mode + " not yet implemented.  sorry"
 		levels = arr_to_list(float_levels,self.xdim*self.ydim)
@@ -518,11 +513,11 @@ if(__name__ == '__main__'):
 	print "last mapping produces the following gaussian srn activations:"
 	myact = mysom.get_activations('gaussian',2.0)
 	mysom.display_activations(myact)
-	print "fixed-window error-based srn activations:"
-	myact = mysom.get_activations('error',emin=5.0,emax=25.0)
-	mysom.display_activations(myact)
-	print "dynamic error-based srn activations:"
+	print "error-based srn activations, tolerance 1.0:"
 	myact = mysom.get_activations('error')
+	mysom.display_activations(myact)
+	print "error-based srn activations, tolerance 0.1:"
+	myact = mysom.get_activations('error', 0.1)
 	mysom.display_activations(myact)
 
 	mysom.save_to_file("test4.cod")
