@@ -372,6 +372,214 @@ class Bitmap(PyroImage):
       blob.equivList = self.equivList[:]
       return blob
 
+"""
+assume that we are starting our x,y coordinates from the upper-left,
+and starting at (0,0), such that (0,0) represents the upper-left-most
+pixel
+"""
+class Point:
+   def __init__(self, x=0, y=0):
+      self.x = x
+      self.y = y
+   def set(self, x, y):
+      self.x = x
+      self.y = y
+   def setx(self, x):
+      self.x = x
+   def sety(self, y):
+      self.y = y
+   def clear(self):
+      self.x = 0
+      self.y = 0
+
+class Blob:
+   def __init__(self, pixel):
+      self.mass = 1
+      self.ul = Point(pixel.x, pixel.y)
+      self.lr = Point(pixel.x, pixel.y)
+      self.cm = Point(pixel.x, pixel.y)
+      self.next = 0
+
+   def addpixel(self, pixel):
+      if pixel.x < self.ul.x:
+         self.ul.x = pixel.x
+      elif pixel.x > self.lr.x:
+         self.lr.x = pixel.x
+      if pixel.y < self.ul.y:
+         self.ul.y = pixel.y
+      elif pixel.y > self.lr.y:
+         self.lr.y = pixel.y
+      self.cm.x = float(self.mass * self.cm.x + pixel.x)/float(self.mass + 1)
+      self.cm.y = float(self.mass * self.cm.y + pixel.y)/float(self.mass + 1)
+      self.mass += 1
+
+   def joinblob(self, other):
+      if other.ul.x < self.ul.x:
+         self.ul.x = other.ul.x
+      elif other.lr.x > self.lr.x:
+         self.lr.x = other.lr.x
+      if other.ul.y < self.ul.y:
+         self.ul.y = other.ul.y
+      elif other.lr.y > self.lr.y:
+         self.lr.y = other.lr.y
+      self.cm.x = float(self.mass * self.cm.x + other.mass * other.cm.x) \
+                  /float(self.mass + other.mass)
+      self.cm.y = float(self.mass * self.cm.y + other.mass * other.cm.y) \
+                  /float(self.mass + other.mass)
+      self.mass += other.mass   
+         
+   def width(self):
+      return self.lr.x - self.ul.x + 1
+   def height(self):
+      return self.lr.y - self.ul.y + 1
+   def area(self):
+      return self.width() * self.height()
+   def density(self):
+      return float(self.mass)/float(self.area())
+   def display(self):
+      print "mass:", self.mass
+      print "area:", self.area()
+      print "density:", self.density()
+      print "center of mass:", self.cm.x, ",", self.cm.y
+      print "upper-left bound:", self.ul.x, ",", self.ul.y
+      print "lower-right bound:", self.lr.x, ",", self.lr.y
+
+
+
+class Blobdata:
+   def __init__(self, bitmap):
+      self.blobmap = Bitmap(bitmap.width, bitmap.height)
+      self.bloblist = [0] * 2000
+      count = 1
+
+      # build the blobmap and construct unjoined Blob objects
+      for w in range(bitmap.width):
+         for h in range(bitmap.height):
+            if bitmap.get(w, h):
+               if h == 0 and w == 0: # in upper left corner -- new blob
+                  self.bloblist[count] = Blob(Point(w,h))
+                  self.blobmap.set(w, h, count)
+                  count += 1
+               elif w == 0:  # if in first col 
+                  if bitmap.get(w, h - 1): # pixel above is on -- old blob
+                     self.bloblist[self.blobmap.get(w,h-1)].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, self.blobmap.get(w, h - 1))
+                  else: # above is off -- new blob
+                     self.bloblist[count] = Blob(Point(w,h))
+                     self.blobmap.set(w, h, count)
+                     count += 1
+               elif h == 0: # in first row
+                  if bitmap.get(w - 1, h): # pixel to left is on -- old blob
+                     self.bloblist[self.blobmap.get(w-1,h)].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, self.blobmap.get(w - 1, h))
+                  else: # left is off -- new blob
+                     self.bloblist[count] = Blob(Point(w,h))
+                     self.blobmap.set(w, h, count)
+                     count += 1
+               elif bitmap.get(w - 1, h) and bitmap.get(w, h - 1): # both on
+                  if self.blobmap.get(w - 1, h) == self.blobmap.get(w, h - 1):
+                     self.bloblist[self.blobmap.get(w-1,h)].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, self.blobmap.get(w - 1, h))
+                  else: # intersection of two blobs
+                     minBlobNum = min( \
+                        self.blobmap.equivList[self.blobmap.get(w - 1, h)],
+                        self.blobmap.equivList[self.blobmap.get(w, h - 1)])
+                     maxBlobNum = max( \
+                        self.blobmap.equivList[self.blobmap.get(w - 1, h)],
+                        self.blobmap.equivList[self.blobmap.get(w, h - 1)])
+                     self.bloblist[minBlobNum].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, minBlobNum)
+                     for n in range(2000):
+                        if self.blobmap.equivList[n] == maxBlobNum:
+                           self.blobmap.equivList[n] = minBlobNum
+               else:
+                  if bitmap.get(w - 1, h): # left is on -- old blob
+                     self.bloblist[self.blobmap.get(w-1,h)].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, self.blobmap.get(w - 1, h))
+                  elif bitmap.get(w, h - 1): # above is on -- old blob
+                     self.bloblist[self.blobmap.get(w,h-1)].addpixel(Point(w,h))
+                     self.blobmap.set(w, h, self.blobmap.get(w, h - 1))
+                  else: # left is off, above is off -- new blob
+                     self.bloblist[count] = Blob(Point(w,h))
+                     self.blobmap.set(w, h, count)
+                     count += 1
+
+      # count the number of blobs and join the actual blob objects
+      self.nblobs = 0
+      for n in range(1,count):
+         if self.blobmap.equivList[n] == n:
+            for m in range(n+1,count):
+               if self.blobmap.equivList[m] == n:
+                  self.bloblist[n].joinblob(self.bloblist[m])
+                  self.bloblist[m] = 0
+            self.nblobs += 1
+
+      # shift the elements of bloblist[] so that the first Blob is at
+      # bloblist[0] and the rest follow consecutively
+      for n in range(1,count):
+         m = n-1
+         while self.bloblist[m] == 0:
+            self.bloblist[m] = self.bloblist[m+1]
+            self.bloblist[m+1] = 0
+            if m == 0:
+               break
+            m -= 1
+
+
+   # sort based on mass, area, or density
+   def sort(self, mode="mass"):
+      newlist = [0] * self.nblobs
+      if mode == "mass":
+         for i in range(0,self.nblobs):
+            max = 0
+            m = 0
+            for n in range(0,self.nblobs):
+               if self.bloblist[n] == 0:
+                  pass
+               elif self.bloblist[n].mass > max:
+                  max = self.bloblist[n].mass
+                  m = n
+            newlist[i] = self.bloblist[m]
+            self.bloblist[m] = 0
+         self.bloblist = newlist
+      elif mode == "area":
+         for i in range(0,self.nblobs):
+            max = 0
+            m = 0
+            for n in range(0,self.nblobs):
+               if self.bloblist[n] == 0:
+                  pass
+               elif self.bloblist[n].area() > max:
+                  max = self.bloblist[n].area()
+                  m = n
+            newlist[i] = self.bloblist[m]
+            self.bloblist[m] = 0
+         self.bloblist = newlist
+      elif mode == "density":
+         for i in range(0,self.nblobs):
+            max = 0
+            m = 0
+            for n in range(0,self.nblobs):
+               if self.bloblist[n] == 0:
+                  pass
+               elif self.bloblist[n].density() > max:
+                  max = self.bloblist[n].density()
+                  m = n
+            newlist[i] = self.bloblist[m]
+            self.bloblist[m] = 0
+         self.bloblist = newlist
+      else:
+         print "unknown sorting parameter:", mode
+
+   def display(self):
+      self.blobmap.display()
+      print "Total number of blobs:", self.nblobs
+      print ""
+      for n in range(0,self.nblobs):
+         print "Blob", n, ":"
+         self.bloblist[n].display()            
+         print ""
+
 if __name__ == '__main__':
    from os import getenv
    import sys
@@ -397,6 +605,9 @@ if __name__ == '__main__':
       bitmap.display()
       blob = bitmap.blobify()
       blob.display()
+      myblobdata = Blobdata(bitmap)
+      myblobdata.sort("area")
+      myblobdata.display()
       print "Done!"
    else:
       print "skipping..."
@@ -527,5 +738,5 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
-      
+
    print "All done!"
