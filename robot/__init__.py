@@ -448,7 +448,6 @@ class Robot:
 
     def startDevice(self, item):
         dev = self.startDevices(item)
-        print "dev =", dev
         if len(dev) < 1:
             raise AttributeError, ("unknown device: '%s'" % item)
         else:
@@ -521,11 +520,16 @@ class Robot:
     def removeDevice(self, item):
         self.device[item].setVisible(0)
         self.device[item].setActive(0)
-        self.device[item].destroy()
-        del self.device[item]
-        del self.devData[item]
-        del self.devDataFunc[item]
-        del self.directory[item]
+        if item in self.device:
+            self.device[item].destroy()
+            del self.device[item]
+        if item in self.devData:
+            del self.devData[item]
+        if item[:-1] in self.devDataFunc:
+            del self.devDataFunc[item[:-1]]
+        if item in self.directory:
+            del self.directory[item]
+        
 
     def destroy(self):
         for item in self.device:

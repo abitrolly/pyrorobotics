@@ -11,15 +11,17 @@ def process(camera):
 
 class VisionBrain(Brain):
    def setup(self):
-      cameraID = self.robot.startDevice("TutorialCamera")
-      self.camera = self.get("devices/%s/object" % cameraID)
-      self.camera.makeWindow()
+      self.cameraID = self.robot.startDevice("TutorialCamera")
+      self.camera = self.get("devices/%s/object" % self.cameraID)
       self.camera.addFilter( process )
       
    def step(self):
       # do something with the camera processed data:
-      print self.camera.filterReturnValue[0]
+      print self.get("devices/%s/filterResults" % self.cameraID)
+
+   def destroy(self):
+      self.robot.removeDevice(self.cameraID)
             
 def INIT(engine):
-   return VisionBrain('SimpleBrain', engine)
+   return VisionBrain('VisionTest', engine)
 
