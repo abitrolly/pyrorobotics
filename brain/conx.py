@@ -1501,8 +1501,9 @@ class Network:
         """
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
-            connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
+            if connect.fromLayer.active and connect.toLayer.active:
+                connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
+                connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
     def ACTPRIME(self, act):
         """
         Used in compute_error.
