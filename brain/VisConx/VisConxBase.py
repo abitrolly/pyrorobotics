@@ -1,5 +1,6 @@
 import Tkinter
 import tkMessageBox
+import tkFileDialog
 import tkSimpleDialog
 from pyro.brain.conx import *
 import pyro.brain.VisConx.TwoDimPlot as TwoDimPlot
@@ -113,6 +114,7 @@ class VisConxBase:
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
         self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.W)
         Tkinter.Button(self.visualFrame,text="Show weights", command=self.createHintonDiag).grid(col=1,row=5, sticky=Tkinter.N)
+        Tkinter.Button(self.visualFrame, text="Save all weights", command=self.saveAllWeights).grid(col=0, row=5, sticky=Tkinter.W)
         self.refreshHintonListBox()
 
         #options for displaying the network topology
@@ -327,7 +329,17 @@ class VisConxBase:
     def refreshActivDiag(self):
         if self.activDiag:
             self.activDiag.reset()
-    
+
+    #handler to save weights
+    def saveAllWeights(self):
+        fileWindow = tkFileDialog.SaveAs(self)
+        fileName = fileWindow.show()
+
+        try:
+            self.saveWeightsToFile(filename)
+        except:
+            tkMessageBox.showerror("File Error", "Writing to file failed.")
+
     #routine to update diagrams if changes occur
     def updateStructureDiags(self):
         self.netStruct = NetStruct.NetStruct(self)
@@ -337,6 +349,7 @@ class VisConxBase:
 
     def handleWindowClose(self):
         self.root.destroy()
+        self.root = None
         self.activDiag = None
         self.hintonDiags = {}
         self.RMSPlot = None

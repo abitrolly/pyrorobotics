@@ -81,10 +81,11 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             self.updateHintonWeights()
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
-                    self.write("Reset limit reached. Ending without reaching goal.")
+                    self.write("Reset limit reached. Ending without reaching goal.\n")
                     break
                 self.resetCount += 1
-                self.write("RESET! resetEpoch reached; starting over...")
+                self.write("RESET! resetEpoch reached; starting over...\n")
+                self.clearErrorPlots()
                 self.initialize()
                 tssErr = 1.0; self.epoch = 1; totalCorrect = 0
                 continue
@@ -130,15 +131,7 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             
             #clear data collected during the last run
             self.initialize()
-            self.TSSData = []
-            if self.TSSPlot:
-                self.TSSPlot.clearData()
-            self.RMSData = []
-            if self.RMSPlot:
-                self.RMSPlot.clearData()
-            self.pCorrectData = []
-            if self.pCorrectPlot:
-                self.pCorrectPlot.clearData()
+            self.clearErrorPlots()
             try:
                 self.trainGUI()
             except AttributeError, err:
@@ -174,6 +167,21 @@ class SweepGUIBase(VisConxBase.VisConxBase):
     def updateEpochLabel(self):
         self.epochLabel.config(text="%d" % (self.epoch,))
 
+    def clearErrorPlots(self):
+        self.TSSData = []
+        if self.TSSPlot:
+            self.TSSPlot.clearData()
+        self.RMSData = []
+        if self.RMSPlot:
+            self.RMSPlot.clearData()
+        self.pCorrectData = []
+        if self.pCorrectPlot:
+            self.pCorrectPlot.clearData()
+
+    def handleWindowClose(self):
+        VisConxBase.handleWindowClose(self)
+        self.stopFlag = 1
+        
 class VisSweepNetwork(SweepGUIBase, Network): 
     def __init__(self):
         Network.__init__(self)
