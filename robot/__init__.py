@@ -133,6 +133,14 @@ class Robot (Drawable):
     def applyFunc(self, sensor, poslist, list, func):
         if func == None:
             return list
+        elif func == 'minval':
+            pos = -1
+            posval = 10000
+            for i in range(len(list)):
+                if list[i] < posval:
+                    pos = poslist[i]
+                    posval = list[i]
+            return posval
         elif func == 'min':
             pos = -1
             posval = 10000
@@ -149,6 +157,14 @@ class Robot (Drawable):
                     pos = poslist[i]
                     posval = list[i]
             return (pos, posval)        
+        elif func == 'maxval':
+            pos = -1
+            posval = -10000
+            for i in range(len(list)):
+                if list[i] > posval:
+                    pos = poslist[i]
+                    posval = list[i]
+            return posval
         elif func == 'sum':
             sum = 0
             for i in list:
