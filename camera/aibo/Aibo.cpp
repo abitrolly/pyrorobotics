@@ -1,6 +1,4 @@
 #include "Aibo.h"
-
-#include <jpeglib.h>
 #include "jpeg.h"
 
 long convert(char *buff) {
