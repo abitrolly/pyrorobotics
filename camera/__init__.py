@@ -226,6 +226,13 @@ class Camera(PyroImage, Device):
          lastCat = category
       return menu
 
+   def setTitle(self, title):
+      self.title = title
+      try:
+         self.window.wm_title(self.title)
+      except:
+         pass
+
    def makeWindow(self):
       try:
          self.window.state()
