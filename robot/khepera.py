@@ -199,6 +199,7 @@ class KheperaRobot(Robot):
                  subtype = "Khepera"):
         # simulator = 0 makes it real
         Robot.__init__(self) # robot constructor
+        self.buffer = ''
         self.debug = 0
         if simulator == 1:
             self.sc = SerialSimulator()
@@ -226,7 +227,7 @@ class KheperaRobot(Robot):
                 if rate == None:
                     rate = 115200
             print "K-Team opening port", port, "..."
-            self.sc = Serial(port, baudrate=rate, xonxoff=0, rtscts=0)
+            self.sc = Serial(port, baudrate=rate) #, xonxoff=0, rtscts=0)
             self.sc.setTimeout(0)
             self.sc.readlines() # to clear out the line
         self.stallTolerance = 0.25
@@ -245,6 +246,12 @@ class KheperaRobot(Robot):
                           'o' : 'light',
                           'k' : 'stall',
                           'e' : 'speed',
+                          't1b'  : 'gripper software',
+                          't1f'  : 'gripper resistivity',
+                          't1g'  : 'gripper beam state',
+                          't1h1' : 'gripper arm position',
+                          't1h0' : 'gripper state',
+                          't1j'  : 'gripper jumpers'
                           }
         self.senseData = {}
         self.senseData['position'] = [0] * 3
@@ -308,36 +315,43 @@ class KheperaRobot(Robot):
     def disconnect(self):
         self.stop()
 
-    def send(self, message):
-        self.sc.writeline(message, self.newline)
-        while self.sc.inWaiting(): self.readData()
-        return self.dataTypes[ message[0].lower() ]
-
     def sendMsg(self, msg):
         #if self.sc.inWaiting() == 0:
         if self.debug: print "DEBUG: sendMsg:", msg
         self.sc.writeline(msg, self.newline)
         #else:
         #    self.readData()
-        
 
     def readData(self):
         if self.sc.inWaiting() == 0: return
         retval = self.sc.readline() # 1 = block till we get something
-        if retval:
-            lines = string.split(retval, "\r\n")
-            for line in lines:
-                if line != '':
-                    rawdata = string.split(line, ",")
+        #print "DEBUG:", retval
+        if len(retval) > 0:
+            if retval[-1] != '\n' and retval[-1] != '\r':
+                self.buffer += retval
+            else:
+                self.buffer += retval.strip()
+                if len(self.buffer) > 0:
+                    rawdata = string.split(self.buffer, ",")
+                    self.buffer = ''
                     if self.debug: print "DEBUG: read:", rawdata
                     dtype, data = rawdata[0], rawdata[1:]
+                    if dtype == 't':
+                        if len(data) < 2:
+                            self.buffer = ''
+                            if self.debug: print "K-Team turret packet error:", rawdata
+                            return
+                        else:
+                            dtype += data[0] + data[1]
+                            data = data[2:]
                     key = self.dataTypes.get(dtype, None)
-                    try:
-                        self.senseData[key] = map(int,data)
-                    except:
-                        #pass
-                        if self.debug: print "K-Team packet error:", rawdata
-        
+                    if key != None:
+                        try:
+                            self.senseData[key] = map(int,data)
+                        except:
+                            #pass
+                            if self.debug: print "K-Team packet error:", rawdata
+
     def update(self):
         self._update()
         if self.devData["subtype"] == "Khepera":
@@ -346,18 +360,18 @@ class KheperaRobot(Robot):
             self.sendMsg('H') #, 'position')
             self.sendMsg('E') #, 'speed')
             self.sendMsg('K') #, 'stall')  # motor status, used by isStall
+            gripperID = self.hasA('gripper')
+            if gripperID:
+                #self.sendMsg('T,1,H,0')  # gripper state
+                #self.sendMsg('T,1,H,1')  # arm position
+                self.sendMsg('T,1,G')    # gripper beam state
+                self.sendMsg('T,1,F')    # gripper resistivity
+                
         elif self.devData["subtype"] == "Hemisson":
             #self.sendMsg('N') #, 'ir')     # proximity
             #self.sendMsg('O') #, 'light')  # ambient light
             pass
         while self.sc.inWaiting(): self.readData()
-        gripperID = self.hasA('gripper')
-        if gripperID:
-            gripper = self.device[gripperID]
-            self.senseData['gripState'] = gripper._getGripState()
-            self.senseData['beamState'] = gripper._getBreakBeamState()
-            self.senseData['armPosition'] = gripper._getArmPosition()
-            self.senseData['resistivity'] = gripper._getResistivity()
         """
         The 'K' message returns 6 numbers dealing with the status of the
         motors.  The 3rd and 6th are error codes representing the left and
@@ -491,52 +505,37 @@ class Gripper(Device):
     def __init__(self, robot, type = "gripper"):
         Device.__init__(self, type)
         self.robot = robot
+        self.robot.sendMsg('T,1,B')    # gripper software version
+        self.robot.sendMsg('T,1,J')    # gripper jumpers
         self.lowestArmPosition = 255
         self.highestArmPosition = 165
         self.liftUpPosition = 175
         self.putDownPosition = 240
         self.startDevice()
 
-    def send(self, message):
-        self.robot.sc.writeline(message, self.robot.newline)
-        return self.robot.sc.readline().split(',')
-
     # preGet methods
-    def _getGripState(self):
-        gripState = int(self.send('T,1,H,0')[3])
+    def getGripState(self):
+        gripState = self.robot.senseData['FIX ME'][0]
         if gripState < 100:
             return 'closed'
         else:
             return 'open'
 
-    def _getBreakBeamState(self):
-        beamState = int(self.send('T,1,G')[3])
+    def getBreakBeamState(self):
+        beamState = self.robot.senseData['gripper beam state'][0]
         if beamState < 100:
             return 'nothing'
         else:
             return 'something'
 
-    def _getArmPosition(self):
-        return int(self.send('T,1,H,1')[3])
-
-    def _getResistivity(self):
-        return int(self.send('T,1,F')[3])
-
-    def getGripState(self):
-        return self.robot.senseData['gripState']
-
-    def getBreakBeamState(self):
-        return  self.robot.senseData['beamState']
-
     def getArmPosition(self):
-        return self.robot.senseData['armPosition']
+        return self.robot.senseData['gripper arm position'][0]
 
     def getResistivity(self):
-        return self.robot.senseData['resistivity']
+        return self.robot.senseData['gripper resistivity'][0]
 
     def getSoftwareVersion(self):
-        version = int(self.send('T,1,B')[3])
-        revision = int(self.send('T,1,B')[4])
+        version, revision = self.robot.senseData['gripper software'][0:2]
         return version + 0.1 * revision
 
     def isClosed(self):
@@ -553,10 +552,10 @@ class Gripper(Device):
 
     # postSet methods
     def gripOpen(self):
-        self.send('T,1,D,0')
+        self.robot.sendMsg('T,1,D,0')
 
     def gripClose(self):
-        self.send('T,1,D,1')
+        self.robot.sendMsg('T,1,D,1')
 
     def gripStop(self):
         pass
@@ -566,7 +565,7 @@ class Gripper(Device):
             angle = self.lowestArmPosition
         elif angle < self.highestArmPosition:
             angle = self.highestArmPosition
-        self.send('T,1,E,' + str(angle))
+        self.robot.sendMsg('T,1,E,' + str(angle))
 
     def liftUp(self):
         self.setArmPosition(self.liftUpPosition)
