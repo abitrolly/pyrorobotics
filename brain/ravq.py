@@ -191,18 +191,14 @@ class RAVQ:
     # used so pickle will work
     def __getstate__(self):
         odict = self.__dict__.copy() 
-        try:
+        if odict.has_key('log'):
             del odict['log']
-        except:
-            pass
         return odict
     def __setstate__(self,dict):
-        try:
+        if dict.has_key('logName'):
             self.log = open(dict['logName'], 'a') 
-            self.__dict__.update(dict)            
-        except:
-            pass
-    
+        self.__dict__.update(dict)
+            
     def logHistory(self, labels = 1, tag = 'None'):
         """
         Writes time winner label tag to file in four column format.
@@ -373,3 +369,10 @@ if __name__ == '__main__':
         cnt += 1
 
     print ravq
+    
+##     ravq.saveRAVQToFile('test.pck')
+##     import pickle
+##     fp = open('test.pck')
+##     ravq = pickle.load(fp)
+##     fp.close()
+##     print ravq

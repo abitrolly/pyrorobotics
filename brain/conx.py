@@ -223,20 +223,17 @@ class Layer:
                                self.size)
         return maxpos, maxvalue, avgvalue
 
-    # used so pickle will work
+    # used so pickle will work with log file pointer
     def __getstate__(self):
         odict = self.__dict__.copy() 
-        try:
-            del odict['_logPtr']
-        except:
-            pass
+        del odict['_logPtr']
         return odict
     def __setstate__(self,dict):
-        try:
+        if dict['log']:
             self._logPtr = open(dict['logFile'], 'a') 
-            self.__dict__.update(dict)
-        except:
-            pass
+        else:
+            self._logPtr = 0
+        self.__dict__.update(dict)
         
     # log methods
     def setLog(self, fileName):
@@ -2256,6 +2253,22 @@ if __name__ == '__main__':
         n.setTolerance(0.2) 
         n.setReportRate(5) 
         n.train() 
+        if ask("Do you want to pickle the previous network?"):
+            import pickle
+            print "Pickling network..."
+            print "Filename to save data (.pickle): ",
+            filename = sys.stdin.readline().strip()
+            print "Setting log layer..."
+            n.logLayer('input', 'input.log')
+            # previously did not work if layer had a file pointer
+            n.saveNetworkToFile(filename)
+            print "Loading file..."
+            fp = open(filename + ".pickle")
+            n = pickle.load(fp)
+            fp.close()
+            print "Sweeping..."
+            n.setInteractive(1)
+            n.sweep()
 
     if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2?"):
         print "SRN ..................................................."
