@@ -553,7 +553,7 @@ class Network:
         elif (fromLayer.type == 'Undefined'):
             fromLayer.type = 'Input'
         if (toLayer.type == 'Input'):
-            toLayer.type = 'Output'
+            toLayer.type = 'Hidden'
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
