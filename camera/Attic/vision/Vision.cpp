@@ -17,7 +17,7 @@ Vision::~Vision() {
   delete [] history;
 }
 
-void Vision::initialize(int wi, int he, int de, int r, int g, int b) {
+PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   width = wi;
   height = he;
   depth = de;
@@ -34,6 +34,7 @@ void Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   filterList = PyList_New(0);
   // set the current image to:
   Image = image;
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::setImage(int newImage) {
@@ -121,7 +122,7 @@ PyObject *Vision::get(int w, int h) {
   }
 }
 
-void Vision::superColor(float w1, float w2, float w3, 
+PyObject *Vision::superColor(float w1, float w2, float w3, 
 			int outChannel) {
   float weight[3] = {w1, w2, w3};
   for (int w=0; w<width; w++) {
@@ -138,6 +139,7 @@ void Vision::superColor(float w1, float w2, float w3,
 	Image[(h * width + w) * depth + rgb[outChannel] ] = brightness; 
     }
   }
+  return PyInt_FromLong(0L);
 }  
 
 // match() - match pixels by tolerance
@@ -223,7 +225,7 @@ PyObject *Vision::saveImage(char *filename) {
   return Py_BuildValue("");
 } 
 
-void Vision::drawRect(int x1, int y1, int x2, int y2, 
+PyObject *Vision::drawRect(int x1, int y1, int x2, int y2, 
 		      int fill, int channel) {
   for(int w=x1; w<=x2; w++) {
       for(int h=y1; h<=y2; h++ ) {
@@ -237,6 +239,7 @@ void Vision::drawRect(int x1, int y1, int x2, int y2,
 	    Image[(h * width + w) * depth + rgb[channel]] = 255;
       }
   }
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::colorHistogram() {
@@ -247,7 +250,7 @@ PyObject *Vision::trainColor() {
   return Py_BuildValue("");
 }
 
-void Vision::gaussianBlur() {
+PyObject *Vision::gaussianBlur() {
   int offset,m1,m2;
   int x,y,temp;
   unsigned char *out;
@@ -287,9 +290,10 @@ void Vision::gaussianBlur() {
 	temp/=16;
 	Image[(x+offset+y*width)*depth+offset] = temp;
       }
+  return PyInt_FromLong(0L);
 }
 
-void Vision::grayScale(int value) {
+PyObject *Vision::grayScale(int value) {
   int x, y, d;
   for (y=0; y<height; y++)
     for(x=0; x<width; x++)
@@ -303,6 +307,7 @@ void Vision::grayScale(int value) {
 	  Image[(x+y*width)*depth + d]= value;
 	}
       }
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::threshold(int channel, int value) {
@@ -399,10 +404,11 @@ PyObject *Vision::sobel(int thresh) {
   return PyInt_FromLong(0L);
 }
 
-void Vision::medianBlur(int kernel) {
+PyObject *Vision::medianBlur(int kernel) {
+  return PyInt_FromLong(0L);
 }
 
-void Vision::meanBlur(int kernel) {
+PyObject *Vision::meanBlur(int kernel) {
   int w,h,i,j,side,d;
   unsigned int average[3]={0};
   
@@ -432,6 +438,7 @@ void Vision::meanBlur(int kernel) {
 	  average[2] = 0;
 	}
     }
+  return PyInt_FromLong(0L);
 }
 
 int Vision::getWidth() { return width; }
@@ -632,12 +639,14 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 
   //[240][384]={0};
   
+  printf("Starting blobify...\n");
+
   unsigned char *ImagePtr;
   PyObject *tuple;
   
   if(inChannel == BLUE)
     {
-      offset = rgb[0]; mark1 = rgb[1]; mark2 = rgb[2];
+      offset = rgb[2]; mark1 = rgb[0]; mark2 = rgb[1];
     }
   else if(inChannel == GREEN)
     {
@@ -645,7 +654,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
     }
   else if(inChannel == RED)
     {
-      offset = rgb[2]; mark1 = rgb[0]; mark2 = rgb[1];
+      offset = rgb[0]; mark1 = rgb[1]; mark2 = rgb[2];
     }
   else
     perror("Invalid Channel\n");
@@ -658,6 +667,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   
   ImagePtr = Image;
 
+  printf("Starting blobify 2...\n");
   /*build the blobmap and construct unjoined Blob objects*/
   for(h=0;h<height;h++)
     {
@@ -665,6 +675,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	{
 	  if(*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high )
 	    {  
+	      printf("matching pixel at (%d, %d)\n", w, h); // 62, 0
 	      if(h == 0 && w == 0)
 		{ /*in upper left corner - new blob */
 		  
@@ -696,6 +707,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		    }
 		  else  /* left is off -- new blob */
 		    {
+		      printf("adding new blob count = %d...", count);
 		      initBlob(&bloblist[count], h,w);
 		      blobdata[w][h]=count;
 		      count++;
@@ -901,6 +913,7 @@ PyObject *Vision::applyFilters(PyObject *newList) {
     PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
     return NULL;
   }
+  PyObject *retvals = PyList_New( PyList_Size(newList) );
   for (int i = 0; i < PyList_Size(newList); i++) {
     filter = PyList_GetItem(newList, i);
     if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
@@ -914,69 +927,69 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
 	return NULL;
       }
-      superColor(f1, f2, f3, i1);
+      PyList_SetItem(retvals, i, superColor(f1, f2, f3, i1));
     } else if (strcmp((char *)command, "meanBlur") == 0) {
       i1 = 3;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: meanBlur");
 	return NULL;
       }
-      meanBlur(i1);
+      PyList_SetItem(retvals, i, meanBlur(i1));
     } else if (strcmp((char *)command, "sobel") == 0) {
       i1 = 1;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: sobel");
 	return NULL;
       }
-      sobel(i1);
+      PyList_SetItem(retvals, i, sobel(i1));
     } else if (strcmp((char *)command, "setPlane") == 0) {
       i1 = 0; i2 = 0;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
 	return NULL;
       }
-      setPlane(i1, i2);
+      PyList_SetItem(retvals, i, setPlane(i1, i2));
     } else if (strcmp((char *)command, "drawRect") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = ALL;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
 	return NULL;
       }
-      drawRect(i1, i2, i3, i4, i5, i6);
+      PyList_SetItem(retvals, i, drawRect(i1, i2, i3, i4, i5, i6));
     } else if (strcmp((char *)command, "match") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0; i6 = ACCUM;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match()");
 	return NULL;
       }
-      match(i1, i2, i3, i4, i5, i6);
+      PyList_SetItem(retvals, i, match(i1, i2, i3, i4, i5, i6));
     } else if (strcmp((char *)command, "grayScale") == 0) {
       i1 = 255;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: grayScale");
 	return NULL;
       }
-      grayScale(i1);
+      PyList_SetItem(retvals, i, grayScale(i1));
     } else if (strcmp((char *)command, "threshold") == 0) {
-      i1 = 0; i2 = 128;
+      i1 = 0; i2 = 200;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: threshold");
 	return NULL;
       }
-      threshold(i1, i2);
+      PyList_SetItem(retvals, i, threshold(i1, i2));
     } else if (strcmp((char *)command, "inverse") == 0) {
       i1 = 0;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: inverse");
 	return NULL;
       }
-      inverse(i1);
+      PyList_SetItem(retvals, i, inverse(i1));
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;
     }
   }
 
-  return Py_BuildValue("");
+  return retvals;
 }
 

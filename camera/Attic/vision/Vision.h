@@ -52,8 +52,8 @@ public:
   Vision(int w, int h, int d, int r, int g, int b);
   Vision(int w, int h, int d);
   ~Vision();
-  void initialize(int wi, int he, int de, int r, int g, int b);
-  void superColor(float w1, float w2, float w3,
+  PyObject *initialize(int wi, int he, int de, int r, int g, int b);
+  PyObject *superColor(float w1, float w2, float w3,
 		  int outChannel);
   PyObject *matchRange(int lr, int lg, int lb,
 		       int hr, int hg, int hb,
@@ -62,9 +62,9 @@ public:
 		  int outChannel, int mode);
   PyObject *get(int w, int h);
   PyObject *set(int w, int h, int d, int val);
-  void drawRect(int x1, int y1, int x2, int y2, 
+  PyObject *drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
-  void meanBlur(int kernel);
+  PyObject *meanBlur(int kernel);
   PyObject *threshold(int channel, int value);
   PyObject *inverse(int channel);
   int getWidth();
@@ -75,10 +75,10 @@ public:
 
   PyObject *Vision::colorHistogram();
   PyObject *Vision::trainColor();
-  void gaussianBlur();
-  void grayScale(int value);
+  PyObject *gaussianBlur();
+  PyObject *grayScale(int value);
   PyObject *sobel(int val);
-  void medianBlur(int kernel);
+  PyObject *medianBlur(int kernel);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 

@@ -109,9 +109,6 @@ class Camera(PyroImage, Service):
       if self.active == 0:
          self.update()
 
-   def setPlane(self, channel, value = 0):
-      self.cobj.setPlane( channel, value)
-
    def popFilterList(self):
       self.cobj.popFilterList()
       # if paused, update the screen
@@ -124,21 +121,6 @@ class Camera(PyroImage, Service):
    def saveImage(self, filename="image.ppm"):
       self.cobj.saveImage(filename)      
 
-   def match(self, red, green, blue, tol=30, channel=0,
-             mode=Vision.ACCUM):
-      self.cobj.match(red, green, blue, tol, channel, mode)
-      
-   def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30,
-                           channel=1, mode=Vision.ACCUM):
-      self.cobj.matchRange(red-t1, green-t2, blue-t3,
-                           red+t1, green+t2, blue+t3,
-                           channel, mode)
-
-   def colorFilterHiLow(self, lred, hred, lgreen,
-                        hgreen, lblue,hblue, channel=1,
-                        mode = Vision.ACCUM):
-      self.cobj.matchRange(lred, lgreen, lblue, hred, hgreen, hblue,
-                           channel, mode)
    def drawRect(self, *args):
       self.cobj.drawRect( *args)
 
@@ -181,15 +163,6 @@ class Camera(PyroImage, Service):
       #elif(cmp(sortMethod.lower(),"density")==0):
       #   self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,2,drawBox,self.width, self.height);
 
-   def meanBlur(self, kernel=3):
-      self.cobj.meanBlur(kernel)
-
-   def medianBlur(self, kernel = 3):
-      self.cobj.medianBlur(kernel)
-
-   def superColor(self, redWeight, greenWeight, blueWeight, outChannel):
-      self.cobj.superColor(redWeight, greenWeight, blueWeight, outChannel)
-   
    def superColorByName(self, color, channel):
 
       if(channel < 0 or channel > 3):
@@ -212,21 +185,6 @@ class Camera(PyroImage, Service):
       else:
          print "Invalid Super Color"
          
-   def gaussianBlur(self):
-      self.cobj.gaussianBlur()
-
-   def sobel(self):
-      self.cobj.sobel(1)
-
-   def threshold(self, channel = 0, val = 128):
-      self.cobj.threshold(channel, val)
-
-   def invers(self, channel = 0):
-      self.cobj.inverse(channel)
-
-   def grayScale(self, val = 255):
-      self.cobj.grayScale(val)
-
    def trainColor(self):
       self.histogram = self.cobj.Hist()
       self.histogram.red, self.histogram.green, self.histogram.blue = self.cobj.trainColor();
@@ -308,6 +266,8 @@ class Camera(PyroImage, Service):
          self.canvas = Tkinter.Canvas(self.window, width = w, height = h)
          self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
          self.canvas.bind("<1>", self.processLeftClick)
+         #self.canvas.bind("<Enter>", self.togglePlay)
+         self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
          menu = [('File',[['Load Filters...',self.loadFilters],
                           ['Save Filters...', self.saveFilters],
@@ -355,6 +315,12 @@ class Camera(PyroImage, Service):
       self.visible = 1
       while self.window.tk.dooneevent(2): pass
 
+   def apply(self, command, *args):
+      if type(command) == type(""):
+         self.cobj.applyFilters( [(command, args)] )
+      else:
+         raise "Improper format for apply()"
+
    def addFilter(self, command, *args):
       """
       Add a filter to the filter list.
@@ -364,7 +330,8 @@ class Camera(PyroImage, Service):
       listFilter( (command, args) )
       if not self.active:
          # if paused, apply it once, and update
-         Camera.__dict__[command](self, *args)
+         #Camera.__dict__[command](self, *args)
+         self.cobj.applyFilters( [(command, args)] )
 
    def setActive(self, val):
       self.active = val
@@ -387,6 +354,9 @@ class Camera(PyroImage, Service):
       print "Filters:"
       map(listFilter, self.cobj.getFilterList())
 
+   def togglePlay(self, event):
+      self.active = not self.active
+
    def processLeftClick(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       x, y = x * self.width, y * self.height
@@ -403,9 +373,9 @@ class Camera(PyroImage, Service):
       try:
          self.im = self.im.resize( (self.window.winfo_width() - 2, 
                                     self.window.winfo_height() - 2) )
-                                   #Image.BILINEAR ) # too slow
+         #Image.BILINEAR ) # too slow
       except:
-         print "error: could not resize window"
+         print "error: could not resize window"         
       self.image = ImageTk.PhotoImage(self.im)
       self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
                                tag="image")
@@ -432,3 +402,8 @@ class Camera(PyroImage, Service):
 
    def updateService(self):
       self.update()
+
+if __name__ == '__main__':
+   cam = Camera(100, 80)
+   cam.makeWindow()
+   cam.mainloop()
