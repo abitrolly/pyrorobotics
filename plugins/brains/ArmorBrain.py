@@ -1,20 +1,28 @@
-#A basic Behavior showing how ArmorRobot should be used
+
 from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
 import time
 
-class MoveArm(Behavior):
+class ArmToCenter(Behavior):
    def init(self):
-      self.Effects('LElbow Rot', .1)
-      self.Effects('RWrist Rot', .1)
+      self.Effects('LElbow Rot', .001)
+      self.Effects('LShoulder Pron', .001)
+      self.Effects('LWrist Rot', .001)
+      
 
    def update(self):
-      self.IF(1, 'LElbow Rot', .05)
-      self.IF(1, 'RWrist Rot', .05)
+      should_val = self.getRobot().getValByName('LShoulder Pron')
+      elbow_val = self.getRobot().getValByName('LElbow Rot')
+      wrist_val = self.getRobot().getValByName('LWrist Rot')
+
+      self.IF(Fuzzy(0, .18) << elbow_val, 'LElbow Rot', .02)
+      self.IF(Fuzzy(0, .8) << should_val, 'LShoulder Pron', -.02)
+      self.IF(Fuzzy(0, .2) << wrist_val, 'LWrist Rot', .02)
+              
 
 class MoveState(State):
    def init(self):
-      self.add(MoveArm(1))
+      self.add(ArmToCenter(1))
 
 def INIT(robot):
    #It seems that every single class that accesses the controls
