@@ -17,4 +17,4 @@ else
     fi
 fi
 export PATH=$PATH:/usr/local/stage/bin:/usr/local/player/bin
-stage $world &
+stage -p $(( 16000 + $UID )) $world &
