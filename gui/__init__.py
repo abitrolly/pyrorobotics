@@ -94,7 +94,7 @@ class gui(Drawable):
       elif retval == "load brain":
          self.loadBrain()
       elif retval == "load simulator":
-         print "Enter path (i.e., plugins/simulators/Aria|Stage|Pioneer)"
+         print "Enter path (i.e., plugins/simulators/[Aria|Stage|Khepera])"
          self.loadSim(self.engine.worldfile)
       elif retval == "stop":
          self.engine.pleaseStop()
@@ -271,17 +271,18 @@ class gui(Drawable):
       self.engine.brainfile = ''
 
    def loadSim(self, worldfile = ''):
+      pyropath = os.getenv('PYRO')
       f = self.fileloaddialog("simulators","*")
       self.redraw()
       if f != '':
          if worldfile == '':
-            if f[-5:] == 'Stage':
-               worldfile = self.fileloaddialog("worlds","*", "/usr/local/share/stage/worlds")
-            elif f[-4:] == 'Aria':
-               worldfile = self.fileloaddialog("worlds","*", "/usr/local/Aria/worlds")
-         self.engine.worldfile = worldfile
-         import os
-         os.system(f + " " + worldfile + " &")
+            simulatorName = f.split('/')[-1]
+            worldfile = self.fileloaddialog("worlds","*.world",
+                                            "%s/plugins/worlds/%s/"
+                                            % (pyropath, simulatorName))
+         if worldfile != '':
+            self.engine.worldfile = worldfile
+            os.system(f + " " + worldfile + " &")
          self.redraw()
          
    def loadRobot(self):

@@ -403,6 +403,9 @@ class GLgui(gui):
          print message
 
 
+   def loadPlot(self):
+      pass
+
 if __name__ == '__main__':
    gui = GLgui(Engine())
    gui.inform("Ready...")

@@ -34,12 +34,12 @@ long int Rnd(int x)
   return(((long)(rand() & 0x7fff)*(long)(x))/(long)(0x8000));
 }
 
-void OpenProgram()
+void OpenProgram(char file_name[])
 {
   struct Button  *but;
   FILE           *file;
 
-  file = fopen("WORLD/avoid.world","r");
+  file = fopen(file_name,"r");
   if (file)
   {
     context->World = (struct World *)malloc(sizeof(struct World));
@@ -148,6 +148,13 @@ int main(int argc,char *argv[]) {
     initButtonValue = RUN_ROBOT;
   if(GetOption("f",argc,argv))
     initButtonValue = RUN_ROBOT_NO_GUI;
+  int index = GetOption("w",argc,argv); // position of -w flag, if one
+  if (index > 0) {
+    strcpy(file_name, argv[index + 1]);
+  } else {
+    strcpy(file_name, "WORLD/avoid.world");
+  }
+  printf("Khepera simulator loading world '%s'...\n", file_name );
   
   key_in = 4000 + (int)getuid();
   key_out = key_in + 10000;
@@ -178,7 +185,7 @@ int main(int argc,char *argv[]) {
   context->Pipe = FALSE;
   context->MonoDisplay = FALSE;
   
-  OpenProgram();
+  OpenProgram(file_name);
   world = context->World;
   robot = context->Robot;
   UserInit(robot);

@@ -29,7 +29,7 @@ class SimpleBrain(Brain):
       self.lps.sensorHits(robot, 'range')
       self.lps.redraw()
       self.gps.updateFromLPS(self.lps, robot)
-      
+      return
       FTOLERANCE = 1.0
       LTOLERANCE = 1.0
       RTOLERANCE = 1.0
