@@ -41,10 +41,10 @@ class Main (State):
     def init(self):
         self.add(Goto(1))
 
-def INIT(robot): 
-    brain = BehaviorBasedBrain({'translate' : robot.translate, \
-                                'rotate' : robot.rotate, \
-                                'update' : robot.update }, robot)
+def INIT(engine): 
+    brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
+                                'rotate' : engine.robot.rotate, \
+                                'update' : engine.robot.update }, engine)
     brain.add(Main(1)) 
     brain.init()
     return brain

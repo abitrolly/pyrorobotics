@@ -13,10 +13,10 @@ from pyro.brain.fuzzy import *
 
 
 class Reinforce(Brain):
-   def __init__(self, name, robot):
+   def __init__(self, name, engine):
       '''Init the brain, and create the network'''
 
-      Brain.__init__(self, name, robot)
+      Brain.__init__(self, name, engine)
 
       self.net = SRN()
       self.sensorCount = self.getRobot().get('range', 'count')
@@ -167,5 +167,5 @@ class Reinforce(Brain):
       else:
          return a + b
 
-def INIT(robot):
-   return Reinforce('Reinforce', robot)
+def INIT(engine):
+   return Reinforce('Reinforce', engine)

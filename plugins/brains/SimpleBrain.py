@@ -13,6 +13,6 @@ class SimpleBrain(Brain):
 # Takes one param (the robot), and returns a Brain object:
 # -------------------------------------------------------
 
-def INIT(robot):
-   return SimpleBrain('SimpleBrain', robot)
+def INIT(engine):
+   return SimpleBrain('SimpleBrain', engine)
       

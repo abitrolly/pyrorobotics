@@ -49,8 +49,8 @@ class MoveBack(State):
       if self.getRobot().getValByName('LElbow Rot') < 0.1:
          self.goto("MoveCenter")
 
-def INIT(robot):
-   brain = BehaviorBasedBrain(robot.controls, robot)
+def INIT(engine):
+   brain = BehaviorBasedBrain(engine.robot.controls, engine)
    brain.add(MoveBack())
    brain.add(MoveCenter(1))
    brain.init()

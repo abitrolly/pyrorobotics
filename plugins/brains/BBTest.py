@@ -103,10 +103,10 @@ class state3 (State):
         print "State1 status =", self.getState('state1').status
         print "Updating State3!"
 
-def INIT(robot): # passes in engine, if you need it
-    brain = BehaviorBasedBrain({'translate' : robot.translate, \
-                                'rotate' : robot.rotate, \
-                                'update' : robot.update })
+def INIT(engine): # passes in engine, if you need it
+    brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
+                                'rotate' : engine.robot.rotate, \
+                                'update' : engine.robot.update }, engine)
     # add a few states:
     brain.add(state1()) # non active
     brain.add(state1(0, 'state2')) # not active, name

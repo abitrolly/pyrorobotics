@@ -13,9 +13,9 @@ class NNBrain(Brain):
    input layer, and trains the network to stay away from
    things.
    """
-   def __init__(self, name, robot):
+   def __init__(self, name, engine):
       """ Init the brain, and create the network. """
-      Brain.__init__(self, name, robot)
+      Brain.__init__(self, name, engine)
       self.net = Network()
       self.net.addThreeLayers(self.getRobot().get('range', 'count'), 2, 2)
       self.net.setBatch(0)
@@ -82,6 +82,6 @@ class NNBrain(Brain):
       self.getRobot().move(trans, rotate)
       self.counter += 1
 
-def INIT(robot):
-   return NNBrain('NNBrain', robot)
+def INIT(engine):
+   return NNBrain('NNBrain', engine)
       

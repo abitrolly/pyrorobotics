@@ -228,10 +228,10 @@ class E2 (State):
 class Done(State):
     pass
 
-def INIT(robot): # passes in robot, if you need it
-    brain = BehaviorBasedBrain({'translate' : robot.translate, \
-                                'rotate' : robot.rotate, \
-                                'update' : robot.update }, robot)
+def INIT(engine): # passes in robot, if you need it
+    brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
+                                'rotate' : engine.robot.rotate, \
+                                'update' : engine.robot.update }, engine)
     # add a few states:
     brain.add(Start(1)) # active
     brain.add(A1()) # active

@@ -24,9 +24,9 @@ class Vehicle(Brain):
 
 # The function INIT that takes a robot and returns a brain:
 
-def INIT(robot):
-   if robot.type != 'khepera':
+def INIT(engine):
+   if engine.robot.type != 'khepera':
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
-   return Vehicle('Braitenberg', robot)
+   return Vehicle('Braitenberg', engine)
       

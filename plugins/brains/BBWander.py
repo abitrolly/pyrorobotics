@@ -46,10 +46,10 @@ class state1 (State):
 
         print "initialized state", self.name
 
-def INIT(robot): # passes in robot, if you need it
-    brain = BehaviorBasedBrain({'translate' : robot.translate, \
-                                'rotate' : robot.rotate, \
-                                'update' : robot.update }, robot)
+def INIT(engine): # passes in robot, if you need it
+    brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
+                                'rotate' : engine.robot.rotate, \
+                                'update' : engine.robot.update }, engine)
     # add a few states:
     brain.add(state1()) # non active
 

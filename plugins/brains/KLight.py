@@ -12,8 +12,8 @@ from math import fabs
 
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
-   def __init__(self, name, robot):
-      Brain.__init__(self, name, robot)
+   def __init__(self, name, engine):
+      Brain.__init__(self, name, engine)
       self.getRobot().set('light', 'units', 'SCALED')
 
    def step(self):
@@ -29,8 +29,8 @@ class Vehicle(Brain):
 
 # The function INIT that takes a robot and returns a brain:
 
-def INIT(robot):
-   if robot.type != 'khepera':
+def INIT(engine):
+   if engine.robot.type != 'khepera':
       raise "Robot should be a Khepera"
-   return Vehicle('Braitenberg', robot)
+   return Vehicle('Braitenberg', engine)
       

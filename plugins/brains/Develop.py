@@ -101,9 +101,8 @@ class Relax:
 class DevelopBrain(Brain):
    # Only method you have to define is the step method:
 
-   def __init__(self, robot):
-      Brain.__init__(self)
-      self.robot = robot
+   def __init__(self, engine):
+      Brain.__init__(self, engine)
       self.t = 0
       self.data = []
       self.lastx = 0
@@ -179,8 +178,8 @@ class DevelopBrain(Brain):
 # Takes one param (the robot), and returns a Brain object:
 # -------------------------------------------------------
 
-def INIT(robot):
-   return DevelopBrain(robot)
+def INIT(engine):
+   return DevelopBrain(engine)
       
 if __name__ == '__main__':
    db = DevelopBrain(0)

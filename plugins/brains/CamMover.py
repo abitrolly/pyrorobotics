@@ -7,8 +7,8 @@ import time
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
     
-   def __init__(self, name, robot):
-	Brain.__init__(self, name, robot)
+   def __init__(self, name, engine):
+	Brain.__init__(self, name, engine)
 
    def step(self):
 	self.robot.camera.update()
@@ -20,6 +20,6 @@ class SimpleBrain(Brain):
 # Takes one param (the robot), and returns a Brain object:
 # -------------------------------------------------------
 
-def INIT(robot):
-   return SimpleBrain('SimpleBrain', robot)
+def INIT(engine):
+   return SimpleBrain('SimpleBrain', engine)
       

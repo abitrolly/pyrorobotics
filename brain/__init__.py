@@ -13,12 +13,14 @@ import pyro.gui.console
 
 class Brain(threading.Thread): #, Drawable):
 
-    def __init__(self, name = 'brain', robot = 0):
+    def __init__(self, name = 'brain', engine = 0):
         threading.Thread.__init__(self)
         self.lastRun = time.time() # seconds
         #Drawable.__init__(self, name)
         self.name = name
-        self.robot = robot
+        self.engine = engine
+        if engine:
+            self.robot = engine.robot
 	self.thread = 0
         self.condition = threading.Condition()
         self.needToStop = 1
@@ -36,6 +38,9 @@ class Brain(threading.Thread): #, Drawable):
 
     def getRobot(self):
         return self.robot
+
+    def getEngine(self):
+        return self.engine
     
     def run(self):
         while self.needToQuit is not 1 and self.isAlive():

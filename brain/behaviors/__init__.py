@@ -11,8 +11,8 @@ class BehaviorBasedBrain (Brain):
    This is the main engine that runs collections of behaviors (states).
    Usually, you create once of these per robot.
    """
-   def __init__(self, controllers = {}, robot = 0):
-      Brain.__init__(self, 'BehaviorBasedBrain', robot)
+   def __init__(self, controllers = {}, engine = 0):
+      Brain.__init__(self, 'BehaviorBasedBrain', engine)
       self.states = {}
       self.controls = controllers
       self.history = [{}, {}, {}]
