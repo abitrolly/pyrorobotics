@@ -31,6 +31,8 @@
 //#include "Blob.h"
 //#include "Filter.h"
 #include "Constants.h"
+#include <string.h>
+#include <stdlib.h>
 
 class Camera 
 {

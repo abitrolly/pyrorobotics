@@ -28,6 +28,7 @@
 #ifndef __BT848_H
 #define __BT848_H
 
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -62,9 +62,9 @@ void BT848::GetData ( )
   ptr = buf;
   
   // Put PPM header on buffer
-  sprintf ( buf, "P6\n%d %d\n255\n", cols, rows ); 
+  sprintf ( (char *) buf, "P6\n%d %d\n255\n", cols, rows ); 
   
-  int pos = strlen(buf);
+  int pos = strlen((char *) buf);
   rawbuf = buf + pos;
 
   for (int j=0; j<rows; j++) {

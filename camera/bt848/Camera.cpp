@@ -149,7 +149,7 @@ Blob *Camera::ApplyFilter(Filter *filter, bool mark_it) {
 	  if (x == 0 || x == cols ||
 	      y == 0 || y == rows) {
 	    tmpmask[x][y] = !filter->val;
-	    exit;
+	    exit(1);
 	  }
 	  int matches = 0;
 	  for (int delta_x = -1; delta_x <= 1; delta_x++) {
@@ -350,7 +350,7 @@ void Camera::Convolve(short int im[3][3], bool val) {
       if (x == 0 || x == cols ||
 	  y == 0 || y == rows) {
 	tmpmask[x][y] = !val;
-	exit;
+	exit(1);
       }
       int matches = 0;
       for (int delta_x = -1; delta_x <= 1; delta_x++) {
@@ -386,7 +386,7 @@ void Camera::Convolve(short int im1[3][3],
       if (x == 0 || x == cols ||
 	  y == 0 || y == rows) {
 	tmpmask[x][y] = !val;
-	exit;
+	exit(1);
       }
       int matches = 0;
       for (int delta_x = -1; delta_x <= 1; delta_x++) {
