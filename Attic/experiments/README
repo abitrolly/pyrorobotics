@@ -12,3 +12,26 @@ Support Programs:
 ffBrain.py - controls trained robot with fixed goal
 plotBrain.py - samples env space, creating flow.dat with x,y,angle
 tools/trace.py -> default.ppm
+
+exp00
+
+Tried 1-step movement paths. Did not train to stop. It performed very
+well in avoiding obstacles. Noise at default value. Goals were sonar
+and vision soms. 15 hids.
+
+exp01
+
+Extended paths to 10-steps. Learned up to 60%. Not very good at
+obstacle avoiding. Had noise at default value. Goals were sonar and
+vision soms. 15 hids.
+
+exp02
+
+Trained 10-step measures, with 5 steps overlap. First tried ortho reps
+from som. Learned up to about 50%. Then added activation spread in som
+reps. Learned up to 48%. No noise in training or testing. Goal was
+just vision som. 30 hids.
+
+exp03
+
+Changed goal back to both sonar and vision soms. Hids 15.

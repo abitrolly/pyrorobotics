@@ -1,4 +1,4 @@
-from pyro.brain.psom import vis
+#from pyro.brain.psom import vis
 import pyro.brain.psom as psom
 from pyro.brain import Brain
 #from pyro.brain.VisConx.VisRobotConx import *
@@ -7,7 +7,8 @@ from time import sleep
 
 def makeVector(pos, len):
    retval = [0.0] * len
-   retval[pos] = 1.0
+   for i in range(len):
+       retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
    return retval
 
 class ffBrain(Brain):
@@ -18,9 +19,10 @@ class ffBrain(Brain):
       self.getRobot().noise = 0
 
       # start and goal poses
-      self.startPose = [4.44, 2.24, 87]
-      self.goalPose = [1.018, 3.75, -117] #1.018, 3.75, -118
-
+      #self.startPose = [4.44, 2.24, 87]
+      self.startPose = [0.84900000, 0.80000000, 65.00000000] # 1 row
+      #self.goalPose = [1.018, 3.75, -117 + 360] 
+      self.goalPose = [0.62800000, 3.20000000, 92.00000000] # 10 row
       # Setup the robot/start services:
       self.getRobot().startService(["BlobCamera", "truth"])
       self.truth = self.getRobot().getService("truth")
@@ -28,12 +30,12 @@ class ffBrain(Brain):
       # The FF Network:
       #self.n = VisRobotNetwork()
       self.n = Network()
-      self.n.addThreeLayers(105,15,2)
+      self.n.addThreeLayers(140,15,2)
       self.n.initialize()
       self.n.loadWeightsFromFile("ff.wts")
       # The SOMs:
-      self.somSonar  = vis.VisPsom(file = "sonar-200passes-20x15.cod")
-      self.somCamera = vis.VisPsom(file = "camera-200passes-20x15.cod")
+      self.somSonar  = psom.psom(file = "sonar-200passes-20x15.cod")
+      self.somCamera = psom.psom(file = "camera-200passes-20x15.cod")
       # Set goal
       self.truth.setPose(self.goalPose[0], self.goalPose[1], self.goalPose[2])
       sleep(1)
@@ -47,7 +49,9 @@ class ffBrain(Brain):
       cameraData = self.scaleList(image.data, 255.0)
       modelSonar  = self.somSonar.map(psom.vector( sonarData ))
       modelCamera = self.somCamera.map(psom.vector(cameraData ))
-      self.goalVector = makeVector(modelCamera.point.x, 20) + \
+      self.goalVector = makeVector(modelSonar.point.x, 20) + \
+                        makeVector(modelSonar.point.y, 15) + \
+                        makeVector(modelCamera.point.x, 20) + \
                         makeVector(modelCamera.point.y, 15)
       self.goalList = [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
       print "Goal:", self.goalList
@@ -101,8 +105,8 @@ class ffBrain(Brain):
 
       #sonarState = modelSonar.point.y * 20 + modelSonar.point.x
       #cameraState = modelCamera.point.y * 20 + modelCamera.point.x
-      print "Current state = ", [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
-      print "Goal state = ", self.goalList
+      print "Current =", [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
+      print "Goal =", self.goalList
 
       if self.mode == "run":
          self.getRobot().move(unscaledTrans, unscaledRotate)

@@ -23,7 +23,8 @@ def saveListToFile(ls,file):
 
 def makeVector(pos, len):
    retval = [0.0] * len
-   retval[pos] = 1.0
+   for i in range(len):
+       retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
    return retval
 
 def fillSecondHalf(sensoryVectors, motorVectors):
@@ -49,7 +50,7 @@ def shiftToFirstHalf(sensoryVectors, motorVectors):
 
 def generateTrainingData(sensoryVectors, motorVectors):
     size = len(sensoryVectors)
-    goalVector = sensoryVectors[size - 1][35:]
+    goalVector = sensoryVectors[size - 1][:] # change to [35:] to be just camera
     for i in range(size - 1):
         sensoryVector = sensoryVectors[i]
         saveListToFile(sensoryVector + goalVector, inputfile)
