@@ -12,6 +12,8 @@ from pyro.gui.drawable import *
 from pyro.gui.renderer.gl import *
 from pyro.gui.renderer.streams import *
 
+from time import time
+
 # A GL gui
 
 class GLgui(gui):
@@ -25,6 +27,7 @@ class GLgui(gui):
       self.frame.pack(side = 'top')
       self.windowBrain = 0
       self.windowRobot = 0
+      self.lastRun = 0
 
       #store the gui structure in something nice insted of python code
       menu = [('file',[('exit',self.cleanup)]),
@@ -96,10 +99,12 @@ class GLgui(gui):
 
    def redrawWindowBrain(self):
       if self.windowBrain != 0:
-         print "---------------------------------------------"
-         for desire in self.engine.brain.desires:
-            print "Desire:", desire[4], desire[3], "IF", desire[0], "THEN", desire[1], desire[2]
-            # truth amount, controller, amount, bname, sname
+         if self.lastRun != self.engine.brain.lastRun:
+            self.lastRun = self.engine.brain.lastRun
+            print "---------------------------------------------"
+            for desire in self.engine.brain.desires:
+               print "Desire:", desire[4], desire[3], "IF", desire[0], "THEN", desire[1], desire[2]
+               # truth amount, controller, amount, behname, statename
 
    def redrawWindowRobot(self):
       if self.windowRobot != 0:
