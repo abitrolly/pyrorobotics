@@ -116,18 +116,18 @@ void V4L::init(void) {
   
   /* set image source and TV norm */
   grab_chan.channel = channel;
-  //  if (-1 >= ioctl(grab_fd,VIDIOCGCHAN,&grab_chan)) {
-  //    fprintf(stderr,"Error: with Videochannel");
-  //   perror("ioctl VIDIOCGCHAN");
-  //   exit(1);
-  //  }
+  if (-1 >= ioctl(grab_fd,VIDIOCGCHAN,&grab_chan)) {
+    fprintf(stderr,"Error: with Videochannel");
+    perror("ioctl VIDIOCGCHAN");
+    exit(1);
+  }
   grab_chan.channel = channel;    
   grab_chan.norm    = GRAB_NORM;
-  //if (-1 >= ioctl(grab_fd,VIDIOCSCHAN,&grab_chan)) {
-  //  fprintf(stderr,"Error: videochannel 2");
-  //  perror("ioctl VIDIOCSCHAN");
-  //  exit(1);
-  //}
+  if (-1 >= ioctl(grab_fd,VIDIOCSCHAN,&grab_chan)) {
+    fprintf(stderr,"Error: videochannel 2");
+    perror("ioctl VIDIOCSCHAN");
+    exit(1);
+  }
   
   grab_map.format = VIDEO_PALETTE_RGB24;
   grab_map.frame  = 0;
