@@ -8,7 +8,7 @@ class PyroImage:
    """
    A Basic Image class. 
    """
-   def __init__(self, width, height, depth = 3, init_val = 0):
+   def __init__(self, width = 0, height = 0, depth = 3, init_val = 0):
       """
       Constructor. Depth is bytes per pixel.
       """
@@ -154,6 +154,21 @@ class PyroImage:
       """
       for v in range(len(vector)):
          self.data[v] = vector[v]
+
+   def filter(self, r, g, b, threshold):
+      bitmap = Bitmap(self.width, self.height)
+      for i in range( bitmap.width):
+         for j in range( bitmap.height):
+            redDiff = (self.get(i, j, 0) - r) ** 2
+            greenDiff = (self.get(i, j, 1) - g) ** 2
+            blueDiff = (self.get(i, j, 2) - b) ** 2
+            finalval = 0
+            if redDiff < threshold and \
+               greenDiff < threshold and \
+               blueDiff < threshold:
+               finalval = 1
+            bitmap.set(i, j, finalval, 0)
+      return bitmap
 
    def histogram(self, cols = 20, rows = 20, initvals = 0):
       """
@@ -497,25 +512,15 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
+   print "Do you want to run test 9: create a filter bitmap of an image? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = PyroImage()
+      image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
+      filter = image.filter(.65, .35, .22, .01) # r, g, b, threshold
+      filter.saveToFile("filter.ppm")
+      print "Done! View filter bitmap with 'xv filter.ppm'"
+   else:
+      print "skipping..."
       
    print "All done!"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
