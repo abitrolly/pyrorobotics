@@ -55,6 +55,7 @@ class KheperaRobot(Robot):
         self.senseData = {}
         self.lastTranslate = 0
         self.lastRotate = 0
+        self.currSpeed = [0, 0]
         # This could go as high as 127, but I am keeping it small
         # to be on the same scale as larger robots. -DSB
         self.translateFactor = 30
@@ -319,8 +320,10 @@ class KheperaRobot(Robot):
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
         self.deadReckon()
-        if self.isStall():
-            print "STALLED"
+#        if self.isStall():
+#            print "STALLED"
+#        else:
+#            print "."
 
     def deadReckon(self):
         """
@@ -363,8 +366,20 @@ class KheperaRobot(Robot):
         self.th = self.thr * (180.0 / math.pi)
 
     def isStall(self, dev = 0):
-        if self.senseData['stall'][2] > 3 or self.senseData['stall'][5] > 3:
-            return 1
+        """
+        The 'K' message returns 6 numbers dealing with the status of the
+        motors.  The 3rd and 6th are error codes representing the left and
+        right motors, respectively.  The represent the difference
+        between the desired speed and the actual speed.
+        """
+        if self.currSpeed[0] != 0:
+            err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
+            if err < .25:
+                return 1
+        if self.currSpeed[1] != 0:
+            err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
+            if err < .25:
+                return 1
         else:
             return 0
 
@@ -462,6 +477,7 @@ class KheperaRobot(Robot):
                      rotate * dev.rotateFactor))
         right  = int((trans * dev.translateFactor + \
                       rotate * dev.rotateFactor))
+        self.currSpeed = [left, right]
         dev.sendMsg('D,%i,%i' % (left, right))
         self.update()
 
@@ -480,6 +496,7 @@ class KheperaRobot(Robot):
                       dev.lastRotate * dev.rotateFactor))
         # FIX: add acceleration, and assume that adjustSpeed
         # is being continuously called.
+        dev.currSpeed = [left, right]
         dev.sendMsg('D,%i,%i' % (left, right))
         
     def _move(self, dev, trans, rotate):
