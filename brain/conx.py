@@ -767,13 +767,12 @@ class Network:
         for i in size:
             if self.layer[i].active:
                 self.layer[i].display()
-                if self.patterned:
-                    if self.layer[i].type == 'Output':
-                        targetWord = self.getWord( self.layer[i].target )
-                        if targetWord != '':
-                            print "Target = '%s'" % targetWord
+                if self.patterned and self.layer[i].type != 'Hidden':
+                    targetWord = self.getWord( self.layer[i].target )
+                    if targetWord != '':
+                        print "Target = '%s'" % targetWord
                     actWord = self.getWord( self.layer[i].activation )
-                    if actWord != '':
+                    if actWord != '' or targetWord != '':
                         print "Word   = '%s'" % actWord
                 if self.verbosity > 0:
                     weights = range(self.connectionCount)
