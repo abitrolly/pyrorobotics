@@ -11,6 +11,8 @@
 #		activations
 
 
+from os import getenv
+import time
 
 import csom
 csom.set_globals()  # neither worry about nor change this
@@ -91,6 +93,13 @@ class psom:
 		else:
 			self.topol = 'hexa'
 		self.last = 'unset'
+		self.logging = 0
+		self.log_mode = 'both'
+		self.log_type = 'file'
+		self.log_dir = getenv("PWD") + "/"
+		self.log_fprefix = "psom"
+		self.log_count = 0
+		self.log_file = 'unopened'
 
 
 	def init_training(self,alpha_0,radius_0,runlen,errorwindow=1):
@@ -134,18 +143,84 @@ class psom:
 		csom.timing_stop(self.params)
 	def get_training_time(self):
 		return csom.get_training_time(self.params)
+
+	def logging_on(self, mode='unset', type='unset', dir='unset', prefix='unset'):
+		"""
+		use this to turn logging on and to initialize logging settings
+		mode specifies what kind of data vectors are logged -- those that
+		are trained ('train'), those that are mapped ('map'), or 'both'
+		type can be 'dir' or 'file'; 'dir' will create a separate file for
+		each log entry and 'file' will create a single file, putting each entry
+		on a separate line
+		dir and prefix specify the directory and file prefix for the target
+		file(s)
+		"""
+		if(self.logging == 1):
+			raise "logging facility already turned on, silly!"
+		self.logging = 1
+		if(mode != 'unset'):
+			if(mode != 'map' and mode != 'train' and mode != 'both'):
+				raise "unrecognized logging mode '" + mode + "'"
+			self.log_mode = mode
+		if(type != 'unset'):
+			if(type != 'file' and type != 'dir'):
+				raise "unrecognized logging type '" + type + "'"
+			self.log_type = type
+		if(dir != 'unset'):
+			if(dir[-1] != "/"):
+				dir += "/"
+			if(dir[0:2] == "~/"):
+				dir = getenv("HOME") + dir[1:]
+			if(dir[0] != "/"):
+				dir = getenv("PWD") + "/" + dir
+			self.log_dir = dir
+		if(prefix != 'unset'):
+			self.log_fprefix = prefix
+		if(self.log_type == 'file'):
+			fname = self.log_dir + self.log_fprefix + ".log"
+			self.log_file = open(fname, "a")
+	def logging_off(self):
+		"""
+		turn logging off
+		"""
+		self.logging = 0
+		if(self.log_type == 'file'):
+			self.log_file.close()	
+	def logging_reset(self):
+		"""
+		reset the log count
+		"""
+		self.log_count = 0
+	def log(self):
+		if(self.log_type == 'dir'):
+			fname = self.log_dir + self.log_fprefix + str(self.log_count) +".log"
+			self.log_file = open(fname, "w")
+			s = time.strftime("%x-%X") + "\n" 
+			s += str(self.last.point) + "\n"
+			s += str(self.last)
+		else:
+			s = str(self.last) + str(self.last.point)
+			s += " " + time.strftime("%x-%X") +"\n"
+		self.log_file.write(s)
+		if(self.log_type == 'dir'):
+			self.log_file.close()
+		self.log_count += 1
 	
 	def map(self,vector):
 		coords = csom.map_one(self.params,vector.entry)
 		pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
 		self.last = vector
 		self.last.point = pt
+		if(self.logging and self.log_mode != 'train'):
+			self.log()
 		return self.get_model_vector(pt)
 	def train(self,vector):
 		coords = csom.train_one(self.params,vector.entry)
 		pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
 		self.last = vector
 		self.last.point = pt
+		if(self.logging and self.log_mode != 'map'):
+			self.log()
 		return self.get_model_vector(pt)
 	def train_from_dataset(self,dataset,mode='cyclic'):
 		if(mode=='rand'):
@@ -273,6 +348,12 @@ class vector:
 	def get_label(self):
 		raise "get_label() has not yet been implemented.  sorry"	
 
+	def __str__(self):
+		mylist = self.get_elts();
+		s = ""
+		for elt in mylist:
+			s += "%.3f" % (elt) + " "
+		return s
 	def display(self):
 		mylist = self.get_elts();
 		weight = self.get_weight();
@@ -372,18 +453,37 @@ class dataset:
 class point:
 	"""
 	simple x,y coordinate holder
+	mypoint.x is equivalent to mypoint[0], mypoint.y to mypoint[1]
+	mypoint.asList() will give you an actual list
 	"""
 	def __init__(self, x=0, y=0):
 		self.x = x
 		self.y = y
+	def __getitem__(self,key):
+		if key == 0:
+			return self.x
+		if key == 1:
+			return self.y
+		raise "invalid address to 'point' class data member"
+	def __len__(self):
+		return 2
+	def asList(self):
+		mylist = []
+		mylist.append(self.x)
+		mylist.append(self.y)
+		return mylist
 	def asIntPtr(self):
+		"""
+		this method is intended only for internal use -- so don't use it!
+		"""
 		ptr = csom.ptrcreate("int",0,2)
 		csom.ptrset(ptr,self.x,0)
 		csom.ptrset(ptr,self.y,1)
 		return ptr
+	def __str__(self):
+		return "(%d,%d)" %(self.x,self.y)
 	def display(self):
-		print "(%d,%d)" % (self.x,self.y)
-
+		print self.__str__()
 
 
 
@@ -498,6 +598,7 @@ if(__name__ == '__main__'):
 		mydataset.addvec(vecs[i])
 	mydataset.display()
 
+	mysom.logging_on(type="file", prefix="psomtest", mode="train")
 	for v in vecs:
 		m = mysom.train(v)
 		print "input vector",
@@ -506,6 +607,7 @@ if(__name__ == '__main__'):
 		m.display()
 		print "at point",
 		m.point.display()
+	mysom.logging_off()
 
 	print "last mapping produces the following bubble srn activations:"
 	myact = mysom.get_activations()
