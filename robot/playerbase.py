@@ -259,7 +259,7 @@ class PlayerBase(Robot):
     def disconnect(self):
         print "Disconnecting..."
 
-    def rawToUnits(self, dev, raw, name, noise):
+    def rawToUnits(self, dev, raw, name, noise = 0.0):
         raw = raw / 1000.0
         if noise > 0:
             if random.random() > .5:
