@@ -111,7 +111,7 @@ class Brain(threading.Thread): #, Drawable):
         
     def pleaseRun(self, callback = 0):
         if not self.isAlive():
-            gui.console.log(gui.console.WARN,"Brain thread is not alive but request to run was made.");
+            pyro.gui.console.log(pyro.gui.console.WARNING,"Brain thread is not alive but request to run was made.");
         #count = 0
         #while self.condition.acquire(0) == 0:
         #    print "R",

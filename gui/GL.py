@@ -269,11 +269,11 @@ class GLgui(gui):
             if needToUpdateState:
                try: self.engine.robot.update()
                except: pass
-            try:
-               self.win.tkRedraw()
-               while self.win.tk.dooneevent(2): pass
-            except:
-               self.done = 1
+            #try:
+            self.win.tkRedraw()
+            while self.win.tk.dooneevent(2): pass
+            #except:
+            #   self.done = 0
             sleep(self.update_interval)
       else:
          self.win.mainloop()
@@ -349,6 +349,8 @@ class GLgui(gui):
       self.bitmapString(1, self.height - 30, "X:", (0, 0, 0))
       self.bitmapString(1, self.height - 60, "Y:", (0, 0, 0))
       self.bitmapString(1, self.height - 90, "Th:", (0, 0, 0))
+      if self.engine.robot.get('robot', 'stall'):
+         self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
       if self.engine != 0 and self.engine.robot != 0:
          self.bitmapString(1, self.height - 30, "    %.2f" % self.engine.robot.get('robot', 'x'), (1, 0, 0))
          self.bitmapString(1, self.height - 60, "    %.2f" % self.engine.robot.get('robot', 'y'), (1, 0, 0))
