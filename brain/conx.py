@@ -26,10 +26,7 @@ def toArray(thing):
     """
     Converts any sequence thing (such as a NumericArray) to a Python Array.
     """
-    arr = [0] * len(thing)
-    for i in range(len(thing)):
-        arr[i] = thing[i]
-    return arr
+    return [x for x in thing]
 
 def displayArray(name, a, width = 0):
     """
@@ -115,6 +112,8 @@ class Layer:
                 if self.target[i] > maxvalue:
                     maxvalue = self.target[i]
                     maxpos = i
+        else:
+            raise "UnknownLayerAttribute", type
         if self.size > 0:
             avgvalue = ttlvalue / float(self.size)
         else:
@@ -525,6 +524,9 @@ class Network:
         if self.verbosity > 1:
             print "Copying Activations: ", vector[start:start+layer.size]
         layer.copyActivations(vector[start:start+layer.size], self.symmetric)
+    # CopyTargets to be parallel with CopyActivations
+    def copyTargets(self, layer, vec, start):
+        copyTarget(self, layer, vec, start):
     def copyTarget(self, layer, vec, start):
         vector = self.replacePatterns(vec)
         if self.verbosity > 1:
