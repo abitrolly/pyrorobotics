@@ -12,8 +12,7 @@ from pyro.gui.drawable import *
 from pyro.gui.renderer.gl import *
 from pyro.gui.renderer.streams import *
 
-from time import time
-
+from time import time, sleep
 import sys
 
 # A GL gui
@@ -33,6 +32,9 @@ class GLgui(gui):
       self.lastRun = 0
       self.history = []
       self.history_pointer = 0
+      self.lasttime = 0
+      self.update_interval = 0.33
+      self.update_interval_detail = 1.0
 
       #store the gui structure in something nice insted of python code
 
@@ -87,7 +89,7 @@ class GLgui(gui):
                            height = height, double = db, depth = depth)
          self.win.pack(side = 'top', expand = 1, fill = 'both')
          self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
-         self.win.redraw = self.redraw
+         self.win.redraw = self.redraw_pass
          self.mode = IntVar(self.win)
          self.mode.set(GL_EXP)
       else: # TK, no display
@@ -115,6 +117,7 @@ class GLgui(gui):
       # create a status bar
       self.status = StatusBar(self.frame)
       self.status.pack(side=BOTTOM, fill=X)
+      self.init()
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def update(self):
@@ -250,10 +253,17 @@ class GLgui(gui):
       return menu
 
    def run(self):
-    self.win.mainloop()
-    #while 1:
-    #     self.redraw(self.win)
-    #     self.win.tk.dooneevent()
+      if self.graphicsMode == 1: # GL
+         self.done = 0
+         while not self.done:
+            try:
+               self.win.tkRedraw()
+               while self.win.tk.dooneevent(2): pass
+            except:
+               self.done = 1
+            sleep(self.update_interval)
+      else:
+         self.win.mainloop()
 
    def init(self):
       # Do not specify a material property here.
@@ -302,44 +312,39 @@ class GLgui(gui):
       return retval
 
    def refresh(self):
-      self.win.autospin = 1
-      self.win.xspin = 0
-      self.win.yspin = 0
-      self.win.after(500, self.win.do_AutoSpin)
+      #   self.win.autospin = 1
+      #   self.win.xspin = 0
+      #   self.win.yspin = 0
+      #   self.win.after(500, self.win.do_AutoSpin)
+      print "refresh!"
+
+   def redraw_pass(self, win = 0): pass
 
    def redraw(self, win = 0):
-      if self.graphicsMode == 1: # GL
-         glClearColor(0.5, 0.5, 0.5, 0)
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-         f = GenericStream()
-         r = StreamRenderer(f)
-         self.draw({}, r)
-         f.close()
-         s = StreamTranslator(f, GLRenderer())
-         s.process()
-         f.close()
-         if self.genlist == 0:
-            self.win.update()
-            self.win.autospin = 1
-            self.win.xspin = 0
-            self.win.yspin = 0
-            self.win.after(500, self.win.do_AutoSpin)
-            self.genlist = 1
-         # This probably doesn't need to update this often:
-         self.redrawWindowBrain()
-         self.redrawWindowRobot()
-         for p in self.engine.plot:
-            try:
-               p.redraw(()) # pass in options
-            except TclError:
-               #Window's closed; remove the plot from the redraw list
-               print "Removing"
-               self.engine.plot.remove(p)
+      glClearColor(0.5, 0.5, 0.5, 0)
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+      f = GenericStream()
+      r = StreamRenderer(f)
+      self.draw({}, r)
+      f.close()
+      s = StreamTranslator(f, GLRenderer())
+      s.process()
+      f.close()
+      current = time()
+      if current - self.lasttime < self.update_interval_detail: return
+      self.lasttime = current
+      self.redrawWindowBrain()
+      self.redrawWindowRobot()
+      for p in self.engine.plot:
+         try:
+            p.redraw(()) # pass in options
+         except TclError:
+            #Window's closed; remove the plot from the redraw list
+            print "Removing"
+            self.engine.plot.remove(p)
 
 if __name__ == '__main__':
    gui = GLgui(Engine())
    gui.inform("Ready...")
-   gui.win.redraw = gui.redraw
-   gui.init()
-   gui.win.mainloop()
+   gui.run()
    gui.cleanup()
