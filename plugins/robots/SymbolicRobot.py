@@ -19,7 +19,7 @@ class TCPRobot(Robot):
 		except:
 			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
 		self.socket.connect( self.addr )
-		notsetables = self.getItem("notsetables"):
+		notsetables = self.getItem("notsetables")
 		for item in notsetables:
 			self.devData[item] = None
 		self.notSetables.extend( notsetables )

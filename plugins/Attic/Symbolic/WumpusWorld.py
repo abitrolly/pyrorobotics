@@ -42,6 +42,9 @@ class GUI(Tkinter.Toplevel):
         self.checkMovement()
         self.count = 0
         self.tag = "data-%d" % self.count
+        self.updateables = ["location", "direction"]
+        self.notSetables = ["percept", "location", "direction", "arrow", "score", "alive"]
+        self.movements = ["left", "right", "forward", "shoot", "grab"]
         self.redraw()
 
     def initWorld(self):
@@ -115,7 +118,7 @@ class GUI(Tkinter.Toplevel):
 
     def sum(self, a, b):
         return a[0] + b[0], a[1] + b[1]
-    
+
     def process(self, request):
         # moves: 'forward', 'left', 'right', 'grab', 'shoot'
         dirs = {'up':0, 'right':1, 'down':2, 'left':3}
@@ -141,6 +144,12 @@ class GUI(Tkinter.Toplevel):
             retval = "ok"
             self.done = 1
             self.quit = 1
+        elif request == 'updateables':
+            retval = self.updateables
+        elif request == 'notsetables':
+            retval = self.notSetables
+        elif request == 'movements':
+            retval = self.movements
         elif request == 'percept':
             retval = ({1:"stench", 0:None}[self.stench],
                       {1:"breeze", 0:None}[self.breeze],
