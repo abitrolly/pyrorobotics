@@ -17,8 +17,11 @@ LIBS= -lstdc++ -ldl -lpthread -ljpeg
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
-_aibo.so: aibo.o Aibo.o Socket.o
-	$(CC) $(CPPFLAGS) -shared aibo.o Aibo.o Socket.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+_aibo.so: aibo.o Aibo.o Socket.o jpeg.o
+	$(CC) $(CPPFLAGS) -shared aibo.o Aibo.o Socket.o jpeg.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+
+jpeg.o: jpeg.c jpeg.h
+	$(CC) jpeg.c -c
 
 Aibo.o: Aibo.cpp Aibo.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c Aibo.cpp
