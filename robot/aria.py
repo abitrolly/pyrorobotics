@@ -198,16 +198,18 @@ class AriaPTZDevice(AriaDevice):
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "sonar")
-        self.devData['units']    = "ROBOTS"
-        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.devData['units']    = "ROBOTS" # current report units
+        # This is fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
-        self.devData['maxvalueraw'] = 2.99
+        # ----------------------------------------------------------
         # What are the raw units of "value"?
         self.devData["rawunits"] = "MM"
+        self.devData['maxvalueraw'] = 2990 # in rawunits
         # ----------------------------------------------------------
         # This should change when you change units:
         # (see postSet below)
-        self.devData['maxvalue'] = self.rawToUnits(2990) # in rawunits
+        # in rawunits
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
         # X,Y,Z are in meters
         # ----------------------------------------------------------
         self.devData["count"] = self.params.getNumSonar()
@@ -245,7 +247,7 @@ class AriaSonar(AriaSensor):
         self.startDevice()
 
     def postSet(self, keyword):
-        self.devData['maxvalue'] = self.rawToUnits(2990)
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
 class AriaLaser(AriaSensor):
     def __init__(self,  params, device):
@@ -253,13 +255,14 @@ class AriaLaser(AriaSensor):
         self.devData['units']    = "ROBOTS"
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
-        self.devData['maxvalueraw'] = 15.0
         # What are the raw units of "value"? CHECK to see if MM is correct
         self.devData["rawunits"] = "MM"
+        self.devData['maxvalueraw'] = 15000
         # ----------------------------------------------------------
         # This should change when you change units:
         # (see postSet below)
-        self.devData['maxvalue'] = self.rawToUnits(15000) # in rawunits
+        # in rawunits
+        self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
         # X,Y,Z are in meters
         # ----------------------------------------------------------
         self.devData["x"] = self.params.getLaserX()
@@ -306,7 +309,7 @@ class AriaLaser(AriaSensor):
         self.startDevice()
 
     def postSet(self, keyword):
-        self.devData['maxvalue'] = self.rawToUnits(15000)
+        self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
@@ -354,20 +357,19 @@ class AriaRobot(Robot):
         self.devData['units'] = 'METERS' # x,y,z units
         self.devData['name'] = self.dev.getRobotName()
         self.dev.runAsync(1)
-        self.supports = []
+        self.devData["supports"] = []
         if self.params.getNumSonar() > 0:
-            self.supports.append( "sonar" )
+            self.devData["supports"].append( "sonar" )
             deviceName = self.startDevice("sonar")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
         if self.params.getLaserPossessed():
-            self.supports.append( "laser" )
+            self.devData["supports"].append( "laser" )
             deviceName = self.startDevice("laser")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
-            self.supports.append( "bumper" )
+            self.devData["supports"].append( "bumper" )
             deviceName = self.startDevice("bumper")
         self.update()
-        self.devData['supports'] = self.supports
         self.inform("Done loading Aria robot.")
 
     def startDeviceBuiltin(self, item):
