@@ -80,6 +80,14 @@ class PlayerCommService(PlayerService):
         self.messages = []
         return tmp
 
+class PlayerPTZService(PlayerService):
+
+    def setPose(self, pan, tilt, zoom):
+        return self.dev.set_ptz(pan, tilt, zoom)
+
+    def getPose(self):
+        return self.dev.get_ptz()
+
 class PlayerGripperService(PlayerService):
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
@@ -156,7 +164,7 @@ class PlayerBase(Robot):
         self.supports["position"] = PlayerService(self.dev, "position")
         self.supports["sonar"] = PlayerService(self.dev, "sonar")
         self.supports["laser"] = PlayerService(self.dev, "laser")
-        self.supports["ptz"] = PlayerService(self.dev, "ptz")
+        self.supports["ptz"] = PlayerPTZService(self.dev, "ptz")
         self.supports["gps"] = PlayerService(self.dev, "gps")
         self.supports["bumper"] = PlayerService(self.dev, "bumper")
         self.supports["truth"] = PlayerService(self.dev, "truth")
