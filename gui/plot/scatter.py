@@ -98,32 +98,36 @@ class Scatter: # Plot
             self.canvas.delete( self.hist[self.count].lineId )
             self.canvas.delete( self.hist[self.count].pointId )
         if type(self.last) != type(1):
+            last_x = self._x(self.last.x)
+            last_y = self._y(self.last.y)
             self.canvas.delete( self.last.pointId)
-            x1 = self.last.x
-            y1 = self.last.y
-            self.last.pointId = self.canvas.create_oval(self._x(x1) - 2,
-                                                        self._y(y1) - 2,
-                                                        self._x(x1) + 2,
-                                                        self._y(y1) + 2,
+            self.last.pointId = self.canvas.create_oval(last_x - 2,
+                                                        last_y - 2,
+                                                        last_x + 2,
+                                                        last_y + 2,
                                                         width = 0,
                                                         tag = 'object',
                                                         fill = 'coral')
 
+        my_x = self._x(x)
+        my_y = self._y(y)
         if self.firstEver:
             self.firstEver = 0
             lid = -1
         else:
-            lid = self.canvas.create_line(self._x(self.last.x),
-                                          self._y(self.last.y),
-                                          self._x(x),
-                                          self._y(y),
+            last_x = self._x(self.last.x)
+            last_y = self._y(self.last.y)
+            lid = self.canvas.create_line(last_x,
+                                          last_y,
+                                          my_x,
+                                          my_y,
                                           width = 1,
                                           tag = 'object',
                                           fill = 'tan')
-        pid = self.canvas.create_oval(self._x(x) - 3,
-                                      self._y(y) - 3,
-                                      self._x(x) + 3,
-                                      self._y(y) + 3,
+        pid = self.canvas.create_oval(my_x - 3,
+                                      my_y - 3,
+                                      my_x + 3,
+                                      my_y + 3,
                                       width = 0,
                                       tag = 'object',
                                       fill = 'red')

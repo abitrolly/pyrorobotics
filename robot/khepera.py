@@ -46,7 +46,6 @@ class KheperaRobot(Robot):
         # to be on the same scale as larger robots. -DSB
         self.translateFactor = 30
         self.rotateFactor = 12
-
         self.inform("Loading Khepera robot interface...")
 
 	# robot senses (all are functions):
@@ -72,7 +71,7 @@ class KheperaRobot(Robot):
 	self.senses['ir']['z'] = lambda self, pos: 0.25
 	self.senses['ir']['value'] = self.getIRRange
         self.senses['ir']['all'] = self.getIRRangeAll
-        self.senses['ir']['maxvalue'] = lambda self: 60.0 # in mm
+        self.senses['ir']['maxvalue'] = self.getIRMaxRange
 	self.senses['ir']['flag'] = self.getIRFlag
         self.senses['ir']['units'] = lambda self: "ROBOTS"
 
@@ -90,15 +89,15 @@ class KheperaRobot(Robot):
 	self.senses['light'] = {}
 	self.senses['light']['count'] = lambda self: 8
 	self.senses['light']['type'] = lambda self: 'measure'
-        self.senses['light']['maxvalue'] = lambda self: 200.0
+        self.senses['light']['maxvalue'] = self.getLightMaxRange
         self.senses['light']['units'] = lambda self: "RAW"
+        self.senses['light']['all'] =   self.getLightRangeAll
 
         # location of sensors' hits:
         self.senses['light']['x'] = self.getIRXCoord
 	self.senses['light']['y'] = self.getIRYCoord
 	self.senses['light']['z'] = lambda self, pos: 0.25
 	self.senses['light']['value'] = self.getLightRange
-        #; self.senseData['light'][x]
 	self.senses['light']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
@@ -303,48 +302,52 @@ class KheperaRobot(Robot):
         elif pos == 7:
             return 180.0
 
+    def getIRMaxRange(self, dev):
+        return self.rawToUnits(dev, 60.0, 'ir')
+
     def getIRRange(self, dev, pos):
-        raw = self.senseData['ir'][pos]
-        mm = min(max(((1023.0 - raw) / 1023.0) * 60.0, 0.0),
-                 self.senses['ir']['maxvalue'](dev))
-        if self.senses['ir']['units'](dev) == "ROBOTS":
-            return mm / 55.0 # khepera is 55mm diameter
-        elif self.senses['ir']['units'](dev) == "MM":
-            return mm
-        elif self.senses['ir']['units'](dev) == "RAW":
-            return raw 
-        elif self.senses['ir']['units'](dev) == "CM":
-            return mm / 10.0 # cm
-        elif self.senses['ir']['units'](dev) == "METERS":
-            return mm / 100.0 # meters
-        elif self.senses['ir']['units'](dev) == "SCALED":
-            return mm / self.senses['ir']['maxvalue'](dev)
-        else:
-            raise 'InvalidType', "IR units are set to invalid type"
+        return self.rawToUnits(dev, self.senseData['ir'][pos], 'ir')
 
     def getLightRange(self, dev, pos):
-        raw = self.senseData['light'][pos]
-        mm = min(max((raw / 511.0) * 200.0, 0.0),
-                 self.senses['light']['maxvalue'](dev))
-        if self.senses['light']['units'](dev) == "ROBOTS":
-            return mm / 55.0 # khepera is 55mm diameter
-        elif self.senses['light']['units'](dev) == "MM":
-            return mm
-        elif self.senses['light']['units'](dev) == "RAW":
-            return raw 
-        elif self.senses['light']['units'](dev) == "CM":
-            return mm / 10.0 # cm
-        elif self.senses['light']['units'](dev) == "METERS":
-            return mm / 100.0 # meters
-        elif self.senses['light']['units'](dev) == "SCALED":
-            return mm / self.senses['light']['maxvalue'](dev)
+        return self.rawToUnits(dev, self.senseData['light'][pos], 'light')
+
+    def getLightMaxRange(self, dev):
+        return self.rawToUnits(dev, 200.0, 'light')
+
+    def rawToUnits(self, dev, raw, name):
+        if name == 'ir':
+            maxvalue = 60.0
+            mm = min(max(((1023.0 - raw) / 1023.0) * maxvalue, 0.0), maxvalue)
+        elif name == 'light':
+            maxvalue = 200.0
+            mm = min(max((raw / 511.0) * maxvalue, 0.0), maxvalue)
         else:
-            raise 'InvalidType', "Light units are set to invalid type"
+            raise 'InvalidType', "Type is invalid"
+        if self.senses[name]['units'](dev) == "ROBOTS":
+            return mm / 55.0 # khepera is 55mm diameter
+        elif self.senses[name]['units'](dev) == "MM":
+            return mm
+        elif self.senses[name]['units'](dev) == "RAW":
+            return raw 
+        elif self.senses[name]['units'](dev) == "CM":
+            return mm / 10.0 # cm
+        elif self.senses[name]['units'](dev) == "METERS":
+            return mm / 100.0 # meters
+        elif self.senses[name]['units'](dev) == "SCALED":
+            return mm / maxvalue
+        else:
+            raise 'InvalidType', "Units are set to invalid type"
 
     def getIRRangeAll(self, dev):
         vector = [0] * self.get('ir', 'count')
         for i in range(self.get('ir', 'count')):
             vector[i] = self.getIRRange(dev, i)
+        return vector
+
+    def getLightRangeAll(self, dev):
+        vector = [0] * self.get('light', 'count')
+        for i in range(self.get('light', 'count')):
+            vector[i] = self.getLightRange(dev, i)
         return vector
 
     def getIRFlag(self, dev, pos):
