@@ -1462,17 +1462,10 @@ class Network:
             if connection.fromLayer.active and connection.toLayer.active:
                 toLayer = connection.toLayer
                 connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
-                #connection.weight = connection.weight + connection.dweight
                 connection.weight += connection.dweight
                 connection.wed = connection.wed * 0.0
-                #toLayer.dbias = toLayer.epsilon * toLayer.bed + \
-                #                self.momentum * toLayer.dbias
-                #toLayer.bias = toLayer.bias + toLayer.dbias
-                #toLayer.bed = toLayer.bed * 0.0
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
-                #dw_count += len(toLayer.dbias)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
-                #dw_sum += Numeric.add.reduce(abs(layer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             if self.verbosity > 2:
