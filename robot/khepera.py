@@ -199,9 +199,10 @@ class KheperaRobot(Robot):
                 port = "/dev/ttyS1"
             print "Khepera opening port", port, "..."
             if rate == None:
-                self.sc = SerialConnection(port, termios.B38400)
-                #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
-                #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
+                rate = termios.B38400
+            self.sc = SerialConnection(port, rate)
+            #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
+            #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.stallTolerance = 0.25
         self.stallHistoryPos = 0
         self.stallHistorySize = 5
