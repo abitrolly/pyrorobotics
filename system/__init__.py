@@ -11,9 +11,7 @@ def about():
     print "-------------------------------------------------------------"
 
 def usage():
-    print "-------------------------------------------------------------"
-    print "Pyro - Python Robotics"
-    print "-------------------------------------------------------------"
+    about()
     print "  -h                 show this help"
     print "  -r ROBOT           name of robot.py file to load"
     print "  -b BRAIN           name of brain.py file to load"
@@ -22,6 +20,7 @@ def usage():
     print ""
 
 def help():
+    about()
     print "-------------------------------------------------------------"
     print "Pyro commands:"
     print "-------------------------------------------------------------"
@@ -64,7 +63,7 @@ def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
     oldpath = sys.path[:] # copy
 
     sys.path.append(search)
-
+    
     exec("import " + module + " as userspace")
     print 'Loaded ' + module
 
