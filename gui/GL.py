@@ -140,7 +140,7 @@ class GLgui(gui):
                      self.redrawPie(piecnt, percentSoFar, \
                                     piececnt, \
                                     d[1], \
-                                    portion, d[4] + ":" + d[3] + " = %.2f" % d[0])
+                                    portion, d[4] + ":" + d[3] + " = %.2f * %.2f" % (d[0], d[5]))
                      percentSoFar += portion
 
    def redrawWindowRobot(self):
