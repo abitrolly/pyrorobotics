@@ -33,3 +33,6 @@ clean::
 
 v4lblobtest: blob.o hsbrgb.o v4lblobtest.c
 	gcc -g -I../../camera/v4l/ -o v4lblobtest v4lblobtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
+
+crashtest: blob.o hsbrgb.o crashtest.c
+	gcc -g -I../../camera/v4l/ -o crashtest crashtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
