@@ -1,0 +1,22 @@
+#!/bin/sh
+
+pyropid=$1
+shift
+
+if [ "$1" = "-g" ]
+then
+    if [ "$2" = "" ]
+    then
+	world="-g /usr/local/share/stage/worlds/everything.world"
+    else
+	world="-g $2"
+    fi
+else
+    if [ "$1" = "" ]
+    then
+	world="/usr/local/share/stage/worlds/everything.world"
+    else
+	world="$1"
+    fi
+fi
+stage -p $(( 16000 + $UID )) $world &
