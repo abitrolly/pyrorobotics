@@ -39,7 +39,7 @@ class SimpleBrain(Brain):
          if random() < .5:
             self.getRobot().move(0, .2)
          else:
-            self.getRobot().move(0, .2)
+            self.getRobot().move(0, -.2)
       else:
          self.getRobot().move(.2, 0)
 
