@@ -7,7 +7,7 @@ class LPS(Tkinter.Tk):
    """
    def __init__(self, cols, rows, value = 0.5,
                 width = 200, height = 200,
-                widthMM = 7000, heightMM = 7000):
+                widthMM = 7500, heightMM = 7500):
       Tkinter.Tk.__init__(self)
       self.title("Local Perceptual Space")
       self.width = width
@@ -16,6 +16,7 @@ class LPS(Tkinter.Tk):
       self.rows = rows
       self.widthMM = widthMM
       self.heightMM = heightMM
+      self.originMM = self.widthMM / 2.0, self.heightMM / 2.0
       self.colScaleMM = self.widthMM / self.cols
       self.rowScaleMM = self.heightMM / self.rows
       self.colScale = self.width / self.cols
@@ -51,16 +52,56 @@ class LPS(Tkinter.Tk):
       self.withdraw()
       self.update_idletasks()
 
-   def plotSensor(self, robot, item):
+   def setGridLocation(self, x, y, value, label = None):
+      xpos = int((self.originMM[0] + x) / self.colScaleMM)
+      ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+      self.grid[ypos][xpos] = value
+      if label != None:
+         self.label[ypos][xpos] = "%d" % label
+
+   def computeOccupancy(self, origx, origy, hitx, hity, arc, label = None):
+      """
+      Initially only compute occupancies on the line from the robot to
+      the sensor hit.
+      """
+      self.setGridLocation(origx, origy, 0.0)
+      rise = hity - origy
+      if abs(rise) < 0.1:
+         rise = 0
+      run  = hitx - origx
+      if abs(run) < 0.1:
+         run = 0
+      steps = round(max(abs(rise/self.rowScaleMM), abs(run/self.colScaleMM)))
+      if steps == 0:
+         return
+      stepx = run / float(steps)
+      if abs(stepx) > self.colScaleMM:
+         stepx = self.colScaleMM
+         if run < 0:
+            stepx *= -1
+      stepy = rise / float(steps)
+      if abs(stepy) > self.rowScaleMM:
+         stepy = self.rowScaleMM
+         if rise < 0:
+            stepy *= -1
+      currx = origx
+      curry = origy
+      for step in range(steps):
+         curry += stepy
+         currx += stepx
+         self.setGridLocation(currx, curry, 0.0, label)
+      self.setGridLocation(hitx, hity, 1.0, label)
+
+   def sensorHits(self, robot, item):
       """
       Point (0,0) is located at the center of the robot.
       Point (offx, offy) is the location of the sensor on the robot.
       Theta is angle of the sensor hit relative to heading 0.
       Dist is the distance of the hit from the sensor.
       Given these values, need to calculate the location of the hit
-      relative to the center of the robot (xhit, yhit).  
+      relative to the center of the robot (hitx, hity).  
 
-                    .(xhit, yhit)
+                    .(hitx, hity)
                    /
                   / 
                  /  
@@ -77,21 +118,16 @@ class LPS(Tkinter.Tk):
       """
       originalUnits = robot.get(item, 'units')
       robot.set(item, 'units', 'METERS')
+      arc = robot.get(item, 'arc', 0)
       for i in range(robot.get(item, 'count')):
          offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
          dist = robot.get(item, 'value', i) 
          theta = robot.get(item, 'th', i)
          if dist < robot.get(item, 'maxvalue'):
-            # calculate point in LPS coordinates
             dist *= 1000
-            xhit = cos(theta) * dist + offx
-            yhit = sin(theta) * dist + offy
-            # transform point to GUI coordinates
-            originMM = self.widthMM / 2.0, self.heightMM / 2.0
-            xpos = int((originMM[0] + xhit) / self.colScaleMM)
-            ypos = int((originMM[1] - yhit) / self.rowScaleMM)
-            self.label[ypos][xpos] = "%d" % i
-            self.grid[ypos][xpos] = 1.0
+            hitx = cos(theta) * dist + offx
+            hity = sin(theta) * dist + offy
+            self.computeOccupancy(offx, offy, hitx, hity, arc, i)
       robot.set(item, 'units', originalUnits)
 
    def redraw(self):
