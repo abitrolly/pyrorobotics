@@ -23,4 +23,10 @@ else
     world="$1"
 fi
 export ARIA=/usr/local/Aria
-$ARIA/bin/SRIsim -p $(( 8000 + $UID ))  -w $world -t tcp
+$ARIA/bin/SRIsim -p $(( 8000 + $UID ))  -w $world -t tcp &
+# get aria pid
+ppid=$!
+# wait for pyro to stop
+while ps --noheaders $pyropid; do sleep 1; done > /dev/null
+# then kill aria
+kill $ppid

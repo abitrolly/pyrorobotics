@@ -35,7 +35,11 @@ sleep 1
 # Now, start the player layer
 player -g default $config &
 ppid=$!
+# wait for pyro to quit
+while ps --noheaders $pyropid; do sleep 1; done > /dev/null
 # Wait for gazebo to finish
-wait $gpid
+# wait $gpid
+# Kill gazebo
+kill $gpid
 # Kill player
 kill $ppid
