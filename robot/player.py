@@ -19,38 +19,29 @@ class PlayerDevice(Device):
         self.groups = groups
         self.dev = dev
         self.name = type
+        # Required:
         self.startDevice()
+        if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
+            self.devData["pose"] = self.getPose()
+
+
+    def preGet(self, kw):
+        if kw == "pose":
+            self.devData["pose"] = self.getPose()
+
+    #def setPose(self, (xM, yM, thDeg)):
 
     def startDevice(self):
         try:
             self.dev.start(self.name)
             time.sleep(.5)
+            Device.startDevice(self)
         except:
-            print "Device not supported: '%s'" % self.name
-            self.dev = 0
+            print "Pyro error: player device did not start: '%s'" % self.name
         return self
 
-    def checkDevice(self):
-        if self.dev == 0:
-            print "Device '%s' not available" % self.name
-            return 0
-        return 1
-
-    def stopDevice(self):
-        if self.checkDevice():
-            self.dev.stop(self.name)
-            self.dev.__dict__[self.name] = {}
-
     def getDeviceData(self, pos = 0):
-        if self.checkDevice():
-            return self.dev.__dict__[self.name][pos]
-
-    def getDeviceState(self):
-        if self.checkDevice():
-            if self.dev.__dict__[self.name] != {}:
-                return "started"
-            else:
-                return "stopped"
+        return self.dev.__dict__[self.name][pos]
 
     def getPose(self):
         function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
@@ -61,7 +52,7 @@ class PlayerDevice(Device):
             raise DeviceError, "Function 'getPose' is not available for device '%s'" % self.name
 
 
-    def setPose(self, xM, yM, thDeg):
+    def setPose(self, (xM, yM, thDeg)):
         """ Move the device. x, y are in meters """
         function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
         if function != None:
@@ -386,7 +377,9 @@ class PlayerRobot(Robot):
                     self.devDataFunc["range"] = self.get("/devices/ir0/object")
                 if device == "sonar":
                     self.devDataFunc["range"] = self.get("/devices/sonar0/object")
-        # default values
+        # specific things about this robot type:
+        self.devData["port"] = port
+        # default values for all robots:
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
         self.devData["y"] = 0.0
@@ -468,6 +461,7 @@ class PlayerRobot(Robot):
 
     def connect(self):
         self.dev = player('localhost', port=self.port)
+        time.sleep(1)
         #self.localize(0.0, 0.0, 0.0)
         
 if __name__ == '__main__':
