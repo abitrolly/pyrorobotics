@@ -1,10 +1,11 @@
-# ----------------------------------------------------
-# An Artificial Neural Network System Implementing
-# Backprop
-# ----------------------------------------------------
-# (c) 2001-2003, Developmental Robotics Research Group
-# ----------------------------------------------------
-
+""" ----------------------------------------------------
+    An Artificial Neural Network System Implementing
+    Backprop. Part of the Pyro Robotics Project.
+    Provided under the GNU General Public License.
+    ----------------------------------------------------
+    (c) 2001-2003, Developmental Robotics Research Group
+    ----------------------------------------------------
+"""
 import RandomArray, Numeric, math, random, time, sys, signal
 
 version = "6.7"
@@ -895,7 +896,9 @@ class Network:
         self.orderedInputs = value
     def verifyArguments(self, arg):
         for l in arg:
-            if not type(l) == list:
+            if not type(l) == list and \
+               not type(l) == type( RandomArray.random(1) ) and \
+               not type(l) == tuple:
                 return 0
             for i in l:
                 if not type(i) == float and not type(i) == int:
@@ -1340,7 +1343,7 @@ class Network:
         """
         Determines the activation.
         """
-        return (1.0 / (1.0 + Numeric.exp(-x)))
+        return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
         
     # backpropagation
     def backprop(self):
@@ -1632,44 +1635,43 @@ class Network:
         fp.close()
         print "To load file:\npython -i %s " % (basename + ".py")
         print ">>> network.train()"
-    def newloadInputsFromFile(self, filename, cols = None, rows = 0,
-                           delim = ' '):
-        # fix rows
-       fp1 = open(filename, "r")
-       line1 = fp1.readline()
-       lineno = 1
-       lastLength = None
-       data = []
-       while line1:
-          if lineno % rows == 0:
-             linedata1 = [float(x) for x in line1.strip().split(delim)]
-
-             if cols == None: # get em all
+    def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
+                            delim = ' '):
+        """
+        Load a set of vectors from a file. Takes a filename, list of cols
+        you want (or None for all), get every everyNrows (or 1 for no
+        skipping), and a delimeter.
+        """
+        fp = open(filename, "r")
+        line = fp.readline()
+        lineno = 1
+        lastLength = None
+        data = []
+        while line:
+            if lineno % everyNrows == 0:
+                linedata1 = [float(x) for x in line.strip().split(delim)]
+            else:
+                continue
+            if cols == None: # get em all
                 newdata = linedata1
-             else: # just get some cols
+            else: # just get some cols
                 newdata = []
                 for i in cols:
-                   newdata.append( linedata1[i] )
-             if lastLength == None or len(newdata) == lastLength:
+                    newdata.append( linedata1[i] )
+            if lastLength == None or len(newdata) == lastLength:
                 data.append( newdata )
-             else:
+            else:
                 raise "DataFormatError", "line = %d" % lineno
-             lastLength = len(newdata)
-          lineno += 1
-          line1 = fp1.readline()    
-       fp1.close()
-       return data
-    def loadInputsFromFile(self, filename, columns = 0):
+            lastLength = len(newdata)
+            lineno += 1
+            line = fp.readline()    
+        fp.close()
+        return data
+    def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
+                           delim = ' '):
         """
         Loads inputs from file. We lose patterning.
         """
-        fp = open(filename, 'r')
-        line = fp.readline()
-        self.inputs = []
-        while line:
-            data = map(float, line.split())
-            self.inputs.append(self.patternVector(data[:]))
-            line = fp.readline()
     def saveInputsToFile(self, filename):
         """
         Saves inputs to file.
@@ -1680,17 +1682,13 @@ class Network:
             for item in vec:
                 fp.write("%f " % item)
             fp.write("\n")
-    def loadTargetsFromFile(self, filename):
+    def loadTargetsFromFile(self, filename, cols = None, everyNrows = 1,
+                            delim = ' '):
         """
         Loads targets from file.
         """
-        fp = open(filename, 'r')
-        line = fp.readline()
-        self.targets = []
-        while line:
-            data = map(float, line.split())
-            self.targets.append(self.patternVector(data[:]))
-            line = fp.readline()
+        self.targets = self.loadVectorsFromFile(filename, cols, everyNrows,
+                                                delim)
     def saveTargetsToFile(self, filename):
         """
         Saves targets to file.
@@ -2066,15 +2064,6 @@ class SRN(Network):
             if self.learning and self.batch:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
-
-#try:
-#    import psyco
-#    psyco.bind(Layer)
-#    psyco.bind(Connection)
-#    psyco.bind(Network)
-#    print "Psyco is installed: running pyro.brain.conx at psyco speed..."
-#except:
-#    pass
 
 if __name__ == '__main__':
 
