@@ -13,11 +13,8 @@ from pyro.brain.fuzzy import *
 
 
 class Reinforce(Brain):
-   def __init__(self, name, engine):
+   def setup(self):
       '''Init the brain, and create the network'''
-
-      Brain.__init__(self, name, engine)
-
       self.net = SRN()
       self.sensorCount = self.getRobot().get('range', 'count')
       self.net.add(Layer('input', self.sensorCount+2))
@@ -34,7 +31,6 @@ class Reinforce(Brain):
       self.net.setBatch(0)
       self.net.initialize()
       self.net.setVerbosity(0)
-      self.net.setQuickProp(0)
       self.net.setEpsilon(0.5)
       self.net.setMomentum(.1)
       self.net.setLearning(1)
@@ -42,7 +38,7 @@ class Reinforce(Brain):
       self.counter = 0
       self.doneLearning = 0
       self.maxvalue = self.getRobot().get('range', 'maxvalue')
-      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'all'))
+      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       self.curr_motors = [0.0, 0.0]
       self.target_trans = 1
       self.target_rotate = .5
@@ -79,7 +75,7 @@ class Reinforce(Brain):
          self.net.setLearning(1)
 
       # input latest sensor and motor values to network
-      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'all'))
+      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       input = (self.curr_sensors) 
       input.append(self.curr_motors[0])
       input.append(self.curr_motors[1])
@@ -103,7 +99,7 @@ class Reinforce(Brain):
       #    first set sensorOutput targets
       sleep(.1)
       self.getRobot().update()
-      next_sensors = map(self.scale, self.getRobot().get('range', 'all'))
+      next_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       self.net.getLayer('sensorOutput').copyTarget(next_sensors)
 
       #    next set motorOutput targets

@@ -5,8 +5,9 @@ from pyro.brain import Brain
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
 
-   def __init__(self, engine):
-      Brain.__init__(self, "SimpleBrain", engine)
+   def setup(self):
+      # create any vars you need here
+      pass
 
    def step(self):
       #self.robot.move(0, -.2) # negative is to the right!

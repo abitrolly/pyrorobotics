@@ -20,8 +20,7 @@ class Behavior:
         self.flag = 1
         
 class SubsumptionBrain(Brain):
-    def __init__(self, engine):
-        Brain.__init__(self, 'SubsumptionBrain', engine)
+    def setup(self):
         self.behaviors = []
 
     def getRobot(self):
@@ -62,7 +61,7 @@ class Avoid(Behavior):
             self.move( -.2, 0)
 
 def INIT(engine):
-    subsumption = SubsumptionBrain( engine )
+    subsumption = SubsumptionBrain( "SubsumptionBrain", engine )
     # add behaviors, lowest priorities first:
     subsumption.add( Wander() )
     subsumption.add( Avoid() )

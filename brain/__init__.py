@@ -28,6 +28,9 @@ class Brain(threading.Thread): #, Drawable):
         self.needToStep = 0
         if self.robot != 0:
             self.robot.localize()
+        # user setup:
+        self.setup()
+        # start the thread:
         self.start()
 
     def __repr__(self):
@@ -138,3 +141,9 @@ class Brain(threading.Thread): #, Drawable):
 		
     def step(self):
         print "need to override pyro.brain.Brain.step()."
+
+    def setup(self):
+        """
+        User init method
+        """
+        pass
