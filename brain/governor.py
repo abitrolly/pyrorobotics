@@ -140,17 +140,19 @@ class GovernorSRN(Governor, SRN):
 
     def sweep(self):
         retval = SRN.sweep(self)
+        if self.decay:
+            good = []
+            for pos in self.histogram.keys():
+                good.append( self.ravq.models.contents[pos] )
+            self.ravq.models.contents = good
+            if len(self.ravq.models.contents):
+                self.ravq.models.next = (self.ravq.models.next + 1) % \
+                                        len(self.ravq.models.contents)
+            else:
+                self.ravq.models.next = 0
         if self.epoch % self.reportRate == 0:
             print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
             self.histogram = {}
-        if self.decay:
-            for i in range(5):
-                if len(self.ravq.models.contents):
-                    self.ravq.models.contents.pop(0)
-                    self.ravq.models.next = (self.ravq.models.next + 1) % \
-                                            len(self.ravq.models.contents)
-            
-            self.next = 0
         return retval
 
     def networkStep(self, **args):
@@ -211,15 +213,16 @@ if __name__ == '__main__':
     # node is important in determining the function of the network.
     net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
     net.addThreeLayers(inSize, inSize/2, 4)
-    net.setTargets( targets[:10000] ) # 389 = one trip around
-    net.setInputs( inputs[:10000] )
+    net.setTargets( targets[:389] ) # 389 = one trip around
+    net.setInputs( inputs[:389] ) # has some pauses in there too
     net.setStopPercent(.95)
     net.setReportRate(1)
     net.setResetLimit(1)
     net.setTolerance(0.2)
-    net.setResetEpoch(2)
     net.governing = int(sys.argv[1])
+    net.setResetEpoch(int(sys.argv[2]))
     print "Goverining is", net.governing
+    net.decay = 1
     net.train()
     print net.ravq
     print "Testing..."
