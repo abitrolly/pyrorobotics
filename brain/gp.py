@@ -23,9 +23,22 @@ class GPGene(Gene):
         if type(tree) == type('string') and values.has_key(tree):
             return values[tree]
         elif type(tree) == type( [1,]) and type(tree[0]) == type('s') and share.operands.has_key( tree[0] ):
-            return self.applyOpList( values, tree )
+            try:
+                retval = self.applyOpList( values, tree )
+            except "unknownOperator":
+                retval = self.applyUserDefinedOplist( values, tree )
+            return retval
         else:
             raise "unknownTreeType", tree
+
+    def applyUserDefinedOplist(self, values, mylist):
+        if share.userOperators.has_key( mylist[0] ):
+            func = share.userOperators[ mylist[0] ]
+            eval_tree = lambda obj: self.eval_tree( values, obj )
+            args = map( eval_tree,  mylist[1:] )
+            return apply(func, args)
+        else:
+            raise "unknownUserOperator", mylist[0]
 
     def applyOpList(self, values, mylist):
         if mylist[0] == 'and':
@@ -58,7 +71,7 @@ class GPGene(Gene):
             else:
                 return self.eval_tree(values, mylist[3])
         else:
-            raise "unknownOperator: ", mylist[0]
+            raise "unknownOperator", mylist[0]
 
     def depth(self, tree = ''):
         if tree == '':
@@ -216,7 +229,7 @@ if __name__ == '__main__':
     gp = GP(300, bias = .6, verbose = 1)
     gp.evolve()
     print " -----------------------------------------------------------------"
-
+    raw_input("Press enter to continue...")
     class PI_GP(GA):
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, **args), **args)
@@ -229,11 +242,12 @@ if __name__ == '__main__':
             return -score
                 
         def isDone(self):
-            return abs(self.fitnessFunction(0, 1)) < 0.0001
+            return abs(self.fitnessFunction(0, 1)) < 0.001
 
-    share.operators = ['+', '-', '*', '/', 'ifpos', 'and', 'or']
-    # how many operands (arguments):
+    share.operators = ['+', '-', '*', '/', 'ifpos', 'and', 'or', '+1']
+    share.operands['+1'] = 1
     share.terminals = ['1', 'e']
+    share.userOperators = {'+1': lambda obj: obj + 1 }
     values = {'1' : 1, 'e' : math.e}
     gp = PI_GP(1000, bias = .6, verbose = 1)
     gp.evolve()

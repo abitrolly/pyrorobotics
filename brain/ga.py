@@ -11,6 +11,7 @@
 #   2. Maximizes the fitness function
 
 import RandomArray, Numeric, math, random, time, sys
+from copy import deepcopy
 
 # Some useful local functions, and variables:
 
@@ -163,6 +164,15 @@ class Population:
                 print "Mutation in individual", pos,
             self.individuals[pos].mutate(**args)
 
+    def selection(self, rate, **args):
+        """
+        If selectionRate = .2, then .2 of bad pop will be replaced with good.
+        """
+        for i in range(int(rate * self.size)):
+            replace = self.pick(BAD)
+            parent = self.pick(GOOD)
+            self.individuals[replace].genotype = deepcopy(self.individuals[parent].genotype)
+
     def crossover(self, rate, **args):
         """
         If crossoverRate = .3, then .3 of pop will be replaced.
@@ -207,6 +217,7 @@ class GA:
         self.sort()
         self.mutationRate = 0.05
         self.crossoverRate = 0.3
+        self.selectionRate = 0.25
         self.maxGeneration = 0
         self.generation = 0
         self.verbose = 0
@@ -214,6 +225,8 @@ class GA:
             self.verbose = args['verbose']
         if args.has_key('mutationRate'):
             self.mutationRate = args['mutationRate']
+        if args.has_key('selectionRate'):
+            self.selectionRate = args['selectionRate']
         if args.has_key('crossoverRate'):
             self.crossoverRate = args['crossoverRate']
         if args.has_key('maxGeneration'):
@@ -291,6 +304,7 @@ class GA:
             if self.isDone():
                 print "Completed!"
                 return
+            self.pop.selection(self.selectionRate)
             self.pop.crossover(self.crossoverRate)
             self.pop.mutate(self.mutationRate)
             self.applyFitnessFunction()
@@ -313,6 +327,7 @@ if __name__ == '__main__':
         print
         ga = MaxSumGA(Population(50, Gene, size = 10, mode = 'integer'),
                       mutationRate = .2, crossoverRate = .5,
+                      selectionRate = .25,
                       maxGeneration = 50, verbose = 1)
         ga.evolve()
     print 
@@ -343,7 +358,8 @@ if __name__ == '__main__':
             self.network = n
             GA.__init__(self, Population( cnt, Gene, size = len(g)),
                         mutationRate = 0.5, crossoverRate = 0.25,
-                        maxGeneration = 400, verbose = 1, min = -2, max = 2)
+                        selectionRate = 0.25, maxGeneration = 400,
+                        verbose = 1, min = -2, max = 2)
         def fitnessFunction(self, genePos):
             self.network.unArrayify(self.pop.individuals[genePos].genotype)
             error, correct, count = self.network.sweep()
