@@ -1,3 +1,5 @@
+from pyro.brain.conx import *
+
 from pyro.brain.VisConx import VisRobotConx
 from pyro.brain.VisConx import VisSweepConx
 
