@@ -90,10 +90,13 @@ class PlayerBase(Robot):
         self.th = pos[2] # degrees
         self.thr = self.th * PIOVER180
         self.stall = stall
-        if self.dev.comms[0] != '':
-            for i in self.dev.comms:
-                self.messages.append(self.dev.comms[i][0][:-1])
-            self.dev.comms = {0: ''}
+        try:
+            if self.dev.comms[0] != '':
+                for i in self.dev.comms:
+                    self.messages.append(self.dev.comms[i][0][:-1])
+                self.dev.comms = {0: ''}
+        except:
+            pass
         # else, comms interface not on
         
     def getOptions(self): # overload 
