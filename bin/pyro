@@ -2,7 +2,10 @@
 
 # Pyro - robotics control system in Python
 
-from pyro.engine import *
+try:
+    from pyro.engine import *
+except ImportError:
+    raise "$PYTHONPATH needs to include dir ABOVE where $PYRO is installed"
 
 robotfile = 0
 brainfile = 0
