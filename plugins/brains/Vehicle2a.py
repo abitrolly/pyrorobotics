@@ -23,7 +23,7 @@ class Vehicle(Brain):
       self.robot.motors(leftSpeed,  rightSpeed) # to the left
 
 def INIT(engine):
-   if engine.robot.get("robot/type") != 'Khepera':
+   if engine.robot.get("robot/type") != 'K-Team':
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
    return Vehicle('Braitenberg2a', engine)
