@@ -68,7 +68,6 @@ class player:
             self.camera         = {}
 # Player 1.5
 	    #self.bps		= {}		# bps device is broken
-
 	    # create automatic update thread
 	    self.lock = thread.allocate_lock()
 	    if auto: self.start_update(speed)
@@ -82,6 +81,15 @@ class player:
 	    raise 'cannot run an update thread.'
 
 	else:
+# Player 1.5
+            self.lastPosition = {}
+	    self.lastPosition['xpos'] = 0
+	    self.lastPosition['ypos'] = 0
+	    self.lastPosition['yawspeed'] = 0
+	    self.lastPosition['xspeed'] = 0
+	    self.lastPosition['yspeed'] = 0
+	    self.lastPosition['yawspeed'] = 0
+# Player 1.5
 	    # save the information of the connection
 	    self.server = (hostname, port)
 	    if self.debug: print '<connected to %s:%d>' % self.server + ' (%s)' % pversion
@@ -902,18 +910,30 @@ class player:
 	"""
 	try:
 	    # set proper position and speed
-	    if xpos is None: xpos = self.position[index][0][0]
-	    if ypos is None: ypos = self.position[index][0][1]
-	    if yawpos is None: yawpos = self.position[index][0][2]
-	    if xspeed is None: xspeed = self.position[index][1][0]
-	    if yspeed is None: yspeed = self.position[index][1][1]
-	    if yawspeed is None: yawspeed = self.position[index][1][2]
+	    #if xpos is None: xpos = self.position[index][0][0]
+	    #if ypos is None: ypos = self.position[index][0][1]
+	    #if yawpos is None: yawpos = self.position[index][0][2]
+	    #if xspeed is None: xspeed = self.position[index][1][0]
+	    #if yspeed is None: yspeed = self.position[index][1][1]
+	    #if yawspeed is None: yawspeed = self.position[index][1][2]
+	    if xpos is None: xpos = self.lastPosition['xpos']
+	    if ypos is None: ypos = self.lastPosition['ypos']
+	    if yawpos is None: yawpos = self.lastPosition['yawspeed']
+	    if xspeed is None: xspeed = self.lastPosition['xspeed']
+	    if yspeed is None: yspeed = self.lastPosition['yspeed']
+	    if yawspeed is None: yawspeed = self.lastPosition['yawspeed']
 	    # send command
 # Player 1.5
 	    header = pack_header(command, 'position', index, size=26) #24
 # Player 1.5
 	    payload = pack_position_command(xpos, ypos, yawpos,
 	    				    xspeed, yspeed, yawspeed)
+            self.lastPosition['xpos'] = xpos
+	    self.lastPosition['ypos'] = ypos
+	    self.lastPosition['yawspeed'] = xspeed
+	    self.lastPosition['xspeed'] = xspeed
+	    self.lastPosition['yspeed'] = yspeed
+	    self.lastPosition['yawspeed'] = yawspeed
 	    self.__nsend(header+payload)
 	    # NO RESPONSE
 	    if self.debug: print '<set the position and speed to (%d,%d,%d) and (%d,%d,%d)>' \
@@ -934,18 +954,30 @@ class player:
             print "position[%d]" % index, self.position[index]
 	try:
 	    # set proper position and speed
-	    if xspeed is None: xspeed = self.position[index][1][0]
-	    if yspeed is None: yspeed = self.position[index][1][1]
-	    if yawspeed is None: yawspeed = self.position[index][1][2]
-	    if xpos is None: xpos = self.position[index][0][0]
-	    if ypos is None: ypos = self.position[index][0][1]
-	    if yawpos is None: yawpos = self.position[index][0][2]
+	    #if xspeed is None: xspeed = self.position[index][1][0]
+	    #if yspeed is None: yspeed = self.position[index][1][1]
+	    #if yawspeed is None: yawspeed = self.position[index][1][2]
+	    #if xpos is None: xpos = self.position[index][0][0]
+	    #if ypos is None: ypos = self.position[index][0][1]
+	    #if yawpos is None: yawpos = self.position[index][0][2]
+	    if xpos is None: xpos = self.lastPosition['xpos']
+	    if ypos is None: ypos = self.lastPosition['ypos']
+	    if yawpos is None: yawpos = self.lastPosition['yawspeed']
+	    if xspeed is None: xspeed = self.lastPosition['xspeed']
+	    if yspeed is None: yspeed = self.lastPosition['yspeed']
+	    if yawspeed is None: yawspeed = self.lastPosition['yawspeed']
 	    # send command
 # Player 1.5
 	    header = pack_header(command, 'position', index, size=26) # 24
 # Player 1.5
 	    payload = pack_position_command(xpos, ypos, yawpos,
 	    				    xspeed, yspeed, yawspeed)
+            self.lastPosition['xpos'] = xpos
+	    self.lastPosition['ypos'] = ypos
+	    self.lastPosition['yawspeed'] = xspeed
+	    self.lastPosition['xspeed'] = xspeed
+	    self.lastPosition['yspeed'] = yspeed
+	    self.lastPosition['yawspeed'] = yawspeed
 	    if self.debug: print '<set the speed and position to (%d,%d,%d) and (%d,%d,%d)>' \
 			    % (xspeed, yspeed, yawspeed, xpos, ypos, yawpos)
 	    self.__nsend(header+payload)

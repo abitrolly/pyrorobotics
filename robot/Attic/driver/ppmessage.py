@@ -300,7 +300,7 @@ def unpack_position_data(payload):
     except:
         print "WARNING: error in position data unpack"
         data = [0] * 7
-    #print "unpack_position_data", data
+    print "unpack_position_data", data
     return (data[0:3], data[3:6], data[6])
 
 
