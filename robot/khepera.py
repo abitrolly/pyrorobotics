@@ -18,13 +18,9 @@ class SerialSimulator:
         self.last_msg = ''
         
     def writeline(self, msg):
-        #if len(msg) > 2:
-        #    print msg
-        #print msg
         self.last_msg = ksim.sendMessage(self.p, msg)
-        sleep(.1)
-        #print self.last_msg
-        #self.last_msg = msg
+        sleep(.01)  # for some reason it seems as if python doesn't block
+		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
         return self.last_msg #+ ',0,0,0,0,0,0,0,0'
@@ -297,7 +293,7 @@ class KheperaRobot(Robot):
             try:
                 self.sc.writeline(msg)
                 retval = self.sc.readline() # 1 = block till we get something
-                print retval
+                #print retval
                 if retval[0].upper() == msg[0]:
                     done = 1
                 else:
