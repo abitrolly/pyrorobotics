@@ -44,7 +44,7 @@ def displayArray(name, a, width = 0):
     print name + ": "
     cnt = 0
     for i in a:
-        print "%4.1f" % i,
+        print "%4.2f" % i,
         if width > 0 and (cnt + 1) % width == 0:
             print ''
         cnt += 1
@@ -532,7 +532,8 @@ class Network:
                     self.interactive = 0
                 elif chr[0] == 'q':
                     sys.exit(1)
-        self.change_weights()
+        if self.learning:
+            self.change_weights()
         return (error, correct, total)        
     def reset_error(self):
         for x in range(self.layerCount):
@@ -889,16 +890,16 @@ class SRN(Network):
         Network.preprop(self, patnum, step)
         if self.sequenceLength > 1:
             if step == 0 and self.initContext:
-                self.getLayer('context').activation = \
-                    Numeric.ones(self.getLayer('context').size, 'f') * .5
+                self.clearContext()
         else: # if seq length is one, you better be doing ordered
             if patnum == 0 and self.initContext:
-                self.getLayer('context').activation = \
-                    Numeric.ones(self.getLayer('context').size, 'f') * .5
+                self.clearContext()
     def postprop(self, patnum, step):
         Network.postprop(self, patnum, step)
         self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
-
+    def clearContext(self):
+        c = self.getLayer('context')
+        c.activation = Numeric.ones(c.size, 'f') * .5
 
 if __name__ == '__main__':
     # Con-x: Sample Networks
