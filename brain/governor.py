@@ -124,6 +124,7 @@ class GovernorNetwork(Governor, Network):
         self.setVerbosity(verbosity)
         self.histogram = {}
         self.decayHistogram = {}
+        self.reportHistograms = 0
         if not mask == []: 
             self.ravq.setMask(mask)
 
@@ -184,12 +185,13 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.learning = 1
         # ravq:
         self.governing = 1
-        self.decay = 0
+        self.decay = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
         self.setVerbosity(verbosity)
         self.histogram = {}
         self.decayHistogram = {}
+        self.reportHistograms = 0
         if not mask == []: 
             self.ravq.setMask(mask)
 
@@ -224,7 +226,7 @@ class GovernorSRN(Governor, SRN):
         SRN.addThreeLayers(self, i, h, o)
         self.trainingNetwork.addThreeLayers(i, h, o)
         self.trainingNetwork.setLayerVerification(0)
-        self.shareWeights(self.trainingNetwork)
+        self.trainingNetwork.shareWeights(self)
         if not self.ravq.mask:
             sum = float(max(i, h, o))
             mask = [sum/i] * i + [sum/h] * h + [sum/o] * o
@@ -257,18 +259,16 @@ class GovernorSRN(Governor, SRN):
     def sweep(self):
         retval = SRN.sweep(self)
         if self.governing and (self.epoch % self.reportRate == 0):
-            print "Model vectors: %d" % len(self.ravq.models)
-            self.flush()
-            print "Report Histogram: %s" % self.histogram
-            self.flush()
-            print "Decay Histogram : %s" % self.decayHistogram
-            self.flush()
+            self.Print("Model vectors: %d" % len(self.ravq.models))
+            if self.reportHistograms:
+                self.Print("Report Histogram: %s" % self.histogram)
+                if self.decay:
+                    self.Print("Decay Histogram : %s" % self.decayHistogram)
             self.histogram = {}
         if self.governing and self.decay:
             self.decayModelVectors()
             if self.epoch % self.reportRate == 0:
-                print "After decay: Model vectors: %d" % len(self.ravq.models)
-                self.flush()
+                self.Print("After decay  : %d" % len(self.ravq.models))
         return retval
 
     def networkStep(self, **args):

@@ -631,6 +631,8 @@ class Network:
         self.autoSaveWeightsFile = None
         self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
+        self.log = None # a pointer to a file-like object, like a Log object
+        self.echo = False   # if going to a log file, echo it too, if true
 
     # general methods
     def path(self, startLayer, endLayer):
@@ -920,6 +922,8 @@ class Network:
         Sets epsilon value for the network.
         """
         self.epsilon = value
+        if len(self.layers) == 0:
+            raise "attempt to set epsilon before layers have been created"
         for layer in self.layers:
             layer.setEpsilon(value)
     def getWeights(self, fromName, toName):
@@ -1212,9 +1216,12 @@ class Network:
         Returns Total Sum Squared error for the specified layer's pattern.
         """
         return self.getLayer(layerName).TSSError()
-    def flush(self):
-        sys.stdout.flush()
-        time.sleep(.1)
+    def Print(self, msg):
+        if self.log:
+            self.log.write(msg + "\n")
+        else:
+            print msg
+        
     # train and sweep methods
     def train(self, cont=0):
         """
@@ -1234,53 +1241,46 @@ class Network:
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
             else:
-                print "Warning: sweep didn't do anything!"
+                self.Print("Warning: sweep didn't do anything!")
             if self.epoch % self.reportRate == 0:
-                print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-                self.flush()
+                self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                      (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
                 if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                     (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
-                    print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                          (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
-                    self.flush()
+                    self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                               (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                         self.lastLowestTSSError = tssCVErr
                         self.saveWeightsToFile(self.autoSaveWeightsFile)
-                        print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
-                        self.flush()
+                        self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
                         break
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
-                    print "Reset limit reached; ending without reaching goal"
+                    self.Print("Reset limit reached; ending without reaching goal")
                     self.epoch += 1
                     break
                 self.resetCount += 1
-                print "RESET! resetEpoch reached; starting over..."
+                self.Print("RESET! resetEpoch reached; starting over...")
                 self.initialize()
                 tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0
                 continue
-            self.flush()
             self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                  (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-            self.flush()
+            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                       (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
-                print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
-                self.flush()
+                self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                           (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                     self.lastLowestTSSError = tssCVErr
                     self.saveWeightsToFile(self.autoSaveWeightsFile)
-                    print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
-                    self.flush()
+                    self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"

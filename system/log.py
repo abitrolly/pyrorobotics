@@ -50,6 +50,7 @@ class Log:
          print msg,
       if self.open:
          self.file.write(msg)
+         self.file.flush()
 
    def writeln(self, msg):
       """ Write a line (with newline) to the log """
