@@ -81,6 +81,44 @@ class VisPsom(psom):
       self.cellhash = {}
       self.history = {}
 
+      # draw connection lines first:
+      for y in range(self.ydim):
+         self.cells.append([])
+         for x in range(self.xdim):
+            x0 = (cellwidth * x) + self.vis_padding + (offset * (y % 2))
+            y0 = (cellwidth * y) + self.vis_padding
+            x1 = x0 + (self.vis_radius * 2)
+            y1 = y0 + (self.vis_radius * 2)
+            #    1    2
+            #     \  /
+            #   0 -  - 3
+            #     /  \
+            #    5    4
+            connection = [1] * 6
+            if y == 0:               # top row
+               connection[1] = 0; connection[2] = 0
+            if x == 0:               # left row
+               connection[0] = 0;
+            if y % 2 == 0 and x == 0:
+               connection[1] = 0
+            if y % 2 == 1 and x == self.xdim - 1:
+               connection[2] = 0
+            if connection[0]: self.canvas.create_line(x0 + cellwidth / 2,
+                                                      y0 + cellwidth / 2,
+                                                      x0 - cellwidth / 2,
+                                                      y0 + cellwidth / 2,
+                                                      tags = 'cell')
+            if connection[1]: self.canvas.create_line(x0 + cellwidth / 2,
+                                                      y0 + cellwidth / 2,
+                                                      x0,
+                                                      y0 - cellwidth / 2,
+                                                      tags = 'cell')
+            if connection[2]: self.canvas.create_line(x0 + cellwidth / 2,
+                                                      y0 + cellwidth / 2,
+                                                      x0 + cellwidth,
+                                                      y0 - cellwidth / 2,
+                                                      tags = 'cell')
+
       for y in range(self.ydim):
          self.cells.append([])
          for x in range(self.xdim):
@@ -105,8 +143,6 @@ class VisPsom(psom):
 
       self.canvas.tag_lower('cell', 'traincount')
       self.canvas.tag_lower('mapcount', 'cell')
-            
-#      self.win.mainloop()
 
    def canvas_clicked_up(self, event):
       celllist = self.canvas.find_overlapping(event.x, event.y,
