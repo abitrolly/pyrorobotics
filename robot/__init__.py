@@ -382,6 +382,12 @@ class Robot (Drawable):
     def hasService(self, item):
         return self.service.has_key(item)
 
+    def removeService(self, item):
+        self.service[item].visible = 0
+        self.service[item].active = 0
+        self.service[item].destroy()
+        del self.service[item]
+
     def sendMessage(self, message):
         raise "NoSendMessageInterface"
 
