@@ -85,7 +85,7 @@ class Camera(PyroImage, Device):
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
       self.lastWindowUpdate = 0
-      self.updateWindowInterval = 1.0 # update window once a second
+      self.updateWindowInterval = 0.0 # update window once a second
       self.update() # call it once to initialize
       self.printFormat["image"] = "<%d x %d x %d PIL image>" % (self.width, self.height, self.depth)
       self.printFormat["data"] = "<%d x %d x %d image data>" % (self.width, self.height, self.depth)
