@@ -32,7 +32,7 @@ def file_exists(file_name):
     else:
         return exists(file_name)
     
-def loadINIT(filename, robot=0, redo=0):
+def loadINIT(filename, robot=0, redo=0, brain=0):
     path = filename.split("/")
     modulefile = path.pop() # module name
     module = modulefile.split(".")[0]
@@ -48,7 +48,10 @@ def loadINIT(filename, robot=0, redo=0):
         reload(userspace)
 
     sys.path = oldpath
-    if robot is 0:
-	return userspace.INIT()
+    if brain is 0:
+        if robot is 0:
+            return userspace.INIT()
+        else:
+            return userspace.INIT(robot)
     else:
-	return userspace.INIT(robot)
+        return userspace.INIT(robot, brain)
