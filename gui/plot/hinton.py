@@ -16,7 +16,7 @@ class Hinton: # Plot
       maxvalue: The maximum magnitude of the plots [1.0]
       data: The vector to initialize the plot with [None]
       """
-      self.app = Tkinter.Tk()
+      self.app = Tk()
       self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.maxvalue=maxvalue
@@ -29,7 +29,7 @@ class Hinton: # Plot
       else:
          self.win.wm_title(title)
       self.canvas = Canvas(self.win,width=self.width,height=self.height)
-      self.canvas.bind("<Configure>", self.changeSize)
+      self.win.bind("<Configure>", self.changeSize)
       self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
       self.even = 0
       if data:
@@ -41,7 +41,7 @@ class Hinton: # Plot
       self.win.wm_title(title)
 
    def changeSize(self, event):
-      self.width = self.canvas.winfo_width() - 2
+      self.width = self.win.winfo_width() - 2
       self.update(self.last)
       
    def update(self, vec):

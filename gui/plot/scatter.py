@@ -20,7 +20,7 @@ class Scatter: # Plot
                       'black', 'azure', 'beige', 'brown', 'coral', \
                       'gold', 'ivory', 'moccasin', 'navy', 'salmon', \
                       'tan', 'ivory']
-        self.app = Tkinter.Tk()
+        self.app = Tk()
         self.app.wm_state('withdrawn')
         self.win = Toplevel()
         if title == None:
@@ -56,7 +56,7 @@ class Scatter: # Plot
         # width - 2 * self.xBorder # / max value
         # background
         self.canvas = Canvas(self.win, width=width, height=height)
-        self.canvas.bind("<Configure>", self.changeSize)
+        self.win.bind("<Configure>", self.changeSize)
         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
         self.init_graphics()
         

@@ -13,7 +13,7 @@ class Matrix: # Plot
 
       """
       self.type = type
-      self.app = Tkinter.Tk()
+      self.app = Tk()
       self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.maxvalue=maxvalue
@@ -26,7 +26,7 @@ class Matrix: # Plot
       else:
          self.win.wm_title(title)
       self.canvas = Canvas(self.win,width=width,height=height)
-      self.canvas.bind("<Configure>", self.changeSize)
+      self.win.bind("<Configure>", self.changeSize)
       self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
       self.even = 0
       if data:
@@ -38,8 +38,8 @@ class Matrix: # Plot
       self.win.wm_title(title)
 
    def changeSize(self, event):
-      self.width = self.canvas.winfo_width() - 2
-      self.height = self.canvas.winfo_height() - 2
+      self.width = self.win.winfo_width() - 2
+      self.height = self.win.winfo_height() - 2
       self.update(self.last)
       
    def update(self, vec):
