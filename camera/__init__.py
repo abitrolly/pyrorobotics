@@ -264,7 +264,7 @@ class Camera(PyroImage, Service):
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
          
       self.visible = 1
-      self.window.aspect(self.width, self.width, self.height, self.height)
+      self.window.aspect(self.width, self.height, self.width, self.height)
       #self.window.minsize(355, 0)
       while self.window.tk.dooneevent(2): pass
 
@@ -410,6 +410,23 @@ class Camera(PyroImage, Service):
             self.filterReturnValue.append( filterFunc(self) )
 
 if __name__ == '__main__':
+   class FakeVisionSystem:
+      def __init__(self):
+         pass
+      def setFilterList(self, myList):
+         pass
+      def getFilterList(self):
+         pass
+      def applyFilterList(self):
+         pass
+      def saveImage(self, filename):
+         pass
+      def popFilterList(self):
+         pass
+      def get(self, x, y):
+         return (0, 0, 0)
+      
    cam = Camera(100, 80)
+   cam.vision = FakeVisionSystem()
    cam.makeWindow()
-   cam.mainloop()
+   cam.window.mainloop()

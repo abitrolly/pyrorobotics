@@ -63,13 +63,16 @@ class VisPsom(psom):
          offset = cellwidth/2
       else: #topol = 'rect'
          offset = 0
+      self.width = self.xdim*(2*self.vis_radius+2*self.vis_padding) + offset
+      self.height = self.ydim*(2*self.vis_radius+2*self.vis_padding)
       self.canvas = Canvas(self.win,
-                           width=self.xdim*(2*self.vis_radius+2*self.vis_padding) + offset,
-                           height=self.ydim*(2*self.vis_radius+2*self.vis_padding),
+                           width=self.width,
+                           height=self.height,
                            bg='white')
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
-      self.canvas.pack(side=TOP)
+      self.win.bind("<Configure>", self.changeSize)
+      self.canvas.pack(side=TOP, fill="both")
 
       """
       # Toggle Button stuff (DEPRECATED)
@@ -188,6 +191,12 @@ class VisPsom(psom):
       # show train count by default
       ShowBtn.invoke(ShowBtn.index('Train Count')) 
       # end menu bar
+      #print self.width, self.height
+      self.win.aspect(self.width, self.height, self.width, self.height)
+
+   def changeSize(self, event):
+      #self.width = self.win.winfo_width() - 2
+      pass
 
    def destroy(self):
       self.win.destroy()
@@ -427,8 +436,8 @@ if __name__ == "__main__":
       print "Press [Enter] to continue...",
       raw_input();
    #mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
-   mysom = VisPsom(file='ex.cod')
-   mydataset = dataset(file='ex.dat')
+   mysom = VisPsom(file=getenv("PYRO") + '/brain/psom/ex.cod')
+   mydataset = dataset(file=getenv("PYRO") + '/brain/psom/ex.dat')
    mysom.init_training(0.02,4.0,5005)
    print "---> Begin training from dataset..."
    mysom.timing_start()
