@@ -316,7 +316,7 @@ class Robot (Drawable):
 
     def startServices(self, item):
         """ Alias for startService() """
-        self.startService(item)
+        return self.startService(item)
         
     def startService(self, item):
         """ Load a service: dict, list, or name or filename """
@@ -324,49 +324,52 @@ class Robot (Drawable):
         import os
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
+            retval = []
             for service in item.keys():
                 console.log(console.INFO,"Loading service '%s'..." % service)
                 if self.service.has_key(service):
                     print "Service is already running: '%s'" % service
                     continue
-                item[service].startService()
+                retval.append(item[service].startService())
                 if item[service].getServiceState() == "started":
                     self.service[service] = item[service]
                     if service not in self.senses:
                         self.senses[service] = self.service[service]
                 else:
                     raise AttributeError, "service '%s' not available" % service
-            return "Ok"
+            return retval
         elif type(item) == type([0,]) or \
              type(item) == type((0,)):
             # list of services
+            retval = []
             for service in item:
-                self.startService(service)
+                retval.append(self.startService(service))
+            return retval
         elif self.supportsService(item): # built-in name
             if self.service.has_key(item):
                 print "Service is already running: '%s'" % item
                 return
             console.log(console.INFO,"Loading service '%s'..." % item)
-            self.supports[item].startService()
+            retval = self.supports[item].startService()
             if self.supports[item].getServiceState() == "started":
                 self.service[item] = self.supports[item]
                 self.senses[item] = self.service[item]
             else:
                 raise AttributeError, "service '%s' not available" % item
+            return retval
         else: # from a file
             file = item
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                self.startService( system.loadINIT(file, self) )
+                return self.startService( system.loadINIT(file, self) )
             elif system.file_exists(os.getenv('PYRO') + \
                                     '/plugins/services/' + file): 
-                self.startService( system.loadINIT(os.getenv('PYRO') + \
+                return self.startService( system.loadINIT(os.getenv('PYRO') + \
                                                    '/plugins/services/'+ \
                                                    file, self))
             else:
                 raise AttributeError, 'Service not found: ' + file
-        return "Ok"
 
     def stopService(self, item):
         self.getService(self, item).stopService()
