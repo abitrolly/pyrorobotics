@@ -4,102 +4,68 @@
 A simple symbloic simulator for symbolic worlds
 """
  
-import SocketServer, sys, Tkinter, threading
+import SocketServer, sys, threading, time, string
 
-class Thread(threading.Thread):
-    def __init__(self, gui, port):
-        threading.Thread.__init__(self)
-        self.gui = gui
-        self.port = port
-        self.server = Server(('', port),  Handler, gui)
-
-    def run(self):
-        self.server.handle_request()
-        self.gui.destroy()
-
-class GUI(Tkinter.Toplevel):
-    def __init__(self, root, width, height, worldFile, port):
-        Tkinter.Toplevel.__init__(self, root)
-        self.root = root
-        self.width = width
-        self.height = height
-        self.worldFile = worldFile
-        self.port = port
-        self.title("SymbolicServer")
-        self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
-        self.canvas.pack()
-        self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.thread = Thread(self, port)
-        self.thread.start()
-        #self.server = Server(('', port),  Handler, self)
-        #self.server.handle_request()
-        self.world = {"A": ("Dirty",), "B": ("Clean",)}
-        self.location = "A"
-        self.redraw()
-
-    def redraw(self):
-        self.canvas.delete('all')
-        #if self.location == 'A':
-        #else:
-
-    def destroy(self):
-        self.root.quit()
+def INIT(filename):
+    path = filename.split("/")
+    modulefile = path.pop() # module name
+    module = modulefile.split(".")[0]
+    search = string.join(path, "/")
+    oldpath = sys.path[:] # copy
+    sys.path.insert(0, search)
+    print "Attempting to import '%s'..." % module 
+    exec("import " + module + " as userspace")
+    reload(userspace)
+    print "Loaded '%s'!" % userspace.__file__
+    sys.path = oldpath
+    try:
+        userspace.INIT
+    except AttributeError:
+        raise ImportError, "your program needs an INIT() function"
+    retval = userspace.INIT()
+    return retval
 
 class Server(SocketServer.TCPServer):
     def __init__(self, connection, handler, gui):
         handler.gui = gui
         SocketServer.TCPServer.__init__(self, connection, handler)
-        #self.allow_reuse_address = 1
-            
-    #def handle_error(self, request, client_address):
-    #    print "error!"
-    
+                
 class Handler(SocketServer.BaseRequestHandler):
     def handle(self):
-	#"From:", self.client_address
-        done = 0
-        while not done:
-            self.gui.update()
-            request = self.request.recv(10240).strip()
-            # ------------------------------------------
-            # handle request
-            # ------------------------------------------
-            retval = "error"
-            if request == 'worldFile':
-                retval = self.gui.worldFile
-            elif request == 'move':
-                if self.gui.location == 'A':
-                    self.gui.location = 'B'
-                else:
-                    self.gui.location = 'A'
-                retval = "ok"
-            elif request == 'location':
-                retval = self.gui.location
-            elif request == 'status':
-                retval = self.gui.world[self.gui.location]
-            elif request == 'quit':
-                retval = "ok"
-                done = 1
-            else:
-                # unknown command
-                pass
-            self.gui.redraw()
-            # ------------------------------------------
-            # return request
-            # ------------------------------------------
+        self.request.setblocking(0)
+        self.gui.done = 0
+        while not self.gui.done:
+            try:
+                request = self.request.recv(10240).strip()
+            except:
+                time.sleep(.25)
+                continue
+            retval = self.gui.process(request)
             try:
                 self.request.send("ACK: %s\n" % retval)
             except: # broken pipe, etc
-                done = 1
+                self.gui.done = 1
         self.request.close()
+
+class Thread(threading.Thread):
+    def __init__(self, gui, port):
+        threading.Thread.__init__(self)
+        self.gui = gui
+        self.server = Server(('', port),  Handler, gui)
+        self.server.socket.settimeout(1) # checks to see if need to quit
+
+    def run(self):
+        while not self.gui.quit:
+            self.server.handle_request()
+        self.gui.destroy()
 
 if __name__ == "__main__":
     # argv can be -g for no graphics, too
-    pid = int(sys.argv[1])
-    port = 6000 # int(sys.argv[1])
-    worldFile = sys.argv[2]
-    # open world file, get details: width, height
-    root = Tkinter.Tk()
-    root.withdraw()
-    gui = GUI(root, 400, 200, worldFile, port)
+    pid = int(sys.argv[1])  # pid of Pyro. If it stops, so should sim
+    worldFile = sys.argv[2] # "world" file
+    if worldFile[-3:] != '.py':
+        worldFile += '.py'
+    gui = INIT(worldFile)
+    thread = Thread(gui, 6000)
+    thread.start()
     gui.mainloop()
