@@ -26,7 +26,7 @@ class PlayerBase(Robot):
         self.thr = 0.0
         self.stall = 0
         self.messages = []
-        self.noise = .2 # 20 % noise
+        self.noise = .05 # 5 % noise
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)
