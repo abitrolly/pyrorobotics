@@ -8,7 +8,7 @@ class Log:
    experiment.
    """
    def __init__(self,filename = None, name = None, robot = None, brain = None,
-                echo = 1):
+                echo = 1, mode = 'w'):
       """
       Pass in robot and brain so that we can query them (and maybe make
       copies and query them on occation).
@@ -19,9 +19,12 @@ class Log:
       if filename == None:
          filename= timestamp + '.log'
       self.filename = filename
-      self.file = open(filename,'w')
+      self.file = open(filename, mode)
       self.echo = echo
-      self.writeln("Log opened: " + timestamp)
+      if mode == 'a':
+         self.writeln('... Continuing log at ' + timestamp)
+      else:
+         self.writeln("Log opened: " + timestamp)
       if name != None:
          self.writeln('Experiment name: ' + name)
       if robot != None:
