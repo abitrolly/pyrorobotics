@@ -126,6 +126,11 @@ class DeviceWrapper:
     def _get(self, path, showstars = 0):
         return self.robot._getDevice(path, showstars)
 
+    def __getattr__(self, attr):
+        """ Overides default get attribute to return devData if exists """
+        # avoid calling self. as that will call this recursively!
+        return self.robot._getDevice([attr, "object"], 0)
+
 class Robot:
     """
     this be the one.
@@ -169,6 +174,8 @@ class Robot:
             return self.__dict__["devDataFunc"][attr] # ._get("") will get list
         elif attr in self.__dict__:
             return self.__dict__[attr]
+        elif attr in self.__dict__["directory"]:
+            return self.__dict__["directory"][attr]
         else:
             raise AttributeError, ("'<type %s>' object has no attribute '%s'" % (self.__class__.__name__, attr))
 
