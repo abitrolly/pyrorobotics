@@ -334,7 +334,7 @@ class Robot (Drawable):
                     retval.append(item[service].startService())
                 if item[service].getServiceState() == "started":
                     self.service[service] = item[service]
-                    if service not in self.senses:
+                    if service not in self.senses.keys():
                         self.senses[service] = self.service[service]
                 else:
                     print "service '%s' not available" % service
