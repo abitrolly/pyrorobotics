@@ -123,6 +123,7 @@ class gui(Drawable):
          robot = self.engine.robot
          engine = self.engine
          gui = self
+         self = robot
          self.inform(">>> " + string.strip(retval))
          try:
             exec exp1
@@ -132,7 +133,9 @@ class gui(Drawable):
                self.inform("Ok")
             except:
                import sys
-               self.inform(sys.exc_value)
+               if sys.exc_value != None:
+                  self.inform(sys.exc_value)
+         self = gui
          #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0
 

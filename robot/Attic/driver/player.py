@@ -166,7 +166,7 @@ class player:
 		elif device == 0x000A:		# fiducial
 		    self.fiducial[index] = unpack_fiducial_data(payload)
 		elif device == 0x000B:		# comms
-		    self.comms[index] = unpack_comms_data(payload)
+		    self.comms[index] = unpack_comms_data(payload)[0]
 		elif device == 0x000C:		# speech
 		    print '<speech device is not supposed to send data back>'
 		elif device == 0x000D:		# gps
@@ -276,7 +276,6 @@ class player:
 	sent = 0
 	while sent < len(data):
 	    sent += self.__socket.send(data[sent:])
-        #print "sent:", sent
 
 
     def __nrecv(self, size):
@@ -1465,9 +1464,8 @@ class player:
 	"""
 	try:
 	    # send request
-	    header = pack_header(request, 'comms', size=1024)
+	    header = pack_header(command, 'comms', size=len(message))
 	    payload = pack_comms_command(message)
-            #print "header+payload=", header+payload
 	    self.__nsend(header+payload)
 	    # NO RESPONSE
 	    if self.debug: print '<sent the message>'
@@ -2046,7 +2044,11 @@ class player:
         """
 	return the sensory value of a comms device.
 	"""
-	return self.comms[index]
+	s = ''
+	if self.comms[index] != '':
+	    s = self.comms[index]
+	    self.comms[index] = ''
+	return s
 
 
     def get_gps(self, index=0):

@@ -96,11 +96,10 @@ class PlayerBase(Robot):
         try:
             if self.dev.comms[0] != '':
                 for i in self.dev.comms:
-                    self.messages.append(self.dev.comms[i][0][:-1])
-                self.dev.comms = {0: ''}
+                    self.messages.append(self.dev.get_comms())
         except:
+            # comms interface not on
             pass
-        # else, comms interface not on
         
     def getOptions(self): # overload 
         pass
