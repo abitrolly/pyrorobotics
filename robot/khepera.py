@@ -158,7 +158,7 @@ class KheperaRobot(Robot):
         try:
             self.w0 = self.senseData['position'][0]
             self.w1 = self.senseData['position'][1]
-        else:
+        except:
             raise "KheperaConnectionError"
 	self.update() 
         self.inform("Done loading robot.")
