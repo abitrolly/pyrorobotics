@@ -380,3 +380,15 @@ void CameraMover::Center() {
   TiltAngle = 0;
   ZoomAmount = 0;
 }
+
+int CameraMover::getPanAngle() {
+  return PanAngle;
+}
+
+int CameraMover::getTiltAngle() {
+  return TiltAngle;
+}
+
+int CameraMover::getZoomAmount() {
+  return ZoomAmount;
+}

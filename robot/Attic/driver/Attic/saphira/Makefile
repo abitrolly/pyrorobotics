@@ -12,6 +12,7 @@ LIBDIRS= -L/usr/X11R6/lib
 LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread
 
 all: lowlevelmodule.so 
+	cp lowlevelmodule.so ../../../lib
 
 obj/%.o : %.cpp
 	mkdir obj | true
@@ -32,5 +33,6 @@ lowlevelmodule.o: lowlevelmodule.cc
 clean :
 	rm -f obj/* | true
 
-
+cleanall: clean
+	rm -f *.so *.cc | true
 

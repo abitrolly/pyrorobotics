@@ -128,6 +128,9 @@ class SaphiraRobot(Robot):
 
 
 if __name__ == '__main__':
-    x = SaphiraRobot()
+    x = SaphiraRobot('Test', 0)
     x.update()
-    x.GetMin()
+    cm = new_CameraMover()
+    CameraMover_Init(cm)
+    CameraMover_Pan(cm, 45)
+    x.disconnect()

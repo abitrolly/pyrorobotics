@@ -1434,6 +1434,72 @@ static PyObject *_wrap_delete_CameraMover(PyObject *self, PyObject *args) {
     return _resultobj;
 }
 
+#define CameraMover_getPanAngle(_swigobj)  (_swigobj->getPanAngle())
+static PyObject *_wrap_CameraMover_getPanAngle(PyObject *self, PyObject *args) {
+    PyObject * _resultobj;
+    int  _result;
+    CameraMover * _arg0;
+    PyObject * _argo0 = 0;
+
+    self = self;
+    if(!PyArg_ParseTuple(args,"O:CameraMover_getPanAngle",&_argo0)) 
+        return NULL;
+    if (_argo0) {
+        if (_argo0 == Py_None) { _arg0 = NULL; }
+        else if (SWIG_GetPtrObj(_argo0,(void **) &_arg0,"_CameraMover_p")) {
+            PyErr_SetString(PyExc_TypeError,"Type error in argument 1 of CameraMover_getPanAngle. Expected _CameraMover_p.");
+        return NULL;
+        }
+    }
+    _result = (int )CameraMover_getPanAngle(_arg0);
+    _resultobj = Py_BuildValue("i",_result);
+    return _resultobj;
+}
+
+#define CameraMover_getTiltAngle(_swigobj)  (_swigobj->getTiltAngle())
+static PyObject *_wrap_CameraMover_getTiltAngle(PyObject *self, PyObject *args) {
+    PyObject * _resultobj;
+    int  _result;
+    CameraMover * _arg0;
+    PyObject * _argo0 = 0;
+
+    self = self;
+    if(!PyArg_ParseTuple(args,"O:CameraMover_getTiltAngle",&_argo0)) 
+        return NULL;
+    if (_argo0) {
+        if (_argo0 == Py_None) { _arg0 = NULL; }
+        else if (SWIG_GetPtrObj(_argo0,(void **) &_arg0,"_CameraMover_p")) {
+            PyErr_SetString(PyExc_TypeError,"Type error in argument 1 of CameraMover_getTiltAngle. Expected _CameraMover_p.");
+        return NULL;
+        }
+    }
+    _result = (int )CameraMover_getTiltAngle(_arg0);
+    _resultobj = Py_BuildValue("i",_result);
+    return _resultobj;
+}
+
+#define CameraMover_getZoomAmount(_swigobj)  (_swigobj->getZoomAmount())
+static PyObject *_wrap_CameraMover_getZoomAmount(PyObject *self, PyObject *args) {
+    PyObject * _resultobj;
+    int  _result;
+    CameraMover * _arg0;
+    PyObject * _argo0 = 0;
+
+    self = self;
+    if(!PyArg_ParseTuple(args,"O:CameraMover_getZoomAmount",&_argo0)) 
+        return NULL;
+    if (_argo0) {
+        if (_argo0 == Py_None) { _arg0 = NULL; }
+        else if (SWIG_GetPtrObj(_argo0,(void **) &_arg0,"_CameraMover_p")) {
+            PyErr_SetString(PyExc_TypeError,"Type error in argument 1 of CameraMover_getZoomAmount. Expected _CameraMover_p.");
+        return NULL;
+        }
+    }
+    _result = (int )CameraMover_getZoomAmount(_arg0);
+    _resultobj = Py_BuildValue("i",_result);
+    return _resultobj;
+}
+
 #define CameraMover_Init(_swigobj)  (_swigobj->Init())
 static PyObject *_wrap_CameraMover_Init(PyObject *self, PyObject *args) {
     PyObject * _resultobj;
@@ -1578,6 +1644,9 @@ static PyMethodDef lowlevelMethods[] = {
 	 { "CameraMover_Tilt", _wrap_CameraMover_Tilt, METH_VARARGS },
 	 { "CameraMover_Pan", _wrap_CameraMover_Pan, METH_VARARGS },
 	 { "CameraMover_Init", _wrap_CameraMover_Init, METH_VARARGS },
+	 { "CameraMover_getZoomAmount", _wrap_CameraMover_getZoomAmount, METH_VARARGS },
+	 { "CameraMover_getTiltAngle", _wrap_CameraMover_getTiltAngle, METH_VARARGS },
+	 { "CameraMover_getPanAngle", _wrap_CameraMover_getPanAngle, METH_VARARGS },
 	 { "delete_CameraMover", _wrap_delete_CameraMover, METH_VARARGS },
 	 { "new_CameraMover", _wrap_new_CameraMover, METH_VARARGS },
 	 { "Saphira_sonar_y", _wrap_Saphira_sonar_y, METH_VARARGS },

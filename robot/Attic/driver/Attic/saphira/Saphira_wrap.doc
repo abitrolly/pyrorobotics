@@ -135,6 +135,15 @@ new_CameraMover()
 delete_CameraMover(self)
         [ Destructor: returns void  ]
 
+CameraMover_getPanAngle(self)
+        [ Member : returns int  ]
+
+CameraMover_getTiltAngle(self)
+        [ Member : returns int  ]
+
+CameraMover_getZoomAmount(self)
+        [ Member : returns int  ]
+
 CameraMover_Init(self)
         [ Member : returns void  ]
 

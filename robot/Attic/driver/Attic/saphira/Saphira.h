@@ -14,6 +14,7 @@ class Saphira {
 public:
   Saphira();
   ~Saphira( void );
+
   double _getSonarRange(int pos);
   double _getSonarXCoord(int num);
   double _getSonarYCoord(int num);
@@ -67,6 +68,10 @@ class CameraMover {
  public:
   CameraMover ();
   ~CameraMover ();
+
+  int getPanAngle(void);
+  int getTiltAngle(void);
+  int getZoomAmount(void);
 
   void Init();
   void Pan(int);

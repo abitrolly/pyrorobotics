@@ -8,7 +8,7 @@ bt848grab : $(FILES)
 	$(CC) $(CPPFLAGS) -o $@ -c $< 
 
 clean : 
-	rm *~ *.o
+	rm *~ *.o | true
 
 cleanall :
-	rm *~ *.o bt848grab
+	rm *~ *.o bt848grab | true
