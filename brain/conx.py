@@ -1264,6 +1264,8 @@ class Network:
         if self.loadOrder == []:
             raise NetworkError, ('No loadOrder for the inputs. Make sure inputs \
             are properly set.', self.loadOrder)
+        if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
+            raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
