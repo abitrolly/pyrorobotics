@@ -148,11 +148,11 @@ class Layer:
     def getTSSError(self):
         return sum(map(lambda (n): n ** 2, self.error))
     def getCorrect(self, tolerance):
-        sum = 0
+        mysum = 0
         for i in range( self.size ):
             if abs(self.target[i] - self.activation[i]) < tolerance:
-                sum += 1
-        return sum
+                mysum += 1
+        return mysum
     def setActive(self, value):
         self.active = value
     def getActive(self):
