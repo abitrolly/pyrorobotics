@@ -15,7 +15,8 @@ CPPFLAGS = -Wall -Wno-unused -DNTSC -D_POSIX_THREADS \
         $(SAPHIRA_INC) $(PYTHON_INCLUDE) -Iinclude -g
 
 LIBDIRS= -L/usr/X11R6/lib 
-LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread -lptzsys -lsfx
+LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread -lptzsys -lsfx -lXp
+#LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread -lptzsys -lsfx
 
 ../../../lib/lowlevelmodule.so: lowlevelmodule.so
 	cp lowlevelmodule.so ../../../lib
