@@ -8,7 +8,7 @@
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.8"
+version = "6.9"
 
 # better to use Numeric.add.reduce()
 def sum(a):
