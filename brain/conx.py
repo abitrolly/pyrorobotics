@@ -650,7 +650,7 @@ class Network:
         if self.learning and self.batch:
             self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
-    def step():
+    def step(self):
         self.epoch += 1
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
