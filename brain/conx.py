@@ -1414,7 +1414,7 @@ class Network:
         for layer in self.layers:
             if layer.active:
                 for connection in self.connections:
-                    if connection.toLayer.name == layer.name:
+                    if connection.toLayer.name == layer.name and connection.fromLayer.active:
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
