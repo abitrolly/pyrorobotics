@@ -39,6 +39,7 @@ PyObject *Blob::updateMMap(PyObject *blobData) {
   for (int i = 0; i < PyTuple_Size(blobData); i++) {
     PyObject *blobTuple = PyTuple_GetItem(blobData, i);
     // for each blob:
+    printf("blobs: %d\n", PyTuple_Size(blobTuple));
     for (int blobcount = 0; blobcount < PyTuple_Size(blobTuple); blobcount++) {
       if (!PyArg_ParseTuple(blobTuple, "O", &blob)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid tuple to updateMMap()");

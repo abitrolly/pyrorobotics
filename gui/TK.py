@@ -38,7 +38,7 @@ class TKgui(gui):
                        ['Save Map...', self.saveMap],
                        ['Exit',self.cleanup] 
                        ]),
-              ('Window', [['Open all service windows', lambda: map( lambda serv: self.engine.robot.getService(serv).makeWindow(), self.engine.robot.getServices())],
+              ('Window', [['Open all service windows', self.makeWindows],
                           None,
                           ['Fast Update 10/sec',self.fastUpdate],
                           ['Medium Update 3/sec',self.mediumUpdate],
@@ -128,6 +128,14 @@ class TKgui(gui):
       self.textframe.pack(side="top", fill="both")
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def makeWindows(self):
+      objs = self.engine.robot.getServices()
+      for serv in objs:
+         try:
+            self.engine.robot.getService(serv).makeWindow()
+         except:
+            print "service '%s' has no associated window" % serv
 
    def makeCommandArea(self):
       # ---------------------------------
