@@ -33,6 +33,8 @@ class GLgui(gui):
       self.windowBrain = 0
       self.windowRobot = 0
       self.lastRun = 0
+      self.history = []
+      self.history_pointer = 0
 
       #store the gui structure in something nice insted of python code
       menu = [('File',[('Exit',self.cleanup)]),
@@ -96,6 +98,10 @@ class GLgui(gui):
       # create a command 
       self.commandEntry = Entry(self.commandFrame)
       self.commandEntry.bind('<Return>', self.CommandReturnKey)
+      self.commandEntry.bind('<Control-p>', self.CommandPreviousKey)
+      self.commandEntry.bind('<Control-n>', self.CommandNextKey)
+      self.commandEntry.bind('<Up>', self.CommandPreviousKey)
+      self.commandEntry.bind('<Down>', self.CommandNextKey)
       self.commandEntry["relief"] = "ridge"
       self.commandEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
 
@@ -104,11 +110,39 @@ class GLgui(gui):
       self.status.pack(side=BOTTOM, fill=X)
       self.inform("Pyro Version " + version() + ": Ready...")
 
+   def CommandPreviousKey(self, event):
+      if self.history_pointer - 1 <= len(self.history) and self.history_pointer - 1 >= 0:
+         self.history_pointer -= 1
+         self.commandEntry.delete(0, 'end')
+         self.commandEntry.insert(0, self.history[self.history_pointer])
+      else:
+         print 'No more commands!', chr(7)
+
+   def CommandNextKey(self, event):
+      self.commandEntry.delete(0, 'end')
+      if self.history_pointer + 1 <= len(self.history) and self.history_pointer + 1 >= 0:
+         self.history_pointer += 1
+         if self.history_pointer <= len(self.history) - 1:
+            self.commandEntry.insert(0, self.history[self.history_pointer])
+      else:
+         print 'No more commands!', chr(7)
+
+   def addCommandHistory(self, command):
+      if len(self.history) > 0:
+         if command != self.history[ len(self.history) - 1]:
+            self.history.append(command)
+      else:
+            self.history.append(command)
+      self.history_pointer = len(self.history)
+      
    def CommandReturnKey(self, event):
       from string import strip
       command = strip(self.commandEntry.get())
       self.commandEntry.delete(0, 'end')
-      self.processCommand(command)
+      self.addCommandHistory(command)
+      done = self.processCommand(command)
+      if done:
+         self.cleanup()
       #self.commandEntry.insert(0, filter)
       #self.commandButton.flash()
       #self.UpdateListBoxes()

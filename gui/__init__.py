@@ -77,15 +77,21 @@ class gui(Drawable):
             print "Need to load a brain first"
       else:
          # elif len(retval) > 0 and retval[0] == "!":
-         exp = "print " + string.strip(retval)
+         exp1 = "print " + string.strip(retval)
+         exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
-         print "> " + string.strip(retval) + ":",
+         print "> " + string.strip(retval) + " =>",
          try:
-            exec exp
+            exec exp1
          except:
-            print "Error in command: '" + exp + "'"
-         #print "Unknown command: '" + retval + "'"
+            try:
+               exec exp2
+               print ''
+            except:
+               import sys
+               print sys.exc_value
+         #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0
 
    def redraw(self):
