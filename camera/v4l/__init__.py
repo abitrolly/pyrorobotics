@@ -162,16 +162,12 @@ class CBuffer:
       return str(self[:])   
 
 if __name__ == "__main__":
-   from grabImage import *
-   from pyro.camera.v4l import *
-
-   print "Now using the V4LGrabber class..."
    cam = V4LGrabber(384, 240)
 
    if 0:
       cam.makeWindow()
 
-   if 0:
+   if 1:
       root = Tk()
       im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                (cam.width, cam.height),
@@ -179,9 +175,16 @@ if __name__ == "__main__":
       image = ImageTk.PhotoImage(im)
       label = Label(root, image=image, bd=0)
       label.pack({'fill':'both', 'expand':1, 'side': 'left'})
-      root.mainloop()
+      while 1:
+         while root.tk.dooneevent(2): pass
+         cam.update()
+         im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                  (cam.width, cam.height),
+                                                  cam.cbuf, 'raw', "BGR")
+         image = ImageTk.PhotoImage(im)
+         label.configure(image = image)
 
-   if 1:
+   if 0:
       print "Testing frames per/second:",
       start = time.time()
       for i in range(100):
@@ -208,10 +211,11 @@ if __name__ == "__main__":
       but test3.tga should have been snapped about a second later.  They are
       all saved in the current directory.
       """
-   del cam
-
    if 0:
       print "Testing greyscale..."
       cam = V4LGrabber(384, 240, 1)
       cam.save("./testgrey.tga")
       print "Saved testgrey.tga"
+
+   del cam
+
