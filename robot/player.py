@@ -246,6 +246,7 @@ class PlayerPTZDevice(PlayerDevice):
         self.notGetables.extend (["tilt", "pan", "zoom"])
         self.devData.update( {"tilt": None, "pan": None,
                               "zoom": None, "command": None, "pose": None} )
+        self.devData["supports"] = ["pan", "tilt", "zoom"]
 
     def preGet(self, keyword):
         if keyword == "pose": # make sure it is the current pose
@@ -300,7 +301,7 @@ class PlayerPTZDevice(PlayerDevice):
         ptz = self.getPose()
         return self.dev.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
 
-    def centerCamera(self):
+    def center(self):
         return self.setPose( self.origPose )
 
     def zoom(self, numDegrees):

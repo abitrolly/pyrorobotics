@@ -90,7 +90,7 @@ class Listener:
         retval = self.s.send(message)
         return retval
 
-class AiboHead(Device):
+class AiboHeadDevice(Device):
     def __init__(self, robot):
         Device.__init__(self, "ptz")
         self.robot = robot
@@ -100,20 +100,85 @@ class AiboHead(Device):
             self.robot.menu_control.s.send( "2\n")
         time.sleep(1) # pause for a second
         self.dev   = Listener(10052, self.robot.host) # head movement
+        self.devData["supports"] = ["pan", "tilt", "roll"]
+        self.notGetables.extend (["tilt", "pan", "zoom", "roll"])
+        self.pose = [0, 0, 0, 0]
+
+    def init(self):
+        self.center()
+
+    def postGet(self, keyword):
+        if keyword == "pose":
+            return self.pose
+
+    def postSet(self, keyword):
+        if keyword == "pose":
+            self.setPose( self.devData[keyword] )
+        elif keyword == "pan":
+            self.pan( self.devData[keyword] )
+        elif keyword == "tilt":
+            self.tilt( self.devData[keyword] )
+        elif keyword == "zoom":
+            self.zoom( self.devData[keyword] )
+        elif keyword == "roll":
+            self.roll( self.devData[keyword] )
+        return "ok"
+
+    def setPose(self, *args):
+        pan, tilt, zoom, roll = 0, 0, 0, 0
+        if len(args) == 3:
+            pan, tilt, zoom = args[0], args[1], args[2]
+        elif len(args) == 4:
+            pan, tilt, zoom, roll = args[0], args[1], args[2], args[3]
+        elif len(args[0]) == 3:
+            pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
+        elif len(args[0]) == 4:
+            pan, tilt, zoom, roll = args[0][0], args[0][1], args[0][2], args[0][3]
+        else:
+            raise AttributeError, "setPose takes pan, tilt, zoom (ignored)[, and roll]"
+        self.pan( pan )
+        self.tilt( tilt )
+        self.zoom( zoom )
+        self.roll( roll )
+        return "ok"
+
+    def zoom(self, amt):
+        return "ok"
 
     def tilt(self, amt):
         # tilt: 0 to -1 (straight ahead to down)
         # see HeadPointListener.java
-        self.dev.write( makeControlCommand('t', amt)) 
+        if amt > 0:
+            amt = 0
+        if amt < -1:
+            amt = -1
+        self.dev.write( makeControlCommand('t', amt))
+        self.pose[1] = amt
+        return "ok"
 
     def pan(self, amt):
         # pan: -1 to 1 (right to left)
         # see HeadPointListener.java
+        if amt > 1:
+            amt = 1
+        if amt < -1:
+            amt = -1
         self.dev.write( makeControlCommand('p', amt)) 
+        self.pose[0] = amt
+        return "ok"
 
     def roll(self, amt):
         # roll: 0 to 1 (straight ahead, to up (stretched))
+        if amt < 0:
+            amt = 0
+        if amt > 1:
+            amt = 1
         self.dev.write( makeControlCommand('r', amt))
+        self.pose[3] = amt
+        return "ok"
+
+    def center(self):
+        return self.setPose(0, 0, 0, 0)
 
 def readMenu(listener, cnt):
     # print "Reading %d menu entries..." % cnt
@@ -214,7 +279,7 @@ class AiboRobot(Robot):
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
-            return {"ptz": AiboHead(self)}
+            return {"ptz": AiboHeadDevice(self)}
 
     def connect(self):
         self.estop_control.s.send("start\n")
