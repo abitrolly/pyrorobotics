@@ -35,7 +35,7 @@ class SaphiraSenseDriver(driver.Driver):
 	self.senses['sonar']['z'] = lambda self, pos: 0.25
 	self.senses['sonar']['value'] = self.getSonarRange
         self.senses['sonar']['all'] = self.getSonarAll
-        self.senses['sonar']['maxvalue'] = lambda self, x = self.mToSenseUnits(2.99): x
+        self.senses['sonar']['maxvalue'] = lambda self, x = 2.99
 	self.senses['sonar']['flag'] = Saphira_getSonarFlag
 
 	# location of origin of sensors:
@@ -47,35 +47,31 @@ class SaphiraSenseDriver(driver.Driver):
         self.senses['sonar']['arc'] = lambda self, pos, \
                                       x = (5 * math.pi / 180) : x
 	self.senses['sonar']['type'] = lambda self: 'range'
+	self.senses['sonar']['units'] = "ROBOTS"
 
         # Make a copy, for default values
         self.senses['range'] = self.senses['sonar']
         console.log(console.INFO,'saphira sense drivers loaded')
 
     def getSonarRange(self, dev, pos):
-        return self.mToSenseUnits( Saphira_getSonarRange(dev, pos))
-
-    def mToSenseUnits(self, val):
-        if self.robot.senseUnits == "ROBOTS":
+        val = Saphira_getSonarRange(dev, pos)
+        if self.senses['sonar']['units'] == "ROBOTS":
             return val / 0.5 # Pioneer is about .5 meters diameter
-        elif self.robot.senseUnits == "MM":
+        elif self.senses['sonar']['units'] == "MM":
             return val / 1000.0
-        elif self.robot.senseUnits == "CM":
+        elif self.senses['sonar']['units'] == "CM":
             return (val) / 100.0 # cm
-        elif self.robot.senseUnits == "METERS" or \
-             self.robot.senseUnits == "RAW":
+        elif self.senses['sonar']['units'] == "METERS" or \
+             self.senses['sonar']['units'] == "RAW":
             return (val) 
-        elif self.robot.senseUnits == "SCALED":
-            print "WARNING: Pioneer senseUnits is SCALED?"
-            # FIX: should we have maxvalue? Force [0,1]?
-            return val / 0.5
+        elif self.senses['sonar']['units'] == "SCALED":
+            return val / self.senses['sonar']['maxvalue']
 
     def getSonarAll(self, dev):
         vector = [0] * Saphira_getSonarCount(dev)
         for i in range(Saphira_getSonarCount(dev)):
             vector[i] = self.getSonarRange(dev, i)
         return vector
-
 
 class SaphiraControlDriver(driver.Driver):
     def __init__(self, machine):
