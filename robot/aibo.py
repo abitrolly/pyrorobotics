@@ -81,7 +81,7 @@ class ListenerThread(threading.Thread):
         self.listener = listener
         self.callback = callback
         self._stopevent = threading.Event()
-        self._sleepperiod = 0.01
+        self._sleepperiod = 0.001
         threading.Thread.__init__(self, name="ListenerThread")
         
     def run(self):
@@ -620,6 +620,7 @@ class AiboRobot(Robot):
         if (amtx>=-1.0 and amtx<=1.0) and \
            ((amty==None) or ( amty>=-1.0 and amty<=1.0)) and \
            ((amtz==None) or ( amtz>=-1.0 and amtz<=1.0)):
+            self.update()
             l = list(self.devData["positionRaw"])
             jointDict = joint.split()
             check = 0
