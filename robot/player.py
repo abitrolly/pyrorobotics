@@ -13,13 +13,12 @@ import playerc
 # dev.__dict__[name] 
 
 class PlayerDevice(Device):
-    NEXT_INDEX = {}
     def __init__(self, client, type, groups = {}):
         Device.__init__(self, type)
         self.groups = groups
         self.client = client
         self.handle = None
-        self.index = PlayerDevice.NEXT_INDEX.setdefault(type,0)
+        self.index = 0
         self.name = type + ("%d" % self.index)
         self.printFormat["data"] = "<device data>"
         self.devData["data"] = None
@@ -29,7 +28,6 @@ class PlayerDevice(Device):
         self.startDevice()
         if "get_geom" in self.client.__dict__:
             self.client.get_geom() # reads it into handle.pose or poses
-        PlayerDevice.NEXT_INDEX[type] += 1
 
     def preGet(self, kw):
         if kw == "pose":
@@ -68,6 +66,12 @@ class PlayerDevice(Device):
             raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.name
 
 class PlayerSimulationDevice(PlayerDevice):
+    def __init__(self, hostname):
+        self.client = playerc.playerc_client(None, hostname, 7000)
+        self.client.connect()
+        PlayerDevice.__init__(self, self.client, "simulation")
+        self.thread = PlayerUpdater(self)
+        self.thread.start()
     def setPose(self, name, x, y, deg):
         th = deg * PIOVER180
         self.handle.set_pose2d(name, x, y, th)
@@ -79,8 +83,8 @@ class PlayerSimulationDevice(PlayerDevice):
             raise "simulation.getPose() failed"
 
 class PlayerSonarDevice(PlayerDevice):
-    def __init__(self, client, name):
-        PlayerDevice.__init__(self, client, name)
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "sonar")
         while len(self) == 0: pass
         if len(self) == 16:
             self.groups = {'all': range(16),
@@ -155,8 +159,8 @@ class PlayerSonarDevice(PlayerDevice):
         return .03
 
 class PlayerLaserDevice(PlayerDevice):
-    def __init__(self, client, name):
-        PlayerDevice.__init__(self, client, name)
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "laser")
         while len(self) == 0: pass # wait for data to be loaded
         count = len(self)
         part = int(count/8)
@@ -504,7 +508,8 @@ class PlayerUpdater(threading.Thread):
         """
         self.runable = runable
         self._stopevent = threading.Event()
-        self._sleepperiod = 0.001 # FIX: this data is coming in too fast!
+        self._sleepperiod = 0.001
+        # We have to read it this fast to keep up!
         threading.Thread.__init__(self, name="PlayerUpdater")
         
     def run(self):
@@ -533,16 +538,21 @@ class PlayerRobot(Robot):
         self.connect() # set self.client to player robot
         self.thread = PlayerUpdater(self)
         self.thread.start()
+        count = 0
+        # FIX: arbitrary setting!
+        while self.client.get_devlist() == -1 and count < 10:
+            time.sleep(.1)
+            count += 1
+        if count == 10:
+            print "ERROR: robot did not load!"
         # Make sure laser is before sonar, so if you have
         # sonar, it will be the default 'range' device
-        while self.client.get_devlist() != 0:
-            print "waiting for player device..."
         devNameList = [playerc.playerc_lookup_name(device.code) for device in self.client.devinfos]
         self.devData["builtinDevices"] = devNameList
-        self.devData["builtinDevices"].append( "simulation" )
         if "blobfinder" in self.devData["builtinDevices"]:
             self.devData["builtinDevices"].append( "camera" )
-        for device in ["position", "laser", "ir", "sonar", "bumper", "simulation"]:
+        self.devData["builtinDevices"].append( "simulation" )
+        for device in ["position", "laser", "ir", "sonar", "bumper"]:
             #is it supported? if so start it up:
             if device in devNameList:
                 deviceName = self.startDevice(device)
@@ -558,6 +568,13 @@ class PlayerRobot(Robot):
                     self.devData["supportedFeatures"].append( "continuous-movement" )
         if "range" in self.devDataFunc:
             self.devData["supportedFeatures"].append( "range-sensor" )
+        # try to add a simulation device from port 7000
+        try:
+            self.startDevice("simulation")
+        except:
+            self.devData["builtinDevices"].remove("simulation")
+            del self.device["simulation0"]
+            print "No such device 'simulation0' on port 7000!"
         # specific things about this robot type:
         self.devData["port"] = port
         self.devData["hostname"] = hostname
@@ -573,12 +590,15 @@ class PlayerRobot(Robot):
         self.devData["subtype"] = 0
         self.devData["units"] = "METERS"
         self.devData["name"] = self.name
-        #self.devData["simulated"] = self.simulated
         self.localize(0.0, 0.0, 0.0)
         self.update()
 
     def destroy(self):
         self.thread.join()
+        try:
+            self.simulation.join()
+        except:
+            pass
 
     def startDeviceBuiltin(self, item):
 ##         if item == "ptz":
@@ -586,11 +606,16 @@ class PlayerRobot(Robot):
 ##         elif item == "gripper":
 ##             return {"gripper": PlayerGripperDevice(self.client, "gripper")}
         if item == "laser":
-            return {"laser": PlayerLaserDevice(self.client, "laser")}
+            return {"laser": PlayerLaserDevice(self.client)}
         elif item == "sonar":
-            return {"sonar": PlayerSonarDevice(self.client, "sonar")}
+            return {"sonar": PlayerSonarDevice(self.client)}
         elif item == "simulation":
-            return {"simulation": PlayerSimulationDevice(self.client, "simulation")}
+            obj = None
+            try:
+                obj = PlayerSimulationDevice(self.hostname)
+            except:
+                pass
+            return {"simulation": obj}
 ##         elif item == "camera":
 ##             if self.devData["simulated"]:
 ##                 return self.startDevice("BlobCamera", visible=0)

@@ -15,10 +15,12 @@ interval_real 100 # real-time milliseconds per update step
 # defines Pioneer-like robots
 include "pioneer.inc"
 
+
 # defines 'map' object used for floorplans
 include "map.inc"
 
-window( size [ 830.000 556.000 ] center [-8.109 2.708] scale 0.014 )
+
+window( size [ 830.000 556.000 ] center [-8.482 1.788] scale 0.014 )
 
 map(
   #size [15.5 11.4]
@@ -38,7 +40,6 @@ define sicklaser laser
   range_max 8.0
   fov 180.0
   samples 180
-
   color "LightBlue"
   size [ 0.14 0.14 ]	
 )
@@ -107,7 +108,7 @@ laserpioneer
 position( 	
   name "invader" 
   size [0.3 0.3]
-  pose [-15.551 -0.066 0.000] 
+  pose [-12.411 -0.066 0.000] 
   color "red"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/space_invader.png"
@@ -119,7 +120,7 @@ position(
 position( 	
   name "ghost" 
   size [0.3 0.3 ]
-  pose [-12.978 -2.980 0.000] 
+  pose [-12.978 -0.380 0.000] 
   color "blue"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/ghost.png"
@@ -127,3 +128,5 @@ position(
   velocity [0 0.2 0]
   laser_return 2
 )
+
+amigobot( color "blue" name "blue" pose [-7.363 2.297 180.000] )
