@@ -381,11 +381,11 @@ class PlayerRobot(Robot):
             if device in devNameList:
                 deviceName = self.startDevice(device)
                 if device == "laser":
-                    self.devDataFunc["range"] = self.get("/device/laser0/object")
+                    self.devDataFunc["range"] = self.get("/devices/laser0/object")
                 if device == "ir":
-                    self.devDataFunc["range"] = self.get("/device/ir0/object")
+                    self.devDataFunc["range"] = self.get("/devices/ir0/object")
                 if device == "sonar":
-                    self.devDataFunc["range"] = self.get("/device/sonar0/object")
+                    self.devDataFunc["range"] = self.get("/devices/sonar0/object")
         # default values
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
