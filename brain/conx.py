@@ -10,7 +10,8 @@
     making artificial neural networks in Python. Part of the
     Pyro project.
 """
-import Numeric, math, random, time, sys, signal, operator
+
+import Numeric, math, random, time, sys, operator
 
 version = "7.0"
 
@@ -624,6 +625,8 @@ class Network:
         self.patterned = 0 # used for file IO with inputs and targets
         self.sharedWeights = 0
         self.useCrossValidationToStop = 0
+        self.saveResults = 0 # will save error, correct, total in sweep()
+        self.results = []
 
     # general methods
     def path(self, startLayer, endLayer):
@@ -1269,11 +1272,15 @@ class Network:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         cnt = 0
+        if self.saveResults:
+            self.results = [(0,0,0) for x in self.loadOrder]
         for i in self.loadOrder:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", self.loadOrder[i] + 1
             datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
             (error, correct, total) = self.step( **datum )
+            if self.saveResults:
+                self.results[i] = (error, correct, total)
             tssError += error
             totalCorrect += correct
             totalCount += total
@@ -1321,12 +1328,12 @@ class Network:
             outLayer.copyTargets(inLayer.activation)
         # Propagate activation through network:
         self.propagate()
-        # Compute error, and back prop it:
-        (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
                 self.prompt()
+        # Compute error, and back prop it:
+        (error, correct, total) = self.backprop() # compute_error()
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
@@ -2015,13 +2022,31 @@ class SRN(Network):
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self, name = name, verbosity = verbosity)
-        self.orderedInputs = 1
+        self.sequenceType = None # You will need to set this!
+        # It should be one or the other:
+        # self.sequenceType = "epoch"    # self.sequenceType = "pattern"
+        self.orderedInputs = 1           # self.orderedInputs = 0
+        self.initContext = 0             # self.initContext = 1
+        # Other options:
         self.learnDuringSequence = 1
-        self.prediction = []
-        self.initContext = 1
         self.contextCopying = 1
+        # Internal stuff:
+        self.prediction = []
         self.contextLayers = {} # records layer reference and associated hidden layer
-       
+    def setSequenceType(self, value):
+        """
+        You must set this! Set it to "epoch" or "pattern".
+        """
+        if value == "epoch":
+            self.sequenceType = "epoch"
+            self.orderedInputs = 1         
+            self.initContext = 0
+        elif value == "pattern":
+            self.sequenceType = "pattern"
+            self.orderedInputs = 0
+            self.initContext = 1
+        else:
+            raise AttributeError, "invalid sequence type: '%s'" % value
     # set and get methods for attributes
     def predict(self, inName, outName):
         """
@@ -2114,6 +2139,8 @@ class SRN(Network):
         # take care of any params other than layer names:
         # two ways to clear context:
         # 1. force it to right now with arg initContext = 1:
+        if self.sequenceType == None:
+            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType('epoch' OR 'pattern') """
         if args.has_key('initContext'):
             if args['initContext']:
                 self.setContext()
@@ -2428,7 +2455,7 @@ if __name__ == '__main__':
         seq1 = [1,0,0, 0,1,0, 0,0,1]
         seq2 = [1,0,0, 0,0,1, 0,1,0]
         n.setInputs([seq1, seq2])
-        n.setLearnDuringSequence(1)
+        n.setSequenceType("pattern")
         n.setReportRate(75)
         n.setEpsilon(0.1)
         n.setMomentum(0)
@@ -2443,6 +2470,31 @@ if __name__ == '__main__':
         n.train()
         timer = time.time() - temp
         print "Time...", timer
+    if ask("Do you want to train an SRN to predict the seqences 1,2,3,2,1?"):
+        print "SRN ..................................................."
+        n = SRN()
+        n.setSeed(114366.64)
+        n.addSRNLayers(3,5,3)
+        n.predict('input','output')
+        seq1 = [1,0,0, 0,1,0, 0,0,1, 0,1,0, 1,0,0]
+        n.setInputs([seq1])
+        n.setSequenceType("pattern")
+        n.setReportRate(75)
+        n.setEpsilon(0.1)
+        n.setMomentum(0)
+        n.setBatch(1)
+        n.setTolerance(0.25)
+        n.setStopPercent(1.00)
+        n.setResetEpoch(20000)
+        n.setResetLimit(0)
+        #n.verbosity = 3
+        temp = time.time()
+        n.train()
+        timer = time.time() - temp
+        print "Time...", timer
+        n.setLearning(0)
+        n.setInteractive(1)
+        n.sweep()
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
         print "Auto-associate .........................................."
         n = Network()
@@ -2482,7 +2534,7 @@ if __name__ == '__main__':
                          [ "mary", "is", "mary" ],
                          ])
         # network learning parameters:
-        raam.setLearnDuringSequence(1)
+        raam.setSequenceType("pattern")
         raam.setReportRate(10)
         raam.setEpsilon(0.1)
         raam.setMomentum(0.0)
@@ -2539,7 +2591,7 @@ if __name__ == '__main__':
         n.associate('input', 'assocInput')
         n.predict('input', 'output')
         n.setInputs([[1,0,0, 0,1,0, 0,0,1, 0,0,1, 0,1,0, 1,0,0]])
-        n.setLearnDuringSequence(1)
+        n.setSequenceType("pattern")
         n.setReportRate(25)
         n.setEpsilon(0.1)
         n.setMomentum(0.3)
@@ -2768,6 +2820,7 @@ if __name__ == '__main__':
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.predict('hidden','output')
+        n.setSequenceType("pattern")
         print "Attempting to predict hidden and output layers..."
         try:
             n.step()
@@ -2850,7 +2903,7 @@ if __name__ == '__main__':
         n = SRN()
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
-        n.setLearnDuringSequence(1)
+        n.setSequenceType("pattern")
 
     if ask("Do you want to test verifyArchitecture()?"):
         print "Creating normal 3-3-3 architecture..."
@@ -2958,6 +3011,7 @@ if __name__ == '__main__':
         print "Creating SRN Network..."
         n = SRN()
         n.addSRNLayers(3,3,3)
+        n.setSequenceType("pattern")
         #n.setInteractive(1)
         print "Using step with arguments..."
         n.step(input = [1.0,0.0,0.0], output = [1.0, 0.0, 0.0], initContext = 1)
