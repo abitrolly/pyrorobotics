@@ -8,22 +8,41 @@ import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                brainargs=[], config = {}):
+                brainargs=[], config = {}, camerafile = 0):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
       self.plot = []
-      self.brainfile = ''
-      self.robotfile = ''
+      if brainfile != None:
+         self.brainfile = brainfile
+      else:
+         self.brainfile = ''
+      if robotfile != None:
+         self.robotfile = robotfile
+      else:
+         self.robotfile = ''
+      if camerafile != None:
+         self.camerafile = camerafile
+      else:
+         self.camerafile = ''
+      if simfile != None:
+         self.simfile = simfile
+      else:
+         self.simfile = ''
+      self.brainargs = brainargs
       self.config = config
-      if simfile:
-         self.loadSimulator(simfile)
-      if robotfile:
-         self.loadRobot(robotfile)
-      if brainargs != [] and brainfile:
-         self.loadBrain(brainfile, brainargs)
-      elif brainfile:
-         self.loadBrain(brainfile)
+      if self.simfile:
+         self.loadSimulator(self.simfile)
+      if self.robotfile:
+         self.loadRobot(self.robotfile)
+         if self.camerafile:
+            self.loadCamera(self.camerafile)
+
+   def postinit(self):
+      if self.brainargs != [] and self.brainfile:
+         self.loadBrain(self.brainfile, self.brainargs)
+      elif self.brainfile:
+         self.loadBrain(self.brainfile)
 
    def reset(self):
       self.pleaseStop()
@@ -113,6 +132,25 @@ class Engine(drawable.Drawable):
       console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
 
+   def loadCamera(self,file):
+      import os
+      console.log(console.INFO,'Loading '+file)
+      if file[-3:] != '.py':
+         file = file + '.py'
+      if system.file_exists(file):
+         self.camerafile = file
+         self.robot.camera = system.loadINIT(file)
+      elif system.file_exists(os.getenv('PYRO') + \
+                              '/plugins/cameras/' + file): 
+         self.camerafile = os.getenv('PYRO') + '/plugins/cameras/' + file
+         self.robot.camera = system.loadINIT(os.getenv('PYRO') + \
+                                      '/plugins/cameras/' + file)
+      else:
+         raise 'Camera file not found: ' + file
+      self.robot.camera.makeWindow()
+      console.log(console.INFO,'Loaded ' + file)
+      #self.append(self.robot.camera)
+
    def loadBrain(self,file, args=None):
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
@@ -145,7 +183,6 @@ class Engine(drawable.Drawable):
    def freeBrain(self):
       if self.brain != 0:
          self.brain.pleaseQuit()
-
       
    def freeRobot(self):
       self.freeBrain()
