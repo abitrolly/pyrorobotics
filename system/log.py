@@ -40,7 +40,7 @@ class Log:
          self.writeln('User: ' + os.environ['USER'])
    def timestamp(self):
       year,month,day,hour,minute,second,one,two,three=time.localtime()
-      return '%4d-%02d-%02d@%02d:%02d:%02d' % (year, month, day, hour, minute, second)
+      return '%4d.%02d.%02d-%02d.%02d.%02d' % (year, month, day, hour, minute, second)
    def flush(self):
       self.file.flush()
 
