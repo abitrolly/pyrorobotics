@@ -34,6 +34,7 @@ brainargs = []
 simulator = 0
 configfile = 0
 camerafile = 0
+worldfile = 0
 evalcommand = ""
 
 def basichelp():
@@ -55,13 +56,13 @@ except:
 def process_options():
     import getopt, sys, string
     global robotfile, brainfile, window, simulator, \
-           brainargs, configfile, camerafile, evalcommand
+           brainargs, configfile, camerafile, evalcommand, worldfile
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:o:i:c:e:", \
+                                   "r:b:hg:s:o:i:c:e:w:", \
                                    ["robot", "brain", "help", \
                                     "gui", "sim", "brain-args",\
-                                    "init", "camera", "eval"])
+                                    "init", "camera", "eval", "world"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -85,6 +86,8 @@ def process_options():
             configfile = a
 	elif o in ("-c", "--camera"):
             camerafile = a
+	elif o in ("-w", "--world"):
+            worldfile = a
 	elif o in ("-e", "--eval"):
             evalcommand = a
 
@@ -111,12 +114,17 @@ if pyro.startup_check():
         camerafile = c.get('camera', 'file')
     else:
         c.put('camera', 'file', camerafile)
+    if not worldfile:
+        worldfile = c.get('world', 'file')
+    else:
+        c.put('world', 'file', worldfile)
     if not brainargs:
         brainargs = c.get('brain', 'args')
     else:
         c.put('brain', 'args', brainargs)
     share.config = c
-    eng = Engine(robotfile, brainfile, simulator, brainargs, c, camerafile)
+    eng = Engine(robotfile, brainfile, simulator,
+                 brainargs, c, camerafile, worldfile)
     if window == 'GL':
         from pyro.gui.GL import GLgui
         gui = GLgui(eng)

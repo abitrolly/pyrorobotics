@@ -7,7 +7,7 @@ def about():
     print "Pyro - Python Robotics"
     print "Version:", version()
     print "See: http://wiki.cs.brynmawr.edu/?Pyro"
-    print "(c) 2002, D. S. Blank"
+    print "(c) 2003, D.S. Blank"
     print "-------------------------------------------------------------"
 
 def usage():
@@ -19,6 +19,7 @@ def usage():
     print "  -s SIMULATOR       name of simulator to run"
     print "  -i CONFIGFILE      name of config file to load"
     print "  -c CAMERA          name of camera.py file to load"
+    print "  -w WORLDFILE       name of simulator world to load"
     print "  -e \"string\"        eval string of commands"
     print "                     that are ; separated"    
     print ""
@@ -36,6 +37,7 @@ def help():
     print "  info                        show brain and robot info"
     print "  load brain                  load a brain file"
     print "  load robot                  load a robot file"
+    print "  load simulator              load a simulator"
     print "  quit | exit | bye           exit from Pyro"
     print "  reload                      reload the brain"
     print "  run                         start brain running"
