@@ -5,16 +5,9 @@
 # (c) 2001-2003, Developmental Robotics Research Group
 # ----------------------------------------------------
 
-## I removed SRN specific code from Network to SRN class and
-## replaced copyVectors() with copyActivations() and copyTargets()
-## For now targetSet and activationSet flags in Layer class must be
-## reset if calling copyActivations() or copyTarget(). The SRN class
-## extension supports only one context layer, but this can be changed.
-## I still need to work on the step() methods. -Jeremy
-
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.4"
+version = "6.5"
 
 def sum(a):
     mysum = 0
@@ -165,12 +158,12 @@ class Layer:
         for i in range(self.size):
             self.activation[i] = value
         if not self.activationSet == 0:
-            raise 'ActivationFlagNotReset', self.activationSet
+            raise 'ActivationFlagNotResetError', self.activationSet
         else:
             self.activationSet = 1
     def copyActivations(self, arr, symmetric = 0):
         if not len(arr) == self.size:
-            raise 'MismatchedActivationSizeLayerSize', (len(arr), self.size)
+            raise 'MismatchedActivationSizeLayerSizeError', (len(arr), self.size)
         if symmetric:
             for i in range(self.size):
                 self.activation[i] = arr[i] - 0.5
@@ -178,7 +171,7 @@ class Layer:
             for i in range(self.size):
                 self.activation[i] = arr[i]
         if not self.activationSet == 0:
-            raise 'ActivationFlagNotReset', self.activationSet
+            raise 'ActivationFlagNotResetError', self.activationSet
         else:
             self.activationSet = 1
     def getTarget(self):
@@ -202,12 +195,12 @@ class Layer:
         for i in range(self.size):
             self.target[i] = value
         if not self.targetSet == 0:
-            raise 'TargetFlagNotReset', self.targetSet
+            raise 'TargetFlagNotResetError', self.targetSet
         else:
             self.targetSet = 1
     def copyTarget(self, arr, symmetric = 0):
         if not len(arr) == self.size:
-            raise 'MismatchedTargetSizeLayerSize', (len(arr), self.size)
+            raise 'MismatchedTargetSizeLayerSizeError', (len(arr), self.size)
         if symmetric:
             for i in range(self.size):
                 self.target[i] = arr[i] - 0.5
@@ -215,7 +208,7 @@ class Layer:
             for i in range(self.size):
                 self.target[i] = arr[i]
         if not self.targetSet == 0:
-            raise 'TargetFlagNotReset', self.targetSet
+            raise 'TargetFlagNotResetError', self.targetSet
         else:
             self.targetSet = 1
     def resetFlags(self):
@@ -248,7 +241,7 @@ class Connection:
                                   self.fromLayer.size), 'f')
     def changeSize(self, toLayerSize, fromLayerSize):
         if toLayerSize <= 0 or fromLayerSize <= 0:
-            raise 'EmptyLayer', (toLayerSize, fromLayerSize)        
+            raise 'EmptyLayerError', (toLayerSize, fromLayerSize)        
         dweight = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
         wed = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
         weight = randomArray((toLayerSize, fromLayerSize),
@@ -539,7 +532,7 @@ class Network:
         layer.copyTarget(vector[start:start+layer.size], self.symmetric)
     def loadInput(self, pos, start = 0):
         if pos >= len(self.input):
-            raise "LoadInputPatternBeyondRange", pos
+            raise "LoadInputPatternBeyondRangeError", pos
         if self.verbosity > 0: print "Loading input", pos, "..."
         if self.inputMapCount == 0:
             self.copyActivations(self.layer[0], self.input[pos], start)
@@ -608,25 +601,25 @@ class Network:
                 raise 'AssociateOutputLayerTypeError', outLayer.type
             outLayer.copyTarget(inLayer.activation)
     def verifyInputs(self):
-        verified = 1
         for l in self.layer:
             if l.type == 'Input' and not l.activationSet:
-                verified = 0
-        return verified
+                raise 'InputNotSetError', (l.name, l.type)
+            else:
+                l.resetActivationFlag()
     def verifyTargets(self):
-        verified = 1
         for l in self.layer:
             if l.type == 'Output' and not l.targetSet:
-                verified = 0
-        return verified
+                raise 'OutputNotSetError', (l.name, l.type)
+            else:
+                l.resetTargetFlag()
     def resetFlags(self):
         for l in self.layer:
             l.resetFlags()
     def postprop(self, pattern, sequence = 0):
-        self.resetFlags()
+        pass
     def sweep(self):
         if self.loadOrder == []:
-            raise 'LoadOrderEmpty'
+            raise 'LoadOrderEmptyError'
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInput:
             self.randomizeOrder()
@@ -635,10 +628,8 @@ class Network:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
             self.preprop(i)
-            if not self.verifyInputs():
-                raise 'MissingInputs'
-            if not self.verifyTargets():
-                raise 'MissingTargets'
+            self.verifyInputs()
+            self.verifyTargets()
             self.propagate()
             (error, correct, total) = self.backprop() # compute_error()
             tssError += error
@@ -734,7 +725,9 @@ class Network:
         self.outputMapCount += 1
     def propagate(self):
         if self.layerCount == 0:
-            raise "NoNetworkLayersError", self.layerCount
+            raise 'NoNetworkLayersError', self.layerCount
+        if self.connectionCount == 0:
+            raise 'NoNetworkConnectionsError', self.connectionCount
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # Initialize netinput:
         for n in range(self.layerCount):
@@ -753,7 +746,6 @@ class Network:
         for n in range(self.layerCount):
             if self.layer[n].log and self.layer[n].active:
                 self.layer[n].writeLog()
-        assert self.connectionCount > 0, "Network contains no connections."
     def prop_process(self, connect):
         if self.verbosity > 5:
             print "Prop_process from " + connect.fromLayer.name + " to " + \
@@ -1064,7 +1056,7 @@ class Network:
         for w in self.patterns:
             if self.compare( self.patterns[w], pattern ):
                 return w
-        return "none"
+        return ""
     def setPattern(self, word, vector):
         self.patterns[word] = vector
     def compare(self, v1, v2):
@@ -1104,6 +1096,12 @@ class SRN(Network):
         self.contextLayer.resetFlags()
         self.contextLayer.setActivations(.5)
     def preprop(self, pattern, step):
+        if self.sequenceLength > 1:
+            if step == 0 and self.initContext:
+                self.clearContext()
+        else: # if seq length is one, you better be doing ordered
+            if pattern == 0 and self.initContext:
+                self.clearContext()
         Network.preprop(self, pattern, step)
         for p in self.prediction:
             (inName, outName) = p
@@ -1119,18 +1117,12 @@ class SRN(Network):
             else:
                 start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.input[pattern]))
                 self.copyTarget(outLayer, self.input[pattern], start)
-        if self.sequenceLength > 1:
-            if step == 0 and self.initContext:
-                self.clearContext()
-        else: # if seq length is one, you better be doing ordered
-            if pattern == 0 and self.initContext:
-                self.clearContext()
     def postprop(self, patnum, step):
         Network.postprop(self, patnum, step)
         self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
     def sweep(self):
         if self.loadOrder == []:
-            raise 'LoadOrderEmpty'
+            raise 'LoadOrderEmptyError'
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInput:
             self.randomizeOrder()
@@ -1148,6 +1140,8 @@ class SRN(Network):
                 if self.verbosity > 0 or self.interactive:
                     print "Step #", s + 1
                 self.preprop(i, s)
+                self.verifyInputs()
+                self.verifyTargets()
                 self.propagate()
                 if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
                     pass # don't update error or count - accumulate history without learning in context layer
@@ -1309,6 +1303,48 @@ if __name__ == '__main__':
         n.setResetEpoch(1000)
         n.setResetLimit(2)
         n.train()
+
+    if ask("Do you want to test a raam network?"):
+        print "Raam ...................................................."
+        # Create network:
+        raam = SRN()
+        raam.setPatterns({"john"  : [0, 0, 0, 1],
+                          "likes" : [0, 0, 1, 0],
+                          "mary"  : [0, 1, 0, 0],
+                          "is" : [1, 0, 0, 0],
+                          })
+        size = len(raam.getPattern("john"))
+        raam.addSRNLayers(size, size * 2, size)
+        raam.add( Layer("outcontext", size * 2) )
+        raam.connect("hidden", "outcontext")
+        raam.associate('input', 'output')
+        raam.associate('context', 'outcontext')
+        raam.setInputs([ [ "john", "likes", "mary" ],
+                         [ "mary", "likes", "john" ],
+                 [ "john", "is", "john" ],
+                         [ "mary", "is", "mary" ],
+                         ])
+        # Network learning parameters:
+        raam.setLearnDuringSequence(1)
+        raam.setReportRate(10)
+        raam.setEpsilon(0.1)
+        raam.setMomentum(0.0)
+        raam.setBatch(0)
+        # Ending criteria:
+        raam.setTolerance(0.4)
+        raam.setStopPercent(1.0)
+        raam.setResetEpoch(5000)
+        raam.setResetLimit(0)
+        # Train:
+        raam.train()
+
+    if ask("Do you want to see (and save) the raam network weights?"):
+        print "Filename to save network (.wts): ",
+        filename = sys.stdin.readline().strip() + ".wts"
+        raam.saveWeightsToFile(filename)
+        raam.setLearning(0)
+        raam.setInteractive(1)
+        raam.sweep()
 
     if ask("Do you want to train a network to both predict and auto-associate?"):
         print "SRN and auto-associate ..................................."
