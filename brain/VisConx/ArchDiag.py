@@ -4,15 +4,16 @@ class ArchDiag(Tkinter.Toplevel):
     SLAB_WIDTH = 150
     SLAB_HEIGHT = 20
     SLAB_VER_SEP = 40
-    SLAB_HORIZ_SEP = 30
+    SLAB_HORIZ_SEP = 40
     EDGE_SEP = 20
-    LINE_WIDTH = 2
+    LINE_WIDTH = 1
     FORWARD_COLOR = "black"
     CONTEXT_COLOR = "red"
     PREDICT_COLOR = "blue"
     ASSOC_COLOR = "green"
     LINE_SEP = 2
     LEGEND_LINE_LENGTH = 25
+    EXTRA_BUFFER = 15
     
     def __init__(self, parent, netStruct):
         Tkinter.Toplevel.__init__(self,parent)
@@ -108,25 +109,32 @@ class ArchDiag(Tkinter.Toplevel):
                 verOffset = -self.SLAB_VER_SEP/2
             self.diagCanvas.create_line(startLoc[0], startLoc[1], \
                                         (startLoc[0]+finishLoc[0])/2, startLoc[1]+verOffset,\
-                                        finishLoc[0], finishLoc[1], fill=color, arrow=Tkinter.LAST, width=self.LINE_WIDTH, smooth=Tkinter.TRUE)
+                                        finishLoc[0], finishLoc[1], fill=color, arrow=Tkinter.LAST,
+                                        width=self.LINE_WIDTH, smooth=Tkinter.TRUE)
         elif distance == 1:
             startLoc = self.topConnect(fromLoc)
             finishLoc = self.bottomConnect(toLoc)
-            self.diagCanvas.create_line(startLoc[0], startLoc[1], finishLoc[0], finishLoc[1], fill=color, arrow=Tkinter.LAST, width=self.LINE_WIDTH)
+            self.diagCanvas.create_line(startLoc[0], startLoc[1], finishLoc[0], finishLoc[1],
+                                        fill=color, arrow=Tkinter.LAST, width=self.LINE_WIDTH)
         elif distance > 1:
             startLoc = self.topConnect(fromLoc)
             finishLoc = self.bottomConnect(toLoc)
             verOffset = self.SLAB_VER_SEP/2
             if (startLoc[0]+finishLoc[0])/2 > self.canvasWidth/2:
-                bendLoc = self.canvasWidth - self.SLAB_HORIZ_SEP/2
+                bendLoc = self.canvasWidth - self.SLAB_HORIZ_SEP/2 + self.EXTRA_BUFFER*(distance-2)
+                if bendLoc > self.canvasWidth-1:
+                    bendLoc = self.canvasWidth - 1
             else:
-                bendLoc = self.SLAB_HORIZ_SEP/2
+                bendLoc = self.SLAB_HORIZ_SEP/2 - self.EXTRA_BUFFER*(distance-2)
+                if bendLoc < 0:
+                    bendLoc = 0
 
             self.diagCanvas.create_line(startLoc[0], startLoc[1], \
                                         bendLoc, startLoc[1]-verOffset, \
                                         bendLoc, finishLoc[1]+verOffset, \
                                         finishLoc[0], finishLoc[1], \
-                                        fill=color, arrow=Tkinter.LAST, width=self.LINE_WIDTH, smooth=Tkinter.TRUE)
+                                        fill=color, arrow=Tkinter.LAST, width=self.LINE_WIDTH,
+                                        smooth=Tkinter.TRUE)
 
     def topConnect(self, tuple):
         return tuple[0]+self.SLAB_WIDTH/2, tuple[1]

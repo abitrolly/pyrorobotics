@@ -18,9 +18,11 @@ class SweepGUIBase(VisConxBase.VisConxBase):
         innerButtonFrame = Tkinter.Frame(controlFrame)
         self.trainButton = Tkinter.Button(innerButtonFrame, text="Start", command=self.handleTrainButton)
         self.trainButton.pack(side=Tkinter.LEFT)
-        self.pauseButton = Tkinter.Button(innerButtonFrame, text="Pause", state=Tkinter.DISABLED, command=self.handlePauseButton)
+        self.pauseButton = Tkinter.Button(innerButtonFrame, text="Pause",
+                                          state=Tkinter.DISABLED, command=self.handlePauseButton)
         self.pauseButton.pack(side=Tkinter.LEFT)
-        self.stopButton = Tkinter.Button(innerButtonFrame, text="Stop", state=Tkinter.DISABLED, command=self.handleStopButton)
+        self.stopButton = Tkinter.Button(innerButtonFrame, text="Stop",
+                                         state=Tkinter.DISABLED, command=self.handleStopButton)
         self.stopButton.pack(side=Tkinter.LEFT)
         Tkinter.Label(innerButtonFrame, text="Epoch: ").pack(side=Tkinter.LEFT)
         self.epochLabel = Tkinter.Label(innerButtonFrame, text="0")
@@ -32,9 +34,11 @@ class SweepGUIBase(VisConxBase.VisConxBase):
 
         #assemble frames
         controlFrame.pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X)
-        Tkinter.Frame(self.root, height=2, bg="black").pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X) #spacer
+        #spacer
+        Tkinter.Frame(self.root, height=2, bg="black").pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X)
         self.visualFrame.pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X)
-        Tkinter.Frame(self.root, height=2, bg="black").pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X) #spacer
+        #spacer
+        Tkinter.Frame(self.root, height=2, bg="black").pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X)
         self.inputFrame.pack(side=Tkinter.TOP, expand=Tkinter.YES, fill=Tkinter.X)
         
     #overloaded methods from Network/SRN
@@ -62,10 +66,12 @@ class SweepGUIBase(VisConxBase.VisConxBase):
               totalCorrect * 1.0 / totalCount < self.stopPercent:
             (tssErr, totalCorrect, totalCount) = self.sweep()
             if self.pausedFlag:
-                self.activButton.config(state=Tkinter.NORMAL)
+                if self.root:
+                    self.activButton.config(state=Tkinter.NORMAL)
                 while self.pausedFlag and not self.stopFlag:
                     self.root.update()
-                self.activButton.config(state=Tkinter.DISABLED)
+                if self.root:
+                    self.activButton.config(state=Tkinter.DISABLED)
                 if self.activDiag:
                     self.handleActivDiag()
             if self.stopFlag:

@@ -134,7 +134,7 @@ class VisConxBase:
         self.inputFrame = Tkinter.Frame(self.root)
 
         inputLabelFrame = Tkinter.Frame(self.inputFrame)
-        Tkinter.Label(inputLabelFrame, text="Conx Input:", font=("Arial", 14, "bold")).pack(side=Tkinter.LEFT)
+        Tkinter.Label(inputLabelFrame, text="Conx Commands:", font=("Arial", 14, "bold")).pack(side=Tkinter.LEFT)
         inputLabelFrame.pack(side=Tkinter.TOP, fill=Tkinter.X, expand=Tkinter.YES)
         
         #output and scroll bar
@@ -265,8 +265,8 @@ class VisConxBase:
             
     def refreshArchDiag(self):
         if self.archDiag:
-            archDiag.destroy()
-            archDiag = ArchDiag.ArchDiag(self.root, self.netStruct)
+            self.archDiag.destroy()
+            self.archDiag = ArchDiag.ArchDiag(self.root, self.netStruct)
             
     def destroy(self):
         self.root.destroy()
@@ -287,7 +287,8 @@ class VisConxBase:
             except:
                 print self.formatExceptionInfo()
         else:
-            print _retval
+            if _retval != None:
+                print _retval
         self.redirectToTerminal()
 
     def formatExceptionInfo(self, maxTBlevel=1):
