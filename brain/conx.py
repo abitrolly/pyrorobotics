@@ -7,14 +7,14 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.0"
+version = "6.1"
 
 def sum(a):
     mysum = 0
     for n in a:
         mysum += n
     return mysum
-                    
+
 def randomArray(size, max):
     """
     Returns an array initialized to random values between -max and max
@@ -68,6 +68,17 @@ class Layer:
         self.initialize()
     def initialize(self):
         self.randomize()
+        self.target = Numeric.zeros(self.size, 'f')
+        self.error = Numeric.zeros(self.size, 'f')
+        self.activation = Numeric.zeros(self.size, 'f')
+        self.dbias = Numeric.zeros(self.size, 'f')
+        self.delta = Numeric.zeros(self.size, 'f')
+        self.netinput = Numeric.zeros(self.size, 'f')
+        self.bed = Numeric.zeros(self.size, 'f')
+    def changeSize(self, newsize):
+        # Overwrites current data!
+        self.size = newsize
+        self.displayWidth = newsize
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
@@ -165,6 +176,7 @@ class Layer:
                 self.target[i] = arr[i]
             else: # arr is short; fill with rest_value
                 self.target[i] = rest_value
+
 # A neural Network connection between layers
 
 class Connection:
@@ -185,6 +197,21 @@ class Connection:
                                            self.fromLayer.size), 'f')
         self.wed = Numeric.zeros((self.toLayer.size, \
                                   self.fromLayer.size), 'f')
+    def changeSize(self, toLayerSize, fromLayerSize):
+        dweight = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
+        wed = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
+        weight = randomArray((toLayerSize, fromLayerSize), 0.1)
+        # copy from old to new, considering one is smaller
+        minToLayerSize = min( toLayerSize, self.toLayer.size)
+        minFromLayerSize = min( fromLayerSize, self.fromLayer.size)
+        for i in range(minFromLayerSize):
+            for j in range(minToLayerSize):
+                wed[j][i] = self.wed[j][i]
+                dweight[j][i] = self.dweight[j][i]
+                weight[j][i] = self.weight[j][i]
+        self.dweight = dweight
+        self.wed = wed
+        self.weight = weight
     def display(self):
         if self.toLayer.verbosity > 0:
             print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
@@ -914,6 +941,15 @@ class Network:
             for j in range(len(self.output[i])):
                 fp.write("%f " % self.output[i][j])
             fp.write("\n")
+    def changeLayerSize(self, layername, newsize):
+        # for all connection from to this layer, change matrix:
+        for c in range( self.connectionCount ):
+            if self.connection[c].fromLayer.name == layername:
+                self.connection[c].changeSize( self.connection[c].toLayer.size, newsize)
+            if self.connection[c].toLayer.name == layername:
+                self.connection[c].changeSize( newsize, self.connection[c].fromLayer.size)
+        # Then, change the actual layer size:
+        self.layerByName[layername].changeSize(newsize)
 
 class SRN(Network):
     def addSRNLayers(self, numInput, numHidden, numOutput):
