@@ -1,6 +1,4 @@
-from pyro.system import share
-import grabImage
-share.grabImage = grabImage
+from v4l import *
 from pyro.camera import *
 from UserString import UserString
 import types, sys, os
@@ -35,12 +33,6 @@ class V4LGrabber(Camera):
       
       Channel -  0: television; 1: composite; 2: S-Video
       """
-      if depth == 1:
-         self.color = 0
-      elif depth == 3:
-         self.color = 1
-      else:
-         raise ValueError, "unsupported color depth: %d" % self.depth
       if width < 48:
          raise ValueError, "width must be greater than 48"
       if height < 48:
@@ -49,10 +41,13 @@ class V4LGrabber(Camera):
       self.handle=None
       self.cbuf=None
       try:
-         self.size, self.depth, self.handle, self.cbuf = \
-                    share.grabImage.grab_image(device, width, height, self.color, channel)
+         self.cobj = V4L(device, width, height, depth, channel)
+         self.cbuf = self.cobj.getMMap()
       except:
          print "v4l: grab_image failed!"
+      self.width = self.cobj.getWidth()
+      self.height = self.cobj.getHeight()
+      self.depth = self.cobj.getDepth()
       if title == None:
 	 title = self.device
       Camera.__init__(self, width, height, depth, title = title)
@@ -67,20 +62,20 @@ class V4LGrabber(Camera):
       """
       try:
 	 if not self.lockCamera:
-            share.grabImage.refresh_image(self.handle, self.width, self.height, self.depth*8)
+            self.cobj.updateMMap()
       except:
          print "v4l: refresh_image failed"
 
-   def __del__(self):
-      """
-      DO NOT REMOVE THIS!
-      This deconstructor method makes sure that the mmap is freed before the
-      Camera is deleted.
-      """
-      if dir(self).count('handle') == 1 and self.handle and self.cbuf:
-         #if __init__ was not successful in acquiring the video device,
-         #a call to free_image will be unsuccessful.
-         share.grabImage.free_image(self.handle, self.cbuf)
+#   def __del__(self):
+#      """
+#      DO NOT REMOVE THIS!
+#      This deconstructor method makes sure that the mmap is freed before the
+#      Camera is deleted.
+#      """
+#      if dir(self).count('handle') == 1 and self.handle and self.cbuf:
+#         #if __init__ was not successful in acquiring the video device,
+#         #a call to free_image will be unsuccessful.
+#         share.grabImage.free_image(self.handle, self.cbuf)
 
    
 
