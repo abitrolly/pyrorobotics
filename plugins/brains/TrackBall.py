@@ -6,10 +6,11 @@ class TrackBall(Brain):
         self.cam = self.getDevice( self.hasA("camera") )
         self.ptz = self.getDevice( self.hasA("ptz") )
         self.ptz.setPose(0, 0, 0)
-        #self.cam.addFilter("match",220,27,46,)
-        #self.cam.addFilter("match",143,24,28,)
-        #self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
-
+        #self.cam.addFilter("matchList", 229, 68, 164, 234, 18, 129, 0)
+        self.cam.addFilter("match", 229, 68, 164)
+        self.cam.addFilter("match", 234, 18, 129)
+        self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
+                
     def destroy(self):
         self.cam.clearFilters()
 
