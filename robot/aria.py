@@ -198,14 +198,18 @@ class AriaPTZDevice(AriaDevice):
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "sonar")
-        # What are the raw units?
-        self.devData["rawunits"] = "METERS"
+        self.devData['units']    = "ROBOTS"
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
         self.devData['maxvalueraw'] = 2.99
+        # What are the raw units of "value"?
+        self.devData["rawunits"] = "MM"
         # ----------------------------------------------------------
-        self.devData['units']    = "ROBOTS"
-        self.devData['maxvalue'] = self.getSonarMaxRange() # FIX: this should change when you change units
+        # This should change when you change units:
+        # (see postSet below)
+        self.devData['maxvalue'] = self.rawToUnits(2990) # in rawunits
+        # X,Y,Z are in meters
+        # ----------------------------------------------------------
         self.devData["count"] = self.params.getNumSonar()
         if self.devData["count"] == 16:
             self.groups = {'all': range(16),
@@ -224,8 +228,8 @@ class AriaSonar(AriaSensor):
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         elif self.params.getNumSonar() > 16:
-            raise AttributeError, ("Need to define sensor groups for sonars "
-                                   "with %d sensors" % self.params.getNumSonar())
+            print "Pyro warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar())
+            self.groups = {'all': range(self.params.getNumSonar())}
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
         self.subDataFunc['oz']    = lambda pos: 0.03
@@ -235,45 +239,61 @@ class AriaSonar(AriaSensor):
         self.subDataFunc['x']     = lambda pos: self.dev.getSonarReading(pos).getLocalX()
         self.subDataFunc['y']     = lambda pos: self.dev.getSonarReading(pos).getLocalY()
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.getSonarRange(pos)
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.getSonarRange(pos))
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
         self.startDevice()
 
-    def getSonarRange(self, pos):
-        return self.rawToUnits(self.dev.getSonarRange(pos) / 1000.0)
-
-    def getSonarMaxRange(self):
-        return self.rawToUnits(2.99)
+    def postSet(self, keyword):
+        self.devData['maxvalue'] = self.rawToUnits(2990)
 
 class AriaLaser(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "laser")
-        self.devData['maxvalue'] = 15.0 # FIX
         self.devData['units']    = "ROBOTS"
-        self.devData["count"] = self.params.getNumLaser()
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.devData["radius"] = 0.750 # meters
+        self.devData['maxvalueraw'] = 15.0
+        # What are the raw units of "value"? CHECK to see if MM is correct
+        self.devData["rawunits"] = "MM"
+        # ----------------------------------------------------------
+        # This should change when you change units:
+        # (see postSet below)
+        self.devData['maxvalue'] = self.rawToUnits(15000) # in rawunits
+        # X,Y,Z are in meters
+        # ----------------------------------------------------------
         self.devData["x"] = self.params.getLaserX()
         self.devData["y"] = self.params.getLaserY()
         self.devData["th"] = self.params.getLaserTh()
-        if self.devData["count"] == 181:
-            self.groups = {'all': range(16),
-                           'front': (3, 4),
-                           'front-left' : (1,2,3),
-                           'front-right' : (4, 5, 6),
-                           'front-all' : (1,2, 3, 4, 5, 6),
-                           'left' : (0, 15), 
-                           'right' : (7, 8), 
-                           'left-front' : (0,), 
-                           'right-front' : (7, ),
-                           'left-back' : (15, ),
-                           'right-back' : (8, ),
-                           'back-right' : (9, 10, 11),
-                           'back-left' : (12, 13, 14), 
-                           'back' : (11, 12),
-                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        #elif self.params.getNumSonar() > 181:
-        #    raise AttributeError, ("Need to define sensor groups for lasers "
-        #                           "with %d sensors" % self.params.getNumSonar())
+        # Compute groups based on count:
+        self.devData["count"] = self.params.getNumLaser()
+        count = self.devData["count"]
+        part = int(count/8)
+        start = 0
+        posA = part
+        posB = part * 2
+        posC = part * 3
+        posD = part * 4
+        posE = part * 5
+        posF = part * 6
+        posG = part * 7
+        end = count
+        self.groups = {'all': range(count),
+                       'right': range(0, posB),
+                       'left': range(posF, end),
+                       'front': range(posC, posE),
+                       'front-right': range(posB, posD),
+                       'front-left': range(posD, posF),
+                       'front-all': range(posB, posF),
+                       'right-front': range(posA, posB),
+                       'right-back': range(start, posA),
+                       'left-front': range(posF,posG),
+                       'left-back': range(posG,end),
+                       'back-right': [],
+                       'back-left': [],
+                       'back': [],
+                       'back-all': []}
+        # for each laser pos:
         self.subDataFunc['oz']    = lambda pos: 0.03
         self.subDataFunc['th']    = lambda pos: self.params.getLaserTh(pos) * PIOVER180
         self.subDataFunc['thr']    = lambda pos: self.params.getLaserTh(pos)
@@ -281,68 +301,42 @@ class AriaLaser(AriaSensor):
         self.subDataFunc['x']     = lambda pos: 0.0 #
         self.subDataFunc['y']     = lambda pos: 0.0 #
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.dev.getSonarRange(pos) # METERS? FIX: make in units
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.getSonarRange(pos)) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.startDevice()
+
+    def postSet(self, keyword):
+        self.devData['maxvalue'] = self.rawToUnits(15000)
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device, "bumper")
         self.devData['maxvalue'] = 1.0 
         self.devData['units']    = "RAW"
+        self.devData["all"]   = self.getBumpersAll()
         self.devData["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
-        if self.devData["count"] == 5:
-            self.groups = {'all': range(16),
-                           'front': (3, 4),
-                           'front-left' : (1,2,3),
-                           'front-right' : (4, 5, 6),
-                           'front-all' : (1,2, 3, 4, 5, 6),
-                           'left' : (0, 15), 
-                           'right' : (7, 8), 
-                           'left-front' : (0,), 
-                           'right-front' : (7, ),
-                           'left-back' : (15, ),
-                           'right-back' : (8, ),
-                           'back-right' : (9, 10, 11),
-                           'back-left' : (12, 13, 14), 
-                           'back' : (11, 12),
-                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        elif self.devData["count"] == 10:
-            self.groups = {'all': range(16),
-                           'front': (3, 4),
-                           'front-left' : (1,2,3),
-                           'front-right' : (4, 5, 6),
-                           'front-all' : (1,2, 3, 4, 5, 6),
-                           'left' : (0, 15), 
-                           'right' : (7, 8), 
-                           'left-front' : (0,), 
-                           'right-front' : (7, ),
-                           'left-back' : (15, ),
-                           'right-back' : (8, ),
-                           'back-right' : (9, 10, 11),
-                           'back-left' : (12, 13, 14), 
-                           'back' : (11, 12),
-                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        elif self.params.getNumSonar() > 10:
-            raise AttributeError, ("Need to define sensor groups for bumpers "
-                                   "with %d sensors" % self.devData["count"])
-        self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['value']   = lambda pos: pos
+        #self.groups = {'all': range(self.devData["count"])}
+        self.subDataFunc['pos']     = lambda pos: pos
+        self.subDataFunc['value']   = self.getBumpers
         self.startDevice()
 
-##     def getBumpersPosDev(self, dev, pos):
-##         return self.getBumpersDev(dev)[pos]
+    def preGet(self, keyword):
+        if keyword == "all":
+            self.devData["all"] = self.getBumpersAll()
 
-##     def getBumpersDev(self, dev):
-##         # bumpers: front first, numbers 1 - 5
-##         retval = []
-##         if self.params.haveFrontBumpers():
-##             for i in range(1, 6):
-##                 retval.append( dev.getStallValue() >> 8 & BITPOS[i] )
-##         if self.params.haveRearBumpers():
-##             for i in range(1, 6):
-##                 retval.append( dev.getStallValue() & BITPOS[i] )
-##         return retval
+    def getBumpers(self, pos):
+        self.getBumpersAll()[pos]
+
+    def getBumpersAll(self):
+        # bumpers: front first, numbers 1 - 5
+        retval = []
+        if self.params.haveFrontBumpers():
+            for i in range(1, 6):
+                retval.append( self.dev.getStallValue() >> 8 & BITPOS[i] )
+        if self.params.haveRearBumpers():
+            for i in range(1, 6):
+                retval.append( self.dev.getStallValue() & BITPOS[i] )
+        return retval
 
 class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
