@@ -383,7 +383,7 @@ class PlayerGripperDevice(PlayerDevice):
         return self.dev.is_lift_up() # ok
 
 class PlayerRobot(Robot):
-    def __init__(self, name = "Player", hostname = 'localhost', port = 6665):
+    def __init__(self, name = "Player", port = 6665, hostname = 'localhost'):
         Robot.__init__(self) # robot constructor
         self.devData["simulated"] = 1
         self.hostname = hostname
@@ -490,6 +490,7 @@ class PlayerRobot(Robot):
         self.thr = self.th * PIOVER180
 
     def connect(self):
+        print "hostname=", self.hostname, "port=", self.port
         self.dev = player(hostname=self.hostname, port=self.port)
         time.sleep(1)
         #self.localize(0.0, 0.0, 0.0)
