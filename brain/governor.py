@@ -115,10 +115,11 @@ class GovernorSRN(Governor, SRN):
         self.shareWeights(self.trainingNetwork)
 
     def sweep(self):
+        retval = SRN.sweep(self)
         if self.epoch % self.reportRate == 0:
-            print "MODEL VECTORS: ", len(self.ravq.models), self.histogram
+            print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
             self.histogram = {}
-        return SRN.sweep(self)
+        return retval
 
     def networkStep(self, **args):
         if self.governing:
@@ -145,19 +146,22 @@ class GovernorSRN(Governor, SRN):
 
 if __name__ == '__main__':
     import os, gzip
-    # read in experimental training data
+    # read in 20,000 lines of experimental training data
     locationfile = gzip.open('location.dat.gz', 'r')
     sensorfile = gzip.open('sensors.dat.gz', 'r')
     sensors = sensorfile.readlines()
     locations = locationfile.readlines()
     locationfile.close()
     sensorfile.close()
+    # make input/target patterns:
     inputs = []
     for line in sensors:
         inputs.append( map(lambda x: float(x), line.strip().split()))
     targets = []
     for line in locations:
         targets.append( map(lambda x: float(x), line.strip().split()))
+    inSize = len(sensors[0].strip().split())
+    govMask = [1] * (inSize - 1) + [16] + [inSize/(inSize/2)] * (inSize/2) + [inSize/4] * 4
     # The "16" weights the input determining the multiple labels
     # The choice of epsilon and delta may change the required
     # weights. For binary nodes, changing the value will make the vector
@@ -165,20 +169,17 @@ if __name__ == '__main__':
     # node. This change is enough if the delta value is less than
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
-    # create network
-    inSize = len(sensors[0].strip().split())
-    govMask = [1] * (inSize - 1) + [16] + [inSize/(inSize/2)] * (inSize/2) + [inSize/4] * 4
-    net = GovernorSRN(5, 2.1, 0.3, 5, 0.2)
+    net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
     net.addThreeLayers(inSize, inSize/2, 4)
     net.setInputs( inputs )
     net.setTargets( targets )
+    net.setStopPercent(.95)
     net.setReportRate(1)
     net.governing = 1
-    #net.setVerbosity(1)
     print "This takes a while..."
     net.train()
-print net.ravq
-net.setLearning(0)
-net.setInteractive(1)
-# run with -i to see net
+    print net.ravq
+    net.setLearning(0)
+    net.setInteractive(1)
+    # run with -i to see net
 

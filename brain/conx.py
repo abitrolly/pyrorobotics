@@ -584,7 +584,8 @@ class Network:
     # constructor
     def __init__(self, name = 'Backprop Network', verbosity = 0):
         """
-        Constructor for the Network class. Takes optional name and verbosity arguments.
+        Constructor for the Network class. Takes optional name and
+        verbosity arguments.
         """
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
@@ -615,14 +616,15 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
+        self.sweepReportRate = 200
         self.crossValidationCorpus = ()
         self.crossValidationReportLayers = []
-        self.crossValidationReportRate = 0
         self.crossValidationSampleRate = 0
         self.crossValidationSampleFile = "sample.cv"
         self.patterns = {}
         self.patterned = 0 # used for file IO with inputs and targets
         self.sharedWeights = 0
+        self.useCrossValidationToStop = 0
 
     # general methods
     def path(self, startLayer, endLayer):
@@ -666,7 +668,8 @@ class Network:
         return len(self.layers)
     def getLayerIndex(self, layer):
         """
-        Given a reference to a layer, returns the index of that layer in self.layers.
+        Given a reference to a layer, returns the index of that layer in
+        self.layers.
         """              
         for i in range(len(self.layers)):
             if layer == self.layers[i]: # shallow cmp
@@ -736,7 +739,7 @@ class Network:
         """
         Resets seed values.
         """
-        random.seed(self.seed1)
+        random.seed(self.seed)
         self.initialize()
     def initialize(self):
         """
@@ -840,15 +843,12 @@ class Network:
         """
         Sets the seed to value.
         """
-        self.seed1 = value
-        self.seed2 = value / 23.45
-        if int(self.seed2) <= 0:
-            self.seed2 = 515
-            print "Warning: random seed too small"
-        random.seed(self.seed1)
+        self.seed = value
+        random.seed(self.seed)
     def getConnection(self, lfrom, lto):
         """
-        Returns the connection instance connecting the specified (string) layer names.
+        Returns the connection instance connecting the specified (string)
+        layer names.
         """
         for connection in self.connections:
             if connection.fromLayer.name == lfrom and \
@@ -864,9 +864,16 @@ class Network:
             layer.verbosity = value
     def setStopPercent(self, value):
         """
-        Sets self.stopPercent to value. train() will stop if the percent correct surpasses the stop percent.
+        Sets self.stopPercent to value. train() will stop if the percent
+        correct surpasses the stop percent.
         """
         self.stopPercent = value
+    def setUseCrossValidationToStop(self, value):
+        """
+        Sets flag so that self.stopPercent is compared to cross validation
+        percent rather than the regular training data percentage correct.
+        """
+        self.useCrossValidationToStop = value
     def setSigmoid_prime_offset(self, value):
         """
         Sets self.sigmoid_prime_offset to value.
@@ -874,27 +881,22 @@ class Network:
         self.sigmoid_prime_offset = value
     def setReportRate(self, value):
         """
-        Sets self.reportRate to value. train() will report when epoch % reportRate == 0.
+        Sets self.reportRate to value.  train() will report when
+        epoch % reportRate == 0. Cross validation will only report if
+        there is a cross validation data set.
         """
         self.reportRate = value
-    def setCrossValidationReportRate(self, value):
+    def setSweepReportRate(self, value):
         """
-        Sets self.crossValidationReportRate to value. train() will report when epoch % crossValidationreportRate == 0.
+        Sets self.sweepReportRate to value.  sweep() will report
+        when epoch % sweepReportRate == 0.  there is a cross
+        validation data set.
         """
-        self.crossValidationReportRate = value
-    def setSeed1(self, value):
-        """
-        Sets seed1 to value. Does not initialize the random number generator.
-        """
-        self.seed1 = value
-    def setSeed2(self, value):
-        """
-        Sets seed2 to value. Does not initialize the random number generator.
-        """
-        self.seed2 = value
+        self.reportRate = value
     def setMaxRandom(self, value):
         """
-        Sets the maxRandom Layer attribute for each layer to value.Specifies the global range for randomly initialized values, [-max, max].
+        Sets the maxRandom Layer attribute for each layer to value.Specifies
+        the global range for randomly initialized values, [-max, max].
         """
         for layer in self.layers:
             layer.maxRandom = value
@@ -1219,11 +1221,7 @@ class Network:
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalCount = 1;
         self.resetCount = 1
-        if len(self.crossValidationCorpus) > 0:
-            useCVtoStop = 1
-        else:
-            useCVtoStop = 0
-        while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or useCVtoStop):
+        while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
             (tssErr, totalCorrect, totalCount) = self.sweep()
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
@@ -1232,18 +1230,18 @@ class Network:
             if self.epoch % self.reportRate == 0:
                 print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-            if self.crossValidationReportRate and len(self.crossValidationCorpus) > 0 and \
-                   self.epoch % self.crossValidationReportRate == 0:
-                (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
-                rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
-                print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
-                if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent:
-                    self.epoch += 1
-                    break
+                if len(self.crossValidationCorpus) > 0:
+                    (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
+                    rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
+                    print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                          (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                    if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
+                        self.epoch += 1
+                        break
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
                     print "Reset limit reached; ending without reaching goal"
+                    self.epoch += 1
                     break
                 self.resetCount += 1
                 print "RESET! resetEpoch reached; starting over..."
@@ -1256,7 +1254,7 @@ class Network:
         if totalCount > 0:
             print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                   (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
-            if self.crossValidationReportRate and len(self.crossValidationCorpus) > 0:
+            if len(self.crossValidationCorpus) > 0:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
@@ -1286,6 +1284,9 @@ class Network:
             tssError += error
             totalCorrect += correct
             totalCount += total
+            if (i + 1) % self.sweepReportRate == 0:
+                print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
+                      (i + 1, tssError, totalCorrect * 1.0 / totalCount)
             if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
                 self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
             i += 1
@@ -2141,7 +2142,7 @@ class SRN(Network):
         # This should really loop over each arg that is kind Input
         # For now, just assumes an "input" layer
         if not args.has_key("input"):
-            return self.networkStep(self, **args)
+            return self.networkStep(**args)
         # The rest of this assumes at least an "input" parameter!
         # compute length of sequence:
         sequenceLength = len(args["input"]) / self["input"].size
@@ -2188,7 +2189,6 @@ class SRN(Network):
     def sweepCrossValidation(self):
         self.setContext()
         return Network.sweepCrossValidation(self)
-
 
 if __name__ == '__main__':
     # Con-x: Sample Networks
@@ -2360,9 +2360,7 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(100)
-        n.setCrossValidationReportRate(n.reportRate)
         n.train()
-        n.setCrossValidationReportRate(0)
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
         print "XOR Backprop non-batch mode: .........................."
@@ -2379,9 +2377,7 @@ if __name__ == '__main__':
             n.setEpsilon(0.5)
             n.setMomentum(.975)
             n.setReportRate(10)
-            n.setCrossValidationReportRate(n.reportRate)
             n.train()
-            n.setCrossValidationReportRate(0)
         if ask("Do you want to test prop_from() method?"):
             n.prop_from([n.getLayer('input')])
             print "Output activations: ", n.getLayer('output').getActivations()
