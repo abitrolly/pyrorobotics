@@ -319,6 +319,8 @@ class KheperaRobot(Robot):
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
         self.deadReckon()
+        if self.isStall():
+            print "STALLED"
 
     def deadReckon(self):
         """
@@ -335,7 +337,6 @@ class KheperaRobot(Robot):
         # get diff:
         delta_w0 = (w0 - self.w0) * 0.08 # mm 
         delta_w1 = (w1 - self.w1) * 0.08 # mm
-        print "delta w0, w1:", delta_w0, delta_w1
         # get diff / diameter of wheel base, in mm:
         delta_thr   = (delta_w1 - delta_w0) / 644.5
         # average diff (dist):
@@ -343,10 +344,9 @@ class KheperaRobot(Robot):
         # compute change in x, y:
         delta_x = delta_dist * math.cos(self.thr + delta_thr/2.0)
         delta_y = delta_dist * math.sin(self.thr + delta_thr/2.0)
-        print "delta x, y:", delta_x, delta_y
         if delta_thr != 0:
-            delta_x *= (2.0 * math.sin(delta_thr/2.0) / delta_thr)
-            delta_y *= (2.0 * math.sin(delta_thr/2.0) / delta_thr)
+            delta_x *= 2.0 * math.sin(delta_thr/2.0) / delta_thr
+            delta_y *= 2.0 * math.sin(delta_thr/2.0) / delta_thr
         # update everything:
         # FIX: I think that this needs to be subtracted for our th?
         self.thr += delta_thr
@@ -360,10 +360,9 @@ class KheperaRobot(Robot):
         self.w1 = w1
         self.x += delta_x
         self.y += delta_y
-        self.th = self.thr * (math.pi / 180.0)
-        print "location:", self.x, self.y, self.th
+        self.th = self.thr * (180.0 / math.pi)
 
-    def isStall(self, dev):
+    def isStall(self, dev = 0):
         if self.senseData['stall'][2] > 3 or self.senseData['stall'][5] > 3:
             return 1
         else:
@@ -507,7 +506,7 @@ class KheperaRobot(Robot):
         self.x = x
         self.y = y
         self.thr = thr
-        self.th = self.thr * (math.pi / 180.0)
+        self.th = self.thr * (180.0 / math.pi)
     
 if __name__ == '__main__':
     x = KheperaRobot()
