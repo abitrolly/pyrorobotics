@@ -10,7 +10,7 @@ class FakeCamera(Camera):
    """
    def __init__(self, pattern = None,
                 start = 0, stop = 19, char = "?",
-                interval = 1.0, visionSystem = None, verbose = 1):
+                interval = 1.0, visionSystem = None, verbose = 0):
       """
       pattern is a filename with indicators on where to put digits for the
       sequence.  Absolute or relative filenames can be used.

@@ -107,8 +107,9 @@ public:
   PyObject *setImage(int newImage);
   PyObject *backup();
   PyObject *restore();
-  PyObject *motion();
+  PyObject *motion(int threshold);
   PyObject *rotate();
+  PyObject *getMenu();
 
  protected:
   unsigned char *Image; // current image (image, original, workspace)
@@ -116,6 +117,7 @@ public:
   unsigned char *original;
   unsigned char *workspace;
   int copyMode;
+  int allocatedImage;
 
   PyObject *filterList;
   int width;

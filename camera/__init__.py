@@ -134,7 +134,9 @@ class Camera(PyroImage, Service):
 
    def saveImage(self, filename = "pyro-vision.ppm"):
       # faster than saveToFile, as it is in C
+      print "saving image to '%s'..." % filename,
       self.vision.saveImage(filename);
+      print "done!"
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
@@ -184,6 +186,18 @@ class Camera(PyroImage, Service):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                  (self.width, self.height),
                                                  self.cbuf, 'raw', self.format)
+   def makeFilterMenu(self, data):
+      menu = []
+      lastCat = ""
+      for line in data:
+         category, subcat, args = line[0], line[1], line[2:]
+         if category != lastCat:
+            menu.append([category, [[subcat, lambda self=self, args=args: self.addFilter(*args)]]])
+         else:
+            menu[-1][1].append( [subcat, lambda self=self, args=args: self.addFilter(*args)] )
+         lastCat = category
+      return menu
+
    def makeWindow(self):
       if self.app != 0:
          self.window.deiconify()
@@ -202,6 +216,21 @@ class Camera(PyroImage, Service):
          #self.canvas.bind("<Enter>", self.togglePlay)
          #self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
+
+         if self.vision:
+            filterData = self.vision.getMenu()
+         else:
+            filterData = []
+
+         filterList = [['List filters', self.listCallbackList],
+                       ['Toggle filter', self.toggleFilterMode],
+                       None,
+                       ['Clear last filter', self.popCallbackList],
+                       ['Clear all filters', lambda self=self: self.clearCallbackList( )],
+                       None]
+
+         filterList.extend( self.makeFilterMenu(filterData) )
+
          menu = [('File',[['Load Filters...',self.loadFilters],
                           ['Save Filters...', self.saveFilters],
                           None,
@@ -213,38 +242,8 @@ class Camera(PyroImage, Service):
                            ['Play', lambda self=self: self.setActive(1)],
                            ['Update', lambda self=self: self.updateOnce()],
                            ]),
-                 ('Filter', [['List filters', self.listCallbackList],
-                             ['Toggle filter', self.toggleFilterMode],
-                             None,
-                             ['Clear last filter', self.popCallbackList],
-                             ['Clear all filters', lambda self=self: self.clearCallbackList( )],
-                             None, 
-                             ['Blur', [['meanBlur', lambda self=self: self.addFilter( "meanBlur") ],
-                                       ['gaussianBlur', lambda self=self: self.addFilter( "gaussianBlur") ],
-                                       ['medianBlur', lambda self=self: self.addFilter( "medianBlur") ],
-                                       ]],
-                             ['Blobify', [['Red', lambda self=self: self.addFilter("blobify", 0, 255, 255, 0, 1, 1)],
-                                          ['Green', lambda self=self: self.addFilter("blobify", 1, 255, 255, 0, 1, 1)],
-                                          ['Blue', lambda self=self: self.addFilter("blobify", 2, 255, 255, 0, 1, 1)]]],
-                             ['Clear', [['Red', lambda self=self: self.addFilter("setPlane", 0)],
-                                        ['Green', lambda self=self: self.addFilter("setPlane", 1)],
-                                        ['Blue', lambda self=self: self.addFilter("setPlane", 2)]]],
-                             ['Supercolor', [['Red', lambda self=self: self.addFilter("superColor", 1, -1, -1, 0)],
-                                             ['Green', lambda self=self: self.addFilter("superColor", -1, 1, -1, 1)],
-                                             ['Blue', lambda self=self: self.addFilter("superColor", -1, -1, 1, 2)]]],
-                             ['Threshold', [['Red', lambda self=self: self.addFilter("threshold", 0)],
-                                            ['Green', lambda self=self: self.addFilter("threshold", 1)],
-                                            ['Blue', lambda self=self: self.addFilter("threshold", 2)]]],
-                             ['Inverse', [['Red', lambda self=self: self.addFilter("inverse", 0)],
-                                          ['Green', lambda self=self: self.addFilter("inverse", 1)],
-                                          ['Blue', lambda self=self: self.addFilter("inverse", 2)]]],
-                             ['Copy', [['Backup', lambda self=self: self.addFilter("backup")],
-                                       ['Restore', lambda self=self: self.addFilter("restore")]]],
-                             ['Detect Edges', [['Sobel', lambda self=self: self.addFilter( "sobel") ]]],
-                             ['Detect Motion', lambda self=self: self.addFilter("motion")],
-                             ['Gray Scale', lambda self=self: self.addFilter("grayScale")],
-                             ['Rotate', lambda self=self: self.addFilter("rotate")]]),
-                 ]
+                 ('Filter', filterList)]
+
          # create menu
          self.mBar = Tkinter.Frame(self.window, relief=Tkinter.RAISED, borderwidth=2)
          self.mBar.pack(fill=Tkinter.X, expand='n', side = "top")

@@ -31,4 +31,4 @@ clean::
 	$(RM) *~ 
 
 cleanall::
-	$(RM) *.so *.o
+	$(RM) *.so *.o *.cc *.so *.pyc

@@ -1,23 +1,28 @@
 #include "Vision.h"
 
 Vision::Vision() {
+  allocatedImage = 0;
 }
 
 Vision::Vision(int wi, int he, int de, int r, int g, int b) {
+  allocatedImage = 0;
   initialize(wi, he, de, r, g, b);
 }
 
 Vision::Vision(int wi, int he, int de) {
+  allocatedImage = 0;
   initialize(wi, he, de, 0, 1, 2);
 }
 
 Vision::~Vision() {
-  delete [] image;
+  if (allocatedImage)
+    delete [] image;
 }
 
 PyObject *Vision::registerCameraDevice(void *dev) {
   Device *device = (Device *)dev;
   image = device->getImage();
+  allocatedImage = 1;
   return initialize(device->getWidth(), device->getHeight(), device->getDepth(),
 		    device->getRGB()[0],device->getRGB()[1],device->getRGB()[2]);
 }
@@ -1000,33 +1005,34 @@ PyObject *Vision::applyFilterList() {
   return applyFilters(filterList);
 }
 
-/*
-PyObject *suppliesFilters() {
-  // ("text name", menu?, funcName, (**defaultArgs)),
-  (("super color", 0, "superColor" , (1, -1, -1, 0)),
-   ("clear plane", 0, "setPlane", (0, 0),
-    ("draw rectangle", 0, "drawRect", (0, 0, 0, 0, 0, ALL)),
-    ("match", 0, "match", (0, 0, 0, 30, 0, ACCUM)),
-    ("threshold", 0, "threshold", (0, 200)),
-    ("inverse", 0, "inverse", (0,)),
-    ("blur edges", 1, "meanBlur", (3)),
-    ("detect edges", 1, "sobel", (1) ),
-    ("gray scale", 1, "grayScale", ()),
-    ("blobify", 1, "blobify", (0)),                          
-    ("clear red", 1, "setPlane", (0),
-    ("clear green", 1, "setPlane", (1),
-    ("clear blue", 1, "setPlane", (2),                          
-    ("superColor red", 1, "superColor", (1, -1, -1, 0),
-    ("superColor green", 1, "superColor", (-1, 1, -1, 1),
-    ("superColor blue", 1, "superColor", (-1, -1, 1, 2),
-    ("threshold red", 1, "threshold", (0),
-    ("threshold green", 1, "threshold", (1),
-    ("threshold blue", 1, "threshold", (2),
-    ("inverse red", 1, "inverse", (0),                          
-    ("inverse green", 1, "inverse", (1),
-    ("inverse blue", 1, "inverse", (2)
+PyObject *Vision::getMenu() {
+  PyObject *menu = PyList_New( 0 );
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "meanBlur", "meanBlur"));
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "gaussianBlur", "gaussianBlur"));
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "medianBlur", "medianBlur"));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Red", "setPlane", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Green", "setPlane", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Blue", "setPlane", 2));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Red", "threshold", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Green", "threshold", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Blue", "threshold", 2));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Red", "inverse", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Green", "inverse", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Blue", "inverse", 2));
+  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
+  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
+  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
+  PyList_Append(menu, Py_BuildValue("sssi", "Detect", "Motion", "motion", 30));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Gray scale", "grayScale"));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
+  return menu;
 }
-*/
 
 PyObject *Vision::backup() { 
   return copy(0); // 0 backup, 1 restore
@@ -1036,10 +1042,9 @@ PyObject *Vision::restore() {
   return copy(1); // 0 backup, 1 restore
 }
 
-PyObject *Vision::motion() { 
+PyObject *Vision::motion(int threshold) { 
   static unsigned char *motion = new unsigned char[width * height * depth];
   static unsigned char *temp = new unsigned char[width * height * depth];
-  int threshold = 30;
   for (int w = 0; w < width; w++) {
     for (int h = 0; h < height; h++) {
       int totalDiff = 0;
@@ -1159,7 +1164,12 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     } else if (strcmp((char *)command, "restore") == 0) {
       retval = restore();
     } else if (strcmp((char *)command, "motion") == 0) {
-      retval = motion();
+      i1 = 30; 
+      if (!PyArg_ParseTuple(list, "|i", &i1)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: motion");
+	return NULL;
+      }
+      retval = motion(i1);
     } else if (strcmp((char *)command, "threshold") == 0) {
       i1 = 0; i2 = 200;
       if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
