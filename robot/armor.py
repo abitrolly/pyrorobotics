@@ -3,7 +3,7 @@
 
 from pyro.robot import *
 
-class SaphiraRobot(Robot):
+class ArmorRobot(Robot):
    def __init__(self, name = None, simiulator = 1):
       Robot.__init__(self, name, "Armor")
 
