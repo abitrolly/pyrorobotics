@@ -386,6 +386,7 @@ class PlayerRobot(Robot):
     def __init__(self, name = "Player", hostname = 'localhost', port = 6665):
         Robot.__init__(self) # robot constructor
         self.devData["simulated"] = 1
+        self.hostname = hostname
         self.port = port
         self.name = name
         self.connect() # set self.dev to player robot
@@ -489,7 +490,7 @@ class PlayerRobot(Robot):
         self.thr = self.th * PIOVER180
 
     def connect(self):
-        self.dev = player(hostname=self.machine, port=self.port)
+        self.dev = player(hostname=self.hostname, port=self.port)
         time.sleep(1)
         #self.localize(0.0, 0.0, 0.0)
         
