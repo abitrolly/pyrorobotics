@@ -15,17 +15,20 @@ else
 SUBDIRS += lib robot/driver/saphira 
 endif
 
-everything: system/version.py all bin/pyro plugins/simulators/Khepera
+everything: system/version.py all bin/pyro plugins/simulators/Khepera compile
 
 include Makefile.src
 
-.PHONY: all tar pyro-$(PYRO_VERSION).tgz cleanall
+.PHONY: all tar pyro-$(PYRO_VERSION).tgz cleanall compile
 
 tar: pyro-$(PYRO_VERSION).tgz
 
 config: 
 	$(PYTHON_BIN) configure.py
 	make
+
+compile:
+	$(PYTHON_BIN) compile.py
 
 pyro-$(PYRO_VERSION).tgz: Makefile
 	mkdir tars || true
