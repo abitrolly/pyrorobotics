@@ -1,4 +1,5 @@
 from pyro.camera import *
+from pyro.brain.behaviors.core import sleep
 from grabImage import *
 from UserString import UserString
 import types
@@ -107,8 +108,8 @@ class V4LGrabber(Camera):
 
 
 
-   def colorFilterHiLow(self, lred, lgreen, lblue,
-                        hred,hgreen,hblue, channel=1):
+   def colorFilterHiLow(self, lred, hred, lgreen,
+                        hgreen, lblue,hblue, channel=1):
       color_filter(lred, lgreen, lblue,hred, hgreen, hblue,
                    channel,self.width, self.height)
       self.sleepCheck();
@@ -138,6 +139,11 @@ class V4LGrabber(Camera):
    def meanBlur(self, kernel=3):
       mean_blur(kernel, self.width, self.height)
       self.sleepCheck()
+
+   def medianBlur(self, kernel = 3):
+      median_blur(kernel, self.width, self.height)
+      self.sleepCheck()
+   
 
    def superColor(self, color, channel, lighten=0):
 
@@ -193,28 +199,8 @@ class V4LGrabber(Camera):
 
 
    def trainColor(self):
-      red = 0
-      green = 0
-      blue = 0
-
-      #train it over 5 frames and take average of colors of those frames
-      #for i in range(0,5):
-      #   refresh_image(self.handle, self.width, self.height, self.depth*8, 0)
-
-      #only do over one frame incase filtering has been done on the frame.
-      #maybe have students just take the average over 5 in their code.?
       self.histRed, self.histGreen, self.histBlue = train_color(self.width,
                                                                 self.height);
-      #red = red + self.histRed
-      #green = green + self.histGreen
-      #blue = blue + self.histBlue
-      
-      #self.histRed = red 
-      #self.histGreen = green 
-      #self.histBlue = blue 
-      
-      #print "Done Training"
-
 
 
    def __del__(self):
