@@ -2,25 +2,40 @@ from socket import *
 from pyro.robot import Robot
 from pyro.robot.device import Device
 from random import random
-from math import pi, sin, cos
+from time import sleep
+import threading
 
-PIOVER180 = pi / 180.0
+class ReadUDP(threading.Thread):
+    """
+    A thread class for reading UDP data
+    """
+    BUF = 10000
+    def __init__(self, robot):
+        """
+        Constructor, setting initial variables
+        """
+        self.robot = robot
+        self._stopevent = threading.Event()
+        self._sleepperiod = 0.0
+        threading.Thread.__init__(self, name="ReadUDP")
+        
+    def run(self):
+        """
+        overload of threading.thread.run()
+        main control loop
+        """
+        while not self._stopevent.isSet():
+            data, addr = self.robot.socket.recvfrom(self.BUF)
+            if len(data) > 0:
+                self.robot.processMsg(parse(data), addr)
+            self._stopevent.wait(self._sleepperiod)
 
-def lookup(thing):
-    """ Returns ASCII, color, width, height """
-    if thing[0] == 'f': # flag
-        return "F", "red", 1, 10
-    elif thing[0] == 'b': # ball
-        return "B", "white", 3, 3
-    elif thing[0] == 'l': # line
-        return None, None, None, None
-    elif thing[0] == 'p': # player
-        return "P", "yellow", 3, 3
-    elif thing[0] == 'g': # goal
-        return "G", "blue", 1, 10 # FIX: make my goal different
-    else:
-        print "unknown thing:", thing
-        return None, None, None, None
+    def join(self,timeout=None):
+        """
+        Stop the thread
+        """
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
 
 def makeDict(pairs):
     """ Turns list of [name, value] pairs into a dict {name: value, ...} or {name: [values], ...}"""
@@ -106,7 +121,6 @@ class TruthDevice(Device):
 
 class RobocupRobot(Robot):
     """ A robot to interface with the Robocup simulator. """
-    BUF = 10000
     def __init__(self, name="TeamPyro", host="localhost", port=6000,
              goalie = 0):
         Robot.__init__(self)
@@ -125,13 +139,15 @@ class RobocupRobot(Robot):
         self.devData["goalie"] = goalie
         self.address = (self.devData["host"], self.devData["port"])
         self.socket = socket(AF_INET, SOCK_DGRAM)
+        self.reader = ReadUDP(self)
+        self.reader.start()
         msg = "(init %s (version 9.0)" % self.devData["name"]
         if goalie:
             msg += "(goalie)"
         msg += ")" 
         self.socket.sendto(msg, self.address)
         # get the real address
-        self.processMsg(10)
+        sleep(1)
         self.devData["builtinDevices"] = ["truth"]
         self.startDevice("truth")
         self.set("/devices/truth0/pose", (random() * 100 - 50,
@@ -148,10 +164,6 @@ class RobocupRobot(Robot):
             address = self.address
         self.socket.sendto(msg + chr(0), address)
 
-    def getMsg(self):
-        data, addr = self.socket.recvfrom(self.BUF)
-        return parse(data), addr
-
     def disconnect(self):
         self.stop()
         self.socket.close()
@@ -161,51 +173,48 @@ class RobocupRobot(Robot):
         if message[0] == "hear":
             print "heard message:", message[1:]
 
-    def processMsg(self, times = 1):
-        for n in range(times):
-            self.lastHistory = self.historyNumber % self.historySize
-            msg, addr = self.getMsg()
-            if len(msg):
-                self.history[self.lastHistory] = msg
-                self.historyNumber += 1
-                if msg[0] == "init":
-                    self.devData[msg[0]] = msg[1:]
-                    self.address = addr
-                elif msg[0] == "server_param":
-                    # next is list of pairs
-                    self.devData[msg[0]] = makeDict(msg[1:])
-                elif msg[0] == "player_param":
-                    # next is list of pairs
-                    self.devData[msg[0]] = makeDict(msg[1:])
-                elif msg[0] == "player_type": # types
-                    # next is list of ["id" num], pairs...
-                    id = "%s:%d" % (msg[0], msg[1][1])
-                    self.devData[id] = makeDict(msg[2:])
-                elif msg[0] == "sense_body": # time pairs...
-                    self.devData[msg[0]] = makeDict(msg[2:])
-                    self.devData["sense_body:time"] = msg[1]
-                elif msg[0] == "see": # time tuples...
-                    self.devData[msg[0]] = msg[2:]
-                    self.devData["%s:time" % msg[0]] = msg[1]
-                elif msg[0] == "error":
-                    print "Robocup error:", msg[1]
-                elif msg[0] == "warning":
-                    print "Robocup warning:", msg[1]
-                elif msg[0] == "hear": # hear time who what
-                    self.devData[msg[0]] = msg[2:]
-                    self.devData["%s:time" % msg[0]] = msg[1]
-                elif msg[0] == "score": 
-                    self.devData[msg[0]] = msg[2:]
-                    self.devData["%s:time" % msg[0]] = msg[1]
-                else:
-                    print "unhandled message in robocup.py: '%s'" % msg[0], msg
-                self.messageHandler(msg)
+    def processMsg(self, msg, addr):
+        self.lastHistory = self.historyNumber % self.historySize
+        if len(msg):
+            self.history[self.lastHistory] = msg
+            self.historyNumber += 1
+            if msg[0] == "init":
+                self.devData[msg[0]] = msg[1:]
+                self.address = addr
+            elif msg[0] == "server_param":
+                # next is list of pairs
+                self.devData[msg[0]] = makeDict(msg[1:])
+            elif msg[0] == "player_param":
+                # next is list of pairs
+                self.devData[msg[0]] = makeDict(msg[1:])
+            elif msg[0] == "player_type": # types
+                # next is list of ["id" num], pairs...
+                id = "%s:%d" % (msg[0], msg[1][1])
+                self.devData[id] = makeDict(msg[2:])
+            elif msg[0] == "sense_body": # time pairs...
+                self.devData[msg[0]] = makeDict(msg[2:])
+                self.devData["sense_body:time"] = msg[1]
+            elif msg[0] == "see": # time tuples...
+                self.devData[msg[0]] = msg[2:]
+                self.devData["%s:time" % msg[0]] = msg[1]
+            elif msg[0] == "error":
+                print "Robocup error:", msg[1]
+            elif msg[0] == "warning":
+                print "Robocup warning:", msg[1]
+            elif msg[0] == "hear": # hear time who what
+                self.devData[msg[0]] = msg[2:]
+                self.devData["%s:time" % msg[0]] = msg[1]
+            elif msg[0] == "score": 
+                self.devData[msg[0]] = msg[2:]
+                self.devData["%s:time" % msg[0]] = msg[1]
             else:
-                return
+                print "unhandled message in robocup.py: '%s'" % msg[0], msg
+            self.messageHandler(msg)
+        else:
+            return
 
     def update(self):
         self._update()
-        self.processMsg(2) # this should probably be in another thread
         if self.devData["continuous"]:
             self.keepGoing()
         self.updateNumber += 1
@@ -240,105 +249,4 @@ class RobocupRobot(Robot):
     def move(self, translate_velocity, rotate_velocity):
         self.translate(translate_velocity)
         self.rotate(rotate_velocity)
-
-    def getPoint( self, distance, direction): # meters, angle off center
-        row = self.height - \
-              self.height * cos( direction * PIOVER180 ) * distance/100.0
-        col = self.width/2.0 \
-              + self.width * sin( direction * PIOVER180 ) * distance/100.0
-        if row < 0 or row >= self.height:
-            return None, None # off screen
-        if col < 0 or col >= self.width:
-            return None, None # off screen
-        return (int(col), int(row))
-
-    def lookupLines( self, flagName ):
-        retval = []
-        for lineName in self.lines:
-            if flagName in self.lines[lineName]:
-                retval.append( lineName )
-        return retval
-
-    def makeImage(self, see = None):
-        if see == None:
-            see = self.get("robot/see")
-        self.width = 40
-        self.height = 30
-        self.depth = 1
-        self.image = [" "] * self.height * self.width * self.depth
-        self.lines = {"top": ["lt", "ct", "rt"],
-                      "left": ["lt", "glt", "gl", "glb", "lb"],
-                      "bottom": ["lb", "cb", "rb"],
-                      "right": ["rb", "grb", "gr", "grt", "rt"],
-                      "Top": ["tl50", "tl40", "tl30", "tl20", "tl10", "t0",
-                              "tr50", "tr40", "tr30", "tr20", "tr10"],
-                      "Left": ["lt30", "lt20", "lt10", "l0",
-                               "lb30", "lb20", "lb10"],
-                      "Bottom": ["bl50", "bl40", "bl30", "bl20", "bl10", "b0",
-                                 "br50", "br40", "br30", "br20", "br10"],
-                      "Right": ["rt30", "rt20", "rt10", "r0",
-                                "rb30", "rb20", "rb10"],
-                      "center": ["t0", "ct", "c", "cb", "b0"],
-                      "1pleft": ["plt", "plc", "plb"],  
-                      "2pright": ["prt", "prc", "prb"],  
-                      }
-        linePoints = {}
-        for s in self.lines:
-            linePoints[s] = []
-        # sort it on distance, further ones first
-        see.sort(lambda x,y: cmp(y[1],x[1]))
-        # First, go through and draw lines from flags:
-        for item in see:
-            # item is something like: [['f', 'c'], 14, 36, 0, 0]
-            if len(item) > 2: # otherwise, can't do much without direction
-                if item[0][0] == "f" or item[0][0] == "g": # it's a flag or goal
-                    flagName = ""
-                    for ch in item[0][1:]:
-                        flagName += "%s" % ch
-                    onLines = self.lookupLines( flagName )
-                    for onLine in onLines:
-                        # distance, direction
-                        x, y = self.getPoint( item[1], item[2])
-                        if x != None and y != None:
-                            linePoints[onLine].append( (x, y) )
-        # now, draw the lines:
-        for lineName in linePoints:
-            if len(linePoints[lineName]) > 0:
-                points = linePoints[lineName]
-                for (x,y) in points:
-                    self.image[y * self.width + x] = lineName[0]
-        # now, draw players, ball, and goal
-        for item in see:
-            if len(item) > 2: # otherwise, can't do much without direction
-                itemName = ""
-                for ch in item[0]:
-                    itemName += "%s" % ch
-                color = ""
-                if itemName[0] == "p": # it's a player
-                    if len(item[0]) > 1:
-                        if item[0][1] == self.devData["name"]:
-                            color = "Y" # my team player
-                        else:
-                            color = "P" # other team player
-                    else:
-                        color = "?" # some player?
-                elif itemName == "b": # ball
-                    color = "@"
-                elif itemName[0] == "g": # center goal
-                    color = "G"
-                elif itemName == "fgrb" or \
-                     itemName == "fgrt" or \
-                     itemName == "fglb" or \
-                     itemName == "fglt":
-                    color = "G" # WHICH IS MINE?
-                if color:
-                    # draw box proportional to size:
-                    x, y = self.getPoint( item[1], item[2])
-                    if x != None and y != None:
-                        self.image[y * self.width + x] = color
-        for y in range(self.height):
-            for x in range(self.width):
-                print self.image[y * self.width + x],
-            print
-        print
 
