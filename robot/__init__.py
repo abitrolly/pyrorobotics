@@ -22,7 +22,7 @@
 import pyro.gui.console as console
 import pyro.system as system
 from pyro.geometry import Polar, distance
-from pyro.robot.device import deviceDirectoryFormat
+from pyro.robot.device import *
 import math, string, time, os
 
 def ellipses(things):
@@ -129,12 +129,17 @@ class Robot:
         If you need to initialize things, call setup()
         """
         self.directory = {} # toplevel place for paths
+        # In this list are the things that can NOT be set()ed:
+        self.notSetables = ['timestamp', "builtinDevices", 'x','y','z','th','thr','stall','model','type','subtype',"simulated"] 
+        # In this list are the things that can NOT be get()ed.
+        self.notGetables = ['comand']
+        #self.notGetables = []
         self.device = {} # what was called services
         self.devData = {} # items in /robot/ path
         self.devDataFunc = {} # function items in /robot/ path
         self.devData['timestamp'] = time.time()
         self.devData['.help'] = "The main robot object. Access the last loaded devices here, plus all of the robot-specific fields (such as x, y, and th). Use robot.move(translate, rotate) to move the robot."
-        self.devData["supports"] = [] # list of built-in devices
+        self.devData["builtinDevices"] = [] # list of built-in devices
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
@@ -180,19 +185,23 @@ class Robot:
             if isDevice and "/robot/" == path[:7]:
                 retval += ("   " * depth) + ("%s = <alias to \"devices/%s\">\n" % (item, self.get("%s/%s/name" % (path, item))))
                 continue
-            if item[0] == "*": # a group (link), do not recur
-                things = ellipses(self.get("%s/%s/pos" % (path, item[1:]), showstars = 1))
-                retval += ("   " * depth) + ("%s = %s\n" % (item, things))
-                if item == "*all/":
-                    retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
-            elif item[-1] == "/": # more things below this
-                retval += ("   " * depth) + ("%s\n" % item)
-                #print "HERE A"
-                retval += self.getAll("%s/%s" % (path, item), depth + 1)
-            else:
-                #print "MORE", path, item
-                things = ellipses(self.get("%s/%s" % (path, item), showstars = 1))
-                retval += ("   " * depth) + ("%s = %s\n" % (item, things))
+            try: # may try to get a non-getable thing:
+                if item[0] == "*": # a group (link), do not recur
+                    item = item[1:]
+                    things = ellipses(self.get("%s/%s/pos" % (path, item), showstars = 1))
+                    retval += ("   " * depth) + ("%s = %s\n" % (item, things))
+                    if item == "all/":
+                        retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
+                elif item[-1] == "/": # more things below this
+                    retval += ("   " * depth) + ("%s\n" % item)
+                    #print "HERE A"
+                    retval += self.getAll("%s/%s" % (path, item), depth + 1)
+                else:
+                    #print "MORE", path, item
+                    things = ellipses(self.get("%s/%s" % (path, item), showstars = 1))
+                    retval += ("   " * depth) + ("%s = %s\n" % (item, things))
+            except:
+                retval += ("   " * depth) + ("%s - used with set()\n" % (item,))
         return retval
 
     def _getDevice(self, pathList, showstars = 0):
@@ -233,7 +242,7 @@ class Robot:
             raise AttributeError, "no such directory item '%s'" % key
 
     def help(self, path):
-        pathList = device.split("/")
+        pathList = path.split("/")
         # remove extra slashes
         while pathList.count("") > 0:
             pathList.remove("")
@@ -261,6 +270,8 @@ class Robot:
         while path.count("") > 0:
             path.remove("")
         path.extend( args )
+        if len(path) > 0 and path[-1] == "help":
+            return self.help(string.join(path[:-1], "/") + "/.help")
         # parse path parts for dashes, colons, and commas
         finalPath = []
         for part in path:
@@ -280,16 +291,22 @@ class Robot:
             raise AttributeError, "'%s' is not a root directory" % finalPath[0]
 
     def _set(self, pathList, value):
+        if len(pathList) < 2:
+            raise DeviceSetError, "invalid format to set()"
         key = pathList[0]
         args = pathList[1:]
         if key in self.devData:
+            if key in self.notSetables:
+                raise DeviceSetError, ("%s is not setable" % key)
             self.devData[key] = value
             return "Ok"
         elif key in self.devDataFunc:
+            if key in self.notSetables:
+                raise DeviceSetError, ("%s is not setable" % key)
             self.devDataFunc[key]._set(args, value)
             return "Ok"
         else:
-            raise AttributeError, "no setable directory item '%s'" % key
+            raise DeviceSetError, "no setable directory item '%s'" % key
 
     def _setDevice(self, pathList, value):
         key = pathList[0]
@@ -297,7 +314,7 @@ class Robot:
         if key in self.device:
             return self.device[key]._set(args, value)
         else:
-            raise AttributeError, "no setable directory item '%s'" % key
+            raise DeviceSetError, "no setable directory item '%s'" % key
         
     def set(self, device, value):
 	"""
@@ -429,7 +446,7 @@ class Robot:
                 retval.append(deviceName)
                 retval.append( None )
             return retval
-        elif item in self.devData["supports"]: # built-in name
+        elif item in self.devData["builtinDevices"]: # built-in name
             # deviceBuiltin returns dictionary
             return self.startDevices( self.startDeviceBuiltin(item) )
         elif isinstance(item, (type((1,)), type([1,]))):
@@ -475,7 +492,7 @@ class Robot:
         return self.device.keys()
 
     def getSupportedDevices(self):
-        return self.devData["supports"]
+        return self.devData["builtinDevices"]
 
     def removeDevice(self, item):
         self.device[item].setVisible(0)
