@@ -1,5 +1,4 @@
 from fake import Fake
-import pyro.vision.cvision.vision as vision
 from pyro.camera import Camera, CBuffer
 import re, time, os
 import PIL
@@ -11,7 +10,7 @@ class FakeCamera(Camera):
    """
    def __init__(self, pattern = None,
                 start = 0, limit = 19, char = "?",
-                interval = 1.0):
+                interval = 1.0, visionSystem = None):
       """
       pattern is a filename with indicators on where to put digits for the
       sequence.  Absolute or relative filenames can be used.
@@ -43,12 +42,14 @@ class FakeCamera(Camera):
                  self.fstring % self.current + \
                  self.pattern[self.match.end():]
       self.cameraDevice = Fake(currname)
-      self.cobj = vision.Vision()
-      self.cobj.registerCameraDevice(self.cameraDevice)
-      self.width = self.cobj.getWidth()
-      self.height = self.cobj.getHeight()
-      self.depth = self.cobj.getDepth()
-      self.cbuf = self.cobj.getMMap()
+      # connect vision system: --------------------------
+      self.vision = visionSystem
+      self.vision.registerCameraDevice(self.cameraDevice)
+      self.width = self.vision.getWidth()
+      self.height = self.vision.getHeight()
+      self.depth = self.vision.getDepth()
+      self.cbuf = self.vision.getMMap()
+      # -------------------------------------------------
       if self.depth == 8:
          self.color = 0
       else:
@@ -60,7 +61,7 @@ class FakeCamera(Camera):
                       "Fake Camera View")
       
    def _update(self):
-      if self.lockCamera == 0 and self.limit > 0:
+      if self.limit > 0:
          if (self.current < self.limit):
             currentTime = time.time()
             if currentTime - self.lastUpdate > self.interval:
@@ -68,7 +69,10 @@ class FakeCamera(Camera):
                           self.fstring % self.current + \
                           self.pattern[self.match.end():]
                self.cameraDevice.updateMMap(currname)
-               self.cobj.applyFilterList()
+               #try:
+               self.vision.processAll()
+               #except:
+               #   print "no vision system?"
                self.current += 1
                self.lastUpdate = currentTime
          else:

@@ -84,11 +84,6 @@ class Camera(PyroImage, Service):
       self.app = 0
       self.title = title
 
-      # lockCamera is used for processing in place -- if 0, refresh_image
-      # will update the image; if 1, processing is occuring on the
-      # buffer, so refresh_image will not update
-      self.lockCamera = 0
-
       self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
       self.maxBlob = self.blob[0]
 
@@ -103,25 +98,19 @@ class Camera(PyroImage, Service):
       Example: cam.setFilterList([("superColor",1,-1,-1,0),("meanBlur",3)]) 
       """
       myList = map(makeArgList, filterList)
-      self.cobj.setFilterList(myList)
+      self.vision.setFilterList(myList)
       # if paused, update the screen
       if self.active == 0:
          self.update()
 
    def popFilterList(self):
-      self.cobj.popFilterList()
+      self.vision.popFilterList()
       # if paused, update the screen
       if self.active == 0:
          self.update()
 
    def getFilterList(self):
-      return self.cobj.getFilterList()
-
-   def saveImage(self, filename="image.ppm"):
-      self.cobj.saveImage(filename)      
-
-   def drawRect(self, *args):
-      self.cobj.drawRect( *args)
+      return self.vision.getFilterList()
 
    def loadFilters(self):
       pass
@@ -141,19 +130,19 @@ class Camera(PyroImage, Service):
          print "Invalid Sort Parameter to maxBlobs."
 
       if number == 1:
-         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = self.cobj.blobify( channel,low_threshold,high_threshold,method,number,drawBox);
+         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = self.vision.blobify( channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 2:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
                
       elif number == 3:
-         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
+         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 4:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 5:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       else:
          print "Invalid parameter to maxBlobs: number, must be 1-5"
@@ -169,24 +158,24 @@ class Camera(PyroImage, Service):
          return;
 
       if (color.lower() == "red"):
-         self.cobj.superColor(1, -1, -1, channel)
+         self.vision.superColor(1, -1, -1, channel)
       elif (color.lower() == "green"):
-         self.cobj.superColor(-1, 1, -1, channel)
+         self.vision.superColor(-1, 1, -1, channel)
       elif (color.lower() == "blue"):
-         self.cobj.superColor(-1, -1, 1, channel)
+         self.vision.superColor(-1, -1, 1, channel)
       # fix the following; they need fractional weights:
       elif (color.lower() == "magenta"):
-         self.cobj.superColor(1, -1, 0.5, channel)
+         self.vision.superColor(1, -1, 0.5, channel)
       elif (color.lower() == "yellow"):
-         self.cobj.superColor(1.0/6.0, 2.0/6.0, -1, channel)
+         self.vision.superColor(1.0/6.0, 2.0/6.0, -1, channel)
       elif (color.lower() == "cyan"):
-         self.cobj.superColor(-1, 1/2.0, 1/2.0, channel)
+         self.vision.superColor(-1, 1/2.0, 1/2.0, channel)
       else:
          print "Invalid Super Color"
          
    def trainColor(self):
-      self.histogram = self.cobj.Hist()
-      self.histogram.red, self.histogram.green, self.histogram.blue = self.cobj.trainColor();
+      self.histogram = self.vision.Hist()
+      self.histogram.red, self.histogram.green, self.histogram.blue = self.vision.trainColor();
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
@@ -316,7 +305,7 @@ class Camera(PyroImage, Service):
 
    def apply(self, command, *args):
       if type(command) == type(""):
-         self.cobj.applyFilters( [(command, args)] )
+         self.vision.applyFilters( [(command, args)] )
       else:
          raise "Improper format for apply()"
 
@@ -325,12 +314,12 @@ class Camera(PyroImage, Service):
       Add a filter to the filter list.
       Example: cam.addFilter( "superColor", 3)
       """
-      self.cobj.addFilter( (command, args) )
+      self.vision.addFilter( (command, args) )
       listFilter( (command, args) )
       if not self.active:
          # if paused, apply it once, and update
          #Camera.__dict__[command](self, *args)
-         self.cobj.applyFilters( [(command, args)] )
+         self.vision.applyFilters( [(command, args)] )
 
    def setActive(self, val):
       self.active = val
@@ -351,7 +340,7 @@ class Camera(PyroImage, Service):
 
    def listFilterList(self):
       print "Filters:"
-      map(listFilter, self.cobj.getFilterList())
+      map(listFilter, self.vision.getFilterList())
 
    def togglePlay(self, event):
       self.active = not self.active
@@ -359,7 +348,7 @@ class Camera(PyroImage, Service):
    def processLeftClick(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       x, y = x * self.width, y * self.height
-      rgb = self.cobj.get(int(x), int(y))
+      rgb = self.vision.get(int(x), int(y))
       self.addFilter("match", rgb[0], rgb[1], rgb[2]) 
 
    def hideWindow(self):
@@ -401,6 +390,10 @@ class Camera(PyroImage, Service):
 
    def updateService(self):
       self.update()
+
+   def setVisionCallBack(self, callback):
+      print "setting vision callback to", callback
+      self.vision.process = callback
 
 if __name__ == '__main__':
    cam = Camera(100, 80)
