@@ -198,6 +198,32 @@ class Camera(PyroImage):
          sys.exit(1)
       self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
+   def motion(self)
+      mimage = Camera()
+      image1 = mimage.update()
+      image2 = mimage.update()
+      image1.grayScale()
+      image2.grayScale()
+      compMotion = image()
+      compMotion.width = image1.width
+      compMotion.height = image1.height
+      compMotion.depth = 1
+      compMotion.data = [0] * compMotion.height * compMotion.width * 1
+      x = 0
+      movedPixelCount = 0
+      while (x < compMotion.width * compMotion.height):
+         if (abs(image1.data[x] - image2.data[x]) > 20):
+            compMotion.data[x] = "M"
+            movedPixelCount += 1
+         else:
+            compMotion.data[x] = "."
+         x += 1
+      compMotion.saveToFile(MotionBitMap)
+#if we want return values, uncomment this. I was unsure.
+      if (movedPixelCount > 5):
+         return 1
+      else:
+         return 0
 
 class Histogram(PyroImage):
    """
