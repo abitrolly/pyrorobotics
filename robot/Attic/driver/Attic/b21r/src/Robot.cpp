@@ -48,7 +48,7 @@ Robot :: Robot(int argnum, char **argstr) : x(px),
   turn_request  = 0;
   speed_request = 0;
 
-  Debug_Level = 10; // atoi(xrcl::get_option(argc, argv, "-debug", "0"));
+  Debug_Level = 0; // atoi(xrcl::get_option(argc, argv, "-debug", "0"));
   RobotName = "B21R"; // xrcl::get_option(argc, argv, "-robot");
   RobotID   = ZERO;
 

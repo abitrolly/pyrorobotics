@@ -221,8 +221,8 @@ class B21RRobot(Robot):
 
     def update(self):
 	self.dev.UpdateReadings()
-	self.x = self.dev.getX() / 1000.0
-	self.y = self.dev.getY() / 1000.0
+	self.x = self.dev.getX() 
+	self.y = self.dev.getY() 
 	self.th = self.dev.getTh()
 	self.thr = self.dev.getThr()
 	self.senseData["laser"] = self.dev.getLaser()

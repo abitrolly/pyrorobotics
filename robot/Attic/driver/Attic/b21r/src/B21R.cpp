@@ -1,6 +1,5 @@
 #include "B21R.h"
 
-
 /**********************************************************
  Robot Classes: B21R
  **********************************************************/
@@ -214,7 +213,7 @@ int B21R :: UpdatePosition(void)
   py     = ((double)pOdoData.position[Y]) - offset_y;
 
   degpth = (double)degWrap((((pOdoData.position[THETA]+PI) / 
-			     (2 * PI)) * 360) - 90 - offset_t);
+			     (2 * PI)) * 360) - 180 - offset_t);
   radpth = D2P(degth);
 
   if(Debug_Level > ONE)

@@ -14,6 +14,7 @@ void b21r :: SensorsInit(void) {
 }
 
 void b21r :: UpdateReadings(void) {
+  dev->UpdatePosition();
   dev->UpdateReadings();
 }
 
@@ -99,11 +100,13 @@ int b21r :: move(double translate, double rotate) {
 }
 
 double b21r :: getX() {
-  return dev->getActualX();
+  // NOTE: switched axis for Pyro
+  return dev->getActualY() * 1000.0;
 }
 
 double b21r :: getY() {
-  return dev->getActualY();
+  // NOTE: switched axis for Pyro
+  return dev->getActualX() * 1000.0;
 }
 
 double b21r :: getTh() {
