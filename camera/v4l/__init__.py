@@ -35,6 +35,11 @@ class V4LGrabber(Camera):
       else:
          raise "Color depth settings other than one or three not yet supported"
 
+      if width < 48:
+         raise ValueError, "Width must be greater than 48."
+      if height < 48:
+         raise ValueError, "Height must be greater than 48."
+
       self.width = width
       self.height = height
       
@@ -82,7 +87,7 @@ class V4LGrabber(Camera):
       """Not supported by this camera"""
       raise "Zoom not supported"
 
-   def save(self, path = "~/V4LGrab.tga"):
+   def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
       Save a copy of the image to disk, in TGA format (Gimp and display
       can read it).
@@ -151,11 +156,11 @@ if __name__ == "__main__":
    print "Now using the V4LGrabber class..."
    cam = V4LGrabber(384, 240)
    #cam.update()
-   cam.save("./test1.tga")
+   cam.saveAsTGA("./test1.tga")
    time.sleep(3)
-   cam.save("./test2.tga")
+   cam.saveAsTGA("./test2.tga")
    cam.update()
-   cam.save("./test3.tga")
+   cam.saveAsTGA("./test3.tga")
 
    print """
    If everything worked, then test1.tga and test2.tga should be identical,
