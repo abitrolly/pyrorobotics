@@ -28,12 +28,13 @@ class Trace:
     Trace provides a general way of displaying a path on an image.
     """
 
-    def __init__(self, pathDataFilename = ""):
-        self.worldImageFilename = ""
+    def __init__(self, pathDataFilename = "", worldImageFilename = ""):
+        self.worldImageFilename = worldImageFilename
         self.pathDataFilename = pathDataFilename
         self.outfile = ""
         self.window = 0
         self.app = 0
+        self.view = 0
         if os.environ.has_key('PYRO'):
             path = os.environ['PYRO']
         else:
@@ -146,6 +147,7 @@ class Trace:
             ls[1] = imWidth - ls[1]
 
     def addLine(self, data):
+        print "data=", data
         x, y, angle, model = data
         model = 1
         self.drawSymbol((x,y), angle, int(model), data[1])
@@ -161,14 +163,17 @@ class Trace:
         self.image.save(outFile)
 
     def run(self):
-        for data in self.robotPathData[0]:
+        print "path data", self.robotPathData
+        for data in self.robotPathData:
             self.addLine(data)
 
 if __name__ == "__main__":
     import sys, getopt
-    opts, args = getopt.getopt(sys.argv[1:], "cm:i:l:r:o:hvw", ["color", "markers", "interval", "width", "resolution", "outfile", "help", "window"])
-    tracer = Trace(sys.argv[1]) # world, data
+    opts, args = getopt.getopt(sys.argv[3:], "cm:i:l:r:o:hvw", ["color", "markers=", "interval=", "length=", "resolution=", "outfile=", "help", "view", "window"])
+    tracer = Trace(sys.argv[1], sys.argv[2]) # world, data
+    print "opts:", opts
     for opt, val in opts:
+        print opt, val
         if opt in ("-h", "--help"):
             print "Help:"
             sys.exit()
@@ -185,13 +190,18 @@ if __name__ == "__main__":
         elif opt in ("-o", "--outfile"):
             tracer.outfile = val
         elif opt in ("-w", "--window"):
-            self.window = 1
+            tracer.window = 1
         elif opt in ("-v", "--view"):
-            self.view = 1
-    if tracer.outfile:
+            tracer.view = 1
+    if tracer.view:
+        if tracer.outfile:
+            tracer.output()
+            sys.system("xview %s" % tracer.outfile)
+        else:
+            print "No outfile specified"
+    elif tracer.outfile:
         tracer.output()
-        if tracer.view:
-            sys.system("xview %s" % self.outfile)
+        sys.system("xview %s" % tracer.outfile)
     if tracer.window:
         tracer.makeWindow()
         tracer.run()
