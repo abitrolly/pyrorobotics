@@ -220,8 +220,8 @@ class AiboRobot(Robot):
         # Throttle the sending of data from the Aibo; we can't handle much faster than
         # 10 bits of data a second. Make this lower if you can (these are ms pauses):
         self.setAiboConfig("vision.rawcam_interval", 50)
-        self.setAiboConfig("vision.rle_interval", 50)
-        self.setAiboConfig("vision.worldState_interval", 50)
+        #self.setAiboConfig("vision.rle_interval", 50)
+        #self.setAiboConfig("vision.worldState_interval", 50)
         # --------------------------------------------------
         self.setRemoteControl("Walk Remote Control", "on")
         self.setRemoteControl("EStop Remote Control", "on")
@@ -585,8 +585,24 @@ class AiboRobot(Robot):
         self.sensor_thread.join()
         Robot.destroy(self)
 
+    def playSound(self, file):
+        # 3BARKS.WAV, 3YIPS.WAV, BARKHIGH.WAV, BARKLOW.WAV, BARKMED.WAV
+        # BARKREAL.WAV, CAMERA.WAV, CATCRY.WAV, CATYOWL.WAV, CRASH.WAV
+        # CUTEY.WAV, DONKEY.WAV, FART.WAV, GLASS.WAV, GROWL.WAV
+        # GROWL2.WAV, GRRR.WAV, HOWL.WAV, MEW.WAV, PING.WAV, ROAR.WAV
+        # SKID.WAV, SNIFF.WAV, TICK.WAV, TOC.WAV, WHIIP.WAV, WHIMPER.WAV
+        # WHOOP.WAV, YAP.WAV, YIPPER.WAV
+        file = file.upper();
+        if (not file.endswith(".WAV")):
+            file +=".WAV"
+        self.main_control.s.send("!select \"%s\"\n" % "Play Sound")
+        self.main_control.s.send("!select \"%s\"\n" % file) #select file
+        
     def setWalk(self, file):
         # PACE.PRM, TIGER.PRM, WALK.PRM (crawl)
+        file = file.upper();
+        if (not file.endswith(".PRM")):
+            file +=".PRM"
         self.walk_control.s.close()
         self.main_control.s.send("!select \"%s\"\n" % "Load Walk") # forces files to be read
         self.main_control.s.send("!select \"%s\"\n" % file) # select file
@@ -699,6 +715,23 @@ class AiboRobot(Robot):
         else:
             raise AttributeError, "values out of range -1.0, 1.0"
 
+    def inverseKinematics(self, joint):
+        jointDict = joint.split()
+        res = {}
+        if "tilt" in jointDict:
+            val = self.getJoint("head tilt")[0]
+            res["tilt"]=val/1.32
+        if "pan" in jointDict:
+            val = self.getJoint("head pan")[0]
+            if val < 0:
+                res["pan"] = val/1.49
+            else:
+                res["pan"] = val/1.54
+        if "roll" in jointDict:
+            val = self.getJoint("head roll")[0]
+            res["roll"] = val/0.71
+        return res
+   
 #TODO:
 
 # 1. How to read sensors? Infrared, Touch, joint positions
