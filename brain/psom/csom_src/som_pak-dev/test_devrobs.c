@@ -11,13 +11,15 @@
 #include "lvq_pak.h"
 #include "som_rout.h"
 #include "datafile.h"
+#include "labels.h" /* WKV 2003-07-28 */
 
 #include "som_devrobs.h"
 
 
 
 int main() {
-  struct teach_params *params;
+  //struct teach_params *params;
+  struct teach_params_counters *params; /* WKV 2003-07-28 */
   struct entries *codes, *data;
   struct data_entry *input, *output, *sample;
   float points[5] = {13.57, 12.61, -1.38, -1.99, 399.77};
@@ -29,7 +31,8 @@ int main() {
   char *out_code_verify1 = "test1_verify.cod";
   char *out_code_file1 = "test1.cod";
   char *out_code_file2 = "test2.cod";
-  int *coords, i, j, error;
+  //int *coords, i, j, error;
+  int *coords, *last_coords, i, j, error; /* WKV 2003-07-28 */
   float *levels;
   float alpha = 0.02, radius = 4.0;
   long rlen = 5000, ewin = 100;
@@ -39,7 +42,7 @@ int main() {
   float radius2, *erange;
 
   // sets global parameters.  i think this is necessary...
-	set_globals();
+  set_globals();
 	
   printf("testing package som_devrobs.c:\n\n");
 
@@ -74,6 +77,7 @@ int main() {
   if(error) printf("  could not create file %s\n", out_code_file2);
   else printf("  resulting code file saved to %s\n", out_code_file2);
 
+  free_teach_params(params); /* WKV 2003-07-28 */
   close_entries(codes);
   close_entries(data);
   
@@ -84,6 +88,7 @@ int main() {
   system(sysdo);
   printf("  compare %s and %s to verify accuracy of test 1\n",
 	 out_code_file1, out_code_verify1);
+
   printf("  test 1 completed\n\n");
 
 
@@ -116,6 +121,7 @@ int main() {
 
   close_entries(codes);
   close_entries(data);
+  free_teach_params(params); /* WKV 2003-07-28 */
   printf("  test 2 completed\n\n");
 
 
@@ -147,22 +153,30 @@ int main() {
   print_dataset(data);
 
   input = rewind_entries(data, &p);
+  last_coords = malloc(2*sizeof(int));  /* WKV 2003-07-28 */
+  last_coords[0] = last_coords[1] = -1; /* WKV 2003-07-28 */
+
   while(input != NULL) {
-    coords = train_one(params, input);
+    //coords = train_one(params, input);
+    coords = train_one(params, input, last_coords, 1); /* WKV 2003-07-28 */
+    free(last_coords);                                 /* WKV 2003-07-28 */
+    last_coords = coords;                              /* WKV 2003-07-28 */
+    
     printf("  input ");
     for(i=0;i<dim;i++) printf("%f ", input->points[i]);
     printf("\n    maps to model (%d,%d): ", coords[0], coords[1]);
     output = get_model_vector(codes, coords);
     for(i=0;i<dim;i++) printf("%f ", output->points[i]);
     printf("\n");
-		sample = input;
+    sample = input;
     input = next_entry(&p);
   }
 
-	radius2 = 2.0;
-	erange = (float *) malloc(2*sizeof(float));
-	erange[0] = 5.0;
-	erange[1] = 20.0;
+  radius2 = 2.0;
+  erange = (float *) malloc(2*sizeof(float));
+  erange[0] = 5.0;
+  erange[1] = 20.0;
+
   printf("  last mapping, to model (%d,%d):\n",coords[0],coords[1]);
   printf("    produces the bubble (radius %.3f) SRN activations:\n",radius2);
   levels = get_activation_levels(params, coords, radius2, NEIGH_BUBBLE);
@@ -173,7 +187,9 @@ int main() {
       printf("%.3f ", levels[j+i*codes->xdim]);
     printf("\n");
   }
-  printf("    produces the guassian (radius %.3f) SRN activations:\n",radius2);
+  free(levels); /* WKV 2003-07-28 */
+
+  printf("    produces the gaussian (radius %.3f) SRN activations:\n",radius2);
   levels = get_activation_levels(params, coords, radius2, NEIGH_GAUSSIAN);
   for(i=0;i<codes->ydim;i++) {
     printf("    ");
@@ -182,6 +198,7 @@ int main() {
       printf("%.3f ", levels[j+i*codes->xdim]);
     printf("\n");
   }
+  free(levels); /* WKV 2003-07-28 */
   /* FIX:
   printf("    produces the fixed-window error-based SRN activations:\n");
   levels = get_levels_by_error(params, sample, erange[0]);
@@ -203,12 +220,19 @@ int main() {
   }
   */
   close_entries(codes);
-  //  close_entries(data);
+  //close_entries(data);
   // cannot close data because points# and mask are constant size arrays
+
+  /* WKV 2003-07-28 */
+  free_dataset(data);
+  free(coords);
+  free(erange);
+  free_teach_params(params);
 
   printf("  test 3 completed\n\n");
 
 
  end:
+  free_labels();
   printf("testing completed\n");
 }

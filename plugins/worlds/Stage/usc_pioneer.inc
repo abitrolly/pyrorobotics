@@ -6,7 +6,7 @@
 
 # use the ActivMedia Pioneer definitions
 #
-include "pioneer.inc"
+include "/rlbackups/home/yeelin/research/pyro/plugins/worlds/Stage/pioneer.inc"
 
 define usc_pioneer pioneer2dx
 (

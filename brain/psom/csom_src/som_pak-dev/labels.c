@@ -56,12 +56,22 @@ static int enlarge_array()
   return 0;
 }
 
-/* free_labels - Free all the memory used by label list */
+/* free_labels - Free all the memory used by label list 
+ *
+ * Free each label in the label list.
+ * -- WKV 2003-07-28
+ */
 
 void free_labels()
 {
-  if (labels)
+  int i; /* WKV 2003-07-28 */
+
+  if (labels) {
+    for(i=0;i<num_labs;i++) 
+      free(labels[i]);
     free(labels);
+  }
+  //if (labels) free(labels); 
 
   labels = NULL;
   num_labs = lab_array_size = 0;

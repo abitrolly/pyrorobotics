@@ -37,13 +37,12 @@ void set_globals(void) {
 /* create an eptr */
 eptr *get_eptr(void) {
   eptr *p;
-  p = (eptr *) malloc(sizeof(eptr));
+  //p = (eptr *) malloc(sizeof(eptr)); /* WKV 2003-07-28 */
+  p = (eptr *) calloc(1, sizeof(eptr));
   return p;
 }
 
-/* free eptr 
- * -- WKV 2003-07-23
- */
+/* free eptr WKV 2003-07-23 */
 void free_eptr(eptr *p) { 
   free(p);
 }
@@ -79,6 +78,27 @@ struct entries *init_dataset(int dim) {
   return data;
 }
 
+/* free_dataset()
+ * --------------
+ * Free memory allocated by init_dataset.
+ * WKV 2003-07-28
+ */
+void free_dataset (struct entries *data) {
+  struct data_entry *current, *next;
+  
+  if(data == NULL) return;
+  current = data->entries;
+  while(current) {
+    next = current->next;
+    free_data_entry(current);
+    current = next;
+    data->num_entries--;
+  }
+  if(data->num_entries > 0) {
+    fprintf(stderr, "free_dataset: All entries freed however count %d is non-zero\n", data->num_entries);
+  }
+  free(data);
+}
 
 
 /* addto_dataset()
@@ -153,6 +173,7 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   entry->weight   = weight;
   entry->next     = NULL;
   entry->fixed    = NULL;
+  entry->lab.label = 0; /* WKV 2003-07-28 */
   
   /* mask */
   if(mask) {
@@ -172,9 +193,26 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   return entry;
 }
   
+/* free_data_entry()
+ * -----------------
+ * Free a data_entry struct.
+ * WKV 2003-07-28
+ */
+void free_data_entry (struct data_entry *entry) {
+  if(entry == NULL) return;
+  if(entry->mask != NULL) {
+    free(entry->mask);
+    entry->mask = NULL;
+  }
+  clear_entry_labels(entry);
+  free(entry);
+}
 
+/* make_data_entry()
+ * -----------------
+ * No labels required.  pass in 0. 
+ */
 struct data_entry *make_data_entry(float *points) {
-  /* no labels required.  pass in 0. */
   return make_data_entry_weighted_masked(points, 1, NULL, 0, 0);
 }
 
@@ -205,7 +243,7 @@ int set_label_data_entry(struct data_entry *entry, char **label) {
 /* Returns 0 if adding a label is successful, 1 otherwise. 
  * add_label simply adds a label to the entry; any previous
  * associations remain the same. 
- * --added June 17, 2003 (Yee Lin Tan)
+ * --added June 17, 2003 (YT)
  */
 void add_label_data_entry(struct data_entry *entry, char **label) {
   int i;
@@ -216,7 +254,7 @@ void add_label_data_entry(struct data_entry *entry, char **label) {
 }
 
 /* Clears all labels associated with a data entry 
- * --added June 17, 2003 (Yee Lin Tan)
+ * --added June 17, 2003 (YT)
  */
 void clear_labels_data_entry(struct data_entry *entry) {
   clear_entry_labels(entry);
@@ -235,7 +273,6 @@ void clear_labels_data_entry(struct data_entry *entry) {
  * about topology, map dimension, vector dimension, and neighborhood
  * type.  'alpha_mode' and 'radius_mode' specify the alpha and radius
  * decay functions.  */
-
 struct teach_params_counters *construct_teach_params(struct entries *codes,
 						     short alpha_mode,
 						     short radius_mode) {
@@ -275,6 +312,20 @@ struct teach_params_counters *construct_teach_params(struct entries *codes,
   return params;
 }
 
+/* free_teach_params()
+ * -------------------
+ * Free memory allocated by construct_teach_params().
+ * WKV 2003-07-28
+ */
+void free_teach_params(struct teach_params_counters *params) {
+  if(params == NULL) return;
+  free_counters(params);
+  if(params->teach) {
+    free(params->teach);
+    params->teach = NULL;
+  }
+  free(params);
+}
 
 /* init_training_session()
  * -----------------------
@@ -298,8 +349,7 @@ int init_training_session(struct teach_params_counters *params,
   }
 
   /* these error checks are now done in the python code: __init__.py
-   * -- Yee Lin Tan
-   */
+   * -- YT */
   /* 
   if(alpha_0 < 0.0) {
     fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
@@ -383,6 +433,7 @@ int setup_snapshot(struct teach_params_counters *params,
  * 3 training counters and 3 mapping counters are associated with each 
  * x,y coordinates.  The arrays are initialized to the number of nodes
  * in the som and are zeroed out.
+ *
  */
 void setup_counters(struct teach_params_counters *params) {
   int xdim, ydim, i, j, k;
@@ -391,6 +442,8 @@ void setup_counters(struct teach_params_counters *params) {
 
   params->tcounters = (unsigned int ***) malloc(sizeof(unsigned int **)*xdim);
   params->mcounters = (unsigned int ***) malloc(sizeof(unsigned int **)*xdim);
+  params->counters_xdim = xdim; /* WKV 2003-07-28 */
+  params->counters_ydim = ydim; /* WKV 2003-07-28 */
 
   for(i=0; i<xdim; i++) {
     params->tcounters[i] = (unsigned int **)malloc(sizeof(unsigned int *)*ydim);
@@ -406,6 +459,30 @@ void setup_counters(struct teach_params_counters *params) {
       	params->mcounters[i][j][k] = 0;
       }
     }
+  }
+}
+
+/* free_counters()
+ * --------------
+ * WKV 2003-07-28
+ */
+void free_counters(struct teach_params_counters *params) {
+  int i, j;
+
+  if(params == NULL) return;
+  if(params->tcounters) {
+    for(i=0; i<params->counters_xdim; i++) {
+      for(j=0; j<params->counters_ydim; j++) {
+	free(params->tcounters[i][j]);
+	free(params->mcounters[i][j]);
+      }
+      free(params->tcounters[i]);
+      free(params->mcounters[i]);
+    }
+    free(params->tcounters);
+    free(params->mcounters);
+    params->tcounters = NULL;
+    params->mcounters = NULL;
   }
 }
 
@@ -745,7 +822,7 @@ struct data_entry *train_fromdataset(struct teach_params_counters *params,
       fprintf(stderr, "train_fromdataset(): train_one() returned NULL\n");
       return NULL;
     }
-    
+    free(last_coords); /* WKV 2003-07-28 */
     last_coords = coords;
     last = entry;
     entry = next_entry(&p);
@@ -803,7 +880,7 @@ struct data_entry *map_fromdataset(struct teach_params_counters *params,
       fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
       return NULL;
     }
-
+    free(last_coords); /* YT 2003-07-28 */
     last_coords = coords;
     last = entry;
     entry = next_entry(&p);
@@ -952,7 +1029,8 @@ float *get_levels_by_error(struct teach_params_counters *params,
 
   levels = (float *) malloc(xdim*ydim*sizeof(float));
   coords = (int *) malloc(2*sizeof(int));
-  emin = 100000.0; // should be largest possible float but i'm lazy
+  //emin = 100000.0; // should be largest possible float but i'm lazy
+  emin = 3.40282347e+38F; /* WKV 2003-07-28 */
   emax = 0.0;
 
   for(y=0; y<ydim; y++) {
@@ -968,6 +1046,8 @@ float *get_levels_by_error(struct teach_params_counters *params,
   }
   emax -= (emax-emin)*(1.0-tolerance);
   
+  free(coords); /* WKV 2003-07-28 */
+
   for(y=0; y<ydim; y++) {
     for(x=0; x<xdim; x++) {
       i = x + y * xdim;

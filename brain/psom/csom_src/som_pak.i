@@ -12,6 +12,7 @@
 #include "som_devrobs.h"
 #include "som_rout.h"
 #include "datafile.h"
+#include "labels.h" /* WKV 2003-07-28 */
 %}
 
 
@@ -154,6 +155,8 @@ struct teach_params_counters {
   struct teach_params *teach;
   unsigned int ***tcounters; /* 3 training counters per som node */
   unsigned int ***mcounters; /* 3 mapping counters per som node */
+  int counters_xdim;
+  int counters_ydim;
 };
 
 /* ------------------- from datafile.h: ------------------------------ */
@@ -178,18 +181,24 @@ extern struct entries *randinit_codes(struct entries *data, int topol,
 extern int write_entries(struct entries *codes, char *out_code_file);
 extern void set_globals(void);
 extern eptr *get_eptr(void);
-extern void free_eptr(eptr *); /* WKV */
+extern void free_eptr(eptr *);
 
 /* --------------------- data set manipulation functions ----------------- */
 
 extern struct entries *init_dataset(int dim);
+extern void free_dataset(struct entries *);
 extern int addto_dataset(struct entries *data, struct data_entry *entry);
 extern struct data_entry *make_data_entry_weighted_masked(float *points, 
                                            short weight, short *mask, int dim,
 					   char **label);
+extern void free_data_entry(struct data_entry *entry);
 extern struct data_entry *make_data_entry(float *points);
 
 /* --------------------- label manipulation functions ----------------- */
+extern int find_conv_to_ind(char *str);
+extern char *find_conv_to_lab(int ind);
+extern int number_of_labels();
+extern void free_labels();
 
 //extern int set_label_data_entry(struct data_entry *entry, char **label);
 extern void add_label_data_entry(struct data_entry *entry, char **label);
@@ -200,6 +209,7 @@ extern void clear_labels_data_entry(struct data_entry *entry);
 extern struct teach_params_counters *construct_teach_params(struct entries *codes,
                                             short alpha_mode, 
                                             short radius_mode);
+extern void free_teach_params(struct teach_params_counters *);
 extern int init_training_session(struct teach_params_counters *params,
         	                  float alpha_0, float radius_0, long length,
                 	          long qerror_window);
@@ -208,6 +218,7 @@ extern int setup_snapshot(struct teach_params_counters *params,
 
 /* ------------------- counter manipulation functions ----------------- */
 extern void setup_counters(struct teach_params_counters *params);
+extern void free_counters(struct teach_params_counters *params);
 extern void update_counters(unsigned int ***counters, int *curr_coords, 
 				int *last_coords);
 extern int get_reg_tcounter(struct teach_params_counters *params, int *coords);

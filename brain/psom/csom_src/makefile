@@ -22,7 +22,10 @@ include ../../../Makefile.src
 
 CC=gcc
 SWIG=swig
-LD=ld
+#On linux ld must be gcc, so you get a shared library instead of a
+#statically linked one. -- WKV 2003-07-28
+#LD=ld
+LD=$(CC)
 CC_FLAGS=-c -g -I $(PYTHON_INCLUDE)
 SWIG_FLAGS=-python
 LD_FLAGS=-shared

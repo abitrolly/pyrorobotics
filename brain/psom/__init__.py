@@ -137,9 +137,16 @@ def arr_to_list(myarr,nitems):
     myarr: c array/pointer
     type : type of array elements
     """
+    """
+    WKV 2003-07-28
+    
     mylist = []
     for i in range(nitems):
         mylist.append(csom.ptrvalue(myarr,i))
+    """
+    mylist = [0] * nitems
+    for i in xrange(nitems):
+        mylist[i] = csom.ptrvalue(myarr, i)
     return mylist
 
 
@@ -251,6 +258,20 @@ class psom:
         self.log_padding = 4
         self.log_format = "%C: [%i] maps to %p at time %d-%t\n"
 
+    def __del__(self):
+        """
+        psom: __del__()
+        ---------------
+        Added by WKV 2003-07-28
+        """
+        if self.params:
+            if csom:
+                codes = csom.teach_params_codes_get(csom.teach_params_counters_teach_get(self.params))
+                csom.close_entries(codes)
+                csom.free_teach_params(self.params)
+            self.params = None
+                                                    
+                
     def init_training(self,alpha_0,radius_0,runlen,errorwindow=1):
         """
         psom: init_training()
@@ -543,14 +564,16 @@ class psom:
                   "Mismatched dimensions of mapping vector (size %s) \
                   and model vector (size %s)" % (vector.dim, self.dim)
         
-        if self.last_mapped == 'unset':
+        if self.last_mapped == 'unset': # first run
             coords = csom.map_one(self.params, vector.entry,
-                                  point(-1,-1).asIntPtr(), 1) # update counters
+                                  point(-1,-1).asIntPtr(),
+                                  1) # 1=update counters
         else:
             coords = csom.map_one(self.params, vector.entry,
                                   self.last_mapped.asIntPtr(), 1)
         
         pt = point(csom.ptrvalue(coords,0), csom.ptrvalue(coords,1))
+        csom.delete_intarray(coords) # WKV 2003-07-28
         self.last = vector
         self.last.point = pt
         self.last_mapped = pt
@@ -583,12 +606,14 @@ class psom:
         
         if self.last_trained == 'unset': # first run
             coords = csom.train_one(self.params, vector.entry,
-                                    point(-1,-1).asIntPtr(), 1) # update counters
+                                    point(-1,-1).asIntPtr(),
+                                    1) # 1=update counters
         else:
             coords = csom.train_one(self.params, vector.entry,
                                     self.last_trained.asIntPtr(), 1)
 
         pt = point(csom.ptrvalue(coords,0), csom.ptrvalue(coords,1))
+        csom.delete_intarray(coords)
         self.last = vector
         self.last.point = pt
         self.last_trained = pt
@@ -637,8 +662,10 @@ class psom:
                            csom.data_entry_num_labs_get(entry)))
 
         coords = csom.map_one(self.params, self.last.entry,
-                              point(-1,-1).asIntPtr(), 0) # don't update counters
+                              point(-1,-1).asIntPtr(),
+                              0) # 0=don't update counters
         pt = point(csom.ptrvalue(coords,0), csom.ptrvalue(coords,1))
+        csom.delete_intarray(coords) # WKV 2003-07-28
         self.last.point = pt
         self.last_trained = pt
         return self.get_model_vector(pt)
@@ -671,8 +698,10 @@ class psom:
                            csom.data_entry_num_labs_get(entry)))
 
         coords = csom.map_one(self.params, self.last.entry,
-                              point(-1,-1).asIntPtr(), 0) # don't update counters
+                              point(-1,-1).asIntPtr(),
+                              0) # 0=don't update counters
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
+        csom.delete_intarray(coords) # WKV 2003-07-28
         self.last.point = pt
         self.last_mapped = pt
         return self.get_model_vector(pt)
@@ -748,17 +777,19 @@ class psom:
         else:
             raise PsomError, "mode %s has not yet implemented" % mode
         levels = arr_to_list(float_levels,self.xdim*self.ydim)
+        csom.delete_floatarray(float_levels) # WKV 2003-07-28
         return levels
 
     def get_xy(self, mylist, x, y):
         """
         psom: get_xy()
         --------------
-        This function allows x,y addressing of a list representation of a matrix.  
+        This function allows x,y addressing of a list representation of a
+        matrix.  
         
         PARAMS
-        mylist: list representation of a matrix (e.g. activation levels of som nodes
-        returned by get_activations())
+        mylist: list representation of a matrix (e.g. activation levels of
+        som nodes returned by get_activations())
         x     : x coordinate of matrix element
         y     : y coordinate of matrix element
         
@@ -772,7 +803,8 @@ class psom:
         """
         psom: save_to_file()
         --------------------
-        Given a filename, this function saves the SOM model vectors to a specified file.
+        Given a filename, this function saves the SOM model vectors to a
+        specified file.
         Use this function to save the model vectors after a training session.
         
         PARAMS
@@ -970,7 +1002,7 @@ class psom:
 class vector:
     """
     Used both for data and model vectors.
-    get_elts() and get() can be used to access the actual values of the entries
+    get_elts() can be used to access the actual values of the entries
     in the vector.  The point data member should remain 'unset' for data
     vectors, but for model vectors represents its coordinates in the SOM
     """
@@ -1034,7 +1066,7 @@ class vector:
                 for item in mask:
                     if(item != 0 and item != 1):
                         raise VectorError, \
-                              "invalid mask: %s.  mask must be a binary list" % mask
+                              "Invalid mask: %s.  Mask must be a binary list" % mask
                 c_mask = list_to_arr(mask, "short") # convert mask list into a c array of shorts
 
             # label
@@ -1064,7 +1096,7 @@ class vector:
         self.entry = entry
         self.point = point
         self.mask  = mask
-    
+
     def get_elts(self):
         """
         vector: get_elts()
@@ -1082,11 +1114,16 @@ class vector:
         """
         mylist = self.get_elts()
         if isinstance(key, types.SliceType):
+            """
+            WKV 2003-07-28
+            
             if key.stop > len(self):
                 stop = len(self)
             else:
                 stop = key.stop
             return mylist[key.start:stop]
+            """
+            return mylist[key.start:key.stop] # WKV 2003-07-28
         else:
             return mylist[key]
     
@@ -1226,12 +1263,19 @@ class vector:
         is typically called by print().  Only the elements in the vector are returned,
         i.e. weight, mask, and label are not.
         """
+        
         mylist = self.get_elts()
+        """
+        # WKV 2003-07-28
+        
         s = ""
         for elt in mylist:
             s += "%.3f" % (elt) + " "
         s = s[:-1]
         return s
+        """        
+        mylist = ["%.3f" % x for x in mylist]
+        return " ".join(mylist)
 
     def display(self):
         """
@@ -1293,7 +1337,7 @@ class dataset:
 	USAGE
 	1.  To read in a dataset from a file:
         >>> mydataset = dataset(file=filename)
-        2.  To build a dataset by hand, first initialize it, either by dimension or with
+        2.  To build a dataset by hand, first initialize it, either by dimension or
         with an initial vector:
         >>> mydataset = dataset(dim=4)
         or 
@@ -1303,20 +1347,32 @@ class dataset:
         >>> mydataset.addvec(vector2)
         """
         self.p = csom.get_eptr()
-        if(file!='unset'):
+        if(file != 'unset'):
             if exists(file):
                 self.data = csom.open_entries(file)
                 self.dim = csom.entries_dimension_get(self.data)
             else:
                 raise FileNotFound, "File '%s' was not found" % file
         else:
-            if(init_vector!='NULL'):
+            """
+            WKV 2003-07-28
+            
+            if(init_vector != 'NULL'):
                 dim = init_vector.dim	
             self.data = csom.init_dataset(dim)
-            if(init_vector!='NULL'):
+            if(init_vector != 'NULL'):
                 self.addvec(init_vector)
             self.dim = dim
-                        
+            """
+            # Code works the same, but it's probably clearer this way.  YT
+            if(init_vector != 'NULL'):
+                dim = init_vector.dim
+                self.data = csom.init_dataset(dim)
+                self.addvec(init_vector)
+            else:
+                self.data = csom.init_dataset(dim)
+            self.dim = dim
+            
     # this was giving me problems with python2.2's garbage collection
     # no idea why, but if you are creating a whole lot of datasets
     # with this commented out you might end up with a memory leak
@@ -1325,9 +1381,13 @@ class dataset:
 
     # Fixed other memory corruptions, uncommented and didn't find problems.
     # -- WKV 2003-07-23
+    # close_entries() may not mix with init_dataset (the entries structures
+    # are slightly different), however it appears to work.  If things start
+    # acting likve memory corruption you could try commenting out the
+    # close_entries() call.  WKV 2003-07-28
     def __del__(self):
-       csom.close_entries(self.data)
-       csom.free_eptr(self.p)
+        csom.close_entries(self.data)
+        csom.free_eptr(self.p)
 
     def addvec(self, vec):
         """
@@ -1387,7 +1447,7 @@ class dataset:
 	-----------------------
         Given a filename, this function saves the dataset to the file.
 	"""
-        csom.write_entries(self.data)
+        csom.write_entries(self.data, file)  # WKV 2003-07-28
 
     def n_vectors(self):
         """
@@ -1429,6 +1489,7 @@ class point:
 	"""
         self.x = x
         self.y = y
+        self.__array = None # WKV 2003-07-28
 
     def __getitem__(self,key):
         """
@@ -1459,10 +1520,15 @@ class point:
         ---------------
         Returns a two-element python list set to the values in the point object
         """
+        """
+        YT 2003-07-30
+        
         mylist = []
         mylist.append(self.x)
         mylist.append(self.y)
         return mylist
+        """
+        return [self.x, self.y]
 
     def isEqual(self, pt):
         if self.x == pt.x and self.y == pt.y:
@@ -1473,14 +1539,26 @@ class point:
         """
         point: asIntPtr()
         -----------------
-        Returns a c array of two integers set to the values in the point object.
+        Returns a c array of two integers set to the values in the point
+        object.
         
         NOTE: This function is intended for internal use only.  Don't use it!
         """
+        """
+        WKV 2003-07-28
+        
         ptr = csom.ptrcreate("int",0,2)
         csom.ptrset(ptr,self.x,0)
         csom.ptrset(ptr,self.y,1)
         return ptr
+        """
+        if not self.__array:
+            self.__array = csom.ptrcreate("int", 0, 2)
+            #csom.ptrset(self.__array, self.x, 0)
+            #csom.ptrset(self.__array, self.y, 1)
+        csom.ptrset(self.__array, self.x, 0) # YT 2003-07-29
+        csom.ptrset(self.__array, self.y, 1) # YT 2003-07-29
+        return self.__array
 
     def __str__(self):
         """

@@ -11,9 +11,8 @@
 #ifndef SOM_DEVROBS_H
 #define SOM_DEVROBS_H
 
-#include "lvq_pak.h"
 #include "Python.h"
-
+#include "lvq_pak.h"
 
 #define CYCLIC    0   // for train_fromdataset()
 #define RAND      1   // for train_fromdataset()
@@ -56,20 +55,25 @@ struct teach_params_counters {
   struct teach_params *teach;
   unsigned int ***tcounters; /* 3 training counters per som node */
   unsigned int ***mcounters; /* 3 mapping counters per som node */
+  int counters_xdim;         /* WKV 2003-07-28 */
+  int counters_ydim;         /* WKV 2003-07-28 */
 };
 
 
 int write_entries(struct entries *codes, char *out_code_file);
 void set_globals(void);
 eptr *get_eptr(void);
-void free_eptr(eptr *); /* -- WKV 2003-07-23 */
+void free_eptr(eptr *); /* WKV 2003-07-23 */
 
 /* --------------------- data set manipulation functions ----------------- */
 
 struct entries *init_dataset(int dim);
+void free_dataset(struct entries *);
 int addto_dataset(struct entries *data, struct data_entry *entry);
 struct data_entry *make_data_entry_weighted_masked(float *points, 
-			short weight, short *mask, int dim, char **label);
+						   short weight, short *mask, 
+						   int dim, char **label);
+void free_data_entry(struct data_entry *);
 struct data_entry *make_data_entry(float *points);
 
 /* --------------------- label manipulation functions ----------------- */
@@ -82,6 +86,7 @@ void clear_labels_data_entry(struct data_entry *entry);
 struct teach_params_counters *construct_teach_params(struct entries *codes,
 					    short alpha_mode, 
 					    short radius_mode);
+void free_teach_params(struct teach_params_counters *);
 int init_training_session(struct teach_params_counters *params,
 			  float alpha_0, float radius_0, long length,
 			  long qerror_window);
@@ -90,6 +95,7 @@ int setup_snapshot(struct teach_params_counters *params,
 
 /* ------------------- counter manipulation functions ----------------- */
 void setup_counters(struct teach_params_counters *params);
+void free_counters(struct teach_params_counters *params);
 void update_counters(unsigned int ***counters, int *curr_coords, 
 		     int *last_coords);
 
