@@ -8,14 +8,11 @@
  * ----------------------------------
  */
 
-
-
 #include <stdio.h>
 #include <float.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 #include "lvq_pak.h"
 #include "som_rout.h"
@@ -23,34 +20,25 @@
 
 #include "som_devrobs.h"
 
-
-
-
-
-
 /* just a silly wrapper for the save_entries() macro because swig does
  * not support macros */
-
 int write_entries(struct entries *codes, char *out_code_file) {
-	return save_entries(codes, out_code_file); }
+  return save_entries(codes, out_code_file); }
 
 
 /* set global som_pak parameters */
-
 void set_globals(void) {
-	use_fixed(0);
-	use_weights(1);
-	label_not_needed(1);
-	init_random((int) time(NULL));
+  use_fixed(0);
+  use_weights(1);
+  label_not_needed(1);
+  init_random((int) time(NULL));
 }
 
-
 /* create an eptr */
-
 eptr *get_eptr(void) {
-	eptr *p;
-	p = (eptr *) malloc(sizeof(eptr));
-	return p;
+  eptr *p;
+  p = (eptr *) malloc(sizeof(eptr));
+  return p;
 }
 
 
@@ -77,7 +65,8 @@ struct entries *init_dataset(int dim) {
     data->dimension = dim;
     data->current = NULL;
     data->entries = NULL;
-  } else {
+  } 
+  else {
     fprintf(stderr, "init_dataset(): alloc_entries() returned NULL\n");
   }
 
@@ -107,9 +96,7 @@ int addto_dataset(struct entries *data, struct data_entry *entry) {
 
   entry->next = data->entries;
   data->entries = entry;
-  
   data->num_entries++;
-
   return 0;
 }
 
@@ -144,7 +131,8 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   char *charmask = NULL;
   int i;
   
-  /* this check has been moved to __init__.py
+  // this check has been moved to __init__.py
+  /*
   if(weight < 0.0) {
     fprintf(stderr, "make_data_entry_weighted_masked(): invalid weight: ");
     fprintf(stderr, "%f\n", weight);
@@ -154,11 +142,11 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
 
   entry = (struct data_entry *)malloc(sizeof(struct data_entry));
 
-  entry->points = points;
+  entry->points   = points;
   entry->num_labs = 0;
-  entry->weight = weight;
-  entry->next = NULL;
-  entry->fixed = NULL;
+  entry->weight   = weight;
+  entry->next     = NULL;
+  entry->fixed    = NULL;
   
   /* mask */
   if(mask) {
@@ -166,39 +154,15 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
     for(i=0;i<dim;i++)
       charmask[i] = (char) mask[i];
   }
-  //charmask[i] = '\0';
   entry->mask = charmask;
   
   /* label */
   /* if the label array is not null, add it to the entry */
   if(label) {
-    for(i=0; label[i] != NULL; i++) { 
-      /* label array is null-terminated with '0'. */
-      //printf("Added: %c\n", label[i][0]);
-      //printf("i: %d\n", i);
+    for(i=0; label[i] != NULL; i++)
       add_entry_label(entry, find_conv_to_ind(label[i]));
-    }
   }
 
-  /*
-  if(entry->num_labs) {
-    printf("  label: ");
-    printf("%c", entry->lab.label);
-    printf("  label2: ");
-    printf("%c", get_entry_label(entry));
-    nlabel = get_entry_labels(entry, 0);
-    printf("\nnlabel: %d", nlabel);
-    printf(" %s\n", find_conv_to_lab(nlabel));
-   
-    for(i=0;;i++) {
-      nlabel = get_entry_labels(entry, i);
-      if(nlabel != LABEL_EMPTY) //last label in label array is always LABEL_EMPTY 
-	printf("%s ", find_conv_to_lab(nlabel));
-      else break;
-    }
-   
-  }
-  */
   return entry;
 }
   
@@ -214,6 +178,9 @@ struct data_entry *make_data_entry(float *points) {
  * the entry before setting the new label.
  * --added June 17, 2003
  */
+
+//DEPRECATED
+//use clear_label() and add_label() instead
 /*
 int set_label_data_entry(struct data_entry *entry, char **label) {
   int i;
@@ -237,11 +204,8 @@ int set_label_data_entry(struct data_entry *entry, char **label) {
 void add_label_data_entry(struct data_entry *entry, char **label) {
   int i;
   if(label) {
-    for(i=0; label[i] != NULL; i++) { 
-      /* label array is null-terminated with '0'. */
-      //printf("i: %d\n", i);
+    for(i=0; label[i] != NULL; i++)
       add_entry_label(entry, find_conv_to_ind(label[i]));
-    }
   }
 }
 
@@ -266,44 +230,44 @@ void clear_labels_data_entry(struct data_entry *entry) {
  * type.  'alpha_mode' and 'radius_mode' specify the alpha and radius
  * decay functions.  */
 
-struct teach_params *construct_teach_params(struct entries *codes,
-					    short alpha_mode,
-					    short radius_mode) {
-  struct teach_params *params;
-
+struct teach_params_counters *construct_teach_params(struct entries *codes,
+						     short alpha_mode,
+						     short radius_mode) {
+  struct teach_params_counters *params;
   if(codes == NULL) {
     fprintf(stderr, "construct_teach_params(): NULL codes struct\n");
     return NULL;
   }
 
-  params = (struct teach_params *) malloc(sizeof(struct teach_params));
-  set_teach_params(params, codes, NULL, 0);
-  set_som_params(params);
+  params = (struct teach_params_counters*)malloc(sizeof(struct teach_params_counters));
+  params->teach = (struct teach_params*)malloc(sizeof(struct teach_params));
+  set_teach_params(params->teach, codes, NULL, 0);
+  set_som_params(params->teach);
+  setup_counters(params);
 
-  params->snapshot = NULL;
-  params->data = NULL;
-	params->count = -1;  // used to signal uninitialized training session
-
+  params->teach->snapshot = NULL;
+  params->teach->data = NULL;
+  params->teach->count = -1;  //used to signal uninitialized training session
+  
   switch(alpha_mode) {
-    case LINEAR:    params->alpha_func = linear_alpha;    break;
-    case INVERSE_T: params->alpha_func = inverse_t_alpha; break;
-    default: fprintf(stderr, "construct_teach_params(): ");
-      fprintf(stderr, "unrecognized alpha mode: %d, ", alpha_mode);
-      fprintf(stderr, "using LINEAR\n");
-      params->alpha_func = linear_alpha;
+  case LINEAR:    params->teach->alpha_func = linear_alpha;    break;
+  case INVERSE_T: params->teach->alpha_func = inverse_t_alpha; break;
+  default: fprintf(stderr, "construct_teach_params(): ");
+    fprintf(stderr, "unrecognized alpha mode: %d, ", alpha_mode);
+    fprintf(stderr, "using LINEAR\n");
+    params->teach->alpha_func = linear_alpha;
   }
   switch(radius_mode) {
-    case LINEAR:    params->radius_func = linear_alpha;    break;
-    case INVERSE_T: params->radius_func = inverse_t_alpha; break;
-    default: fprintf(stderr, "construct_teach_params(): ");
-      fprintf(stderr, "unrecognized radius mode: %d, ", radius_mode);
-      fprintf(stderr, "using LINEAR\n");
-      params->radius_func = linear_alpha;
+  case LINEAR:    params->teach->radius_func = linear_alpha;    break;
+  case INVERSE_T: params->teach->radius_func = inverse_t_alpha; break;
+  default: fprintf(stderr, "construct_teach_params(): ");
+    fprintf(stderr, "unrecognized radius mode: %d, ", radius_mode);
+    fprintf(stderr, "using LINEAR\n");
+    params->teach->radius_func = linear_alpha;
   }
 
   return params;
 }
-
 
 
 /* init_training_session()
@@ -315,14 +279,20 @@ struct teach_params *construct_teach_params(struct entries *codes,
  * vectors mapped, with the most recent having the greatest effect. 
  * Returns 1 if a fatal error occurs, 0 otherwise.  */
 
-int init_training_session(struct teach_params *params,
-			   float alpha_0, float radius_0, long length,
-			   long qerror_window) {
+int init_training_session(struct teach_params_counters *params,
+			  float alpha_0, float radius_0, long length,
+			  long qerror_window) {
   if(params == NULL) {
-    fprintf(stderr, "init_training_session(): NULL teach_params\n");
+    fprintf(stderr, "init_training_session(): NULL teach_params_counters\n");
     return 1;
   }
-  /* these error checks are now done in the python code: __init__.py
+  if(params->teach == NULL) {
+    fprintf(stderr, "init_training_session(): NULL params->teach_params\n");
+    return 1;
+  }
+
+  //these error checks are now done in the python code: __init__.py
+  /* 
   if(alpha_0 < 0.0) {
     fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
 	    alpha_0);
@@ -354,13 +324,12 @@ int init_training_session(struct teach_params *params,
     qerror_window = 1;
   }
   */
-  params->alpha = alpha_0;
-  params->radius = radius_0;
-  params->length = length;
-  params->count = 0;
-  params->qerror = 0.0;
-  params->error_factor = 1.0 / ((float) qerror_window);
-
+  params->teach->alpha  = alpha_0;
+  params->teach->radius = radius_0;
+  params->teach->length = length;
+  params->teach->count  = 0;
+  params->teach->qerror = 0.0;
+  params->teach->error_factor = 1.0 / ((float) qerror_window);
   return 0;
 }
 
@@ -374,12 +343,16 @@ int init_training_session(struct teach_params *params,
  * then the resulting files will be "snap.cod.100", "snap.cod.200", etc.
  * Returns 1 if an error occurs, 0 otherwise.  */
 
-int setup_snapshot(struct teach_params *params,
-		    char *snapfile_prefix, long interval) {
+int setup_snapshot(struct teach_params_counters *params,
+		   char *snapfile_prefix, long interval) {
   struct snapshot_info *snap;
-
+  
   if(params == NULL) {
-    fprintf(stderr, "setup_snapshot(): NULL teach_params\n");
+    fprintf(stderr, "setup_snapshot(): NULL teach_params_counters\n");
+    return 1;
+  }
+  if(params->teach == NULL) {
+    fprintf(stderr, "setup_snapshot(): NULL params->teach_params\n");
     return 1;
   }
   if(interval < 1) {
@@ -387,25 +360,209 @@ int setup_snapshot(struct teach_params *params,
     return 1;
   }
   snap = (struct snapshot_info *) malloc(sizeof(struct snapshot_info));
-
   snap->filename = snapfile_prefix;
   snap->interval = interval;
   snap->type = SNAPSHOT_SAVEFILE;
-
-  params->snapshot = snap;
+  params->teach->snapshot = snap;
 
   return 0;
 }
 
+/* ------------------- counter manipulation functions ----------------- */
 
+/* Sets up the two 3-dimensional arrays in the teach_param_counters struct.
+ * The two arrays store training and mapping counters for each SOM node. 
+ * 3 training counters and 3 mapping counters are associated with each 
+ * x,y coordinates.  The arrays are initialized to the number of nodes
+ * in the som and are zeroed out.
+ */
+void setup_counters(struct teach_params_counters *params) {
+  int xdim, ydim, i, j, k;
+  xdim = params->teach->codes->xdim;
+  ydim = params->teach->codes->ydim;
 
+  params->tcounters = (unsigned int ***) malloc(sizeof(unsigned int **)*xdim);
+  params->mcounters = (unsigned int ***) malloc(sizeof(unsigned int **)*xdim);
+
+  for(i=0; i<xdim; i++) {
+    params->tcounters[i] = (unsigned int **)malloc(sizeof(unsigned int *)*ydim);
+    params->mcounters[i] = (unsigned int **)malloc(sizeof(unsigned int *)*ydim);
+
+    for (j=0; j<ydim; j++) {
+      /* 3 training counters and 3 mapping counters per node */
+      params->tcounters[i][j] = (unsigned int *)malloc(sizeof(unsigned int)*3); 
+      params->mcounters[i][j] = (unsigned int *)malloc(sizeof(unsigned int)*3); 
+
+      for (k=0; k<3; k++) {
+	params->tcounters[i][j][k] = 0;
+      	params->mcounters[i][j][k] = 0;
+      }
+    }
+  }
+}
+
+/* update_counters()
+ * -----------------
+ * Given the winning coordinates and the previous winning coordinates, 
+ * increment the counters.
+ * counters[0]: regular counter    
+ * counters[1]: consecutive counter
+ * counters[2]: maximum consecutive counter                                   
+ * The (regular) counter and the consecutive counter are always incremented.  
+ * The maximum consecutive counter stores the highest consecutive train/map
+ * counter associated with a SOM node.
+ *
+ * Note: For test runs (i.e. counters are not incremented, use (-1,-1) 
+ *       as last_coords.
+ */
+void update_counters(unsigned int ***counters, int *curr_coords, 
+		     int *last_coords) {
+  int curr_x, curr_y;
+  curr_x = curr_coords[0]; 
+  curr_y = curr_coords[1];
+  /*
+  printf("Incrementing counter %d->%d for point:(%d,%d)\n", 
+	 counters[curr_x][curr_y][0], counters[curr_x][curr_y][0] + 1,
+	 curr_x, curr_y);
+  */
+  counters[curr_x][curr_y][0]++;
+  /*
+  printf("Incrementing consec counter %d->%d for point:(%d,%d)\n", 
+	 counters[curr_x][curr_y][1], counters[curr_x][curr_y][1] + 1,
+	 curr_x, curr_y);
+  */
+  counters[curr_x][curr_y][1]++;
+  
+  if(counters[curr_x][curr_y][1] > counters[curr_x][curr_y][2]) {
+    /*
+    printf("Setting max consec counter %d->%d for point:(%d,%d)\n", 
+	   counters[curr_x][curr_y][2], counters[curr_x][curr_y][1],
+	   curr_x, curr_y);
+    */
+    counters[curr_x][curr_y][2] = counters[curr_x][curr_y][1];
+  }
+  
+  /* If this is not the first mapping, and the last mapped coordinate
+   * is not the same as the current winning coordinate, reset the
+   * consecutive counter for the last coordinate.
+   * Note: last_coords is == NULL if this is the first run i.e.
+   * the SOM has never been trained/mapped before.
+   */
+  if(!(last_coords[0] == -1     && last_coords[1] == -1) &&
+     !(last_coords[0] == curr_x && last_coords[1] == curr_y)) {
+    /*
+    printf("Reseting consec counter %d->%d for last point:(%d,%d)\n", 
+	   counters[last_coords[0]][last_coords[1]][1], 0, 
+	   last_coords[0], last_coords[1]);
+    */
+    counters[last_coords[0]][last_coords[1]][1] = 0;
+  }
+  return;
+}
+
+/* get_reg_tcounter()
+ * ------------------
+ * Returns the regular train counter associated with the 
+ * given coordinates.
+ */
+int get_reg_tcounter(struct teach_params_counters *params, 
+		     int *coords) {
+  return get_counter(params, coords, TRAIN, REGULAR);
+}
+/* get_consec_tcounter()
+ * ---------------------
+ * Returns the consecutive train counter associated with the 
+ * given coordinates.
+ */
+int get_consec_tcounter(struct teach_params_counters *params, 
+			int *coords) {
+  return get_counter(params, coords, TRAIN, CONSEC);
+}
+/* get_maxconsec_tcounter()
+ * ------------------------
+ * Returns the max consecutive train counter associated with the 
+ * given coordinates.
+ */
+int get_maxconsec_tcounter(struct teach_params_counters *params, 
+			   int *coords) {
+  return get_counter(params, coords, TRAIN, MAX_CONSEC);
+}
+/* get_reg_mcounter()
+ * ------------------
+ * Returns the regular map counter associated with the 
+ * given coordinates.
+ */
+int get_reg_mcounter(struct teach_params_counters *params, 
+		     int *coords) {
+  return get_counter(params, coords, NO_TRAIN, REGULAR);
+}
+/* get_consec_mcounter()
+ * ---------------------
+ * Returns the consecutive map counter associated with the 
+ * given coordinates.
+ */
+int get_consec_mcounter(struct teach_params_counters *params, 
+			int *coords) {
+  return get_counter(params, coords, NO_TRAIN, CONSEC);
+}
+/* get_maxconsec_mcounter()
+ * ------------------------
+ * Returns the max consecutive map counter associated with the 
+ * given coordinates.
+ */
+int get_maxconsec_mcounter(struct teach_params_counters *params, 
+			   int *coords) {
+  return get_counter(params, coords, NO_TRAIN, MAX_CONSEC);
+}
+
+/* get_counter()
+ * -------------
+ * Given a teach_params_counters struct, a coordinate, a mode (TRAIN
+ * for training mode, NO_TRAIN for mapping mode), and the counter type 
+ * ([0]:REGULAR, [1]:CONSEC, [2]:MAX_CONSEC), this function returns
+ * the corresponding counter associated with that coordinate. 
+ * By default, it returns the regular counter associated with that 
+ * coordinate.
+ */
+int get_counter(struct teach_params_counters *params, 
+		int *coords, short mode, int counter_type) {
+  unsigned int ***counters;
+
+  if(params == NULL) {
+    fprintf(stderr, "get_counter(): NULL teach_params_counters\n");
+    return 1;
+  }
+  if(params->teach == NULL) {
+    fprintf(stderr, "get_counter(): NULL params->teach_params\n");
+    return 1;
+  }
+  if(coords[0] >= params->teach->codes->xdim ||
+     coords[1] >= params->teach->codes->ydim) {
+    fprintf(stderr, "get_regular_counter(): Invalid coordinates (%d,%d)\n",
+	    params->teach->codes->xdim, params->teach->codes->ydim);
+  }
+
+  if(mode == TRAIN) 
+    counters = params->tcounters;
+  else 
+    counters = params->mcounters;
+
+  switch(counter_type) {
+  case CONSEC:
+    return counters[coords[0]][coords[1]][1];
+  case MAX_CONSEC:
+    return counters[coords[0]][coords[1]][2];
+  default:
+    return counters[coords[0]][coords[1]][0];
+  }
+}
 
 
 /* ------------------ training/mapping functions ---------------------- */
 
 /* input_one()
  * -----------
- * Takes teach_params and a data_entry and applies the mapping algorithm
+ * Takes teach_params_counters and a data_entry and applies the mapping algorithm
  * to the data vector, returning a pointer to integer coordinates of the
  * winning model vector, or NULL if an error occurs.
  * If mode is NO_TRAIN, then that is all that happens.
@@ -413,46 +570,65 @@ int setup_snapshot(struct teach_params *params,
  *  radius, and whatnot, and the count is increased.
  * If appropriate, snapshots are also taken from here. */
 
-int *map_one(struct teach_params *teach, struct data_entry *sample) {
-	return input_one(teach, sample, NO_TRAIN); }
-int *train_one(struct teach_params *teach, struct data_entry *sample) {
-	return input_one(teach, sample, TRAIN); }
+int *map_one(struct teach_params_counters *params, 
+	     struct data_entry *sample, 
+	     int *last_coords, int update_counter_flag) {
+  return input_one(params, sample, NO_TRAIN, 
+		   last_coords, update_counter_flag); 
+}
+int *train_one(struct teach_params_counters *params, 
+	       struct data_entry *sample, 
+	       int *last_coords, int update_counter_flag) {
+  return input_one(params, sample, TRAIN, 
+		   last_coords, update_counter_flag); 
+}
 
-int *input_one(struct teach_params *teach,
-	       struct data_entry *sample, short mode) {
-  NEIGH_ADAPT *adapt = teach->neigh_adapt;
-  WINNER_FUNCTION *find_winner = teach->winner;
-  ALPHA_FUNC *get_alpha = teach->alpha_func;
-  ALPHA_FUNC *get_radius = teach->radius_func;
-  struct snapshot_info *snap = teach->snapshot;
+int *input_one(struct teach_params_counters *params,
+	       struct data_entry *sample, short mode, 
+	       int *last_coords, int update_counter_flag) {
+  NEIGH_ADAPT *adapt           = params->teach->neigh_adapt;
+  WINNER_FUNCTION *find_winner = params->teach->winner;
+  ALPHA_FUNC *get_alpha        = params->teach->alpha_func;
+  ALPHA_FUNC *get_radius       = params->teach->radius_func;
+  struct snapshot_info *snap   = params->teach->snapshot;
   struct winner_info win_info;
-  struct entries *codes = teach->codes;
+  struct entries *codes        = params->teach->codes;
   float alpha, radius;
   int *coords;
 
-  if(teach == NULL) {
-    fprintf(stderr, "input_one(): NULL teach_params\n");
+  if(params == NULL) {
+    fprintf(stderr, "input_one(): NULL teach_params_counters\n");
+    fflush(stdout);
+    return NULL;
+  }
+  if(params->teach == NULL) {
+    fprintf(stderr, "input_one(): NULL params->teach_params\n");
+    fflush(stdout);
     return NULL;
   }
   if(sample == NULL) {
     fprintf(stderr, "input_one(): NULL sample data_entry\n");
+    fflush(stdout);
     return NULL;    
   }
   if(mode != NO_TRAIN && mode != TRAIN) {
     fprintf(stderr, "input_one(): unrecognized mode: %d, using TRAIN\n", mode);
+    fflush(stdout);
     mode = TRAIN;
   }
-	if(mode == TRAIN && teach->count == -1) {
-		fprintf(stderr, "input_one(): uninitialized training session\n");
-		return NULL;
-	}
-
+  if(mode == TRAIN && params->teach->count == -1) {
+    fprintf(stderr, "input_one(): uninitialized training session\n");
+    fflush(stdout);
+    return NULL;
+  }
+  
   /* Find the best match, use fixed point if allowed */
   coords = (int *) malloc(2*sizeof(int));
   if ((sample->fixed != NULL) && (use_fixed(-1))) {
     coords[0] = sample->fixed->xfix;
     coords[1] = sample->fixed->yfix;
-  } else {
+  } 
+  else {
     if (find_winner(codes, sample, &win_info, 1) == 0) {
       fprintf(stderr, "input_one(): no winner found in call to find_winner()");
       fprintf(stderr, ", skipping teaching\n");
@@ -462,30 +638,41 @@ int *input_one(struct teach_params *teach,
     }
     coords[0] = win_info.index % codes->xdim;
     coords[1] = win_info.index / codes->xdim;
-    teach->qerror = (1.0-teach->error_factor) * teach->qerror 
-      + teach->error_factor * sqrt((double) win_info.diff);
+    params->teach->qerror = (1.0-params->teach->error_factor) * params->teach->qerror 
+      + params->teach->error_factor * sqrt((double) win_info.diff);
   }
   
   /* Adapt the units */
   if(mode == TRAIN) {
-    radius = get_radius(teach->count, teach->length, teach->radius-1) + 1;
-    alpha  = get_alpha(teach->count, teach->length, teach->alpha);
+    radius = get_radius(params->teach->count, params->teach->length, 
+			params->teach->radius-1) + 1;
+    alpha  = get_alpha(params->teach->count, params->teach->length, 
+		       params->teach->alpha);
     if ((sample->weight > 0) && (use_weights(-1)))
       alpha = 1.0 - (float) pow((double) (1.0 - alpha), 
 				(double) sample->weight);
     if (alpha < 0.0) alpha = 0.0;
     if (radius < 1.0) radius = 1.0;
-    adapt(teach, sample, coords[0], coords[1], radius, alpha);
-    teach->count++;
+    adapt(params->teach, sample, coords[0], coords[1], radius, alpha);
+    params->teach->count++;
   }
 
   skip_teach:
   /* save snapshot when needed */
-  if ((snap) && ((teach->count % snap->interval) == 0) && (teach->count > 0))
-    save_snapshot(teach, teach->count);
+  if ((snap) && ((params->teach->count % snap->interval) == 0) && 
+      (params->teach->count > 0))
+    save_snapshot(params->teach, params->teach->count);
 
-//printf("> coords: %d, %d\n", coords[0], coords[1]);
-  return(coords);
+  /* update training/mapping counters depending on mode */
+  if(update_counter_flag) {
+    if(mode == TRAIN) {
+      update_counters(params->tcounters, coords, last_coords);
+    }
+    else {
+      update_counters(params->mcounters, coords, last_coords);
+    }
+  }
+  return coords;
 }
 
 
@@ -504,217 +691,135 @@ int *input_one(struct teach_params *teach,
  * which data vectors are fed to the SOM.
  * Returns NULL if a fatal error occurs, otherwise returns a pointer to
  * the last data_entry used in the data set (used in the python interface
- * to determine SRN activations after training from a data set) */
-
-struct data_entry *train_fromdataset(struct teach_params *teach, 
-		    struct entries *data, short mode) {
+ * to determine SRN activations after training from a data set).
+ */
+struct data_entry *train_fromdataset(struct teach_params_counters *params, 
+				     struct entries *data, short mode) {
   struct data_entry *entry = NULL, *last;
   eptr p;
-  int j, *error;
-
-  if(teach == NULL) {
-    fprintf(stderr, "train_fromdataset(): NULL teach_params\n");
+  int j = 0, *coords, *last_coords;
+  
+  if(params == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL teach_param_counters\n");
     return NULL;
   }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "train_fromdataset(): NULL teach_params->codes\n");
+  if(params->teach == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL params->teach_params\n");
+    return NULL;
+  }
+  if(params->teach->codes == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL params->teach_params->codes\n");
     return NULL;
   }
   if(data == NULL) {
     fprintf(stderr, "train_fromdataset(): NULL data set\n");
     return NULL;    
   }
-  if(data->dimension != teach->codes->dimension) {
+  if(data->dimension != params->teach->codes->dimension) {
     fprintf(stderr, "train_fromdataset(): mismatched data set and model ");
     fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
-	    teach->codes->dimension);
+	    params->teach->codes->dimension);
     return NULL;
   }
 
   data->flags.random_order = mode;
   if(mode == RAND) init_random((int) time(NULL));
+  
+  /* last_coords == (-1,-1) tells update_counters() that this
+   * is the first run, so no need to check consecutive counter
+   */
+  last_coords = (int *) malloc(2*sizeof(int));
+  last_coords[0] = last_coords[1] = -1;
 
-  while(teach->count < teach->length) {
+  while(params->teach->count < params->teach->length) {
     if(entry == NULL) entry = rewind_entries(data, &p);
-    error = train_one(teach, entry);
-    if(error == NULL) {
-      fprintf(stderr, "train_fromdataset(): train_one() returned NULL\n");
-      return NULL;
-    }
-    //printf("> coords: %d, %d\n", error[0], error[1]);
-    last = entry;
-    entry = next_entry(&p);
-  }
-
-  return last;
-}
-
-/*
-int *train_fromdataset(struct teach_params *teach, 
-		       struct entries *data, short mode) {
-  struct data_entry *entry = NULL, *last;
-  eptr p;
-  int j, *error, *coords_arr;
-  FILE *filec;
-
-  if(teach == NULL) {
-    fprintf(stderr, "train_fromdataset(): NULL teach_params\n");
-    return NULL;
-  }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "train_fromdataset(): NULL teach_params->codes\n");
-    return NULL;
-  }
-  if(data == NULL) {
-    fprintf(stderr, "train_fromdataset(): NULL data set\n");
-    return NULL;    
-  }
-  if(data->dimension != teach->codes->dimension) {
-    fprintf(stderr, "train_fromdataset(): mismatched data set and model ");
-    fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
-	    teach->codes->dimension);
-    return NULL;
-  }
-
-  data->flags.random_order = mode;
-  if(mode == RAND) init_random((int) time(NULL));
-  coords_arr = (int *) malloc(sizeof(int)*(teach->length*2));
-  filec = fopen("testc.dat", "w");
-
-  while(teach->count < teach->length) {
-    if(entry == NULL) entry = rewind_entries(data, &p);
-    error = train_one(teach, entry);
-    if(error == NULL) {
+    if((coords = train_one(params, entry, last_coords, 1)) == NULL) {
       fprintf(stderr, "train_fromdataset(): train_one() returned NULL\n");
       return NULL;
     }
     
-    coords_arr[teach->count] = error[0];
-    coords_arr[teach->count] = error[1];
-    fprintf(filec, "%d %d\n", error[0], error[1]);
-    fflush(filec);
-
+    last_coords = coords;
     last = entry;
     entry = next_entry(&p);
-  }
-
-  //return last;
-  return coords_arr;
-}
-
-*/
-/* map_fromdataset()
- * -----------------
- */
-
-struct data_entry *map_fromdataset(struct teach_params *teach, 
-				   struct entries *data) {
-  struct data_entry *entry = NULL, *last;
-  eptr p;
-  int j = 0,*error;
-
-  if(teach == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL teach_params\n");
-    return NULL;
-  }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL teach_params->codes\n");
-    return NULL;
-  }
-  if(data == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL data set\n");
-    return NULL;    
-  }
-  if(data->dimension != teach->codes->dimension) {
-    fprintf(stderr, "map_fromdataset(): mismatched data set and model ");
-    fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
-	    teach->codes->dimension);
-    return NULL;
-  }
-  
-  while(j < data->num_entries) {
-    if(entry == NULL) entry = rewind_entries(data, &p);
-    error = map_one(teach, entry);
-    if(error == NULL) {
-      fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
-      return NULL;
-    }
-    last = entry;
-    entry = next_entry(&p);
-    ++j;
   }
 
   return last;
 }
 
-/*
-int *map_fromdataset(struct teach_params *teach, struct entries *data) {
+/* map_fromdataset()
+ * -----------------
+ * Given a dataset, this function maps the vectors in the dataset
+ * to the trained SOM.  
+ * Returns NULL if a fatal error occurs, otherwise returns a pointer to
+ * the last data_entry used in the data set (used in the python interface
+ * to determine SRN activations after training from a data set).
+ */
+struct data_entry *map_fromdataset(struct teach_params_counters *params, 
+				   struct entries *data) {
   struct data_entry *entry = NULL, *last;
   eptr p;
-  int j = 0, *error, *coords_arr;
+  int *coords, *last_coords;
 
-  if(teach == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL teach_params\n");
+  if(params == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL teach_params_counters\n");
     return NULL;
   }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL teach_params->codes\n");
+  if(params->teach == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL params->teach_params\n");
+    return NULL;
+  }
+  if(params->teach->codes == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL params->teach_params->codes\n");
     return NULL;
   }
   if(data == NULL) {
-    fprintf(stderr, "map_fromdataset(): NULL data set\n");
+    fprintf(stderr, "map_fromdataset(): NULL dataset\n");
     return NULL;    
   }
-  if(data->dimension != teach->codes->dimension) {
-    fprintf(stderr, "map_fromdataset(): mismatched data set and model ");
+  if(data->dimension != params->teach->codes->dimension) {
+    fprintf(stderr, "map_fromdataset(): mismatched dataset and model ");
     fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
-	    teach->codes->dimension);
+	    params->teach->codes->dimension);
     return NULL;
   }
   
-  coords_arr = (int *) malloc(sizeof(int)*(data->num_entries*2));
+  /* last_coords == (-1,-1) tells update_counters() that this
+   * is the first run, so no need to check consecutive counter
+   */
+  last_coords == (int *)malloc(2*sizeof(int));
+  last_coords[0] = last_coords[1] = -1;
+  entry = rewind_entries(data, &p);
 
-  while(j < data->num_entries) {
-    if(entry == NULL) entry = rewind_entries(data, &p);
-    error = map_one(teach, entry);
-    if(error == NULL) {
+  while(entry != NULL){
+    if((coords = map_one(params, entry, last_coords, 1)) == NULL) {
       fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
       return NULL;
     }
 
-    coords_arr[j] = error[0];
-    coords_arr[j+1] = error[1];
-
+    last_coords = coords;
     last = entry;
     entry = next_entry(&p);
-    ++j;
   }
 
-  //return last;
-  return coords_arr;
+  return last;
 }
-*/
 
 
 /* ------------------- training timing functions ---------------------- */
 
 /* all of these functions are really self explanatory */
 
-void timing_start(struct teach_params *teach) {
-  time(&teach->start_time);
+void timing_start(struct teach_params_counters *params) {
+  time(&params->teach->start_time);
 }
 
-void timing_stop(struct teach_params *teach) {
-  time(&teach->end_time);
+void timing_stop(struct teach_params_counters *params) {
+  time(&params->teach->end_time);
 }
 
-int get_training_time(struct teach_params *teach) {
-  return teach->end_time - teach->start_time;
+int get_training_time(struct teach_params_counters *params) {
+  return params->teach->end_time - params->teach->start_time;
 }
-
-
-
-
 
 /* -------------- functions for getting info about SOM state ---------- */
 
@@ -724,8 +829,8 @@ int get_training_time(struct teach_params *teach) {
  * see init_training_session() and input_one() for info about how error
  * is actually calculated.  */
 
-float get_error(struct teach_params *teach) {
-  return teach->qerror;
+float get_error(struct teach_params_counters *params) {
+  return params->teach->qerror;
 }
 
 
@@ -738,64 +843,68 @@ float get_error(struct teach_params *teach) {
  * 'radius' and either gaussian or bubble function, as specified by 'mode'.  
  * Returns NULL if an error occurs.  */
 
-float *get_activation_levels(struct teach_params *teach,
+float *get_activation_levels(struct teach_params_counters *params,
 			     int *coords, float radius, short mode) {
-  MAPDIST_FUNCTION *distf = teach->mapdist;
+  MAPDIST_FUNCTION *distf = params->teach->mapdist;
   float *levels, delta;
   int i, x, y, xdim, ydim;
 
-  if(teach == NULL) {
-    fprintf(stderr, "get_activation_levels(): NULL teach_params\n");
+  if(params == NULL) {
+    fprintf(stderr, "get_activation_levels(): NULL teach_params_counters\n");
     return NULL;
   }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "get_activation_levels(): NULL teach_params->codes\n");
+  if(params->teach == NULL) {
+    fprintf(stderr, "get_activation_levels(): NULL params->teach_params\n");
+    return NULL;
+  }
+  if(params->teach->codes == NULL) {
+    fprintf(stderr, "get_activation_levels(): NULL params->teach_params->codes\n");
     return NULL;
   }
   if(coords == NULL) {
     fprintf(stderr, "get_activation_levels(): NULL coordinates\n");
     return NULL;
-	}
-	if(mode != NEIGH_GAUSSIAN && mode != NEIGH_BUBBLE) {
-		fprintf(stderr, "get_activation_levels(): unrecognized mode %d, using %d\n",
-										mode,NEIGH_GAUSSIAN);
-		mode = NEIGH_GAUSSIAN;
-	}
+  }
+  if(mode != NEIGH_GAUSSIAN && mode != NEIGH_BUBBLE) {
+    fprintf(stderr, "get_activation_levels(): unrecognized mode %d, using %d\n",
+	    mode,NEIGH_GAUSSIAN);
+    mode = NEIGH_GAUSSIAN;
+  }
   if(radius < 1.0) {
     fprintf(stderr, "get_activation_levels(): invalid radius: %f, ", radius);
     fprintf(stderr, "using 1.0\n");
     radius = 1.0;
   }
-
-  xdim = teach->codes->xdim;
-  ydim = teach->codes->ydim;
-
+  
+  xdim = params->teach->codes->xdim;
+  ydim = params->teach->codes->ydim;
+  
   if(coords[0] < 0 || coords[0] > xdim || coords[1] < 0 || coords[1] > ydim) {
     fprintf(stderr, "get_activation_levels(): invalid x,y coordinates: ");
     fprintf(stderr, "%d,%d, map dimensions: %d,%d\n", coords[0], coords[1],
 	    xdim, ydim);
     return NULL;
   }
-
+  
   levels = (float *) malloc(xdim*ydim*sizeof(float));
-	if(mode == NEIGH_GAUSSIAN) {
-	  for(y=0;y<ydim;y++) {
-  	  for(x=0;x<xdim;x++) {
-    	  i = x + y * xdim;
-      	delta = 2.0*distf(coords[0], coords[1], x, y)/radius;
-      	levels[i] = 1.0 / (exp(delta*delta));
-    	}
-  	}
-	} else {
-		for(y=0;y<ydim;y++) {
-			for(x=0;x<xdim;x++) {
-				i = x + y * xdim;
-				if(distf(coords[0],coords[1],x,y) <= radius-1.0) levels[i] = 1.0;
-				else levels[i] = 0.0;
-			}
-		}
-	}	
-
+  if(mode == NEIGH_GAUSSIAN) {
+    for(y=0; y<ydim; y++) {
+      for(x=0; x<xdim; x++) {
+	i = x + y * xdim;
+	delta = 2.0*distf(coords[0], coords[1], x, y)/radius;
+	levels[i] = 1.0 / (exp(delta*delta));
+      }
+    }
+  } else {
+    for(y=0; y<ydim; y++) {
+      for(x=0; x<xdim; x++) {
+	i = x + y * xdim;
+	if(distf(coords[0],coords[1],x,y) <= radius-1.0) levels[i] = 1.0;
+	else levels[i] = 0.0;
+      }
+    }
+  }	
+  
   return levels;
 }
 
@@ -803,60 +912,65 @@ float *get_activation_levels(struct teach_params *teach,
 /* get_levels_by_error()
  * ---------------------
  * returns SRN appropriate activation levels based on error calculations
- * for each model vector */
-
-float *get_levels_by_error(struct teach_params *teach,
+ * for each model vector 
+*/
+float *get_levels_by_error(struct teach_params_counters *params,
 			   struct data_entry *sample, float tolerance) {
-  DIST_FUNCTION *distf = teach->dist;
+  DIST_FUNCTION *distf = params->teach->dist;
   float *levels, delta, emin, emax;
-  int i, x, y, xdim, ydim, dim=teach->codes->dimension, *coords;
-	struct data_entry *model;
+  int i, x, y, xdim, ydim, dim=params->teach->codes->dimension, *coords;
+  struct data_entry *model;
 
-  if(teach == NULL) {
-    fprintf(stderr, "get_levels_by_error(): NULL teach_params\n");
+  if(params == NULL) {
+    fprintf(stderr, "get_levels_by_error(): NULL teach_params_counters\n");
     return NULL;
   }
-  if(teach->codes == NULL) {
-    fprintf(stderr, "get_levels_by_error(): NULL teach_params->codes\n");
+  if(params->teach == NULL) {
+    fprintf(stderr, "get_levels_by_error(): NULL params->teach_params\n");
     return NULL;
   }
-	if(tolerance < 0.0 || tolerance > 1.0) {
-		fprintf(stderr, "get_levels_by_error(): invalid tolerance %d, using 1.0\n",
-				tolerance);
-		tolerance = 1.0;
-	}
+  if(params->teach->codes == NULL) {
+    fprintf(stderr, "get_levels_by_error(): NULL params->teach_params->codes\n");
+    return NULL;
+  }
+  if(tolerance < 0.0 || tolerance > 1.0) {
+    fprintf(stderr, "get_levels_by_error(): Invalid tolerance %d, using 1.0\n",
+	    tolerance);
+    tolerance = 1.0;
+  }
 
-  xdim = teach->codes->xdim;
-  ydim = teach->codes->ydim;
+  xdim = params->teach->codes->xdim;
+  ydim = params->teach->codes->ydim;
 
-	levels = (float *) malloc(xdim*ydim*sizeof(float));
-	coords = (int *) malloc(2*sizeof(int));
-	emin = 100000.0; // should be largest possible float but i'm lazy
-	emax = 0.0;
-	for(y=0;y<ydim;y++) {
-		for(x=0;x<xdim;x++) {
-			i = x + y * xdim;
-			coords[0] = x;
-			coords[1] = y;
-			model = get_model_vector(teach->codes,coords);
-			levels[i] = distf(sample,model,dim);
-			if(levels[i] < emin) emin = levels[i];
-			if(levels[i] > emax) emax = levels[i];
-		}
-	}
-	emax -= (emax-emin)*(1.0-tolerance);
-	
-	for(y=0;y<ydim;y++) {
-		for(x=0;x<xdim;x++) {
-			i = x + y * xdim;
-			levels[i] = 1.0 - (levels[i]-emin)/emax;
-			if(levels[i] < 0.0) levels[i] = 0.0;
-			if(levels[i] > 1.0) levels[i] = 1.0;
-			levels[i] *= levels[i] * levels[i];
-		}
-	}
-		
-	return levels;
+  levels = (float *) malloc(xdim*ydim*sizeof(float));
+  coords = (int *) malloc(2*sizeof(int));
+  emin = 100000.0; // should be largest possible float but i'm lazy
+  emax = 0.0;
+
+  for(y=0; y<ydim; y++) {
+    for(x=0; x<xdim; x++) {
+      i = x + y * xdim;
+      coords[0] = x;
+      coords[1] = y;
+      model = get_model_vector(params->teach->codes,coords);
+      levels[i] = distf(sample,model,dim);
+      if(levels[i] < emin) emin = levels[i];
+      if(levels[i] > emax) emax = levels[i];
+    }
+  }
+  emax -= (emax-emin)*(1.0-tolerance);
+  
+  for(y=0; y<ydim; y++) {
+    for(x=0; x<xdim; x++) {
+      i = x + y * xdim;
+      levels[i] = 1.0 - (levels[i]-emin)/emax;
+      if(levels[i] < 0.0) levels[i] = 0.0;
+      if(levels[i] > 1.0) levels[i] = 1.0;
+      levels[i] *= levels[i] * levels[i];
+    }
+  }
+  
+  return levels;
 }
 
 
@@ -934,9 +1048,11 @@ void print_dataset(struct entries *data) {
       printf(" label: ");
       for(i=0;;i++) {
 	label = get_entry_labels(entry, i);
-	if(label != LABEL_EMPTY) /* last label in label array is always LABEL_EMPTY */
+	if(label != LABEL_EMPTY) 
+	  /* last label in label array is always LABEL_EMPTY */
 	  printf("%s ", find_conv_to_lab(label));
-	else break;
+	else 
+	  break;
       }
     }
     printf("\n");
@@ -951,15 +1067,6 @@ void print_dataset(struct entries *data) {
  * --added June 20, 2003 (Yee Lin Tan)
  */
 char *get_mask_data_entry(struct data_entry *entry, int dim) {
-  //return Py_BuildValue("s", entry->mask);
-  /*
-  if(mask) {
-    charmask = (char *) malloc(dim);
-    for(i=0;i<dim;i++)
-      charmask[i] = (char) mask[i];
-  }
-  entry->mask = charmask;
-  */
   return entry->mask;
 }
 
@@ -991,26 +1098,4 @@ char **get_label_data_entry(struct data_entry *entry, int num_labels) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* -------------------------- end of file ----------------------------- */
-
-/*
-void foo(char **s) {
-  *s = "hello";
-  //*s = (char *)malloc(64);
-  //sprintf(*s, "Hello\n");
-}
-*/

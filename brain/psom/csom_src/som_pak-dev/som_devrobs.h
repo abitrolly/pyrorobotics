@@ -22,6 +22,10 @@
 #define NO_TRAIN  0   // for input_one()
 #define TRAIN     1   // for input_one()
 
+#define REGULAR    0  // for get_reg_tcounter(), get_reg_mcounter()
+#define CONSEC     1  // for get_consec_tcounter(), get_consec_mcounter()
+#define MAX_CONSEC 2  // for get_maxconsec_tcounter(), get_maxconsec_mcounter()
+
 /* other relevant definitions:
  * lvq_pak.h:
  *   #define TOPOL_HEXA
@@ -44,16 +48,14 @@
  *                                  int neigh, int xdim, int ydim);
  */
 
-//Structure to hold the teach_params alongside counters for mapping
-//and training
-struct params_counters {
-  struct teach_params *params;
-  unsigned int **tcounter;
-  unsigned int **consec_tcounter;
-  unsigned int **max_consec_tcounter;
-  unsigned int **mcounter;
-  unsigned int **consec_mcounter;
-  unsigned int **max_consec_mcounter;
+/*
+ * Structure to hold the teach_params alongside counters for mapping
+ * and training.
+ */
+struct teach_params_counters {
+  struct teach_params *teach;
+  unsigned int ***tcounters; /* 3 training counters per som node */
+  unsigned int ***mcounters; /* 3 mapping counters per som node */
 };
 
 
@@ -77,50 +79,66 @@ void clear_labels_data_entry(struct data_entry *entry);
 
 /* ------------------ training session initialization functions ---------- */
 
-struct teach_params *construct_teach_params(struct entries *codes,
+struct teach_params_counters *construct_teach_params(struct entries *codes,
 					    short alpha_mode, 
 					    short radius_mode);
-int init_training_session(struct teach_params *params,
+int init_training_session(struct teach_params_counters *params,
 			  float alpha_0, float radius_0, long length,
 			  long qerror_window);
-int setup_snapshot(struct teach_params *params,
+int setup_snapshot(struct teach_params_counters *params,
 		   char *snapfile_prefix, long interval);
 
+/* ------------------- counter manipulation functions ----------------- */
+void setup_counters(struct teach_params_counters *params);
+void update_counters(unsigned int ***counters, int *curr_coords, 
+		     int *last_coords);
 
+int get_reg_tcounter(struct teach_params_counters *params, int *coords);
+int get_consec_tcounter(struct teach_params_counters *params, int *coords);
+int get_maxconsec_tcounter(struct teach_params_counters *params, int *coords);
+
+int get_reg_mcounter(struct teach_params_counters *params, int *coords);
+int get_consec_mcounter(struct teach_params_counters *params, int *coords);
+int get_maxconsec_mcounter(struct teach_params_counters *params, int *coords);
+
+int get_counter(struct teach_params_counters *params, 
+		int *coords, short mode, int counter_type);
 
 /* ------------------ training/mapping functions ---------------------- */
 
-int *input_one(struct teach_params *teach,
-	       struct data_entry *sample, short mode);
-int *map_one(struct teach_params *teach, struct data_entry *sample);
-int *train_one(struct teach_params *teach, struct data_entry *sample);
-
-struct data_entry *train_fromdataset(struct teach_params *teach, 
-				     struct entries *data, short mode);
-struct data_entry *map_fromdataset(struct teach_params *teach, 
-				   struct entries *data);
+int *input_one(struct teach_params_counters *params,
+	       struct data_entry *sample, short mode, 
+	       int *last_coords, int update_counter_flag);
+int *map_one(struct teach_params_counters *params, 
+	     struct data_entry *sample, 
+	     int *last_coords, int update_counter_flag);
+int *train_one(struct teach_params_counters *params, 
+	       struct data_entry *sample, 
+	       int *last_coords, int update_counter_flag);
 /*
-int *train_fromdataset(struct teach_params *teach, 
-		       struct entries *data, short mode);
-int *map_fromdataset(struct teach_params *teach, 
-		     struct entries *data);
+struct data_entry *train_fromdataset_old(struct teach_params *teach,
+					 struct entries *data, short mode);
 */
+struct data_entry *train_fromdataset(struct teach_params_counters *params, 
+				     struct entries *data, short mode);
+struct data_entry *map_fromdataset(struct teach_params_counters *params, 
+				   struct entries *data);
 
 /* ------------------- training timing functions ---------------------- */
 
-void timing_start(struct teach_params *teach);
-void timing_stop(struct teach_params *teach);
-int get_training_time(struct teach_params *teach);
+void timing_start(struct teach_params_counters *params);
+void timing_stop(struct teach_params_counters *params);
+int get_training_time(struct teach_params_counters *params);
 
 
 
 /* -------------- functions for getting info about SOM state ---------- */
 
-float get_error(struct teach_params *teach);
-float *get_activation_levels(struct teach_params *teach,
+float get_error(struct teach_params_counters *params);
+float *get_activation_levels(struct teach_params_counters *params,
 			     int *coords, float radius, short mode);
-float *get_levels_by_error(struct teach_params *teach,
-								struct data_entry *sample, float tolerance);
+float *get_levels_by_error(struct teach_params_counters *params,
+			   struct data_entry *sample, float tolerance);
 struct data_entry *get_model_vector(struct entries *codes, int *coords);
 void print_dataset(struct entries *data);
 

@@ -81,7 +81,7 @@ class VisPsom(psom):
       f.pack(side=BOTTOM)
       """
       
-      self.lastMapped = (0,0)
+      self.lastMapped = (-1,-1)
       self.cells = []
       self.cellhash = {}
       self.history = {}
@@ -153,12 +153,12 @@ class VisPsom(psom):
             # dictionary associated with each cell
             pt = point(x, y)
             self.cells[y].append({"cell": cell,
-                                  "traincount": self.get_counter(pt, 'train'),
-                                  "mapcount": self.get_counter(pt, 'map'),
+                                  #"traincount": self.get_reg_counter(pt, 'train'),
+                                  #"mapcount": self.get_reg_counter(pt, 'map'),
                                   "traintext": traintext,
                                   "maptext": maptext,
-                                  "labeltext": labeltext,
-                                  "label": self.get_model_vector(pt).get_label()})
+                                  "labeltext": labeltext})
+                                  #"label": self.get_model_vector(pt).get_label()})
             self.cellhash[cell] = (x, y)
 
       self.canvas.tag_lower('cell', 'traincount')
@@ -168,14 +168,14 @@ class VisPsom(psom):
       # Set labels
       for y in range(self.ydim):
          for x in range(self.xdim):
-            self._labelcell(x, y)
+            self._setcell_label(x, y)
 
       # menu bar with File and Show options
       menuBar = Menu(self.win)
       self.win.config(menu=menuBar)
       FileBtn = Menu(menuBar)
       menuBar.add_cascade(label='File', menu=FileBtn)
-      FileBtn.add_command(label='Exit', command=self.close)
+      FileBtn.add_command(label='Exit', command=sys.exit)
 
       ShowBtn = Menu(menuBar)
       menuBar.add_cascade(label='Show', menu=ShowBtn)
@@ -185,7 +185,8 @@ class VisPsom(psom):
                               command=self.show_map_count)
       ShowBtn.add_radiobutton(label='Labels',
                               command=self.show_labels)
-      ShowBtn.invoke(ShowBtn.index('Train Count')) # show train count by default
+      # show train count by default
+      ShowBtn.invoke(ShowBtn.index('Train Count')) 
       # end menu bar
 
    def close(self):
@@ -200,18 +201,13 @@ class VisPsom(psom):
             cell = item
             break
       
-      label = "No Label"
       if cell:
          x, y = self.cellhash[cell]
-         vec = self.get_model_vector(point(x, y))
+         vec = self.get_model_vector(point(x,y))
          
-         # build string of items in label ls
-         label_ls = self.cells[y][x]['label']
-         if len(label_ls) != 0:
-            label = ""
-            for item in label_ls:
-               label += item
-               
+         label = self.get_model_vector(point(x,y)).get_label_asString()
+         if label == "": label = "No Label"
+            
          if x == self.last_x and y == self.last_y:
             visclass = getVisVectorByName(self.vectortype)
             if self.opts: # override defaults
@@ -246,57 +242,47 @@ class VisPsom(psom):
       if cell:
          self.last_x, self.last_y = self.cellhash[cell]
 
-   """
-   # callback associated with toggle button (DEPRECATED)
-   def countSwitch(self):
-      if self.showCount == "Map":
-         self.canvas.tag_raise('traincount', 'cell')
-         self.canvas.tag_lower('mapcount', 'cell')
-         self.toggleCount.configure(text="Show Map Count")
-         self.showCount = "Train"
-      elif self.showCount == "Train":
-         self.canvas.tag_raise('mapcount', 'cell')
-         self.canvas.tag_lower('traincount', 'cell')
-         self.toggleCount.configure(text="Show Train Count")
-         self.showCount = "Map"
-   """
-         
-   def _setcount(self, x, y, new_counter, which):
-      """
-      Update the hit counter of a cell, and change the corresponding
-      counter label.
-      """
-      self.cells[y][x][which+"count"] = new_counter
-      self.canvas.itemconfigure(self.cells[y][x][which+"text"],
-                                text=str(new_counter))
-                                
-   def _setcell(self, x, y, level):
-      try:
-         self.canvas.itemconfigure(self.cells[y][x]["cell"],
-                                   fill='gray' + str(level))
-      except:
-         pass
+   def _setcell_color(self, x, y, color, level='unset'):
+      if level == 'unset':
+         self.canvas.itemconfigure(self.cells[y][x]['cell'],
+                                   fill=color)
+      else:
+         self.canvas.itemconfigure(self.cells[y][x]['cell'],
+                                   fill=color + str(level))
 
-   def _updatefill(self):
+   def _train_updatefill(self, curr_pt):
+      self.history[curr_pt] = ACT_MAX
+      
       for pt in self.history.keys():
          act = self.history[pt]
-         self._setcell(pt[0], pt[1], (ACT_MAX - act) * GRAY_STEP)
+         self._setcell_color(pt[0], pt[1],
+                             'gray', (ACT_MAX - act) * GRAY_STEP)
          #decrease activation by 1
          if act == 0:
             del self.history[pt]
          else:
             self.history[pt] -= 1
+   
+   def _map_updatefill(self, curr_pt):
+      if self.lastMapped[0] != -1 and self.lastMapped[1] != -1:
+         self._setcell_color(self.lastMapped[0], self.lastMapped[1],
+                             'gray', 100)
+      self._setcell_color(curr_pt[0], curr_pt[1], 'green')
 
-   def _labelcell(self, x, y):
+   def _setcell_count(self, x, y, count, which):
+      """
+      Updates the hit counter of a cell.  Counters are displayed
+      only if their values are > 0.
+      """
+      if count != 0:
+         self.canvas.itemconfigure(self.cells[y][x][which+"text"],
+                                   text=str(count))
+                                
+   def _setcell_label(self, x, y):
       """
       Given x, y coordinates, this function labels the corresponding cell
-      using information stored in the dictionary associated with the cell.
       """
-      label_ls = self.cells[y][x]['label']
-      label = ""
-      if len(label_ls) != 0:
-         for item in label_ls:
-            label += item
+      label = self.get_model_vector(point(x,y)).get_label_asString()
       self.canvas.itemconfigure(self.cells[y][x]['labeltext'],
                                 text = label,
                                 font=(('MS', 'Sans', 'Serif'), '8'))
@@ -308,41 +294,94 @@ class VisPsom(psom):
       """
       for y in range(self.ydim):
          for x in range(self.xdim):
-            self._setcell(x, y, 100)
-            self.cells[x][y]['count'] = 0
-      self.canvas.delete('count')
+            self._setcell_color(x, y, 100)
+            #self.cells[x][y]['count'] = 0
+      self.canvas.delete('traincount')
+      self.canvas.delete('mapcount')
+      self.update()
    
    def map(self, vector):
+      """
+      Maps the given vector, updates the fill, counter, label (if any)
+      of the node that was mapped.  Returns the winning model vector.
+      """
       model = psom.map(self, vector)
       pt    = model.point.x, model.point.y
 
-      # change the color of the last mapped cell to gray
-      self._setcell(self.lastMapped[0], self.lastMapped[1], 100)
-
-      # color the current winning cell green
-      self.canvas.itemconfigure(self.cells[pt[1]][pt[0]]["cell"],
-                                fill = 'green')
+      # update cell fill
+      self._map_updatefill(pt)
+      # update counter
+      self._setcell_count(pt[0], pt[1],
+                          self.get_reg_counter(model.point, 'map'),
+                          'map')
+      self._setcell_label(pt[0], pt[1])
       self.lastMapped = pt
-      self._setcount(pt[0], pt[1],
-                     self.get_counter(model.point, 'map'),
-                     'map')
-      self._labelcell(pt[0], pt[1])
       self.update()
       return model
 
    def train(self, vector):
-      model = psom.train(self,vector)
+      """
+      Trains the SOM on the given vector.  Updates the fill and counter
+      of the node that was mapped to.  Returns the winning model vector.
+      """
+      model = psom.train(self, vector)
       pt   = model.point.x, model.point.y
-      
-      self.history[pt] = ACT_MAX # max color activation (black)
-      self._updatefill() # update color activations of nodes
-      
-      self._setcount(pt[0], pt[1],
-                     self.get_counter(model.point, 'train'),
-                     'train')
+
+      # update cell fill
+      self._train_updatefill(pt)
+      # update counter
+      self._setcell_count(pt[0], pt[1],
+                          self.get_reg_counter(model.point, 'train'),
+                          'train')
+      self.update()
+      return model
+   
+   def train_from_dataset(self, dataset, mode='cyclic'):
+      """
+      Trains the SOM on the given dataset in either 'cyclic' or 'rand'
+      mode.  See train_from_dataset() in __init__.py for more info.
+      Updates the fill of the last mapped node and the counters of
+      all nodes that were mapped during training.  Returns the model
+      vector of the last node that was mapped.
+      """
+      model = psom.train_from_dataset(self, dataset, mode)
+      pt = model.point.x, model.point.y
+
+      # update cell fill for last point
+      self._train_updatefill(pt)
+      # update counters
+      for x in range(self.xdim):
+         for y in range(self.ydim):
+            self._setcell_count(x, y,
+                                self.get_reg_counter(point(x,y), 'train'),
+                                'train')
       self.update()
       return model
 
+   def map_from_dataset(self, dataset):
+      """
+      Maps the dataset to the SOM.  See map_from_dataset() in
+      __init__.py for more info.  Updates the fill of the last mapped
+      node and the counters of all nodes that were mapped.  Returns
+      the model vector of the last node that was mapped to.
+      """
+      model = psom.map_from_dataset(self, dataset)
+      pt = model.point.x, model.point.y
+
+      # update cell fill for last point
+      self._map_updatefill(pt)
+      # update counters
+      for x in range(self.xdim):
+         for y in range(self.ydim):
+            self._setcell_count(x, y,
+                           self.get_reg_counter(point(x,y), 'map'),
+                           'map')
+            self._setcell_label(x, y)
+      
+      self.lastMapped = pt
+      self.update()
+      return model
+      
    def add_label(self, x, y, label=[]):
       """
       Given a label list, this function adds the label to the cell/model vector
@@ -350,8 +389,7 @@ class VisPsom(psom):
       """
       vec = self.get_model_vector(point(x, y))
       vec.add_label(label)
-      self.cells[y][x]['label'] = self.get_model_vector(point(x, y)).get_label()
-      self._labelcell(x, y)
+      self._setcell_label(x, y)
 
    def clear_label(self, x, y):
       """
@@ -360,8 +398,7 @@ class VisPsom(psom):
       """
       vec = self.get_model_vector(point(x, y))
       vec.clear_label()
-      self.cells[y][x]['label'] = self.get_model_vector(point(x, y)).get_label()
-      self._labelcell(x, y)
+      self._setcell_label(x, y)
       
    def update(self):
       while self.win.tk.dooneevent(2): pass
@@ -392,7 +429,7 @@ if __name__ == "__main__":
    #mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
    mysom = VisPsom(file='ex.cod')
    mydataset = dataset(file='ex.dat')
-   mysom.init_training(0.02,4.0,5002)
+   mysom.init_training(0.02,4.0,5005)
    print "---> Begin training from dataset..."
    mysom.timing_start()
    mysom.train_from_dataset(mydataset)
@@ -405,6 +442,15 @@ if __name__ == "__main__":
    pause()
    print "---> Training..."
    mysom.train(vector([14.0, 10.0, .3, -.8, 400.0]))
+   pause()
+   print "---> Training..."
+   mysom.train(vector([24.48, 29.45, -0.54, 0.16, 402.9]))
+   pause()
+   print "---> Training..."
+   mysom.train(vector([27.0, 35.69, -0.45, -1.7, 401.7]))
+   pause()
+   print "---> Training..."
+   mysom.train(vector([17.7, 18.89, -1.24, -0.84, 400.10]))
    pause()
    print "---> Mapping..."
    mysom.map(vector([10.0, 30.0, -.3, .8, 375.0]))

@@ -18,19 +18,18 @@
 //%include cpointer.i
 %include typemaps.i
 %include carrays.i
-//%include cdata.i
 %array_functions(float,floatarray)
 %array_functions(short,shortarray)
 %array_functions(int,intarray)
 %array_functions(char, chararray)
 %array_functions(char*,charstararray)
+//%include cdata.i
 //%cdata(char)
 //%include cstring.i
 //%cstring_output_allocate(char **s, free(*$1))
 //%cstring_output_allocate_size(char **x, int *slen, free(*$1))
 
 //passing in char ** to functions
-
 %typemap(in) char ** label {
 	int i, size;
 	//Check if is a list
@@ -78,6 +77,10 @@
 #define INVERSE_T 1   // for construct_teach_params()
 #define NO_TRAIN  0   // for input_one()
 #define TRAIN     1   // for input_one()
+
+#define REGULAR    0  // for get_reg_tcounter(), get_reg_mcounter()
+#define CONSEC     1  // for get_consec_tcounter(), get_consec_mcounter()
+#define MAX_CONSEC 2  // for get_maxconsec_tcounter(), get_maxconsec_mcounter()
 
 #define TOPOL_HEXA 3
 #define TOPOL_RECT 4
@@ -147,6 +150,12 @@ struct teach_params {
   time_t start_time, end_time;
 };
 
+struct teach_params_counters {
+  struct teach_params *teach;
+  unsigned int ***tcounters; /* 3 training counters per som node */
+  unsigned int ***mcounters; /* 3 mapping counters per som node */
+};
+
 /* ------------------- from datafile.h: ------------------------------ */
 /* ------------------------------------------------------------------- */
 
@@ -187,45 +196,62 @@ extern void clear_labels_data_entry(struct data_entry *entry);
 
 /* ------------------ training session initialization functions ---------- */
 
-extern struct teach_params *construct_teach_params(struct entries *codes,
+extern struct teach_params_counters *construct_teach_params(struct entries *codes,
                                             short alpha_mode, 
                                             short radius_mode);
-extern int init_training_session(struct teach_params *params,
-                          float alpha_0, float radius_0, long length,
-                          long qerror_window);
-extern int setup_snapshot(struct teach_params *params,
-                   char *snapfile_prefix, long interval);
+extern int init_training_session(struct teach_params_counters *params,
+        	                  float alpha_0, float radius_0, long length,
+                	          long qerror_window);
+extern int setup_snapshot(struct teach_params_counters *params,
+                   	char *snapfile_prefix, long interval);
+
+/* ------------------- counter manipulation functions ----------------- */
+extern void setup_counters(struct teach_params_counters *params);
+extern void update_counters(unsigned int ***counters, int *curr_coords, 
+				int *last_coords);
+extern int get_reg_tcounter(struct teach_params_counters *params, int *coords);
+extern int get_consec_tcounter(struct teach_params_counters *params, int *coords);
+extern int get_maxconsec_tcounter(struct teach_params_counters *params, int *coords);
+
+extern int get_reg_mcounter(struct teach_params_counters *params, int *coords);
+extern int get_consec_mcounter(struct teach_params_counters *params, int *coords);
+extern int get_maxconsec_mcounter(struct teach_params_counters *params, int *coords);
+
+extern int get_counter(struct teach_params_counters *params, 
+			int *coords, short mode, int counter_type);
 
 /* ------------------ training/mapping functions ---------------------- */
 
-extern int *input_one(struct teach_params *teach,
-               struct data_entry *sample, short mode);
-
-extern int *map_one(struct teach_params *teach, struct data_entry *sample);
-extern int *train_one(struct teach_params *teach, struct data_entry *sample);
-
-extern struct data_entry *train_fromdataset(struct teach_params *teach, 
-					struct entries *data, short mode);
-extern struct data_entry *map_fromdataset(struct teach_params *teach, 
-				   struct entries *data);
+extern int *input_one(struct teach_params_counters *params,
+	          	struct data_entry *sample, short mode, 
+			int *last_coords, int update_counter_flag);
+extern int *map_one(struct teach_params_counters *params, 
+			struct data_entry *sample, 
+			int *last_coords, int update_counter_flag);
+extern int *train_one(struct teach_params_counters *params, 
+			struct data_entry *sample, 
+			int *last_coords, int update_counter_flag);
 /*
-extern int *train_fromdataset(struct teach_params *teach, 
-				struct entries *data, short mode);
-extern int *map_fromdataset(struct teach_params *teach, 
-			struct entries *data);
+extern struct data_entry *train_fromdataset_old(struct teach_params_counters *params, 
+						struct entries *data, short mode);
 */
+extern struct data_entry *train_fromdataset(struct teach_params_counters *params, 
+						struct entries *data, short mode);
+extern struct data_entry *map_fromdataset(struct teach_params_counters *params, 
+				   		struct entries *data);
+
 /* ------------------- training timing functions ---------------------- */
 
-extern void timing_start(struct teach_params *teach);
-extern void timing_stop(struct teach_params *teach);
-extern int get_training_time(struct teach_params *teach);
+extern void timing_start(struct teach_params_counters *params);
+extern void timing_stop(struct teach_params_counters *params);
+extern int get_training_time(struct teach_params_counters *params);
 
 /* -------------- functions for getting info about SOM state ---------- */
 
-extern float get_error(struct teach_params *teach);
-extern float *get_activation_levels(struct teach_params *teach,
-                             int *coords, float radius, short mode);
-extern float *get_levels_by_error(struct teach_params *teach,
+extern float get_error(struct teach_params_counters *params);
+extern float *get_activation_levels(struct teach_params_counters *params,
+	                             int *coords, float radius, short mode);
+extern float *get_levels_by_error(struct teach_params_counters *params,
                 struct data_entry *sample, float tolerance);
 extern struct data_entry *get_model_vector(struct entries *codes, int *coords);
 extern void print_dataset(struct entries *data);
