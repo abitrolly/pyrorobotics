@@ -123,9 +123,14 @@ class VisPsom(psom):
             self.history[pt] -= 1
             
    def clearfill(self):
+      """
+      Clears the markers, the count printout, and resets the count to 0
+      for all cells.
+      """
       for y in range(self.ydim):
          for x in range(self.xdim):
             self._setcell(x, y, 100)
+            self.cells[x][y]['count'] = 0
       self.canvas.delete('count')
 
    def map(self, vector):
@@ -140,11 +145,12 @@ class VisPsom(psom):
       retval = psom.train(self,vector)
       pt = retval.point.x, retval.point.y
       self.history[pt] = ACT_MAX
+      self.cells[pt[1]][pt[0]]["count"] += 1
       self._updatefill()
       return retval
 
 if __name__ == "__main__":
-   mysom = VisPsom(file='ex.cod', vis_vectortype="BarGraph")
+   mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
    mydataset = dataset(file='ex.dat')
    mysom.init_training(0.02,4.0,5000)
    mysom.train_from_dataset(mydataset)
