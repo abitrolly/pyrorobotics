@@ -4,7 +4,38 @@
 from random import random
 from math import log
 
-version = "1.1"
+version = "1.2"
+
+class GUI:
+    def __init__(self, title, width, height):
+        from Tkinter import Tk, Canvas, Toplevel
+        self.width = width
+        self.height = height
+        self.title = title
+        self.app = Tk()
+        self.app.withdraw()
+        self.win = Toplevel()
+        self.win.wm_title(title)
+        self.canvas = Canvas(self.win,
+                             width=(self.width * 2),
+                             height=(self.height * 2))
+        self.canvas.pack(side = 'bottom', expand = "yes", anchor = "n",
+                         fill = 'both')
+        self.win.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.close)
+        #self.canvas.bind("<Configure>", self.changeSize)
+        
+    def close(self):
+        self.app.destroy()
+
+    def draw(self, lat, length):
+        print "Drawing...",
+        for h in range(length):
+            for w in range(self.width):
+                if lat.data[h][w]:
+                    self.canvas.create_rectangle(w*2, h*2, w*2+2, h*2+2,
+                                                 fill = "black")
+            self.win.update_idletasks()
+        print "Done!"
 
 def poisson(_lambda):
     """
@@ -92,42 +123,29 @@ class Matrix:
             self.init(decimalToBinaryString(str, self.size))
 
 class Rules(Matrix):
-    def __init__(self, window = 3, values = 2):
-        self.window = window
+    def __init__(self, radius = 3, values = 2, bias = .5):
+        self.radius = radius
         self.values = values
-        self.size = (self.values ** (self.window * 2 + 1))
+        self.size = (self.values ** (self.radius * 2 + 1))
         self.height = 1
         self.data = [0]
         self.data[0] = [0] * self.size
+        self.randomize(bias)
     def watch(self, lat):
         self.width = lat.size 
         length = lat.height - 1
-        from Tkinter import Tk, Canvas, BOTH
-        self.win = Tk()
-        self.win.wm_title("Pyro CA")
-        self.canvas = Canvas(self.win,width=(self.width * 2),height=(length * 2))
-        #self.canvas.bind("<Configure>", self.changeSize)
-        self.canvas.pack(fill=BOTH)
+        self.gui = GUI("Pyro CA", lat.size, lat.height - 1)
         for c in range( length):
             self.apply(lat, c)
-        #    if lat.data[c] == lat.data[c + 1]:
-        #        return c
-        #return length
-        self.draw(lat, length)
-        self.win.mainloop()
-    def draw(self, lat, length):
-        print "Drawing...",
-        for h in range(length):
-            for w in range(self.width):
-                if lat.data[h][w]:
-                    self.canvas.create_rectangle(w*2, h*2, w*2+2, h*2+2, fill = "black")
-        print "Done!"
+        self.gui.draw(lat, length)
+        self.gui.win.mainloop()
+
     def apply(self, lat, c):
         for i in range(lat.size):
             lat.data[c+1][i] = self.data[0][self.size -
                                             lat.bits2rule(c,
-                                                          i - self.window,
-                                                          i + self.window) - 1]
+                                                          i - self.radius,
+                                                          i + self.radius) - 1]
     def applyAll(self, lat, length = -1):
         if length == -1:
             length = lat.height - 1
@@ -138,22 +156,21 @@ class Rules(Matrix):
         return length
 
 class Lattice(Matrix):
-    def __init__(self, size = 149, height = 150):
+    def __init__(self, size = 149, height = 150, bias = .5):
         self.size = size
         self.height = height
         self.data = [0] * self.height
         for h in range(self.height):
             self.data[h] = [0] * self.size
+        self.randomize(bias)
     def bit(self, row, pos):
         return self.data[row][pos % self.size]
     def bits2rule(self, row, start, stop):
         sum = 0
         cnt = 0
-        #print "bits2rule:", stop, start, range(stop, start - 1, -1),
         for i in range(stop, start - 1, -1):
             sum += self.bit(row, i) * 2 ** cnt
             cnt += 1
-        #print "RULE FIRING! #", sum
         return sum
 
 if __name__ == '__main__':
@@ -163,9 +180,12 @@ if __name__ == '__main__':
         print "---Press ENTER to continue---",
         sys.stdin.readline()
 
+    rules = Rules()
     data = Lattice()
+    rules.watch( data )
 
-    rules = Rules(window = 1)
+    data = Lattice()
+    rules = Rules(radius = 1)
     rules.init(110)
     print "Rule #110:"
     rules.display()
@@ -174,7 +194,7 @@ if __name__ == '__main__':
     data.data[0][data.size/2] = 1
     rules.applyAll(data)
     data.display()
-    #rules.watch(data)
+    rules.watch(data)
     pause()
 
     data.randomize(.1)
