@@ -18,11 +18,59 @@
 //%include cpointer.i
 %include typemaps.i
 %include carrays.i
+//%include cdata.i
 %array_functions(float,floatarray)
 %array_functions(short,shortarray)
 %array_functions(int,intarray)
+%array_functions(char, chararray)
 %array_functions(char*,charstararray)
+//%cdata(char)
+//%include cstring.i
+//%cstring_output_allocate(char **s, free(*$1))
+//%cstring_output_allocate_size(char **x, int *slen, free(*$1))
 
+//passing in char ** to functions
+
+%typemap(in) char ** label {
+	int i, size;
+	//Check if is a list
+	if(!PyList_Check($input)) {
+		PyErr_SetString(PyExc_TypeError, "Not a list");
+		return NULL;	
+	}
+	
+	size = PyList_Size($input);
+	i = 0;
+	$1 = (char **) malloc((size+1)*sizeof(char *));
+	for(i=0; i<size; i++) {
+		PyObject *o = PyList_GetItem($input, i);
+		if(PyString_Check(o)) 
+			$1[i] = PyString_AsString(o);
+		else {
+			PyErr_SetString(PyExc_TypeError, "List must contain strings");
+			free($1);
+			return NULL;
+		}
+	}
+	$1[i] = NULL;
+}
+
+//cleanup argument data.  free up resources allocated when the wrapper function exits.
+
+%typemap(freearg) char ** label {
+	if($1) free($1);
+}
+
+//to return labels from c function
+%typemap(out) char ** {
+	int i;
+	if(arg2 == 0) return PyList_New(0);
+	$result = PyList_New(arg2);
+	for(i=0; $1[i] != NULL; i++){
+		PyObject *o = PyString_FromString($1[i]);
+		PyList_SetItem($result, i, o);
+	}	
+}
 
 #define CYCLIC    0   // for train_fromdataset()
 #define RAND      1   // for train_fromdataset()
@@ -133,8 +181,8 @@ extern struct data_entry *make_data_entry(float *points);
 
 /* --------------------- label manipulation functions ----------------- */
 
-extern int set_label_data_entry(struct data_entry *entry, char **label);
-extern int add_label_data_entry(struct data_entry *entry, char **label);
+//extern int set_label_data_entry(struct data_entry *entry, char **label);
+extern void add_label_data_entry(struct data_entry *entry, char **label);
 extern void clear_labels_data_entry(struct data_entry *entry);
 
 /* ------------------ training session initialization functions ---------- */
@@ -156,9 +204,16 @@ extern int *input_one(struct teach_params *teach,
 extern int *map_one(struct teach_params *teach, struct data_entry *sample);
 extern int *train_one(struct teach_params *teach, struct data_entry *sample);
 
-extern struct data_entry* train_fromdataset(struct teach_params *teach, 
-							struct entries *data, short mode);
-
+extern struct data_entry *train_fromdataset(struct teach_params *teach, 
+					struct entries *data, short mode);
+extern struct data_entry *map_fromdataset(struct teach_params *teach, 
+				   struct entries *data);
+/*
+extern int *train_fromdataset(struct teach_params *teach, 
+				struct entries *data, short mode);
+extern int *map_fromdataset(struct teach_params *teach, 
+			struct entries *data);
+*/
 /* ------------------- training timing functions ---------------------- */
 
 extern void timing_start(struct teach_params *teach);
@@ -174,3 +229,10 @@ extern float *get_levels_by_error(struct teach_params *teach,
                 struct data_entry *sample, float tolerance);
 extern struct data_entry *get_model_vector(struct entries *codes, int *coords);
 extern void print_dataset(struct entries *data);
+
+/* ------ testing ------ */
+
+extern char *get_mask_data_entry(struct data_entry *entry, int dim);
+
+extern char **get_label_data_entry(struct data_entry *entry, int num_labels);
+//extern void foo(char **s);

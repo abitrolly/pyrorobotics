@@ -60,8 +60,8 @@ struct data_entry *make_data_entry_weighted_masked(float *points,
 struct data_entry *make_data_entry(float *points);
 
 /* --------------------- label manipulation functions ----------------- */
-int set_label_data_entry(struct data_entry *entry, char **label);
-int add_label_data_entry(struct data_entry *entry, char **label);
+//int set_label_data_entry(struct data_entry *entry, char **label);
+void add_label_data_entry(struct data_entry *entry, char **label);
 void clear_labels_data_entry(struct data_entry *entry);
 
 /* ------------------ training session initialization functions ---------- */
@@ -85,9 +85,15 @@ int *map_one(struct teach_params *teach, struct data_entry *sample);
 int *train_one(struct teach_params *teach, struct data_entry *sample);
 
 struct data_entry *train_fromdataset(struct teach_params *teach, 
-		struct entries *data, short mode);
-
-
+				     struct entries *data, short mode);
+struct data_entry *map_fromdataset(struct teach_params *teach, 
+				   struct entries *data);
+/*
+int *train_fromdataset(struct teach_params *teach, 
+		       struct entries *data, short mode);
+int *map_fromdataset(struct teach_params *teach, 
+		     struct entries *data);
+*/
 
 /* ------------------- training timing functions ---------------------- */
 
@@ -108,8 +114,8 @@ struct data_entry *get_model_vector(struct entries *codes, int *coords);
 void print_dataset(struct entries *data);
 
 
-
-
-
+char *get_mask_data_entry(struct data_entry *entry, int dim);
+char **get_label_data_entry(struct data_entry *entry, int num_labels);
+//void foo(char **s);
 
 #endif /* SOM_DEVROBS_H */

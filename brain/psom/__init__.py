@@ -300,15 +300,18 @@ class psom:
         # check alpha (learning rate)
         if(alpha_0 < 0.0 or alpha_0 > 1.0):
             raise PsomError, \
-                  "invalid learning rate: %s. alpha must be between 0 and 1.0 (inclusive)" % alpha_0
+                  "invalid learning rate: %s. alpha must be between 0 and 1.0 (inclusive)" \
+                  % alpha_0
         # check radius of learning effect
         if(radius_0 < 1.0):
             raise PsomError, \
-                  "invalid radius: %s. radius of learning effect must be at least 1" % radius_0
+                  "invalid radius: %s. radius of learning effect must be at least 1" \
+                  % radius_0
         # make sure radius of learning effect is not greater than map dimension
         if(radius_0 > self.xdim and radius_0 > self.ydim):
             raise PsomError, \
-                  "invalid radius: %s. SOM dimension is only %sx%s" % (radius_0, self.xdim, self.ydim)
+                  "invalid radius: %s. SOM dimension is only %sx%s" \
+                  % (radius_0, self.xdim, self.ydim)
         # runlen must be greater than or equal to 1
         if(runlen < 1):
             raise PsomError, \
@@ -317,7 +320,8 @@ class psom:
         # error window must be greater than or equal to 1
         if(errorwindow < 1):
             raise PsomError, \
-                  "invalid size of error window: %s.  window size must be at least 1" % errorwindow
+                  "invalid size of error window: %s.  window size must be at least 1" \
+                  % errorwindow
         
         csom.init_training_session(self.params,alpha_0,radius_0,runlen,errorwindow)
 
@@ -530,7 +534,8 @@ class psom:
         # make sure dimensions of mapping vector and SOM model vector match
         if(vector.dim != self.dim):
             raise PsomError, \
-                  "Mismatched dimensions of mapping vector (size %s) and model vector (size %s)" % (vector.dim, self.dim)
+                  "Mismatched dimensions of mapping vector (size %s) and model vector (size %s)" \
+                  % (vector.dim, self.dim)
         coords = csom.map_one(self.params,vector.entry)
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
         self.last = vector
@@ -558,7 +563,8 @@ class psom:
         # make sure dimensions of training vector and SOM model vector match
         if(vector.dim != self.dim):
             raise PsomError, \
-                  "Mismatched dimensions of training vector (size %s) and model vector (size %s)" % (vector.dim, self.dim)
+                  "Mismatched dimensions of training vector (size %s) and model vector (size %s)" \
+                  % (vector.dim, self.dim)
         coords = csom.train_one(self.params,vector.entry)
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
         self.last = vector
@@ -573,35 +579,84 @@ class psom:
         psom: train_from_dataset()
         --------------------------
         Trains SOM from vectors in a dataset.  There are two training modes: cyclic
-        and rand.  The dimension of the vectors in the dataset must match the dimension
-        of the SOM model vectors.
+        and rand (for random).  The dimension of the vectors in the dataset must match
+        the dimension of the SOM model vectors.
         
         PARAMS
         dataset: dataset of training vectors
         mode   : mode of training from dataset ('cyclic' or 'rand'. 'cyclic' by default,
         i.e. vectors are mapped in order, and training is repeated iteratively 
-        depending on the number of training patterns specifiied at
-        initialization.) as for 'rand', vectors are chosen at random from the
-        dataset. 
+        depending on the number of training patterns specifiied at initialization.)
+        As for 'rand', vectors are chosen at random from the dataset. 
         
         USAGE
         >>> mydataset = psom.dataset(file=filename)
         >>> mysom.train_from_dataset(mydataset)
         """
-        # make sure dimension of dataset vectors and SOM model vector match
+        # make sure dimension of dataset vectors and SOM model vectors match
         if(dataset.dim != self.dim):
             raise PsomError, \
-                  "Mismatched dimensions of training vector (size %s) and model vector (size %s" % (dataset.dim, self.dim)
+                  "Mismatched dimensions of training vector (size %s) and model vector (size %s)" \
+                  % (dataset.dim, self.dim)
         if(mode == 'rand'):
             mode = csom.RAND
         else:
             mode = csom.CYCLIC
+        """
+        coords_arr = csom.train_fromdataset(self.params, dataset.data, mode)
+        print csom.teach_params_count_get(self.params)
+        coords_ls = arr_to_list(coords_arr, csom.teach_params_count_get(self.params))
+        j = 0
+        filec = open("coords.dat", "w")
+        for i in coords_ls:
+            filec.write(str(i) + " ");
+            if(j%2 == 1):
+                filec.write("\n")
+            j += 1
+        filec.flush()
+        """
+        
         entry = csom.train_fromdataset(self.params,dataset.data,mode)
-        self.last = vector(entry=entry,dim=self.dim)
+        #self.last = vector(entry=entry,dim=self.dim)
+
+        self.last = vector(entry=entry,dim=self.dim,
+                           label=csom.get_label_data_entry(entry, \
+                           csom.data_entry_num_labs_get(entry)))
+
         coords = csom.map_one(self.params,self.last.entry)
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
         self.last.point = pt
-	
+
+    def map_from_dataset(self,dataset):
+        """
+        psom: map_from_dataset()
+        ------------------------
+        Maps vectors from a dataset in order to the SOM.  The dimension of the vectors in the
+        dataset must match the dimension of the SOM model vectors.
+        
+        PARAMS
+        dataset: dataset of vectors to be mapped
+        
+        USAGE
+        >>> mydataset = psom.dataset(file=filename)
+        >>> mysom.map_from_dataset(mydataset)
+        """
+        # make sure dimension of dataset vectors and SOM model vectors match
+        if(dataset.dim != self.dim):
+            raise PsomError, \
+                  "Mismatched dimensions of training vector (size %s) and model vector (size %s)" \
+                  % (dataset.dim, self.dim)
+        entry = csom.map_fromdataset(self.params,dataset.data)
+        #self.last = vector(entry=entry,dim=self.dim)
+
+        self.last = vector(entry=entry,dim=self.dim,
+                           label=csom.get_label_data_entry(entry, \
+                           csom.data_entry_num_labs_get(entry)))
+        
+        coords = csom.map_one(self.params,self.last.entry)
+        pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
+        self.last.point = pt
+
     def get_model_vector(self,point):
         """
         psom: get_model_vector()
@@ -617,8 +672,9 @@ class psom:
         """
         codes = csom.teach_params_codes_get(self.params)
         entry = csom.get_model_vector(codes, point.asIntPtr())
+        label = csom.get_label_data_entry(entry, csom.data_entry_num_labs_get(entry))
         dim = csom.entries_dimension_get(codes)
-        return vector(entry=entry,dim=dim,point=point)
+        return vector(entry=entry, dim=dim, point=point, label=label)
 
     def get_activations(self,mode='bubble',radius=1.0):
         """
@@ -763,7 +819,7 @@ class vector:
     vectors, but for model vectors represents its coordinates in the SOM
     """
     def __init__(self, elts='unset', weight=1, mask='NULL', entry='unset',
-                 dim='unset', point='unset', label='NULL'):
+                 dim='unset', point='unset', label=[]):
 	"""
 	vector: __init__()
 	------------------
@@ -815,7 +871,8 @@ class vector:
                 # make sure len(mask) matches vector dimension
                 if (len(mask) != dim):
                     raise VectorError, \
-                          "Mismatched dimensions of vector (len %s) and mask (len %s)" % (dim,len(mask))
+                          "Mismatched dimensions of vector (len %s) and mask (len %s)" \
+                          % (dim,len(mask))
                 # make sure mask is a binary list
                 for item in mask:
                     if(item != 0 and item != 1):
@@ -824,32 +881,34 @@ class vector:
                 c_mask = list_to_arr(mask, "short") # convert mask list into a c array of shorts
 
             # label
-            c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
-            if(label != 'NULL'):
+            #c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
+            str_label = []
+            if(len(label) != 0):
                 # convert every elt in label (python list) to a string,
                 # storing it in str_label, a new python list of strings.
-                str_label = []
+                #str_label = []
                 for item in label:
                     str_label.append(str(item))
                     
                 # Null-terminate the list of strings. this is needed to determine
                 # the array size in make_data_entry_weighted_masked() in som_devrobs.c
-                str_label.append(str(0)) 
+                #str_label.append(str(0)) 
                     
                 # Convert list of strings into a c array of character pointers.
                 # Note: each elt in c_str_label is a char pointer.  So, c_str_label is the
                 # equivalent of C's char **.
-                c_str_label = list_to_arr(str_label, "char") 
+                #c_str_label = list_to_arr(str_label, "char") 
                 
             # create a data entry struct (see som_devrobs.c for more info)
             entry = csom.make_data_entry_weighted_masked(points, weight, c_mask, dim,
-                                                             c_str_label)
+                                                         str_label)
         # data members of vector object (separated from code for clarity)
         self.dim   = dim
         self.entry = entry
         self.point = point
         self.mask  = mask
-        self.label = label
+        #self.label = str_label
+        #self.numlabels = len(label)
     
     def get_elts(self):
         """
@@ -858,7 +917,7 @@ class vector:
         Returns the original list representation of the elements in the vector.
         """
         points = csom.data_entry_points_get(self.entry)
-        return arr_to_list(points,self.dim)
+        return arr_to_list(points, self.dim)
 
     def __getitem__(self, key):
         """
@@ -893,16 +952,20 @@ class vector:
         Returns the mask of the vector.  Mask is returned as a python list.
         """
         return self.mask
+        #mask = csom.data_entry_mask_get(self.entry)
+        #print mask
+        #return arr_to_list(mask, self.dim)
     
-    def set_label(self,label='NULL'):
-        """
+    #def set_label(self,label='NULL'):
+    """
+    def set_label(self,label=[]):
         vector: set_label()
         -------------------
         Associates a vector with the given label.  Removes all labels previously
         associated with the vector.
-        """
-        c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
-        if(label == 'NULL'):
+        #c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
+        #if(label == 'NULL'):
+        if(len(label) == 0):
             raise VectorError, "No label provided"
             
         # convert every elt in label (python list) to a string,
@@ -918,20 +981,25 @@ class vector:
         # Convert list of strings into a c array of character pointers.
         # Note: each elt in c_str_label is a char pointer.  So, c_str_label is the
         # equivalent of C's char **.
-        c_str_label = list_to_arr(str_label, "char")
+        #c_str_label = list_to_arr(str_label, "char")
 		
-        csom.set_label_data_entry(self.entry, c_str_label)
-        self.label = label
+        #csom.set_label_data_entry(self.entry, c_str_label)
+        print str_label
+        csom.set_label_data_entry(self.entry, str_label)
+        self.label = str_label
+    """
         
-    def add_label(self,label='NULL'):
+    #def add_label(self,label='NULL'):
+    def add_label(self,label=[]):
         """
         vector: add_label()
         -------------------
         Associates a vector with the given label.  All labels previously
         associated with the vector remain unchanged.
         """
-        c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
-        if(label == 'NULL'):
+        #c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
+        #if(label == 'NULL'):
+        if(len(label) == 0):
             raise VectorError, "No label provided"
         
         # convert every elt in label (python list) to a string,
@@ -939,34 +1007,27 @@ class vector:
         str_label = []
         for item in label:
             str_label.append(str(item))
-                
+
         # Null-terminate the list of strings. this is needed to determine
         # the array size in make_data_entry_weighted_masked() in som_devrobs.c
-        str_label.append(str(0)) 
+        #str_label.append(str(0)) 
         
         # Convert list of strings into a c array of character pointers.
         # Note: each elt in c_str_label is a char pointer.  So, c_str_label is the
         # equivalent of C's char **.
-        c_str_label = list_to_arr(str_label, "char")
+        #c_str_label = list_to_arr(str_label, "char")
         
-        csom.add_label_data_entry(self.entry, c_str_label)
-            
-        if(self.label == 'NULL'):
-            # no labels previously associated with this vector 
-            self.label = label
-        else:
-            # add to the labels associated with this vector
-            for item in label: 
-                self.label.append(item)
+        #csom.add_label_data_entry(self.entry, c_str_label)
+        csom.add_label_data_entry(self.entry, str_label)
 
     def clear_label(self):
         """
         vector: clear_label()
         ---------------------
         Removes all labels associated with the vector.
+        For some reason, this is giving me a segfault.
         """
         csom.clear_labels_data_entry(self.entry)
-        self.label = 'NULL'
         
     def get_label(self):
         """
@@ -975,7 +1036,13 @@ class vector:
         Returns the label list associated with the vector or 'NULL'
         if no labels are associated with this vector.
         """
-        return self.label
+        return csom.get_label_data_entry(self.entry, self.get_numlabels())
+
+    def get_numlabels(self):
+        """
+        Returns the number of labels associated with the vector.
+        """
+        return csom.data_entry_num_labs_get(self.entry)
     
     def __str__(self):
         """
@@ -1015,7 +1082,7 @@ class vector:
             for elt in mask:
                 print "%s" % elt,
             print "]",
-        if(label != 'NULL'):
+        if(label != []):
             print " label: [",
             for elt in label:
                 print "\'%s\'" % elt,
@@ -1279,7 +1346,14 @@ if(__name__ == '__main__'):
     print "  and to test_devrobs output \"test1_verify.cod\""
     print "test 1 successfully completed"
     print ""
-
+    print "Testing map from dataset"
+    mysom.timing_start()
+    mysom.map_from_dataset(mydataset)
+    mysom.timing_stop()
+    ttime = mysom.get_training_time()
+    print "Mapping took", ttime, " seconds"
+    print ""
+    
     # test 2:
     # SOM is randomly initialized using dataset created from ex.dat.  SOM is then
     # trained using the same dataset.  After training, model vectors are saved to
@@ -1309,9 +1383,11 @@ if(__name__ == '__main__'):
     # vectors (before training) are saved to test3a.cod.  SOM is then trained
     # using the dataset created from ex.dat, and the model vectors (after training)
     # are saved to test3b.cod.
+
     print "test 3: dataset from file, som pure randinit, train from dataset"
     print "----------------------------------------------------------------"
     mysom = psom(12,8,dim=5,rmin=0.0,rmax=10.0)
+
     mysom.save_to_file("test3a.cod")
     print "initial som written to file \"test3a.cod\""
     mysom.init_training(0.02,4.0,5000)
@@ -1330,11 +1406,12 @@ if(__name__ == '__main__'):
     print "output written to file \"test3b.cod\""
     print "test 3 successfully completed"
     print ""
-    
+
     # test 4:
     # SOM's model vectors are read in from ex.cod.  SOM is then trained on
     # 4 manually created training vectors.  SOM's model vectors are saved to
     # test4.cod after training.
+
     print "test 4: data/training dynamic, view SRN levels"
     print "----------------------------------------------"
     mysom = psom(file='ex.cod')
@@ -1345,26 +1422,30 @@ if(__name__ == '__main__'):
     vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0],
                        label=['X', 13, 'ab', 'C4']))
     vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
-    
+
     mydataset = dataset(vecs[0])
+
     print "Adding vectors to dataset, displaying mask and labels"
     for i in range(1,4):
+        vecs[i].display()
+        print "\n"
         mydataset.addvec(vecs[i])
-        vecs[i].add_label([i]) # test add_label()
-        print i, vecs[i].get_mask(), vecs[i].get_label() # test get_mask() and get_label()
-        if(i == 2):
-            vecs[i].clear_label() # test clear_label()
-            print "Labels on vector %s removed" % i
-            print i, vecs[i].get_mask(), vecs[i].get_label() 
-        if(i == 3):
-            vecs[i].set_label([4]) # test set_label()
-            print "Label on vector %s changed to 4" % i
-            print i, vecs[i].get_mask(), vecs[i].get_label() 
-            
+        vecs[i].add_label([i])
+        if(i==3):
+            vecs[i].clear_label()
+        #if(i==2): vecs[i].add_label([i])
+        #if(i==1 or i==3): vecs[i].add_label([i]) # test add_label()
+        #if(i==2): vecs[i].clear_label()
+        #vecs[i].display()
+        #if(i == 3):
+         #   vecs[i].add_label([4]) # test add_label()
+          #  print "Added 4 to label on vector %s" % i
+          #  print i, vecs[i].get_mask(), vecs[i].get_label()
+
     print "\nDisplaying dataset..."
     mydataset.display()
     print "\n"
-	
+
     mysom.logging_set(type="file", prefix="psomtest", mode="train")
     mysom.logging_clear()
     mysom.logging_on()

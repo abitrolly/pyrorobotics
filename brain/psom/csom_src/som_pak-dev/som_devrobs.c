@@ -15,6 +15,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
+
 #include "lvq_pak.h"
 #include "som_rout.h"
 #include "datafile.h"
@@ -164,13 +166,16 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
     for(i=0;i<dim;i++)
       charmask[i] = (char) mask[i];
   }
+  //charmask[i] = '\0';
   entry->mask = charmask;
   
   /* label */
   /* if the label array is not null, add it to the entry */
   if(label) {
-    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
+    for(i=0; label[i] != NULL; i++) { 
+      /* label array is null-terminated with '0'. */
       //printf("Added: %c\n", label[i][0]);
+      //printf("i: %d\n", i);
       add_entry_label(entry, find_conv_to_ind(label[i]));
     }
   }
@@ -207,12 +212,14 @@ struct data_entry *make_data_entry(float *points) {
  * The difference between add_label and set_label is that 
  * set_label removes all labels previously associated with
  * the entry before setting the new label.
+ * --added June 17, 2003
  */
+/*
 int set_label_data_entry(struct data_entry *entry, char **label) {
   int i;
   
   if(label) {
-    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
+    for(i=0; label[i][0] != '0'; i++) { //label array is null-terminated with '0'.
       //printf("Added: %c\n", label[i][0]);
       set_entry_label(entry, find_conv_to_ind(label[i]));
     }
@@ -220,28 +227,31 @@ int set_label_data_entry(struct data_entry *entry, char **label) {
   }
   return 1;
 }
+*/
 
 /* Returns 0 if adding a label is successful, 1 otherwise. 
  * add_label simply adds a label to the entry; any previous
  * associations remain the same. 
+ * --added June 17, 2003
  */
-int add_label_data_entry(struct data_entry *entry, char **label) {
+void add_label_data_entry(struct data_entry *entry, char **label) {
   int i;
-
   if(label) {
-    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
-      //printf("Added: %c\n", label[i][0]);
+    for(i=0; label[i] != NULL; i++) { 
+      /* label array is null-terminated with '0'. */
+      //printf("i: %d\n", i);
       add_entry_label(entry, find_conv_to_ind(label[i]));
     }
-    return 0;
   }
-  return 1;
 }
 
-/* Clears all labels associated with the entry */
+/* Clears all labels associated with the entry 
+ * --added June 17, 2003
+ */
 void clear_labels_data_entry(struct data_entry *entry) {
   clear_entry_labels(entry);
 }
+
 
 /* ------------------ training session initialization functions ---------- */
 
@@ -531,15 +541,159 @@ struct data_entry *train_fromdataset(struct teach_params *teach,
       fprintf(stderr, "train_fromdataset(): train_one() returned NULL\n");
       return NULL;
     }
-		last = entry;
+    //printf("> coords: %d, %d\n", error[0], error[1]);
+    last = entry;
     entry = next_entry(&p);
   }
 
   return last;
 }
 
+/*
+int *train_fromdataset(struct teach_params *teach, 
+		       struct entries *data, short mode) {
+  struct data_entry *entry = NULL, *last;
+  eptr p;
+  int j, *error, *coords_arr;
+  FILE *filec;
 
+  if(teach == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL teach_params\n");
+    return NULL;
+  }
+  if(teach->codes == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL teach_params->codes\n");
+    return NULL;
+  }
+  if(data == NULL) {
+    fprintf(stderr, "train_fromdataset(): NULL data set\n");
+    return NULL;    
+  }
+  if(data->dimension != teach->codes->dimension) {
+    fprintf(stderr, "train_fromdataset(): mismatched data set and model ");
+    fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
+	    teach->codes->dimension);
+    return NULL;
+  }
 
+  data->flags.random_order = mode;
+  if(mode == RAND) init_random((int) time(NULL));
+  coords_arr = (int *) malloc(sizeof(int)*(teach->length*2));
+  filec = fopen("testc.dat", "w");
+
+  while(teach->count < teach->length) {
+    if(entry == NULL) entry = rewind_entries(data, &p);
+    error = train_one(teach, entry);
+    if(error == NULL) {
+      fprintf(stderr, "train_fromdataset(): train_one() returned NULL\n");
+      return NULL;
+    }
+    
+    coords_arr[teach->count] = error[0];
+    coords_arr[teach->count] = error[1];
+    fprintf(filec, "%d %d\n", error[0], error[1]);
+    fflush(filec);
+
+    last = entry;
+    entry = next_entry(&p);
+  }
+
+  //return last;
+  return coords_arr;
+}
+
+*/
+/* map_fromdataset()
+ * -----------------
+ */
+
+struct data_entry *map_fromdataset(struct teach_params *teach, 
+				   struct entries *data) {
+  struct data_entry *entry = NULL, *last;
+  eptr p;
+  int j = 0,*error;
+
+  if(teach == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL teach_params\n");
+    return NULL;
+  }
+  if(teach->codes == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL teach_params->codes\n");
+    return NULL;
+  }
+  if(data == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL data set\n");
+    return NULL;    
+  }
+  if(data->dimension != teach->codes->dimension) {
+    fprintf(stderr, "map_fromdataset(): mismatched data set and model ");
+    fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
+	    teach->codes->dimension);
+    return NULL;
+  }
+  
+  while(j < data->num_entries) {
+    if(entry == NULL) entry = rewind_entries(data, &p);
+    error = map_one(teach, entry);
+    if(error == NULL) {
+      fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
+      return NULL;
+    }
+    last = entry;
+    entry = next_entry(&p);
+    ++j;
+  }
+
+  return last;
+}
+
+/*
+int *map_fromdataset(struct teach_params *teach, struct entries *data) {
+  struct data_entry *entry = NULL, *last;
+  eptr p;
+  int j = 0, *error, *coords_arr;
+
+  if(teach == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL teach_params\n");
+    return NULL;
+  }
+  if(teach->codes == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL teach_params->codes\n");
+    return NULL;
+  }
+  if(data == NULL) {
+    fprintf(stderr, "map_fromdataset(): NULL data set\n");
+    return NULL;    
+  }
+  if(data->dimension != teach->codes->dimension) {
+    fprintf(stderr, "map_fromdataset(): mismatched data set and model ");
+    fprintf(stderr, "vector dimensions: %d, %d\n", data->dimension,
+	    teach->codes->dimension);
+    return NULL;
+  }
+  
+  coords_arr = (int *) malloc(sizeof(int)*(data->num_entries*2));
+
+  while(j < data->num_entries) {
+    if(entry == NULL) entry = rewind_entries(data, &p);
+    error = map_one(teach, entry);
+    if(error == NULL) {
+      fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
+      return NULL;
+    }
+
+    coords_arr[j] = error[0];
+    coords_arr[j+1] = error[1];
+
+    last = entry;
+    entry = next_entry(&p);
+    ++j;
+  }
+
+  //return last;
+  return coords_arr;
+}
+*/
 
 
 /* ------------------- training timing functions ---------------------- */
@@ -652,7 +806,7 @@ float *get_activation_levels(struct teach_params *teach,
  * for each model vector */
 
 float *get_levels_by_error(struct teach_params *teach,
-								       struct data_entry *sample, float tolerance) {
+			   struct data_entry *sample, float tolerance) {
   DIST_FUNCTION *distf = teach->dist;
   float *levels, delta, emin, emax;
   int i, x, y, xdim, ydim, dim=teach->codes->dimension, *coords;
@@ -792,9 +946,49 @@ void print_dataset(struct entries *data) {
 }
 
 
+/* Returns the mask array (char *) associated with the 
+ * given data entry 
+ * --added June 20, 2003 (Yee Lin Tan)
+ */
+char *get_mask_data_entry(struct data_entry *entry, int dim) {
+  //return Py_BuildValue("s", entry->mask);
+  /*
+  if(mask) {
+    charmask = (char *) malloc(dim);
+    for(i=0;i<dim;i++)
+      charmask[i] = (char) mask[i];
+  }
+  entry->mask = charmask;
+  */
+  return entry->mask;
+}
 
 
+/* Returns the label array associated with the given
+ * data entry as a array of strings.
+ * --added June 20, 2003 (Yee Lin Tan)
+ */
+char **get_label_data_entry(struct data_entry *entry, int num_labels) {
+  int i, label;
+  char **labels = NULL, *str_label = NULL;
 
+  if(entry->num_labs) {
+    labels = malloc(entry->num_labs*sizeof(char*));
+    for(i=0;;i++) {
+      label = get_entry_labels(entry, i);
+      if(label != LABEL_EMPTY) {
+	/* last label in label array is always LABEL_EMPTY */
+	str_label = find_conv_to_lab(label);
+	labels[i] = str_label;
+      }
+      else {
+	labels[i] = NULL;
+	break;
+      }
+    }
+  }
+  return labels;
+}
 
 
 
@@ -812,3 +1006,11 @@ void print_dataset(struct entries *data) {
 
 
 /* -------------------------- end of file ----------------------------- */
+
+/*
+void foo(char **s) {
+  *s = "hello";
+  //*s = (char *)malloc(64);
+  //sprintf(*s, "Hello\n");
+}
+*/
