@@ -53,6 +53,9 @@ class Robot (Drawable):
         #self.units['map']   = "METERS"
         #self.units['motor'] = "SCALED"
 
+    def __repr__(self):
+        return "name = '%s'\ntype = '%s'\n" % (self.name, self.type)
+
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
 
