@@ -97,10 +97,10 @@ class Robot:
         """
         self.directory = {} # toplevel place for paths
         self.device = {} # what was called services
-        self.supports = {} # keyword list of built-in devices
         self.devData = {} # items in /robot/ path
         self.devDataFunc = {} # function items in /robot/ path
         self.devData['timestamp'] = time.time()
+        self.devData["supports"] = [] # list of built-in devices
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
@@ -364,7 +364,7 @@ class Robot:
                 retval.append(deviceName)
                 retval.append( None )
             return retval
-        elif item in self.supports: # built-in name
+        elif item in self.devData["supports"]: # built-in name
             # deviceBuiltin returns dictionary
             return self.startDevices( self.startDeviceBuiltin(item) )
         elif isinstance(item, (type((1,)), type([1,]))):
@@ -410,7 +410,7 @@ class Robot:
         return self.device.keys()
 
     def getSupportedDevices(self):
-        return self.supports.keys()
+        return self.devData["supports"]
 
     def removeDevice(self, item):
         self.device[item].setVisible(0)
