@@ -1,17 +1,13 @@
 # Defines AriaRobot, a subclass of robot
 
 from pyro.robot import *
+from pyro.geometry import *
 from pyro.robot.device import Device, DeviceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
 from os import getuid
 import time
-
-PIOVER180 = pi / 180.0
-DEG90RADS = 0.5 * pi
-COSDEG90RADS = cos(DEG90RADS) / 1000.0
-SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
 BIT0 = 0x1
 BIT1 = 0x2 
