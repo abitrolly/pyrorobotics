@@ -48,7 +48,9 @@ for module in args:
             exec("obj = %s.%s.%s" % (module, i, m))
             mType = type(obj)
             if mType == types.MethodType and moduleName == module:
-                if obj.im_func.func_code.co_filename[0] == "/": 
+                filename = module.replace(".", "/")
+                #print filename
+                if obj.im_func.func_code.co_filename.find(filename) < 0:
                     #print "This method is defined in ", obj.im_func.func_code.co_filename
                     continue
                 if include__ or (m[:2] != "__" and m[:-2] != "__" and m != "__init__"):
