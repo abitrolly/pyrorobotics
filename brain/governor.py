@@ -165,8 +165,8 @@ class GovernorNetwork(Governor, Network):
         raise AttributeError, "This method has not yet been written"
 
     def setLearning(self, value):
-        self.ravq.setAddModels(value)
         self.learning = value
+        self.ravq.setAddModels(value)
 
 class GovernorSRN(Governor, SRN): 
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
@@ -331,7 +331,6 @@ class GovernorSRN(Governor, SRN):
     def setLearning(self, value):
         if self.governing:
             self.trainingNetwork.learning = value
-            self.governing = value
             self.ravq.setAddModels(value)
         else:
             self.learning = value
@@ -397,7 +396,7 @@ if __name__ == '__main__':
     net.governing = 0
     net.setTargets( targets )
     net.setInputs( inputs )
-    net.setLearning(0)
+    net.governing = 0
     tss, correct, total = net.sweep()
     print "TSS: %.4f Percent: %.4f" % (tss, correct / float(total))
     # run with -i to see net

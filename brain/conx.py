@@ -1985,12 +1985,20 @@ class Network:
     def setPatterns(self, patterns):
         """
         Sets patterns to the dictionary argument.
+
+        Example: net.setPatterns( {"tom": [0, 0, 0, 1], "mary": [1, 0, 0, 0]} )
+
+        Sets net.patterned to 1 as a side-effect.
+        
         """
         self.patterns = patterns
         self.patterned = 1
     def getPattern(self, word):
         """
         Returns the pattern with key word.
+
+        Example: net.getPattern("tom") => [0, 0, 0, 1]
+        
         """
         if self.patterns.has_key(word):
             return self.patterns[word]
@@ -1999,6 +2007,12 @@ class Network:
     def getWord(self, pattern):
         """
         Returns the word associated with pattern.
+
+        Example: net.getWord([0, 0, 0, 1]) => "tom"
+
+        This method uses the net.compare() method to compute if the patterns
+        are the same. Tolerance is adjusted using net.setTolerance().
+        
         """
         for w in self.patterns:
             if self.compare( self.patterns[w], pattern ):
@@ -2009,11 +2023,17 @@ class Network:
         """
         Sets a pattern with key word. Better to use addPattern() and
         delPattern().
+
+        Example: net.setPattern("tom", [1, 0, 0, 0])
+
         """
         self.patterns[word] = vector
     def addPattern(self, word, vector):
         """
         Adds a pattern with key word.
+
+        Example: net.addPattern("tom", [0, 0, 0, 1])
+        
         """
         if self.patterns.has_key(word):
             raise NetworkError, \
@@ -2024,6 +2044,9 @@ class Network:
     def delPattern(self, word):
         """
         Delete a pattern with key word.
+
+        Example: net.delPattern("tom")
+        
         """
         del self.patterns[word]
     def compare(self, v1, v2):
@@ -2048,8 +2071,15 @@ class Network:
                 return 0
     def shareWeights(self, network):
         """
-        Share weights with another network of the same topology. Connection
-        is broken after a randomize or change of size.
+        Share weights with another network of the same topology (layers and
+        connections must be created in the same order). Connection is broken
+        after a call to net.randomize() or a change of size of one of the
+        layers.
+
+        Example: net.shareWeights(otherNet)
+
+        See also: net.shareSomeWeights()
+        
         """
         self.sharedWeights = 1
         network.sharedWeights = 1
@@ -2057,6 +2087,35 @@ class Network:
             self.connections[c].weight = network.connections[c].weight
         for l in range(len(self.layers)):
             self.layers[l].bias   = network.layers[l].bias
+    def shareSomeWeights(self, network, listOfLayerNamePairs):
+        """
+        Share some weights with another network of the same topology. Connection
+        is broken after a randomize or change of size. Layers must have the same
+        names in both networks.
+
+        Example: net.shareSomeWeights(otherNet, [["hidden", "output"]])
+
+        This example will take the weights between the hidden and output layers
+        of otherNet and share them with net. Also, the bias values of
+        otherNet["output"] will be shared with net["output"].
+
+        See also: net.shareWeights()
+        
+        """
+        self.sharedWeights = 1
+        for (fromLayerName, toLayerName) in listOfLayerNamePairs:
+            for c1 in range(len(self.connections)):
+                if self.connections[c1].fromLayer.name == fromLayerName and \
+                       self.connections[c1].toLayer.name == toLayerName:
+                    for c2 in range(len(network.connections)):
+                        if network.connections[c2].fromLayer.name == fromLayerName and \
+                               network.connections[c2].toLayer.name == toLayerName:
+                            self.connections[c1].weight = network.connections[c2].weight
+        for l1 in range(len(self.layers)):
+            if self.layers[l1].name == toLayerName:
+                for l2 in range(len(network.layers)):
+                    if network.layers[l2].name == toLayerName:
+                        self.layers[l1].bias = network.layers[l2].bias
 
 class SRN(Network):
     """
