@@ -33,6 +33,9 @@ class TCPRobot(Robot):
 			self.devData[item] = self.move(item)
 		self._update()
 
+	def preGet(self, item):
+		self.devData[item] = self.move(item)
+
 	def getItem(self, item):
 		return self.move(item)
 
