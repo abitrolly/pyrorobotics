@@ -65,9 +65,37 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels);
 void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
 void Blobdata_del(struct blobdata* data);
 
-struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height);
-struct bitmap* bitmap_from_ppm(char* filename);
-struct bitmap* bitmap_from_pgm(char* filename);
+struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height,
+			       double (*filter)(double, double, double),
+			       double threshold);
+struct bitmap* bitmap_from_ppm(char* filename,
+			       double (*filter)(double, double, double),
+			       double threshold);
+struct bitmap* bitmap_from_pgm(char* filename,
+			       double (*filter)(double, double, double),
+			       double threshold);
+struct bitmap* bitmap_from_8bitGrayArray(uint8_t* array, int width, int height,
+					 double (*filter)(double, double, double),
+					 double threshold);
+struct bitmap* bitmap_from_8bitRGBArray(uint8_t* array, int width, int height,
+					 double (*filter)(double, double, double),
+					 double threshold);
+struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int height,
+					       double (*filter)(double, double, double),
+					       double threshold);
+
+/*--------- filter functions -----------
+    Must conform to the prototype double func(double r, double g, double b).
+    They Are expected to take an rgb value, with each element in the range
+    [0.0, 1.0], and returns a value in the same range. */
+
+
+double filter_red (double r, double g, double b);
+double filter_green (double r, double g, double b);
+double filter_blue (double r, double g, double b);
+double filter_hue (double r, double g, double b);
+double filter_saturation (double r, double g, double b);
+double filter_brightness (double r, double g, double b);
 
 player_blobfinder_data_t* make_player_blob(struct blobdata** blobs, uint32_t* channels, int n_channels);
 playerblob_t* make_player_blob_varsize(struct blobdata** blobs, uint32_t* channels, int n_channels);

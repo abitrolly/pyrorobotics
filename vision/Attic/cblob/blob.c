@@ -4,6 +4,35 @@
 #include <stdio.h>
 #include <errno.h>
 
+/*********************************
+ * All init operations expect the pointer to already have been malloced,
+ * and all the del operations do not free the structure.  These operations
+ * allocate and free memory used within the structures.  Therefore, to
+ * use them correctly, your code should look like this:
+ *
+ *  struct bitmap* map;
+ *  map = (struct bitmap*)malloc(sizeof(struct bitmap));
+ *  Bitmap_init(map, 100, 100);
+ *
+ *  //use the bitmap
+ *
+ *  Bitmap_del(map);
+ *  free(map);
+ *
+ * The factory methods which return pointers, on the other hand, such
+ * as bitmap_from_ppm(), return an already-malloced structure
+ * which must be freed by the user.  E.g.:
+ *
+ *  struct bitmap* map;
+ *  map = bitmap_from_cap(camera, 76, 48);
+ *
+ *  //use the image
+ *
+ *  Bitmap_del(map);
+ *  free(map);
+ *
+ **********************************/
+
 /* ------------- Blob operations ------------ */
 
 void Blob_init(struct blob* theBlob, struct point* pixel){
@@ -135,6 +164,11 @@ void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
   int count = 0;
   int w, h, n, m, minBlobNum, maxBlobNum, i;
   struct blob* tempBlob;
+  /*--------------------
+    This is a traslation into C of Doug's Blob code from
+    pyro.camera.Blobdata.__init__.  It's pretty much exactly
+    the same algorithm.
+    -------------------*/
   data->blobmap = (struct bitmap*)malloc(sizeof(struct bitmap));
   Bitmap_init(data->blobmap, theBitmap->width, theBitmap->height);
   data->equivList = (int *) malloc(sizeof(int) * BLOBLIST_SIZE);
@@ -271,9 +305,13 @@ void Blobdata_del(struct blobdata* data){
 */
 
 
-struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
+
+struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height,
+			       double (*filter)(double, double, double),
+			       double threshold){
   int i;
   float h, s, v;
+  double temp;
   int red, green, blue;
   struct bitmap* bmp = (struct bitmap*) malloc(sizeof(struct bitmap));
   Bitmap_init(bmp, width, height);
@@ -282,34 +320,28 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
       red  = ((uint16_t *)image->data)[i + 2];
       green= ((uint16_t *)image->data)[i + 1];
       blue = ((uint16_t *)image->data)[i + 0];
-      rmRGBtoHSV(red/255.0,
-		 green/255.0,
-		 blue/255.0,
-		 &h, &s, &v);
-      if (v > BITMAP_CUTOFF){
-	bmp->data[i/3] = 1;
-      }
-      else
-	bmp->data[i/3] = 0;
+
+      bmp->data[i/3] = ((*filter)(red/255.0, green/255.0, blue/255.0) > threshold);
     }
   } else if (image->bpp == 8){
     for (i = 0; i < image->size; i++){
-      if (((int *)image->data)[i] > (int)BITMAP_CUTOFF*255)
-	bmp->data[i] = 1;
-      else
-	bmp->data[i] = 0;
+      temp = ((uint8_t*)image->data)[i]/255.0;
+      bmp->data[i] = ((*filter)(temp, temp, temp) > threshold);
     }
   }
   return bmp;
 }
 
-struct bitmap* bitmap_from_ppm(char* filename){
+struct bitmap* bitmap_from_ppm(char* filename,
+			       double (*filter)(double, double, double),
+			       double threshold){
   int rows, cols, maxval;
   FILE* theFile;
-  unsigned char* rgb;
-  unsigned int*  RGB;
+  uint8_t* rgb;
+  uint16_t*  RGB;
   struct bitmap* bmp;
-  int i, red, green, blue;
+  int i;
+  double red, green, blue;
   float h, s, v;
   
 
@@ -321,38 +353,24 @@ struct bitmap* bitmap_from_ppm(char* filename){
   fscanf(theFile, "%*2c\n%d %d\n%d", &cols, &rows, &maxval);
   Bitmap_init(bmp, cols, rows);
   if (maxval <= 255){
-    rgb = (unsigned char*)malloc(rows*cols*3);
+    rgb = (uint8_t*)malloc(rows*cols*3);
     fread(rgb, 1, rows*cols*3, theFile);
     for (i = 0; i < rows*cols*3; i += 3) {
-      red  = rgb[i];
-      green= rgb[i + 1];
-      blue = rgb[i + 2];
-      rmRGBtoHSV(red/(float)maxval,
-		 green/(float)maxval,
-		 blue/(float)maxval,
-		 &h, &s, &v);
-      if (v > BITMAP_CUTOFF)
-	bmp->data[i/3] = 1;
-      else
-	bmp->data[i/3] = 0;
+      red  = rgb[i]/(double)maxval;
+      green= rgb[i + 1]/(double)maxval;
+      blue = rgb[i + 2]/(double)maxval;
+      bmp->data[i/3] = ((*filter)(red, green, blue) > threshold);
     }
     free(rgb);
   }
   else{
-    RGB = (unsigned int*)malloc(2*rows*cols*3);
+    RGB = (uint16_t*)malloc(2*rows*cols*3);
     fread(RGB, 2, rows*cols*3, theFile);
     for (i = 0; i < rows*cols*3; i += 3) {
-      red  = RGB[i];
-      green= RGB[i + 1];
-      blue = RGB[i + 2];
-      rmRGBtoHSV(red/(float)maxval,
-		 green/(float)maxval,
-		 blue/(float)maxval,
-		 &h, &s, &v);
-      if (v > BITMAP_CUTOFF)
-	bmp->data[i/3] = 1;
-      else
-	bmp->data[i/3] = 0;
+      red  = RGB[i]/(double)maxval;
+      green= RGB[i + 1]/(double)maxval;
+      blue = RGB[i + 2]/(double)maxval;
+      bmp->data[i/3] = ((*filter)(red, green, blue) > threshold);
     }
     free(RGB);
   }
@@ -361,11 +379,14 @@ struct bitmap* bitmap_from_ppm(char* filename){
   return bmp;
 }
   
-struct bitmap* bitmap_from_pgm(char* filename){
+struct bitmap* bitmap_from_pgm(char* filename,
+			       double (*filter)(double, double, double),
+			       double threshold){
   unsigned int rows, cols, maxval;
   FILE* theFile;
   unsigned char* gray;
   struct bitmap* bmp;
+  double temp;
   int i;
 
   
@@ -383,17 +404,103 @@ struct bitmap* bitmap_from_pgm(char* filename){
   fread(gray, 1, rows*cols, theFile);
   fclose(theFile);
   for (i = 0; i < rows*cols; i++) {
-    if (gray[i] > BITMAP_CUTOFF)
-      bmp->data[i] = 1;
-    else
-      bmp->data[i] = 0;
+    temp = gray[i]/(double)maxval;
+    bmp->data[i] = ((*filter)(temp, temp, temp) > threshold);
   }
   free(gray);
   return bmp;
 }
 
+/* array should be a 1D, width*height element array. */
+struct bitmap* bitmap_from_8bitGrayArray(uint8_t* array, int width, int height,
+					 double (*filter)(double, double, double),
+					 double threshold){
+  int i;
+  double temp;
+  struct bitmap* bmp;
+
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, width, height);
+  for (i = 0; i < width*height; i++){
+    temp = array[i]/255.0;
+    bmp->data[i] = ((*filter)(temp, temp, temp) > threshold);
+  }
+  return bmp;
+}
+
+/* array should be a 1D, width*height*3 length array of RGB values,
+   i.e., array[0] = R_1, array[1] = G_1. array[2] = B_1, array[3] = R_2, etc*/
+struct bitmap* bitmap_from_8bitRGBArray(uint8_t* array, int width, int height,
+					 double (*filter)(double, double, double),
+					double threshold){
+  int i;
+  double r, g, b;
+  struct bitmap* bmp;
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, width, height);
+  for (i = 0; i < width*height*3; i += 3){
+    r = array[i]/255.0;
+    g = array[i+1]/255.0;
+    b = array[i+2]/255.0;
+    bmp->data[i/3] = ((*filter)(r, g, b) > threshold);
+  }
+  return bmp;
+}
+
+/* array should be a 1D, width*height length array of packed 32-bit RGB values,
+   i.e., array[0] = 0x00RRGGBB */
+struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int height,
+					       double (*filter)(double, double, double),
+					       double threshold){
+  int i;
+  double r, g, b;
+  struct bitmap* bmp;
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, width, height);
+  for (i = 0; i < width*height; i++){
+    r = ((array[i] & 0x00FF0000) >> 16)/255.0;
+    g = ((array[i] & 0x0000FF00) >> 8)/255.0;
+    b = (array[i] & 0x000000FF)/255.0;
+    bmp->data[i] = ((*filter)(r, g, b) > threshold);
+  }
+  return bmp;
+}
+  
 
   
+
+//---------- Filter functions ------------------
+
+double filter_red (double r, double g, double b){
+    return r;
+}
+
+double filter_green (double r, double g, double b){
+    return g;
+}
+
+double filter_blue (double r, double g, double b){
+    return b;
+}
+
+
+double filter_hue (double r, double g, double b){
+  float h, s, v;
+  rmRGBtoHSV(r, g, b, &h, &s, &v);
+  return h;
+}
+
+double filter_saturation (double r, double g, double b){
+  float h, s, v;
+  rmRGBtoHSV(r, g, b, &h, &s, &v);
+  return s;
+}
+
+double filter_brightness (double r, double g, double b){
+  float h, s, v;
+  rmRGBtoHSV(r, g, b, &h, &s, &v);
+  return v;
+}
 /* ------- Blob output ---------
    Given an array of blobdatas, an array of ints, and an int representing the
    length of the previous two arrays (which much be equal), return a struct that looks

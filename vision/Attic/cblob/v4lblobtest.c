@@ -4,7 +4,7 @@
 
 #define WIDTH 768
 #define HEIGHT  480
-#define PBMHEADER "P5\n768\n480\n1\n"
+#define PBMHEADER "P5\n768\n480\n255\n"
 #define PGMHEADER_F "P5\n%d\n%d\n%d\n"
 #define PPMHEADER "P6\n768\n480\n255\n"
 
@@ -29,16 +29,13 @@ int main(int argc, char** argv){
   bmp = bitmap_from_cap(camera, WIDTH, HEIGHT);
   printf("Got bitmap_from_cap\n");
 #else
-  bmp = bitmap_from_ppm("cap.ppm");
+  bmp = bitmap_from_ppm("cap.ppm", filter_red, 0.3);
   printf("Got bitmap_from_ppm('cap.ppm')\n");
 #endif
 
-  out = fopen("bmp.pbm", "w");
-  fprintf(out, PBMHEADER);
-  printf("Wrote header\n");
-  fwrite(bmp->data, 2, bmp->width * bmp->height, out);
-  printf("Wrote data\n");
-  fclose(out);
+  Bitmap_write_to_pgm(bmp, "bmp.pgm", 1);
+  printf("Wrote bmp\n");
+
 
   thedata = (struct blobdata*)malloc(sizeof(struct blobdata));
   Blobdata_init(thedata, bmp);
