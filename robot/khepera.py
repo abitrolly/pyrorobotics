@@ -32,7 +32,7 @@ class KheperaRobot(Robot):
                              'left' : [(0, 'ir')], 
                              'right' : [(5, 'ir')], 
                              'left-front' : [(0, 'ir')], 
-                             'rightfront' : [(5, 'ir')], 
+                             'right-front' : [(5, 'ir')], 
                              'left-back' : [(7, 'ir')], 
                              'right-back' : [(6, 'ir')], 
                              'back-left' : [(7, 'ir')], 
