@@ -9,14 +9,14 @@ def averageVector(V):
     """
     return Numeric.add.reduce(V) / len(V)
 
-def euclideanDistance(x, y):
+def euclideanDistance(x, y, mask):
     """
     Takes two Numeric vectors as arguments.
     d(x, y) = Sum[i = 1 to |x|]{(x_i - y_i) ^ 2}
     """
-    return math.sqrt(Numeric.add.reduce((x - y) ** 2))
+    return math.sqrt(Numeric.add.reduce( ((x - y) * mask)  ** 2))
 
-def SetDistance(V, X):
+def SetDistance(V, X, mask):
     """
     d(V, X) = (1/|X|) Sum[i = 1 to |X|]{ min[j = 1 to |V|] {|| x_i - v_j||} }
     where x_i is in X and v_j is in V.  
@@ -25,7 +25,7 @@ def SetDistance(V, X):
     sum = 0
     for x in X:
         for v in V:
-            min.append(euclideanDistance(x,v))
+            min.append(euclideanDistance(x,v,mask))
         sum += min[Numeric.argmin(min)]
     return sum / len(X)
 
@@ -108,12 +108,17 @@ class RAVQ:
         self.addModels = 1
         self.winnerCount = 0
         self.totalCount = 0
-
+      
     # update the RAVQ
     def input(self, vec):
         array = Numeric.array(vec, 'd')
         if self.time < self.size:
             self.buffer.append(array)
+            if self.time == 0:
+                if not self.__dict__.has_key('mask'):
+                    self.mask = Numeric.ones(len(array), 'd')
+                else:
+                    pass # mask has already been set
         else:
             self.buffer = self.buffer[1:] + [array]
             self.process() # process new information
@@ -126,8 +131,12 @@ class RAVQ:
             return 0
         else:
             return 1
+    def setMask(self, mask):
+        self.mask = Numeric.array(mask, 'd')
     def getWinnerCount(self):
         return self.winnerCount
+    def getMinimumCount(self):
+        return self.counters[Numeric.argmin(self.counters)]
     def setVerbosity(self, value):
         self.verbosity = value
     def setHistory(self, value):
@@ -166,10 +175,10 @@ class RAVQ:
     def setMovingAverage(self):
         self.movingAverage = averageVector(self.buffer)
     def setMovingAverageDistance(self):
-        self.movingAverageDistance = SetDistance([self.movingAverage], self.buffer)
+        self.movingAverageDistance = SetDistance([self.movingAverage], self.buffer, self.mask)
     def setModelVectorsDistance(self):
         if not self.models == []:
-            self.modelVectorsDistance = SetDistance(self.models, self.buffer)
+            self.modelVectorsDistance = SetDistance(self.models, self.buffer, self.mask)
         else:
             self.modelVectorsDistance = self.epsilon + self.delta
     def updateModelVectors(self):
@@ -184,7 +193,7 @@ class RAVQ:
     def updateWinner(self):
         min = []
         for m in self.models:
-            min.append(euclideanDistance(m, self.movingAverage))
+            min.append(euclideanDistance(m, self.movingAverage, self.mask))
         if min == []:
             self.winner = 'No Winner'
         else:
@@ -203,7 +212,7 @@ class RAVQ:
     def distanceMap(self):
         map = []
         for x, y in [(x,y) for x in self.models for y in self.models]:
-            map.append(euclideanDistance(x,y))
+            map.append(euclideanDistance(x,y,self.mask))
         return map
 
     def __str__(self):
@@ -343,7 +352,7 @@ class RAVQ:
         """
         if len(v1) != len(v2):
             return 0
-        elif euclideanDistance(v1,v2) > self.tolerance:
+        elif euclideanDistance(v1,v2, self.mask) > self.tolerance:
             return 0
         else:
             return 1
@@ -409,11 +418,11 @@ class ARAVQ(RAVQ):
     def updateDeltaWinner(self):
         if not self.winner == 'No Winner':
             if self.verbosity > 3:
-                print 'MAandW' , euclideanDistance(self.movingAverage, self.winner)
+                print 'MAandW' , euclideanDistance(self.movingAverage, self.winner, self.mask)
                 print 'MA' ,  self.movingAverageDistance
                 print 'MV' ,  self.modelVectorsDistance
                 print 'MVMD' ,  self.modelVectorsDistance - self.delta
-            if euclideanDistance(self.movingAverage, self.winner) < self.epsilon / 2:
+            if euclideanDistance(self.movingAverage, self.winner, self.mask) < self.epsilon / 2:
                 self.deltaWinner = self.alpha * (self.movingAverage - self.winner)
                 if self.verbosity > 4: print 'Learning'
             else:
@@ -450,10 +459,10 @@ if __name__ == '__main__':
     ravq = ARAVQ(4, 2.1, 1.1, .2)
     ravq.setHistory(0)
     cnt = 0
+    ravq.setMask([2,2,1,1,1,1,1,1])
     for bits in bitlist:
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
         cnt += 1
 
     print ravq
-    
