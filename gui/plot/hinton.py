@@ -41,13 +41,16 @@ class Hinton: # Plot
             color = 'red'
          else:
             color = 'black'
-         self.canvas.create_rectangle(x - size,
-                                      y - size,
-                                      x + size,
-                                      y + size,
-                                      width = 0,
-                                      tag = label,
-                                      fill = color)
+         try:
+            self.canvas.create_rectangle(x - size,
+                                         y - size,
+                                         x + size,
+                                         y + size,
+                                         width = 0,
+                                         tag = label,
+                                         fill = color)
+         except:
+            pass
       self.canvas.delete(last)
 
 if __name__ == '__main__':

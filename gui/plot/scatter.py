@@ -131,22 +131,22 @@ class Scatter: # Plot
                                                                   fill = 'coral')
             except:
                 pass
-        my_x = self._x(x)
-        my_y = self._y(y)
-        if self.firstEver[line]:
-            self.firstEver[line] = 0
-            lid = -1
-        else:
-            last_x = self._x(self.last[line].x)
-            last_y = self._y(self.last[line].y)
-            lid = self.canvas.create_line(last_x,
-                                          last_y,
-                                          my_x,
-                                          my_y,
-                                          width = 1,
-                                          tag = 'object',
-                                          fill = 'tan')
         try:
+            my_x = self._x(x)
+            my_y = self._y(y)
+            if self.firstEver[line]:
+                self.firstEver[line] = 0
+                lid = -1
+            else:
+                last_x = self._x(self.last[line].x)
+                last_y = self._y(self.last[line].y)
+                lid = self.canvas.create_line(last_x,
+                                              last_y,
+                                              my_x,
+                                              my_y,
+                                              width = 1,
+                                              tag = 'object',
+                                              fill = 'tan')
             pid = self.canvas.create_oval(my_x - 3,
                                           my_y - 3,
                                           my_x + 3,
@@ -154,11 +154,12 @@ class Scatter: # Plot
                                           width = 0,
                                           tag = 'object',
                                           fill = self.color[line])
+            self.hist[line][self.count[line]] = Line(x, y, lid, pid)
+            self.last[line] = self.hist[line][self.count[line]]
+            self.count[line] += 1
         except:
             pass
-        self.hist[line][self.count[line]] = Line(x, y, lid, pid)
-        self.last[line] = self.hist[line][self.count[line]]
-        self.count[line] += 1
+
 
 if __name__ == '__main__':
     sp = Scatter()
