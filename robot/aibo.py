@@ -105,12 +105,13 @@ class AiboHeadDevice(Device):
     Does not implement zoom.
     """
     def __init__(self, robot):
-        #Device.__init__(self, "ptz")
+        Device.__init__(self, "ptz")
         self.robot = robot
         # Turn on head remote control if off:
         self.robot.setRemoteControl("Head Remote Control", "on")
         time.sleep(1) # pause for a second
-        self.dev   = Listener(10052, self.robot.host) # head movement
+        self.dev   = Listener(self.robot.PORT["Head Remote Control"],
+                              self.robot.host)
         self.devData["supports"] = ["pan", "tilt", "roll"]
         self.notGetables.extend (["tilt", "pan", "zoom", "roll"])
         self.pose = [0, 0, 0, 0]
@@ -195,19 +196,21 @@ class AiboRobot(Robot):
     """
     Class for an Aibo robot in Pyro. 
     """
-    # TODO: put listeners in a dict, referenced by name
-    # Look up port here:
+    # pyro/camera/aibo/__init__.py references this:
     PORT = {"Head Remote Control": 10052,
-            "Root Control": 10020,
             "Walk Remote Control": 10050, 
             "EStop Remote Control": 10053,
             "World State Serializer": 10031,
+            "Raw Cam Server": 10011,
+            "Seg Cam Server": 10012,
+            "Main Control": 10020,
             }
     def __init__(self, host):
         Robot.__init__(self)
         self.host = host
         #---------------------------------------------------
-        self.main_control     = Listener(10020,self.host) # menu controls
+        self.main_control     = Listener(self.PORT["Main Control"],
+                                         self.host) 
         self.main_control.s.send("!reset\n") # reset menu
         # --------------------------------------------------
         self.setRemoteControl("Walk Remote Control", "on")
@@ -229,7 +232,7 @@ class AiboRobot(Robot):
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
-        #self.startDevice("ptz")
+        self.startDevice("ptz")
         #self.startDevice("camera")
 
         # Commands available on main_control (port 10020):
@@ -242,13 +245,12 @@ class AiboRobot(Robot):
         # '!cancel' - calls doCancel() of the current control
         # '!msg text' - broadcasts text as a TextMsgEvent
         # '!root text ...' - calls takeInput(text) on the root control
-        # '!cmd control' - calls takeInput("") on control
         # '!hello' - responds with 'hello\ncount\n' where count is the number of times
         #            '!hello' has been sent.  Good for detecting first connection after
         #            boot vs. a reconnect.
         # '!hilight [n1 [n2 [...]]]' - hilights zero, one, or more items in the menu
         # '!input text' - calls takeInput(text) on the currently hilighted control(s)
-        # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
+        # '!set section.key=value' - will be sent to Config::setValue(section,key,value)
         #  any text not beginning with ! - sent to takeInput() of the current control
 
     def setConfig(self, item, state):
@@ -259,7 +261,7 @@ class AiboRobot(Robot):
         # could also use "!root "TekkotsuMon" %(item)"
         if state == "off":
             item = "#" + item
-        self.main_control.s.send("!cmd \"%s\"\n" % item)
+        self.main_control.s.send("!select \"%s\"\n" % item)
 
         # Main menu:
         # 0 Mode Switch - Contains the "major" apps, mutually exclusive selection
@@ -274,7 +276,7 @@ class AiboRobot(Robot):
         # 9 Help: Recurses through the menu, prints name and description of each item
 
         # Option 2 from Main Menu, TekkotsuMon menu:
-        # 0 RawCamServer: Forwards images from camera, port 10012
+        # 0 RawCamServer: Forwards images from camera, port 10011
         # 1 SegCamServer: Forwards segmented images from camera, port 10012
         # 2 Head Remote Control: Listens to head control commands, port 10052
         # 3 Walk Remote Control: Listens to walk control commands, port 10050
@@ -397,19 +399,18 @@ class AiboRobot(Robot):
         self.sensor_thread.join()
         Robot.destroy(self)
 
-    def setWalk(self, value):
+    def setWalk(self, file):
+        # PACE.PRM, TIGER.PRM (crawl), WALK.PRM
+        self.walk_control.s.close()
+        self.main_control.s.send("!select \"%s\"\n" % "Load Walk") # forces files to be read
+        self.main_control.s.send("!select \"%s\"\n" % file) # select file
+        self.main_control.s.send("!select \"%s\"\n" % "#WalkControllerBehavior") # turn off
+        self.main_control.s.send("!select \"%s\"\n" % "-WalkControllerBehavior") # turn on
         # If you change the walk, then you have to reconnect
         # back onto the walk server
-        # PACE.PRM TIGER.PRM (crawl) WALK.PRM
-        code = {"pace":0, "walk":1, "crawl":2}
-        self.walk_control.s.close()
-        self.main_control.s.send("!reset\n")
-        self.main_control.s.send("5\n") # walk editor
-        self.main_control.s.send("9\n") # load walk
-        self.main_control.s.send("%d\n" % code[value]) # walk number
-        self.main_control.s.send("0\n") # stop walk socket
-        self.main_control.s.send("0\n") # start walk socket
-        self.walk_control     = Listener(10050, self.host) # walk command
+        time.sleep(2)
+        self.walk_control     = Listener(self.PORT["Walk Remote Control"],
+                                         self.host) # walk command
 
 #TODO:
 

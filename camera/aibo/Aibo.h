@@ -5,9 +5,9 @@
 #include "Socket.h"
 #include "RWLock.h"
 
-class Aibo : public Device {
+class AiboCam : public Device {
  public:
-  Aibo(char *hostname);
+  AiboCam(char *hostname, int port);
   PyObject *updateMMap(int decompress);
   Socket *sock;
   RWLock lock;

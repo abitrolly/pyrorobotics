@@ -1,5 +1,5 @@
 from pyro.camera import Camera, CBuffer
-from pyro.camera.aibo.aibo import Aibo
+from pyro.camera.aibo.aibo import AiboCam
 from math import pi, sin, cos
 import threading
 import time
@@ -45,7 +45,7 @@ class AiboCamera(Camera):
       self.robot = robot
       self.robot.setRemoteControl("Raw Cam Server", "on")
       time.sleep(1)
-      self.cameraDevice = Aibo( self.robot.host )
+      self.cameraDevice = AiboCam( self.robot.host, self.robot.PORT["Raw Cam Server"])
       # connect vision system: --------------------------
       self.vision = visionSystem
       self.vision.registerCameraDevice(self.cameraDevice)

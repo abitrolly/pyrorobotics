@@ -10,7 +10,7 @@ long convert(char *buff) {
   return retval;
 }
 
-PyObject *Aibo::updateMMap(int decompress) {
+PyObject *AiboCam::updateMMap(int decompress) {
   char *header, *type, *creator, *fmt, *image_buffer;
   long format, compression, newWidth, newHeight, timeStamp, frameNum, unknown1;
   long chanWidth, chanHeight, layer, chanID, unknown2, size;
@@ -90,9 +90,9 @@ PyObject *Aibo::updateMMap(int decompress) {
   return PyInt_FromLong(0);
 }
 
-Aibo::Aibo(char *hostname) {
+AiboCam::AiboCam(char *hostname, int port) {
   // get image details
-  sock = new Socket(hostname, 10011);
+  sock = new Socket(hostname, port);
   depth = 3;
   // set width, height 0 to trigger automatically:
   width = 0;
