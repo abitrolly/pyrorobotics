@@ -461,7 +461,6 @@ class AriaRobot(Robot):
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
-    
 if __name__ == '__main__':
     myrobot = AriaRobot()
     myrobot.update()
