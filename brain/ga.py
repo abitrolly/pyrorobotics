@@ -21,11 +21,16 @@ def display(v):
     print v,
 
 def sum(a):
-    # FIX: I think this is built in somewhere
     sum = 0
     for n in a:
         sum += n
     return sum
+
+def avg(seq):
+    sum = 0.0
+    for i in range(len(seq)):
+        sum += seq[i]
+    return sum / len(seq)
 
 
 # The classes:
@@ -48,6 +53,12 @@ class Gene:
                 self.data.append( random.random() < self.bias)
             else:
                 self.data.append( random.random() * 2.0 - 1.0)
+
+    def __getitem__(self, val):
+        return self.data[val]
+
+    def __len__(self):
+        return len(self.data)
 
     def fitnessFunction(self, **args):
         # Overload this, or the one in GA.
@@ -90,13 +101,19 @@ class Population:
     """
     Class to abstract gene-related items.
     """
-    def __init__(self, cnt, geneConstructor, **args): 
+    def __init__(self, cnt, geneConstructor, **args):
         self.data = []
         self.size = cnt
         self.geneConstructor = geneConstructor
         self.args = args
         for i in range(cnt):
             self.data.append( geneConstructor(**args))
+
+    def __getitem__(self, val):
+        return self.data[val]
+
+    def __len__(self):
+        return len(self.data)
 
     def mutate(self, rate, **args):
         for i in range(int(rate * self.size)):
@@ -127,7 +144,6 @@ class Population:
 
     def probability(self, pos):
         return ((len(self.data) - pos) + 0.0) / len(self.data)
-
             
 class GA:
     """
@@ -152,6 +168,7 @@ class GA:
         pass
 
     def fitnessFunction(self, genePosition, **args):
+        # Override this, or the one in the Gene
         return self.pop.data[genePosition].fitnessFunction(**args)
 
     def applyFitnessFunction(self):
@@ -227,9 +244,9 @@ if __name__ == '__main__':
     from pyro.brain.conx import *
     class TestGA(GA):
         def fitnessFunction(self, genePos):
-            return sum(self.pop.data[genePos].data)
+            return sum(self.pop[genePos].data)
         def isDoneFunction(self):
-            return sum(self.pop.data[0].data) > 20
+            return sum(self.pop[0].data) > 20
 
     print "Do you want to evolve a list of big numbers? ",
     if sys.stdin.readline().lower()[0] == 'y':
@@ -240,7 +257,7 @@ if __name__ == '__main__':
     # that solves the XOR problem:
 
     class NNGA(GA):
-        def __init__(self):
+        def __init__(self, cnt):
             n = Network()
             n.add( Layer('input', 2) )
             n.add( Layer('hidden', 2) )
@@ -259,7 +276,7 @@ if __name__ == '__main__':
             n.setTolerance(.4)
             g = n.arrayify()
             self.network = n
-            GA.__init__(self, Population( 300, Gene, size = len(g)))
+            GA.__init__(self, Population( cnt, Gene, size = len(g)))
         def fitnessFunction(self, genePos):
             self.network.unArrayify(self.pop.data[genePos].data)
             error, correct, count = self.network.sweep()
@@ -272,7 +289,7 @@ if __name__ == '__main__':
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = NNGA()
+        ga = NNGA(300)
         ga.evolve()
         ga.network.unArrayify(ga.pop.data[0].data)
         ga.network.setInteractive(1)
