@@ -368,9 +368,8 @@ class KheperaRobot(Robot):
                 self.sendMsg('T,1,F')    # gripper resistivity
                 
         elif self.devData["subtype"] == "Hemisson":
-            #self.sendMsg('N') #, 'ir')     # proximity
-            #self.sendMsg('O') #, 'light')  # ambient light
-            pass
+            self.sendMsg('N') #, 'ir')     # proximity
+            self.sendMsg('O') #, 'light')  # ambient light
         while self.sc.inWaiting(): self.readData()
         """
         The 'K' message returns 6 numbers dealing with the status of the
