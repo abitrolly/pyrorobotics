@@ -1,4 +1,4 @@
-
+import pyro.robot
 import types, random
 
 def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
@@ -17,8 +17,15 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
     else:
         retval = []
     for keyword in deviceDict:
+        if keyword[0] == "_":
+            continue
         #print keyword, type(deviceDict[keyword])
-        if type(deviceDict[keyword]) == types.InstanceType:
+        # if this is an instance, then don't follow
+        below = issubclass(deviceDict[keyword].__class__, pyro.robot.Robot) \
+                or issubclass(deviceDict[keyword].__class__, pyro.robot.DeviceWrapper) \
+                or issubclass(deviceDict[keyword].__class__, Device)
+        #print "THINGS BELOW?:", keyword, below
+        if below:
             if issubclass(deviceDict[keyword].__class__, Device) and showstars:
                 keyword = "*" + keyword
             if retdict:
@@ -156,7 +163,6 @@ class Device:
             raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
     def _get(self, path, showstars = 0):
-        #print "path=", path
         if len(path) == 0:
             # return all of the things a sensor can show
             tmp = self.devData.copy()
@@ -189,7 +195,10 @@ class Device:
         if len(path) == 1: # no specific data request
             #tmp = self.subData.copy()
             #tmp.update( self.subDataFunc )
-            return deviceDirectoryFormat(self.subDataFunc, 0)
+            if type(path[0]) == type(1) and len(self.subDataFunc) > 0:
+                return deviceDirectoryFormat(self.subDataFunc, 0)
+            else:
+                raise AttributeError, "no such item: '%s'" % path[0]
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]
@@ -225,7 +234,7 @@ class Device:
             elif type(elements) == type(""):
                 #print "CASE 4", elements
                 if elements not in self.subDataFunc:
-                    return elements
+                    raise AttributeError, "no such item: '%s'" % elements
                 self.preGet(elements)
                 retval = []
                 if keys != None:

@@ -26,15 +26,19 @@ class PlayerDevice(Device):
 
     def preGet(self, kw):
         if kw == "pose":
-            self.devData["pose"] = self.getPose()
+            if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
+                self.devData["pose"] = self.getPose()
 
-    #def setPose(self, (xM, yM, thDeg)):
+    def postSet(self, keyword):
+        if keyword == "pose":
+            if ("set_%s_pose" % self.name) in self.dev.__class__.__dict__:
+                self.setPose( self.devData[keyword] )
 
     def startDevice(self):
         try:
             self.dev.start(self.name)
             # self.devData["index"] get index here for this device (ie, dev.laser[index])
-            time.sleep(.5)
+            time.sleep(.25) # required!
             Device.startDevice(self)
         except:
             print "Pyro error: player device did not start: '%s'" % self.name
@@ -231,6 +235,24 @@ class PlayerPTZDevice(PlayerDevice):
     def __init__(self, dev, name):
         PlayerDevice.__init__(self, dev, name)
         self.origPose = (0, 0, 120)
+        self.devData["_help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
+                                """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
+        self.devData.update( {"tilt": None, "pan": None,
+                              "zoom": None, "command": None, "pose": None} )
+
+    def preGet(self, keyword):
+        if keyword == "pose": # make sure it is the current pose
+            self.devData["pose"] = self.dev.get_ptz()
+
+    def postSet(self, keyword):
+        if keyword == "pose":
+            self.setPose( self.devData[keyword] )
+        elif keyword == "pan":
+            self.pan( self.devData[keyword] )
+        elif keyword == "tilt":
+            self.tilt( self.devData[keyword] )
+        elif keyword == "zoom":
+            self.zoom( self.devData[keyword] )
 
     def init(self):
         self.setPose( self.origPose )
@@ -333,6 +355,53 @@ class PlayerPTZDevice(PlayerDevice):
 class PlayerGripperDevice(PlayerDevice):
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
+    def __init__(self, dev, name):
+        PlayerDevice.__init__(self, dev, name)
+        if self.dev.is_paddles_closed():
+            self.devData["command"] = "close"
+        else:
+            self.devData["command"] = "open"
+        self.devData["_help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
+                                """     down, store, deploy, halt.\n""" \
+                                """.get('/robot/gripper/KEYWORD') where KEYWORD is: gripperState, breakBeamState,\n""" \
+                                """     isClosed, isMoving, isLiftMoving, isLiftMaxed""" 
+        self.devData.update( {"gripperState": None, "breakBeamState": None, "isClosed": None,
+                              "isMoving": None, "isLiftMoving": None, "isLiftMaxed": None} )
+
+    def postSet(self, keyword):
+        if keyword == "command":
+            if self.devData["command"] == "open":
+                self.devData["command"] = self.dev.gripper_open() 
+            elif self.devData["command"] == "close":
+                self.devData["command"] = self.dev.gripper_close() 
+            elif self.devData["command"] == "stop":
+                self.devData["command"] = self.dev.gripper_stop()
+            elif self.devData["command"] == "up":
+                self.devData["command"] = self.dev.gripper_up()
+            elif self.devData["command"] == "down":
+                self.devData["command"] = self.dev.gripper_down()
+            elif self.devData["command"] == "store":
+                self.devData["command"] = self.dev.gripper_store() 
+            elif self.devData["command"] == "deploy":
+                self.devData["command"] = self.dev.gripper_deploy()
+            elif self.devData["command"] == "halt":
+                self.devData["command"] = self.dev.gripper_halt()
+            else:
+                raise AttributeError, "invalid command to ptz: '%s'" % keyword
+
+    def preGet(self, keyword):
+        if keyword == "gripperState":
+            self.devData[keyword] = self.dev.is_paddles_closed() # help!
+        elif keyword == "breakBeamState":
+            self.devData[keyword] = self.getBreakBeamState()
+        elif keyword == "isClosed":
+            self.devData[keyword] = self.dev.is_paddles_closed() #ok
+        elif keyword == "isMoving":
+            self.devData[keyword] = self.dev.is_paddles_moving() #ok
+        elif keyword == "isLiftMoving":
+            self.devData[keyword] = self.dev.is_lift_moving() # ok
+        elif keyword == "isLiftMaxed":
+            self.devData[keyword] = self.dev.is_lift_up() # ok
 
     def open(self):
         return self.dev.gripper_open() 
@@ -366,8 +435,10 @@ class PlayerGripperDevice(PlayerDevice):
 
     def getBreakBeamState(self):
         sum = 0
-        sum += self.dev.is_ibeam_obstructed() * 2 #FIX: which?
-        sum += self.dev.is_obeam_obstructed()
+        if self.dev.is_ibeam_obstructed() == 8:
+            sum += 2
+        if self.dev.is_obeam_obstructed() == 4:
+            sum += 1
         return sum
 
     def isClosed(self): # FIX: add this to aria
