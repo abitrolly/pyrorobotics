@@ -3,6 +3,7 @@ import pyro.brain.psom as psom
 from pyro.brain import Brain
 #from pyro.brain.VisConx.VisRobotConx import *
 from pyro.brain.conx import Network
+from time import sleep
 
 def makeVector(pos, len):
    retval = [0.0] * len
@@ -36,6 +37,7 @@ class ffBrain(Brain):
       self.somCamera = vis.VisPsom(file = "camera-20passes-20x15.cod")
       # Set goal
       self.truth.setPose(self.goalPose[0], self.goalPose[1], self.goalPose[2])
+      sleep(1)
       # next save SOM state of goal pose (camera and sonar):
       # force a robot/camera update for data:
       self.getRobot().update()
@@ -51,9 +53,11 @@ class ffBrain(Brain):
                         makeVector(modelCamera.point.x, 20) + \
                         makeVector(modelCamera.point.y, 15)
       self.goalList = [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
+      print "Goal:", self.goalList
       # Put robot in place to start:
       #self.truth.setPose(2.0, 1.25, 270)
       self.truth.setPose(self.startPose[0], self.startPose[1], self.startPose[2])
+      sleep(1)
       self.getRobot().update()
       self.camera.update()
       print "Initialized"
