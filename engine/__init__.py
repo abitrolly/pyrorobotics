@@ -79,6 +79,13 @@ class Engine(drawable.Drawable):
       import os, string
       options = string.split(file)
       guiflag = ''
+      simulatorName = file.split('/')[-1]
+      if system.file_exists(worldfile):
+         pass # leave it alone
+      elif system.file_exists( os.getenv('PYRO') + \
+                               '/plugins/worlds/%s/%s' % (simulatorName, worldfile)):
+         worldfile = os.getenv('PYRO') + \
+                     '/plugins/worlds/%s/%s' % (simulatorName, worldfile)
       if self.config.get("pyro", "gui") == 'TTY':
          guiflag = '-g'
       if system.file_exists(options[0]):
@@ -89,7 +96,7 @@ class Engine(drawable.Drawable):
                    " " + guiflag + " " + worldfile + " &")
       else:
          raise 'Simulator file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
+      console.log(console.INFO,"Loaded '%s' with world file '%s'" %(file, worldfile))
       print "Loading.",
       sys.stdout.flush()
       time.sleep(1)
