@@ -83,15 +83,17 @@ class PlayerSonarDevice(PlayerDevice):
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         else:
             self.groups= {'all': range(len(self.sonarGeometry))}
+        self.devData['units']    = "ROBOTS"
         # What are the raw units?
+        # Anything that you pass to rawToUnits should be in these units
         self.devData["rawunits"] = "MM"
+        self.devData['maxvalueraw'] = 5000 # mm
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
-        self.devData['maxvalueraw'] = 5.000
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
-        self.devData['units']    = "ROBOTS"
-        self.postSet('maxvalue')
+        # see also postSet below
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
         self.devData["noise"] = 0.05 # 5 percent
         # These are per reading:
         self.subDataFunc['ox']    = lambda pos: self.sonarGeometry[pos][0]
@@ -102,15 +104,14 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
         self.subDataFunc['x']     = self.getX
         self.subDataFunc['y']     = self.getY
-	self.subDataFunc['z']     = lambda pos: self.rawToUnits(0.03) # meters
+	self.subDataFunc['z']     = lambda pos: self.rawToUnits(300) # rawunits
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.sonar[0][pos], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
 
     def postSet(self, keyword):
         """ Anything that might change after a set """
-        if keyword == "maxvalue" or keyword == "maxvalueraw":
-            self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
     def getX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
@@ -154,10 +155,19 @@ class PlayerLaserDevice(PlayerDevice):
                        'back-left': [],
                        'back': [],
                        'back-all': []}
-        self.devData['maxvalueraw'] = 8.000 # meters
         self.devData['units']    = "ROBOTS"
-        self.devData['maxvalue'] = 8.000
-        self.devData['index'] = self.dev.laser.keys()[0]
+        self.devData["noise"]    = 0.0
+        # -------------------------------------------
+        self.devData["rawunits"] = "MM"
+        self.devData['maxvalueraw'] = 8000
+        # -------------------------------------------
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.devData["radius"] = 0.750 # meters
+        # ----------------------------------------------------------
+        # MM to units:
+        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        # -------------------------------------------
+        self.devData['index'] = 0 # self.dev.laser.keys()[0] FIX
         self.devData["count"] = count
         self.subDataFunc['ox']    = lambda pos: 0
         self.subDataFunc['oy']    = lambda pos: 0
@@ -168,19 +178,23 @@ class PlayerLaserDevice(PlayerDevice):
         self.subDataFunc['x']     = self.getX
         self.subDataFunc['y']     = self.getY
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos] / 1000.0) # fix, get in units
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos], self.devData["noise"]) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
+    def postSet(self, keyword):
+        """ Anything that might change after a set """
+        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+
     def getX(self, pos):
         thr = (self.laserGeometry[pos][2] + 90.0) * PIOVER180
-        dist = self.dev.laser[0][1][pos] / 1000.0
+        dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
         x = self.laserGeometry[pos][0]
         return cos(thr) * dist
 
     def getY(self, pos):
         thr = (self.laserGeometry[pos][2] - 90.0) * PIOVER180
-        dist = self.dev.laser[0][1][pos] / 1000.0
+        dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
         y = self.laserGeometry[pos][1]
         return sin(thr) * dist
 
@@ -382,7 +396,6 @@ class PlayerRobot(Robot):
         # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
         devNameList = map(lambda triplet: triplet[0], devList)
         self.devData["supports"] = devNameList
-        self.supports = devNameList
         for device in ["position", "laser", "ir", "sonar", "bumper"]:
             #is it supported? if so start it up:
             if device in devNameList:
@@ -423,7 +436,7 @@ class PlayerRobot(Robot):
             return {"laser": PlayerLaserDevice(self.dev, "laser")}
         elif item == "sonar":
             return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
-        elif item in self.supports:
+        elif item in self.devData["supports"]:
             return {item: PlayerDevice(self.dev, item)}
         else:
             raise AttributeError, "player robot does not support device '%s'" % item

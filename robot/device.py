@@ -72,34 +72,48 @@ class Device:
         return retval
 
     def rawToUnits(self, raw, noise = 0.0):
-        # first, get everything into meters:
-        if self.devData["rawunits"] == "MM":
-            raw = raw / 1000.0
-        elif self.devData["rawunits"] == "CM":
-            raw = raw / 100.0
-        elif self.devData["rawunits"] == "METERS":
-            pass # ok
-        else:
-            raise AttributeError, "device can't work in rawunits as %s" % self.devData["rawunits"]
+        # first, add noise, if you want:
+        units = self.devData["units"]
         if noise > 0:
             if random.random() > .5:
                 raw += (raw * (noise * random.random()))
             else:
                 raw -= (raw * (noise * random.random()))
-        val = min(max(raw, 0.0), self.devData["maxvalueraw"])
-        units = self.devData["units"]
-        if units == "ROBOTS":
-            return val / self.devData["radius"] 
-        elif units == "MM":
-            return val * 1000.0
-        elif units == "CM":
-            return (val) * 100.0 # cm
-        elif units == "METERS" or units == "RAW":
-            return (val) 
+        # keep it in range:
+        raw = min(max(raw, 0.0), self.devData["maxvalueraw"])
+        if units == "RAW":
+            return raw
         elif units == "SCALED":
-            return val / self.devData["maxvalueraw"]
+            return raw / self.devData["maxvalueraw"]
+        # else, it is in some metric unit.
+        # now, get it into meters:
+        if self.devData["rawunits"] == "MM":
+            if units == "MM":
+                return raw
+            else:
+                raw = raw / 1000.0
+        elif self.devData["rawunits"] == "CM":
+            if units == "CM":
+                return raw
+            else:
+                raw = raw / 100.0
+        elif self.devData["rawunits"] == "METERS":
+            if units == "METERS":
+                return raw
+            # else, no conversion necessary
         else:
-            raise TypeError, "Units are set to invalid type"
+            raise AttributeError, "device can't work in rawunits as %s" % self.devData["rawunits"]
+        # now, it is in meters. convert it to output units:
+        if units == "ROBOTS":
+            return raw / self.devData["radius"] # in meters
+        elif units == "MM":
+            return raw * 1000.0
+        elif units == "CM":
+            return raw * 100.0 
+        elif units == "METERS":
+            return raw 
+        else:
+            raise TypeError, "Units are set to invalid type '%s'" % units
 
     def getVisible(self):
         return self.devData["visible"]
