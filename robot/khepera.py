@@ -37,6 +37,9 @@ class KheperaRobot(Robot):
                 port = config.get('khepera', 'port')
             except:
                 port = "/dev/ttyS1"
+            if not port:
+                port = "/dev/ttyS1"
+            print "Khepera opening port", port, "..."
             self.sc = SerialConnection(port, termios.B38400)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
