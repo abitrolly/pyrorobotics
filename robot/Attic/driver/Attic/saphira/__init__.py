@@ -5,7 +5,7 @@
 
 import pyro.robot.driver as driver
 import pyro.gui.console as console
-from pyro.robot.driver.saphira.lowlevel import *
+from pyro.robot.driver.saphira._lowlevel import *
 import math
 
 class SaphiraSenseDriver(driver.Driver):

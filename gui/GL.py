@@ -273,8 +273,8 @@ class GLgui(gui):
                self.win.tkRedraw()
                while self.win.tk.dooneevent(2): pass
             except:
-               print "Exiting main loop..."
-               self.done = 0
+               print "Exiting main loop...", self.done
+               self.done = 1
             sleep(self.update_interval)
       else:
          self.win.mainloop()

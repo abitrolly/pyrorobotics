@@ -1,6 +1,6 @@
 # author: Douglas Blank
 
-OBJS = lowlevelmodule.so
+OBJS = _lowlevel.so
 
 include ../../../Makefile.cfg
 include ../../../Makefile.src
@@ -19,8 +19,8 @@ LIBDIRS= -L/usr/X11R6/lib
 LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread -lptzsys -lsfx -lXp -lXext
 #LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread -lptzsys -lsfx
 
-../../../lib/lowlevelmodule.so: lowlevelmodule.so
-	cp lowlevelmodule.so ../../../lib
+../../../lib/_lowlevel.so: _lowlevel.so
+	cp _lowlevel.so ../../../lib
 
 obj/%.o : %.cpp
 	mkdir obj | true
@@ -29,13 +29,13 @@ obj/%.o : %.cpp
 main: main.cpp obj/Saphira.o
 	$(CC) $(CPPFLAGS) $^ -o $@ $(LIBDIRS) $(SAPHIRA_LIB) $(LIBS)
 
-lowlevelmodule.so: lowlevelmodule.o obj/Saphira.o
+_lowlevel.so: lowlevel.o obj/Saphira.o
 	$(CC) $(CPPFLAGS) -shared $^ $(SAPHIRA_LIB) $(LIBDIRS) -o $@ $(LIBS)
 
-lowlevelmodule.cc: Saphira.i Saphira.h
+lowlevel.cc: Saphira.i Saphira.h
 	swig -python -c++ -o $@ $<
 
-lowlevelmodule.o: lowlevelmodule.cc
+lowlevel.o: lowlevel.cc
 	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@
 
 clean::
