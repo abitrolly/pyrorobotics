@@ -49,25 +49,26 @@ devicenum = { 'player'		: 0x0001,
 	      'bumper'		: 0x000E,
 	      'truth'		: 0x000F,
 	      'idarturret'	: 0x0010,
-	      'idar'		: 0x0011,
-	      'descartes'	: 0x0012,
-	      'mote'		: 0x0013,
-	      'dio'		: 0x0014,
-	      'aio'		: 0x0015,
-	      'ir'		: 0x0016,
-	      'wifi'		: 0x0017,
-	      'waveform'	: 0x0018,
-	      'localization'	: 0x0019,
+	      'idar'		: 0x0011, # 17
+	      'descartes'	: 0x0012, # 18
+	      'mote'		: 0x0013, # 19
+	      'dio'		: 0x0014, # 20
+	      'aio'		: 0x0015, # 21
+	      'ir'		: 0x0016, # 22
+	      'wifi'		: 0x0017, # 23
+	      'waveform'	: 0x0018, # 24
+	      'localization'	: 0x0019, # 25
 ## Player 1.5
-              'mcom'            : 0x001A,
-              'sound'           : 0x001B,
-              'audiodsp'        : 0x001C,
-              'audiomixer'      : 0x001D,
-              'position3d'      : 0x001E,
-              'simulation'      : 0x001F,
-              'service_adv'     : 0x0020,
-              'blinkenlight'    : 0x0021,
-              'camera'          : 0x0022,
+              'mcom'            : 0x001A, # 26
+              'sound'           : 0x001B, # 27
+              'audiodsp'        : 0x001C, # 28
+              'audiomixer'      : 0x001D, # 29
+              'position3d'      : 0x001E, # 30
+              'simulation'      : 0x001F, # 31
+              'service_adv'     : 0x0020, # 32
+              'blinkenlight'    : 0x0021, # 33
+              'nomad'           : 0x0022, # 34
+              'camera'          : 0x0028, # 40
 ## Player 1.5              
 #	      'bps'		: 0x001A,
 }
@@ -144,6 +145,9 @@ def unpack_player_devlist(payload):
         data = [0] * 194
     list = []
     for idx in range(2, 2+3*data[1], 3):
+        #print "idx = ", idx
+        #print "data=", data[idx], data[idx+1], data[idx+2]
+        #print "devicestr=", (devicestr[data[idx]], data[idx+1], data[idx+2])
         list.append((devicestr[data[idx]], data[idx+1], data[idx+2]))
     return tuple(list)
 
