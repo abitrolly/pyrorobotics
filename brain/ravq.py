@@ -10,12 +10,14 @@ def averageVector(V):
 def euclideanDistance(x, y):
     """
     Takes two Numeric vectors as arguments.
+    d(x, y) = Sum[i = 1 to |x|]{(x_i - y_i) ^ 2}
     """
     return math.sqrt(Numeric.add.reduce((x - y) ** 2))
 
 def SetDistance(X, V):
     """
-    Takes two lists of Numeric vectors as arguments.
+    d(X,V) = (1/|X|) Sum[i = 1 to |X|]{ min[j = 1 to |V|] {|| x_i - v_j||} }
+    where x_i is in X and v_j is in V.  
     """
     min = []
     sum = 0
@@ -24,18 +26,6 @@ def SetDistance(X, V):
             min.append(euclideanDistance(x,v))
         sum += min[Numeric.argmin(min)]
     return sum / len(X)
-
-def displayArray(a, width = 0):
-    """
-    Prints an array (any sequence of floats, really) to the screen.
-    """
-    cnt = 0
-    for i in a:
-        print "%4.4f" % i,
-        if width > 0 and (cnt + 1) % width == 0:
-            print ''
-        cnt += 1
-    print ''
 
 def stringArray(a, width = 0):
     """
@@ -92,11 +82,29 @@ class RAVQ:
         
     # process happens once the buffer is full
     def process(self):
+        """
+        The RAVQ Algorithm:
+        1. Calculate the average vector of all inputs in the buffer.
+        2. Calculate the distance of the average from the set of inputs
+        in the buffer.
+        3. Calculate the distance of the model vectors from the inputs
+        in the buffer.
+        4. If distance in step 2 is small and distance in step 3 is large,
+        add current average to list of model vectors.
+        5. Calculate the winning model vector based on distance between
+        each model vector and the buffer list.
+        6. Update history.
+        ---The metric used to calculate distance is described in
+        "Sensory Flow Segmentation Using a Resource Allocating
+        Vector Quantizer" by Fredrik Linaker and Lars Niklasson
+        (2000).---
+        """
         self.setMovingAverage()
         self.setMovingAverageDistance()
         self.setModelVectorsDistance()
         self.updateModelVectors()
         self.updateWinner()
+        self.updateHistory()
     def setMovingAverage(self):
         self.movingAverage = averageVector(self.buffer)
     def setMovingAverageDistance(self):
@@ -119,66 +127,65 @@ class RAVQ:
         else:
             self.winnerIndex = Numeric.argmin(min)
             self.winner = self.models[self.winnerIndex]
-            if self.recordHistory:
-                self.history[str(self.time)] = self.winner[:]
-
+    def updateHistory(self):
+        if self.recordHistory and self.winner != 'No Winner':
+            self.history[str(self.time)] = self.winner[:]
     def distanceMap(self):
         map = []
         for x, y in [(x,y) for x in self.models for y in self.models]:
             map.append(euclideanDistance(x,y))
         return map
-        
-    def display(self):
-        print "Time: ", self.time
-        print "Moving average distance: ",  "%4.4f" % self.movingAverageDistance
-        print "Model vectors distance: ",  "%4.4f" % self.modelVectorsDistance
-        print "Moving average: "
-        displayArray(self.movingAverage)
-        print "Winning model vector: "
-        displayArray(self.winner)
-        print "Buffer: "
-        for array in self.buffer:
-            displayArray(array)
-        print "Model vectors: "
-        for array in self.models:
-            displayArray(array)
-        print "Model vector labels: "
-        for array in self.models:
-            print self.getLabel(array)
-        print "Distance map: "
-        displayArray(self.distanceMap(), len(self.models))
-        print "History: "
-        for item in self.history.iteritems():
-            print "Time: ", item[0]
-            print "Winner: ",
-            displayArray(item[1])
-            print "Label: ", self.getLabel(item[1])
 
     def __str__(self):
+        """
+        To display ravq just call print <instance>.
+        """
         s = ""
         s += "Time: " + str(self.time) + "\n"
         s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
         s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
-        s += "Moving average: " + "\n"
+        s += "Moving average:\n"
         s += stringArray(self.movingAverage)
-        s += "Winning model vector: "
+        s += "Winning model vector:\n"
         s += stringArray(self.winner)
-        s += "Buffer:\n"
-        for array in self.buffer:
-            s += stringArray(array)
-        s += "Model vectors:\n"
-        for array in self.models:
-            s += stringArray(array)
-        s += "Model vector labels:\n"
-        for array in self.models:
-            s += self.getLabel(array) + "\n"
+        s += "Winning label:\n"
+        s += self.getLabel(self.winner) + "\n"
+        s += self.bufferString()
+        s += self.modelString()
+        s += self.labelString()
         s += "Distance map:\n"
         s += stringArray(self.distanceMap(), len(self.models))
-        s += "History:\n"
-        for item in self.history.iteritems():
-            s += "Time: " + item[0] + "\n"
-            s += "Winner: " + stringArray(item[1])
-            s += "Label: " + self.getLabel(item[1]) + "\n"
+        s += self.historyString()
+        return s
+
+    # helpful string methods
+    def modelString(self):
+        s = "Model vectors:\n"
+        for array in self.models:
+            s += stringArray(array)
+        return s
+    def labelString(self):
+        s = "Model vector labels:\n"
+        for array in self.models:
+            s += self.getLabel(array) + "\n"
+        return s
+    def bufferString(self):
+        s = "Buffer:\n"
+        for array in self.buffer:
+            s += stringArray(array)
+        return s
+    def historyString(self):
+        if not self.recordHistory:
+            return ''
+        s = "History:\n"
+        for i in range(self.time):
+            s += "Time: " + str(i) + "\n"
+            if self.history.has_key(str(i)):
+                s += "Winner: " + stringArray(self.history[str(i)])
+                s += "Label: " + self.getLabel(self.history[str(i)]) + "\n"
+            else:
+                s += "No Winner\n"
+            s += "----------------------------------------------------------\n"
         return s
 
     # labels!
@@ -195,7 +202,7 @@ class RAVQ:
         Adds a label with key word.
         """
         if self.labels.has_key(word):
-            raise NetworkError, \
+            raise KeyError, \
                   ('Label key already in use. Call delLabel to free key.', word)
         else:
             self.labels[word] = vector
@@ -238,12 +245,13 @@ class ARAVQ(RAVQ):
             self.deltaWinner = 'No Winner'
     def learn(self):
         """
-        Only updates the model vector, not the winner. Winner will change next time step anyway.
+        Only updates the model vector, not the winner. Winner will change
+        next time step anyway.
         """
         if self.deltaWinner != 'No Winner' and self.learning:
             self.models[self.winnerIndex] = self.winner + self.deltaWinner
         else:
-            pass
+            pass 
     def process(self):
         RAVQ.process(self)
         self.updateDeltaWinner()
@@ -285,7 +293,7 @@ if __name__ == '__main__':
         ravq.input(bits)
         cnt += 1
 
-    print str(ravq)
+    print ravq
 
     ravq = ARAVQ(4, 2.1, 1.1, .2)
     ravq.setHistory(0)
@@ -294,4 +302,5 @@ if __name__ == '__main__':
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
         cnt += 1
-    print str(ravq)
+
+    print ravq
