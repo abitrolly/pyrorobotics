@@ -10,7 +10,7 @@ class SpacePerceptionGrid{
   int lowerBound,upperBound;
   float overshoot;
  public:
-  SpacePerceptionGrid(int w,int h,int low=-30, int high=30,float overshoot=1.5);
+  SpacePerceptionGrid(int w,int h,int low, int high, float overshoot);
   ~SpacePerceptionGrid();
   void update(float xsrc, float ysrc, 
 	      float xdst, float ydst, 

@@ -9,7 +9,8 @@
 # define min(x, y) ((x<=y)?x:y)
 # define max(x, y) ((x>=y)?x:y)
 
-SpacePerceptionGrid::SpacePerceptionGrid(int w, int h,int low =-30, int high=30,float overshoot=1.5){
+SpacePerceptionGrid::SpacePerceptionGrid(int w, int h, int low, 
+					 int high, float overshoot){
   data = new float[w*h];
   grid = new float*[h];
   for(int i=0; i<h; i++)
@@ -210,9 +211,8 @@ void SpacePerceptionGrid::updateGridLine(float* p0,
 
   dx = to[1] - from[1];
 
-
   if(dx == 0){
-    updateGridRow(p0[1],p0[0],p1[1],delta); //this needs floor/ceil stuff.
+    updateGridRow((int)p0[1],(int)p0[0],(int)p1[1],delta); //this needs floor/ceil stuff.
     return;
   }
 
@@ -220,7 +220,7 @@ void SpacePerceptionGrid::updateGridLine(float* p0,
   
   x=from[0];
   for(y=(int)ceil(from[1]);y<=to[1];y++,x+=dx){
-    updateGridRow(y,x,x+dx,delta);
+    updateGridRow((int)y,(int)x,(int)(x+dx),delta);
   }
 }
 
@@ -264,7 +264,7 @@ void SpacePerceptionGrid::updateGridTriangle(float* p0,
       if(x[0] > x[1]){
 	t = x[0]; x[0] = x[1]; x[1] = t;
       }
-      updateGridRow(y,(int)x[0],(int)x[1],delta);
+      updateGridRow((int)y,(int)x[0],(int)x[1],delta);
     }
   }
 }

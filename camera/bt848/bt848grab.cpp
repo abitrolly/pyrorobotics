@@ -7,11 +7,13 @@
 
 int str_to_int(char *input, int *target);
 
-
-
 main(int argc, char *argv[]) {
   int ncols, nrows;
   char filename[255];
+  if (argc <= 1) {
+    printf("Call with filename\n");
+    exit(1);
+  }
   strcpy(filename, argv[1]);
   if(argc==4) {
     str_to_int(argv[2], &ncols);

@@ -136,7 +136,7 @@ class SaphiraRobot(Robot):
         pass
 
     def connect(self):
-        Saphira_Connect(self.dev)
+        Saphira_Connect(self.dev, self.simulator)
         Saphira_Localize(0.0, 0.0, 0.0)
 
     def localize(self, x = 0.0, y = 0.0, z = 0.0):
