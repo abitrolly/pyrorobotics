@@ -50,14 +50,14 @@ class V4LGrabber(Camera):
       self.cbuf=None
       try:
          self.size, self.depth, self.handle, self.cbuf = \
-                    grab_image(device, width, height, self.color, channel)
+                    share.grabImage.grab_image(device, width, height, self.color, channel)
       except:
          print "v4l: grab_image failed!"
       if title == None:
 	 title = self.device
       Camera.__init__(self, width, height, depth, title = title)
       self.rgb = (2, 1, 0) # offsets to BGR
-      self.RGB = "BGR"
+      self.format = "BGR"
       self.data = CBuffer(self.cbuf)
 
    def _update(self):
@@ -66,7 +66,8 @@ class V4LGrabber(Camera):
       refresh.
       """
       try:
-         refresh_image(self.handle, self.width, self.height, self.depth*8)
+	 if not self.lockCamera:
+            share.grabImage.refresh_image(self.handle, self.width, self.height, self.depth*8)
       except:
          print "v4l: refresh_image failed"
 
@@ -79,7 +80,7 @@ class V4LGrabber(Camera):
       if dir(self).count('handle') == 1 and self.handle and self.cbuf:
          #if __init__ was not successful in acquiring the video device,
          #a call to free_image will be unsuccessful.
-         free_image(self.handle, self.cbuf)
+         share.grabImage.free_image(self.handle, self.cbuf)
 
    
 
