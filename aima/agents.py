@@ -23,9 +23,6 @@ EnvFrame ## A graphical representation of the Environment
 
 from utils import *
 import random, copy
-import Tkinter as tk
-from ImageTk import PhotoImage
-import Image
 
 #______________________________________________________________________________
 
@@ -33,12 +30,8 @@ class Object:
     """This represents any physical object that can appear in an Environment.
     You subclass Object to get the objects you want.  Each object can have a
     .__name__  slot (used for output only)."""
-    def __init__(self):
-        item = self.__name__ 
-        im = Image.open("../images/%s.gif" % item.lower())
-        im = im.resize( (48, 48), Image.BILINEAR )
-        self.image = PhotoImage(im)
-        #self.image = None
+    def __init__(self, image = None):
+        self.image = image
     
     def __repr__(self):
         return '<%s>' % getattr(self, '__name__', self.__class__.__name__)
@@ -64,8 +57,8 @@ class Agent(Object):
     There is an optional slots, .performance, which is a number giving
     the performance measure of the agent in its environment."""
 
-    def __init__(self):
-        Object.__init__(self)
+    def __init__(self, image = None):
+        Object.__init__(self, image)
         def program(percept):
             return raw_input('Percept=%s; action? ' % percept)
         self.program = program
@@ -244,19 +237,16 @@ class XYEnvironment(Environment):
         "Return all objects exactly at a given location."
         return [obj for obj in self.objects if obj.location == location]
 
-    def objects_near(self, location, radius = 1):
+    def objects_near(self, location, radius):
         "Return all objects within radius of location."
         radius2 = radius * radius
-        print location
-        for obj in self.objects:
-            print obj.location
         return [obj for obj in self.objects
                 if distance2(location, obj.location) <= radius2]
 
     def percept(self, agent):
         "By default, agent perceives objects within radius r."
         return [self.object_percept(obj, agent)
-                for obj in self.objects_near(agent.location)]
+                for obj in self.objects_near(agent)]
 
     def execute_action(self, agent, action):
         if action == 'TurnRight':
@@ -403,9 +393,7 @@ class Gold(Object): pass
 class Pit(Object): pass
 class Arrow(Object): pass
 class Wumpus(Agent): pass
-class Explorer(RandomAgent):
-    def __init__(self):
-        RandomAgent.__init__(self, ['Shoot', 'Forward', 'Left', 'Right', 'Grab'])
+class Explorer(Agent): pass
 
 class WumpusEnvironment(XYEnvironment):
     object_classes = [Wall, Gold, Pit, Arrow, Wumpus, Explorer]
@@ -472,6 +460,10 @@ testv(RandomVacuumAgent)
 # and muddle through without a GUI.
 
 
+import Tkinter as tk
+from ImageTk import PhotoImage
+import Image
+
 class EnvFrame(tk.Frame):
     def __init__(self, env, title='AIMA GUI', cellwidth=50, n=10):
         update(self, cellwidth = cellwidth, running=False, delay=1.0)
@@ -530,24 +522,30 @@ class EnvFrame(tk.Frame):
         pass
 
     def add_object(self, event):
+        ## This is supposed to pop up a menu of Object classes; you choose the one
+        ## You want to put in this square.  Not working yet.
         tx, ty = event.x + self.winfo_rootx(), event.y + self.winfo_rooty()
         px, py = event.x/50, event.y/50
         x, y = px * 50, py * 50
         menu = tk.Menu(self, title='Edit (%d, %d)' % (px, py))
-        items = [obj.__name__ for obj in self.env.object_classes]
+        items = ['Wumpus', 'Pit', 'Agent', 'Gold', None, 'Monkey']
         for (txt, cmd) in [(item, lambda item=item: self.makeObject(item, px, py))
                            for item in items]:
+            if txt:
                 menu.add_command(label=txt, command=cmd)
+            else:
+                menu.add_separator()
         menu.tk_popup(tx, ty)
 
     def makeObject(self, item, px, py):
+        x, y = px * 50, py * 50
+        im = Image.open("../images/%s.gif" % item.lower())
+        im = im.resize( (48, 48), Image.BILINEAR )
+        image=PhotoImage(im)
+        self.canvas.create_image(x+2,y+2,anchor=tk.NW,image=image)
         for obj in self.env.object_classes:
             if obj.__name__ == item:
-                o = obj()
-                self.env.add_object(o, (px, py))
-                if o.image:
-                    x, y = px * 50, py * 50
-                    self.canvas.create_image(x+2,y+2,anchor=tk.NW,image=o.image)
+                self.env.add_object( obj(image), (px, py))
                 return
 
 #v = VacuumEnvironment(); w1 = EnvFrame(v);

@@ -255,6 +255,47 @@ class AiboRobot(Robot):
         # TODO: what are these for:
         #wsjoints_port   =10031
         #wspids_port     =10032
+
+        # System console - port 59000
+
+        #* All output from Aperios, printf, cout, and cerr goes here.
+        #* Output from sout (below) will be redirected here if it is
+        #not connected.  * Output is non-blocking, so if a crash
+        #occurs, the last few lines of output may not be displayed.  *
+        #Reading from this console (cin) is blocking - your code will
+        #freeze until the user hits return, and there is no way (that
+        #we know) to check if input is waiting. (hence the need for
+        #the user to specify when they are ready to input data using
+        #the buttons listed above)
+
+        # Tekkotsu standard out (sout)- port 10001
+
+        # * If you connect to this port, all tekkotsu-generated output
+        # will be sent here instead of the system console. This can
+        # help you separate framework messages from system messages,
+        # or your own debugging messages. (if you are using cout) o As
+        # of 1.4, we are still in the process of moving output from
+        # cout to sout, so many messages will still be sent to cout.
+        # * Output from serr is sent here if there is no other
+        # connection.  * Output is non-blocking.  * Input from this
+        # port is sent to the controller.  If there is a GUI active,
+        # anything you type will be broadcast as a TextMsgEvent.  If
+        # there is no GUI active, the input will be processed by the
+        # controller (commands listed below).
+
+        # Tekkotsu standard error (serr) - port 10002
+
+        # * Output is blocking.  Thus, if you send something here,
+        # your code will stop until the message is sent.  This is very
+        # handy for debugging so you can tell what it was doing right
+        # before a crash, but is also rather slow, so it should be
+        # used sparingly.  o NOTE: It appears this is not completely
+        # blocking.  There appears to be some system buffering, so
+        # that a few lines of output may still be lost.  * If this
+        # port is unconnected, it will be redirected to sout, but then
+        # no claims about blocking can be made (sout is responsible
+        # for its transmission).  * There is no input from this port.
+        
         time.sleep(1) # let the servers get going...
         self.walk_control     = Listener(10050, self.host) # walk command
         self.estop_control    = Listener(10053, self.host) # head movement
@@ -269,6 +310,25 @@ class AiboRobot(Robot):
             servers[item] = self.menuData["TekkotsuMon"][item][2] # on or off
         self.devData["servers"] = servers # allows robot.get("robot/servers"); returns dictionary
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
+
+        # Commands available on menu_control (port 10020):
+        # '!refresh' - redisplays the current control (handy on first connecting,
+        #               or when other output has scrolled it off the screen)
+        # '!reset' - return to the root control
+        # '!next' - calls doNextItem() of the current control
+        # '!prev' - calls doPrevItem() of the current control
+        # '!select' - calls doSelect() of the current control
+        # '!cancel' - calls doCancel() of the current control
+        # '!msg text' - broadcasts text as a TextMsgEvent
+        # '!root text' - calls takeInput(text) on the root control
+        # '!hello' - responds with 'hello\ncount\n' where count is the number of times
+        #            '!hello' has been sent.  Good for detecting first connection after
+        #            boot vs. a reconnect.
+        # '!hilight [n1 [n2 [...]]]' - hilights zero, one, or more items in the menu
+        # '!input text' - calls takeInput(text) on the currently hilighted control(s)
+        # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
+        #  any text not beginning with ! - sent to takeInput() of the current control
+
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
