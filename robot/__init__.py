@@ -276,7 +276,7 @@ class Robot (Drawable):
 	else:
 		self.controls[action](self.dev, value1, value2, val3)
         self.needToRedraw = 1
-        self.update() # updates the robot's state reflector
+        #self.update() # updates the robot's state reflector
         #self.gui.win.tkRedraw()
 
     def update(self):
