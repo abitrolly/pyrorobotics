@@ -133,6 +133,7 @@ class Robot:
         self.devData = {} # items in /robot/ path
         self.devDataFunc = {} # function items in /robot/ path
         self.devData['timestamp'] = time.time()
+        self.devData['_help'] = "The main robot object. Access the last loaded devices here, plus all of the robot-specific fields (such as x, y, and th). Use robot.move(translate, rotate) to move the robot."
         self.devData["supports"] = [] # list of built-in devices
         # toplevel:
         self.directory["robot"] = self
@@ -161,19 +162,23 @@ class Robot:
         console.log(console.INFO, msg)
 
     def getAll(self, path = '', depth = 0):
+        #print "=>" * depth, "getAll", path
         retval = ''
         pathList = self.get(path, showstars = 1)
         if isinstance(pathList, (type((1,)), type([1,]))):
             pathList.sort()
         for item in pathList:
-            # HACK! Is the word range in the item? Alias!
+            # HACK! 
+            #print "CHECK:", path, item
             try:
-                self.get("robot/%sname" % item)
+                self.get("%s/%s/name" % (path, item))
+                #print "%s is an object!" % item
                 isDevice = 1
             except:
+                #print "%s is NOT an object!" % item
                 isDevice = 0
-            if isDevice:
-                retval += ("   " * depth) + ("%s = <alias to /devices/%s/>\n" % (item, self.get("robot/%sname" % item)))
+            if isDevice and "/robot/" == path[:7]:
+                retval += ("   " * depth) + ("%s = <alias to \"devices/%s\">\n" % (item, self.get("%s/%s/name" % (path, item))))
                 continue
             if item[0] == "*": # a group (link), do not recur
                 things = ellipses(self.get("%s/%s/pos" % (path, item[1:]), showstars = 1))
@@ -182,8 +187,10 @@ class Robot:
                     retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
             elif item[-1] == "/": # more things below this
                 retval += ("   " * depth) + ("%s\n" % item)
+                #print "HERE A"
                 retval += self.getAll("%s/%s" % (path, item), depth + 1)
             else:
+                #print "MORE", path, item
                 things = ellipses(self.get("%s/%s" % (path, item), showstars = 1))
                 retval += ("   " * depth) + ("%s = %s\n" % (item, things))
         return retval
@@ -211,6 +218,8 @@ class Robot:
         key = pathList[0]
         args = pathList[1:]
         if key in self.devData:
+            if len(args) != 0:
+                raise AttributeError, "extra path items '%s' after '%s'" % (args, key)
             return self.devData[key]
         elif key in self.devDataFunc:
             return self.devDataFunc[key]._get(args, showstars)
@@ -222,6 +231,20 @@ class Robot:
             return deviceDirectoryFormat(tmp, 1) 
         else:
             raise AttributeError, "no such directory item '%s'" % key
+
+    def help(self, path):
+        pathList = device.split("/")
+        # remove extra slashes
+        while pathList.count("") > 0:
+            pathList.remove("")
+        if len(pathList) == 1 and pathList[0] == "devices":
+            help = "Devices are where all of the peripheral attachments can be located. For example, if the robot has a set of sonar sensors, you'll find the device at robot.get('devices/sonar0'). You'll also find the same information at robot.get('robot/sonar'). Sometimes, there may be more than one device. So you may see 'devices/camera0' and 'devices/camera1' for example."
+        else:
+            try:
+                help = self.get(path, "_help")
+            except:
+                help = "No such help available"
+        return help
 
     def get(self, device = "", *args, **keywords):
 	"""
@@ -411,7 +434,7 @@ class Robot:
         elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
             for i in item:
-                return retval.append( self.startDevice(i) )
+                retval.append( self.startDevice(i) )
             return retval
         else: # from a file
             file = item
