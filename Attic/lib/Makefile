@@ -3,7 +3,9 @@
 # Makefile for PTZ Camera object
 #
 
-SHELL = /bin/sh
+OBJS = libptzsys.so
+
+include ../Makefile.src
 
 #############################################################
 
@@ -17,23 +19,20 @@ OAALIB = $(SAPHIRA)/oaa/agents/lib/
 SHARED = -shared
 
 # find out which OS we have 
-include $(SAPHIRA)/handler/include/os.h
+#include $(SAPHIRA)/handler/include/os.h
 
-CFLAGS =  -g -D$(CONFIG)
-CC = gcc
-INCLUDE = -I$(INCD) -I$(X11D)include
-
+CFLAGS =  -g -DLINUX
+INCLUDE = -I$(INCD) -I$(X11_DIR)/include
 
 #############################################################
-all: $(COLBERT)ptzsys.so
-	touch all
 
 #
 # PTZ camera loadable object file
 #
 
-$(OBJD)ptzsys.o: $(SRCD)ptzsys.c $(INCD)saphira.h
-	$(CC) $(CFLAGS) -c $(SRCD)ptzsys.c $(INCLUDE) -o $(OBJD)ptzsys.o
+libptzsys.so: ptzsys.o
+	$(LD) $(SHARED) ptzsys.o -o libptzsys.so
 
-$(COLBERT)ptzsys.so: $(OBJD)ptzsys.o
-	$(LD) $(SHARED) $(OBJD)ptzsys.o -o libptzsys.so
+ptzsys.o: ptzsys.c $(INCD)saphira.h
+	$(CC) $(CFLAGS) -c ptzsys.c $(INCLUDE) -o ptzsys.o
+

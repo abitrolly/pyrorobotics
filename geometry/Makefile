@@ -1,31 +1,27 @@
-CC = gcc
-OBJ = intersect.o vector.o volume.o geometry.o 
+OBJS = intersect.o vector.o volume.o geometry.o 
 BIN  = test
-LIB = libgeometry.so
-MODULE = geometrymodule.so
+LIB = ../lib/libgeometry.so
+MODULE = ../lib/geometrymodule.so
+CLEAN = $(OBJS) $(LIB) $(MODULE) $(BIN) *~
 
-PYTHONINCLUDE = -I/usr/local/include/python2.1
+everything : $(OBJS) $(LIB) $(BIN) $(MODULE)
+
+include ../Makefile.src
 
 CFLAGS = -Wall -g
-LDFLAGS = -L. -lgeometry -lm
-
+LDFLAGS = -L. -lgeometry -lm -L../lib/
 
 %module.c : %.i %.h
 	swig -python -o $@  $<
 
 %module.o : %module.c
-	gcc -c $(PYTHONINCLUDE) -o $@ $<
+	gcc -c $(PYTHON_INCLUDE) -o $@ $<
 
-%module.so : %module.o
+../lib/%module.so : %module.o
 	gcc -nodefaultlibs -nostdlib -shared $(LDFLAGS) -o $@ $<
 
-lib%.so : %.o
+../lib/lib%.so : %.o
 	gcc -nodefaultlibs -nostdlib -shared -o $@ $^
 
+#libgeometry.so : $(OBJS)
 
-all : $(OBJ) $(LIB) $(BIN) $(MODULE)
-
-libgeometry.so : $(OBJ)
-
-clean :
-	rm -f $(OBJ) $(LIB) $(MODULE) $(BIN) *~

@@ -1,14 +1,10 @@
-CC = g++
-FILES = bt848grab.o Camera.o BT848.o
+OBJS = bt848grab.o Camera.o BT848.o
+CLEAN = bt848grab
 
-bt848grab : $(FILES)
-	$(CC) $(FILES) -o $@
+bt848grab: $(OBJS)
+	$(CC) $(OBJS) -o $@
 
-%.o : %.cpp
+include ../../Makefile.src
+
+%.o: %.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $< 
-
-clean : 
-	rm *~ *.o | true
-
-cleanall :
-	rm *~ *.o bt848grab | true

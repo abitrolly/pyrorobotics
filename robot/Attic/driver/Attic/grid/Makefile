@@ -1,27 +1,26 @@
-include ../../../Config.mk
-
-OBJ = SpacePerceptionGrid.o
+OBJS = SpacePerceptionGrid.o
 BIN  = 
 LIB = 
 MODULE = spgmodule.so
 SRC = SpacePerceptionGrid.cc SpacePerceptionGrid.h
+CLEAN = $(OBJS) $(LIB) $(MODULE) $(BIN) *~
 
-CFLAGS = -Wall -g -I$(PYRO) 
-LDFLAGS = -L$(PYRO)/geometry -lm -lgeometry
+CFLAGS = -Wall -g -I../../../
+LDFLAGS = -L$(PYRO)/geometry -lm -lgeometry -L../../../lib
 
-all : $(OBJ) $(LIB) $(BIN) $(MODULE)
+everything : $(OBJS) $(LIB) $(BIN) $(MODULE)
+
+include ../../../Makefile.src
 
 %module.cc : %.i 
 	swig -c++ -python -o $@  $<
 
 %module.o : %module.cc $(SRC)
-	gcc -c $(PYTHONINCLUDE) -o $@ $<
+	gcc -c $(PYTHON_INCLUDE) -o $@ $<
 
 %module.so : %module.o
-	gcc -shared $(LDFLAGS) $(OBJ) -o $@ $<
+	gcc -shared $(LDFLAGS) $(OBJS) -o $@ $<
 
 %.o : %.cc
 	gcc -c $(CFLAGS) $< -o $@
 
-clean :
-	rm -f $(OBJ) $(LIB) $(MODULE) $(BIN) *~
