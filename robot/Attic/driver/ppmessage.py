@@ -8,6 +8,22 @@ import struct
 # Constants
 #------------------------------------------------------------------------------
 
+#** The request subtypes **#
+PLAYER_PLAYER_DEVLIST_REQ     = 0x01
+PLAYER_PLAYER_DRIVERINFO_REQ  = 0x02
+PLAYER_PLAYER_DEV_REQ         = 0x03
+PLAYER_PLAYER_DATA_REQ        = 0x04
+PLAYER_PLAYER_DATAMODE_REQ    = 0x05
+PLAYER_PLAYER_DATAFREQ_REQ    = 0x06
+PLAYER_PLAYER_AUTH_REQ        = 0x07
+PLAYER_PLAYER_NAMESERVICE_REQ = 0x08
+
+PLAYER_SONAR_MAX_SAMPLES          = 64
+PLAYER_SONAR_GET_GEOM_REQ         = 0x01
+PLAYER_SONAR_POWER_REQ            = 0x02
+PLAYER_POSITION_POSITION_MODE_REQ = 0x05
+PLAYER_POSITION_SET_ODOM_REQ      = 0x09
+
 # message type codes
 data		  = 0x0001
 command		  = 0x0002
@@ -17,35 +33,6 @@ synchronization	  = 0x0005
 nacknowledgement  = 0x0006
 error		  = 0x0007
 
-# conversion table from device number to device string
-devicestr = { 0x0001 : 'player',
-              0x0002 : 'power',
-	      0x0003 : 'gripper',
-	      0x0004 : 'position',
-	      0x0005 : 'sonar',
-	      0x0006 : 'laser',
-	      0x0007 : 'blobfinder', 
-	      0x0008 : 'ptz',
-	      0x0009 : 'audio',
-	      0x000A : 'fiducial',
-	      0x000B : 'comms',
-	      0x000C : 'speech',
-	      0x000D : 'gps',
-	      0x000E : 'bumper',
-	      0x000F : 'truth',	
-	      0x0010 : 'idarturret',
-	      0x0011 : 'idar',
-	      0x0012 : 'descartes',
-	      0x0013 : 'mote',
-	      0x0014 : 'dio',
-	      0x0015 : 'aio',
-	      0x0016 : 'ir',
-	      0x0017 : 'wifi',
-	      0x0018 : 'waveform',
-	      0x0019 : 'localization',
-#	      0x001A : 'bps',
-}
-    
 # conversion table from device string to device number
 devicenum = { 'player'		: 0x0001,
               'power'		: 0x0002,
@@ -72,8 +59,24 @@ devicenum = { 'player'		: 0x0001,
 	      'wifi'		: 0x0017,
 	      'waveform'	: 0x0018,
 	      'localization'	: 0x0019,
+## Player 1.5
+              'mcom'            : 0x001A,
+              'sound'           : 0x001B,
+              'audiodsp'        : 0x001C,
+              'audiomixer'      : 0x001D,
+              'position3d'      : 0x001E,
+              'simulation'      : 0x001F,
+              'service_adv'     : 0x0020,
+              'blinkenlight'    : 0x0021,
+              'camera'          : 0x0022,
+## Player 1.5              
 #	      'bps'		: 0x001A,
 }
+
+# Now, make a reverse lookup:
+devicestr = {}
+for name in devicenum:
+    devicestr[ devicenum[name] ] = name
 
 # gripper command table
 gripper_command = { 'open'	: 1,
@@ -87,7 +90,6 @@ gripper_command = { 'open'	: 1,
 		    'halt'	: 15,
 		    'press'	: 16,
 		    'carry'	: 17 }
-
 
 #------------------------------------------------------------------------------
 # Common functions for all devices.
@@ -116,7 +118,7 @@ def unpack_header(header):
              = struct.unpack('!hhhhllllll', header)
         return (type, device, index), (t_sec, t_usec), (ts_sec, ts_usec), size
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in header unpack"
         return (0, 0, 0), (0, 0), (0, 0), 0
 
 
@@ -129,7 +131,7 @@ def pack_player_devlist():
     encode player get-device-list message in to a binary string.
     """
     return struct.pack('!H386x',
-    		       0x01)			# PLAYER_PLAYER_DEVLIST_REQ
+    		       PLAYER_PLAYER_DEVLIST_REQ )
 
 
 def unpack_player_devlist(payload):
@@ -139,7 +141,7 @@ def unpack_player_devlist(payload):
     try:
         data = struct.unpack('!HH192H', payload)
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in player devlist unpack"
         data = [0] * 194
     list = []
     for idx in range(2, 2+3*data[1], 3):
@@ -166,7 +168,7 @@ def unpack_player_driverinfo(payload):
         subtype, code, index, port, name = struct.unpack('!HHHH64s', payload)
         return name[0:name.find('\x00')]
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in player driverinfo unpack"
         return ""
 
 
@@ -189,7 +191,7 @@ def unpack_player_request(payload):
         subtype, device, index, access, name = struct.unpack('!HHHc64s', payload)
         return access, name[0:name.find('\x00')]
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in player request unpack"
         return 0, ""
 
 
@@ -240,7 +242,7 @@ def unpack_power_data(payload):
     try:
         return struct.unpack('!H', payload)[0] / 10.0
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in power data unpack"
         return 0.0
 
 def pack_power_main():
@@ -258,7 +260,7 @@ def unpack_power_main(payload):
     try:
         return struct.unpack('!H', payload)[0] / 10.0
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in power main unpack"
         return 0.0
 
 
@@ -273,7 +275,7 @@ def unpack_gripper_data(payload):
     try:
         return struct.unpack('!BB', payload)
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in gripper data unpack"
         return [0] * 2
 
 
@@ -297,22 +299,27 @@ def unpack_position_data(payload):
     try:
         data = struct.unpack('!iiiiiiB', payload)
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in position data unpack"
         data = [0] * 7
     return (data[0:3], data[3:6], data[6])
 
 
-def pack_position_command(xpos, ypos, yawpos, xspeed, yspeed, yawspeed):
+def pack_position_command(xpos, ypos, yawpos, xspeed, yspeed, yawspeed,
+                          state = 1, commandtype = 0):
     """
     encode position and speed command into a binary string.
     """
-    return struct.pack('!iiiiii',	# format string
+# Player 1.5                   
+    return struct.pack('!iiiiiiii',	# format string
     		       xpos,		# X position
     		       ypos,		# Y position
     		       yawpos,		# heading
                        xspeed,		# X speed
 		       yspeed,		# Y speed
-		       yawspeed)	# turnrate
+		       yawspeed,	# turnrate
+                       state,           # motor state off/locked
+                       commandtype)     # 0 = velocity, 1 = position
+# Player 1.5                   
 
 
 def pack_position_geom():
@@ -331,7 +338,7 @@ def unpack_position_geom(payload):
         type, xpos, ypos, yawpos, xdim, ydim = struct.unpack('!B3H2H', payload)
         return ((xpos, ypos, yawpos), (xdim, ydim))
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in position geom unpack"
         return ((0, 0, 0), (0, 0))
 
 
@@ -366,7 +373,7 @@ def pack_position_positionmode(mode):
     encode position posiiton-control message into a binary string.
     """
     return struct.pack('!BB',		# format string
-                       0x05,		# PLAYER_POSITION_POSITION_MODE_REQ
+                       PLAYER_POSITION_POSITION_MODE_REQ,
 		       mode)		# position control mode
 
 
@@ -402,9 +409,11 @@ def pack_position_setodom(x, y, theta):
     """
     encode position set-odometry message into a binary string.
     """
-    return struct.pack('!BiiH',		# format string
-    		       0x09,		# PLAYER_POSITION_SET_ODOM_REQ
-		       x, y, theta)	# new pose
+# Player 1.5
+    return struct.pack('!Biii',		# format string
+    		       PLAYER_POSITION_SET_ODOM_REQ,
+		       x, y, theta, )	# new pose
+# Player 1.5
 
 
 #------------------------------------------------------------------------------
@@ -416,10 +425,12 @@ def unpack_sonar_data(payload):
     decode sonar device data.
     """
     try:
-        data = struct.unpack('!H32H', payload)
+## Player 1.5
+        data = struct.unpack('!H64H', payload)
     except:
-        print "WARNING: error in unpack"
-        data = [0] * 33
+        print "WARNING: error in sonar data unpack"
+        data = [0] * 65
+## Player 1.5
     return data[1:data[0]+1]
 
 
@@ -428,18 +439,30 @@ def pack_sonar_geom():
     encode sonar get-geometry message into a binary string.
     """
     return struct.pack('!B',		# format string
-    		       0x01)		# PLAYER_SONAR_GET_GEOM_REQ
+    		       PLAYER_SONAR_GET_GEOM_REQ )
 
 
 def unpack_sonar_geom(payload): 
     """
     decode sonar get-geometry message.
     """
+
+    print "data:", len(payload)
+    for i in range(1024):
+        try:
+            struct.unpack('!BH%dh' % i, payload)
+            print i, "worked!"
+            break
+        except:
+            pass
+
+## Player 1.5
     try:
-        data = struct.unpack('!BH96h', payload)
+        data = struct.unpack('!BH192h', payload)
     except:
-        print "WARNING: error in unpack"
-        data = [0] * 98
+        print "WARNING: error in sonar geom unpack"
+        data = [0] * 200
+## Player 1.5
     geometry = []
     for idx in range(data[1]):
         geometry.append(tuple(data[2+idx*3:2+(idx+1)*3]))
@@ -451,7 +474,7 @@ def pack_sonar_power(state):
     encode sonar set-power message into a binary string.
     """
     return struct.pack('!BB',		# format string
-                       0x02,		# PLAYER_SONAR_POWER_REQ
+                       PLAYER_SONAR_POWER_REQ,
 		       state)		# on/off state
 
 
@@ -466,7 +489,7 @@ def unpack_laser_data(payload):
     try:
         data = struct.unpack('!hhHH401H401B', payload)
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in laser data unpack"
         data = [0] * 806
     return ((data[0]/100.0, data[1]/100.0, data[2]/100.0),
     	    data[4:4+data[3]], data[405:405+data[3]])
@@ -488,7 +511,7 @@ def unpack_laser_geom(payload):
         type, xpos, ypos, yaw, xdim, ydim = struct.unpack('!B3h2h', payload)
         return ((xpos, ypos, yaw), (xdim, ydim))
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in laser geom unpack"
         return ((0, 0, 0), (0, 0))
 
 
@@ -521,7 +544,7 @@ def unpack_laser_getconfig(payload):
               = struct.unpack('!BhhHB', payload)
         return (min_angle/100.0, max_angle/100.0, resolution/100.0, intensity)
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in laser getconfig unpack"
         return (0, 0, 0, 0)
 
 
@@ -537,12 +560,12 @@ def unpack_blobfinder_data(payload):
     try:
         width, height = struct.unpack('!HH', payload[:4])
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in blobfinder data 1 unpack"
         width, height = 0, 0
     try:
         header = struct.unpack('!64H', payload[4:132])
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in blobfinder data 2 unpack"
         header = [0] * 140
     num_blobs = range(32)
     index = range(32)
@@ -559,7 +582,7 @@ def unpack_blobfinder_data(payload):
                 try:
                     blob = struct.unpack('!IIHHHHHHH', payload[datum:datum+22])
                 except:
-                    print "WARNING: error in unpack"
+                    print "WARNING: error in blobfinder data 3 unpack"
                     blob = [0] * 9
 	        blobs.append(blob)
 	    blob_list.append(tuple(blobs))
@@ -730,7 +753,7 @@ def unpack_truth_data(payload):
     try:
         return struct.unpack('!iii', payload);
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in truth data unpack"
         return [0] * 3
 
 
@@ -749,7 +772,7 @@ def unpack_truth_getpose(payload):
     try:
         return struct.unpack('!Biii', payload)[1:]
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in truth getpose unpack"
         return [0] * 2
 
 
@@ -803,7 +826,7 @@ def unpack_mote_data(payload):
     try:
         len = struct.unpack('!B', payload[0]);
     except:
-        print "WARNING: error in unpack"
+        print "WARNING: error in mote data unpack"
         len = 0
     return payload[1:len+1]
 

@@ -22,7 +22,7 @@ class player:
 	"""
 
 	# debugging information will be inhibited
-	self.debug = None
+	self.debug = 0
 
 	try:
 	    # make a connection to the specified player server
@@ -56,6 +56,17 @@ class player:
 	    self.wifi		= {}
 	    self.waveform	= {}
 	    self.localization	= {}
+# Player 1.5
+            self.mcom           = {}
+            self.sound          = {}
+            self.audiodsp       = {}
+            self.audiomixer     = {}
+            self.position3d     = {}
+            self.simulation     = {}
+            self.service_adv    = {}
+            self.blinkenlight   = {}
+            self.camera         = {}
+# Player 1.5
 	    #self.bps		= {}		# bps device is broken
 
 	    # create automatic update thread
@@ -273,6 +284,7 @@ class player:
 	caller should catch exceptions for proper error handling,
 	i.e. broken pipe.
 	"""
+        if self.debug: print "__nsend data: len =", len(data)
 	sent = 0
 	while sent < len(data):
 	    sent += self.__socket.send(data[sent:])
@@ -1197,8 +1209,11 @@ class player:
 	    # stop the update thread
 	    self.lock.acquire()
 	    # send request
-	    header = pack_header(request, 'position', size=11)
+# Player 1.5
+	    header = pack_header(request, 'position', size=13)
+# Player 1.5
 	    payload = pack_position_setodom(x, y, theta)
+            if self.debug: print "set_odometry: payload len =", len(payload)
 	    self.__nsend(header+payload)
 	    # wait a respose from the player server
 	    self.__wait_response(('position', 0))
