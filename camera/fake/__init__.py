@@ -1,5 +1,6 @@
 from fake import Fake # cameraDevice
 from pyro.camera import Camera, CBuffer # base class
+import pyro.system as system
 import re, time, os
 
 class FakeCamera(Camera):
@@ -25,7 +26,7 @@ class FakeCamera(Camera):
       FakeCamera('vision/snaps/som-?.ppm', 0, 19)
       """
       if pattern == None:
-         pattern = os.environ['PYRO'] + "/vision/snaps/som-?.ppm"
+         pattern = "/vision/snaps/som-?.ppm"
       self.pattern = pattern
       self.limit = limit
       self.interval = interval
@@ -40,7 +41,13 @@ class FakeCamera(Camera):
       currname = self.pattern[:self.match.start()] + \
                  self.fstring % self.current + \
                  self.pattern[self.match.end():]
-      self.cameraDevice = Fake(currname)
+      if system.file_exists(currname):
+         self.path = ''
+      elif system.file_exists( os.getenv('PYRO') + currname):
+         self.path = os.getenv('PYRO') + "/"
+      else:
+         raise "file not found:" + currname
+      self.cameraDevice = Fake(self.path + currname)
       # connect vision system: --------------------------
       self.vision = visionSystem
       self.vision.registerCameraDevice(self.cameraDevice)
@@ -88,7 +95,7 @@ class FakeCamera(Camera):
             currname = self.pattern[:self.match.start()] + \
                        self.fstring % self.current + \
                        self.pattern[self.match.end():]
-            self.cameraDevice.updateMMap(currname)
+            self.cameraDevice.updateMMap(self.path + currname)
             self.processAll()
             self.current += 1
             self.lastUpdate = currentTime
