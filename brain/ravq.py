@@ -46,7 +46,11 @@ def stringArray(a, newline = 1, width = 0):
         s += '\n'
     return s
 
+# these are both for determining the size of the history buffer
 def isIterable(x):
+    """
+    Convenience function.
+    """
     try:
         iter(x)
     except:
@@ -55,6 +59,10 @@ def isIterable(x):
         return 1
 
 def nestedLength(list, recurseLimit):
+    """
+    Since characters in a string are iterable, we have to be careful
+    to avoid an infinite loop here.
+    """
     if recurseLimit == 0:
         return 1
     else:
@@ -72,6 +80,7 @@ def nestedLength(list, recurseLimit):
 def logBaseTwo(value):
     """
     Returns integer ceil of log_2 of value.
+    Python 2.3 should support different log bases.
     """
     if value < 2:
         return 1
