@@ -15,7 +15,8 @@ class Configuration:
             "srisim":      {},
             "pyro":        {}
             }
-        self.load(file)
+        if file != None:
+            self.load(file)
 
     def display(self):
         for sec in self.data.keys():
