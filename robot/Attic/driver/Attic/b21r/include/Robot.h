@@ -201,11 +201,13 @@ class xcPosition {
     y = p.y;
     radTh = rth;
   }
-  xcPosition(Point *p, double rth) { 
+  /*
+    xcPosition(Point *p, double rth) { 
     x = p->x;
     y = p->y;
     radTh = rth;
   }
+  */
 };
 
 

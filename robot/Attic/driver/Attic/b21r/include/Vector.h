@@ -28,6 +28,9 @@
 /*
 $Header$
 $Log$
+Revision 1.2  2003/09/15 22:57:49  dblank
+Compiles, and loads in Python
+
 Revision 1.1  2003/09/15 18:45:59  dblank
 New driver for B21R (elektro)
 
@@ -78,11 +81,11 @@ public:
 	Polar( const Vector & rhs );
 
 	Polar SetCartesian( double dx, double dy );
-	operator Vector( void ) const;
+	//operator Vector( void ) const;
 	Polar SetR( double dr );
 	Polar SetT( double dt );
-	Polar operator=( const Polar & rhs );
-	Polar operator=( const Vector & rhs );
+	//Polar operator=( const Polar & rhs );
+	//Polar operator=( const Vector & rhs );
 	Polar operator+( const Polar & rhs );
 	Polar operator/( double val );
 };
@@ -98,14 +101,14 @@ public:
 	Vector( double dx, double dy, bool bIsCartesian = true );
 	Vector( const Polar & rhs );
 
-	operator Polar ( void ) const;
+	//operator Polar ( void ) const;
 	Vector SetPolar( double dt, double dr );
 	Vector SetX( double dx );
 	Vector SetY( double dy );
 	Vector SetR( double dr );
 	Vector SetT( double dt );
-	Vector operator=( const Polar & rhs );
-	Vector operator=( const Vector & rhs );
+	//Vector operator=( const Polar & rhs );
+	//Vector operator=( const Vector & rhs );
 
 	Vector operator+( const Vector & rhs ) const;
 	Vector operator+( const double & rhs ) const;
