@@ -1,0 +1,7 @@
+SIM=sim
+
+cd $SIM_DIR
+./$SIM &
+if ps | grep sim; then
+echo 'Khepera Simulator Started'
+fi
