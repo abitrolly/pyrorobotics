@@ -51,6 +51,12 @@ class GPGene(Gene):
                 return operand1 / operand2
             else:
                 return 0.0
+        elif mylist[0] == 'ifpos':
+            testExp = self.eval_tree(values, mylist[1])
+            if testExp > 0:
+                return self.eval_tree(values, mylist[2])
+            else:
+                return self.eval_tree(values, mylist[3])
         else:
             raise "unknownOperator: ", mylist[0]
 
@@ -185,11 +191,13 @@ if __name__ == '__main__':
     # These go together:
     share.operators = ['+', '-', '*', '/']
     # how many operands (arguments):
-    share.operands  = {'+'   : 2,
-                       '-'   : 2,
-                       '*'   : 2,
-                       '/'   : 2 }
-
+    share.operands  = {'+'     : 2,
+                       '-'     : 2,
+                       '*'     : 2,
+                       '/'     : 2,
+                       'ifpos' : 3,
+                       'and'   : 2,
+                       'or'    : 2}
     class GP(GA):
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, **args), **args)
@@ -223,12 +231,8 @@ if __name__ == '__main__':
         def isDone(self):
             return abs(self.fitnessFunction(0, 1)) < 0.0001
 
-    share.operators = ['+', '-', '*', '/']
+    share.operators = ['+', '-', '*', '/', 'ifpos', 'and', 'or']
     # how many operands (arguments):
-    share.operands  = {'+'   : 2,
-                       '-'   : 2,
-                       '*'   : 2,
-                       '/'   : 2 }
     share.terminals = ['1', 'e']
     values = {'1' : 1, 'e' : math.e}
     gp = PI_GP(1000, bias = .6, verbose = 1)
