@@ -23,8 +23,9 @@ def saveListToFile(ls,file):
 
 def makeVector(pos, len):
    retval = [0.0] * len
-   for i in range(len):
-       retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
+   #for i in range(len):
+   #    retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
+   retval[pos] = 1.0
    return retval
 
 def fillSecondHalf(sensoryVectors, motorVectors):
@@ -62,7 +63,6 @@ def generateTrainingData(sensoryVectors, motorVectors):
         assert(0.0 <= exaggeratedTrans <= 1.0)
     saveListToFile(sensoryVectors[size - 1] + goalVector, inputfile)
     saveListToFile([0, 0], targetfile)
-
 
 sensoryVectors = [0] * measureSize
 motorVectors = [0] * measureSize
