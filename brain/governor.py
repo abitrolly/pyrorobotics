@@ -4,6 +4,7 @@ Designed to give the power of offline learning to online learning
 
 """
 
+from pyro.brain.VisConx.VisRobotConx import *
 from pyro.brain.conx import *
 from pyro.brain.psom.vis import *
 from pyro.brain.ravq import *
@@ -49,10 +50,11 @@ class Governor(Network, VisPsom):
 
 class RAVQGovernor:
     def __init__(self, inputSize, hiddenSize, outputSize, threshold):
-        self.net = SRN(self, "Governor Network")
-        self.net.addThreeLayers( inputSize, hiddenSize, outputSize)
+        self.net = VisRobotSRN()
+        self.net.addThreeLayers(inputSize, hiddenSize, outputSize)
         self.net.setLearning(1)
-        self.ravq = ARAVQ(5, .2, .3, .03)
+        self.net.setEpsilon(.1)
+        self.ravq = ARAVQ(5, 1.0, 1.2, .2)
         self.threshold = threshold
     def setLearning(self):
         count = self.ravq.getWinnerCount()
@@ -61,12 +63,12 @@ class RAVQGovernor:
         else:
             return 1
     def setEpsilon(self):
-        pass
+        return self.net.epsilon
     def step(self, inputs, targets):
         self.ravq.input(inputs + targets)
         self.net.setLearning(self.setLearning())
         self.net.setEpsilon(self.setEpsilon())
-        return self.net.step(input = inputs, output = outputs)
+        return self.net.step(input = inputs, output = targets)
         
         
 if __name__ == '__main__':
