@@ -86,7 +86,7 @@ class SOM:
     def scale(self):
         return (1.0 - (self.step * 1.0) / self.maxStep) 
 
-    def updateMap(self, pos, x, y): # winner at (x, y)
+    def updateMap(self, pattern, x, y): # winner at (x, y)
         error = 0.0
         for r in range(self.rows):
             for c in range(self.cols):
@@ -95,7 +95,7 @@ class SOM:
                 # if (scale != 0.0):
                 if self.euclidian(x, y, c, r) <= 1.0:
                     for i in range( self.vectorLen):
-                        e = (self.input[pos][i] - self.weight[r][c][i])
+                        e = (pattern[i] - self.weight[r][c][i])
                         error += abs(e)
                         self.weight[r][c][i] += scale * e
                         # (scale * self.radius()) * e
@@ -123,10 +123,17 @@ class SOM:
             for p in self.loadOrder:
                 x, y, d = self.winner(self.input[p])
                 #print "Winner for input #", p, "is weight at (", x, y, ") (diff was", d,  ")"
-                error += self.updateMap(p, x, y)
+                error += self.updateMap(self.input[p], x, y)
                 #self.testMap(p, x, y)
             self.step += 1
             print "Error =", error
+
+    def trainPattern(self, pattern):
+        # will depend on self.step
+        x, y, d = self.winner(pattern)
+        error += self.updateMap(pattern, x, y)
+        print "Winner is weight at (", x, y, ") (diff was", d,  ") error = ", \
+              error
 
     def test(self):
         self.loadOrder = range(len(self.input))
