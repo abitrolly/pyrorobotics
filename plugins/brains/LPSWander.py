@@ -10,11 +10,12 @@ class SimpleBrain(Brain):
       # create the Local Perceptiual Space window
       units = self.getRobot().get('range', 'units')
       self.getRobot().set('range', 'units', 'MM')
-      maxvalue = self.getRobot().get('range', 'maxvalue')
+      sizeMM = self.getRobot().get('range', 'maxvalue') * 3 + \
+               self.getRobot().get('self', 'radius')
       self.getRobot().set('range', 'units', units)
       self.lps = LPS( 10, 10,
-                      widthMM = int(maxvalue * 3),
-                      heightMM = int(maxvalue * 3))
+                      widthMM = sizeMM,
+                      heightMM = sizeMM)
 
    def destroy(self):
       self.lps.destroy()
@@ -24,7 +25,7 @@ class SimpleBrain(Brain):
       self.lps.reset() # reset counts
       self.lps.sensorHits(robot, 'range')
       self.lps.redraw()
-      return
+      
       FTOLERANCE = 1.0
       LTOLERANCE = 1.0
       RTOLERANCE = 1.0
@@ -33,11 +34,11 @@ class SimpleBrain(Brain):
       right = robot.get('range', 'value', 'right', 'min')[1]
       front = robot.get('range', 'value', 'front', 'min')[1]
 
-      print "left", left, "front", front, "right", right
+      #print "left", left, "front", front, "right", right
 
       if (left < LTOLERANCE and right < RTOLERANCE):
          robot.move(0, .2)
-         #sleep(.5)
+         sleep(.5)
       elif (right < RTOLERANCE):
          robot.move(0, .2)
       elif (left < LTOLERANCE):

@@ -25,9 +25,11 @@ class Map:
         xpos = int((self.originMM[0] + x) / self.colScaleMM)
         ypos = int((self.originMM[1] - y) / self.rowScaleMM)
         if self.inRange(ypos, xpos):
-            self.grid[ypos][xpos] = value
-            if label != None:
-                self.label[ypos][xpos] = "%d" % label
+            # if hit was already detected, leave it alone!
+            if self.grid[ypos][xpos] != 1.0:
+                self.grid[ypos][xpos] = value
+                if label != None:
+                    self.label[ypos][xpos] = "%d" % label
 
     def addGridLocation(self, x, y, value, label = None):
         xpos = int((self.originMM[0] + x) / self.colScaleMM)
