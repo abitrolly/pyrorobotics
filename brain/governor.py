@@ -259,13 +259,17 @@ class GovernorSRN(Governor, SRN):
         retval = SRN.sweep(self)
         if self.governing and (self.epoch % self.reportRate == 0):
             print "Model vectors: %d" % len(self.ravq.models)
+            self.flush()
             print "Report Histogram: %s" % self.histogram
+            self.flush()
             print "Decay Histogram : %s" % self.decayHistogram
+            self.flush()
             self.histogram = {}
         if self.governing and self.decay:
             self.decayModelVectors()
             if self.epoch % self.reportRate == 0:
                 print "After decay: Model vectors: %d" % len(self.ravq.models)
+                self.flush()
         return retval
 
     def networkStep(self, **args):
