@@ -5,7 +5,8 @@ from pyro.robot.driver.saphira import *
 
 class SaphiraRobot(Robot):
     def __init__(self, name = None, simulator = 1):
-        Robot.__init__(self, name, "saphira") # robot constructor
+        Robot.__init__(self, name, "pioneer") # robot constructor
+        self.simulated = simulator
         self.dev = new_Saphira() # create Saphira object first
         self.inform("Loading Saphira robot interface...")
         Saphira_Connect(self.dev, simulator) # connect to what?
