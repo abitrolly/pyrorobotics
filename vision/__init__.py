@@ -84,6 +84,47 @@ class PyroImage:
             fp.writelines(r)
          x += 1
 
+
+
+   def shrink(self, xscale=0.5, yscale='unset'):
+		"""
+		shrink the current image using getShrunkenImage()
+		"""
+		newImage = self.getShrunkenImage(xscale,yscale)
+		self.data = newImage.data
+		self.depth = newImage.depth
+		self.width = newImage.width
+		self.height = newImage.height
+
+   def getShrunkenImage(self, xscale=0.5, yscale='unset'):
+		"""
+		return a shrunken version of the current image
+		if used without arguments, will return a 1/2 scale image
+		if yscale is unspecified, the image is uniformly scaled
+		currently you get wacky results unless you use scale values that
+		fit evenly into 1.0 (i recommend 0.5, 0.333, 0.25, 0.125 ...)
+		"""
+		if yscale=='unset':
+			yscale = xscale
+		newImage = PyroImage(int(xscale*self.width), int(yscale*self.height), 
+												self.depth)
+		xpixels = int(1/xscale)
+		ypixels = int(1/yscale)
+		for y in range(newImage.height):
+			for x in range(newImage.width):
+				for y1 in range(y*ypixels,(y+1)*ypixels):
+					for x1 in range(x*xpixels,(x+1)*xpixels):
+						val1 = self.getVal(x1,y1)
+						val2 = newImage.getVal(x,y)
+						newval = tuple(map(lambda x,y: x+y, val1, val2))
+						newImage.setVal(x,y,newval)
+				val = newImage.getVal(x,y)
+				newval = tuple(map(lambda x: x/(xpixels*ypixels), val))
+				newImage.setVal(x,y,newval)
+		return newImage
+
+
+
    def grayScale(self):
       """
       Method to convert depth 3 color into depth 1 grayscale
@@ -777,6 +818,14 @@ if __name__ == '__main__':
       image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
       image.saveToFile("test.ppm")
       print "Done! To see output, use 'xv test.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 2.25: image shrinking? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      newimage = image.getShrunkenImage()
+      newimage.saveToFile("shrunken.ppm")
+      print "Done! To see output, use 'xv shrunken.ppm'"
    else:
       print "skipping..."
    print "Do you want to run test 2.5: create a filtered image, save to file? ",
