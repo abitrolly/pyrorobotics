@@ -1,0 +1,14 @@
+Path Protoplanning Experiments
+
+8/28/2003
+
+1. collect.py -> camera.dat  motors.dat  poses.dat  sonar.dat
+2. somtrain.py   -> camera.cod sonar.cod
+3. ffprepare.py -> fftargets.dat ffinputs.dat
+4. fftrain.py -> ff.wts
+
+Support Programs:
+
+ffBrain.py - controls trained robot with fixed goal
+plotBrain.py - samples env space, creating flow.dat with x,y,angle
+tools/trace.py -> default.ppm
