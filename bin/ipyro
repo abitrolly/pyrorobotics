@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#
+# IPyron (= Pyro + IPython) launcher script
+# by Pierre-Antoine Champin (pierre-antoine.champin at iuta.univ-lyon1.fr)
+#
+
+# I need that under Debian, don't ask me why
+export HOSTNAME=$HOSTNAME
+
+# Launch pyro with the appropriate options
+exec $PYRO/bin/pyro "$@" -g tty -e \
+    "from pyro.ipyro import *; ipyro_start(vars())"
