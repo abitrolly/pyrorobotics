@@ -194,12 +194,9 @@ class GLgui(gui):
       width = 100
       row = (pie - 1) * (width * 1.5)
       colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
-      try:
-         self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
-         self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-         self.canvasBrain.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
-      except:
-         pass
+      self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
+      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
+      self.canvasBrain.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
 
    def info(self):
       print "-------------------------------------------------------------"
@@ -224,12 +221,15 @@ class GLgui(gui):
                   if control == d[0]:
                      piececnt += 1
                      portion = d[2]
-                     self.redrawPie(piecnt, percentSoFar, \
-                                    piececnt, \
-                                    "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
-                                    portion, \
-                                    "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
-                                                                            d[3], d[4]))
+                     try:
+                        self.redrawPie(piecnt, percentSoFar, \
+                                       piececnt, \
+                                       "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
+                                       portion, \
+                                       "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
+                                                                               d[3], d[4]))
+                     except:
+                        pass
                      percentSoFar += portion
          else:
             try:
