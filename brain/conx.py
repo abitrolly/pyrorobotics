@@ -8,9 +8,9 @@
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.12"
+version = "6.13"
 
-# better to use Numeric.add.reduce() when you know that it is a Numeric list
+# better to use Numeric.add.reduce() when you know that "a" is a Numeric list
 def sum(a):
     """
     Sums elements in a sequence.
@@ -59,13 +59,14 @@ def toStringArray(name, a, width = 0):
         cnt += 1
     return string
 
-def writeArray(fp, a):
+def writeArray(fp, a, delim = " ", nl = 1):
     """
     Writes a sequence a of floats to file pointed to by file pointer.
     """
     for i in a:
-        fp.write("%f " % i)
-    fp.write("\n")
+        fp.write("%f%s" % (i, delim))
+    if nl:
+        fp.write("\n")
 
 class LayerError(AttributeError):
     """
@@ -592,7 +593,9 @@ class Network:
         self.epsilon = 0.1
         self.reportRate = 25
         self.crossValidationReportRate = 0
+        self.crossValidationSampleRate = 0
         self.crossValidationCorpus = ()
+        self.crossValidationSampleFile = "sample.cv"
         self.patterns = {}
         self.patterned = 0 # used for file IO with inputs and targets
 
@@ -1220,7 +1223,29 @@ class Network:
             totalCount += total
         self.learning = oldLearning
         return (tssError, totalCorrect, totalCount)
-        
+    def saveNetworkForCrossValidation(self, filename, mode = 'a'):
+        fp = open(filename, mode)
+        # for each layer, if type is Input or Output, save it with name
+        # one per line
+        fp.write("{")
+        for layer in self.layers:
+            if layer.type == 'Input':
+                fp.write('"' + layer.name + '": [')
+                writeArray(fp, layer.activation, delim = ", ", nl = 0)
+                fp.write('], ')
+            elif layer.type == 'Output':
+                fp.write('"' + layer.name + '": [')
+                writeArray(fp, layer.target, delim = ", ", nl = 0)
+                fp.write('], ')
+        fp.write("}\n")
+        fp.close()
+    def loadCrossValidation(self, filename):
+        self.crossValidationCorpus = []
+        fp = open(filename, "r")
+        for line in fp:
+            dict = eval( line )
+            self.crossValidationCorpus.append( dict )
+        fp.close()
     def sweep(self):
         """
         Runs through entire dataset. Must call setInputs(),
@@ -1253,6 +1278,8 @@ class Network:
             sys.stdout.flush()
             if self.learning and not self.batch:
                 self.change_weights()
+            if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
+                self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
         if self.learning and self.batch:
             self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
@@ -2246,6 +2273,16 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.setReportRate(100)
         n.train()
+        # test crossvalidation ---------------------------------
+        print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
+        n.learning = 0
+        n.crossValidationSampleRate = 1
+        #saves in "sample.cv"
+        n.sweep()
+        n.crossValidationSampleRate = 0
+        print "Loading crossvalidation from 'sample.cv'..."
+        n.loadCrossValidation("sample.cv")
+        print "Corpus:", n.crossValidationCorpus
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode with cross validation?"):
         print "XOR Backprop batch mode: .............................."
