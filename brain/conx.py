@@ -3,12 +3,12 @@
     Backprop. Part of the Pyro Robotics Project.
     Provided under the GNU General Public License.
     ----------------------------------------------------
-    (c) 2001-2003, Developmental Robotics Research Group
+    (c) 2001-2004, Developmental Robotics Research Group
     ----------------------------------------------------
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.7"
+version = "6.8"
 
 # better to use Numeric.add.reduce()
 def sum(a):
@@ -53,7 +53,7 @@ def toStringArray(name, a, width = 0):
     string = name + ": "
     cnt = 0
     for i in a:
-        string += "%4.2f" % i + "  " 
+        string += "%4.2f  " % i 
         if width > 0 and (cnt + 1) % width == 0:
             string += '\n'
         cnt += 1
@@ -106,7 +106,6 @@ class Layer:
         self.log = 0
         self.logFile = ''
         self._logPtr = 0
-        self.bepsilon = 0.1
         self.active = 1
         self.maxRandom = 0.1
         self.initialize()
@@ -123,6 +122,7 @@ class Layer:
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
         self.bed = Numeric.zeros(self.size, 'f')
+        self.epsilon = Numeric.ones(self.size, "f") * 0.1 # default epsilon value for all units
         self.targetSet = 0
         self.activationSet = 0
     def randomize(self):
@@ -141,6 +141,14 @@ class Layer:
         return self.toString()
 
     # modify layer methods
+    def setEpsilon(self, value):
+        self.epsilon = Numeric.ones(self.size, "f") * value
+    def setEpsilonAt(self, value, pos):
+        Numeric.put(self.activation, Numeric.arange(pos, pos+1), value)
+    def getEpsilon(self):
+        return self.epsilon
+    def getEpsilonAt(self, pos):
+        return self.epsilon[pos]
     def setActive(self, value):
         """
         Sets layer to active or inactive. Layers must be active to propagate activations.
@@ -411,8 +419,6 @@ class Connection:
         Constructor for Connection class. Takes instances of source and
         destination layers as arguments.
         """
-        self.epsilon = 0.1
-        self.split_epsilon = 0
         self.fromLayer = fromLayer
         self.toLayer = toLayer
         self.frozen = 0
@@ -543,27 +549,6 @@ class Connection:
         string += '\n'
         return string
     
-    # parameter methods
-    def setEpsilon(self, value):
-        """
-        Sets self.epsilon to value. Used in back-propagation to determine
-        the amount by which a weight's value should be changed.
-        """
-        self.epsilon = value
-    def setSplitEpsilon(self, value):
-        """
-        Sets self.split_epsilon to value.
-        """
-        self.split_epsilon = value
-    def getEpsilon(self):
-        """
-        Returns the epsilon value for the connection (split or otherwise).
-        """
-        if (self.split_epsilon):
-            return (self.epsilon / self.fromLayer.size)
-        else:
-            return self.epsilon
-
 class Network:
     """
     Class which contains all of the parameters and methods needed to
@@ -685,7 +670,6 @@ class Network:
             if toLayer.kind == 'Undefined':
                 toLayer.kind = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
-        self.connections[len(self.connections) - 1].setEpsilon(self.epsilon)
     def addThreeLayers(self, inc, hidc, outc):
         """
         Creates a three layer network with 'input', 'hidden', and
@@ -852,11 +836,6 @@ class Network:
         Sets self.sigmoid_prime_offset to value.
         """
         self.sigmoid_prime_offset = value
-    def setSplit_epsilon(self, value):
-        """
-        Sets self.split_epsilon to value.
-        """
-        self.split_epsilon = value
     def setReportRate(self, value):
         """
         Sets self.reportRate to value. train() will report when epoch % reportRate == 0.
@@ -889,9 +868,7 @@ class Network:
         """
         self.epsilon = value
         for layer in self.layers:
-            layer.bepsilon = value
-        for connection in self.connections:
-            connection.setEpsilon(value)
+            layer.setEpsilon(value)
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
@@ -1397,11 +1374,11 @@ class Network:
         for connection in self.connections:
             if not connection.frozen:
                 if connection.fromLayer.active:
-                    connection.dweight = connection.epsilon * connection.wed + self.momentum * connection.dweight
+                    toLayer = connection.toLayer
+                    connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
                     connection.weight = connection.weight + connection.dweight
                     connection.wed = connection.wed * 0.0
-                    toLayer = connection.toLayer
-                    toLayer.dbias = toLayer.bepsilon * toLayer.bed + \
+                    toLayer.dbias = toLayer.epsilon * toLayer.bed + \
                                     self.momentum * toLayer.dbias
                     toLayer.bias = toLayer.bias + toLayer.dbias
                     toLayer.bed = toLayer.bed * 0.0
