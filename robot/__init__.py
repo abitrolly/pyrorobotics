@@ -193,13 +193,17 @@ class Robot (Drawable):
 
     def step(self, dir):
         if dir == 'L':
-            self.rotate(.3)
+            self.rotate(.2)
         elif dir == 'R':
-            self.rotate(-.3)
+            self.rotate(-.2)
         elif dir == 'B':
-            self.translate(-.3)
+            self.translate(-.2)
         elif dir == 'F':
-            self.translate(0.3)
+            self.translate(0.2)
+        elif dir == 'ST':
+            self.translate(0.0)
+        elif dir == 'SR':
+            self.rotate(0.0)
 
     def accelerate(self, translate, rotate):
         self.act('accelerate', translate, rotate)
