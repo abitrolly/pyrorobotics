@@ -393,20 +393,20 @@ class Connection:
         Initializes self.dweight and self.wed to zero matrices.
         """
         self.randomize()
-        self.dweight = Numeric.zeros((self.toLayer.size, \
-                                      self.fromLayer.size), 'f')
-        self.wed = Numeric.zeros((self.toLayer.size, \
-                                  self.fromLayer.size), 'f')
+        self.dweight = Numeric.zeros((self.fromLayer.size, \
+                                      self.toLayer.size), 'f')
+        self.wed = Numeric.zeros((self.fromLayer.size, \
+                                  self.toLayer.size), 'f')
     def randomize(self):
         """
         Sets weights to initial random values.
         """
-        self.weight = randomArray((self.toLayer.size, \
-                                   self.fromLayer.size),
+        self.weight = randomArray((self.fromLayer.size, \
+                                   self.toLayer.size),
                                   self.toLayer.maxRandom)
-
+         
     # connection modification methods
-    def changeSize(self, toLayerSize, fromLayerSize):
+    def changeSize(self, fromLayerSize, toLayerSize):
         """
         Changes the size of the connection depending on the size
         change of either source or destination layer. Should only be
@@ -414,19 +414,19 @@ class Connection:
         """
         if toLayerSize <= 0 or fromLayerSize <= 0:
             raise LayerError, ('changeSize() called with invalid layer size.', \
-                               (toLayerSize, fromLayerSize))
-        dweight = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
-        wed = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
-        weight = randomArray((toLayerSize, fromLayerSize),
+                               (fromLayerSize, toLayerSize))
+        dweight = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
+        wed = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
+        weight = randomArray((fromLayerSize, toLayerSize),
                              self.toLayer.maxRandom)
         # copy from old to new, considering one is smaller
-        minToLayerSize = min( toLayerSize, self.toLayer.size)
         minFromLayerSize = min( fromLayerSize, self.fromLayer.size)
+        minToLayerSize = min( toLayerSize, self.toLayer.size)
         for i in range(minFromLayerSize):
             for j in range(minToLayerSize):
-                wed[j][i] = self.wed[j][i]
-                dweight[j][i] = self.dweight[j][i]
-                weight[j][i] = self.weight[j][i]
+                wed[i][j] = self.wed[i][j]
+                dweight[i][j] = self.dweight[i][j]
+                weight[i][j] = self.weight[i][j]
         self.dweight = dweight
         self.wed = wed
         self.weight = weight
@@ -438,34 +438,34 @@ class Connection:
         """
         if self.toLayer.verbosity > 0:
             print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
-            for i in range(self.toLayer.size):
-                print self.toLayer.name, "[", i, "]",
+            for j in range(self.toLayer.size):
+                print self.toLayer.name, "[", j, "]",
             print ''
             for i in range(self.fromLayer.size):
                 print self.fromLayer.name, "[", i, "]", ": ",
                 for j in range(self.toLayer.size):
-                    print self.wed[j][i],
+                    print self.wed[i][j],
                 print ''
             print ''
             print "dweight: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
-            for i in range(self.toLayer.size):
-                print self.toLayer.name, "[", i, "]",
+            for j in range(self.toLayer.size):
+                print self.toLayer.name, "[", j, "]",
             print ''
             for i in range(self.fromLayer.size):
                 print self.fromLayer.name, "[", i, "]", ": ",
                 for j in range(self.toLayer.size):
-                    print self.dweight[j][i],
+                    print self.dweight[i][j],
                 print ''
             print ''
         print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
         print "             ",
-        for i in range(self.toLayer.size):
-            print self.toLayer.name, "[", i, "]",
+        for j in range(self.toLayer.size):
+            print self.toLayer.name, "[", j, "]",
         print ''
         for i in range(self.fromLayer.size):
             print self.fromLayer.name, "[", i, "]", ": ",
             for j in range(self.toLayer.size):
-                print self.weight[j][i],
+                print self.weight[i][j],
             print ''
         print ''
     
@@ -625,9 +625,9 @@ class Network:
         # for all connection from to this layer, change matrix:
         for connection in self.connections:
             if connection.fromLayer.name == layername:
-                connection.changeSize( connection.toLayer.size, newsize)
+                connection.changeSize(  newsize, connection.toLayer.size )
             if connection.toLayer.name == layername:
-                connection.changeSize( newsize, connection.fromLayer.size)
+                connection.changeSize( connection.fromLayer.size, newsize )
         # then, change the actual layer size:
         self.getLayer(layername).changeSize(newsize)
     def freeze(self, fromName, toName):
@@ -752,16 +752,15 @@ class Network:
             print "Warning: random seed too small"
         random.seed(self.seed1)
         RandomArray.seed(int(self.seed1), int(self.seed2))
-
-    def getConnection(self, lto, lfrom):
+    def getConnection(self, lfrom, lto):
         """
         Returns the connections between two layers.
         """
         for connection in self.connections:
-            if connection.toLayer.name == lto and \
-               connection.fromLayer.name == lfrom:
+            if connection.fromLayer.name == lfrom and \
+               connection.toLayer.name == lto:
                 return connection
-        raise NetworkError, ('Connection was not found.', (lto, lfrom))
+        raise NetworkError, ('Connection was not found.', (lfrom, lto))
     def setVerbosity(self, value):
         """
         Sets self.verbosity and each layer verbosity to value.
@@ -1294,17 +1293,17 @@ class Network:
         if self.verbosity > 5:
             print "Prop_process from " + connect.fromLayer.name + " to " + \
                   connect.toLayer.name
-        for i in range(connect.toLayer.size):
+        for j in range(connect.toLayer.size):
             if self.verbosity > 6: print "netinput@", connect.toLayer.name, \
-               "starts at", connect.toLayer.netinput[i]
-            for j in range(connect.fromLayer.size):
+               "starts at", connect.toLayer.netinput[j]
+            for i in range(connect.fromLayer.size):
                 if self.verbosity > 6: print "netinput@", \
-                   connect.toLayer.name, "[", i, "] = ", \
-                   connect.fromLayer.activation[j], "*", connect.weight[i][j]
-                connect.toLayer.netinput[i] += (connect.fromLayer.activation[j] * connect.weight[i][j])
+                   connect.toLayer.name, "[", j, "] = ", \
+                   connect.fromLayer.activation[i], "*", connect.weight[i][j]
+                connect.toLayer.netinput[j] += (connect.fromLayer.activation[i] * connect.weight[i][j])
                 if self.verbosity > 6: print "netinput@", \
-                   connect.toLayer.name, "[", i, "] = ", \
-                   connect.toLayer.netinput[i]
+                   connect.toLayer.name, "[", j, "] = ", \
+                   connect.toLayer.netinput[j]
     def activationFunction(self, x):
         """
         Determines the activation.
@@ -1340,18 +1339,18 @@ class Network:
         """
         for connection in self.connections:
             if not connection.frozen:
-                for i in range(connection.toLayer.size):
+                for j in range(connection.toLayer.size):
                     if connection.fromLayer.active:
-                        for j in range(connection.fromLayer.size):
+                        for i in range(connection.fromLayer.size):
                             connection.dweight[i][j] = connection.getEpsilon() * connection.wed[i][j] + \
                                                     self.momentum * connection.dweight[i][j]
                             connection.weight[i][j] += connection.dweight[i][j]
                             connection.wed[i][j] = 0.0
                         toLayer = connection.toLayer
-                        toLayer.dbias[i] = toLayer.bepsilon * toLayer.bed[i] + \
-                                           self.momentum * toLayer.dbias[i]
-                        toLayer.bias[i] += toLayer.dbias[i]
-                        toLayer.bed[i] = 0.0
+                        toLayer.dbias[j] = toLayer.bepsilon * toLayer.bed[j] + \
+                                           self.momentum * toLayer.dbias[j]
+                        toLayer.bias[j] += toLayer.dbias[j]
+                        toLayer.bed[j] = 0.0
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
@@ -1384,11 +1383,11 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.toLayer.active:
-                for i in range(connect.toLayer.size):
-                    connect.toLayer.delta[i] = \
-                      connect.toLayer.error[i] * self.ACTPRIME(connect.toLayer.activation[i])
-                    for j in range(connect.fromLayer.size):
-                        connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
+                for j in range(connect.toLayer.size):
+                    connect.toLayer.delta[j] = \
+                      connect.toLayer.error[j] * self.ACTPRIME(connect.toLayer.activation[j])
+                    for i in range(connect.fromLayer.size):
+                        connect.fromLayer.error[i] += (connect.toLayer.delta[j] * \
                                                        connect.weight[i][j])
         return (error, correct, total)
     def compute_wed(self):
@@ -1398,11 +1397,11 @@ class Network:
         """
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            for i in range(connect.toLayer.size):
-                for j in range(connect.fromLayer.size):
-                    connect.wed[i][j] += (connect.toLayer.delta[i] * \
-                                          connect.fromLayer.activation[j])
-                connect.toLayer.bed[i] += connect.toLayer.delta[i]
+            for j in range(connect.toLayer.size):
+                for i in range(connect.fromLayer.size):
+                    connect.wed[i][j] += (connect.toLayer.delta[j] * \
+                                          connect.fromLayer.activation[i])
+                connect.toLayer.bed[j] += connect.toLayer.delta[j]
     def ACTPRIME(self, act):
         """
         Used in compute_error.
@@ -1465,8 +1464,8 @@ class Network:
                 for i in range(layer.size):
                     gene.append( layer.bias[i] )
         for connection in self.connections:
-            for j in range(connection.fromLayer.size):
-                for i in range(connection.toLayer.size):
+            for i in range(connection.fromLayer.size):
+                for j in range(connection.toLayer.size):
                     gene.append( connection.weight[i][j] )
         return gene
     def unArrayify(self, gene):
@@ -1482,8 +1481,8 @@ class Network:
                     layer.bias[i] = float( gene[g])
                     g += 1
         for connection in self.connections:
-            for j in range(connection.fromLayer.size):
-                for i in range(connection.toLayer.size):
+            for i in range(connection.fromLayer.size):
+                for j in range(connection.toLayer.size):
                     connection.weight[i][j] = gene[g]
                     g += 1
         # if gene is too long we may have a problem
@@ -1526,8 +1525,8 @@ class Network:
             for connection in self.connections:
                 fp.write("# from " + connection.fromLayer.name + " to " +
                          connection.toLayer.name + "\n")
-                for j in range(connection.fromLayer.size):
-                    for i in range(connection.toLayer.size):
+                for i in range(connection.fromLayer.size):
+                    for j in range(connection.toLayer.size):
                         fp.write("%f " % connection.weight[i][j] )
                     fp.write("\n")
             fp.close()
@@ -1539,16 +1538,16 @@ class Network:
             cnt = 1
             for lto in self.layers:
                 if lto.type != 'Input':
-                    for i in range(lto.size):
+                    for j in range(lto.size):
                         fp.write("# TO NODE %d\n" % cnt)
-                        fp.write("%f\n" % lto.bias[i] )
+                        fp.write("%f\n" % lto.bias[j] )
                         for lfrom in self.layers:
                             try:
-                                connection = self.getConnection(lto.name, lfrom.name)
-                                for j in range(connection.fromLayer.size):
+                                connection = self.getConnection(lfrom.name,lto.name)
+                                for i in range(connection.fromLayer.size):
                                     fp.write("%f\n" % connection.weight[i][j])
                             except NetworkError: # should return an exception here
-                                for j in range(lfrom.size):
+                                for i in range(lfrom.size):
                                     fp.write("%f\n" % 0.0)
                         cnt += 1
             fp.close()            
@@ -1586,16 +1585,16 @@ class Network:
             cnt = 1
             for lto in self.layers:
                 if lto.type != 'Input':
-                    for i in range(lto.size):
+                    for j in range(lto.size):
                         fp.readline() # TO NODE %d
-                        lto.bias[i] = float(fp.readline())
+                        lto.bias[j] = float(fp.readline())
                         for lfrom in self.layers:
                             try:
-                                connection = self.getConnection(lto.name, lfrom.name)
-                                for j in range(connection.fromLayer.size):
+                                connection = self.getConnection(lfrom.name, lto.name)
+                                for i in range(connection.fromLayer.size):
                                     connection.weight[i][j] = float( fp.readline() )
                             except NetworkError:
-                                for j in range(lfrom.size):
+                                for i in range(lfrom.size):
                                     # 0.0
                                     fp.readline()
                         cnt += 1
@@ -2049,7 +2048,7 @@ if __name__ == '__main__':
         return ans == 'y'
 
     n = Network()
-    n.setSeed(114366.64)
+    #n.setSeed(114366.64)
     n.addThreeLayers(2, 2, 1)
     n.setInputs([[0.0, 0.0],
                  [0.0, 1.0],
@@ -2170,6 +2169,8 @@ if __name__ == '__main__':
         n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
+        #n.verbosity = 10
+        #n.setInteractive(1)
         n.train()
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
@@ -2200,7 +2201,7 @@ if __name__ == '__main__':
     if ask("Do you want to test an AND network?"):
         print "Creating and running and network..."
         n = Network()
-        n.setSeed(114366.64)
+        #n.setSeed(114366.64)
         n.add(Layer('input',2)) 
         n.add(Layer('output',1)) 
         n.connect('input','output') 
@@ -2217,7 +2218,7 @@ if __name__ == '__main__':
         print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
         print "follow."
         n = SRN()
-        n.setSeed(114366.64)
+        #n.setSeed(114366.64)
         n.addSRNLayers(3,2,3)
         n.predict('input','output')
         seq1 = [1,0,0, 0,1,0, 0,0,1]
@@ -2239,7 +2240,7 @@ if __name__ == '__main__':
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
         print "Auto-associate .........................................."
         n = Network()
-        n.setSeed(114366.64)
+        #n.setSeed(114366.64)
         n.addThreeLayers(3,2,3)
         n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
         n.associate('input','output')
@@ -2257,7 +2258,7 @@ if __name__ == '__main__':
         print "Raam ...................................................."
         # create network:
         raam = SRN()
-        raam.setSeed(114366.64)
+        #raam.setSeed(114366.64)
         raam.setPatterns({"john"  : [0, 0, 0, 1],
                           "likes" : [0, 0, 1, 0],
                           "mary"  : [0, 1, 0, 0],
@@ -2322,7 +2323,7 @@ if __name__ == '__main__':
     if ask("Do you want to train a network to both predict and auto-associate?"):
         print "SRN and auto-associate ..................................."
         n = SRN()
-        n.setSeed(114366.64)
+        #n.setSeed(114366.64)
         n.addSRNLayers(3,3,3)
         n.add(Layer('assocInput',3))
         n.connect('hidden', 'assocInput')
