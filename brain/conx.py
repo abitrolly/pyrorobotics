@@ -108,7 +108,7 @@ class Layer:
         self._logPtr = 0
         self.active = 1
         self.maxRandom = 0.1
-        self.initialize()
+        self.initialize(0.1)
     def initialize(self, epsilon):
         """
         Initializes important node values to zero for each node in the
