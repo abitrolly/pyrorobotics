@@ -14,7 +14,7 @@ def euclideanDistance(x, y, mask):
     Takes two Numeric vectors as arguments.
     d(x, y) = Sum[i = 1 to |x|]{(x_i - y_i) ^ 2}
     """
-    return math.sqrt(Numeric.add.reduce( ((x - y) * mask)  ** 2))
+    return math.sqrt(Numeric.add.reduce( ((x - y)  ** 2) * mask))
 
 def SetDistance(V, X, mask):
     """
