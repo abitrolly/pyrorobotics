@@ -94,7 +94,7 @@ class VisConxBase:
         self.root = Tkinter.Tk()
         self.root.title("VisConx")
         self.root.resizable(0,0)
-        self.root.protocol("WM_DELETE_WINDOW", handleWindowClose)
+        self.root.protocol("WM_DELETE_WINDOW", self.handleWindowClose)
         
         self.visualFrame = Tkinter.Frame(self.root)
         Tkinter.Label(self.visualFrame, text="Visualization Tools:", font=("Arial", 14, "bold")).grid(row=0, col=0, columnspan=2, sticky=Tkinter.W)
