@@ -104,7 +104,8 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['ox']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][0])
         self.subDataFunc['oy']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][1])
         self.subDataFunc['oz']    = lambda pos: 0.03 # meters
-        self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
+        self.subDataFunc['thr']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
+        self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] # degrees
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
         self.subDataFunc['x']     = self.getX
         self.subDataFunc['y']     = self.getY
@@ -368,10 +369,9 @@ class PlayerRobot(Robot):
         self.name = name
         self.connect() # set self.dev to player robot
         # for some basic devices:
-        # Make sure sonar is before laser, so if you have
-        # laser, it will be the default 'range' device
-        for device in ["power", "position", "sonar", "laser",
-                       "bumper"]:
+        # Make sure laser is before sonar, so if you have
+        # sonar, it will be the default 'range' device
+        for device in ["power", "position", "ir", "laser", "sonar", "bumper"]:
             #is it supported? if so start it up:
             devList = self.dev.get_device_list()
             # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)

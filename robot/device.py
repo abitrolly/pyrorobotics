@@ -47,6 +47,7 @@ class Device:
         self.devDataFunc = {} # not currently working
         self.subDataFunc = {}
         self.groups = {}
+        self.printFormat = {}
         self.dev = 0
         self.devData["active"] = 1
         self.devData["visible"] = visible
@@ -156,12 +157,18 @@ class Device:
             return deviceDirectoryFormat(tmp, 0)
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
-            self.preGet(path[0])
-            return self.devData[path[0]]
+            if showstars and path[0] in self.printFormat:
+                return self.printFormat[path[0]]
+            else:
+                self.preGet(path[0])
+                return self.devData[path[0]]
         elif len(path) == 1 and path[0] in self.devDataFunc:
-            # return a value/ function with no argument
-            self.preGet(path[0])
-            return self.devDataFunc[path[0]]()
+            if showstars and path[0] in self.printFormat:
+                return self.printFormat[path[0]]
+            else:
+                # return a value/ function with no argument
+                self.preGet(path[0])
+                return self.devDataFunc[path[0]]()
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
             #tmp = self.subData.copy()
