@@ -616,7 +616,7 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
-        self.sweepReportRate = 200
+        self.sweepReportRate = 500
         self.crossValidationCorpus = ()
         self.crossValidationReportLayers = []
         self.crossValidationSampleRate = 0

@@ -97,10 +97,10 @@ class GovernorSRN(Governor, SRN):
                      verbosity = verbosity)
         self.trainingNetwork = SRN(name = "Governed Training SRN",
                                    verbosity = verbosity)
-        # so that we can use step:
-        self.trainingNetwork.initContext = 0
-        self.initContext = 0 
-        # ravq
+        self.trainingNetwork.setMomentum(0)
+        self.trainingNetwork.setInitContext(0)
+        self.setInitContext(0)
+        # ravq:
         self.governing = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
@@ -171,15 +171,23 @@ if __name__ == '__main__':
     # node is important in determining the function of the network.
     net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
     net.addThreeLayers(inSize, inSize/2, 4)
-    net.setInputs( inputs )
-    net.setTargets( targets )
+    net.setTargets( targets[:389] ) # 389 = one trip around
+    net.setInputs( inputs[:389] )
     net.setStopPercent(.95)
     net.setReportRate(1)
-    net.governing = 1
-    print "This takes a while..."
+    net.setResetLimit(1)
+    net.setStopPercent(1.1) # (110%) keep going until resetLimit 
+    net.setResetEpoch(5)
+    net.governing = 0
     net.train()
     print net.ravq
+    print "Testing..."
+    print "This takes a while..."
+    net.governing = 0
+    net.setTargets( targets )
+    net.setInputs( inputs )
     net.setLearning(0)
-    net.setInteractive(1)
+    tss, correct, total = net.sweep()
+    print "TSS: %.4f Percent: %.4f" % (tss, correct / float(total))
     # run with -i to see net
 
