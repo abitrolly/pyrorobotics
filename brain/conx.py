@@ -901,6 +901,15 @@ class Network:
                connection.toLayer.name == toName:
                 return connection.weight
         raise NetworkError, ('Connection was not found.', (fromName, toName))
+    def setWeight(self, fromName, fromPos, toName, toPos, value):
+        """
+        Sets the weight of the connection between two layers (argument strings).
+        """
+        for connection in self.connections:
+            if connection.fromLayer.name == fromName and \
+               connection.toLayer.name == toName:
+                return connection.weight[fromPos][toPos] = value
+        raise NetworkError, ('Connection was not found.', (fromName, toName))
     def setOrderedInputs(self, value):
         """
         Sets self.orderedInputs to value. Specifies if inputs
