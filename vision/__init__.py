@@ -386,8 +386,8 @@ class PyroImage:
             g = self.get(w, h, 1)
             b = self.get(w, h, 2)
             if r == 0: r = 1.0
-            br = min(int(b/float(r) * float(cols - 1)), cols - 1)
-            gr = min(int(g/float(r) * float(rows - 1)), rows - 1)
+            br = min(int(b/float(r + g + b) * float(cols - 1)), cols - 1)
+            gr = min(int(g/float(r + g + b) * float(rows - 1)), rows - 1)
             histogram.incr(br, gr)
       return histogram
    

@@ -41,6 +41,7 @@ class NNBrain(Brain):
    def step(self):
       if self.doneLearning:
          self.net.setLearning(0)
+         self.pleaseStop()
       else:
          self.net.setLearning(1)
          print self.counter
