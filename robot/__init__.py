@@ -122,8 +122,13 @@ class Robot:
     #    return self.get(path)
 
     def __repr__(self):
-        return "Robot name = '%s', type = '%s'" % (self.get("/robot/name"),
-                                                   self.get("/robot/type"))
+        retval = 'Robot:\n---------------------------------\n'
+        for item in self.get("robot/"):
+            if item[-1] == "/": # more things below this
+                retval += "    %s\n" % item
+            else:
+                retval += "    %s = %s\n" % (item, self.get("robot/%s" % item))
+        return retval
 
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
@@ -152,7 +157,7 @@ class Robot:
             tmp.update( self.dataFunc )
             return serviceDirectoryFormat(tmp, 1) 
         else:
-            raise AttributeError, "robot has no such directory item '%s'" % key
+            raise AttributeError, "no such directory item '%s'" % key
 
     def get(self, device = "", *args):
 	"""
@@ -173,7 +178,7 @@ class Robot:
         for part in path:
             finalPath.append(expand( part ) )
         if len(finalPath) == 0:
-            return serviceDirectoryFormat(self.service, 0)
+            return serviceDirectoryFormat(self.service, 0) # toplevel in service
         elif finalPath[0] in self.service:
             # pass the command down to robot
             return self.service[finalPath[0]]._get(finalPath[1:])
@@ -190,7 +195,7 @@ class Robot:
         elif key in self.dataFunc:
             return self.dataFunc[key]._set(args, value)
         else:
-            raise AttributeError, "robot has no setable directory item '%s'" % key
+            raise AttributeError, "no setable directory item '%s'" % key
         
     def set(self, device, value):
 	"""
@@ -199,7 +204,7 @@ class Robot:
         # remove extra slashes
         while path.count("") > 0:
             path.remove("")
-        if path[0] in self.service:
+        if path[0] in self.service: # toplevel in service
             # pass the command down to robot
             return self.service[path[0]]._set(path[1:], value)
         else:
@@ -280,9 +285,7 @@ class Robot:
         return phi
 
     def getAngleToPoint(self, x, y):
-        return self.getAngleToPoints(x, y, \
-                                     self.senses['robot']['x'](self.dev), \
-                                     self.senses['robot']['y'](self.dev))
+        return self.getAngleToPoints(x, y, self.get('robot/x'), self.get('robot/y'))
                                      
     def getAngleToPoints(self, x1, y1, x2, y2):
         p = Polar()
@@ -294,10 +297,7 @@ class Robot:
         return self.getAngleToAngle(phi)
 
     def getDistanceToPoint(self, x, y):
-        return distance(x, y, \
-                        self.senses['robot']['x'](self.dev), \
-                        self.senses['robot']['y'](self.dev))
-
+        return distance(x, y, self.get('robot/x'), self.get('robot/y'))
 
     # ------------------------- Service functions:
 
