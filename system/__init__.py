@@ -42,6 +42,7 @@ def loadINIT(filename, robot=0, redo=0):
     sys.path.append(search)
 
     exec("import " + module + " as userspace")
+    print 'Loaded ' + module
 
     if redo:
         reload(userspace)
