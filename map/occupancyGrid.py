@@ -1,6 +1,6 @@
-import Tkinter
+from pyro.map.tkmap import TkMap
 
-class occupancyGrid(Tkinter.Tk):
+class occupancyGrid(TkMap):
    """
    GUI for visualizing an occupancy grid style map.
    
@@ -16,98 +16,73 @@ class occupancyGrid(Tkinter.Tk):
    Press '2' to double the size of the occupancy grid.
    Press 'Q' to quit.
    """
-   def __init__(self, grid):
-      Tkinter.Tk.__init__(self)
-      self.menuButtons = {}
-      self.title("Occupancy Grid")
-      self.threshhold = 0.8
-      self.grid = grid
-      self.lastMatrix = self.grid
-      self.lastPath = None
-      self.colScale = 50.0
-      self.rowScale = 50.0
-      self.start = (0, 0)
-      self.goal = (6, 2)
-      self.rows = len(grid)
-      self.cols = len(grid[0])
-      self.width = self.cols * self.colScale
-      self.height = self.rows * self.rowScale
-      self.infinity = 1e5000
-      self.bigButNotInfinity = 5000
-      self.value= [[self.infinity for col in range(self.cols)]
-                   for row in range(self.rows)]
-      menu = [('File',[['Load map...',self.loadMap],
+   def __init__(self, start, goal):
+      menu = [('File',[['Load map...',self.myLoadMap],
                        ['Save map...',self.saveMap],
                        ['Exit',self.destroy] 
                        ]),
               ]
-      self.mBar = Tkinter.Frame(self,relief=Tkinter.RAISED,borderwidth=2)
-      self.mBar.pack(fill=Tkinter.X)
-      self.menuButtons = {}
-      for entry in menu:
-         self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0],entry[1]))
-      self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
-      self.bind("<Configure>", self.changeSize)
-      self.canvas.bind("<B1-Motion>", self.increaseCell)
-      self.canvas.bind("<B2-Motion>", self.middleCell)
-      self.canvas.bind("<B3-Motion>", self.decreaseCell)
-      self.canvas.bind("<Button-1>", self.increaseCell)
-      self.canvas.bind("<Button-2>", self.middleCell)
-      self.canvas.bind("<Button-3>", self.decreaseCell)
-      self.canvas.bind("<KeyPress-p>", self.findPath)
-      self.canvas.bind("<KeyPress-s>", self.setStart)
-      self.canvas.bind("<KeyPress-g>", self.setGoal)
-      self.canvas.bind("<KeyPress-2>", self.setDouble)
-      self.canvas.bind("<KeyPress-q>", self.close)
-      self.canvas.pack()
-      self.protocol('WM_DELETE_WINDOW', self.close)
-      self.update_idletasks()
+      keybindings = [ ("<B1-Motion>", self.increaseCell),
+                      ("<B2-Motion>", self.middleCell),
+                      ("<B3-Motion>", self.decreaseCell),
+                      ("<Button-1>", self.increaseCell),
+                      ("<Button-2>", self.middleCell),
+                      ("<Button-3>", self.decreaseCell),
+                      ("<KeyPress-p>", self.findPath),
+                      ("<KeyPress-s>", self.setStart),
+                      ("<KeyPress-g>", self.setGoal),
+                      ("<KeyPress-2>", self.setDouble),
+                      ("<KeyPress-q>", self.destroy)
+                      ]
+      TkMap.__init__(self, 50, 50, 0.5,
+                     200, 200, 100, 100,
+                     "Occupancy Grid", menu, keybindings)
+      self.threshhold = 0.8
+      self.lastMatrix = self.grid
+      self.lastPath = None
+      self.start = start
+      self.goal = goal
+      self.infinity = 1e5000
+      self.bigButNotInfinity = 5000
+      self.value= [[self.infinity for col in range(self.cols)]
+                   for row in range(self.rows)]
 
-   def loadMap(self):
-      pass
-
-   def saveMap(self):
-      pass
-
-   def cleanup(self):
-      self.destroy()
-
-   def makeMenu(self, bar, name, commands):
-      """ Assumes self.menuButtons exists """
-      menu = Tkinter.Menubutton(bar,text=name,underline=0)
-      self.menuButtons[name] = menu
-      menu.pack(side=Tkinter.LEFT,padx="2m")
-      menu.filemenu = Tkinter.Menu(menu)
-      for cmd in commands:
-         menu.filemenu.add_command(label=cmd[0],command=cmd[1])
-      menu['menu'] = menu.filemenu
-      return menu
+   def myLoadMap(self):
+      TkMap.loadMap(self)
+      self.redraw(self.grid, None)
 
    def increaseCell(self, event):
-      cellCol = int(round(event.x/self.colScale))
-      cellRow = int(round(event.y/self.rowScale))
+      self.canvas.focus_set()
+      cellCol = int(round(event.x /self.colScale))
+      cellRow = int(round((event.y - 15)/self.rowScale))
       self.grid[cellRow][cellCol] = 1.0
       self.redraw( self.grid, None)
 
    def middleCell(self, event):
+      self.canvas.focus_set()
       cellCol = int(round(event.x/self.colScale))
-      cellRow = int(round(event.y/self.rowScale))
+      cellRow = int(round((event.y - 15)/self.rowScale))
       self.grid[cellRow][cellCol] = 0.5
       self.redraw( self.grid, None)
 
    def decreaseCell(self, event):
+      self.canvas.focus_set()
       cellCol = int(round(event.x/self.colScale))
-      cellRow = int(round(event.y/self.rowScale))
+      cellRow = int(round((event.y - 15)/self.rowScale))
       self.grid[cellRow][cellCol] = 0.0
       self.redraw( self.grid, None)
 
-   def changeSize(self, event):
+   # Overloaded:
+   def changeSize(self, event = 0):
       self.width = self.winfo_width() - 2
       self.height = self.winfo_height() - 30 # with menu
       self.canvas.configure(width = self.width, height = self.height)
       self.colScale = int(round(self.width / self.cols))
       self.rowScale = int(round(self.height / self.rows))
-      self.redraw( self.lastMatrix, self.lastPath)
+      try:
+         self.redraw( self.lastMatrix, self.lastPath)
+      except:
+         pass
 
    def color(self, value, maxvalue):
       if value == self.infinity:
@@ -115,11 +90,6 @@ class occupancyGrid(Tkinter.Tk):
       value = 1.0 - value / maxvalue
       color = "gray%d" % int(value * 100.0) 
       return color
-
-   def close(self, event = 0):
-      self.withdraw()
-      self.update_idletasks()
-      self.destroy()
 
    def setDouble(self, event):
       self.rows *= 2
@@ -133,28 +103,41 @@ class occupancyGrid(Tkinter.Tk):
       self.redraw(self.grid)
 
    def setGoal(self, event):
-      self.goal = int(round(event.x/self.colScale)), int(round(event.y/self.rowScale))
+      self.goal = int(round(event.x/self.colScale)), \
+                  int(round((event.y - 15)/self.rowScale))
       self.redraw(self.grid)
 
    def setStart(self, event):
-      self.start = int(round(event.x/self.colScale)), int(round(event.y/self.rowScale))
+      self.start = int(round(event.x/self.colScale)), \
+                   int(round((event.y - 15)/self.rowScale))
       self.redraw(self.grid)
 
    def findPath(self, event):
+      if self.debug: print "Finding path..."
+      if self.grid[self.goal[1]][self.goal[0]] > self.threshhold:
+         raise "NoPathExists", "goal is in unattainable location"
       end = 10
       start = 0
       self.initPlanPath()
       done = 0
+      path = None
       while not done:
+         print "Trying %d iterations..." % end
          try:
             path = self.planPath(self.start, self.goal, range(start, end))
             done = 1
          except "NoPathExists":
-            start = end
-            end *= 2
+            if end > 80:
+               done = 1
+            else:
+               start = end
+               end *= 2
       print "iterations:", end
       if path:
+         print "Done!"
          self.redraw(g.value, path)
+      else:
+         raise "NoPathExists", "maximum interation limit exceded"
 
    def redraw(self, matrix, path = None):
       self.lastMatrix = matrix
@@ -192,13 +175,6 @@ class occupancyGrid(Tkinter.Tk):
                               (self.goal[1] + .5) * self.rowScale,
                               tag = 'cell',
                               text="Goal", fill='green')
-
-   def printMatrix(self, m):
-      for i in range(self.rows):
-         for j in range(self.cols):
-            print "%8.2f" % m[i][j],
-         print
-      print "-------------------------------------------------"
 
    def tooTight(self, row, col, i, j):
       """ Check to see if you aren't cutting a corner next to an obstacle."""
@@ -278,9 +254,6 @@ class occupancyGrid(Tkinter.Tk):
       print "Path is %d steps" % steps
       return path
 
-   def inRange(self, r, c):
-      return r >= 0 and r < self.rows and c >= 0 and c < self.cols
-
 if __name__ == '__main__':
    # An occupancy grid of a simple world with an L-shaped obstacle
    map = [[0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
@@ -290,9 +263,10 @@ if __name__ == '__main__':
           [0.5, 0.5, 0.5, 0.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.5],
           [0.0, 0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.5],
           ]
-   g = occupancyGrid(map)
+   g = occupancyGrid((0, 0), (6, 2))
+   g.setGrid( map )
    # Find a path from position 0,0 to a point on the other side of
    # the L-shaped obstacle.
-   g.redraw(map)
-   g.canvas.focus_set()
+   g.redraw(map) # forces it to redraw the map, rather than default
+   g.application = 1
    g.mainloop()
