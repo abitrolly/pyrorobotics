@@ -66,6 +66,11 @@ ewin = 100
 radius2 = 2.0
 
 def test1():
+	# test 1:
+	# SOM's model vectors are read in from ex.cod.  SOM is then trained using
+	# a dataset created from ex.dat.  After training, model vectors are saved to
+	# test1.cod.
+	
 	print "test 1: codes from file, train from file"
 	print "----------------------------------------"
 	data = csom.open_entries(in_data_file)
@@ -95,6 +100,7 @@ def test1():
 	return 0
 
 def test2():
+	
 	print "test 2: train from file, codes init. from data"
 	print "----------------------------------------------"
 	data = csom.open_entries(in_data_file)

@@ -56,9 +56,9 @@ eptr *get_eptr(void);
 struct entries *init_dataset(int dim);
 int addto_dataset(struct entries *data, struct data_entry *entry);
 struct data_entry *make_data_entry_weighted_masked(float *points, 
-			short weight, short *mask, int dim);
+			short weight, short *mask, int dim, char **label);
 struct data_entry *make_data_entry(float *points);
-
+int label_data_entry(struct data_entry *entry, char **label);
 
 
 

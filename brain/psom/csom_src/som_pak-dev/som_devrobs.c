@@ -125,14 +125,19 @@ int addto_dataset(struct entries *data, struct data_entry *entry) {
  *   'points' should be ignored in computing the winning model vector.
  *   Typically 'mask' is {0, 0, ...}, or equivalently NULL.
  *
+ * Modifications:
  * it is primarily left up to the user to make certain that 'points',
  * 'mask', and the associated SOM are all of the same vector dimension 
- * -- this is no longer true.  checks have been added to __init__.py 
- *    (Yee Lin Tan, June 9,2002)
+ * -- this is no longer true.  dim checks have been added to __init__.py 
+ *    added June 9, 2003.
+ * 
+ * 'label' is an array of char pointers. 
+ * -- added June 16, 2003. 
  */
 
 struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
-						   short *mask, int dim) {
+						   short *mask, int dim,
+						   char **label) {
   struct data_entry *entry;
   char *charmask = NULL;
   int i;
@@ -152,23 +157,65 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   entry->weight = weight;
   entry->next = NULL;
   entry->fixed = NULL;
-
+  
+  /* mask */
   if(mask) {
     charmask = (char *) malloc(dim);
     for(i=0;i<dim;i++)
       charmask[i] = (char) mask[i];
   }
   entry->mask = charmask;
+  
+  /* label */
+  /* if the label array is not null, add it to the entry */
+  if(label) {
+    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
+      //printf("Added: %c\n", label[i][0]);
+      add_entry_label(entry, find_conv_to_ind(label[i]));
+    }
+  }
 
+  /*
+  if(entry->num_labs) {
+    printf("  label: ");
+    printf("%c", entry->lab.label);
+    printf("  label2: ");
+    printf("%c", get_entry_label(entry));
+    nlabel = get_entry_labels(entry, 0);
+    printf("\nnlabel: %d", nlabel);
+    printf(" %s\n", find_conv_to_lab(nlabel));
+   
+    for(i=0;;i++) {
+      nlabel = get_entry_labels(entry, i);
+      if(nlabel != LABEL_EMPTY) //last label in label array is always LABEL_EMPTY 
+	printf("%s ", find_conv_to_lab(nlabel));
+      else break;
+    }
+   
+  }
+  */
   return entry;
 }
-
+  
 
 struct data_entry *make_data_entry(float *points) {
-  return make_data_entry_weighted_masked(points, 1, NULL, 0);
+  /* no labels required.  pass in 0. */
+  return make_data_entry_weighted_masked(points, 1, NULL, 0, 0);
 }
 
+/* Returns 0 if label setting is successful, 0 otherwise. */
+int label_data_entry(struct data_entry *entry, char **label) {
+  int i;
 
+  if(label) {
+    for(i=0; label[i][0] != '0'; i++) { /* label array is null-terminated with '0'. */
+      //printf("Added: %c\n", label[i][0]);
+      add_entry_label(entry, find_conv_to_ind(label[i]));
+    }
+    return 0;
+  }
+  return 1;
+}
 
 
 /* ------------------ training session initialization functions ---------- */
@@ -694,18 +741,18 @@ void print_dataset(struct entries *data) {
       printf("%.3f ", entry->points[i]);
     
     /* display weight of vector */
-    printf(" wt: %d", entry->weight);
+    printf(" wt: %d ", entry->weight);
 
     /* display mask associated with vector if there is one */
     if(entry->mask) {
-      printf("  mask: ");
+      printf(" mask: ");
       for(i=0;i<data->dimension;i++)
         printf("%d ", entry->mask[i]);
     }
 
     /* display label(s) if there are any */
     if(entry->num_labs) {
-      printf("  label: ");
+      printf(" label: ");
       for(i=0;;i++) {
 	label = get_entry_labels(entry, i);
 	if(label != LABEL_EMPTY) /* last label in label array is always LABEL_EMPTY */

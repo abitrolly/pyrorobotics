@@ -21,6 +21,8 @@
 %array_functions(float,floatarray)
 %array_functions(short,shortarray)
 %array_functions(int,intarray)
+%array_functions(char*,charstararray)
+
 
 #define CYCLIC    0   // for train_fromdataset()
 #define RAND      1   // for train_fromdataset()
@@ -125,8 +127,10 @@ extern eptr *get_eptr(void);
 extern struct entries *init_dataset(int dim);
 extern int addto_dataset(struct entries *data, struct data_entry *entry);
 extern struct data_entry *make_data_entry_weighted_masked(float *points, 
-                                           short weight, short *mask, int dim);
+                                           short weight, short *mask, int dim,
+					   char **label);
 extern struct data_entry *make_data_entry(float *points);
+extern int label_data_entry(struct data_entry *entry, char **label);
 
 /* ------------------ training session initialization functions ---------- */
 

@@ -33,24 +33,36 @@ csom.set_globals()  # neither worry about nor change this
 # Given an array, an item, and an index, this function inserts the item
 # into the array at position indexed by i.
 def _ptrset(myarr, item, i):
+	"""
+	Given an array, an item, and an index, this function inserts the item
+	into the array at position indexed by i.
+	"""
 	if myarr[-5:] == 'float':
 		csom.floatarray_setitem(myarr, i, item)
 	elif myarr[-5:] == 'short':
 		csom.shortarray_setitem(myarr, i, item)
 	elif myarr[-3:] == 'int':
 		csom.intarray_setitem(myarr, i, item)
+	elif myarr[-4:] == 'char':
+		csom.charstararray_setitem(myarr, i, item) # array of character pointers
 	else:
 		raise TypeError, myarr		
 
 # Given an array and an index, this function returns the value stored
 # at index position i.
 def _ptrvalue(myarr, i):
+	"""
+	Given an array and an index, this function returns the value stored
+	at index position i.
+	"""
 	if myarr[-5:] == 'float':
 		return csom.floatarray_getitem(myarr, i)
 	elif myarr[-5:] == 'short':
 		return csom.shortarray_getitem(myarr, i)
 	elif myarr[-3:] == 'int':
 		return csom.intarray_getitem(myarr, i)
+	elif myarr[-4:] == 'char':
+		return csom.charstararray_getitem(myarr, i) # array of character pointers
 	else:
 		raise TypeError, myarr
 
@@ -58,12 +70,19 @@ def _ptrvalue(myarr, i):
 # an array of the specified type and number of elements.
 # The init param is unused. 
 def _ptrcreate(type, init, nitems):
+	"""
+	Given a type and the number of elements, this function creates
+	an array of the specified type and number of elements.
+	The init param is unused.
+	"""
 	if type == "short":
 		return csom.new_shortarray(nitems)
 	elif type == "float":
 		return csom.new_floatarray(nitems)
 	elif type == "int":
 		return csom.new_intarray(nitems)
+	elif type == "char":
+		return csom.new_charstararray(nitems) # array of character pointers
 	else:
 		raise TypeError, type
 
@@ -704,38 +723,51 @@ class vector:
 	def __init__(self, elts='unset', weight=1, mask='NULL', entry='unset',
 		     dim='unset', point='unset', label='NULL'):
 		if(elts != 'unset'):
-			# make sure weight of training vector >= 0.  This check used to be performed
-			# in som_devrobs.c
+			# make sure weight of training vector >= 0.  This check used to be performed in som_devrobs.c
 			if(weight < 0.0):
 				raise "invalid weight for training vector: %s. weight must be >= 0" % weight
 			points = list_to_arr(elts, "float")
 			dim = len(elts)
-			mask_arr = 'NULL' # Warning: mask_arr must be initialized to NULL, otherwise call to
-			# make_data_entry_weighted_masked() below will fail if mask is NULL
+
+			# mask
+			c_mask = 'NULL' # Warning: c_mask must be initialized to NULL, otherwise call to
+			                # make_data_entry_weighted_masked() below will fail if mask is NULL.
 			if(mask != 'NULL'):
-				# make sure len(mask) matches len(elts)
+				# make sure len(mask) matches vector dimension
 				if (len(mask) != dim):
 					raise "Mismatched dimensions of vector (len %s) and mask (len %s)" % (dim,len(mask))
 				# make sure mask is a binary list
 				for i in range(len(mask)):
 					if(mask[i] != 0 and mask[i] != 1):
 						raise "invalid mask: %s.  mask must be a binary list" % mask
-				mask_arr = list_to_arr(mask, "short")
+				c_mask = list_to_arr(mask, "short") # convert mask list into a c array of shorts
 
 			# label
-			"""
+			c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
 			if(label != 'NULL'):
-				label_arr = 'NULL'
-				label_arr = list_to_arr(label, "int")
-			entry = csom.make_data_entry_weighted_masked(points, weight, mask_arr, dim, label_arr)
-			"""
-			entry = csom.make_data_entry_weighted_masked(points, weight, mask_arr, dim)
-		
+				# convert every elt in label (python list) to a string,
+				# storing it in str_label, a new python list of strings.
+				str_label = []
+				for i in range(len(label)):
+					str_label.append(str(label[i]))
+
+				# Null-terminate the list of strings. this is needed to determine
+				# the array size in make_data_entry_weighted_masked() in som_devrobs.c
+				str_label.append(str(0)) 
+
+				# Convert list of strings into a c array of character pointers.
+				# Note: each elt in c_str_label is a char pointer.  So, c_str_label is the equivalent
+				# of C's char **.
+				c_str_label = list_to_arr(str_label, "char") 
+
+			# create a data entry struct (see som_devrobs.c for more info)
+			entry = csom.make_data_entry_weighted_masked(points, weight, c_mask, dim, c_str_label)
+					
 		# data members of vector object (separated from code for clarity)
 		self.dim   = dim
 		self.entry = entry
 		self.point = point
-		self.mask  = mask  # keep mask around for retrieval with get_mask()
+		self.mask  = mask
 		self.label = label
 
 	"""
@@ -764,34 +796,63 @@ class vector:
 	"""
 	vector: get_weight()
 	--------------------
-	Returns the training weight of the vector.  See vector constructor.
+	Returns the training weight of the vector.  See vector constructor for
+	more info.
 	"""
 	def get_weight(self):
 		return csom.data_entry_weight_get(self.entry)	
 	"""
 	vector: get_mask()
 	------------------
-	Returns the mask of the vector.  See vector constructor.
+	Returns the mask of the vector.  See vector constructor for more info.
 	"""
 	def get_mask(self):
 		return self.mask
-		#raise "get_mask() has not yet been implemented"  # why not?
+	"""
+	vector: set_label()
+	-------------------
+	Sets the label associated with the vector.  See vector constructor for more
+	info.
+	"""
+	def set_label(self,label='NULL'):
+		c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
+		if(label == 'NULL'):
+			raise 'No label provided'
+		# convert every elt in label (python list) to a string,
+		# storing it in str_label, a new python list of strings.
+		str_label = []
+		for i in range(len(label)):
+			str_label.append(str(label[i]))
+			
+		# Null-terminate the list of strings. this is needed to determine
+		# the array size in make_data_entry_weighted_masked() in som_devrobs.c
+		str_label.append(str(0)) 
+		
+		# Convert list of strings into a c array of character pointers.
+		# Note: each elt in c_str_label is a char pointer.  So, c_str_label is the equivalent
+		# of C's char **.
+		c_str_label = list_to_arr(str_label, "char")
+		
+		csom.label_data_entry(self.entry, c_str_label)
+		self.label = label
+		
 	"""
 	vector: get_label()
 	-------------------
-	I'm still not sure what this is for.
+	Returns the label list associated with the vector.  See vector constructor
+	for more info.
 	"""
 	def get_label(self):
 		return self.label
-		#raise "get_label() has not yet been implemented" # why not?
 	"""
 	vector: __str__()
 	-----------------
 	Returns a string representation of all elements in the vector.  This function
-	is typically called by print().
+	is typically called by print().  Only the elements in the vector are returned,
+	i.e. weight, mask, and label are not.
 	"""
 	def __str__(self):
-		mylist = self.get_elts();
+		mylist = self.get_elts()
 		s = ""
 		for elt in mylist:
 			s += "%.3f" % (elt) + " "
@@ -800,18 +861,36 @@ class vector:
 	"""
 	vector: display()
 	-----------------
-	Displays the vector as a list of values.
+	Displays the vector as a list of values.  Datamembers (e.g. weight, mask, and label)
+	associated with the vector are displayed as well.
+	Format: [<vector elts>]  weight:<wt>  mask:[<mask elts>]  label:[<label elts>]
 	"""
 	def display(self):
-		mylist = self.get_elts();
-		weight = self.get_weight();
+		mylist = self.get_elts()
+		weight = self.get_weight()
+		mask   = self.get_mask()
+		label  = self.get_label()
+		
 		print "[",
 		for elt in mylist:
 			print "%.3f" % (elt),
-		if(weight > 1):
-			print "] weight:", weight
-		else:
-			print "]" 
+		#if(weight > 1):
+		print "] weight: %s" % weight,
+		#else:
+			#print "]"
+		if(mask != 'NULL'):
+			print " mask: [",
+			for elt in mask:
+				print "%s" % elt,
+			print "]",
+		if(label != 'NULL'):
+			print " label: [",
+			for elt in label:
+				print "\'%s\'" % elt,
+			print "]"
+	       
+		
+		   
 
 
 #################################################################################
@@ -1005,7 +1084,8 @@ class point:
 	"""
 	point: __str__()
 	----------------
-	Returns a string representation of a point object
+	Returns a string representation of a point object.  By default, print() calls
+	this function.
 	"""
 	def __str__(self):
 		return "(%d,%d)" %(self.x,self.y)
@@ -1066,6 +1146,10 @@ To test, run this file as a program, i.e. python __init__.py
 """
 
 if(__name__ == '__main__'):
+	# test 1:
+	# SOM's model vectors are read in from ex.cod.  SOM is then trained using
+	# a dataset created from ex.dat.  After training, model vectors are saved to
+	# test1.cod.
 	print "test 1: som from file, data from file, train from dataset"
 	print "---------------------------------------------------------"
 	mysom = psom(file='ex.cod')
@@ -1081,9 +1165,12 @@ if(__name__ == '__main__'):
 	print "for verification, compare to test_csom.py output \"test1.cod\""
 	print "  and to test_devrobs output \"test1_verify.cod\""
 	print "test 1 successfully completed"
-
 	print ""
-	
+
+	# test 2:
+	# SOM is randomly initialized using dataset created from ex.dat.  SOM is then
+	# trained using the same dataset.  After training, model vectors are saved to
+	# test2.cod.
 	print "test 2: dataset from file, som randinit from data, train from dataset"
 	print "---------------------------------------------------------------------"
 	mysom = psom(12,8,data=mydataset)
@@ -1102,9 +1189,13 @@ if(__name__ == '__main__'):
 	mysom.display_activations(myact)
 	print "output written to file \"test2.cod\""
 	print "test 2 successfully completed"
-
 	print ""
 
+	# test 3:
+	# SOM is randomly initialized to values between 0 and 10.  The initial model
+	# vectors (before training) are saved to test3a.cod.  SOM is then trained
+	# using the dataset created from ex.dat, and the model vectors (after training)
+	# are saved to test3b.cod.
 	print "test 3: dataset from file, som pure randinit, train from dataset"
 	print "----------------------------------------------------------------"
 	mysom = psom(12,8,dim=5,rmin=0.0,rmax=10.0)
@@ -1125,9 +1216,12 @@ if(__name__ == '__main__'):
 	mysom.display_activations(myact)
 	print "output written to file \"test3b.cod\""
 	print "test 3 successfully completed"
-
 	print ""
 
+	# test 4:
+	# SOM's model vectors are read in from ex.cod.  SOM is then trained on
+	# 4 manually created training vectors.  SOM's model vectors are saved to
+	# test4.cod after training.
 	print "test 4: data/training dynamic, view SRN levels"
 	print "----------------------------------------------"
 	mysom = psom(file='ex.cod')
@@ -1135,15 +1229,20 @@ if(__name__ == '__main__'):
 	vecs = []
 	vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))
 	vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
-	vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0]))
+	vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0], label=['X']))
 	vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
+	
 	mydataset = dataset(vecs[0])
+	print "Adding vectors to dataset, displaying mask and labels"
 	for i in range(1,4):
 		mydataset.addvec(vecs[i])
-		print i, vecs[i].get_mask()
-	print "DISPLAYING DATASET..."
+		vecs[i].set_label([i]) # test set_label()
+		print i, vecs[i].get_mask(), vecs[i].get_label() # test get_mask() and get_label()
+		
+	print "\nDisplaying dataset..."
 	mydataset.display()
-
+	print "\n"
+	
 	mysom.logging_set(type="file", prefix="psomtest", mode="train")
 	mysom.logging_clear()
 	mysom.logging_on()
