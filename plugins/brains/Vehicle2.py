@@ -9,10 +9,13 @@ class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
    def step(self):
-      maxvalue = 550.0
-      sensor = maxvalue -  self.robot.get('light', 'value', 2) # light
-      forward = sensor / maxvalue
-      self.robot.move(forward,  0.0) # to the left
+       lpos, left = self.robot.get('light', 'value', (0, 1, 2), 'min') # light
+       rpos, right = self.robot.get('light', 'value', (3, 4, 5), 'min')# light
+       forward = .2
+       if left < right: # lower means more light
+          self.robot.move(forward,  0.3) # to the left
+       else:
+          self.robot.move(forward, -0.3) # to the right
 
 def INIT(engine):
    if engine.robot.type != 'khepera':
