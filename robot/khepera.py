@@ -209,14 +209,14 @@ class KheperaRobot(Robot):
     def getIRXCoord(self, dev, pos):
         # convert to x,y relative to robot
         dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
-        angle = (self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
+        angle = (-self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
         return dist * math.cos(angle)
         
 
     def getIRYCoord(self, dev, pos):
         # convert to x,y relative to robot
         dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
-        angle = (self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
+        angle = (-self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
         return dist * math.sin(angle)
     
     def light_ox(self, dev, pos):
