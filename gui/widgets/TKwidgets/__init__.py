@@ -347,6 +347,12 @@ class FileDialog(ModalDialog):
 		button["width"] = 8
 		button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
 
+		button = Tkinter.Button(self.buttonFrame)
+		button["text"] = "My Copy"
+		button["command"] = self.CopyPressed
+		button["width"] = 8
+		button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
+
 	#	create the directory list box
 
 	def CreateDirListBox(self):
@@ -495,14 +501,23 @@ class FileDialog(ModalDialog):
 	def CancelPressed(self):
 		self.TerminateDialog(0)
 
-        def EditPressed(self):
+        def CopyPressed(self):
            import os
            filename = self.fileNameEntry.get()
+           myfilename = "$HOME/my" + filename.split("/")[-1]
+           os.system("cp -i %s %s" %(filename, myfilename))
+           self.EditPressed(myfilename)
+
+        def EditPressed(self, filename = None):
+           import os
+           if filename == None:
+              filename = self.fileNameEntry.get()
            if os.getenv("EDITOR"): 
               editor = os.getenv("EDITOR")
            else:
               editor = "emacs"
            os.system("%s %s &" % (editor, filename))
+           self.TerminateDialog(0)
 
 	def GetFileName(self):
 		return self.fileNameEntry.get()

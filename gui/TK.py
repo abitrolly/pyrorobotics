@@ -127,9 +127,6 @@ class TKgui(gui):
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
 
-
-
-
    def makeCommandArea(self):
       # ---------------------------------
       self.commandFrame = Tkinter.Frame(self.frame)
