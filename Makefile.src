@@ -13,14 +13,14 @@ PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 all:: $(SUBDIRS) $(OBJS)
 
 $(SUBDIRS):
-	(cd $@; $(MAKE))
+	(cd ./$@ && $(MAKE))
 
 clean::
 	- $(RM) *.o *.bak core *~
 ifeq ($(SUBDIRS),)
 else
 	@for i in $(SUBDIRS); do\
-		(cd $$i; $(MAKE) clean); \
+		(cd ./$$i; $(MAKE) clean); \
 	done
 endif
 
@@ -30,6 +30,6 @@ cleanall::
 ifeq ($(SUBDIRS),)
 else
 	@for i in $(SUBDIRS); do\
-		(cd $$i; $(MAKE) cleanall); \
+		(cd ./$$i; $(MAKE) cleanall); \
 	done
 endif
