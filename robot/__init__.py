@@ -97,8 +97,8 @@ class Robot:
         self.directory = {} # toplevel place for paths
         self.device = {} # what was called services
         self.supports = {} # keyword list of built-in devices
-        self.data = {} # items in /robot/ path
-        self.dataFunc = {} # function items in /robot/ path
+        self.devData = {} # items in /robot/ path
+        self.devDataFunc = {} # function items in /robot/ path
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
@@ -129,13 +129,18 @@ class Robot:
 
     def getAll(self, path = '', depth = 0):
         retval = ''
-        for item in self.get(path):
+        pathList = self.get(path)
+        pathList.sort()
+        for item in pathList:
             if item[0] == "*": # a group (link), do not recur
+                if item == "*range/":
+                    retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("%s/%s/type" % (path, item[1:]))))
+                    continue
                 retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]))))
                 if item == "*all/":
                     retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,)))
             elif item[-1] == "/": # more things below this
-                retval += ("   " * depth) + ("%s:\n" % item)
+                retval += ("   " * depth) + ("%s\n" % item)
                 retval += self.getAll("%s/%s" % (path, item), depth + 1)
             else:
                 retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s" % (path, item))))
@@ -157,20 +162,20 @@ class Robot:
 
     def _get(self, pathList):
         if len(pathList) == 0:
-            tmp = self.data.copy()
-            tmp.update( self.dataFunc )
+            tmp = self.devData.copy()
+            tmp.update( self.devDataFunc )
             return serviceDirectoryFormat(tmp, 0)
         key = pathList[0]
         args = pathList[1:]
-        if key in self.data:
-            return self.data[key]
-        elif key in self.dataFunc:
-            return self.dataFunc[key]._get(args)
+        if key in self.devData:
+            return self.devData[key]
+        elif key in self.devDataFunc:
+            return self.devDataFunc[key]._get(args)
         if key == '*':
             if args != []:
                 raise AttributeError, "wildcard feature not implemented in directory middle"
-            tmp = self.data.copy()
-            tmp.update( self.dataFunc )
+            tmp = self.devData.copy()
+            tmp.update( self.devDataFunc )
             return serviceDirectoryFormat(tmp, 1) 
         else:
             raise AttributeError, "no such directory item '%s'" % key
@@ -209,10 +214,12 @@ class Robot:
     def _set(self, pathList, value):
         key = pathList[0]
         args = pathList[1:]
-        if key in self.data:
-            self.data[key] = value
-        elif key in self.dataFunc:
-            return self.dataFunc[key]._set(args, value)
+        if key in self.devData:
+            self.devData[key] = value
+            return "Ok"
+        elif key in self.devDataFunc:
+            self.devDataFunc[key]._set(args, value)
+            return "Ok"
         else:
             raise AttributeError, "no setable directory item '%s'" % key
 
@@ -232,7 +239,8 @@ class Robot:
         while path.count("") > 0:
             path.remove("")
         if path[0] in self.directory:
-            return self.directory[path[0]]._set(path[1:], value)
+            self.directory[path[0]]._set(path[1:], value)
+            return "Ok"
         else:
             raise AttributeError, "'%s' is not a root directory" % path[0]
 
@@ -263,9 +271,9 @@ class Robot:
         self.move(0, 0)
 
     def _update(self):
-        self.data['datestamp'] = time.time()
+        self.devData['datestamp'] = time.time()
         for service in self.getServices():
-            if self.getService(service).active:
+            if self.getService(service).getActive():
                 self.getService(service).updateService()
 
     # Need to define these:
@@ -410,8 +418,7 @@ class Robot:
             raise AttributeError, "unknown service '%s'" % item
 
     def getServices(self):
-        #return self.device.keys()
-        return []
+        return self.device.keys()
 
     def getSupportedServices(self):
         return self.supports.keys()
@@ -420,8 +427,8 @@ class Robot:
         return self.device.has_key(item)
 
     def removeService(self, item):
-        self.device[item].visible = 0
-        self.device[item].active = 0
+        self.device[item].setVisible(0)
+        self.device[item].setActive(0)
         self.device[item].destroy()
         del self.device[item]
 
