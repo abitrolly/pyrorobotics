@@ -84,9 +84,9 @@ class Camera(PyroImage, Device):
       self.lastWindowUpdate = 0
       self.updateWindowInterval = 1.0 # update window once a second
       self.update() # call it once to initialize
-      self.printFormat["image"] = "<PIL image>"
-      self.printFormat["data"] = "<image data>"
-      self.printFormat["grayscale"] = "<grayscale data>"
+      self.printFormat["image"] = "<%d x %d x %d PIL image>" % (self.width, self.height, self.depth)
+      self.printFormat["data"] = "<%d x %d x %d image data>" % (self.width, self.height, self.depth)
+      self.printFormat["grayscale"] = "<%d x %d grayscale data>" % (self.width, self.height)
       self.devData["image"] = []
       self.devData["data"] = self.data
       self.devData["grayscale"] = []

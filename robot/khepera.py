@@ -217,7 +217,9 @@ class KheperaRobot(Robot):
         self.devData["supports"] = ['ir', 'light']
         self.startDevice("ir")
         self.devDataFunc["range"] = self.get("/devices/ir0/object")
+        self.devDataFunc["ir"] = self.get("/devices/ir0/object")
         self.startDevice("light")
+        self.devDataFunc["light"] = self.get("/devices/light0/object")
 
         self.sendMsg('H', 'position')
         self.x = 0.0
