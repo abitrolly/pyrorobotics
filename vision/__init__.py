@@ -86,13 +86,12 @@ class PyroImage:
 
 
 
-   def shrink(self, xscale=0.5, yscale='unset'):
+   def shrink(self, xscale=0.5, yscale='unset', mode='average'):
       """
       shrink the current image using getShrunkenImage()
       """
-      newImage = self.getShrunkenImage(xscale,yscale)
+      newImage = self.getShrunkenImage(xscale,yscale,mode)
       self.data = newImage.data
-      self.depth = newImage.depth
       self.width = newImage.width
       self.height = newImage.height
       
