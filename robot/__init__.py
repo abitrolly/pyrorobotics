@@ -253,10 +253,10 @@ class Robot (Drawable):
                 if self.get(type, 'value', pos) < min:
                     min = self.get(type, 'value', pos)
                     minpos = pos
-                    minangle = self.senses[sensor]['th'](self.dev, minpos)
+                    minangle = self.senses[type]['th'](self.dev, minpos)
             if minpos == -1:
                 return None
-            return (minpos, min, angle)
+            return (minpos, min, minangle)
         elif func == 'max':
             max = -100000
             maxpos = -1
@@ -266,7 +266,7 @@ class Robot (Drawable):
                 if self.get(type, 'value', pos) > max:
                     max = self.get(type, 'value', pos)
                     maxpos = pos
-                    maxangle = self.senses[sensor]['th'](self.dev, maxpos)
+                    maxangle = self.senses[type]['th'](self.dev, maxpos)
             if maxpos == -1:
                 return None
             return (maxpos, max, maxangle)
