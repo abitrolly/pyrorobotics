@@ -1,7 +1,7 @@
 #ifndef __V4L_H
 #define __V4L_H
 
-#include "../vision/Vision.h"
+#include "Device.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,7 +28,7 @@
 
 //extern int errno;
 
-class V4L : public Vision
+class V4L : public Device
 {
  public:
   V4L ( char *device_name, int wi, int he, int de, int ch);

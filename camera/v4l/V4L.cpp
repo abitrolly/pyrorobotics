@@ -1,7 +1,7 @@
 #include "V4L.h"
 
 V4L::V4L ( char *device_name, int wi, int he, int de, int ch) :
-     Vision(wi, he, de) {
+     Device(wi, he, de) {
   int size = 0;
 
   snprintf(device, 255, device_name);
@@ -40,10 +40,7 @@ PyObject *V4L:: updateMMap( )
 	//swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
 	width  = grab_buf.width;
 	height = grab_buf.height;
-	PyObject *retval = applyFilterList();
-	if (motionDetection) 
-	  memcpy(history, image, width * height * depth);
-	return retval;
+	return PyInt_FromLong(0L);
       }
     }
     sleep(1); 
