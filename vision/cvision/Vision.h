@@ -67,8 +67,9 @@ public:
 		  int outChannel);
   PyObject *matchList(PyObject *myList);
   PyObject *get(int w, int h);
+  PyObject *set(int offset, int r, int g, int b);
   PyObject *set(int w, int h, int r, int g, int b);
-  PyObject *set(int w, int h, int d, int val);
+  PyObject *setVal(int w, int h, int d, int val);
   PyObject *drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
   PyObject *drawCross(int x1, int y1, int length, int channel);

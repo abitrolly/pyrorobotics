@@ -1,5 +1,12 @@
 #include "Fake.h"
 
+Fake::Fake(int w, int h, int d) {
+  if (d == 3) 
+    initialize(w, h, 3, 0, 1, 2);
+  else if (d == 1)
+    initialize(w, h, 1, 0, 0, 0);
+}
+
 Fake::Fake(char filename[]) {
   int limit, w, h, num, maxval, color, d;
   PyObject *buffer, *tuple;

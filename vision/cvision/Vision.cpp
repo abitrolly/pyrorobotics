@@ -75,14 +75,28 @@ PyObject *Vision::setImage(int newImage) {
 // if d is RED, GREEN, or BLUE then set just that d; if
 // d == ALL, then set all colors to val.
 
-PyObject *Vision::set(int w, int h, int r, int g, int b) {
-  set(w, h, rgb[0], r);
-  set(w, h, rgb[1], g);
-  set(w, h, rgb[2], b);
-  return Py_BuildValue("i", 0);
+PyObject *Vision::set(int offset, int r, int g, int b) {
+  if (offset < 0 || offset >= width * height) {
+    PyErr_SetString(PyExc_ValueError, "offset, or value out-of-bounds in set()");
+    return NULL;
+  } else {
+    int value[3] = {r, g, b};
+    for (int deep = 0; deep < depth; deep++) {
+      Image[offset * depth + deep] = value[deep];
+    }
+  }
+  return Py_BuildValue("i", 1);
+  
 }
 
-PyObject *Vision::set(int w, int h, int d, int value) {
+PyObject *Vision::set(int w, int h, int r, int g, int b) {
+  setVal(w, h, rgb[0], r);
+  setVal(w, h, rgb[1], g);
+  setVal(w, h, rgb[2], b);
+  return Py_BuildValue("i", 1);
+}
+
+PyObject *Vision::setVal(int w, int h, int d, int value) {
   if (w < 0 || w >= width ||
       h < 0 || h >= height ||
       value < 0 || value >= 256) {
