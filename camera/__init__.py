@@ -142,16 +142,20 @@ class Camera(PyroImage, Device):
       return self.vision.getFilterList()
 
    def loadFilters(self):
-      # use TK file open
-      # system.loadINIT
-      # take list, and go through and addFilter
-      pass
+      import tkFileDialog, pickle
+      fileName = tkFileDialog.askopenfilename()
+      fp = open(filename, "r")
+      self.clearCallbackList()
+      self.callbackList.extend( pickle.load(fp) )
+      fp.close()
 
    def saveFilters(self):
-      # use TK file open
-      # system.loadINIT
-      # INIT() return [["match", args, ...], ["superColor", ...]]
-      pass
+      # doesn't work on arbitrary filters
+      import tkFileDialog, pickle
+      fileName = tkFileDialog.asksaveasfilename()
+      fp = open(fileName, "w")
+      pickle.dump(self.callbackList, fp)
+      fp.close()
 
    def getData(self):
       data = [0 for y in range(self.height * self.width * self.depth)]
@@ -163,7 +167,9 @@ class Camera(PyroImage, Device):
             data[(x + y * self.width) * self.depth + 2] = rgb[self.rgb[2]]
       return data
 
-   def saveImage(self, filename = "pyro-camera.ppm"):
+   def saveImage(self):
+      import tkFileDialog
+      filename = tkFileDialog.asksaveasfilename()
       # faster than saveToFile, as it is in C
       print "saving image to '%s'..." % filename,
       self.vision.saveImage(filename);
@@ -279,9 +285,9 @@ class Camera(PyroImage, Device):
 
          filterList.extend( self.makeFilterMenu(filterData) )
 
-         menu = [('File',[['Load Filters...',self.loadFilters],
-                          ['Save Filters...', self.saveFilters],
-                          None,
+         menu = [('File',[#['Load Filters...',self.loadFilters],
+                          #['Save Filters...', self.saveFilters],
+                          #None,
                           ['Save Image...', self.saveImage],
                           None,
                           ['Close',self.hideWindow] 
