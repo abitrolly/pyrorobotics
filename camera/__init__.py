@@ -5,7 +5,7 @@ from pyro.robot.service import Service
 
 import Tkinter
 import PIL.PpmImagePlugin
-import Image, ImageTk, types
+import Image, ImageTk, types, time
 
 def display(item):
    print item
@@ -92,6 +92,8 @@ class Camera(PyroImage, Service):
       self.callbackTextList = []
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
+      self.lastWindowUpdate = 0
+      self.updateWindowInterval = 1.0 # update window once a second
       self.update() # call it once to initialize
 
    def setFilterList(self, filterList):
@@ -343,6 +345,10 @@ class Camera(PyroImage, Service):
       self.window.withdraw()
       
    def updateWindow(self):
+      now = time.time()
+      if now - self.lastWindowUpdate < self.updateWindowInterval:
+         return
+      self.lastWindowUpdate = now
       self.canvas.delete("image")
       self.im = self.getImage()
       try:
