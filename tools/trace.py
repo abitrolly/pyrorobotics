@@ -28,11 +28,11 @@ class Trace:
     Trace provides a general way of displaying a path on an image.
     """
 
-    def __init__(self,
-                 worldImageFilename = "",
-                 pathDataFilename = ""):
-        self.worldImageFilename = worldImageFilename
+    def __init__(self, pathDataFilename = ""):
+        self.worldImageFilename = ""
         self.pathDataFilename = pathDataFilename
+        self.outfile = ""
+        self.window = 0
         self.app = 0
         if os.environ.has_key('PYRO'):
             path = os.environ['PYRO']
@@ -151,7 +151,8 @@ class Trace:
         self.drawSymbol((x,y), angle, int(model), data[1])
         self.updateWindow()
 
-    def output(self, outFile = "default.ppm"):
+    def output(self):
+        outFile = self.outfile
         iteration = 0
         for x, y, angle, label in self.robotPathData:
             if iteration % self.interval == 0:
@@ -164,10 +165,34 @@ class Trace:
             self.addLine(data)
 
 if __name__ == "__main__":
-    import sys
-    testTrace = Trace(sys.argv[1],sys.argv[2])
-    #testTrace = Trace("/home/dblank/pyro/experiments/colorful.gif","ffgoalposes.dat")
-    testTrace.output(sys.argv[3])
-    #testTrace.makeWindow()
-    #testTrace.run()
-    #testTrace.app.mainloop()
+    import sys, getopt
+    opts, args = getopt.getopt(sys.argv[1:], "cm:i:l:r:o:hvw", ["color", "markers", "interval", "width", "resolution", "outfile", "help", "window"])
+    tracer = Trace(sys.argv[1]) # world, data
+    for opt, val in opts:
+        if opt in ("-h", "--help"):
+            print "Help:"
+            sys.exit()
+        elif opt in ("-c", "--color"): 
+            tracer.color = 1
+        elif opt in ("-m", "--markers"): 
+            tracer.markers = int(val)
+        elif opt in ("-i", "--interval"):
+            tracer.interval = int(val)
+        elif opt in ("-l", "--length"):
+            tracer.lineLength = int(val)
+        elif opt in ("-r", "--resolution"):
+            tracer.resolution = int(val)
+        elif opt in ("-o", "--outfile"):
+            tracer.outfile = val
+        elif opt in ("-w", "--window"):
+            self.window = 1
+        elif opt in ("-v", "--view"):
+            self.view = 1
+    if tracer.outfile:
+        tracer.output()
+        if tracer.view:
+            sys.system("xview %s" % self.outfile)
+    if tracer.window:
+        tracer.makeWindow()
+        tracer.run()
+        tracer.app.mainloop()

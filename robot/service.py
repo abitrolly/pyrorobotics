@@ -19,7 +19,7 @@ class Service:
 
     def startService(self):
         self.state = "started"
-        return "Ok"
+        return self
 
     def stopService(self):
         self.state = "stopped"

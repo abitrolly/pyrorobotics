@@ -26,6 +26,7 @@ class PlayerService(Service):
         except:
             print "Device not supported: '%s'" % self.name
             self.dev = 0
+        return self
 
     def checkService(self):
         if self.dev == 0:
