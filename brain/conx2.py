@@ -1258,7 +1258,7 @@ class Network:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                      (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
@@ -1286,17 +1286,17 @@ class Network:
                 self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
             i += 1
         if self.learning and self.batch:
-            self.change_weights() # batch mode
+            self.change_weights() # batch mode, otherwise change weights in step
         return (tssError, totalCorrect, totalCount)
 
     def step(self, **args):
         """
+        Network.step()
         Does a single step. Calls propagate(), backprop(), and
         change_weights() if learning is set.
         Format for parameters: <layer name> = <activation/target list>
         
         """
-        self.preprop()
         for key in args:
             layer = self.getLayer(key)
             if layer.type == 'Input':
@@ -1309,6 +1309,17 @@ class Network:
                 layer.copyActivations(args[key])
             else:
                 raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
+        for aa in self.association:
+            (inName, outName) = aa
+            inLayer = self.getLayer(inName)
+            if not inLayer.type == 'Input':
+                raise LayerError, ('Associated input layer not type \'Input\'.', \
+                                   inLayer.type)
+            outLayer = self.getLayer(outName)
+            if not outLayer.type == 'Output':
+                raise LayerError, ('Associated output layer not type \'Output\'.', \
+                                   outLayer.type)
+            outLayer.copyTargets(inLayer.activation)
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 2 or self.interactive:
@@ -1316,10 +1327,8 @@ class Network:
             if self.interactive:
                 self.prompt()
         if self.learning and not self.batch:
-            self.change_weights()
-        self.postprop()
+            self.change_weights() # else change weights in sweep
         return (error, correct, total)
-
     def sweepCrossValidation(self):
         """
         sweepCrossValidation() will go through each of the crossvalidation input/targets.
@@ -1368,28 +1377,6 @@ class Network:
         Alternate to sweep().
         """
         return self.sweep()
-
-    # pre and post prop methods for sweep
-    def preprop(self):
-        """
-        Used to initialize auto-association.
-        """
-        for aa in self.association:
-            (inName, outName) = aa
-            inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Associated input layer not type \'Input\'.', \
-                                   inLayer.type)
-            outLayer = self.getLayer(outName)
-            if not outLayer.type == 'Output':
-                raise LayerError, ('Associated output layer not type \'Output\'.', \
-                                   outLayer.type)
-            outLayer.copyTargets(inLayer.activation)
-    def postprop(self):
-        """
-        Any necessary post propagation changes go here.
-        """
-        pass
 
     # propagation methods
     def prop_from(self, startLayers):
@@ -1769,7 +1756,7 @@ class Network:
             fp.close()
         # give some help:
         print "To load network:"
-        print "   % python -i %s " % (basename + ".py")
+        print "   %% python -i %s " % (basename + ".py")
         print "   >>> network.train() # for example"
         print "--- OR ---"
         print "   % python"
@@ -2128,49 +2115,9 @@ class SRN(Network):
         if self.contextCopying:
             self.copyHiddenToContext() # must go after error computation
         return retval
-    def step(self, **args):
-        """
-        Extends network step method by automatically copying hidden
-        layer activations to the context layer.
-        """
-        if args.has_key('clearContext'):
-            if args['clearContext']:
-                self.clearContext()
-            del args['clearContext']
-        return Network.step(self, **args)
-    def preprop(self, pattern, step):
-        """
-        Extends preprop() by adding support for clearing context layers
-        and predicting.
-        """
-        if self.sequenceLength > 1:
-            if step == 0 and self.initContext:
-                self.clearContext()
-        else: # if seq length is one, you better be doing ordered
-            if pattern == 0 and self.initContext:
-                self.clearContext()
-        Network.preprop(self, pattern, step) # must go here, consider raam example
-        for p in self.prediction:
-            (inName, outName) = p
-            inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
-            outLayer = self.getLayer(outName)
-            if not outLayer.type == 'Output':
-                raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
-            if self.sequenceLength == 1:
-                position = (pattern + 1) % len(self.inputs)
-                outLayer.copyTargets(self.inputs[position])
-            else:
-                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.inputs[pattern]))
-                self.copyTargets(outLayer, self.inputs[pattern], start)
-    def postprop(self):
-        """
-        Do any necessary post propagation here.
-        """
-        Network.postprop(self)
     def sweep(self):
         """
+        SRN.step()
         Enables sequencing over Network.sweep().
         """
         if self.loadOrder == []:
@@ -2192,7 +2139,7 @@ class SRN(Network):
             for s in range(self.sequenceLength):
                 if self.verbosity > 0 or self.interactive:
                     print "Step #", s + 1
-                self.preprop(i, s)
+                #self.preprop(i, s)
                 self.propagate()
                 if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
                     # don't update error or count
@@ -2223,6 +2170,38 @@ class SRN(Network):
             if self.learning and self.batch:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
+    def step(self, **args):
+        """
+        SRN.step()
+        Extends network step method by automatically copying hidden
+        layer activations to the context layer.
+        """
+        if args.has_key('clearContext'):
+            if args['clearContext']:
+                self.clearContext()
+            del args['clearContext']
+        #if self.sequenceLength > 1:
+        #    if step == 0 and self.initContext:
+        #        self.clearContext()
+        #else: # if seq length is one, you better be doing ordered
+        #    if self.initContext: #pattern == 0 and
+        #        self.clearContext()
+        # FIX: figure out who is going to clear context
+        for p in self.prediction:
+            (inName, outName) = p
+            inLayer = self.getLayer(inName)
+            if not inLayer.type == 'Input':
+                raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
+            outLayer = self.getLayer(outName)
+            if not outLayer.type == 'Output':
+                raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
+            if self.sequenceLength == 1:
+                position = (pattern + 1) % len(self.inputs)
+                outLayer.copyTargets(self.inputs[position])
+            else:
+                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.inputs[pattern]))
+                self.copyTargets(outLayer, self.inputs[pattern], start)
+        return Network.step(self, **args)
 
 if __name__ == '__main__':
 
@@ -2261,7 +2240,7 @@ if __name__ == '__main__':
         net.setPatterns( {"one" : [0, 0, 0], "two" :  [1, 1, 1]} )
         print net.getPattern("one")
         print net.getPattern("two")
-        print "Replacing patterns..."
+        print "Replacing patterns... (should return [0, 0, 0, 1, 1, 1])"
         print net.replacePatterns(["one", "two"])
         net.setInputs([ "one", "two" ])
         net.copyActivations(net["input"], net.inputs[0])
@@ -2778,13 +2757,13 @@ if __name__ == '__main__':
         else:
             print "No exception caught."
 
-    if ask("Do you want to test loadInput exception?"):
+    if ask("Do you want to test load exception?"):
         print "Creating a 3-3-3 network..."
         n = Network()
         n.addThreeLayers(3,3,3)
-        print "Calling loadInput()..."
+        print "Loading input..."
         try:
-            net.copyActivations(net["input"], net.inputs[0])
+            n.copyActivations(net["input"], n.inputs[0])
         except IndexError, err:
             print err
         else:
@@ -2798,7 +2777,7 @@ if __name__ == '__main__':
         n.associate('hidden','output')
         print "Attempting to associate hidden and output layers..."
         try:
-            n.preprop(0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2807,7 +2786,7 @@ if __name__ == '__main__':
         n.associate('input','hidden')
         print "Attempting to associate input and hidden layers..."
         try:
-            n.preprop(0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2819,7 +2798,7 @@ if __name__ == '__main__':
         n.predict('hidden','output')
         print "Attempting to predict hidden and output layers..."
         try:
-            n.preprop(0,0)
+            n.step()
         except LayerError, err:
             print err
         else:
@@ -2828,7 +2807,7 @@ if __name__ == '__main__':
         n.predict('input','hidden')
         print "Attempting to predict input and hidden layers..."
         try:
-            n.preprop(0,0)
+            n.step()
         except LayerError, err:
             print err
         else:
