@@ -634,8 +634,6 @@ class Network:
         for i in self.loadOrder:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
-            if self.verbosity > 0 or self.interactive:
-                print "Step #", s + 1
             self.preprop(i)
             if not self.verifyInputs():
                 raise 'MissingInputs'
