@@ -334,10 +334,16 @@ class gui:
             else:
                # ends with "Simulator"
                simDirName = simulatorName[:-9]
-               worldfile = self.fileloaddialog("worlds","*.world",
-                                               self.lastDir.get("%s-world" % simulatorName,
-                                                                "%s/plugins/worlds/%s/" %
-                                                                (pyropath, simDirName)))
+               if simulatorName == "SymbolicSimulator":
+                  worldfile = self.fileloaddialog("worlds","*.py",
+                                                  self.lastDir.get("%s-world" % simulatorName,
+                                                                   "%s/plugins/worlds/%s/" %
+                                                                   (pyropath, simDirName)))
+               else:
+                  worldfile = self.fileloaddialog("worlds","*.world",
+                                                  self.lastDir.get("%s-world" % simulatorName,
+                                                                   "%s/plugins/worlds/%s/" %
+                                                                   (pyropath, simDirName)))
                if worldfile == "":
                   return
                self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
