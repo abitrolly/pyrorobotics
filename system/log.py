@@ -12,19 +12,22 @@ class Log:
       Pass in robot and brain so that we can query them (and maybe make
       copies and query them on occation).
       """
+      timestamp = self.timestamp()
       if filename == None:
-         year,month,day,hour,minute,second,one,two,three=time.localtime()
-         filename='log-'+str(month)+'-'+str(day)+'('+str(hour)+":"+str(minute)+':'+str(second)+')'
+         filename= timestamp + '.log'
+      self.filename = filename
       self.file = open(filename,'w')
-      self.writeln("Log opened: %s/%s/%s at %s:%s:%s" %
-                   (str(month), str(day), str(year), str(hour),
-                    str(minute), str(second)))
+      self.writeln("Log opened: " + timestamp)
       if name:
-         self.writeln('Experiment name:\n' + "   " + name)
+         self.writeln('Experiment name: ' + name)
       if robot:
-         self.writeln('Robot:\n' + "   " + robot.get('robot','type'))
+         self.writeln('Robot: ' + robot.get('robot','type'))
       if brain:
-         self.writeln('Brain:\n' + "   " + brain.name)
+         self.writeln('Brain: ' + brain.name)
+
+   def timestamp(self):
+      year,month,day,hour,minute,second,one,two,three=time.localtime()
+      return '%4d-%02d-%02d:%02d:%02d:%02d' % (year, month, day, hour, minute, second)
 
    def write(self, msg):
       """ Write a string to the log """
@@ -37,9 +40,7 @@ class Log:
    def close(self):
       """ Close the log """
       year,month,day,hour,minute,second,one,two,three=time.localtime()
-      self.writeln("Log closed: %s/%s/%s at %s:%s:%s" %
-                   (str(month), str(day), str(year), str(hour),
-                   str(minute), str(second)))
+      self.writeln("Log closed: " + self.timestamp())
       self.file.close()
    
 if __name__ == '__main__':
