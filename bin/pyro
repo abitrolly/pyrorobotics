@@ -1,0 +1,196 @@
+#!/usr/bin/env python 
+
+# -----------------------------------
+# Pyro - robotics control system in Python
+
+import os 
+import sys 
+# Where are we? Compute cwd 
+# ----------------------------------------------------
+if os.name in ['nt', 'dos', 'os2']:
+    if sys.argv[0][1] == ':' and sys.argv[0][2] == '\\':
+        cwd = sys.argv[0]
+    else:
+        cwd = os.getcwd() + '\\' + sys.argv[0]
+elif os.name in ['posix']:
+    if sys.argv[0][0] == '/':
+        cwd = sys.argv[0]
+    else:
+        cwd = os.getcwd() + '/' + sys.argv[0]
+else:
+    raise AttributeError, "your OS (%s) is not supported" % os.name
+# ----------------------------------------------------
+# Add cwd to our PYTHON search path
+# ----------------------------------------------------
+(binpath,spare) = os.path.split(cwd) # peel off pyro filename
+(pyropath,spare) = os.path.split(binpath) # peel off bin dir
+(path,spare) = os.path.split(pyropath) # peel off pyro dir
+sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
+sys.path.append("/usr/local/Aria/python") # add Aria
+# ----------------------------------------------------
+# Make sure environment is setup:
+# ----------------------------------------------------
+if os.name in ['nt', 'dos', 'os2']:
+    os.environ['EDITOR'] = 'notepad'
+    os.putenv('EDITOR', 'notepad')
+    os.environ['HOME'] = pyropath
+    os.putenv('HOME', pyropath)
+    os.environ['HOSTNAME'] = os.getenv('COMPUTERNAME')
+    os.putenv('HOSTNAME', os.getenv('COMPUTERNAME'))
+elif os.name in ['posix']:
+    if os.environ.has_key('LD_LIBRARY_PATH'):
+        newlibpath = os.environ['LD_LIBRARY_PATH'] + (':' + pyropath + '/lib')
+    else:
+        newlibpath = (pyropath + '/lib')
+    os.environ['LD_LIBRARY_PATH'] = newlibpath
+    os.putenv('LD_LIBRARY_PATH', newlibpath)
+if not os.environ.has_key('PYRO'):
+    os.environ['PYRO'] = pyropath
+    os.putenv('PYRO', pyropath )
+if not os.environ.has_key('HOSTNAME'):
+    os.environ['HOSTNAME'] = 'computer'
+    os.putenv('HOSTNAME', 'computer' )
+try:
+    from pyro.system import share
+    from pyro.engine import *
+except ImportError:
+    raise "$PYTHONPATH needs to include dir ABOVE where $PYRO is installed"
+
+robotfile = 0
+devices = 0
+vars = []
+brainfile = 0
+window = 'TK'
+pyroargs = []
+simulator = 0
+configfile = 0
+worldfile = 0
+evalcommand = ""
+
+def basichelp():
+    print "You may need to define the PYRO environment variable. Try:"
+    print "         export PYRO=/usr/local/pyro"
+    print "or maybe export PYRO=~/pyro"
+    print ""
+    print "Also, make sure PYRO is in PYTHONPATH. Try:"
+    print "         export PYTHONPATH=$PYTHONPATH:$PYRO/bin"
+
+try:
+    import pyro
+except:
+    import sys
+    basichelp()
+    sys.exit(1)
+
+
+def process_options():
+    import getopt, sys, string
+    global robotfile, brainfile, window, simulator, \
+           pyroargs, configfile, evalcommand, worldfile, devices
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], \
+                                   "r:b:hg:s:a:i:e:w:d:c:v:", \
+                                   ["robot=", "brain=", "help", \
+                                    "gui=", "sim=", "args=",\
+                                    "init=", "eval=", "world=",
+                                    "devices=", "config=", "var="])
+    except getopt.GetoptError:
+        # print help information and exit:
+        pyro.system.usage()
+        sys.exit(1)
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            pyro.system.usage()
+            sys.exit(1)
+        elif o in ("-g", "--gui"):
+            window = string.upper(a)
+        elif o in ("-r", "--robot"):
+            robotfile = a
+        elif o in ("-s", "--sim"):
+            simulator = a
+        elif o in ("-b", "--brain"):
+            brainfile = a
+	elif o in ("-a", "--args"):
+            pyroargs = a
+	elif o in ("-i", "--init"):
+            configfile = a
+	elif o in ("-w", "--world", "-c", "--config"):
+            worldfile = a
+	elif o in ("-d", "--devices"):
+            devices = a
+	elif o in ("-e", "--eval"):
+            evalcommand = a
+	elif o in ("-v", "--var"):
+            vars.append( a )
+
+if pyro.startup_check():
+    import pyro.system
+    from pyro.system.config import Configuration
+    process_options()
+    c = Configuration(configfile)
+    if configfile:
+        c.put('config', 'file', configfile)
+    if not robotfile:
+        robotfile = c.get('robot', 'file')
+    else:
+        c.put('robot', 'file', robotfile)
+    if not devices:
+        devices = c.get('robot', 'devices')
+    else:
+        c.put('robot', 'devices', devices)
+    if not simulator:
+        simulator = c.get('simulator', 'file')
+    else:
+        c.put('simulator', 'file', simulator)
+    if not brainfile:
+        brainfile = c.get('brain', 'file')
+    else:
+        c.put('brain', 'file', brainfile)
+    if not worldfile:
+        worldfile = c.get('world', 'file')
+    else:
+        c.put('world', 'file', worldfile)
+    if not pyroargs:
+        pyroargs = c.get('pyro', 'args')
+    else:
+        c.put('pyro', 'args', pyroargs)
+    c.put('pyro', 'gui', window)
+    for var in vars:
+        section, variableValue = var.split(".")
+        variable, value = variableValue.split("=")
+        c.put(section, variable, value)
+    share.config = c
+    if devices == None:
+        devices = ""
+    ## need to make root here, before we load brain
+    ## in case brain has gui things
+    if window == "TK":
+        import Tkinter
+        # save it, in case we need it:
+        import pyro.system.share as share
+        if not share.gui:
+            share.gui = Tkinter.Tk()
+            share.gui.withdraw()
+    eng = Engine(robotfile, brainfile, simulator,
+                 pyroargs, c, worldfile, devices.split(",") )
+    if window == 'GL':
+        from pyro.gui.GL import GLgui
+        gui = GLgui(eng)
+        gui.win.redraw = gui.redraw
+    elif window == 'TK':
+        from pyro.gui.TK import TKgui
+        gui = TKgui(eng)
+    elif window == 'TTY':
+        gui = pyro.gui.gui("tty gui", {}, eng)
+    elif window == 'CURSES':
+        from pyro.gui.Curses import Curses as Curses
+        gui = Curses("curses gui", {}, eng)
+    if evalcommand != "":
+        evalcommand = evalcommand.split(';')
+    else:
+        evalcommand = []
+    gui.run(evalcommand)
+    gui.cleanup()
+else:
+    basichelp()
