@@ -35,8 +35,9 @@ class GLgui(gui):
       self.history_pointer = 0
 
       #store the gui structure in something nice insted of python code
+
       menu = [('File',[['Edit Brain', self.editBrain],
-                       ['Exit',self.cleanup]
+                       ['Exit',self.cleanup] 
                        ]),
               ('Simulators',[['Load...',self.loadSim]]),
               ('Robot',[['Load...',self.loadRobot],
@@ -50,10 +51,16 @@ class GLgui(gui):
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
                         ['Right',self.stepRight],
-                        ['Stop',self.stopEngine]]),
-              ('Help',[['About',system.usage]])
+                        ['Stop',self.stopEngine],
+                        ['Update',self.update]
+                        ]),
+              ('Help',[['Help',system.help],
+                       ['Usage',system.usage],
+                       ['Info',self.info],
+                       ['About',system.about]
+                       ])
               ]
-
+      
       button1 = [('Step',self.stepEngine),
                  ('Reload',self.resetEngine),
                  ('Refresh',self.refresh),
@@ -109,6 +116,11 @@ class GLgui(gui):
       self.status = StatusBar(self.frame)
       self.status.pack(side=BOTTOM, fill=X)
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def update(self):
+      if self.engine != 0:
+         if self.engine.robot != 0:
+            self.engine.robot.update()
 
    def CommandPreviousKey(self, event):
       if self.history_pointer - 1 <= len(self.history) and self.history_pointer - 1 >= 0:
@@ -172,6 +184,13 @@ class GLgui(gui):
          self.canvasBrain.create_text(xoffset + 275,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
       except:
          pass
+
+   def info(self):
+      print "-------------------------------------------------------------"
+      print "Brain file:\t%s" % self.engine.brainfile
+      print "Brain:\t\t%s" % self.engine.brain
+      print "Robot:\t\t%s" % self.engine.robot
+      print "-------------------------------------------------------------"
 
    def redrawWindowBrain(self):
       # FIX: behavior specific. How to put this in behavior code so
