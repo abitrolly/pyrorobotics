@@ -135,7 +135,13 @@ class KheperaRobot(Robot):
         console.log(console.INFO,'khepera control drivers loaded')
         self.SanityCheck()
 
-	self.update() # Khepera_UpdatePosition(self.dev)
+	self.update() 
+        self.w0 = self.senseData['position'][0]
+        self.w1 = self.senseData['position'][0]
+        self.x = 0.0
+        self.y = 0.0
+        self.thr = 0.0
+        self.th = 0.0 
         self.inform("Done loading robot.")
 
     def _draw(self, options, renderer): # overloaded from robot
@@ -151,7 +157,7 @@ class KheperaRobot(Robot):
         #renderer.xformXlate((self.get('robot', 'x'), \
         #                     self.get('robot','y'), \
         #                     self.get('robot','z')))
-        #renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
+        renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
 
         renderer.xformXlate(( 0, 0, .09))
         renderer.torus(.12, .12, 12, 24)
@@ -267,7 +273,6 @@ class KheperaRobot(Robot):
 
     def connect(self):
         pass
-        #Khepera_Localize(0.0, 0.0, 0.0)
 
     def disconnect(self):
         self.stop()
@@ -311,7 +316,39 @@ class KheperaRobot(Robot):
         self.sendMsg('H', 'position')
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
+        self.deadReckon()
 
+    def deadReackon(self):
+        """ Called after each little update in positions """
+        # get wheel positions:
+        w0 = self.senseData['position'][0]
+        w1 = self.senseData['position'][1]
+        if w0 == self.w0 and w1 == self.w1:
+            return
+        # get diff:
+        delta_w0 = w0 - self.w0
+        delta_w1 = w1 - self.w1
+        # get diff / diameter of wheel base, in mm:
+        delta_th   = (delta_w1 - delta_w0) / 644.5
+        # average diff (dist):
+        delta_dist = (delta_w0 + delta_w1) / 2.0
+        # compute change in x, y:
+        delta_x = delta_dist * math.cos(self.thr + delta_th/2.0)
+        delta_y = delta_dist * math.sin(self.thr + delta_th/2.0)
+        if delta_th != 0:
+            delta_x *= (2.0 * math.cos(delta_alpha/2.0) / delta_th)
+            delta_y *= (2.0 * math.sin(delta_alpha/2.0) / delta_th)
+        # keep in range 0 - 2pi:
+        while (self.thr > 2.0 * math.pi):
+            self.thr -= (2.0 * math.pi)
+        while (self.thr < 0):
+            self.thr += (2.0 * math.pi)
+        # update everything:
+        self.w0 = w0
+        self.w1 = w1
+        self.x += delta_x
+        self.y += delta_y
+        self.th = self.thr * (math.pi / 180.0)
 
     def isStall(self, dev):
         if self.senseData['stall'][2] > 3 or self.senseData['stall'][5] > 3:
@@ -320,20 +357,20 @@ class KheperaRobot(Robot):
             return 0
 
     def getX(self, dev):
-        return 0.0
+        return self.x
     
     def getY(self, dev):
-        return 0.0
+        return self.y
     
     def getZ(self, dev):
         return 0
     
     def getTh(self, dev):
-        return 0
-    
-    def getThr(self, dev):
-        return 0
-    
+        return self.th
+
+    def getTh(self, dev):
+        return self.thr
+
     def getIRMaxRange(self, dev):
         return self.rawToUnits(dev, 60.0, 'ir')
 
@@ -453,8 +490,11 @@ class KheperaRobot(Robot):
         dev.lastRotate = value
         dev.adjustSpeed()
     
-    def localize(self):
-        pass
+    def localize(self, x, y, thr):
+        self.x = x
+        self.y = y
+        self.thr = thr
+        self.th = self.thr * (math.pi / 180.0)
     
 if __name__ == '__main__':
     x = KheperaRobot()
