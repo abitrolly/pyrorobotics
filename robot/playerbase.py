@@ -49,7 +49,7 @@ class PlayerService(Service):
     def getPose(self):
         function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
         if function != None:
-            function(self.dev)
+            return function(self.dev)
         else:
             raise ServiceError, "Function 'getPose' is not available for service '%s'" % self.name
 
@@ -57,7 +57,7 @@ class PlayerService(Service):
     def setPose(self, xMM, yMM, thDeg):
         function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
         if function != None:
-            function( self.dev, xMM, yMM, thDeg)
+            return function( self.dev, xMM, yMM, thDeg)
         else:
             raise ServiceError, "Function 'setPose' is not available for service '%s'" % self.name
 
