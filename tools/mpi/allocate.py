@@ -24,6 +24,14 @@ class TestTask:
 def sampleTaskList(size):
     return [TestTask() for x in range(size)]
 
+class TaskWrapper:
+    def __init__(self, *args, **keywords):
+        self.args = args
+        self.keywords = keywords
+    def run(self):
+        e = Experiment(*self.args, **self.keywords)
+        return e.run()
+
 class TaskAllocator:
     """ Generic class to deal out tasks. """
     def __init__(self, taskList):
