@@ -34,18 +34,15 @@ PyObject *Blob::updateMMap(PyObject *blobData) {
     PyErr_SetString(PyExc_TypeError, "Invalid tuple to updateMMap()");
     return NULL;
   }
-  long int packedcolor, area, center_x, center_y, 
+  long int packedcolor, area;
+  int center_x, center_y, 
     left, right, top, bottom, dist;
   for (int i = 0; i < PyTuple_Size(blobData); i++) {
     PyObject *blobTuple = PyTuple_GetItem(blobData, i);
     // for each blob:
-    printf("blobs: %d\n", PyTuple_Size(blobTuple));
     for (int blobcount = 0; blobcount < PyTuple_Size(blobTuple); blobcount++) {
-      if (!PyArg_ParseTuple(blobTuple, "O", &blob)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid tuple to updateMMap()");
-	return NULL;
-      }
-      if (!PyArg_ParseTuple(blob, "lllllllll", 
+      blob = PyTuple_GetItem(blobTuple, blobcount);
+      if (!PyArg_ParseTuple(blob, "lliiiiiii", 
 			    &packedcolor, &area, &center_x, &center_y, \
 			    &left, &right, &top, &bottom, &dist)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid items to updateMMap()");

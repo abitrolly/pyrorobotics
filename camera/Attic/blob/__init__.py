@@ -17,22 +17,6 @@ class BlobCamera(Camera):
       else:
          raise "didn't load blob camera"
       self.depth = depth
-      self.colorpos = { (255, 255, 255) : 0,
-                        (255, 0, 0): 1,
-                        (0, 255, 0) : 2, 
-                        (0, 0, 255) : 3,
-                        (0, 255, 255) : 4,
-                        (255, 255, 0) : 5, 
-                        (255, 0, 255) : 6, 
-                        (0, 0, 0) : 7}
-      self.colorpal = [ (255, 255, 255), 
-                        (255, 0, 0),
-                        (0, 255, 0),
-                        (0, 0, 255),
-                        (0, 255, 255),
-                        (255, 255, 0),
-                        (255, 0, 255),
-                        (0, 0, 0) ]      
       self.interval = interval
       self.lastUpdate = 0
       self.cameraDevice = Blob(self.width, self.height,
