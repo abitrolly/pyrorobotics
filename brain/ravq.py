@@ -1,6 +1,6 @@
 import Numeric, math
 
-version = '1.2'
+version = '1.3'
 
 # general functions
 def averageVector(V):
@@ -615,6 +615,60 @@ class ARAVQ(RAVQ):
         RAVQ.process(self)
         self.updateDeltaWinner()
         self.learn()
+
+class ExperimentalRAVQ(ARAVQ):
+    """
+    Depart from the approach by Fredrik Linaker and Lars
+    Niklasson. Use the current input to determine the winning model
+    vector instead of the moving average. The moving average is only
+    used to create model vectors in this case.
+    """
+    def input(self, vec):
+        """
+        Update current input each time input is called to be used to
+        calculate winner.
+        """
+        self.currentInput = Numeric.array(vec)
+        ARAVQ.input(self, vec)
+    def updateWinner(self):
+        """
+        Update winner based on the current input and not the moving average.
+        """
+        min = []
+        for m in self.models:
+            min.append(euclideanDistance(m, self.currentInput, self.mask))
+        if min == []:
+            self.winner = 'No Winner'
+        else:
+            self.previousWinnerIndex= self.newWinnerIndex
+            self.newWinnerIndex = Numeric.argmin(min)
+            if self.previousWinnerIndex == self.newWinnerIndex:
+                self.winnerCount += 1
+            else:
+                self.winnerCount = 0
+                if len(self.winnerIndexHistory) < len(self.models):
+                    self.winnerIndexHistory.append(self.newWinnerIndex)
+                else:
+                    self.winnerIndexHistory = self.winnerIndexHistory[1:] + \
+                                         [self.newWinnerIndex]
+            self.winner = self.models[self.newWinnerIndex]
+            self.counters[self.newWinnerIndex] += 1
+            self.totalCount += 1
+    def updateHistory(self):
+        """
+        Record a history of where inputs map.
+        """
+        if self.recordHistory and self.winner != 'No Winner':
+            # new model vector so we initialize new history list
+            if len(self.history) < len(self.models):
+                self.history.append(self.currentInput)
+            # previous model vector, but corresponding history list is not full
+            elif len(self.history[self.newWinnerIndex]) < self.historySize:
+                self.history[self.newWinnerIndex].append(self.currentInput)
+            # previous model vector, history list is full
+            else:
+                self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
+                                                    [self.currentInput]
         
 if __name__ == '__main__':
             
