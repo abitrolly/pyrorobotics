@@ -118,6 +118,14 @@ class RAVQ:
       
     # update the RAVQ
     def input(self, vec):
+        """
+        Drives the ravq. For most uses, the vector categorization
+        is as simple as calling ravq.input(vec) on all vec in the
+        dataset. Accessing the winning model vector (after the buffer
+        is full) can be done directly. Using the get commands after
+        calling input will return any information necessary from the
+        ravq.
+        """
         array = Numeric.array(vec, 'd')
         if self.time < self.size:
             self.buffer.append(array)
@@ -134,39 +142,80 @@ class RAVQ:
 
     # attribute methods
     def getNewWinner(self):
+        """
+        Returns boolean depending on whether or not there is a new
+        winner after the last call to input.
+        """
         if self.winnerCount > 0:
             return 0
         else:
             return 1
     def setMask(self, mask):
+        """
+        The mask serves to weight certain components of the inputs in
+        the distance calculations.
+        """
         self.mask = Numeric.array(mask, 'd')
     def getWinnerCount(self):
+        """
+        Returns the number of times the current winner has been the
+        winner, ie. the number of consecutive calls to input where the
+        current winner has been the winner.
+        """
         return self.winnerCount
     def getHistorySize(self):
+        """
+        Sets the size of each history list associated with a model
+        vector. Records the previous inputs that mapped to that model
+        vector, up to historySize.
+        """
         return self.historySize
     def getHistoryLength(self):
+        """
+        Returns the total length of all histories as if history were a
+        flat list.
+        """
         # used to limit flat searches of history with getHistory()
         return self.historySize * len(self.history) 
     def getHistory(self, index):
+        """
+        Index into history as if history were a flat list. Note that
+        this method iterates across columns.
+        """
         # index into self.history, index into self.history[i], check this logic?
         i,j = index % len(self.history), index / len(self.history)
         return self.history[i][j]
     def getWinnerTotalCount(self):
+        """
+        Get the total number of times the current winner has been a
+        winner (not consecutive).
+        """
         if self.counters == []:
             return 0
         else:
             return self.counters[self.newWinnerIndex]
     def getMinimumCount(self):
+        """
+        Get the minimum count that any model vector has, i.e. the
+        minimum number of times any model vector has won.
+        """
         if self.counters == []:
             return 0
         else:
             return self.counters[Numeric.argmin(self.counters)]
     def getMinimumVector(self):
+        """
+        Get the minimum model vector, i.e. the model vector that has
+        won the least amount of times.
+        """
         if self.models == []:
             return []
         else:
             return self.models[Numeric.argmin(self.counters)]
     def getTotalCount(self):
+        """
+        Total number of times a winner has been calculated.
+        """
         if self.counters == []:
             return 0
         else:
@@ -489,10 +538,14 @@ if __name__ == '__main__':
     ravq = ARAVQ(4, 2.1, 1.1, .2)
     ravq.setHistory(1)
     cnt = 0
-    ravq.setMask([8,8,1,1,1,1,1,1])
+    ravq.setMask([1,0,0,0,1,0,0,0])
     for bits in bitlist:
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
         cnt += 1
 
     print ravq
+    print ravq.mask
+    print euclideanDistance(Numeric.array([1,2]),
+                            Numeric.array([3,5]),
+                            Numeric.array([1,0]))
