@@ -2089,14 +2089,14 @@ class SRN(Network):
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
 
-try:
-    import psyco
-    psyco.bind(Layer)
-    psyco.bind(Connection)
-    psyco.bind(Network)
-    print "Psyco is installed: running pyro.brain.conx at psyco speed..."
-except:
-    pass
+#try:
+#    import psyco
+#    psyco.bind(Layer)
+#    psyco.bind(Connection)
+#    psyco.bind(Network)
+#    print "Psyco is installed: running pyro.brain.conx at psyco speed..."
+#except:
+#    pass
 
 if __name__ == '__main__':
 

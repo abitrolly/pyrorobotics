@@ -26,7 +26,7 @@ class TKgui(gui):
       self.genlist = 0
       self.win = Tkinter.Toplevel()
       self.frame = Tkinter.Frame(self.win)
-      self.frame.pack(side = 'top')
+      self.frame.pack(side = 'bottom', expand = "yes", anchor = "n", fill = 'both')
       self.windowBrain = 0
       self.lastRun = 0
       self.history = []
@@ -98,21 +98,11 @@ class TKgui(gui):
       self.commandEntry.bind('<Up>', self.CommandPreviousKey)
       self.commandEntry.bind('<Down>', self.CommandNextKey)
       self.commandEntry["relief"] = "ridge"
-      self.commandEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
+      self.commandEntry.pack({'expand':'yes', 'side':'bottom', 'fill':'x'})
 
       # create a status bar
       #self.status = TKwidgets.StatusBar(self.frame)
       #self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
-
-      self.textframe = Tkinter.Frame(self.frame)
-      self.status = Tkinter.Text(self.textframe, height= 16,
-                                 width = 60, state='disabled', wrap='word')
-      self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
-      self.status.configure(yscrollcommand=self.scrollbar.set)
-      
-      self.scrollbar.pack(side="right", fill="y")
-      self.status.pack(side=Tkinter.LEFT, fill=Tkinter.X)
-      self.textframe.pack(side = "bottom", fill = "x")
 
       # Display:
       self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld),
@@ -124,16 +114,30 @@ class TKgui(gui):
       self.textArea = {}
       for item in self.loadables:
          self.makeRow(item)
+
       self.buttonArea["Robot:"]["state"] = 'normal'
       self.buttonArea["Simulator:"]["state"] = 'normal'
       ## ----------------------------------
       toolbar = Tkinter.Frame(self.frame)
-      toolbar.pack(side=Tkinter.TOP, fill='both', expand = 1)
-#      Tkinter.Label(toolbar, text="Brain:").pack(side="left")
       for b in button1:
-         self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],width=6,command=b[1])
-         self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
+         self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],command=b[1])
+         self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = "yes", anchor="n")
+
+      toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "yes")
+      #self.makeRow(('status', 'Pose:', '', ''))
+      ## ----------------------------------
       self.makeRow(('status', 'Pose:', '', ''))
+      ## ----------------------------------
+      self.textframe = Tkinter.Frame(self.frame)
+      self.status = Tkinter.Text(self.textframe, 
+                                 state='disabled', wrap='word')
+      self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
+      self.status.configure(yscrollcommand=self.scrollbar.set)
+      
+      self.scrollbar.pack(side="right", fill="y")
+      self.status.pack(side=Tkinter.LEFT, fill="both")
+      self.textframe.pack(side = "bottom", anchor = "nw", fill = "both")
+      
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
 
@@ -142,15 +146,15 @@ class TKgui(gui):
       tempframe = Tkinter.Frame(self.frame)
       if type == 'button':
          self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
-                                                 width=10, command = loadit,
+                                                 width = 10, command = loadit,
                                                  state='disabled')
-         self.textArea[load] = Tkinter.Button(tempframe, width=55,command=editit, justify="right", state='disabled')
+         self.textArea[load] = Tkinter.Button(tempframe, command=editit, justify="right", state='disabled')
       elif type == 'status':
          self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
-         self.textArea[load] = Tkinter.Label(tempframe, width=55, justify="left")
-      self.buttonArea[load].pack(side=Tkinter.LEFT)
-      self.textArea[load].pack(side=Tkinter.RIGHT, fill="x")
-      tempframe.pack(side = "top", anchor = "n", fill = "x")
+         self.textArea[load] = Tkinter.Label(tempframe, justify="left")
+      self.buttonArea[load].pack(side=Tkinter.LEFT, fill = "none", expand = "no", anchor="n")
+      self.textArea[load].pack(side=Tkinter.RIGHT, fill="x", expand = "yes", anchor="n")
+      tempframe.pack(side = "top", anchor = "s", fill = "x")
 
    def redirectToWindow(self):
       # --- save old sys.stdout, sys.stderr

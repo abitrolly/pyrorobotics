@@ -13,6 +13,11 @@ from time import sleep
 
 from pyro.simulators.khepera.CNTRL import _ksim as ksim
 
+PIOVER180 = pi / 180.0
+DEG90RADS = 0.5 * pi
+COSDEG90RADS = math.cos(DEG90RADS) / 1000.0
+SINDEG90RADS = math.sin(DEG90RADS) / 1000.0
+
 class SerialSimulator:
     def __init__(self):
         self.p = ksim.initControl()
@@ -406,10 +411,12 @@ class KheperaRobot(Robot):
         return (stalls / self.stallHistorySize) > 0.5
 
     def getX(self, dev):
-        return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
+        #return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
+        return self.x / 1000.0
     
     def getY(self, dev):
-        return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
+        #return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
+        return self.y / 1000.0
     
     def getZ(self, dev):
         return 0
@@ -541,11 +548,11 @@ class KheperaRobot(Robot):
         dev.lastRotate = value
         dev.adjustSpeed()
     
-    def localize(self, x = 0.0, y = 0.0, thr = 0.0):
-        self.x = x
-        self.y = y
-        self.thr = thr
-        self.th = self.thr * (180.0 / math.pi)
+    def localize(self, x = 0.0, y = 0.0, th = 0.0):
+        self.x = x * 1000
+        self.y = y * 1000
+        self.th = th
+        self.thr = self.th * PIOVER180
     
 if __name__ == '__main__':
     x = KheperaRobot()
