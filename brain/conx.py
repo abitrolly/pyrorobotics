@@ -30,7 +30,7 @@ def randomArray(size, max):
 # better to use array.tolist()
 def toArray(thing):
     """
-    Converts any sequence thing (such as a NumericArray) to a Python List.
+    Converts any sequence (such as a NumericArray) to a Python List.
     """
     return [x for x in thing]
 
@@ -127,7 +127,7 @@ class Layer:
         self.activationSet = 0
     def randomize(self):
         """
-        Initialize node biases to random values.
+        Initialize node biases to random values in the range [-max, max].
         """
         self.bias = randomArray(self.size, self.maxRandom)
 
@@ -143,12 +143,12 @@ class Layer:
     # modify layer methods
     def setActive(self, value):
         """
-        Sets self.active to value.
+        Sets layer to active or inactive. Layers must be active to propagate activations.
         """
         self.active = value
     def getActive(self):
         """
-        Returns the value of self.active.
+        Used to determine if a layer is active or inactive.
         """
         return self.active
     def changeSize(self, newsize):
@@ -310,17 +310,16 @@ class Layer:
         return self.activation.tolist()
     def getActivations(self):
         """
-        Returns activations in array form.
+        Returns node activations in (Numeric) array form.
         """
         return self.activation
     def setActivations(self, value):
         """
-        Sets all activations to the value of the argument.
+        Sets all activations to the value of the argument. Value should be in the range [0,1].
         """
         if not self.activationSet == 0:
             raise LayerError, \
-                  ('Activation flag not reset before call to setActivations()', \
-                   self.activationSet)
+                  ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
         if (value < 0 or value > 1) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
@@ -328,7 +327,7 @@ class Layer:
     def copyActivations(self, arr):
         """
         Copies activations from the argument array into
-        self.activation.
+        layer activations.
         """
         array = Numeric.array(arr)
         if not len(array) == self.size:
@@ -352,12 +351,12 @@ class Layer:
         return self.target.tolist()
     def getTargets(self):
         """
-        Return targets in array form.
+        Return targets in (Numeric) array form.
         """
         return self.target
     def setTargets(self, value):
         """
-        Sets all targets the the value of the argument.
+        Sets all targets the the value of the argument. This value must be in the range [0,1].
         """
         if not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
@@ -409,7 +408,7 @@ class Connection:
     # constructor and initialization methods
     def __init__(self, fromLayer, toLayer):
         """
-        Constructor for Connection class. Takes names of source and
+        Constructor for Connection class. Takes instances of source and
         destination layers as arguments.
         """
         self.epsilon = 0.1
@@ -429,7 +428,7 @@ class Connection:
                                   self.toLayer.size), 'f')
     def randomize(self):
         """
-        Sets weights to initial random values.
+        Sets weights to initial random values in the range [-max, max].
         """
         self.weight = randomArray((self.fromLayer.size, \
                                    self.toLayer.size),
@@ -547,7 +546,8 @@ class Connection:
     # parameter methods
     def setEpsilon(self, value):
         """
-        Sets self.epsilon to value.
+        Sets self.epsilon to value. Used in back-propagation to determine
+        the amount by which a weight's value should be changed.
         """
         self.epsilon = value
     def setSplitEpsilon(self, value):
@@ -698,7 +698,7 @@ class Network:
         self.connect('hidden', 'output')
     def changeLayerSize(self, layername, newsize):
         """
-        Changes layer size.
+        Changes layer size. Newsize must be greater than zero.
         """
         # for all connection from to this layer, change matrix:
         for connection in self.connections:
@@ -710,7 +710,7 @@ class Network:
         self.getLayer(layername).changeSize(newsize)
     def freeze(self, fromName, toName):
         """
-        Freezes a connection between two layers.
+        Freezes a connection between two layers. Weights for the connection will not be changed during learning.
         """
         for connection in self.connections:
             if connection.fromLayer.name == fromName and \
@@ -718,7 +718,7 @@ class Network:
                 connection.frozen = 1
     def unFreeze(self, fromName, toName):
         """
-        unFreezes a connection between two layers.
+        unFreezes a connection between two layers.Weights for the connection will be changed during learning.
         """
         for connection in self.connections:
             if connection.fromLayer.name == fromName and \
@@ -736,7 +736,7 @@ class Network:
     def initialize(self):
         """
         Initializes network by calling Connection.initialize() and
-        Layer.initialize().
+        Layer.initialize(). self.count is set to zero.
         """
         self.count = 0
         for connection in self.connections:
@@ -753,7 +753,7 @@ class Network:
     # set and get methods for attributes
     def getLayer(self, name):
         """
-        Returns the layer with name.
+        Returns the layer with the argument (string) name.
         """
         return self.layersByName[name]
     def setPatterned(self, value):
@@ -828,7 +828,7 @@ class Network:
         RandomArray.seed(int(self.seed1), int(self.seed2))
     def getConnection(self, lfrom, lto):
         """
-        Returns the connections between two layers.
+        Returns the connection instance connecting the specified (string) layer names.
         """
         for connection in self.connections:
             if connection.fromLayer.name == lfrom and \
@@ -844,7 +844,7 @@ class Network:
             layer.verbosity = value
     def setStopPercent(self, value):
         """
-        Sets self.stopPercent to value.
+        Sets self.stopPercent to value. train() will stop if the percent correct surpasses the stop percent.
         """
         self.stopPercent = value
     def setSigmoid_prime_offset(self, value):
@@ -859,22 +859,22 @@ class Network:
         self.split_epsilon = value
     def setReportRate(self, value):
         """
-        Sets self.reportRate to value.
+        Sets self.reportRate to value. train() will report when epoch % reportRate == 0.
         """
         self.reportRate = value
     def setSeed1(self, value):
         """
-        Sets seed1 to value.
+        Sets seed1 to value. Does not initialize the random number generator.
         """
         self.seed1 = value
     def setSeed2(self, value):
         """
-        Sets seed2 to value.
+        Sets seed2 to value. Does not initialize the random number generator.
         """
         self.seed2 = value
     def setMaxRandom(self, value):
         """
-        Sets the maxRandom Layer attribute for each layer to value.
+        Sets the maxRandom Layer attribute for each layer to value.Specifies the global range for randomly initialized values, [-max, max].
         """
         for layer in self.layers:
             layer.maxRandom = value
@@ -894,7 +894,7 @@ class Network:
             connection.setEpsilon(value)
     def getWeights(self, fromName, toName):
         """
-        Gets the weights of the connection between two layers.
+        Gets the weights of the connection between two layers (argument strings).
         """
         for connection in self.connections:
             if connection.fromLayer.name == fromName and \
@@ -904,12 +904,15 @@ class Network:
     def setOrderedInputs(self, value):
         """
         Sets self.orderedInputs to value. Specifies if inputs
-        should be ordered.
+        should be ordered and if so orders the inputs.
         """
         self.orderedInputs = value
         if self.orderedInputs:
             self.loadOrder = range(len(self.inputs))
     def verifyArguments(self, arg):
+        """
+        Verifies that arguments to setInputs and setTargets are appropriately formatted.
+        """
         for l in arg:
             if not type(l) == list and \
                not type(l) == type( RandomArray.random(1) ) and \
@@ -921,8 +924,7 @@ class Network:
         return 1
     def setInputs(self, inputs):
         """
-        Sets self.input to inputs. self.loadOrder is initalized by not
-        random.
+        Sets self.input to inputs. Load order is by default random. Use setOrderedInputs() to order inputs.
         """
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
@@ -1043,10 +1045,10 @@ class Network:
         inputLayerFlag = 1
         # must have layers and connections
         if len(self.layers) == 0:
-            raise NetworkError, ('No network layers but propagate() was called.', \
+            raise NetworkError, ('No network layers.', \
                                  self.layers)
         if len(self.connections) == 0:
-            raise NetworkError, ('No network connections but propagate() was called.', \
+            raise NetworkError, ('No network connections.', \
                                  self.connections)
         # layers should not have the same name
         for x, y in [(x, y) for x in range(len(self.layers)) for y in range(len(self.layers))]:
@@ -1173,7 +1175,7 @@ class Network:
     def train(self):
         """
         Trains the network on the dataset till a stopping condition is
-        met.
+        met. This stopping condition can be a limiting epoch or a percentage correct requirement.
         """
         # check architecture
         self.verifyArchitecture()
@@ -1209,10 +1211,10 @@ class Network:
         Runs through entire dataset. Must call setInputs(),
         setTargets(), and associate() methods to initialize all inputs
         and targets for the entire dataset before calling
-        sweep(). Returns TSS error, total correct, and total count.
+        propagate() and backprop() (possibly without learning). Returns TSS error, total correct, and total count.
         """
         if self.loadOrder == []:
-            raise NetworkError, ('loadOrder is empty but sweep() was called.', self.loadOrder)
+            raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
@@ -1356,7 +1358,7 @@ class Network:
         self.count += 1 # counts number of times propagate() is called
     def activationFunction(self, x):
         """
-        Determines the activation.
+        Determine the activation of a node based on that nodes net input.
         """
         return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
         
@@ -1373,7 +1375,7 @@ class Network:
     def change_weights(self):
         """
         Changes the weights according to the error values calaculated
-        during backprop().
+        during backprop(). Learning must be set.
         """
         for connection in self.connections:
             if not connection.frozen:
@@ -1687,7 +1689,7 @@ class Network:
     def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
                            delim = ' '):
         """
-        Loads inputs from file. We lose patterning.
+        Loads inputs from file. Patterning is lost.
         """
         self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
         self.loadOrder = range(len(self.inputs))
@@ -1720,7 +1722,7 @@ class Network:
             fp.write("\n")
     def saveDataToFile(self, filename):
         """
-        Saves data to file.
+        Saves data (targets/inputs) to file.
         """
         fp = open(filename, 'w')
         for i in range(len(self.inputs)):
@@ -1739,7 +1741,7 @@ class Network:
             fp.write("\n")
     def loadDataFromFile(self, filename, ocnt = -1):
         """
-        Loads data from file.
+        Loads data (targets/inputs) from file.
         """
         if ocnt == -1:
             ocnt = int(self.layers[len(self.layers) - 1].size)
@@ -1883,7 +1885,7 @@ class SRN(Network):
     # constructor
     def __init__(self):
         """
-        Constructor for SRN sub-class.
+        Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self)
         self.sequenceLength = 1
@@ -1963,7 +1965,7 @@ class SRN(Network):
             if self.verbosity > 2: print 'Context layer after copy: ', item[1].activation
     def clearContext(self, value = .5):
         """
-        Clears the context layer. 
+        Clears the context layer by setting context layer to (default) value 0.5. 
         """
         for context in self.contextLayers.values():
             context.resetFlags() # hidden activations have already been copied in
@@ -2028,7 +2030,7 @@ class SRN(Network):
         Enables sequencing over Network.sweep().
         """
         if self.loadOrder == []:
-            raise SRNError, ('loadOrder is empty but sweep() was called.', self.loadOrder)
+            raise SRNError, ('No loadOrder. Make sure inputs are properly set.', self.loadOrder)
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
