@@ -19,7 +19,7 @@ X11_DIR = /usr/X11
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYRO_VERSION = 0.8.6
+PYRO_VERSION = 0.8.7
 PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean cleanall all
