@@ -56,10 +56,10 @@ class Camera(PyroImage, Service):
 
    def makeWindow(self):
       if self.app != 0:
-         self.window.wm_state('normal')
+         self.window.deiconify()
       else:
          self.app = Tkinter.Tk()
-         self.app.wm_state('withdrawn')
+         self.app.withdraw()
          self.window = Tkinter.Toplevel()
          self.window.wm_title("Camera View")
          self.im = self.getImage()
@@ -72,7 +72,7 @@ class Camera(PyroImage, Service):
 
    def hideWindow(self):
       self.visible = 0
-      self.window.wm_state('withdrawn')
+      self.window.withdraw()
       
    def updateWindow(self):
       self.im = self.getImage()
