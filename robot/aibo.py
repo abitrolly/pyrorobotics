@@ -67,6 +67,7 @@ class Listener:
     def write(self, message):
         retval = self.s.send(message)
         return retval
+        
 
 class ListenerThread(threading.Thread):
     """
@@ -192,6 +193,8 @@ class AiboHeadDevice(Device):
     def center(self):
         return self.setPose(0, 0, 0, 0)
 
+
+
 class AiboRobot(Robot):
     """
     Class for an Aibo robot in Pyro. 
@@ -204,6 +207,7 @@ class AiboRobot(Robot):
             "Raw Cam Server": 10011,
             "Seg Cam Server": 10012,
             "Main Control": 10020,
+            "Joint Writer": 10051
             }
     def __init__(self, host):
         Robot.__init__(self)
@@ -482,6 +486,16 @@ class AiboRobot(Robot):
         time.sleep(2)
         self.walk_control     = Listener(self.PORT["Walk Remote Control"],
                                          self.host) # walk command
+
+    def setPose(self, joint, amt):
+        soc = Listener(self.PORT["Joint Writer"], self.host)
+        time.sleep(1)
+        list = self.devData["sensorRaw"]
+        print "setPose"
+        if joint == "jaw":
+            list[17] = amt
+        soc.write(struct.pack(f,list))
+        print "wrote ", list
 
 #TODO:
 
