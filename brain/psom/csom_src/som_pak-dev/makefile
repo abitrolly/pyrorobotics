@@ -23,7 +23,7 @@ UMATOBJS=umat.o map.o median.o header.o
 OTHERFILES=header.ps
 
 
-all:: test_devrobs vcal mapinit vsom qerror randinit lininit visual sammon planes vfind umat
+all::  vcal mapinit vsom qerror randinit lininit visual sammon planes vfind umat
 
 test_devrobs:	test_devrobs.o $(OBJS) vsom
 	$(LD) $(LDFLAGS) -o $@ test_devrobs.o $(OBJS) $(LDLIBS)
