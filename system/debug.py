@@ -45,14 +45,14 @@ class PyroDebugger(code.InteractiveConsole):
                 pointer = ">"
             else:
                 pointer = " "
-            nameFormat = ("%" + ("%d" % (maxFuncName + 2))) + "s"
+            nameFormat = ("%-" + ("%d" % (maxFuncName + 2))) + "s"
             print (" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es)
             c += 1
         print
 
     def displayHelp(self):
-        print "Commands: up, down, top, bottom, help, quit, <CONTROL+D> to continue"
-        print "          or any Python expression. Try: dir() for current stack vars."
+        print "Commands: up, down, top, bot, help, quit, edit; <CONTROL+D> to continue"
+        print "          or any Python expression.  Try: dir() for current stack vars."
 
     def init_history(self, histfile):
         readline.parse_and_bind("tab: complete")
@@ -75,7 +75,7 @@ class PyroDebugger(code.InteractiveConsole):
         return code.InteractiveConsole.raw_input(self, prompt)
 
     def push(self, line):
-        if line in ["up", "down", "top", "bottom"]:
+        if line in ["up", "down", "top", "bot"]:
             if line == "up":
                 self.currentPos -= 1
             elif line == "down":
@@ -92,6 +92,15 @@ class PyroDebugger(code.InteractiveConsole):
             return
         if line == "quit":
             sys.exit(1)
+        elif line == "help":
+            self.displayHelp()
+            return
+        elif line == "edit":
+            a_es, b_es, c_es, d_es = self.stack[self.currentPos]
+            fileName = a_es
+            lineNumber =  b_es
+            os.system("emacs +%s %s &" % (lineNumber, fileName))
+            return
         return code.InteractiveConsole.push(self, line)
 
 def handler(signum, frame):
