@@ -10,17 +10,24 @@ import math
 import termios
 from time import sleep
 
+from pyro.plugins.simulators import ksim
+
 class SerialSimulator:
     def __init__(self):
+        self.p = ksim.initControl()
         self.last_msg = ''
         
     def writeline(self, msg):
         #if len(msg) > 2:
         #    print msg
-        self.last_msg = msg
+        print msg
+        self.last_msg = ksim.sendMessage(self.p, msg)
+        sleep(.1)
+        print self.last_msg
+        #self.last_msg = msg
 
     def readline(self): # 1 = block till we get something
-        return self.last_msg + ',0,0,0,0,0,0,0,0'
+        return self.last_msg #+ ',0,0,0,0,0,0,0,0'
     
 class KheperaRobot(Robot):
     def __init__(self, name = None, simulator = 0): # 0 makes it real
@@ -290,6 +297,7 @@ class KheperaRobot(Robot):
             try:
                 self.sc.writeline(msg)
                 retval = self.sc.readline() # 1 = block till we get something
+                print retval
                 if retval[0].upper() == msg[0]:
                     done = 1
                 else:
