@@ -54,7 +54,7 @@ class edge (State):
         print "EDGE: actual = (%f, %f) start = (%f, %f); dist = %f" \
               % (x, y, self.startX, self.startY, dist)
         if self.robot.get("robot/stall"):
-            self.push("edge")
+            self.push()
             self.goto('stuck')
         elif dist > 1.0:
             self.goto('turn')
@@ -70,7 +70,8 @@ class turn (State):
         th = self.robot.get('robot', 'th')
         print "TURN: actual = %f start = %f" % (th, self.th)
         if self.robot.get("robot/stall"):
-            self.push("turn")
+            self.push() # current statename is default;
+            # can also take another statename to return to
             self.goto('stuck')
         elif angleAdd(th, - self.th) > 90: 
             self.goto('edge')

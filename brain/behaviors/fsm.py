@@ -126,7 +126,9 @@ class State:
    def set(self, path, value):
       return self.robot.set(path, value)
 
-   def push(self, statename):
+   def push(self, statename = None):
+      if statename == None:
+         statename = self.name
       if statename not in self.brain.states:
          raise AttributeError, "push: not a valid state name '%s'" % statename
       self.brain.stack.append( statename )
