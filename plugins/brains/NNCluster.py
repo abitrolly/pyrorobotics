@@ -25,7 +25,7 @@ class NNBrain(Brain):
       """ Ceate the network. """
       self.net = Network()
       self.hiddenLayerSize = 10
-      self.net.addThreeLayers(self.getRobot().get('range', 'count'),
+      self.net.addThreeLayers(self.robot.get('robot/range/count'),
                               self.hiddenLayerSize, 2)
       self.net.setBatch(0)
       self.net.initialize()
@@ -33,12 +33,12 @@ class NNBrain(Brain):
       self.net.setMomentum(.1)
       self.net.setLearning(1)
       self.counter = 0
-      self.maxvalue = self.getRobot().get('range', 'maxvalue')
+      self.maxvalue = self.robot.get('robot/range/maxvalue')
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])
       self.hidHinton = Hinton(self.hiddenLayerSize, title = 'Hidden Layer')
-      self.inHinton = Hinton(self.getRobot().get('range', 'count'),
+      self.inHinton = Hinton(self.robot.get('robot/range/count'),
                              title = 'Input Layer')
       self.outHinton = Hinton(2, title = 'Output Layer')
 
@@ -61,14 +61,14 @@ class NNBrain(Brain):
          self.net.setLearning(0)
          # this will create a log file, and write the activations out
          # on each propagate:
-         self.net.getLayer('hidden').setLog("hidden.dat")
+         self.net['hidden'].setLog("hidden.dat")
       elif self.counter < 1000:
          mode = 'collect'
          # collect hid data when propagate
       elif self.counter == 1000:
          mode = 'close file'
          # close file, compute eigenvalues
-         self.net.getLayer('hidden').closeLog()
+         self.net['hidden'].closeLog()
          try:
             unlink("hidden.e")
          except:
@@ -82,19 +82,19 @@ class NNBrain(Brain):
       print self.counter
          
       # First, set inputs and targets:
-      ins = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+      ins = map(self.scale, self.robot.get('robot/range/all/value'))
       # Compute targets:
       target_rotate = 0.5
-      if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
+      if min(self.robot.get('robot/range/front/value')) < 1:
          target_trans = 0.0
          target_rotate = 0.0
-      elif self.getRobot().get('range', 'value', 'back', 'min')[1] < 1:
+      elif min(self.robot.get('robot/range/back/value')) < 1:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if self.getRobot().get('range', 'value', 'left', 'min')[1] < 1:
+      if min(self.robot.get('robot/range/left/value')) < 1:
          target_rotate = 0.0
-      elif self.getRobot().get('range', 'value', 'right', 'min')[1] < 1:
+      elif min(self.robot.get('robot/range/right/value')) < 1:
          target_rotate = 1.0
       target = [target_trans, target_rotate]
       #print "Learning: trans =", target_trans, "rotate =", target_rotate
@@ -104,22 +104,22 @@ class NNBrain(Brain):
       # get PCA, components #1 and #2, then plot:
 
       if mode == 'plot':
-         system("echo " + a2s(self.net.getLayer('hidden').activation) + " | tools/cluster/cluster -pehidden.e -c1,2 > out")
+         system("echo " + a2s(self.net['hidden'].activation) + " | tools/cluster/cluster -pehidden.e -c1,2 > out")
          plot = open("out").readline().split(' ')
          self.hidScat.addPoint( (float(plot[0]) + 1.0) / 2.0,
                                 (float(plot[1]) + 1.0) / 2.0 )
       # get the output, and move:
-      trans = (self.net.getLayer('output').activation[0] - .5) / 2.0
-      rotate = (self.net.getLayer('output').activation[1] - .5) / 2.0
+      trans = (self.net['output'].activation[0] - .5) / 2.0
+      rotate = (self.net['output'].activation[1] - .5) / 2.0
       self.hidScat.addPoint( trans * 2 + .5,
                              rotate * 2 + .5, 1)
       self.hidScat.addPoint( target_trans,
                              target_rotate, 2)
-      self.inHinton.update(self.net.getLayer('input').activation)
-      self.hidHinton.update(self.net.getLayer('hidden').activation)
-      self.outHinton.update(self.net.getLayer('output').activation)
+      self.inHinton.update(self.net['input'].activation)
+      self.hidHinton.update(self.net['hidden'].activation)
+      self.outHinton.update(self.net['output'].activation)
       #print "Move    : trans =", trans, "rotate =", rotate
-      self.getRobot().move(trans, rotate)
+      self.robot.move(trans, rotate)
       self.counter += 1
 
 def INIT(engine):

@@ -11,12 +11,11 @@ from random import random
 from time import sleep
 from pyro.brain.fuzzy import *
 
-
 class Reinforce(Brain):
    def setup(self):
       '''Init the brain, and create the network'''
       self.net = SRN()
-      self.sensorCount = self.getRobot().get('range', 'count')
+      self.sensorCount = self.robot.get('robot/range/count')
       self.net.add(Layer('input', self.sensorCount+2))
       self.net.addContext(Layer('context', 2), 'hidden')
       self.net.add(Layer('hidden', 2))
@@ -36,8 +35,8 @@ class Reinforce(Brain):
 
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.getRobot().get('range', 'maxvalue')
-      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+      self.maxvalue = self.robot.get('robot/range/maxvalue')
+      self.curr_sensors = map(self.scale, self.robot.get('robot/range/all/value'))
       self.curr_motors = [0.0, 0.0]
       self.target_trans = 1
       self.target_rotate = .5
@@ -49,9 +48,9 @@ class Reinforce(Brain):
       self.plot = Scatter(title = 'Reinforce and Predict',
                           history = [100, 5, 5], linecount = 3,
                           legend = ['Hidden', 'Motor Output', 'Motor Target'])
-      self.pred = Hinton(self.getRobot().get('range', 'count'),
+      self.pred = Hinton(self.robot.get('robot/range/count'),
                          title = 'Predicted Inputs')
-      self.targ = Hinton(self.getRobot().get('range', 'count'),
+      self.targ = Hinton(self.robot.get('robot/range/count'),
                          title = 'Actual Inputs')
 
    def destroy(self):
@@ -81,7 +80,7 @@ class Reinforce(Brain):
          self.net.setLearning(1)
 
       # gather inputs (latest sensors and motor values)
-      self.curr_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+      self.curr_sensors = map(self.scale, self.robot.get('robot/range/all/value'))
       input = (self.curr_sensors) 
       input.append(self.curr_motors[0])
       input.append(self.curr_motors[1])
@@ -89,28 +88,28 @@ class Reinforce(Brain):
       # set inputs
       if self.counter == 0:
          self.net.clearContext(.5)
-      self.net.getLayer('input').copyActivations(input)
+      self.net['input'].copyActivations(input)
 
       # propagate...to see what output would be
       self.net.propagate()
 
       # move according to resulting motor outputs
-      next_motors = self.net.getLayer('motorOutput').activation[:]
+      next_motors = self.net['motorOutput'].activation[:]
       trans = (next_motors[0] - .5)/2
       rotate = (next_motors[1] - .5)/2
-      self.getRobot().move(trans, rotate)
+      self.robot.move(trans, rotate)
       self.curr_motors = next_motors
       
       # set targets based on new sensor and motor values
       #    first set sensorOutput targets
       sleep(.1)
-      self.getRobot().update()
-      next_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
-      self.net.getLayer('sensorOutput').copyTargets(next_sensors)
+      self.robot.update()
+      next_sensors = map(self.scale, self.robot.get('robot/range/all/value'))
+      self.net['sensorOutput'].copyTargets(next_sensors)
 
       #    next set motorOutput targets
       #       determine fuzzy values
-      next_min = self.getRobot().get('range', 'value', 'all', 'min')[1]
+      next_min = min(self.robot.get('robot/range/all/value'))
 
       distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
       speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)
@@ -143,7 +142,7 @@ class Reinforce(Brain):
       self.target_trans = max(min(tt, 1), 0)
       self.target_rotate = max(min(tr, 1), 0)
       # there is no backprop() between this an the last call of copyTarget()
-      self.net.getLayer('motorOutput').copyTargets([self.target_trans,
+      self.net['motorOutput'].copyTargets([self.target_trans,
                                                    self.target_rotate])
       
       # propagate backwards
@@ -153,13 +152,13 @@ class Reinforce(Brain):
       
       # update plots
       self.plot.addPoint(next_motors[0], next_motors[1], 1)
-      self.plot.addPoint(self.net.getLayer('hidden').activation[0],
-                         self.net.getLayer('hidden').activation[1], 0)
+      self.plot.addPoint(self.net['hidden'].activation[0],
+                         self.net['hidden'].activation[1], 0)
       if not self.doneLearning:
-         self.plot.addPoint(self.net.getLayer('motorOutput').target[0],
-                            self.net.getLayer('motorOutput').target[1], 2)
-      self.pred.update(self.net.getLayer('sensorOutput').activation)
-      self.targ.update(self.net.getLayer('sensorOutput').target)
+         self.plot.addPoint(self.net['motorOutput'].target[0],
+                            self.net['motorOutput'].target[1], 2)
+      self.pred.update(self.net['sensorOutput'].activation)
+      self.targ.update(self.net['sensorOutput'].target)
 
       # update counter
       self.counter += 1

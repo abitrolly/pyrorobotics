@@ -17,7 +17,7 @@ class NNBrain(Brain):
       """ Init the brain, and create the network. """
       # create the network
       self.net = Network()
-      self.net.addThreeLayers(self.getRobot().get('range', 'count'), 2, 2)
+      self.net.addThreeLayers(self.robot.get('robot/range/count'), 2, 2)
       self.net.initialize()
       # learning parameters
       self.net.setEpsilon(0.5)
@@ -26,13 +26,13 @@ class NNBrain(Brain):
       # some helpful attributes
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.getRobot().get('range', 'maxvalue')
+      self.maxvalue = self.robot.get('robot/range/maxvalue')
       # visualization
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])
       self.hidHinton = Hinton(2, title = 'Hidden Layer')
-      self.inHinton = Hinton(self.getRobot().get('range', 'count'),
+      self.inHinton = Hinton(self.robot.get('robot/range/count'),
                              title = 'Input Layer')
       self.outHinton = Hinton(2, title = 'Output Layer')
 
@@ -54,17 +54,17 @@ class NNBrain(Brain):
          print self.counter,
          
       # first inputs and targets:
-      inputs = map(self.scale, self.getRobot().get('range', 'value', 'all'))
+      inputs = map(self.scale, self.robot.get('robot/range/all/value'))
       # Compute targets:
-      if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
+      if min(self.robot.get('robot/range/front/value')) < 1:
          target_trans = 0.0
-      elif self.getRobot().get('range', 'value', 'back', 'min')[1] < 1:
+      elif min(self.robot.get('robot/range/back/value')) < 1:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if self.getRobot().get('range', 'value', 'left', 'min')[1] < 1:
+      if min(self.robot.get('robot/range/left/value')) < 1:
          target_rotate = 0.0
-      elif self.getRobot().get('range', 'value', 'right', 'min')[1] < 1:
+      elif min(self.robot.get('robot/range/right/value')) < 1:
          target_rotate = 1.0
       else:
          target_rotate = 0.5
@@ -72,20 +72,20 @@ class NNBrain(Brain):
       # step
       self.net.step(input = inputs, output = targets)
       # print "Learning: trans =", target_trans, "rotate =", target_rotate
-      self.hidScat.addPoint( self.net.getLayer('hidden').activation[0],
-                             self.net.getLayer('hidden').activation[1], 0 )
+      self.hidScat.addPoint( self.net['hidden'].activation[0],
+                             self.net['hidden'].activation[1], 0 )
       # get the output, and move:
-      trans = (self.net.getLayer('output').activation[0] - .5) / 2.0
-      rotate = (self.net.getLayer('output').activation[1] - .5) / 2.0
+      trans = (self.net['output'].activation[0] - .5) / 2.0
+      rotate = (self.net['output'].activation[1] - .5) / 2.0
       self.hidScat.addPoint( trans * 2 + .5,
                              rotate * 2 + .5, 1)
       self.hidScat.addPoint( target_trans,
                              target_rotate, 2)
-      self.inHinton.update(self.net.getLayer('input').activation)
-      self.hidHinton.update(self.net.getLayer('hidden').activation)
-      self.outHinton.update(self.net.getLayer('output').activation)
+      self.inHinton.update(self.net['input'].activation)
+      self.hidHinton.update(self.net['hidden'].activation)
+      self.outHinton.update(self.net['output'].activation)
       #print "Move    : trans =", trans, "rotate =", rotate
-      self.getRobot().move(trans, rotate)
+      self.robot.move(trans, rotate)
       self.counter += 1
 
 def INIT(engine):
