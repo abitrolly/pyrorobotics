@@ -183,10 +183,11 @@ class GLgui(gui):
    def viewBrain(self):
       self.windowBrain = Tk()
       self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
-      self.canvasBrain = Canvas(self.windowBrain,width=500,height=300)
+      self.canvasBrain = Canvas(self.windowBrain,width=550,height=300)
       self.canvasBrain.pack()
 
-   def redrawPie(self, pie, percentSoFar, piececnt, controller, percent, name):
+   def redrawPie(self, pie, percentSoFar, piececnt, controller,
+                 percent, name):
       # FIX: behavior specific. How to put in Behavior-based code?
       xoffset = 5
       yoffset = 20
@@ -194,9 +195,9 @@ class GLgui(gui):
       row = (pie - 1) * (width * 1.5)
       colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
       try:
-         self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
+         self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
          self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-         self.canvasBrain.create_text(xoffset + 275,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
+         self.canvasBrain.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
       except:
          pass
 
@@ -214,27 +215,21 @@ class GLgui(gui):
          if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
             self.lastRun = self.engine.brain.lastRun
             self.canvasBrain.delete('pie')
-            total = {}
-            try:
-               for c in self.engine.brain.effectsTotal.keys():
-                  total[c] = self.engine.brain.effectsTotal[c]
-            except:
-               pass
             piecnt = 0
-            keys = total.keys()
-            keys.sort()
-            for control in keys:
+            for control in self.engine.brain.controls:
                piecnt += 1
                percentSoFar = 0
                piececnt = 0
-               for d in self.engine.brain.desires:
-                  if control == d[1] and total[d[1]] != 0:
+               for d in self.engine.brain.pie:
+                  if control == d[0]:
                      piececnt += 1
-                     portion = float(d[2])/float(total[d[1]]) * d[0]
+                     portion = d[2]
                      self.redrawPie(piecnt, percentSoFar, \
                                     piececnt, \
-                                    d[1] + " effects", \
-                                    portion, d[4] + ":" + d[3] + ":" + d[6] + " IF %.2f THEN %.2f" % (d[0], d[5]))
+                                    "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
+                                    portion, \
+                                    "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
+                                                                            d[3], d[4]))
                      percentSoFar += portion
          else:
             try:

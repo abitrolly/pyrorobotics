@@ -16,9 +16,9 @@ class BehaviorBasedBrain (Brain):
       self.states = {}
       self.controls = controllers
       self.history = [{}, {}, {}]
+      self.pie = []
       self.desires = []
       self.effectsTotal = {}
-
    def set_controls(self, controllers):
       self.controls = controllers
       self.history = [{}, {}, {}]
@@ -56,14 +56,35 @@ class BehaviorBasedBrain (Brain):
       for s in self.states.keys():
          if self.states[s].status == 1:
             self.states[s].run()
+      # desires: truth, controller, value, rulename, behname, statename
       control = {}
-      for d in self.desires:
-         total = self.effectsTotal[d[1]]
-         if total != 0:
-            if d[1] in control.keys():
-               control[d[1]] += float(d[2])/float(total) * float(d[0]) * float(d[5])
-            else:
-               control[d[1]] = float(d[2])/float(total) * float(d[0]) * float(d[5])
+      # set all totalTruths to 0, totalEffects to 0
+      totalTruth = {}
+      totalEffects = {}
+      for c in self.controls.keys():
+         totalTruth[c] = 0.0
+         totalEffects[c] = 0.0
+      for e in self.effectsTotal.keys(): # state:beh:controller
+         s, b, c = e.split(':')
+         totalEffects[c] = max(self.effectsTotal[e], totalEffects[c])
+      # sum up totalTruth
+      for d in self.desires: 
+         # compute total truth for each controller
+         totalTruth[d[1]] += d[0] * (self.effectsTotal[d[5]+":"+d[4]+":"+d[1]] / totalEffects[d[1]])
+      self.pie = []
+      for d in self.desires: 
+         # (beffect / totaleffect) * (truth / totaltruth) * value
+         c = d[1]
+         part = ((d[0]*(self.effectsTotal[d[5]+":"+d[4]+":"+d[1]]/totalEffects[d[1]]))/totalTruth[c])
+         amt = part * d[2]
+         self.pie.append( [d[1], (self.effectsTotal[d[5] + ":" + d[4] + ":" + c] / totalEffects[c]),
+                           part, d[2], amt,
+                           d[5] + ":" + d[4] + ":" + d[3] ] )
+                          
+         if c in control.keys():
+            control[c] += amt
+         else:
+            control[c] = amt
       for c in self.controls.keys():
          if c in control.keys():
             # set that controller to act with a value
@@ -179,23 +200,12 @@ class State:
          if b.status:
             b.rules = [] # clear rules
             b.update() # fires IF rules
-            total = {}
             for r in b.rules:
-               if r[1] in total.keys():
-                  total[r[1]] += float(r[0])
-               else:
-                  total[r[1]] = float(r[0])
-            for r in b.rules:
-               # truth, controller, amount, beh name, state name
-               c = r[1]
-               if total[c] != 0:
-                  self.behaviorEngine.effectsTotal[c] = b.effects[c]
-                  self.behaviorEngine.desires.append([float(r[0])/float(total[c]), \
-                                                      c, \
-                                                      b.effects[c],
-                                                      b.name, \
-                                                      b.state.name,
-                                                      r[2], r[3]])
+               # r = truth, controller, amount, beh name, state name
+               r.extend([b.name, b.state.name])
+               self.behaviorEngine.desires.append( r )
+               # what is the controller effect for this state/behavior?
+               self.behaviorEngine.effectsTotal[b.state.name+":"+b.name+":"+r[1]] = b.effects[r[1]]
       self.update()
 
    def getRobot(self):
