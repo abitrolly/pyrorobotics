@@ -41,7 +41,7 @@ class V4LGrabber(Camera):
    I'm not sure why.
    """
    def __init__(self, width, height, depth = 3,
-                device = '/dev/video0', channel = 1):
+                device = '/dev/video0', channel = 1, title = None):
       """
       Currently, if depth is any number other than 1 or 3, an exception
       will be raised.  I plan on implementing various color depths soon.
@@ -70,7 +70,9 @@ class V4LGrabber(Camera):
                     grab_image(device, width, height, self.color, channel)
       except:
          print "v4l: grab_image failed!"
-      Camera.__init__(self, width, height, depth)
+      if title == None:
+	 title = self.device
+      Camera.__init__(self, width, height, depth, title = title)
       self.rgb = (2, 1, 0) # offsets to BGR
       self.data = CBuffer(self.cbuf)
 
