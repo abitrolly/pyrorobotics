@@ -394,9 +394,9 @@ class Robot:
     def update(self):
         """
         This is a common control that isn't an act, so we pull it out
-        here.
+        here. Must call _update() to update all of the devices, etc.
         """
-        pass
+        self._update()
 
     def enableMotors(self):
         pass

@@ -53,7 +53,8 @@ class V4L : public Device
 #ifdef VIDIOCGCAP
 
   struct video_capability   grab_cap;
-  struct video_mmap         grab_buf;
+  struct video_mmap         grab_map;
+  struct video_mbuf         grab_buf;
   struct video_channel	    grab_chan;
   int                       grab_fd, grab_size;
   //unsigned char            *grab_data;

@@ -16,7 +16,6 @@ V4L::V4L ( char *device_name, int wi, int he, int de, int ch) :
 #ifdef VIDIOCGCAP
   size = width * height * depth;
 #endif
-
   image = new unsigned char [size];
   init();
 }
@@ -36,17 +35,17 @@ V4L::~V4L ()
 PyObject *V4L:: updateMMap( )
 {
   for (;;) {
-    if (-1 >= ioctl(grab_fd,VIDIOCMCAPTURE,&grab_buf)) {
+    if (-1 >= ioctl(grab_fd,VIDIOCMCAPTURE,&grab_map)) {
       fprintf(stderr,"Error: ioctl cmcapture");
       perror("ioctl VIDIOCMCAPTURE");
     } else {
-      if (-1 >= ioctl(grab_fd,VIDIOCSYNC,&grab_buf)) {
+      if (-1 >= ioctl(grab_fd,VIDIOCSYNC,&grab_map)) {
 	fprintf(stderr,"Error: VivioCsync");
 	perror("ioctl VIDIOCSYNC");
       } else {
-	//swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
-	width  = grab_buf.width;
-	height = grab_buf.height;
+	//swap_rgb24((char *)image,grab_map.width*grab_map.height);
+	width  = grab_map.width;
+	height = grab_map.height;
 	return PyInt_FromLong(0L);
       }
     }
@@ -104,7 +103,7 @@ void V4L::init(void) {
 #ifdef VIDIOCGCAP
 
 void V4L::init(void) {
-  fprintf(stderr,"Init-ing Video4Linux(%s)..", device);
+  fprintf(stderr,"Initializing Video4Linux %s..", device);
   if (-1 >= (grab_fd = open(device,O_RDWR))) {
     fprintf(stderr,"Error: opening video device");
     perror(device);
@@ -118,7 +117,7 @@ void V4L::init(void) {
   /* set image source and TV norm */
   grab_chan.channel = channel;
   if (-1 >= ioctl(grab_fd,VIDIOCGCHAN,&grab_chan)) {
-    fprintf(stderr,"Error: with VIdeochannel");
+    fprintf(stderr,"Error: with Videochannel");
     perror("ioctl VIDIOCGCHAN");
     exit(1);
   }
@@ -130,14 +129,22 @@ void V4L::init(void) {
     exit(1);
   }
   
-  grab_buf.format = VIDEO_PALETTE_RGB24;
-  grab_buf.frame  = 0;
-  grab_buf.width  = width;
-  grab_buf.height = height;
-  grab_size = grab_buf.width * grab_buf.height * 3;
-  image = (unsigned char *)mmap(NULL,grab_size, PROT_READ | PROT_WRITE, MAP_SHARED, grab_fd, 0); 
-  if (-1 >= (int)image) {
-    fprintf(stderr,"Error: mmap");
+  grab_map.format = VIDEO_PALETTE_RGB24;
+  grab_map.frame  = 0;
+  grab_map.width  = width;
+  grab_map.height = height;
+  if (-1 == ioctl(grab_fd, VIDIOCGMBUF, &grab_buf)) {
+    perror("ioctl VIDIOCGMBUF");
+  }
+  grab_size = grab_buf.size; 
+  image = (unsigned char *)mmap(NULL, 
+				grab_size, 
+				PROT_READ | PROT_WRITE, 
+				MAP_SHARED, 
+				grab_fd, 
+				0); 
+  if ((int)image == -1) {
+    fprintf(stderr,"Error ");
     perror("mmap");
     exit(1);
   }

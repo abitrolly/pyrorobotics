@@ -38,11 +38,12 @@ class V4LCamera(Camera):
       # -------------------------------------------------
       if title == None:
 	 title = self.device
-      Camera.__init__(self, width, height, depth, title = title)
-      self.devData["subtype"] = "video4linux"
-      self.data = CBuffer(self.cbuf)
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
+      Camera.__init__(self, width, height, depth, title = title)
+      self.devData["subtype"] = "video4linux"
+      self.devData["source"] = device
+      self.data = CBuffer(self.cbuf)
 
    def _update(self):
       """
@@ -51,7 +52,7 @@ class V4LCamera(Camera):
       """
       try:
          self.cameraDevice.updateMMap()
+         self.processAll()
       except:
-         print "v4l: refresh_image failed"
-      self.processAll()
+         print "v4l: updateMMap() failed"
 
