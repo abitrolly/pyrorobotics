@@ -64,6 +64,7 @@ class SaphiraRobot(Robot):
                                            (13, 'sonar'), (14, 'sonar')]
                              }
         self.senses['robot']['simulator'] = lambda self, x = simulator: x
+        self.senses['self'] = self.senses['robot']
 	self.update() # Saphira_UpdatePosition(self.dev)
         self.inform("Done loading lobot.")
 

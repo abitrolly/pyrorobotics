@@ -143,6 +143,8 @@ class KheperaRobot(Robot):
         self.senses['light']['arc'] = lambda self, pos, \
                                       x = (15 * math.pi / 180) : x
 
+        self.senses['self'] = self.senses['robot']
+
         console.log(console.INFO,'khepera sense drivers loaded')
 
         self.controls['move'] = self._move
