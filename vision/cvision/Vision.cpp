@@ -12,8 +12,9 @@ Vision::Vision(int wi, int he, int de) {
 }
 
 Vision::~Vision() {
-  delete [] workspace;
-  delete [] history;
+  delete [] image;
+  //delete [] workspace;
+  //delete [] original;
 }
 
 PyObject *Vision::registerCameraDevice(void *dev) {
@@ -31,10 +32,10 @@ PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   for (int d = 0; d < depth; d++)
     // set offsets for RGB
     rgb[d] = rgb_order[d];
-  workspace = new unsigned char [width * height * depth];
-  history = new unsigned char [width * height * depth];
-  memset(history, 0, width * height * depth);
-  memset(workspace, 0, width * height * depth);
+  //workspace = new unsigned char [width * height * depth];
+  //original = new unsigned char [width * height * depth];
+  //memset(original, 0, width * height * depth);
+  //memset(workspace, 0, width * height * depth);
   filterList = PyList_New(0);
   // set the current image to:
   Image = image;
@@ -42,8 +43,8 @@ PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
 }
 
 PyObject *Vision::setImage(int newImage) {
-  if (newImage == HISTORY)
-    Image = history;
+  if (newImage == ORIGINAL)
+    Image = original;
   else if (newImage == IMAGE) 
     Image = image;
   else if (newImage == WORKSPACE)
@@ -911,6 +912,10 @@ PyObject *suppliesFilters() {
     ("inverse blue", 1, "inverse", (2)
 }
 */
+
+PyObject *Vision::copyOriginal() {
+  memcpy(original, Image, width * height * depth);
+}
 
 PyObject *Vision::applyFilters(PyObject *newList) {
   int i1, i2, i3, i4, i5, i6;

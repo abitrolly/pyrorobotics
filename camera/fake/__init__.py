@@ -1,7 +1,6 @@
-from fake import Fake
-from pyro.camera import Camera, CBuffer
+from fake import Fake # cameraDevice
+from pyro.camera import Camera, CBuffer # base class
 import re, time, os
-import PIL
 
 class FakeCamera(Camera):
    """
@@ -69,10 +68,8 @@ class FakeCamera(Camera):
                           self.fstring % self.current + \
                           self.pattern[self.match.end():]
                self.cameraDevice.updateMMap(currname)
-               #try:
-               self.vision.processAll()
-               #except:
-               #   print "no vision system?"
+               if self.vision != None:
+                  self.vision.processAll()
                self.current += 1
                self.lastUpdate = currentTime
          else:

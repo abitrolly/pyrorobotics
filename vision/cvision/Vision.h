@@ -40,7 +40,7 @@ public:
   static const int ALL = 10;
 
   static const int WORKSPACE = 50;
-  static const int HISTORY = 60;
+  static const int ORIGINAL = 60;
   static const int IMAGE = 70;
 
   static const int AND = 100;
@@ -92,15 +92,19 @@ public:
   PyObject *getFilterList();
   PyObject *popFilterList();
 
+  int getCopyMode() { return copyMode; }
+  void setCopyMode(int value) {copyMode = value;}
   int getMotionDetection() { return motionDetection; }
   void setMotionDetection(int val) { motionDetection = val; }
   PyObject *setImage(int newImage);
+  PyObject *copyOriginal();
 
  protected:
-  unsigned char *Image; // current image (image, history, workspace)
+  unsigned char *Image; // current image (image, original, workspace)
   unsigned char *image;
-  unsigned char *history;
+  unsigned char *original;
   unsigned char *workspace;
+  int copyMode;
 
   PyObject *filterList;
   int width;

@@ -267,8 +267,12 @@ class Camera(PyroImage, Service):
                            ['Update', lambda: self.updateOnce()],
                            ]),
                  ('Filter', [['List filters', self.listFilterList],
+                             ['Toggle filter mode', self.toggleFilterMode],
+                             None,
                              ['Clear last filter', self.popFilterList],
-                             ['Clear all filters', lambda: self.setFilterList( [] )]]),
+                             ['Clear all filters', lambda: self.setFilterList( [] )],
+                             ['Clear callback funtion', lambda: self.setVisionCallBack( lambda: None )],
+                             ]),
                  ('Add', [['blur edges', lambda: self.addFilter( "meanBlur") ],
                           ['detect edges', lambda: self.addFilter( "sobel") ],
                           ['gray scale', lambda: self.addFilter("grayScale")],
@@ -347,6 +351,12 @@ class Camera(PyroImage, Service):
 
    def togglePlay(self, event):
       self.active = not self.active
+
+   def toggleFilterMode(self):
+      self.vision.toggleFilterMode()
+      if self.active == 0:
+         self.update()
+      
 
    def processLeftClick(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
