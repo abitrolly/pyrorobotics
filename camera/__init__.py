@@ -90,12 +90,8 @@ class Camera(PyroImage, Service):
       self.callbackList = []
       self.filterReturnValue = []
       self.callbackTextList = []
-      self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
-      self.maxBlob = self.blob[0]
-
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
-
       self.update() # call it once to initialize
 
    def setFilterList(self, filterList):
@@ -123,65 +119,6 @@ class Camera(PyroImage, Service):
 
    def saveFilters(self):
       pass
-
-   def maxBlobs(self, channel, low_threshold, high_threshold, sortMethod, number, drawBox=1):
-
-      if(sortMethod.lower() == "mass"):
-         method = 0
-
-      elif(sortMethod.lower() =="area"):
-         method = 1
-
-      else:
-         print "Invalid Sort Parameter to maxBlobs."
-
-      if number == 1:
-         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = self.vision.blobify( channel,low_threshold,high_threshold,method,number,drawBox);
-
-      elif number == 2:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
-               
-      elif number == 3:
-         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
-
-      elif number == 4:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
-
-      elif number == 5:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = self.vision.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
-
-      else:
-         print "Invalid parameter to maxBlobs: number, must be 1-5"
-
-      #not good, 1 pixel is very dense.
-      #elif(cmp(sortMethod.lower(),"density")==0):
-      #   self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,2,drawBox,self.width, self.height);
-
-   def superColorByName(self, color, channel):
-
-      if(channel < 0 or channel > 3):
-         print "Invalid Color Channel to Super Color"
-         return;
-
-      if (color.lower() == "red"):
-         self.vision.superColor(1, -1, -1, channel)
-      elif (color.lower() == "green"):
-         self.vision.superColor(-1, 1, -1, channel)
-      elif (color.lower() == "blue"):
-         self.vision.superColor(-1, -1, 1, channel)
-      # fix the following; they need fractional weights:
-      elif (color.lower() == "magenta"):
-         self.vision.superColor(1, -1, 0.5, channel)
-      elif (color.lower() == "yellow"):
-         self.vision.superColor(1.0/6.0, 2.0/6.0, -1, channel)
-      elif (color.lower() == "cyan"):
-         self.vision.superColor(-1, 1/2.0, 1/2.0, channel)
-      else:
-         print "Invalid Super Color"
-         
-   def trainColor(self):
-      self.histogram = self.vision.Hist()
-      self.histogram.red, self.histogram.green, self.histogram.blue = self.vision.trainColor();
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
