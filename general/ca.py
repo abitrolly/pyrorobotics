@@ -60,10 +60,10 @@ class Rules(Matrix):
         self.data[0] = [0] * self.size
     def watch(self, lat):
         self.width = lat.size 
-        length = lat.data.height - 1
+        length = lat.height - 1
         from Tkinter import Tk, Canvas, BOTH
         self.win = Tk()
-        self.win.wm_title("Python Cellular Automata Experimenter Toolbox")
+        self.win.wm_title("Pyro CA")
         self.canvas = Canvas(self.win,width=(self.width * 2),height=(length * 2))
         #self.canvas.bind("<Configure>", self.changeSize)
         self.canvas.pack(fill=BOTH)
@@ -79,7 +79,7 @@ class Rules(Matrix):
         for h in range(length):
             for w in range(self.width):
                 if lat.data[h][w]:
-                    self.canvas.create_rectangle(w*2, h*2, w*2+2, h*2+2)
+                    self.canvas.create_rectangle(w*2, h*2, w*2+2, h*2+2, fill = "black")
         print "Done!"
     def apply(self, lat, c):
         for i in range(lat.size):
@@ -88,7 +88,7 @@ class Rules(Matrix):
                                                           i + self.window)]
     def applyAll(self, lat, length = -1):
         if length == -1:
-            length = lat.data.height - 1
+            length = lat.height - 1
         for c in range( length):
             self.apply(lat, c)
             if lat.data[c] == lat.data[c + 1]:
