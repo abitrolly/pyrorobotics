@@ -54,7 +54,8 @@ class SaphiraSenseDriver(driver.Driver):
         console.log(console.INFO,'saphira sense drivers loaded')
 
     def getSonarRange(self, dev, pos):
-        val = Saphira_getSonarRange(dev, pos)
+        val = min(max(Saphira_getSonarRange(dev, pos), 0.0),
+                  self.senses['sonar']['maxvalue'](dev))
         if self.senses['sonar']['units'](dev) == "ROBOTS":
             return val / 1.0 # Pioneer is about .5 meters diameter
         elif self.senses['sonar']['units'](dev) == "MM":
@@ -67,8 +68,7 @@ class SaphiraSenseDriver(driver.Driver):
         elif self.senses['sonar']['units'](dev) == "SCALED":
             return val / self.senses['sonar']['maxvalue'](dev)
         else:
-            raise "Sonar units are set to invalid type"
-        
+            raise 'InvalidType', "Sonar units are set to invalid type"
 
     def getSonarAll(self, dev):
         vector = [0] * Saphira_getSonarCount(dev)

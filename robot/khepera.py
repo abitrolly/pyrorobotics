@@ -20,13 +20,21 @@ class KheperaRobot(Robot):
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.dev = self # pointer to self
-        self.sensorGroups = {'front' : [(2, 'ir'), (3, 'ir')], 
+        self.sensorGroups = {'all' : [ (0, 'ir'), (4, 'ir'),
+                                       (1, 'ir'), (5, 'ir'),
+                                       (2, 'ir'), (6, 'ir'),
+                                       (3, 'ir'), (7, 'ir') ],
+                             'front' : [(2, 'ir'), (3, 'ir')], 
                              'front-left' : [(0, 'ir'), (1, 'ir')], 
                              'front-right' : [(4, 'ir'), (5, 'ir')],
                              'front-all' : [(1, 'ir'), (2, 'ir'),
                                             (3, 'ir'), (4, 'ir')], 
                              'left' : [(0, 'ir')], 
                              'right' : [(5, 'ir')], 
+                             'left-front' : [(0, 'ir')], 
+                             'rightfront' : [(5, 'ir')], 
+                             'left-back' : [(7, 'ir')], 
+                             'right-back' : [(6, 'ir')], 
                              'back-left' : [(7, 'ir')], 
                              'back-right' : [(6, 'ir')], 
                              'back-all' : [(6, 'ir'), (7, 'ir')], 
@@ -82,7 +90,7 @@ class KheperaRobot(Robot):
 	self.senses['light'] = {}
 	self.senses['light']['count'] = lambda self: 8
 	self.senses['light']['type'] = lambda self: 'measure'
-        self.senses['light']['maxvalue'] = lambda self: 200
+        self.senses['light']['maxvalue'] = lambda self: 200.0
         self.senses['light']['units'] = lambda self: "RAW"
 
         # location of sensors' hits:
@@ -222,10 +230,10 @@ class KheperaRobot(Robot):
         return 0
 
     def getX(self, dev):
-        return 0
+        return 0.0
     
     def getY(self, dev):
-        return 0
+        return 0.0
     
     def getZ(self, dev):
         return 0
@@ -297,7 +305,8 @@ class KheperaRobot(Robot):
 
     def getIRRange(self, dev, pos):
         raw = self.senseData['ir'][pos]
-        mm = ((1023.0 - raw) / 1023.0) * 60.0
+        mm = min(max(((1023.0 - raw) / 1023.0) * 60.0, 0.0),
+                 self.senses['ir']['maxvalue'](dev))
         if self.senses['ir']['units'](dev) == "ROBOTS":
             return mm / 55.0 # khepera is 55mm diameter
         elif self.senses['ir']['units'](dev) == "MM":
@@ -311,11 +320,12 @@ class KheperaRobot(Robot):
         elif self.senses['ir']['units'](dev) == "SCALED":
             return mm / self.senses['ir']['maxvalue'](dev)
         else:
-            raise "IR units are set to invalid type"
+            raise 'InvalidType', "IR units are set to invalid type"
 
     def getLightRange(self, dev, pos):
         raw = self.senseData['light'][pos]
-        mm = (raw / 511.0) * 200.0
+        mm = min(max((raw / 511.0) * 200.0, 0.0),
+                 self.senses['light']['maxvalue'](dev))
         if self.senses['light']['units'](dev) == "ROBOTS":
             return mm / 55.0 # khepera is 55mm diameter
         elif self.senses['light']['units'](dev) == "MM":
@@ -329,7 +339,7 @@ class KheperaRobot(Robot):
         elif self.senses['light']['units'](dev) == "SCALED":
             return mm / self.senses['light']['maxvalue'](dev)
         else:
-            raise "Light units are set to invalid type"
+            raise 'InvalidType', "Light units are set to invalid type"
 
     def getIRRangeAll(self, dev):
         vector = [0] * self.get('ir', 'count')
