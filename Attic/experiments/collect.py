@@ -15,7 +15,7 @@ class Collect(Brain):
     """
 
     def setup(self):
-        self.noise = 0
+        self.getRobot().noise = 0
         self.getRobot().startService(["BlobCamera", "truth"])
         self.camera = self.getRobot().getService("BlobCamera")
         self.truth = self.getRobot().getService("truth")
