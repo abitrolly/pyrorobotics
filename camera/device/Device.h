@@ -12,11 +12,10 @@ public:
   Device(int w, int h, int d);
   ~Device();
   PyObject *initialize(int wi, int he, int de, int r, int g, int b);
-
+  void setRGB(int r, int g, int b);
   int getWidth() {return width;}
   int getHeight() {return height;}
   int getDepth() {return depth;}
-  int *getRGB() {return rgb;}
   unsigned char *getImage() {return image;}
 
  protected:

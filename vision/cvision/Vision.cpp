@@ -184,11 +184,11 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
 	   between 100-255ish for more varied usage? */
 	if (outChannel == ALL) {
 	  for (int d = 0; d < depth; d++) {
-	    Image[(h * width + w) * depth + rgb[d] ] = 255;
+	    Image[(h * width + w) * depth + d ] = 255;
 	  }
 	} else {
 	  for (int d = 0; d < depth; d++) {
-	    Image[(h * width + w) * depth + rgb[d] ] = 0;
+	    Image[(h * width + w) * depth + d ] = 0;
 	  }
 	  Image[(h * width + w) * depth + rgb[outChannel] ] = 255;
 	}
