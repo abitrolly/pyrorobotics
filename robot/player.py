@@ -583,11 +583,12 @@ class PlayerRobot(Robot):
         Set robot's internal pose to x (meters), y (meters),
         th (radians)
         """
-        self.dev.set_odometry(x * 1000, y * 1000, th)
-        self.x = x
-        self.y = y
-        self.th = th
-        self.thr = self.th * PIOVER180
+        if self.hasA("position"):
+            self.dev.set_odometry(x * 1000, y * 1000, th)
+            self.x = x
+            self.y = y
+            self.th = th
+            self.thr = self.th * PIOVER180
 
     def connect(self):
         print "hostname=", self.hostname, "port=", self.port
