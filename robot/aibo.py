@@ -336,110 +336,206 @@ class AiboRobot(Robot):
         mouthOffset = tailOffset + numTailJoints
         jointDict = query.split()
         pos = 0
-        for joint in jointDict:
-            if joint == "leg":
+        check = 0 #used to check if the joint request is correct
+        if "leg" in jointDict:
+            if len(jointDict) == 4:
                 pos += legOffset
-            elif joint == "head":
-                pos += headOffset
-            elif joint == "tail":
-                pos += tailOffset
-            elif joint == "mouth":
-                pos += mouthOffset
-            elif joint == "front":
-                pos += 0
-            elif joint == "back":
-                pos += numLegs/2*jointsPerLeg
-            elif joint == "left":
-                pos +=0
-            elif joint == "right":
-                pos += jointsPerLeg
-            elif joint == "rotator":
-                # moves leg forward or backward along body
-                pos +=0
-            elif joint == "elevator":
-                # moves leg toward or away from body
-                pos += 1
-            elif joint == "knee":
-                pos += 2
-            elif joint == "tilt":
-                pos +=0
-            elif joint == "pan":
-                pos +=1
-            elif joint == "roll":
-                pos +=2
-            elif joint == "nod":
-                pos +=2
+                check +=1
+                if "front" in jointDict:
+                    pos +=0
+                    check +=1
+                elif "back" in jointDict:
+                    pos += numLegs/2*jointsPerLeg
+                    check +=1
+                if "left" in jointDict:
+                    pos +=0
+                    check +=1
+                elif "right" in jointDict:
+                    pos += jointsPerLeg
+                    check +=1
+                if "rotator" in jointDict:
+                    pos +=0
+                    check +=1
+                elif "elevator" in jointDict:
+                    pos +=1
+                    check +=1
+                elif "knee" in jointDict:
+                    pos +=2
+                    check +=1
+                if check !=4:
+                    raise AttributeError, "incorrect joint request"
             else:
-                raise AttributeError, "no such joint: '%s'" % joint
+                raise AttributeError, "incorrect joint request"
+        elif "head" in jointDict:
+            if len(jointDict) ==2:
+                pos += headOffset
+                check +=1
+                if "tilt" in jointDict:
+                    pos +=0
+                    check +=1
+                elif "pan" in jointDict:
+                    pos +=1
+                    check +=1
+                elif "roll" in jointDict:
+                    pos +=2
+                    check +=1
+                elif "nod" in jointDict:
+                    pos +=2
+                    check +=1
+                if check !=2:
+                    raise AttributeError, "incorrect joint request"
+            else:
+                raise AttributeError, "incorrect joint request"
+        elif "tail" in jointDict:
+            if len(jointDict) == 2:
+                pos += tailOffset
+                check +=1
+                if "tilt" in jointDict:
+                    pos +=0
+                    check +=1
+                elif "pan" in jointDict:
+                    pos +=1
+                    check +=1
+                if check != 2:
+                    raise AttributeError, "incorrect joint request"
+            else:
+                raise AttributeError, "incorrect joint request"
+        elif "mouth" in jointDict:
+                if len(jointDict) == 1:
+                    pos += mouthOffset
+                else:
+                    raise AttributeError, "incorrect joint request"
+
+        else:
+            raise AttributeError, "no such joint"
         return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
 
     def getButton(self, query):
+        """ Get value of button by name """
         pos = 0
+        check = 0
         btnDict = query.split()
-        for b in btnDict:
-            if b == "chin":
+        if "chin" in btnDict:
+            if len(btnDict) == 1:
                 pos = 4
-            elif b == "head":
-                pos = 5
-            elif b == "body":
-                pos +=6
-            elif b == "front":
-                pos +=0
-            elif b == "middle":
-                pos +=1
-            elif b == "rear":
-                pos +=2
-            elif b == "wireless":
-                pos = 9
-            elif b == "paw":
-                pos +=0
-            elif b == "back":
-                pos +=2
-            elif b == "left":
-                pos +=0
-            elif b == "right":
-                pos +=1
             else:
-                raise AttributeError, "no such button: '%s'" % b
+                raise AttributeError, "incorrect button request"
+        elif "head" in btnDict:
+            if len(btnDict) == 1:
+                pos = 5
+            else:
+                raise AttributeError, "incorrect button request"    
+        elif "body" in btnDict:
+            if len(btnDict) == 2:
+                pos +=6
+                check +=1
+                if "front" in btnDict:
+                    pos +=0
+                    check+=1
+                elif "middle" in btnDict:
+                    pos +=1
+                    check += 1
+                elif "rear" in btnDict:
+                    pos +=2
+                    check +=1
+                if check !=2:
+                    raise AttributeError, "incorrect button request"
+            else:
+                raise AttributeError, "incorrect button request"  
+        elif "wireless" in btnDict:
+            if len(btnDict) == 1:
+                pos = 9
+            else:
+                raise AttributeError, "incorrect button request"
+        elif "paw" in btnDict:
+            if len(btnDict) == 3:
+                pos +=0
+                check +=1
+                if "front" in btnDict:
+                    pos +=0
+                    check +=1
+                elif "back" in btnDict:
+                    pos +=2
+                    check += 1
+                if "left" in btnDict:
+                    pos +=0
+                    check +=1
+                elif "right" in btnDict:
+                    pos +=1
+                    check +=1
+                if check !=3:
+                    raise AttributeError, "incorrect button request"
+            else:
+                raise AttributeError, "no such button"
         return self.devData["buttonRaw"][pos]
 
     def getSensor(self, query):
+        """ Get the sensor value """
         pos = 0
+        check =0
         sensDict = query.split()
-        for s in sensDict:
-            if s == "ir":
+        if "ir" in sensDict:
+            if len(sensDict) == 2:
                 pos +=0
-            elif s == "near":
-                # in mm 50-500
-                pos +=0
-            elif s == "far":
-                # in mm 200-1500
-                pos +=1
-            elif s == "chest":
-                # in mm 100-900
-                pos +=2
-            elif s == "accel":
-                pos +=3
-            elif s == "front-back":
-                pos +=0
-            elif s == "right-left":
-                pos +=1
-            elif s == "up-down":
-                pos +=2
-            elif s == "power":
-                pos +=6
-            elif s == "remaining":
-                pos +=0
-            elif s == "thermo":
-                pos +=1
-            elif s == "capacity":
-                pos +=2
-            elif s == "voltage":
-                pos +=3
-            elif s == "current":
-                pos +=4
+                check +=1
+                if "near" in sensDict:
+                    # in mm 50-500
+                    pos +=0
+                    check +=1
+                elif "far" in sensDict:
+                    # in mm 200-1500
+                    pos +=1
+                    check += 1
+                elif "chest" in sensDict:
+                    # in mm 100-900
+                    pos +=2
+                    check += 1
+                if check !=2:
+                    raise AttributeError , "incorrect sensor request"
             else:
-                raise AttributeError , "no such sensor: '%s'" % b
+                raise AttributeError , "incorrect sensor request"
+        elif "accel" in sensDict:
+            if len(sensDict) == 2:
+                pos +=3
+                check +=1
+                if "front-back" in sensDict:
+                    pos +=0
+                    check+=1
+                elif "right-left" in sensDict:
+                    pos +=1
+                    check += 1
+                elif "up-down" in sensDict:
+                    pos +=2
+                    check += 1
+                if check !=2:
+                    raise AttributeError , "incorrect sensor request"
+            else:
+                raise AttributeError , "incorrect sensor request"
+        elif "power" in sensDict:
+            if len(sensDict) == 2:
+                pos +=6
+                check += 1
+                if "remaining" in sensDict:
+                    pos +=0
+                    check +=1
+                elif "thermo" in sensDict:
+                    pos +=1
+                    check +=1
+                elif "capacity" in sensDict:
+                    pos +=2
+                    check +=1
+                elif "voltage" in sensDict:
+                    pos +=3
+                    check +=1
+                elif "current" in sensDict:
+                    pos +=4
+                    check += 1
+                if check !=2:
+                    raise AttributeError , "incorrect sensor request"
+            else:
+                raise AttributeError , "incorrect sensor request"
+        else:
+                raise AttributeError , "no such sensor"
         return self.devData["sensorRaw"][pos]
 
     def startDeviceBuiltin(self, item):
@@ -493,31 +589,74 @@ class AiboRobot(Robot):
         self.walk_control     = Listener(self.PORT["Walk Remote Control"],
                                          self.host) # walk command
 
-    def setPose(self, joint, amtx, amty=0, amtz =0):
+    def setPose(self, joint, amtx, amty=None, amtz=None):
+        """ Set the position of a joint """
+        # all values passed in are between -1.0 and 1.0
         l = list(self.devData["positionRaw"])
-        if joint == "mouth":
-            l[17] = amtx
-        elif joint == "tail":
-            l[15] = amtx;
-            l[16] = amty;
-        elif joint == "front left leg":
-            l[0] = amtx #elevate
-            l[1] = amty #roate
-            l[2] = amtz #knee
-        elif joint == "front right leg":
-            l[3] = amtx #elevate
-            l[4] = amty #roate
-            l[5] = amtz #knee
-        elif joint == "back left leg":
-            l[6] = amtx #elevate
-            l[7] = amty #roate
-            l[8] = amtz #knee
-        elif joint == "back right leg":
-            l[9] = amtx #elevate
-            l[10] = amty #roate
-            l[11] = amtz #knee
+        jointDict = joint.split()
+        check = 0
+        if "mouth" in jointDict:
+            # original: 0.0(closed) and -1.0(open)
+            # pyro: 0.0(closed) and 1.0(open)
+            if len(jointDict) == 1:
+                l[17] = -amtx
+            else:
+                raise AttributeError, "incorrect joint name"    
+        elif "tail" in jointDict:
+            # original: 
+            if len(jointDict) == 1:
+                l[15] = amtx; #pan
+                l[16] = amty; #tilt
+            elif len(jointDict) == 2:
+                if "pan" in jointDict:
+                    l[15] = amtx;
+                elif "tilt" in jointDict:
+                    l[16] = amtx;
+                else:
+                    raise AttributeError, "incorrect joint name"     
+            else:
+                raise AttributeError, "incorrect joint name"    
+        elif "leg" in jointDict:
+            if len(jointDict) == 3 or len(jointDict) == 4:
+                check +=1
+                offset = 0
+                if "front" in jointDict:
+                    offset = 0
+                    check += 1
+                elif "back" in jointDict:
+                    offset = 6
+                    check += 1
+                if "left" in jointDict:
+                    offset +=0
+                    check += 1
+                elif "right" in jointDict:
+                    offset +=3
+                    check += 1
+                if check == 3:
+                    if len(jointDict) == check:
+                        l[offset] = amtx #rotator
+                        l[offset+1] = amty #elevator
+                        l[offset+2] = amtz #knee
+                    else:
+                        if "rotator" in jointDict:
+                            offset +=0
+                            check +=1
+                        elif "elevator" in jointDict:
+                            offset +=1
+                            check +=1
+                        elif "knee" in jointDict:
+                            offset +=2
+                            check +=1
+                        if check !=4:
+                            raise AttributeError, "incorrect joint name"
+                        l[offset] = amtx
+                else:
+                    raise AttributeError, "incorrect joint name"
+            else:
+                raise AttributeError, "incorrect joint name"
+        else:
+            raise AttributeError, "no such joint"  
         self.joint_socket.write(struct.pack("<18f",*l))
-        
 
 #TODO:
 
