@@ -107,7 +107,6 @@ class Robot (Drawable):
 	and its parts. There is one assumed piece, self.dev that
 	is the actual pointer to the robot device
 	"""
-        print "type of pos=", type(pos)
 	if (data == None):
             return self.senses[device]
         elif (type(data) == type(1)):
@@ -118,7 +117,7 @@ class Robot (Drawable):
             return self.senses[device][data]
 	elif type(pos) == type(1): # number
             return self.senses[device][data](self.dev, pos)
-        elif type(pos) == type([1,2]) or type(pos) == type((1,2)): # collect
+        elif type(pos) == type([1,2]) or type(pos) == type((1,2)): # collection
             list = []
             for i in pos:
                 list.append( self.senses[device][data](self.dev, i) )
