@@ -1,18 +1,19 @@
 from OpenGL.GLUT import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.Tk import *
-
+import Tkinter
+import OpenGL.Tk as Opengl
 from pyro.gui import *
-from pyro.gui.widgets.TKwidgets import *
+import pyro.gui.widgets.TKwidgets as TKwidgets
 from pyro.system.version import *
 from pyro.engine import *
 import pyro.system as system
 from pyro.gui.drawable import *
 from pyro.gui.renderer.gl import *
 from pyro.gui.renderer.streams import *
-
 from time import time, sleep
+import PIL.PpmImagePlugin
+import Image, ImageTk
 import sys
 
 # A GL gui
@@ -25,10 +26,10 @@ class GLgui(gui):
       self.width = width
       self.height = height
       self.genlist = 0
-      self.frame = Frame()
+      self.frame = Tkinter.Frame()
       self.frame.pack(side = 'top')
       self.windowBrain = 0
-      self.windowRobot = 0
+      self.windowCamera = 0
       self.lastRun = 0
       self.history = []
       self.history_pointer = 0
@@ -44,9 +45,10 @@ class GLgui(gui):
               ('Simulators',[['Load...',self.loadSim]]),
               ('Robot',[['Load...',self.loadRobot],
                         ['Unload',self.freeRobot]]),
+              #['Load Camera...',self.loadCamera]]),
               ('Brain',[['Load...',self.loadBrain],
                         ['Unload',self.freeBrain],
-                        ['View', self.viewBrain]]),
+                        ['Brain View', self.openBrainWindow]]),
               ('Plot',[['Load...',self.loadPlot]]),
               # ['robot', self.viewRobot]
               ('Move', [['Forward',self.stepForward],
@@ -74,41 +76,41 @@ class GLgui(gui):
                  ('Stop',self.stopEngine)]
 
       # create menu
-      self.mBar = Frame(self.frame, relief=RAISED, borderwidth=2)
-      self.mBar.pack(fill=X)
+      self.mBar = Tkinter.Frame(self.frame, relief=Tkinter.RAISED, borderwidth=2)
+      self.mBar.pack(fill=Tkinter.X)
 
       for entry in menu:
          self.mBar.tk_menuBar(self.makeMenu(entry[0],entry[1]))
 
       # if show main buttons:
       if 1: # FIX: add a preference about showing buttons someday
-         toolbar = Frame(self.frame)
-         toolbar.pack(side=TOP, fill='both', expand = 1)
+         toolbar = Tkinter.Frame(self.frame)
+         toolbar.pack(side=Tkinter.TOP, fill='both', expand = 1)
          for b in button1:
-            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2,fill=X, expand = 1)
+            Tkinter.Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
 
       if self.graphicsMode == 1: # GL
-         self.win = Opengl(master = self.frame, width = width, \
-                           height = height, double = db, depth = depth)
+         self.win = Opengl.Opengl(master = self.frame, width = width, \
+                                   height = height, double = db, depth = depth)
          self.win.pack(side = 'top', expand = 1, fill = 'both')
          self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
          self.win.redraw = self.redraw_pass
-         self.mode = IntVar(self.win)
+         self.mode = Tkinter.IntVar(self.win)
          self.mode.set(GL_EXP)
       else: # TK, no display
          self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
          self.win = self.frame
 
-      self.commandFrame = Frame(self.frame)
+      self.commandFrame = Tkinter.Frame(self.frame)
       self.commandFrame['relief'] = 'raised'
       self.commandFrame['bd']	 = '2'
       self.commandFrame.pack({'expand':'no', 'side':'bottom', 'fill':'x'})
 
-      self.commandLabel = Label(self.commandFrame)
+      self.commandLabel = Tkinter.Label(self.commandFrame)
       self.commandLabel["text"] = "Command:"
       self.commandLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
       # create a command 
-      self.commandEntry = Entry(self.commandFrame)
+      self.commandEntry = Tkinter.Entry(self.commandFrame)
       self.commandEntry.bind('<Return>', self.CommandReturnKey)
       self.commandEntry.bind('<Control-p>', self.CommandPreviousKey)
       self.commandEntry.bind('<Control-n>', self.CommandNextKey)
@@ -118,11 +120,57 @@ class GLgui(gui):
       self.commandEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
 
       # create a status bar
-      self.status = StatusBar(self.frame)
-      self.status.pack(side=BOTTOM, fill=X)
-      self.init()
+      self.status = TKwidgets.StatusBar(self.frame)
+      self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
+      print self.graphicsMode
+      if self.graphicsMode == 1: # GL
+         self.init()
       self.inform("Pyro Version " + version() + ": Ready...")
 
+   def openBrainWindow(self):
+      try:
+         self.windowBrain.state()
+      except:
+         self.windowBrain = Tkinter.Tk()
+         self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
+         self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
+         self.canvasBrain.pack()
+
+   def redrawWindowBrain(self):
+      # FIX: behavior specific. How to put this in behavior code so
+      # that each brain would know how to draw itself?
+      try:
+         self.windowBrain.state()
+      except:
+         return
+      if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
+         self.lastRun = self.engine.brain.lastRun
+         self.canvasBrain.delete('pie')
+         piecnt = 0
+         for control in self.engine.brain.controls:
+            piecnt += 1
+            percentSoFar = 0
+            piececnt = 0
+            for d in self.engine.brain.pie:
+               if control == d[0]:
+                  piececnt += 1
+                  portion = d[2]
+                  try:
+                     self.redrawPie(piecnt, percentSoFar, \
+                                    piececnt, \
+                                    "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
+                                    portion, \
+                                    "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
+                                                                            d[3], d[4]))
+                  except:
+                     pass
+                  percentSoFar += portion
+      else:
+         try:
+            self.canvasBrain.create_text(200,130, tags='pie',fill='black', text = "Ready...")
+         except:
+            pass
+         
    def fastUpdate(self):
       self.update_interval = 0.10
 
@@ -174,18 +222,6 @@ class GLgui(gui):
       #self.commandButton.flash()
       #self.UpdateListBoxes()
 
-   def viewRobot(self):
-      self.windowRobot = Tk()
-      self.windowRobot.wm_title("pyro@%s: Robot View" % os.getenv('HOSTNAME'))
-      self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
-      self.canvasRobot.pack()
-
-   def viewBrain(self):
-      self.windowBrain = Tk()
-      self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
-      self.canvasBrain = Canvas(self.windowBrain,width=550,height=300)
-      self.canvasBrain.pack()
-
    def redrawPie(self, pie, percentSoFar, piececnt, controller,
                  percent, name):
       # FIX: behavior specific. How to put in Behavior-based code?
@@ -205,55 +241,17 @@ class GLgui(gui):
       print "Robot:\t\t%s" % self.engine.robot
       print "-------------------------------------------------------------"
 
-   def redrawWindowBrain(self):
-      # FIX: behavior specific. How to put this in behavior code so
-      # that each brain would know how to draw itself?
-      if self.windowBrain != 0:
-         if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
-            self.lastRun = self.engine.brain.lastRun
-            self.canvasBrain.delete('pie')
-            piecnt = 0
-            for control in self.engine.brain.controls:
-               piecnt += 1
-               percentSoFar = 0
-               piececnt = 0
-               for d in self.engine.brain.pie:
-                  if control == d[0]:
-                     piececnt += 1
-                     portion = d[2]
-                     try:
-                        self.redrawPie(piecnt, percentSoFar, \
-                                       piececnt, \
-                                       "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
-                                       portion, \
-                                       "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
-                                                                               d[3], d[4]))
-                     except:
-                        pass
-                     percentSoFar += portion
-         else:
-            try:
-               self.canvasBrain.create_text(200,130, tags='pie',fill='black', text = "Ready...")
-            except:
-               pass
-
-   def redrawWindowRobot(self):
-      #if self.windowRobot != 0:
-      #   print dir(self.engine.robot),
-      pass
-
    def editBrain(self):
       import os
-      from os import getcwd, getenv, chdir, system
-      if getenv("EDITOR"):
-         os.system(getenv("EDITOR") + " " + self.engine.brainfile + "&")
+      if os.getenv("EDITOR"):
+         os.system(os.getenv("EDITOR") + " " + self.engine.brainfile + "&")
       else:
          os.system("emacs " + self.engine.brainfile + "&")
          
    def makeMenu(self,name,commands):
-      menu = Menubutton(self.mBar,text=name,underline=0)
-      menu.pack(side=LEFT,padx="2m")
-      menu.filemenu = Menu(menu)
+      menu = Tkinter.Menubutton(self.mBar,text=name,underline=0)
+      menu.pack(side=Tkinter.LEFT,padx="2m")
+      menu.filemenu = Tkinter.Menu(menu)
       for cmd in commands:
          menu.filemenu.add_command(label=cmd[0],command=cmd[1])
       menu['menu'] = menu.filemenu
@@ -273,11 +271,30 @@ class GLgui(gui):
                self.win.tkRedraw()
                while self.win.tk.dooneevent(2): pass
             except:
-               print "Exiting main loop...", self.done
+               #   print "Exiting main loop...", self.done
                self.done = 1
             sleep(self.update_interval)
       else:
-         self.win.mainloop()
+         self.done = 0
+         while not self.done:
+            needToUpdateState = 1
+            try: needToUpdateState = self.engine.brain.needToStop
+            except: pass
+            if needToUpdateState:
+               try: self.engine.robot.update()
+               except: pass
+            #try:
+            self.redrawWindowBrain()
+            try:
+               self.windowCamera.updateWindow()
+            except:
+               pass
+            while self.win.tk.dooneevent(2): pass
+            #except:
+            #   print "Exiting main loop...", self.done
+            #   self.done = 1
+            sleep(self.update_interval)
+         #self.win.mainloop()
 
    def init(self):
       # Do not specify a material property here.
@@ -315,7 +332,7 @@ class GLgui(gui):
       retval = ""
       cwd = getcwd()
       chdir(pyro.pyrodir() + "/plugins/" + filetype)
-      d = LoadFileDialog(self.win, "Load " + filetype, skel)
+      d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel)
       if d.Show() == 1:
          doc = d.GetFileName()
          d.DialogCleanup()
@@ -335,46 +352,50 @@ class GLgui(gui):
    def redraw_pass(self, win = 0): pass
 
    def redraw(self, win = 0):
-      glClearColor(0.5, 0.5, 0.5, 0)
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-      #glLoadIdentity()
-      #self.resize(self.width, self.height)
-      f = GenericStream()
-      r = StreamRenderer(f)
-      self.draw({}, r)
-      f.close()
-      s = StreamTranslator(f, GLRenderer())
-      s.process()
-      f.close()
-      self.textView()
-      self.bitmapString(1, self.height - 30, "X:", (0, 0, 0))
-      self.bitmapString(1, self.height - 60, "Y:", (0, 0, 0))
-      self.bitmapString(1, self.height - 90, "Th:", (0, 0, 0))
-      if self.engine != 0 and self.engine.robot != 0:
-         self.bitmapString(1, self.height - 30, "    %.2f" % self.engine.robot.get('robot', 'x'), (1, 0, 0))
-         self.bitmapString(1, self.height - 60, "    %.2f" % self.engine.robot.get('robot', 'y'), (1, 0, 0))
-         self.bitmapString(1, self.height - 90, "      %.2f" % self.engine.robot.get('robot', 'th'), (1, 0, 0))
-         if self.engine.robot.get('self', 'stall'):
-            self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
-      else:
-         self.bitmapString(1, self.height - 30, "    0.0", (1, 0, 0))
-         self.bitmapString(1, self.height - 60, "    0.0", (1, 0, 0))
-         self.bitmapString(1, self.height - 90, "      0.0", (1, 0, 0))
-      # ----------------------------------------------------------
-      # This doesn't get updated as often:
-      # ----------------------------------------------------------      
-      current = time()
-      if current - self.lasttime < self.update_interval_detail: return
-      self.lasttime = current
-      self.redrawWindowBrain()
-      self.redrawWindowRobot()
-      for p in self.engine.plot:
+      if self.graphicsMode == 1: # GL
+         glClearColor(0.5, 0.5, 0.5, 0)
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+         #glLoadIdentity()
+         #self.resize(self.width, self.height)
+         f = GenericStream()
+         r = StreamRenderer(f)
+         self.draw({}, r)
+         f.close()
+         s = StreamTranslator(f, GLRenderer())
+         s.process()
+         f.close()
+         self.textView()
+         self.bitmapString(1, self.height - 30, "X:", (0, 0, 0))
+         self.bitmapString(1, self.height - 60, "Y:", (0, 0, 0))
+         self.bitmapString(1, self.height - 90, "Th:", (0, 0, 0))
+         if self.engine != 0 and self.engine.robot != 0:
+            self.bitmapString(1, self.height - 30, "    %.2f" % self.engine.robot.get('robot', 'x'), (1, 0, 0))
+            self.bitmapString(1, self.height - 60, "    %.2f" % self.engine.robot.get('robot', 'y'), (1, 0, 0))
+            self.bitmapString(1, self.height - 90, "      %.2f" % self.engine.robot.get('robot', 'th'), (1, 0, 0))
+            if self.engine.robot.get('self', 'stall'):
+               self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
+         else:
+            self.bitmapString(1, self.height - 30, "    0.0", (1, 0, 0))
+            self.bitmapString(1, self.height - 60, "    0.0", (1, 0, 0))
+            self.bitmapString(1, self.height - 90, "      0.0", (1, 0, 0))
+         # ----------------------------------------------------------
+         # This doesn't get updated as often:
+         # ----------------------------------------------------------      
+         current = time()
+         if current - self.lasttime < self.update_interval_detail: return
+         self.lasttime = current
+         self.redrawWindowBrain()
          try:
-            p.redraw(()) # pass in options
-         except TclError:
-            #Window's closed; remove the plot from the redraw list
-            print "Removing"
-            self.engine.plot.remove(p)
+            self.windowCamera.updateWindow()
+         except:
+            pass
+         for p in self.engine.plot:
+            try:
+               p.redraw(()) # pass in options
+            except TclError:
+               #Window's closed; remove the plot from the redraw list
+               print "Removing"
+               self.engine.plot.remove(p)
 
    def textView(self):
       glViewport(0,0,self.width,self.height)

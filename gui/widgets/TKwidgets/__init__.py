@@ -1,10 +1,10 @@
-from Tkinter import *
+import Tkinter
 
-class StatusBar(Frame):
+class StatusBar(Tkinter.Frame):
    def __init__(self, master):
-      Frame.__init__(self, master)
-      self.label = Label(self, bd=1, relief=SUNKEN, anchor=W)
-      self.label.pack(fill=X)
+      Tkinter.Frame.__init__(self, master)
+      self.label = Tkinter.Label(self, bd=1, relief=Tkinter.SUNKEN, anchor=Tkinter.W)
+      self.label.pack(fill=Tkinter.X)
 
    def set(self, format, *args):
       self.label.config(text=format % args)
@@ -26,7 +26,7 @@ class Dialog:
 
 	def __init__(self, master):
 		self.master = master
-		self.top = Toplevel(self.master)
+		self.top = Tkinter.Toplevel(self.master)
 		self.top.title(self.__class__.__name__)
 		self.top.minsize(1, 1)
 		self.myWaitVar = `self.top` + 'EndDialogVar'
@@ -70,7 +70,7 @@ class Dialog:
 class ModalDialog(Dialog):
 
 	def __init__(self, master):
-		Dialog__init__(self, master)
+		Dialog.__init__(self, master)
 
 	def Show(self):
 		import string
@@ -109,19 +109,19 @@ class AlertDialog(ModalDialog):
 
 	def SetupDialog(self):
 		import string
-		upperFrame = Frame(self.top)
+		upperFrame = Tkinter.Frame(self.top)
 		upperFrame['relief'] = 'raised'
 		upperFrame['bd']	 = 1
 		upperFrame.pack({'expand':'yes', 'side':'top', 'fill':'both' })
-		self.bitmap = Label(upperFrame)
+		self.bitmap = Tkinter.Label(upperFrame)
 		self.bitmap.pack({'side':'left'})
 		msgList = string.splitfields(self.msgString, "\n")
 		for i in range(len(msgList)):
-			msgText = Label(upperFrame)
+			msgText = Tkinter.Label(upperFrame)
 			msgText["text"]	  = msgList[i]
 			msgText.pack({'expand':'yes', 'side':'top', 'anchor':'nw', 
 				'fill':'x' })
-		self.lowerFrame = Frame(self.top)
+		self.lowerFrame = Tkinter.Frame(self.top)
 		self.lowerFrame['relief'] = 'raised'
 		self.lowerFrame['bd']	 = 1
 		self.lowerFrame.pack({'expand':'yes', 'side':'top', 'pady':'2', 
@@ -137,7 +137,7 @@ class AlertDialog(ModalDialog):
 		self.TerminateDialog(2)
 
 	def CreateButton(self, text, command):
-		self.button = Button(self.lowerFrame)
+		self.button = Tkinter.Button(self.lowerFrame)
 		self.button["text"]	  = text
 		self.button["command"]   = command
 		self.button.pack({'expand':'yes', 'pady':'2', 'side':'left'})
@@ -250,29 +250,29 @@ class FileDialog(ModalDialog):
 
 		# directory label
 
-		self.dirFrame = Frame(self.top)
+		self.dirFrame = Tkinter.Frame(self.top)
 		self.dirFrame['relief'] = 'raised'
 		self.dirFrame['bd']	 = '2'
 		self.dirFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
-		self.dirLabel = Label(self.dirFrame)
+		self.dirLabel = Tkinter.Label(self.dirFrame)
 		self.dirLabel["text"] = "Directory:"
 		self.dirLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
 		# editable filter
 
-		self.filterFrame = Frame(self.top)
+		self.filterFrame = Tkinter.Frame(self.top)
 		self.filterFrame['relief'] = 'raised'
 		self.filterFrame['bd']	 = '2'
 		self.filterFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
-		self.filterLabel = Label(self.filterFrame)
+		self.filterLabel = Tkinter.Label(self.filterFrame)
 		self.filterLabel["text"] = "Filter:"
 		self.filterLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-                self.goHomeButton = Button(self.filterFrame)
+                self.goHomeButton = Tkinter.Button(self.filterFrame)
 		self.goHomeButton["text"]	  = "Home"
 		self.goHomeButton["command"]   = self.HomePressed
 		self.goHomeButton["width"] = 8
 		self.goHomeButton.pack({'expand':'yes', 'pady':'2', 'side':'right'})
                 
-		self.filterEntry = Entry(self.filterFrame)
+		self.filterEntry = Tkinter.Entry(self.filterFrame)
 		self.filterEntry.bind('<Return>', self.FilterReturnKey)
 		self.filterEntry["width"]  = "40"
 		self.filterEntry["relief"] = "ridge"
@@ -281,7 +281,7 @@ class FileDialog(ModalDialog):
 
 		# the directory and file listboxes
 
-		self.listBoxFrame = Frame(self.top)
+		self.listBoxFrame = Tkinter.Frame(self.top)
 		self.listBoxFrame['relief'] = 'raised'
 		self.listBoxFrame['bd']	 = '2'
 		self.listBoxFrame.pack({'expand':'yes', 'side' :'top',
@@ -292,14 +292,14 @@ class FileDialog(ModalDialog):
 
 		# editable filename
 
-		self.fileNameFrame = Frame(self.top)
+		self.fileNameFrame = Tkinter.Frame(self.top)
 		self.fileNameFrame.pack({'expand':'no', 'side':'top', 'fill':'both'})
 		self.fileNameFrame['relief'] = 'raised'
 		self.fileNameFrame['bd']	 = '2'
-		self.fileNameLabel = Label(self.fileNameFrame)
+		self.fileNameLabel = Tkinter.Label(self.fileNameFrame)
 		self.fileNameLabel["text"] = "File:"
 		self.fileNameLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-		self.fileNameEntry = Entry(self.fileNameFrame)
+		self.fileNameEntry = Tkinter.Entry(self.fileNameFrame)
 		self.fileNameEntry["width"]  = "40"
 		self.fileNameEntry["relief"] = "ridge"
 		self.fileNameEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
@@ -307,21 +307,21 @@ class FileDialog(ModalDialog):
 
 		#	buttons - ok, filter, cancel
 
-		self.buttonFrame = Frame(self.top)
+		self.buttonFrame = Tkinter.Frame(self.top)
 		self.buttonFrame['relief'] = 'raised'
 		self.buttonFrame['bd']	 = '2'
 		self.buttonFrame.pack({'expand':'no', 'side':'top', 'fill':'x'})
-		self.okButton = Button(self.buttonFrame)
+		self.okButton = Tkinter.Button(self.buttonFrame)
 		self.okButton["text"]	  = "OK"
 		self.okButton["command"]   = self.OkPressed
 		self.okButton["width"] = 8
 		self.okButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
-		self.filterButton = Button(self.buttonFrame)
+		self.filterButton = Tkinter.Button(self.buttonFrame)
 		self.filterButton["text"]	  = "Filter"
 		self.filterButton["command"]   = self.FilterPressed
 		self.filterButton["width"] = 8
 		self.filterButton.pack({'expand':'yes', 'pady':'2', 'side':'left'})
-		button = Button(self.buttonFrame)
+		button = Tkinter.Button(self.buttonFrame)
 		button["text"] = "Cancel"
 		button["command"] = self.CancelPressed
 		button["width"] = 8
@@ -330,22 +330,22 @@ class FileDialog(ModalDialog):
 	#	create the directory list box
 
 	def CreateDirListBox(self):
-		frame = Frame(self.listBoxFrame)
+		frame = Tkinter.Frame(self.listBoxFrame)
 		frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 
 			'fill' :'both'})
 		frame['relief'] = 'raised'
 		frame['bd']	 = '2'
-		filesFrame = Frame(frame)
+		filesFrame = Tkinter.Frame(frame)
 		filesFrame['relief'] = 'flat'
 		filesFrame['bd']	 = '2'
 		filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
-		label = Label(filesFrame)
+		label = Tkinter.Label(filesFrame)
 		label['text'] = 'Directories:'
 		label.pack({'side':'left', 'expand':'yes', 'anchor':'w',
 			'fill':'none'})
-		scrollBar = Scrollbar(frame, {'orient':'vertical'})
+		scrollBar = Tkinter.Scrollbar(frame, {'orient':'vertical'})
 		scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
-		self.dirLb = Listbox(frame, {'yscroll':scrollBar.set})
+		self.dirLb = Tkinter.Listbox(frame, {'yscroll':scrollBar.set})
 		self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
 			'fill' :'both'})
 		self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
@@ -354,22 +354,22 @@ class FileDialog(ModalDialog):
 	#	create the files list box
 
 	def CreateFileListBox(self):
-		frame = Frame(self.listBoxFrame)
+		frame = Tkinter.Frame(self.listBoxFrame)
 		frame['relief'] = 'raised'
 		frame['bd']	 = '2'
 		frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 'padx' :'1', 
 			'fill' :'both'})
-		filesFrame = Frame(frame)
+		filesFrame = Tkinter.Frame(frame)
 		filesFrame['relief'] = 'flat'
 		filesFrame['bd']	 = '2'
 		filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
-		label = Label(filesFrame)
+		label = Tkinter.Label(filesFrame)
 		label['text'] = 'Files:'
 		label.pack({'side':'left', 'expand':'yes', 'anchor':'w', 
 			'fill':'none'})
-		scrollBar = Scrollbar(frame, {'orient':'vertical'})
+		scrollBar = Tkinter.Scrollbar(frame, {'orient':'vertical'})
 		scrollBar.pack({'side':'right', 'fill':'y'})
-		self.fileLb = Listbox(frame, {'yscroll':scrollBar.set})
+		self.fileLb = Tkinter.Listbox(frame, {'yscroll':scrollBar.set})
 		self.fileLb.pack({'expand':'yes', 'side' :'top', 'pady' :'0', 
 			'fill' :'both'})
 		self.fileLb.bind('<1>', self.DoSelection)
@@ -414,7 +414,7 @@ class FileDialog(ModalDialog):
 		from posixpath import join
 		lb = event.widget
 		field = self.fileNameEntry
-		field.delete(0, AtEnd())
+		field.delete(0, Tkinter.AtEnd())
 		field.insert(0, join(self.cwd_print(), lb.get(lb.nearest(event.y))))
                 lb.select_clear(0, "end")
                 lb.select_anchor(lb.nearest(event.y))
@@ -536,12 +536,12 @@ class SaveFileDialog(FileDialog):
 			warningDlg.DialogCleanup()
 		FileDialog.OkPressed(self)
 
-class Application(Frame):
+class Application(Tkinter.Frame):
     def __init__(self, master=None):
-        Frame.__init__(self, master)
+        Tkinter.Frame.__init__(self, master)
 
 
-        self.button = Button(self)
+        self.button = Tkinter.Button(self)
         self.button['text'] = 'Load File...'
         self.button['command'] = self.Press
         self.button.pack({"side": "top"})

@@ -883,9 +883,9 @@ if __name__ == '__main__':
    if getenv('DISPLAY') and sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       try:
-         from Tkinter import *
+         import Tkinter
          import Image, ImageTk
-         class UI(Label):
+         class UI(Tkinter.Label):
             def __init__(self, master, im):
                if im.mode == "1":
                   # bitmap image
@@ -894,8 +894,8 @@ if __name__ == '__main__':
                else:
                   # photo image
                   self.image = ImageTk.PhotoImage(im)
-                  Label.__init__(self, master, image=self.image, bd=0)
-         root = Tk()
+                  Tkinter.Label.__init__(self, master, image=self.image, bd=0)
+         root = Tkinter.Tk()
          filename = getenv('PYRO') + "/vision/snaps/som-1.ppm"
          root.title(filename)
          im = Image.open(filename)

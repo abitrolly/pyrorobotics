@@ -3,7 +3,6 @@ import curses
 #import curses.wrapper
 
 class Curses(gui):
-    
     def init(self):
         self.stdscr = curses.initscr()
         curses.noecho()

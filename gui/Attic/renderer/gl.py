@@ -1,7 +1,7 @@
 from pyro.gui.renderer import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from OpenGL.Tk import *
+#from OpenGL.Tk import *
 from math import sin, cos
 
 class GLRenderer(Renderer):

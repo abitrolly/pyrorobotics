@@ -72,6 +72,8 @@ class gui(Drawable):
          about()
       elif retval == "reload":
          self.engine.reset()
+      elif retval == "load camera":
+         self.loadCamera()
       elif retval == "load robot":
          self.loadRobot()
       elif retval == "load brain":
@@ -101,6 +103,8 @@ class gui(Drawable):
          exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
+         engine = self.engine
+         gui = self
          print "> " + string.strip(retval) + " =>",
          try:
             exec exp1
@@ -214,6 +218,13 @@ class gui(Drawable):
       self.redraw()
       if f != '':
          self.engine.loadRobot(f)
+         self.redraw()
+
+   def loadCamera(self):
+      f = self.fileloaddialog("cameras","*.py")
+      self.redraw()
+      if f != '':
+         self.engine.loadCamera(f)
          self.redraw()
 
    def freeRobot(self):

@@ -1,8 +1,7 @@
 import string
-#from OpenGL.GL import *
-from pickle import *
+#from pickle import *
 from cPickle import *
-from pyro.gui.renderer import *
+from pyro.gui.renderer import Renderer
 
 class GenericStream:
    def __init__(self):
