@@ -54,4 +54,7 @@ def distance(x1, y1, x2, y2):
 
 def angleAdd(angle, degree):
     return ((angle + degree) + 360) % 360 # make positive, in range 0-360
-        
+
+def angleEqual(angle1, angle2, tolerance = 5):
+    pass
+
