@@ -29,7 +29,7 @@ config:
 pyro-$(PYRO_VERSION).tgz: Makefile
 	mkdir tars || true
 	mv *.tgz tars/ || true
-	make cleanall; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude plugins/simulators/Khepera --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
+	make cleanall; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude pyro/plugins/simulators/Khepera --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
 
 Makefile.cfg:
 	python configure.py
@@ -42,9 +42,14 @@ bin/pyro: Makefile.src build/pyro Makefile.cfg
 	cat build/pyro >> bin/pyro
 	chmod a+x bin/pyro
 
-plugins/simulators/Khepera: build/Khepera Makefile
+plugins/simulators/Khepera: build/Khepera Makefile Makefile.cfg Makefile.src
 	echo -e "#!/bin/sh" > plugins/simulators/Khepera
 	echo -e "SIM_DIR=$(PWD)/simulators/khepera" >> plugins/simulators/Khepera
 	cat build/Khepera >> plugins/simulators/Khepera
 	chmod a+x plugins/simulators/Khepera
 
+clean:: 
+	- $(RM) plugins/simulators/Khepera
+	- $(RM) bin/pyro
+
+cleanall:: clean

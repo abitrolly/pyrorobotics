@@ -56,3 +56,5 @@ header.h: types.h graphics.h sim.h robot.h world.h
 clean:
 	rm -f sim OBJ/*.o ; \
 	(cd ./CNTRL && make clean)
+
+cleanall:: clean
