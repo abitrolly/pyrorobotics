@@ -135,6 +135,11 @@ class RAVQ:
         self.mask = Numeric.array(mask, 'd')
     def getWinnerCount(self):
         return self.winnerCount
+    def getWinnerTotalCount(self):
+        if self.counters == []:
+            return 0
+        else:
+            return self.counters[self.winnerIndex]
     def getMinimumCount(self):
         if self.counters == []:
             return 0
