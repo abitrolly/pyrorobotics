@@ -1,62 +1,7 @@
 Pyro README File
 ----------------
 
-Information for the Python Robotics system
+Please see http://emergent.brynmawr.edu/wiki/?Pyro for notes on
+installation, development, use, licensing, etc.
 
-1. INSTALL
 
-To use Pyro, you will need all of the following installed:
-
-* Python 2.0, or greater
-* Python Numeric module
-* Python module PyOpenGL 
-
-Briefly:
-
-0. su -
-1. tar xfz Numeric-20.3.tar.gz
-2. cd Numeric-20.3
-3. python2.1 setup.py install
-4. cd 
-5. tar xfz PyOpenGL-2.0.0.44.tar.g
-6. cd PyOpenGL-2.0.0.44
-7. python2.1 setup.py build
-8. python2.1 setup.py install
-
-Pyro has been tested on RedHat Linux, 7.2.
-
-Once the above have been installed, you are ready to setup the
-environment and make the Pyro C-based modules. 
-
-First, put the tar file where you will install the system:
-
-% mv pyro-X.X.tgz /usr/local/
-% cd /usr/local
-
-Untar the system:
-
-% tar xfz pyro-X.X.tgz
-
-Setup up the PYRO environment variable, for example:
-
-% cd pyro
-% export PYRO=/usr/local/pyro
-
-To set up other environment variables:
-
-% . bin/environment.sh
-
-Next, change to the pyro subdirectory, and make the system:
-
-% cd $PYRO
-% make all
-
-2. GETTING STARTED
-
-You start Pyro with the command:
-
-% $PYRO/bin/pyro
-
-or put $PYRO/bin in your path and just call pyro.
-
-In the startup window
