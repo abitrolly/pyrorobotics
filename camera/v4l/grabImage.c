@@ -597,34 +597,37 @@ Blob *addPixel( Blob *b, int y,int x )
 
 Blob *joinBlob( Blob *self, Blob *other )
 {
-  
-  if( other->ul.x < self->ul.x )
-    self->ul.x = other->ul.x;
-
-  if( other->lr.x > self->lr.x )
-      self->lr.x = other->lr.x ;
-  
-  if( other->ul.y < self->ul.y )
-    self->ul.y = other->ul.y;
-
-  if( other->lr.y > self->lr.y )
-    self->lr.y = other->lr.y;
- 
-  /* Not Correct */
-  /*
-    self->cm.x=( (self->mass * self->cm.x + other->mass * other->cm.x )/
-    (self->mass + other->mass));
-    self->cm.y=( (self->mass * self->cm.y + other->mass * other->cm.y)/
-    (self->mass + other->mass));
-  */
-  
-  self->mass += other->mass;
-
+  if(self->mass != 0 && other->mass != 0)
+    {
+      if( other->ul.x < self->ul.x )
+	self->ul.x = other->ul.x;
+      
+      if( other->lr.x > self->lr.x )
+	self->lr.x = other->lr.x ;
+      
+      if( other->ul.y < self->ul.y )
+	self->ul.y = other->ul.y;
+      
+      if( other->lr.y > self->lr.y )
+	self->lr.y = other->lr.y;
+      
+      /* Not Correct */
+      /*
+	self->cm.x=( (self->mass * self->cm.x + other->mass * other->cm.x )/
+	(self->mass + other->mass));
+	self->cm.y=( (self->mass * self->cm.y + other->mass * other->cm.y)/
+	(self->mass + other->mass));
+      */
+      
+      self->mass += other->mass;
+      
+      other->mass = 0;
+    }
 }
 
 void deleteBlob( Blob *b )
 {
-
+  
   b->cm.x = 192;
   b->cm.y = 120;
   b->ul.x = 384;
@@ -632,7 +635,7 @@ void deleteBlob( Blob *b )
   b->lr.x = 0;
   b->lr.x = 0;
   b->mass = 0;
-
+  
 }
 
 int getBlobWidth( Blob *b )
@@ -652,11 +655,50 @@ int getBlobArea( Blob *b )
 
 /* not correct, 1 pixel is very dense.  */
 /*
-float getBlobDensity( Blob *b )
-{
+  float getBlobDensity( Blob *b )
+  {
   return( (float)b->mass / (float)getBlobArea( b ) );
-}
+  }
 */
+
+
+void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size)
+{
+  int i,j;
+  int rankTable[MAXBLOBS];
+  
+  
+  for(i=0; i<MAXBLOBS; i++)
+    rankTable[i] = i;
+  
+  switch(sortMethod)
+    {
+      
+    case 0:/* Mass */
+      for(i=1; i < size+1; i++)
+	for(j=i+1; j< MAXBLOBS; j++)
+	  if(bloblist[rankTable[i]].mass < bloblist[rankTable[j]].mass)
+	    SWAP(rankTable[i],rankTable[j]);
+      break;
+      
+    case 1: /* Area */
+      for(i=1; i < size+1; i++)
+	for(j=i+1; j< MAXBLOBS; j++)
+	  /* automattically swap out 0 mass from i spot*/
+	  if(bloblist[rankTable[i]].mass == 0 ||
+	     (bloblist[rankTable[j]].mass != 0 &&
+	      getBlobArea(&bloblist[rankTable[i]]) <
+	      getBlobArea(&bloblist[rankTable[j]])))
+	    SWAP(rankTable[i],rankTable[j]); 
+      break;
+    
+    }
+  
+  for(i=1;i<size+1;i++)
+    indexes[i-1]= rankTable[i];
+  
+}
+
 
 static PyObject *blobify(PyObject *self, PyObject *args)
 {
@@ -675,33 +717,24 @@ static PyObject *blobify(PyObject *self, PyObject *args)
   
   Blob bloblist[MAXBLOBS];
   
-  int channel, width, height, low, high,sortmethod, drawBox;
+  int channel, width, height, low, high,sortmethod, size, drawBox;
   int w,h,n,m,i,j, k, l;
   int offset, mark1, mark2;
   int count;
   int minBlobNum=0, maxBlobNum=0;
-  int maxBlobIndex=0;
-  
+
+  int maxIndex[5]={0};
   unsigned int blobdata[240][384]={0};
-  
-  int min_x,min_y,max_x,max_y,cm_x,cm_y,mass;
   
   unsigned char *image;
   PyObject *tuple;
   
-  if(!PyArg_ParseTuple(args, "iiiiiii", &channel, &low, 
-		       &high, &sortmethod, &drawBox, &width, &height))
+  if(!PyArg_ParseTuple(args, "iiiiiiii", &channel, &low, 
+		       &high, &sortmethod, &size, &drawBox, &width, &height))
     {
       PyErr_SetString(PyExc_TypeError, "Invalid arguments to blobify");
       return NULL;
     }
-  
-  min_x = width;
-  min_y = height;
-  max_x = 0;
-  min_x = 0;
-  cm_x = 0;
-  cm_y = 0;
   
   image = map;
   
@@ -793,6 +826,8 @@ static PyObject *blobify(PyObject *self, PyObject *args)
 			for(j=0;j<width;j++)
 			  if(blobdata[i][j] == n)
 			    blobdata[i][j] = blobdata[h][w-1];
+		      
+		      /*deleteBlob(&bloblist[blobdata[h-1][w]]);*/
 		    }
 		}
 	      else
@@ -818,73 +853,104 @@ static PyObject *blobify(PyObject *self, PyObject *args)
 	    }
 	}
     }
-  
-  
-  maxBlobIndex=1;
-  switch(sortmethod)
-    {
-    case 0: /* Max Mass */
-      for(n=1;n<MAXBLOBS;n++)
-	if(bloblist[n].mass != 0)
-	  if(bloblist[n].mass > bloblist[maxBlobIndex].mass)
-	    maxBlobIndex=n;
-      break;
-    case 1: /* max area*/
-      for(n=1;n<MAXBLOBS;n++)
-	if(bloblist[n].mass != 0)
-	  if(getBlobArea(&bloblist[n]) > getBlobArea(&bloblist[maxBlobIndex]))
-	    maxBlobIndex=n;
-      break;
-      /*  
-	  case 2: /* Max Density *
-	  for(n=1;n<MAXBLOBS;n++)
-	  if(bloblist[n].mass != 0)
-	  if(getBlobDensity(&bloblist[n]) > getBlobDensity(&bloblist[maxBlobIndex]))
-	  maxBlobIndex=n;
-	  break;
-	  }
-      */
-    }
-      
+
+  sortBlobs(sortmethod, bloblist, maxIndex,size);
+
   image=map;
+
   if(drawBox)
     {
       for(i=0; i<height; i++ )
 	for(j=0; j<width; j++,image+=3 )
-	  {
-	    if(blobdata[i][j] == maxBlobIndex)
+	  for(k=0;k<size;k++)
+	    {
+	      if(blobdata[i][j] == maxIndex[k])
 	      {
 		*(image+offset) = high;
 		*(image+mark1) = 0;
 		*(image+mark2) = 0;
 		
 	      }
-	    
-	    if(((j >= bloblist[maxBlobIndex].ul.x && j <= bloblist[maxBlobIndex].lr.x) &&
-		(i == bloblist[maxBlobIndex].ul.y || i == bloblist[maxBlobIndex].lr.y)) ||
-	       ((j == bloblist[maxBlobIndex].ul.x || j == bloblist[maxBlobIndex].lr.x) &&
-		(i >= bloblist[maxBlobIndex].ul.y && i <= bloblist[maxBlobIndex].lr.y)))
-	      {
-		*(image+offset) = 255;
-		*(image+mark1) = 255;
-		*(image+mark2) = 255;
-	      }
-	  }
+	  
+	      if(bloblist[maxIndex[k]].mass > 0 )
+		if(((j >= bloblist[maxIndex[k]].ul.x && j <= bloblist[maxIndex[k]].lr.x) &&
+		    (i == bloblist[maxIndex[k]].ul.y || i == bloblist[maxIndex[k]].lr.y)) ||
+		   ((j == bloblist[maxIndex[k]].ul.x || j == bloblist[maxIndex[k]].lr.x) &&
+		    (i >= bloblist[maxIndex[k]].ul.y && i <= bloblist[maxIndex[k]].lr.y)))
+		  {
+		    *(image+offset) = 255;
+		    *(image+mark1) = 255;
+		    *(image+mark2) = 255;
+		  }
+	    }
     }
   
-  
-  min_x = bloblist[maxBlobIndex].ul.x;
-  min_y = bloblist[maxBlobIndex].ul.y;
-  max_x = bloblist[maxBlobIndex].lr.x;
-  max_y = bloblist[maxBlobIndex].lr.y;
-  /*cm_x  = bloblist[maxBlobIndex].cm.x;
-    cm_y  = bloblist[maxBlobIndex].cm.y;*/
-  mass  = bloblist[maxBlobIndex].mass;
-  
-  /* got max blob coordinates, return them. */
-  
-  tuple = Py_BuildValue("iiiii", min_x, min_y, max_x, max_y,mass); 
-  
+
+
+  switch(size)
+    {
+    case 1:
+      tuple = Py_BuildValue("iiiii",bloblist[maxIndex[0]].ul.x,
+			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
+			    bloblist[maxIndex[0]].ul.x,bloblist[maxIndex[0]].mass);
+      break;
+	   
+    case 2:
+      tuple = Py_BuildValue("iiiiiiiiii",bloblist[maxIndex[0]].ul.x,
+			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
+			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
+			    bloblist[maxIndex[1]].ul.x,
+			    bloblist[maxIndex[1]].ul.y,bloblist[maxIndex[1]].lr.x,
+			    bloblist[maxIndex[1]].lr.y,bloblist[maxIndex[1]].mass);
+      break;
+    
+    case 3:
+      tuple = Py_BuildValue("iiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
+			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
+			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
+			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
+			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
+			    bloblist[maxIndex[1]].mass,
+			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
+			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
+			    bloblist[maxIndex[2]].mass);
+      break;
+
+    case 4:
+      tuple = Py_BuildValue("iiiiiiiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
+			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
+			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
+			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
+			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
+			    bloblist[maxIndex[1]].mass,
+			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
+			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
+			    bloblist[maxIndex[2]].mass,
+			    bloblist[maxIndex[3]].ul.x,bloblist[maxIndex[3]].ul.y,
+			    bloblist[maxIndex[3]].lr.x,bloblist[maxIndex[3]].lr.y,
+			    bloblist[maxIndex[3]].mass);
+
+      break;
+
+    case 5:
+      tuple = Py_BuildValue("iiiiiiiiiiiiiiiiiiiiiiiii",bloblist[maxIndex[0]].ul.x,
+			    bloblist[maxIndex[0]].ul.y,bloblist[maxIndex[0]].lr.x,
+			    bloblist[maxIndex[0]].lr.y,bloblist[maxIndex[0]].mass,
+			    bloblist[maxIndex[1]].ul.x,bloblist[maxIndex[1]].ul.y,
+			    bloblist[maxIndex[1]].lr.x,bloblist[maxIndex[1]].lr.y,
+			    bloblist[maxIndex[1]].mass,
+			    bloblist[maxIndex[2]].ul.x,bloblist[maxIndex[2]].ul.y,
+			    bloblist[maxIndex[2]].lr.x,bloblist[maxIndex[2]].lr.y,
+			    bloblist[maxIndex[2]].mass,
+			    bloblist[maxIndex[3]].ul.x,bloblist[maxIndex[3]].ul.y,
+			    bloblist[maxIndex[3]].lr.x,bloblist[maxIndex[3]].lr.y,
+			    bloblist[maxIndex[3]].mass,
+			    bloblist[maxIndex[4]].ul.x,bloblist[maxIndex[4]].ul.y,
+			    bloblist[maxIndex[4]].lr.x,bloblist[maxIndex[4]].lr.y,
+			    bloblist[maxIndex[4]].mass);
+      break;
+    }
+  /* got blob coordinates, return them. */  
   return tuple; 
 }  
 
