@@ -19,9 +19,9 @@ void Blob::drawRect(long int left, long int right,
 void Blob::clear() {
   for(int w=0; w<width; w++) {
     for(int h=0; h<height; h++ ) {
-      image[(h * width + w) * depth + rgb[0]] = 255;
-      image[(h * width + w) * depth + rgb[1]] = 255;
-      image[(h * width + w) * depth + rgb[2]] = 255;
+      image[(h * width + w) * depth + rgb[0]] = 128;
+      image[(h * width + w) * depth + rgb[1]] = 128;
+      image[(h * width + w) * depth + rgb[2]] = 128;
     }
   }
 }
