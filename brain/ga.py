@@ -22,8 +22,8 @@
 #    the fitness function must return a non-negative value.  
 # --------------------------------------------------------------------------
 
-import RandomArray, Numeric, math, random, time, sys, string
-from copy import deepcopy, copy
+import Numeric, math, random, time, sys, string
+from copy import deepcopy
 
 def display(v):
     print v,
@@ -85,6 +85,9 @@ class Gene:
                 self.genotype.append( self.alphabet[int(random.random() * len(self.alphabet)) ] )
             else:
                 raise "unknownMode", self.mode
+
+    def copy(self):
+        return deepcopy(self)
 
     def __getitem__(self, val):
         return self.genotype[val]
@@ -186,7 +189,7 @@ class Gene:
         else:
             if self.verbose > 2:
                 print "no crossover"
-            return deepcopy(parent1), deepcopy(parent2)
+            return parent1.copy(), parent2.copy()
 
 class Population:
     def __init__(self, cnt, geneConstructor, **args):
@@ -198,13 +201,23 @@ class Population:
         self.bestMember = -1
         self.size = cnt
         self.verbose = 0
+        self.args = args
+        self.geneConstructor = geneConstructor
         if args.has_key('elitePercent'):
             self.elitePercent = args['elitePercent']
         if args.has_key('verbose'):
             self.verbose = args['verbose']
         for i in range(cnt):
-            self.individuals.append(geneConstructor(pos = i, popSize = cnt, **args))
-
+            self.individuals.append(geneConstructor(pos = i,
+                                                    popSize = cnt,
+                                                    **args))
+    def copy(self):
+        newPop = self.__class__(0, self.geneConstructor, **self.args)
+        newPop.size = self.size
+        for i in range(self.size):
+            newPop.individuals.append( self.individuals[i].copy() )
+        return newPop
+        
     def __getitem__(self, val):
         return self.individuals[val]
 
@@ -235,7 +248,7 @@ class Population:
             print "selected",
             self.individuals[index].display(),
             print "fitness", self.individuals[index].fitness
-        return deepcopy(self.individuals[index])
+        return self.individuals[index].copy()
 
     def statistics(self):
         """
@@ -305,7 +318,7 @@ class GA:
         self.reInitialize()
 
     def reInitialize(self):
-        self.pop = deepcopy(self.origPop)
+        self.pop = self.origPop.copy()
         self.initialize()
 
     def initialize(self):
@@ -328,12 +341,9 @@ class GA:
     def applyFitnessFunction(self):
         for i in range( len(self.pop.individuals) ):
             self.pop.individuals[i].fitness = self.fitnessFunction(i) # PROBLEM!
-
     def setSeed(self, value):
-        self.seed1 = value
-        self.seed2 = value / 23.45
-        random.seed(self.seed1)
-        RandomArray.seed(int(self.seed1), int(self.seed2))
+        self.seed = value
+        random.seed(self.seed)
 
     def display_one(self, p):
         self.pop.individuals[p].display()
@@ -538,8 +548,8 @@ if __name__ == '__main__':
             GA.__init__(self,
                         Population(cnt, Gene, size=len(g), verbose=1,
                                    min=-1, max=1, maxStep = 1,
-                                   elitePercent = .1),
-                        mutationRate=0.5, crossoverRate=0.25,
+                                   elitePercent = .01),
+                        mutationRate=0.05, crossoverRate=0.6,
                         maxGeneration=400, verbose=1)
         def fitnessFunction(self, genePos):
             self.network.unArrayify(self.pop.individuals[genePos].genotype)
@@ -553,7 +563,7 @@ if __name__ == '__main__':
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = NNGA(20)
+        ga = NNGA(300)
         ga.evolve()
         ga.network.unArrayify(ga.pop.bestMember.genotype)
         ga.network.setInteractive(1)
@@ -572,9 +582,7 @@ if __name__ == '__main__':
                 for c in range(len(self.pop.individuals[i].genotype)):
                     if self.pop.individuals[i].genotype[c] == phrase[c]:
                         sum += 1
-                fraw = float(sum) / len(self.pop.individuals[i].genotype)
-                fscale = 2 ** fraw
-                return fscale
+                return float(sum) / len(self.pop.individuals[i].genotype)
             def isDone(self):
                 print "Best:",
                 self.pop.bestMember.display()

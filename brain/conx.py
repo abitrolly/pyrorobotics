@@ -2179,6 +2179,18 @@ class SRN(Network):
         self.setContext()
         return Network.sweepCrossValidation(self)
 
+class Corpus:
+    def __init__(self, function, length):
+        self.len = length
+        self.func = function
+    def __len__(self):
+        return self.len
+    def __getitem__(self, pos):
+        if pos >= self.len:
+            raise StopIteration
+        else:
+            return self.func(pos)
+
 if __name__ == '__main__':
     # Con-x: Sample Networks
     # (c) 2001, D.S. Blank
@@ -2966,6 +2978,16 @@ if __name__ == '__main__':
         n.getLayer('output').copyTargets([1.0, 0.0, 0.0])
         n.step() # if you don't want context cleared, initContext = 0
 
+    if ask("Test functional corpus?"):
+        print "Testing continuous XOR..."
+        n = SRN()
+        n.addThreeLayers(2, 2, 1)
+        n.setInitContext(0)
+        def random(pos):
+            x1 = random.random()
+            x2 = random.random()
+            return  []
+        
     if ask("Additional tests?"):
         n = Network()
         n.addThreeLayers(2,2,1)
