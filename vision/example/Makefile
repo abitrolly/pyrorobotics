@@ -1,5 +1,8 @@
 
+ifeq ($(PYRO),)
+# Give it some default
 PYRO=/usr/local/pyro
+endif
 
 include $(PYRO)/Makefile.cfg
 
