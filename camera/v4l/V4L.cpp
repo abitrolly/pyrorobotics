@@ -26,7 +26,7 @@ V4L::~V4L ()
   delete [] image;
 }
 
-void V4L:: updateMMap( )
+PyObject *V4L:: updateMMap( )
 {
   for (;;) {
     if (-1 >= ioctl(grab_fd,VIDIOCMCAPTURE,&grab_buf)) {
@@ -40,11 +40,12 @@ void V4L:: updateMMap( )
 	//swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
 	width  = grab_buf.width;
 	height = grab_buf.height;
-	//image = grab_data;
-	return;
+	return applyFilterList();
       }
     }
-    sleep(1); // force context switch; this is millisec
+    sleep(1); 
+    // force context switch to avoid giant sucking sound
+    // this is a millisec
   }
 }
 
