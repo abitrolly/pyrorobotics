@@ -34,4 +34,17 @@ just vision som. 30 hids.
 
 exp03
 
-Changed goal back to both sonar and vision soms. Hids 15.
+Changed goal back to both sonar and vision soms. Hids 45. No
+noise. 70% correct.
+
+exp04 (cesario)
+
+Goal just vision. Everything else same as exp03. 65% correct.
+
+exp05 
+
+Start: 4.46, 4.431, 226
+Path A Goal: 0.623, 2.53, 181
+Path B Goal: 0.495, 0.56, 230
+
+Trained by hand-driving 6 times each. Each path was about 80-100 steps.

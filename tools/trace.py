@@ -14,6 +14,15 @@ class ColorSet:
         self.colorCount = (self.colorCount + 1) % len(self.colors)
         return retval
 
+class SymbolSet:
+    def __init__(self):
+        self.symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+        self.symbolCount = 0
+    def next(self):
+        retval = self.symbols[self.symbolCount]
+        self.symbolCount = (self.symbolCount + 1) % len(self.symbols)
+        return retval
+
 class Trace:
     """
     Trace provides a general way of displaying a path on an image.
@@ -32,10 +41,10 @@ class Trace:
         self.fontFilename = path + "/tools/pilfonts/courR08.pil"
         self.symbols = 1        # activates/deactivates symbol mode
         self.color = 1          # activates/deactivates color
-        self.lineWidth = 30     # the length of lines in non-symbol mode
+        self.lineWidth = 10     # the length of lines in non-symbol mode
         # the resolution given for the bitmap in the world file
         self.resolution = 0.01
-        self.interval = 1       # frequency datapoints should be displayed
+        self.interval = 2       # frequency datapoints should be displayed
         self.robotPathData = self.readDataFile()
         im = Image.open(self.worldImageFilename)
         if not self.color:
@@ -44,6 +53,9 @@ class Trace:
         self.convertXPositionData(self.image, self.robotPathData)
         self.drawObj = ImageDraw.Draw(self.image)
         self.textDict = {}
+        self.symbolDict = {}
+        self.autoSymbol = 0
+        self.symbolSet = SymbolSet()
         self.colorSet = ColorSet()
 
     def readDataFile(self):
@@ -69,8 +81,17 @@ class Trace:
             self.textDict[label] = self.colorSet.next()
             return self.textDict[label]
 
+    def getSymbol(self, label):
+        if label in self.symbolDict:
+            return self.symbolDict[label]
+        else:
+            self.symbolDict[label] = self.symbolSet.next()
+            return self.symbolDict[label]
+
     def drawSymbol(self, loc, angle, label):
         pointList = []
+        if self.autoSymbol:
+            label = self.getSymbol(label)
         colorNum = self.getColor(label)
         if self.symbols:
             self.drawObj.text(loc, label, font = ImageFont.load(self.fontFilename),
@@ -146,7 +167,7 @@ if __name__ == "__main__":
     import sys
     testTrace = Trace(sys.argv[1],sys.argv[2])
     #testTrace = Trace("/home/dblank/pyro/experiments/colorful.gif","ffgoalposes.dat")
-    testTrace.output()
+    testTrace.output(sys.argv[3])
     #testTrace.makeWindow()
     #testTrace.run()
     #testTrace.app.mainloop()

@@ -1,3 +1,4 @@
+from pyro.system.log import Log
 from pyro.brain.conx import *
 # Create the network  
 n = Network()  
@@ -12,14 +13,14 @@ n.setTolerance(0.1)
 # set inputs and targets (from collected data set)  
 n.loadInputsFromFile('ffinputs.dat')
 n.loadTargetsFromFile('fftargets.dat')
-
+log = Log()
 best = 0  
 for i in xrange(0,10000,1):  
    tssError, totalCorrect, totalCount = n.sweep()    
    correctpercent = (totalCorrect*0.1) / (totalCount*0.1)  
-   print ( "Epoch # "+ str(i)+ " TSS ERROR: "+ str(tssError)+ 
-           " Correct: "+ str(totalCorrect)+ " Total Count: "+ 
-           str(totalCount)+ " %correct = "+ str(correctpercent))  
+   log.writeln( "Epoch # "+ str(i)+ " TSS ERROR: "+ str(tssError)+ 
+                " Correct: "+ str(totalCorrect)+ " Total Count: "+ 
+                str(totalCount)+ " %correct = "+ str(correctpercent))  
    if best < correctpercent:  
       n.saveWeightsToFile("ff.wts")  
       best = correctpercent  

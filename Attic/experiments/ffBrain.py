@@ -7,8 +7,9 @@ from time import sleep
 
 def makeVector(pos, len):
    retval = [0.0] * len
-   for i in range(len):
-       retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
+   #for i in range(len):
+   #    retval[i] = min(max(1 - abs(i - pos)/float(len/2 - 1), 0.0), 1.0)
+   retval[pos] = 1.0
    return retval
 
 class ffBrain(Brain):
@@ -16,13 +17,16 @@ class ffBrain(Brain):
    def setup(self):
       #self.mode = "viewState"
       self.mode = "run"
-      self.getRobot().noise = 0
+      self.getRobot().noise = 0.0
+      self.p = .8
+      self.minVal = .40
+      self.maxVal = .8
 
       # start and goal poses
-      #self.startPose = [4.44, 2.24, 87]
-      self.startPose = [0.84900000, 0.80000000, 65.00000000] # 1 row
-      #self.goalPose = [1.018, 3.75, -117 + 360] 
-      self.goalPose = [0.62800000, 3.20000000, 92.00000000] # 10 row
+      self.startPose = [4.46, 4.431, 226]
+      self.goalPose = [0.623, 2.53, 181] # Path A Goal
+      #self.goalPose = [0.495, 0.56, 230] # Path B Goal      
+
       # Setup the robot/start services:
       self.getRobot().startService(["BlobCamera", "truth"])
       self.truth = self.getRobot().getService("truth")
@@ -30,7 +34,7 @@ class ffBrain(Brain):
       # The FF Network:
       #self.n = VisRobotNetwork()
       self.n = Network()
-      self.n.addThreeLayers(140,15,2)
+      self.n.addThreeLayers(140,45,2)
       self.n.initialize()
       self.n.loadWeightsFromFile("ff.wts")
       # The SOMs:
@@ -55,20 +59,23 @@ class ffBrain(Brain):
                         makeVector(modelCamera.point.y, 15)
       self.goalList = [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
       print "Goal:", self.goalList
+      print "Goal Vector:", self.goalVector
       # Put robot in place to start:
       #self.truth.setPose(2.0, 1.25, 270)
       self.truth.setPose(self.startPose[0], self.startPose[1], self.startPose[2])
       sleep(1)
       self.getRobot().update()
       self.camera.update()
-      self.out = open("path.dat", "w")
+      self.cameraOut = open("path-camera-som-A.dat", "w")
+      self.sonarOut = open("path-sonar-som-A.dat", "w")
       print "Initialized"
 
    def destroy(self):
       self.somCamera.destroy()
       self.somSonar.destroy()
       self.n.destroy()
-      self.out.close()
+      self.sonarOut.close()
+      self.cameraOut.close()
 
    def scaleSonar(self,ls):
       myl = []
@@ -99,7 +106,7 @@ class ffBrain(Brain):
       self.n.propagate()
       # 4. move the robot based on output (unscale the ouputs first!)
       exaggeratedTrans, scaledRotate = self.n["output"].getActivations()
-      scaledTrans = (((exaggeratedTrans - .5) / .5) * .1) + .5
+      scaledTrans = self.minVal + (self.maxVal - self.minVal) * ((exaggeratedTrans - 1) / self.p + 1)
       unscaledTrans = (scaledTrans * 2) - 1
       unscaledRotate = (scaledRotate * 2) - 1
 
@@ -110,7 +117,12 @@ class ffBrain(Brain):
 
       if self.mode == "run":
          self.getRobot().move(unscaledTrans, unscaledRotate)
-         self.out.write("%f %f %f\n" %  self.truth.getPose())
+         #self.out.write("%f %f %f " %  self.truth.getPose() )
+         sonarStateNum = modelSonar.point.y * 20 + modelSonar.point.x
+         cameraStateNum = modelCamera.point.y * 20 + modelCamera.point.x
+         #self.out.write(" %d\n" % cameraStateNum)
+         self.sonarOut.write(" %f %f\n" % (modelSonar.point.x, modelSonar.point.y))
+         self.cameraOut.write(" %f %f\n" % (modelCamera.point.x, modelCamera.point.y))
 
 
 def INIT(engine):
