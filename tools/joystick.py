@@ -4,7 +4,7 @@ class Joystick:
 
    def __init__(self):
       self.app = Tk()
-      self.app.wm_state('withdrawn')
+      self.app.withdraw()
       self.win = Toplevel()
       self.win.wm_title('Joystick')
 
@@ -60,9 +60,9 @@ class Joystick:
       #x in?
       dist2 = (center[0] - x)**2 + (center[1] - y)**2
       if (dist2 < r2):
-         return True
+         return 1
       else:
-         return False
+         return 0
 
    def calc_tr(self, x, y):
       #right is negative

@@ -19,7 +19,7 @@ class TKgui(gui):
       gui.__init__(self, 'TK gui', {}, engine)
       # This needs to be done here:
       self.app = Tkinter.Tk()
-      self.app.wm_state('withdrawn')
+      self.app.withdraw()
       # And other main windows should use Tkinter.Toplevel()
       self.genlist = 0
       self.win = Tkinter.Toplevel()
