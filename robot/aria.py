@@ -264,6 +264,28 @@ class AriaRobot(Robot):
         self.senses['sonar']['arc'] = lambda dev, pos, \
                                       x = (7.5 * PIOVER180) : x
 
+	self.senses['laser'] = {}
+	self.senses['laser']['count'] = lambda dev: dev.getNumLaser()
+	self.senses['laser']['type'] = lambda dev: 'range'
+
+	# location of sensors' hits:
+        self.senses['laser']['x'] = lambda dev, pos: self.getLaserX(pos)
+        self.senses['laser']['y'] = lambda dev, pos: self.getLaserY(pos)
+	self.senses['laser']['z'] = lambda dev, pos: 0.03 # meters
+        self.senses['laser']['value'] = lambda dev, pos: self.getLaserRangeDev(dev, pos)
+        self.senses['laser']['maxvalue'] = lambda dev: self.getLaserMaxRange(dev)
+        self.senses['laser']['flag'] = lambda dev, pos: 0 # self.getLaserFlag
+        self.senses['laser']['units'] = lambda dev: "ROBOTS"
+
+	# location of origin of sensors:
+        self.senses['laser']['ox'] = lambda dev, pos: self.params.getLaserX(pos)
+        self.senses['laser']['oy'] = lambda dev, pos: self.params.getLaserY(pos)
+	self.senses['laser']['oz'] = lambda dev, pos: 0.03
+        self.senses['laser']['th'] = lambda dev, pos: self.params.getLaserTh(pos) * PIOVER180 # self.light_th
+        # in radians:
+        self.senses['laser']['arc'] = lambda dev, pos, \
+                                      x = (7.5 * PIOVER180) : x
+
         if self.params.haveFrontBumpers() or self.params.haveRearBumpers():
             # bumper sensors
             self.senses['bumper'] = {}
