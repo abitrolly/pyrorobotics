@@ -2,251 +2,67 @@
 
 from pyro.system.share import config
 from pyro.robot import *
+from pyro.robot.device import *
 from pyro.system.SerialConnection import *
 import pyro.robot.driver as driver
 import pyro.gui.console as console
-import string
-import array
-import math
-import termios
+import string, array, math, termios
 from time import sleep
-
 from pyro.simulators.khepera.CNTRL import _ksim as ksim
 
-PIOVER180 = pi / 180.0
-DEG90RADS = 0.5 * pi
+PIOVER180 = math.pi / 180.0
+DEG90RADS = 0.5 * math.pi
 COSDEG90RADS = math.cos(DEG90RADS) / 1000.0
 SINDEG90RADS = math.sin(DEG90RADS) / 1000.0
 
-class SerialSimulator:
-    def __init__(self):
-        self.p = ksim.initControl()
-        self.last_msg = ''
-        
-    def writeline(self, msg):
-        self.last_msg = ksim.sendMessage(self.p, msg)
-        sleep(.01)  # for some reason it seems as if python doesn't block
-		    # properly on the preceeding assignment unless this is here
+class IRSensor(Device):
+    def __init__(self, dev, type = "ir"):
+        Device.__init__(self, type)
+        self.dev = dev
+        self.devData['units']    = "ROBOTS" # current report units
+        self.devData["radius"] = 55 / 1000.0 # meters
+        # natural units:
+        self.devData["rawunits"] = "MM"
+        self.devData['maxvalueraw'] = 60 # in rawunits
+        # ----------------------------------------------
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+        self.devData["count"] = 8
+        self.groups = {'all': range(8),
+                       'front' : (2, 3), 
+                       'front-left' : (0, 1), 
+                       'front-right' : (4, 5),
+                       'front-all' : (1, 2, 3, 4),
+                       'left' : (0, ), 
+                       'right' : (5, ), 
+                       'left-front' : (0, ), 
+                       'right-front' : (5, ), 
+                       'left-back' : (7, ), 
+                       'right-back' : (6, ), 
+                       'back-left' : (7, ), 
+                       'back-right' : (6, ), 
+                       'back-all' : (6, 7), 
+                       'back' : (6, 7)} 
+        self.subDataFunc['ox']    = self.ox
+        self.subDataFunc['oy']    = self.oy
+        self.subDataFunc['oz']    = lambda pos: 0.03
+        self.subDataFunc['th']    = self.th
+        self.subDataFunc['thr']    = lambda pos: self.th(pos) / PIOVER180
+        self.subDataFunc['arc']   = lambda pos: (15 * PIOVER180)
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
+	self.subDataFunc['x'] = self.getIRXCoord
+	self.subDataFunc['y'] = self.getIRYCoord
+	self.subDataFunc['z'] = lambda pos: 0.03
+	self.subDataFunc['value'] = self.getIRRange
+        #self.subDataFunc['all'] = self.getIRRangeAll
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+	self.subDataFunc['flag'] = self.getIRFlag
+        self.startDevice()    
 
-    def readline(self): # 1 = block till we get something
-        return self.last_msg #+ ',0,0,0,0,0,0,0,0'
-    
-class KheperaRobot(Robot):
-    def __init__(self, name = None, simulator = 0): # 0 makes it real
-        Robot.__init__(self, name, "khepera") # robot constructor
-        self.simulated = simulator
-        if simulator == 1:
-            self.sc = SerialSimulator()
-        else:
-            try:
-                port = config.get('khepera', 'port')
-            except:
-                port = "/dev/ttyS1"
-            if not port:
-                port = "/dev/ttyS1"
-            print "Khepera opening port", port, "..."
-            self.sc = SerialConnection(port, termios.B38400)
-            #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
-            #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
-        self.dev = self # pointer to self
-        self.stallTolerance = 0.25
-        self.stallHistoryPos = 0
-        self.stallHistorySize = 5
-        self.stallHistory = [0] * self.stallHistorySize
-        self.sensorSet = {'all': range(8),
-                          'front' : (2, 3), 
-                          'front-left' : (0, 1), 
-                          'front-right' : (4, 5),
-                          'front-all' : (1, 2, 3, 4),
-                          'left' : (0, ), 
-                          'right' : (5, ), 
-                          'left-front' : (0, ), 
-                          'right-front' : (5, ), 
-                          'left-back' : (7, ), 
-                          'right-back' : (6, ), 
-                          'back-left' : (7, ), 
-                          'back-right' : (6, ), 
-                          'back-all' : (6, 7), 
-                          'back' : (6, 7)} 
-        self.senseData = {}
-        self.lastTranslate = 0
-        self.lastRotate = 0
-        self.currSpeed = [0, 0]
-        # This could go as high as 127, but I am keeping it small
-        # to be on the same scale as larger robots. -DSB
-        self.translateFactor = 30
-        self.rotateFactor = 12
-        self.inform("Loading Khepera robot interface...")
+    def postSet(self, keyword):
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
-	# robot senses (all are functions):
-        self.senses['robot'] = {}
-        self.senses['robot']['simulator'] = lambda self, x = simulator: x
-        self.senses['robot']['stall'] = self.isStall
-        self.senses['robot']['x'] = self.getX
-        self.senses['robot']['y'] = self.getY
-        self.senses['robot']['z'] = self.getZ
-        self.senses['robot']['radius'] = lambda self: 55.0 # in MM
-        self.senses['robot']['th'] = self.getTh # in degrees
-        self.senses['robot']['thr'] = self.getThr # in radians
-	self.senses['robot']['type'] = lambda self: 'khepera'
-        self.senses['robot']['units'] = lambda self: 'CM'
-
-	self.senses['robot']['name'] = lambda self: 'khepera-1'
-
-	self.senses['ir'] = {}
-	self.senses['ir']['count'] = lambda self: 8
-	self.senses['ir']['type'] = lambda self: 'range'
-
-	# location of sensors' hits:
-	self.senses['ir']['x'] = self.getIRXCoord
-	self.senses['ir']['y'] = self.getIRYCoord
-	self.senses['ir']['z'] = lambda self, pos: 0.03
-	self.senses['ir']['value'] = self.getIRRange
-        self.senses['ir']['all'] = self.getIRRangeAll
-        self.senses['ir']['maxvalue'] = self.getIRMaxRange
-	self.senses['ir']['flag'] = self.getIRFlag
-        self.senses['ir']['units'] = lambda self: "ROBOTS"
-
-	# location of origin of sensors:
-        self.senses['ir']['ox'] = self.light_ox
-	self.senses['ir']['oy'] = self.light_oy
-	self.senses['ir']['oz'] = lambda self, pos: 0.03 # meters
-	self.senses['ir']['th'] = self.light_th
-        # in radians:
-        self.senses['ir']['arc'] = lambda self, pos, \
-                                      x = (15 * math.pi / 180) : x
-        # Make a copy, for default:
-        self.senses['range'] = self.senses['ir']
-
-	self.senses['light'] = {}
-	self.senses['light']['count'] = lambda self: 8
-	self.senses['light']['type'] = lambda self: 'measure'
-        self.senses['light']['maxvalue'] = self.getLightMaxRange
-        self.senses['light']['units'] = lambda self: "RAW"
-        self.senses['light']['all'] =   self.getLightRangeAll
-
-        # location of sensors' hits:
-        self.senses['light']['x'] = self.getIRXCoord
-	self.senses['light']['y'] = self.getIRYCoord
-	self.senses['light']['z'] = lambda self, pos: 0.03
-	self.senses['light']['value'] = self.getLightRange
-	self.senses['light']['flag'] = self.getIRFlag
-
-	# location of origin of sensors:
-        self.senses['light']['ox'] = self.light_ox
-	self.senses['light']['oy'] = self.light_oy
-	self.senses['light']['oz'] = lambda self, pos: 0.03 # meters
-	self.senses['light']['th'] = self.light_th
-        # in radians:
-        self.senses['light']['arc'] = lambda self, pos, \
-                                      x = (15 * math.pi / 180) : x
-
-        self.senses['self'] = self.senses['robot']
-
-        console.log(console.INFO,'khepera sense drivers loaded')
-
-        self.controls['move'] = self._move
-        self.controls['raw_move'] = self._raw_move
-        self.controls['move_now'] = self._move_now
-        self.controls['accelerate'] = self.accelerate
-        self.controls['translate'] = self.translate
-        self.controls['rotate'] = self.rotate
-        self.controls['update'] = self.update 
-        self.controls['localize'] = self.localize
-
-        console.log(console.INFO,'khepera control drivers loaded')
-        self.SanityCheck()
-
-        self.sendMsg('H', 'position')
-        self.x = 0.0
-        self.y = 0.0
-        self.thr = 0.0
-        self.th = 0.0
-        try:
-            self.w0 = self.senseData['position'][0]
-            self.w1 = self.senseData['position'][1]
-        except:
-            raise "KheperaConnectionError"
-	self.update() 
-        self.inform("Done loading robot.")
-
-    def _draw(self, options, renderer): # overloaded from robot
-        #self.setLocation(self.senses['robot']['x'], \
-        #                 self.senses['robot']['y'], \
-        #                 self.senses['robot']['z'], \
-        #                 self.senses['robot']['thr'] )
-        renderer.xformPush()
-        renderer.color((0, 0, 1))
-        #print "position: (", self.get('robot', 'x'), ",",  \
-        #      self.get('robot', 'y'), ")"
-
-        #renderer.xformXlate((self.get('robot', 'x'), \
-        #                     self.get('robot','y'), \
-        #                     self.get('robot','z')))
-        renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
-
-        renderer.xformXlate(( 0, 0, .09))
-        renderer.torus(.12, .12, 12, 24)
-
-        renderer.color((.5, .5, .5))
-
-        # wheel 1
-        renderer.xformPush()
-        renderer.xformXlate((0, .18, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .06, 12, 24)
-        renderer.xformPop()
-
-        # wheel 2
-        renderer.xformPush()
-        renderer.xformXlate((0, -.18, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .06, 12, 24)
-        renderer.xformPop()
-
-        # IR
-        renderer.xformPush()
-        renderer.color((0.7, 0, 0))
-        for i in range(self.get('ir', 'count')):
-            y1, x1, z1 = -self.get('ir', 'x', i), \
-                         -self.get('ir', 'y', i), \
-                         self.get('ir', 'z', i)
-            y2, x2, z2 = -self.get('ir', 'ox', i), \
-                         -self.get('ir', 'oy', i), \
-                         self.get('ir', 'oz', i)
-            #x2, y2, z2 = 0, 0, z1
-            arc    = self.get('ir', 'arc', i) # in radians
-            renderer.ray((x1, y1, z1), (x2, y2, z2), arc)
-
-        renderer.xformPop()        
-
-        # end of robot
-        renderer.xformPop()
-
-    def getIRXCoord(self, dev, pos):
-        # convert to x,y relative to robot
-        try:
-            data = self.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
-        angle = (-self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
-        return dist * math.cos(angle)
-        
-
-    def getIRYCoord(self, dev, pos):
-        # convert to x,y relative to robot
-        try:
-            data = self.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
-        angle = (-self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
-        return dist * math.sin(angle)
-    
-    def light_ox(self, dev, pos):
+    def ox(self, pos):
         # in mm
         if pos == 0:
             retval = 10.0
@@ -266,7 +82,7 @@ class KheperaRobot(Robot):
             retval = -30.0
         return retval
 
-    def light_oy(self, dev, pos):
+    def oy(self, pos):
         # in mm
         if pos == 0:
             retval = 30.0
@@ -286,7 +102,7 @@ class KheperaRobot(Robot):
             retval = 10.0
         return retval
 
-    def light_thd(self, dev, pos):
+    def th(self, pos):
         if pos == 0:
             return 90.0
         elif pos == 1:
@@ -304,11 +120,159 @@ class KheperaRobot(Robot):
         elif pos == 7:
             return 180.0
 
-    def getOptions(self): # overload 
-        pass
+    def getIRMaxRange(self):
+        return 
 
-    def connect(self):
-        pass
+    def getIRRange(self, pos):
+        try:
+            data = self.dev.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        return self.rawToUnits(data)
+
+    def getIRXCoord(self, dev, pos):
+        # convert to x,y relative to robot
+        try:
+            data = self.dev.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
+        angle = (-self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
+        return dist * math.cos(angle)
+        
+
+    def getIRYCoord(self, dev, pos):
+        # convert to x,y relative to robot
+        try:
+            data = self.dev.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
+        angle = (-self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
+        return dist * math.sin(angle)
+    
+    def getIRMaxRange(self, dev):
+        return self.rawToUnits(dev, 60.0, 'ir')
+
+    def getIRRange(self, pos):
+        try:
+            data = self.dev.senseData['ir'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        return self.rawToUnits(data)
+
+    def getIRFlag(self, pos):
+        return 0
+
+class LightSensor(IRSensor):
+    def __init__(self, dev):
+        IRSensor.__init__(self, dev, "light")
+        # now, just overwrite those differences
+        self.devData['units'] = "RAW"
+        self.devData["maxvalueraw"] = 511.0
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+	self.subDataFunc['value'] = self.getLightRange
+	self.subDataFunc['flag'] = self.getIRFlag
+
+    def postSet(self, kw):
+        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+
+    def getLightRange(self, pos):
+        try:
+            data = self.dev.senseData['light'][pos]
+        except:
+            print "not enough sensor data"
+            return 0.0
+        return self.rawToUnits(data)
+
+class SerialSimulator:
+    def __init__(self):
+        self.p = ksim.initControl()
+        self.last_msg = ''
+        
+    def writeline(self, msg):
+        self.last_msg = ksim.sendMessage(self.p, msg)
+        sleep(.01)  # for some reason it seems as if python doesn't block
+		    # properly on the preceeding assignment unless this is here
+
+    def readline(self): # 1 = block till we get something
+        return self.last_msg #+ ',0,0,0,0,0,0,0,0'
+    
+class KheperaRobot(Robot):
+    def __init__(self, port = "/dev/ttyS1", simulator = 0): # 0 makes it real
+        Robot.__init__(self) # robot constructor
+        if simulator == 1:
+            self.sc = SerialSimulator()
+            port = "simulated"
+            print "Khepera opening simulation..."
+        else:
+            try:
+                port = config.get('khepera', 'port')
+            except:
+                pass
+            print "Khepera opening port", port, "..."
+            self.sc = SerialConnection(port, termios.B38400)
+            #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
+            #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
+        self.stallTolerance = 0.25
+        self.stallHistoryPos = 0
+        self.stallHistorySize = 5
+        self.stallHistory = [0] * self.stallHistorySize
+        self.lastTranslate = 0
+        self.lastRotate = 0
+        self.currSpeed = [0, 0]
+        # This could go as high as 127, but I am keeping it small
+        # to be on the same scale as larger robots. -DSB
+        self.translateFactor = 30
+        self.rotateFactor = 12
+        self.senseData = {}
+        self.senseData['position'] = []
+        self.senseData['ir'] = []
+        self.senseData['light'] = []
+        self.senseData['stall'] = []
+
+        self.devData["supports"] = ['ir', 'light']
+        self.startDevice("ir")
+        self.devDataFunc["range"] = self.get("/devices/ir0/object")
+        self.startDevice("light")
+
+        self.sendMsg('H', 'position')
+        self.x = 0.0
+        self.y = 0.0
+        self.thr = 0.0
+        self.th = 0.0
+        try:
+            self.w0 = self.senseData['position'][0]
+            self.w1 = self.senseData['position'][1]
+        except:
+            raise "KheperaConnectionError"
+        self.devData["type"] = "Khepera"
+        self.devData["subtype"] = "khepera1"
+        self.devData["port"] = port
+        self.devData["simulated"] = simulator
+        self.devData['radius'] = 55.0 # in MM
+        # ----- Updatable things:
+        self.devData['stall'] = self.isStall()
+        self.devData['x'] = self.getX()
+        self.devData['y'] = self.getY()
+        self.devData['z'] = self.getZ()
+        self.devData['th'] = self.getTh() # in degrees
+        self.devData['thr'] = self.getThr() # in radians
+
+	self.update() 
+        self.inform("Done loading khepera robot.")
+
+    def startDeviceBuiltin(self, item):
+        if item == "ir":
+            return {"ir": IRSensor(self)}
+        elif item == "light":
+            return {"light": LightSensor(self)}
+        else:
+            raise AttributeError, "khepera robot does not support device '%s'" % item
 
     def disconnect(self):
         self.stop()
@@ -377,6 +341,13 @@ class KheperaRobot(Robot):
             pass
         # ----------- end compute stall
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
+        self.devData['stall'] = self.isStall()
+        self.devData['x'] = self.getX()
+        self.devData['y'] = self.getY()
+        self.devData['z'] = self.getZ()
+        self.devData['th'] = self.getTh() # in degrees
+        self.devData['thr'] = self.getThr() # in radians
+
         self.deadReckon()
 
     def deadReckon(self):
@@ -428,11 +399,11 @@ class KheperaRobot(Robot):
         return (stalls / self.stallHistorySize) > 0.5
 
     def getX(self, dev = 0):
-        #return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
+        #return self.mmToUnits(self.x, self.devData['units'](dev))
         return self.x / 1000.0
     
     def getY(self, dev = 0):
-        #return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
+        #return self.mmToUnits(self.y, self.devData['units'](dev))
         return self.y / 1000.0
     
     def getZ(self, dev = 0):
@@ -444,99 +415,11 @@ class KheperaRobot(Robot):
     def getThr(self, dev = 0):
         return self.thr
 
-    def getIRMaxRange(self, dev):
-        return self.rawToUnits(dev, 60.0, 'ir')
-
-    def getIRRange(self, dev, pos):
-        try:
-            data = self.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        return self.rawToUnits(dev, data, 'ir')
-
-    def getLightRange(self, dev, pos):
-        try:
-            data = self.senseData['light'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        return self.rawToUnits(dev, data, 'light')
-
-    def getLightMaxRange(self, dev):
-        return self.rawToUnits(dev, 511.0, 'light')
-
-    def mmToUnits(self, mm, units):
-        if units == 'MM':
-            return mm
-        elif units == 'CM':
-            return mm / 100.0
-        elif units == 'METERS':
-            return mm / 1000.0
-        elif units == 'ROBOTS':
-            return mm / 60.0
-        
-    def rawToUnits(self, dev, raw, name, units = None):
-        if units == None:
-            units = self.senses[name]['units'](dev)
-        if name == 'ir':
-            maxvalue = 60.0
-            mm = min(max(((1023.0 - raw) / 1023.0) * maxvalue, 0.0), maxvalue)
-        elif name == 'light':
-            maxvalue = 511.0
-            mm = min(max((raw / 511.0) * maxvalue, 0.0), maxvalue)
-        else:
-            raise 'InvalidType', "Type is invalid"
-        if units == "ROBOTS":
-            return mm / 55.0 # khepera is 55mm diameter
-        elif units == "MM":
-            return mm
-        elif units == "RAW":
-            return raw 
-        elif units == "CM":
-            return mm / 100.0 # cm
-        elif units == "METERS":
-            return mm / 1000.0 # meters
-        elif units == "SCALED":
-            return mm / maxvalue
-        else:
-            raise 'InvalidType', "Units are set to invalid type"
-
-    def getIRRangeAll(self, dev):
-        vector = [0] * self.get('ir', 'count')
-        for i in range(self.get('ir', 'count')):
-            vector[i] = self.getIRRange(dev, i)
-        return vector
-
-    def getLightRangeAll(self, dev):
-        vector = [0] * self.get('light', 'count')
-        for i in range(self.get('light', 'count')):
-            vector[i] = self.getLightRange(dev, i)
-        return vector
-
-    def getIRFlag(self, dev, pos):
-        return 0
-
-    def light_th(self, dev, pos):
-        return self.light_thd(dev, pos) / 180.0 * math.pi
-    
-    def move_now(self, trans, rotate):
-        """
-        This is only neaded if there is an accelleration model.
-        There currently isn't, so this not useful yet.
-        """
-        self._move_now(self, trans, rotate)
-
-    def _move_now(self, dev, trans, rotate):
-        left  = int((trans * dev.translateFactor - \
-                     rotate * dev.rotateFactor))
-        right  = int((trans * dev.translateFactor + \
-                      rotate * dev.rotateFactor))
-        self.currSpeed = [left, right]
-        dev.sendMsg('D,%i,%i' % (left, right))
-
     def move(self, trans, rotate):
-        self._move(self, trans, rotate)
+        self.lastTranslate = trans
+        self.lastRotate = rotate
+        # FIX: do min/max here
+        self.adjustSpeed()
 
     def adjustSpeed(dev):
         # This will send new motor commands based on the
@@ -551,26 +434,6 @@ class KheperaRobot(Robot):
         # is being continuously called.
         dev.currSpeed = [left, right]
         dev.sendMsg('D,%i,%i' % (left, right))
-        
-    def _move(self, dev, trans, rotate):
-        self.lastTranslate = trans
-        self.lastRotate = rotate
-        # FIX: do min/max here
-        self.adjustSpeed()
-
-    def _raw_move(self, dev, left, right):
-        """
-        Give direct values to the Khepera's motors.
-        There are in the robot's units, which go from -100 to 100
-        """
-        self.currSpeed = [left, right]
-        dev.sendMsg('D,%i,%i' % (left, right))
-
-    def accelerate(self, trans, rotate): # incr
-        self.lastTranslate += trans
-        self.lastRotate += rotate
-        # FIX: do min/max here
-        self.adjustSpeed()
         
     def translate(dev, value):
         dev.lastTranslate = value

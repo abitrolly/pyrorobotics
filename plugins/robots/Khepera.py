@@ -3,4 +3,4 @@
 from pyro.robot.khepera import *
 
 def INIT():
-    return KheperaRobot("Khepera") # 1 makes it simulated
+    return KheperaRobot() # 1 makes it simulated
