@@ -1651,7 +1651,7 @@ if(__name__ == '__main__'):
     mysom1a = psom(file='ex.cod')
     mysom1a.timing_start()
     mysom1a.map_from_dataset(mydataset)
-    mysom1a.map_from_dataset(mydataset)
+    #mysom1a.map_from_dataset(mydataset)
     mysom1a.timing_stop()
     ttime = mysom1a.get_training_time()
     print "Mapping took", ttime, "seconds"
