@@ -12,7 +12,7 @@ class Brain(threading.Thread):
         self.lastRun = time.time() # seconds
         self.name = name
         self.engine = engine
-        if engine:
+        if engine is not 0:
             self.robot = engine.robot
 	self.thread = 0
         self.condition = threading.Condition()
@@ -45,6 +45,7 @@ class Brain(threading.Thread):
             self.engine.gui.done = 1
     
     def run(self):
+        self.couldBeMoving = 0
         while self.needToQuit is not 1 and self.isAlive():
             #print "Acquire ----------------------------"
             count = 0
@@ -67,10 +68,15 @@ class Brain(threading.Thread):
                 self.condition.wait(.25) # FIX: .5?
                 #print "release()"
                 self.condition.release()
+                if self.couldBeMoving:
+                    self.couldBeMoving = 0
+                    self.robot.move(0, 0)
                 continue #check for quit before we step
             
             #print "step()"
+            self.robot.update()
             self.step()
+            self.couldBeMoving = 1
             time.sleep(.1)
             self.lastRun = time.time() # seconds
             #print "release()"
@@ -78,7 +84,7 @@ class Brain(threading.Thread):
             #print "Return  ----------------------------"
             #print self.needToStep
         #print "End of run!"
-
+            
     def pleaseQuit(self):
         #count = 0
         #while self.condition.acquire(0) == 0:
@@ -150,3 +156,9 @@ class Brain(threading.Thread):
 
     def redraw(self):
         self.canvas.create_text(100,130, tags='pie',fill='black', text = "This Brain needs a redraw method!")
+
+    def destroy(self):
+        """
+        Method to override of you create objects.
+        """
+        pass

@@ -174,6 +174,7 @@ class gui(Drawable):
       self.done = 1
       try:
          sys.stdout = self.sysstdout
+         sys.stderr = self.sysstderr
       except:
          pass
       if self.engine != 0:
@@ -218,6 +219,7 @@ class gui(Drawable):
       f = self.fileloaddialog("brains","*.py")
       self.redraw()
       if f != '':
+         self.freeBrain()
          self.engine.loadBrain(f)
          self.redraw()
 
@@ -228,8 +230,25 @@ class gui(Drawable):
          self.engine.loadPlot(f)
          self.redraw()
 
+   def loadDevice(self):
+      f = self.fileloaddialog("devices","*.py")
+      self.redraw()
+      if f != '':
+         self.engine.loadDevices(f)
+         self.redraw()
+
+   def loadService(self):
+      f = self.fileloaddialog("services","*.py")
+      self.redraw()
+      if f != '':
+         self.engine.loadService(f)
+         self.redraw()
+
    def freeBrain(self):
+      self.engine.pleaseStop()
+      self.engine.destroyBrain()
       self.engine.freeBrain()
+      self.engine.brainfile = ''
 
    def loadSim(self, worldfile = ''):
       f = self.fileloaddialog("simulators","*")
@@ -249,6 +268,8 @@ class gui(Drawable):
       f = self.fileloaddialog("robots","*.py")
       self.redraw()
       if f != '':
+         self.freeBrain()
+         self.freeRobot()
          self.engine.loadRobot(f)
          self.redraw()
 
@@ -260,10 +281,13 @@ class gui(Drawable):
          self.redraw()
 
    def freeRobot(self):
+      self.engine.pleaseStop()
       self.engine.freeRobot()
+      self.engine.robotfile = ''
 
    def INThandler(self, signum, frame):
       print "STOP ----------------------------------------------------"
+      self.engine.pleaseStop()
       self.cleanup()
 
    def inform(self, message):

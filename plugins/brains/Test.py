@@ -18,7 +18,6 @@ class SimpleBrain(Brain):
 
       print "Min angle:", self.robot.getMin().angle
       print "Max angle:", self.robot.getMax().angle
-      self.robot.update()
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.

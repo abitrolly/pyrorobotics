@@ -195,10 +195,7 @@ class Layer:
     def setTarget(self, value):
         for i in range(self.size):
             self.target[i] = value
-        if not self.targetSet == 0:
-            raise 'TargetFlagNotResetError', self.targetSet
-        else:
-            self.targetSet = 1
+        self.targetSet = 1
     def copyTarget(self, arr, symmetric = 0):
         if not len(arr) == self.size:
             raise 'MismatchedTargetSizeLayerSizeError', (len(arr), self.size)
@@ -208,10 +205,7 @@ class Layer:
         else:
             for i in range(self.size):
                 self.target[i] = arr[i]
-        if not self.targetSet == 0:
-            raise 'TargetFlagNotResetError', self.targetSet
-        else:
-            self.targetSet = 1
+        self.targetSet = 1
     def resetFlags(self):
         self.targetSet = 0
         self.activationSet = 0

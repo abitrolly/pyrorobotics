@@ -19,7 +19,6 @@ class SimpleBrain(Brain):
          sleep(0.5)
       else:
          robot.move(0.5, 0)
-      robot.update()
       #self.quit()
 
 # -------------------------------------------------------

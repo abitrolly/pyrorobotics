@@ -32,18 +32,21 @@ class PlayerBase(Robot):
         self.translateDev(self.dev, translate_velocity)
 
     def translateDev(self, dev, translate_velocity):
+        self.update()
         dev.set_speed(translate_velocity * 1100.0, None, None)
 
     def rotate(self, rotate_velocity):
         self.rotateDev(self.dev, rotate_velocity)
 
     def rotateDev(self, dev, rotate_velocity):
+        self.update()
         dev.set_speed(None, None, rotate_velocity * 75.0)
 
     def move(self, translate_velocity, rotate_velocity):
         self.moveDev(self.dev, translate_velocity, rotate_velocity)
 
     def moveDev(self, dev, translate_velocity, rotate_velocity):
+        self.update()
         dev.set_speed(translate_velocity * 1100.0,
                       0,
                       rotate_velocity * 75.0)

@@ -33,7 +33,7 @@ def colorize(txt, col):
 def log(level, message):
     if level <= verbosityLevel:
         if not USE_COLOR:
-            print verbosityMessage[level],": ",message
+            print message
         else:
             print colorize(message, level)
     if level == 'fatal':

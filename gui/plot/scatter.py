@@ -187,6 +187,8 @@ class Scatter: # Plot
     def update(self):
         while self.win.tk.dooneevent(2): pass
 
+    def destroy(self):
+        self.win.destroy()
 
 if __name__ == '__main__':
     sp = Scatter()

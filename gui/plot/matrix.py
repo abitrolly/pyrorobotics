@@ -91,6 +91,9 @@ class Matrix: # Plot
          pass
       while self.win.tk.dooneevent(2): pass
 
+   def destroy(self):
+      self.win.destroy()
+
 if __name__ == '__main__':
    matrix1 = Matrix(3, 2, type = 'grid', maxvalue = 1)
    matrix3 = Matrix(3, 2, type = 'som', maxvalue = 1)
