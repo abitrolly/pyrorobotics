@@ -25,7 +25,7 @@ class Avoid (Behavior):
     def update(self):
         if self.count == 50:
             currtime = time.mktime(time.localtime())
-            print "=======  1 Loop in", (currtime - self.lasttime)/50.0, "seconds."
+            print "=======  50 Loops in", (currtime - self.lasttime)/50.0, "seconds."
             self.count = 0
             self.lasttime =  time.mktime(time.localtime())
         else:
