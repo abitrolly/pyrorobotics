@@ -100,35 +100,91 @@ class Robot (Drawable):
                 console.log(console.INFO,'Adding control "'+key+'" from driver '+driver.__class__.__name__)
                 self.controls[key] = cd[key]
                 
-    def get(self, device = 'robot', data = None, pos = None, func = None):
+    def get(self, device, *args):
 	"""
 	this is designed to be the main interface to the robot
 	and its parts. There is one assumed piece, self.dev that
 	is the actual pointer to the robot device
 	"""
-	if (data == None):
-            return self.senses[device]
-        elif (type(data) == type(1)):
-            return self.senses[device]['value'](self.dev, data)
-	elif (pos == None):
-            return self.senses[device][data](self.dev)
-	elif (pos == 'function'):
-            return self.senses[device][data]
-	elif type(pos) == type(1): # number
-            return self.senses[device][data](self.dev, pos)
-        elif type(pos) == type([1,2]) or type(pos) == type((1,2)): # collection
-            list = []
-            for i in pos:
-                list.append( self.senses[device][data](self.dev, i) )
-            return self.applyFunc(device, pos, list, func)
-        elif type(pos) == type("name"): # string
-            list = []
-            for i in self.sensorSet[pos]:
-                list.append(self.senses[device][data](self.dev, i))
-            return self.applyFunc(device, self.sensorSet[pos], list, func)
+        if device[0] == "/":
+            path = device.split("/")
+            # remove extra slashes
+            while path.count("") > 0:
+                path.remove("")
+        else: # given in device, args form
+            path = [device,]
+            path.extend( args )
+        # parse path parts for dashes, colons, and commas
+        finalPath = []
+        for part in path:
+            finalPath.append(self.condense( part ) )
+        # todo: store these functions in part of self
+        return self.senses[finalPath[0]].get(self.dev, finalPath[1:])
+
+    def condense(self, part):
+        retvals = []
+        if part.find(",") >= 0:
+            subparts = part.split(",")
         else:
-            print "Error: pos is wrong type!"
-            return None
+            subparts = [part,]
+        for s in subparts:
+            if s.count(":") == 1:
+                rangeVals = s.split(":")
+                if rangeVals[0].isdigit() and rangeVals[0].isdigit():
+                    retvals.extend(range(int(rangeVals[0]), int(rangeVals[1])))
+                else:
+                    if s.isdigit():
+                        retvals.append( int(s) )
+                    else:
+                        retvals.append( s )
+            elif s.count("-") == 1:
+                rangeVals = s.split("-")
+                if rangeVals[0].isdigit() and rangeVals[0].isdigit():
+                    retvals.extend(range(int(rangeVals[0]), int(rangeVals[1]) + 1))
+                else:
+                    if s.isdigit():
+                        retvals.append( int(s) )
+                    else:
+                        retvals.append( s )
+            else:
+                if s.isdigit():
+                    retvals.append( int(s) )
+                else:
+                    retvals.append( s )
+        if len(retvals) == 1:
+            return retvals[0]
+        else:
+            return retvals
+                        
+                    
+        #if type(pos) == type("") and pos.isdigit():
+        #    pos = int(pos)
+                
+                
+                
+	#if (data == None): # never used
+        #    return self.senses[device]
+        #elif (type(data) == type(1)): # never used
+        #    return self.senses[device]['value'](self.dev, data)
+	#elif (pos == None): # never used
+        #    return self.senses[device][data](self.dev)
+	#elif (pos == 'function'): # never used
+        #    return self.senses[device][data]
+	#elif type(pos) == type(1): # number
+        #    return self.senses[device][data](self.dev, pos)
+        #elif type(pos) == type([1,2]) or type(pos) == type((1,2)): # collection
+        #    list = []
+        #    for i in pos:
+        #        list.append( self.senses[device][data](self.dev, i) )
+        #    return self.applyFunc(device, pos, list, func)
+        #elif type(pos) == type("name"): # sensor set
+        #    list = []
+        #    for i in self.sensorSet[pos]:
+        #        list.append(self.senses[device][data](self.dev, i))
+        #    return self.applyFunc(device, self.sensorSet[pos], list, func)
+        #else:
+        #    print "Error: pos is wrong type!"
+        #    return None
 
     def applyFunc(self, sensor, poslist, list, func):
         if func == None:
