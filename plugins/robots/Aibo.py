@@ -3,4 +3,5 @@
 from pyro.robot.aibo import AiboRobot
 
 def INIT():
-    return AiboRobot("k-9") 
+    # replace "aibo" with your dog's IP or DNS name
+    return AiboRobot("aibo") 
