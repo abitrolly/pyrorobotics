@@ -6,7 +6,7 @@
     (c) 2001-2004, Developmental Robotics Research Group
     ----------------------------------------------------
 """
-import RandomArray, Numeric, math, random, time, sys, signal
+import RandomArray, Numeric, math, random, time, sys, signal, operator
 
 version = "6.13"
 
@@ -1199,9 +1199,13 @@ class Network:
             self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            print "Final #%6d" % self.epoch, "| TSS Error: %f" % tssErr, \
-                  "| Correct =", totalCorrect * 1.0 / totalCount, \
-                  "| RMS Error: %.2f" % rmsErr
+            print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                  (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
+            if self.crossValidationReportRate and len(self.crossValidationCorpus) > 0:
+                (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
+                rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
+                print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                      (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
@@ -1458,6 +1462,13 @@ class Network:
                     for i in range(layer.size):
                         layer.error[i] = 0.0
         return (retval, correct, totalCount)
+    def getError(self, *layerNames):
+        totalSquaredError, totalSize, totalCorrect = 0.0, 0, 0
+        for layerName in layerNames:
+            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, self.layersByName[layerName].error ))
+            totalSize += len(self.layersByName[layerName].error)
+            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, self.layersByName[layerName].error))
+        return (totalSquaredError, totalCorrect, totalSize)
     def compute_error(self):
         """
         Computes error for all non-output layers backwards through all
@@ -2273,12 +2284,15 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.setReportRate(100)
         n.train()
+        print "getError('output') = (tss, correct, total):", n.getError("output")
+        print "getError('output', 'output') :", n.getError("output", "output")
         # test crossvalidation ---------------------------------
         print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
         n.learning = 0
         n.crossValidationSampleRate = 1
         #saves in "sample.cv"
         n.sweep()
+        n.learning = 1
         n.crossValidationSampleRate = 0
         print "Loading crossvalidation from 'sample.cv'..."
         n.loadCrossValidation("sample.cv")
