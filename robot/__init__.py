@@ -143,6 +143,12 @@ class Robot:
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
+        # some default values:
+        self.devData["stall"] = 0
+        self.devData["x"] = 0
+        self.devData["y"] = 0
+        self.devData["th"] = 0
+        self.devData["thr"] = 0
         # user init:
         self.setup(**kwargs)
 
