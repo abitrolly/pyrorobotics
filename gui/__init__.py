@@ -65,7 +65,7 @@ class gui(Drawable):
          print "Stopped!"
       elif retval == "quit" or retval == "exit" or retval == "bye":
          return 1
-      elif retval[0] == "%":
+      elif len(retval) > 2 and retval[0] == "%":
          exp = string.strip(retval[1:])
          os.system(exp)
       elif retval == "edit":
