@@ -36,8 +36,8 @@ class Governor:
 
     def map(self, vector):
         """
-        Returns the index and vector of winning position. Side effect: records index of winning
-        pos in histogram.
+        Returns the index and vector of winning position. Side effect: records
+        index of winning pos in histogram.
         """
         index, modelVector = self.ravq.input(vector)
         if self.histogram.has_key(index):
@@ -66,16 +66,6 @@ class Governor:
         """
         return self.ravq.models.nextItem().nextItem()
 
-    def categorize(self, vector):
-        """
-        Maps and gets next item.
-        """
-        self.map(vector)
-        if len(self.ravq.models) == 0:
-            return vector
-        else:
-            return self.nextItem()
-
     def saveRAVQ(self, filename):
         """ Saves RAVQ data to a file. """
         self.ravq.saveRAVQToFile(filename)
@@ -91,6 +81,7 @@ class GovernorNetwork(Governor, Network):
         Network.__init__(self, name = "Governed Network",
                          verbosity = verbosity)
         # ravq
+        self.governing = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
         self.ravq.setVerbosity(verbosity)
@@ -102,15 +93,42 @@ class GovernorSRN(Governor, SRN):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
         # network:
-        SRN.__init__(self, name = "Governed Simple Recurrent Network",
+        SRN.__init__(self, name = "Governed Acting SRN",
                      verbosity = verbosity)
+        self.trainingNetwork = SRN(name = "Governed Training SRN",
+                                   verbosity = verbosity)
         # ravq
+        self.governing = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
         self.ravq.setVerbosity(verbosity)
         self.histogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
+
+    def addThreeLayers(self, i, h, o):
+        SRN.addThreeLayers(self, i, h, o)
+        self.trainingNetwork.addThreeLayers(i, h, o)
+        self.shareWeights(self.trainingNetwork)
+
+    def step(self, **args):
+        if self.governing:
+            # map the ravq input context and target
+            actContext = list(self["context"].activation)
+            self.map(args["input"] + actContext + args["output"])
+            # get the next
+            inLen = self["input"].size
+            conLen = self["context"].size
+            outLen = self["output"].size
+            array = self.nextItem()
+            input = array[0:inLen]
+            context = array[inLen:inLen+conLen]
+            output  = array[inLen+conLen:]
+            # load them and train training Network
+            self.trainingNetwork.copyActivations(context)
+            self.trainingNetwork.step(input=input, output=output)
+        SRN.step(self, **args)
+        
 
 if __name__ == '__main__':
     import os, gzip

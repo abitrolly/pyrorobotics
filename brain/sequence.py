@@ -1,5 +1,7 @@
 from pyro.brain.conx import *
 
+# goal is to remember first input given in several sequences
+
 net = SRN()
 net.addThreeLayers(1,5,1)
 net.setInputs( [[0.0, 0.0],
