@@ -5,19 +5,53 @@ from pyro.robot.device import Device
 #class IRSensor(Device):
 #	def __init__(self, dev, type = "ir"):
 
-def car_cdr(lisp):
-	car = ""
-	for x in range(1, len(lisp)):
-		if lisp[x] == ")":
-			return car, "(" + lisp[len(car)+1:]
-		elif lisp[x] == " ":
-			return car, "(" + lisp[len(car)+2:]
+def lex(str):
+	retval = []
+	currentword = ""
+	for ch in str:
+		if ch == "(":
+			if currentword:
+				retval.append(currentword)
+			retval.append("(")
+			currentword = ""
+		elif ch == ")":
+			if currentword:
+				retval.append(currentword)
+			retval.append(")")
+			currentword = ""
+		elif ch == " ":
+			if currentword:
+				retval.append(currentword)
+			currentword = ""
 		else:
-			car += lisp[x]
+			currentword += ch
+	if currentword:
+		retval.append(currentword)
+	return retval
 
-def lisp2list(lisp):
-	if lisp[0] == "(":
-		car,cdr = car_cdr(lisp)
+def parse(str):
+	lexed = lex(str)
+	stack = []
+	currentlist = []
+	for symbol in lexed:
+		if symbol == "(":
+			stack.append( currentlist )
+			currentlist = []
+		elif symbol == ")":
+			if len(stack) == 0:
+				raise AttributeError, "too many closing parens"
+			currentlist, temp = stack.pop(), currentlist
+			currentlist.append( temp )
+		else:
+			if symbol.isalpha():
+				currentlist.append( symbol )
+			elif symbol.isdigit():
+				currentlist.append( int(symbol) )
+			else:
+				currentlist.append( float(symbol) )
+	if len(stack) != 0:
+		raise AttributeError, "missing ending paren"
+	return currentlist[0]
 
 class RobocupRobot(Robot):
 	BUF = 1024
@@ -27,7 +61,7 @@ class RobocupRobot(Robot):
 		self.devData["name"] = name
 		self.devData["host"] = host
 		self.devData["port"] = port
-		self.address = (self.host, self.port)
+		self.address = (self.devData["host"], self.devData["port"])
 		self.socket = socket(AF_INET, SOCK_DGRAM)
 		self.socket.sendto("(init %s)" % self.devData["name"], self.address)
 
@@ -42,13 +76,12 @@ class RobocupRobot(Robot):
 		self.stop()
 		self.socket.close()
 
-
 	def update(self):
 		self._update()
 		data = self.getMsg()
-		if 
-			self.sendMsg('N') 
-			self.sendMsg('O') 
-			self.sendMsg('H') 
-			self.sendMsg('E') 
-			self.sendMsg('K') 
+		print data
+		try:
+			pdata = parse(data)
+			print pdata
+		except:
+			print "error"
