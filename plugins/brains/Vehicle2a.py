@@ -20,7 +20,7 @@ class Vehicle(Brain):
       rightSensorValue = self.get('/devices/light0/4/value') # right lights
       leftSpeed  = self.convert(leftSensorValue)
       rightSpeed = self.convert(rightSensorValue)
-      self.robot.motors(leftSpeed,  rightSpeed) # to the left
+      self.motors(leftSpeed,  rightSpeed) # to the left
 
 def INIT(engine):
    if engine.robot.get("robot/type") != 'K-Team':

@@ -12,7 +12,7 @@ class NNPredict(Brain):
    def setup(self):
       """ Create the network. """
       self.net = SRN()
-      self.sensorCount = self.robot.get('robot/range/count')
+      self.sensorCount = self.get('robot/range/count')
       self.net.add(Layer('input', self.sensorCount+2))
       self.net.addContext(Layer('context', 2), 'hidden')
       self.net.add(Layer('hidden', 2))
@@ -35,8 +35,8 @@ class NNPredict(Brain):
       self.rotate = 0
       self.counter = 0
       self.doneLearning = 0
-      self.robot.set('robot/range/units', 'METERS')
-      self.maxvalue = self.robot.get('robot/range/maxvalue')
+      self.set('robot/range/units', 'METERS')
+      self.maxvalue = self.get('robot/range/maxvalue')
       print " Max value: ", self.maxvalue
       
       self.plot1 = Scatter()
@@ -45,9 +45,9 @@ class NNPredict(Brain):
       self.plot2.setTitle('hidden 0 x hidden 1')
       self.plot3 = Scatter()
       self.plot3.setTitle('targetT x targetR')
-      self.pred = Hinton(self.robot.get('robot/range/count'),
+      self.pred = Hinton(self.get('robot/range/count'),
                          title = 'Predicted Inputs')
-      self.targ = Hinton(self.robot.get('robot/range/count'),
+      self.targ = Hinton(self.get('robot/range/count'),
                          title = 'Actual Inputs')
       self.cont = Hinton(2, title = 'Context Layer')
       self.hidd = Hinton(2, title = 'Hidden Layer')
@@ -74,22 +74,22 @@ class NNPredict(Brain):
 
       # set targets   
       target_rotate = 0.5
-      if min(self.robot.get('robot/range/front/value')) < .5:
+      if min(self.get('robot/range/front/value')) < .5:
          target_trans = 0.0
          target_rotate = 0.0 # some asymmetry to make things interesting
-      elif min(self.robot.get('robot/range/back/value')) < .5:
+      elif min(self.get('robot/range/back/value')) < .5:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if min(self.robot.get('robot/range/left/value')) < .2:
+      if min(self.get('robot/range/left/value')) < .2:
          target_rotate = 0.0
-      elif min(self.robot.get('robot/range/right/value')) < .2:
+      elif min(self.get('robot/range/right/value')) < .2:
          target_rotate = 1.0
       else:
          pass
       target = [target_trans,target_rotate]
 
-      # print "Raw sensor data: ", self.robot.get('robot/range/all/value')
+      # print "Raw sensor data: ", self.get('robot/range/all/value')
       # print "Context Layer: ", self.net['context'].activation
       # print "Hidden Layer: ", self.net['hidden'].activation
 
@@ -98,11 +98,11 @@ class NNPredict(Brain):
       
       # set up inputs and learn
       if self.counter == 0:
-         self.new = map(self.scale, self.robot.get('robot/range/all/value'))
+         self.new = map(self.scale, self.get('robot/range/all/value'))
          #self.net.clearContext() # do once
       else:
          old = self.new + [self.trans, self.rotate] #trans and rotate
-         self.new = map(self.scale, self.robot.get('robot/range/all/value'))
+         self.new = map(self.scale, self.get('robot/range/all/value'))
          # print self.new
          self.net.step( input = old, motorOutput = target, prediction = self.new )
 
@@ -110,7 +110,7 @@ class NNPredict(Brain):
       self.trans = self.net['motorOutput'].activation[0]
       self.rotate = self.net['motorOutput'].activation[1]
 
-      self.robot.move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
+      self.move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
 
       self.plot1.addPoint(self.trans, self.rotate)
       self.plot2.addPoint(self.net['hidden'].activation[0],

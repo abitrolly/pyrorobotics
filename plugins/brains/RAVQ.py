@@ -15,12 +15,10 @@ class SimpleBrain(Brain):
       self.ravq.setHistory(0)
       self.ravq.openLog('ravq_2.log')
       self.counter = 0 
-      self.getRobot().startService('truth') 
-      self.getRobot().set('range', 'units', 'ROBOTS') 
+      self.startDevice('truth') 
+      self.set('robot/range/units', 'ROBOTS') 
 
    def avoidObstacles(self): 
-      robot = self.getRobot() 
- 
       """ 
       Determines next action, but doesn't execute it. 
       Returns the translate and rotate values. 
@@ -32,11 +30,11 @@ class SimpleBrain(Brain):
       minRange = 0.50
       maxRange = 1.50
       rand = random() * 0.5
-      minFront = robot.get('range', 'value', 'front', 'min')[1] 
-      minLeft  = robot.get('range', 'value', 'front-left', 'min')[1] 
-      minRight = robot.get('range', 'value', 'front-right', 'min')[1] 
-      left =  robot.get('range', 'value', 'left', 'min')[1]
-      right = robot.get('range', 'value', 'right', 'min')[1]
+      minFront = min(self.get('robot/range/front/value'))
+      minLeft  = min(self.get('robot/range/front-left/value'))
+      minRight = min(self.get('robot/range/front-right/value'))
+      left =  min(self.get('robot/range/left/value'))
+      right = min(self.get('robot/range/right/value'))
       
       if minFront < minRange: 
          if not self.blockedFront: 
@@ -67,15 +65,15 @@ class SimpleBrain(Brain):
          return [0.5, 0.0]
    
    def recordRAVQ(self): 
-      all = self.getRobot().get('range', 'value', 'all') 
+      all = self.get('robot/range/all/value') 
       self.ravq.input(all)
       if self.counter % 1000 == 0:
-         self.ravq.logHistory(0, str(self.getRobot().dev.get_truth_pose()))
+         self.ravq.logHistory(0, str(self.robot.dev.get_truth_pose()))
  
    def step(self): 
       print self.counter 
       target = self.avoidObstacles() 
-      self.getRobot().move(target[0], target[1]) 
+      self.move(target[0], target[1]) 
       self.recordRAVQ()          
       if self.counter == 5000:
          self.ravq.logRAVQ()

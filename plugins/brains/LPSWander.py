@@ -10,10 +10,10 @@ from pyro.tools.joystick import Joystick
 class SimpleBrain(Brain):
    def setup(self):
       # create the Local Perceptiual Space window
-      units = self.robot.get('/robot/range/units')
+      units = self.get('/robot/range/units')
       self.robot.set('/robot/range/units', 'MM')
-      sizeMM = self.robot.get('/robot/range/maxvalue') * 3 + \
-               self.robot.get('robot/radius')
+      sizeMM = self.get('/robot/range/maxvalue') * 3 + \
+               self.get('robot/radius')
       self.robot.set('/robot/range/units', units)
       self.lps = LPS( 20, 20,
                       widthMM = sizeMM,

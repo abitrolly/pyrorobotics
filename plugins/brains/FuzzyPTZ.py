@@ -7,7 +7,7 @@ from pyro.brain.behaviors import *
 class BBB(BehaviorBasedBrain):
     def destroy(self):
         print "robot=", self.robot
-        self.robot.removeDevice("ptz0")
+        self.removeDevice("ptz0")
   
 class Track(Behavior): 
     def setup(self):
@@ -38,8 +38,8 @@ class MyState(State):
         self.add(Track(1, {'pan': 1, 'tilt': 1})) 
 
 def INIT(engine):
-    ptzID = engine.robot.startDevice("ptz"); 
-    ptz = engine.robot.get("devices/%s/object" % ptzID); 
+    ptzID = engine.startDevice("ptz"); 
+    ptz = engine.robot..get("devices/%s/object" % ptzID); 
     brain = BBB({'pan' : ptz.panRel,
                  'tilt': ptz.tiltRel,
                  'update' : engine.robot.update },

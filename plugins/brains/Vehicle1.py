@@ -14,7 +14,7 @@ class Vehicle(Brain):
    def step(self):
       sensorValue = avg(self.get('/devices/light0/2,3/value')) # front lights
       forward = (self.maxvalue - sensorValue) / self.maxvalue
-      self.robot.motors(forward,  forward) # to the left
+      self.motors(forward,  forward) # to the left
 
 def INIT(engine):
    if engine.robot.get("robot/type") != 'K-Team':

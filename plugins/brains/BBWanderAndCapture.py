@@ -29,7 +29,7 @@ class Avoid (Behavior):
             self.count = 0
             self.lasttime =  time.mktime(time.localtime())
 
-        close = select(min, "value", self.robot.get("robot/range/all/value,th"))
+        close = select(min, "value", self.get("robot/range/all/value,th"))
         close_dist = close.value
         close_angl = close.th / math.pi
         print "Closest distance is:", close_dist

@@ -48,7 +48,7 @@ class Wander(Behavior):
 
 class Avoid(Behavior):
     def update(self):
-        if min(self.robot.get('/robot/range/front-all/value')) < 1:
+        if min(self.get('/robot/range/front-all/value')) < 1:
             self.move( -.2, 0)
 
 def INIT(engine):

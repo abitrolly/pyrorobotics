@@ -34,34 +34,34 @@ from pyro.brain.behaviors.fsm import State, FSMBrain
 class edge (State):
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         print "EDGE: actual = (%f, %f) start = (%f, %f); dist = %f" \
               % (x, y, self.startX, self.startY, dist)
         if dist > 1.0:
             self.goto('turn')
         else:
-            self.robot.move(.3, 0)
+            self.move(.3, 0)
 
 class turn (State):
 
     def onActivate(self):
-        self.th = self.robot.get('robot', 'th')
+        self.th = self.get('robot/th')
 
     def update(self):
-        th = self.robot.get('robot', 'th')
+        th = self.get('robot/th')
         print "TURN: actual = %f start = %f" % (th, self.th)
         if angleAdd(th, - self.th) > 90: 
             self.goto('edge')
         else:
-            self.robot.move(0, .2)
+            self.move(0, .2)
 
-def INIT(engine): # passes in robot, if you need it
+def INIT(engine): # passes in engine, if you need it
     brain = FSMBrain(engine)
     # add a few states:
     brain.add(edge(1))

@@ -3,13 +3,13 @@ from pyro.brain import Brain
 class TrackBall(Brain):
 
     def setup(self):
-        self.cam = self.robot.getDevice( self.robot.hasA("camera") )
-        self.ptz = self.robot.getDevice( self.robot.hasA("ptz") )
+        self.cam = self.getDevice( self.hasA("camera") )
+        self.ptz = self.getDevice( self.hasA("ptz") )
         self.ptz.setPose(0, 0, 0)
         print "Brain: make sure you set a Blobify Filter before running."
 
     def step(self):
-        results = self.robot.get("robot/camera/filterResults")
+        results = self.get("robot/camera/filterResults")
         if len(results) > 1: # need a match, and blobify at least
             if len(results[-1][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[-1][0]

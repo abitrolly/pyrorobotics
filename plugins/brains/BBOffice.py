@@ -95,12 +95,12 @@ class A2 (State):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         if dist > 1.5:
             self.goto('B1')
@@ -112,10 +112,10 @@ class B1 (State):
         self.add(TurnRight(1))
 
     def onActivate(self):
-        self.th = self.robot.get('robot', 'th')
+        self.th = self.get('robot/th')
 
     def update(self):
-        th = self.robot.get('robot', 'th')
+        th = self.get('robot/th')
         if angleEqual(angleAdd(th, -self.th), 270):
             self.goto('B2')
             
@@ -125,12 +125,12 @@ class B2 (State):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         if dist > 6.5:
             self.goto('C1')
@@ -142,10 +142,10 @@ class C1 (State):
         self.add(TurnLeft(1))
 
     def onActivate(self):
-        self.th = self.robot.get('robot', 'th')
+        self.th = self.get('robot/th')
 
     def update(self):
-        th = self.robot.get('robot', 'th')
+        th = self.get('robot/th')
         if angleAdd(th, - self.th) > 90: 
             self.goto('C2')
 
@@ -155,12 +155,12 @@ class C2 (State):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         if dist > 8.0:
             self.goto('D1')
@@ -172,10 +172,10 @@ class D1 (State):
         self.add(TurnLeft(1))
 
     def onActivate(self):
-        self.th = self.robot.get('robot', 'th')
+        self.th = self.get('robot/th')
 
     def update(self):
-        th = self.robot.get('robot', 'th')
+        th = self.get('robot/th')
         if angleAdd(th, - self.th) > 90: 
             self.goto('D2')
             
@@ -185,12 +185,12 @@ class D2 (State):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         if dist > 12.0:
             self.goto('E1')
@@ -202,10 +202,10 @@ class E1 (State):
         self.add(TurnRight(1))
 
     def onActivate(self):
-        self.th = self.robot.get('robot', 'th')
+        self.th = self.get('robot/th')
 
     def update(self):
-        th = self.robot.get('robot', 'th')
+        th = self.get('robot/th')
         if angleAdd(self.th, -th) < 270: 
             self.goto('E2')
             
@@ -215,19 +215,19 @@ class E2 (State):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.robot.get('robot', 'x') 
-        self.startY = self.robot.get('robot', 'y') 
+        self.startX = self.get('robot/x') 
+        self.startY = self.get('robot/y') 
         
     def update(self):
-        x = self.robot.get('robot', 'x')
-        y = self.robot.get('robot', 'y')
+        x = self.get('robot/x')
+        y = self.get('robot/y')
         dist = distance( self.startX, self.startY, x, y) 
         if dist > 2.0:
             self.goto('Done')
 
 class Done(State):
     def update(self):
-        self.robot.move(0,0)
+        self.move(0,0)
 
 def INIT(engine): # passes in robot, if you need it
     brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \

@@ -30,34 +30,34 @@ class Avoid (Behavior):
         #self.IF(1, 'translate', .2) 
         #self.IF(1, 'rotate', 0)
         
-        left = min(self.robot.get('robot/range/left/value'))
-        front = min(self.robot.get('robot/range/front/value'))
-        right = min(self.robot.get('robot/range/right/value'))
+        left = min(self.get('robot/range/left/value'))
+        front = min(self.get('robot/range/front/value'))
+        right = min(self.get('robot/range/right/value'))
         
         if (left < LTOLERANCE and right < RTOLERANCE):
-            #self.robot.move(0, .2)
+            #self.move(0, .2)
             self.IF(1, 'rotate', .2)
             self.IF(1, 'translate', 0)
             #sleep(.5)
         elif (left < LTOLERANCE):
-            #self.robot.move(0, -.2)
+            #self.move(0, -.2)
             self.IF(1, 'rotate', -.2)
             self.IF(1, 'translate', 0)
         elif (right < RTOLERANCE):
-            #self.robot.move(0, .2)
+            #self.move(0, .2)
             self.IF(1, 'rotate', .2)
             self.IF(1, 'translate', 0)
         elif (front < FTOLERANCE):
             if random() < .5:
-                #self.robot.move(0, .2)
+                #self.move(0, .2)
                 self.IF(1, 'rotate', .2)
                 self.IF(1, 'translate', 0)
             else:
-                #self.robot.move(0, .2)
+                #self.move(0, .2)
                 self.IF(1, 'rotate', .2)
                 self.IF(1, 'translate', 0)
         else:
-            #self.robot.move(.2, 0)
+            #self.move(.2, 0)
             self.IF(1, 'translate', .2)
             self.IF(1, 'rotate', 0)
 
@@ -113,7 +113,7 @@ class state3 (State):
         fp.close()
         self.goto("state1")
 
-def INIT(engine): # passes in robot, if you need it
+def INIT(engine): # passes in engine, if you need it
     assert (engine.robot.requires("range-sensor") and
             engine.robot.requires("continuous-movement"))
     brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \

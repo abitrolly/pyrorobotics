@@ -63,19 +63,27 @@ class Brain(threading.Thread):
     def get(self, *args):
         return self.robot.get(*args)
     def move(self, *args):
-        self.robot.move(*args)
+        return self.robot.move(*args)
     def translate(self, *args):
-        self.robot.translate(*args)
+        return self.robot.translate(*args)
     def rotate(self, *args):
-        self.robot.rotate(*args)
+        return self.robot.rotate(*args)
     def stop(self):
-        self.robot.stop()
+        return self.robot.stop()
     def startDevice(self, *args, **keywords):
         return self.robot.startDevice(*args, **keywords)
     def removeDevice(self, *args, **keywords):
         return self.robot.removeDevice(*args, **keywords)
     def update(self):
-        self.robot.update()
+        return self.robot.update()
+    def motors(self, *args):
+        return self.robot.motors(*args)
+    def getDevice(self, *args):
+        return self.robot.getDevice(*args)
+    def hasA(self, *args):
+        return self.robot.hasA(*args)
+    def requires(self, *args):
+        return self.robot.requires(*args)
 
     def __getattr__(self, attr):
         """ Overides default get attribute to return devData if exists """

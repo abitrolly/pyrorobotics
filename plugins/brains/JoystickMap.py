@@ -9,12 +9,12 @@ class Map(Brain):
        # We want our map to measure in MM, so we first store our current unit of measure
        units = self.get('/robot/range/units')
        # We then reset our measurements to MMs
-       self.robot.set('/robot/range/units', 'MM')
+       self.set('/robot/range/units', 'MM')
        # Calculate the maximum range of our sensors
        rangeMaxMM = self.get('/robot/range/maxvalue')
-       sizeMM = rangeMaxMM * 3 + self.robot.get('/robot/radius')
+       sizeMM = rangeMaxMM * 3 + self.get('/robot/radius')
        # Reset our unit of measure
-       self.robot.set('robot/range/units', units)
+       self.set('robot/range/units', units)
        # Now, we create our Local Perceptiual Space window - this will hold our local map
        #   Our map will be 20px by 20px and will represent an height and width of sizeMM (total sensor range)
        self.lps = LPS( 20, 20, widthMM = sizeMM, heightMM = sizeMM)
@@ -24,18 +24,17 @@ class Map(Brain):
        self.joystick = Joystick()
        
    def step(self):
-       robot = self.robot
        # First we clear out all our old LPS data
        self.lps.reset()
        # Next we update our LPS with current 'range' sensor readings
-       self.lps.sensorHits(robot, 'range')
+       self.lps.sensorHits(self.robot, 'range')
        # Now redraw our LPS window - the LPS redraw can be improve performance
        self.lps.redraw()
        # Then update our GPS with the new information in the LPS
-       self.gps.updateFromLPS(self.lps, robot)
+       self.gps.updateFromLPS(self.lps, self.robot)
        # Finally, we redraw the GPS window
        self.gps.redraw()
-       self.robot.move(self.joystick.translate, self.joystick.rotate)
+       self.move(self.joystick.translate, self.joystick.rotate)
        
    def destroy(self):
        # Make sure we close down cleanly
