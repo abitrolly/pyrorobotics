@@ -505,9 +505,9 @@ class AriaRobot(Robot):
         elif item == "bumper":
             return {"bumper": AriaBumper(self.params, self.dev)}
         elif item == "ptz-sony":
-            return {"ptz": AriaPTZDevice(self.params, self.dev, model = "sony")}
+            return {"ptz": AriaPTZDevice(self.dev, model = "sony")}
         elif item == "ptz-canon":
-            return {"ptz": AriaPTZDevice(self.params, self.dev, model = "canon")}
+            return {"ptz": AriaPTZDevice(self.dev, model = "canon")}
         elif item == "gripper":
             return {"gripper": AriaGripperDevice(self.dev)}
         else:
