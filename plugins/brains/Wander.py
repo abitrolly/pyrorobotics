@@ -5,7 +5,7 @@ from pyro.brain import Brain
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
 
-   def setup(self):
+   def setup(self, **args):
       # create any vars you need here
       pass
 
@@ -25,5 +25,5 @@ class SimpleBrain(Brain):
 # -------------------------------------------------------
 
 def INIT(engine):
-   return SimpleBrain(engine)
+   return SimpleBrain("SimpleBrain", engine)
       

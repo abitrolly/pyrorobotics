@@ -8,7 +8,7 @@ from math import sqrt
 class LPSBrain(Brain):
 
    def setup(self):
-      self.lps = LPS( 20, 20 )
+      self.lps = LPS( 20, 20 ) # create the Local Perceptiual Space window
 
    def step(self):
       robot = self.getRobot()
