@@ -142,7 +142,7 @@ class Layer:
         return self.toString()
 
     # modify layer methods
-    def setEpsilon(self, value):
+    def setEpsilons(self, value):
         self.epsilon = Numeric.ones(self.size, "f") * value
     def setEpsilonAt(self, value, pos):
         self.epsilon[pos] = value
@@ -869,7 +869,7 @@ class Network:
         """
         self.epsilon = value
         for layer in self.layers:
-            layer.setEpsilon(value)
+            layer.setEpsilons(value)
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
