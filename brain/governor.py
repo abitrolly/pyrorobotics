@@ -49,12 +49,9 @@ class Governor(Network, VisPsom):
         Network.train(self)
 
 class RAVQGovernor:
-    def __init__(self, inputSize, hiddenSize, outputSize, threshold):
-        self.net = VisRobotSRN()
-        self.net.addThreeLayers(inputSize, hiddenSize, outputSize)
-        self.net.setLearning(1)
-        self.net.setEpsilon(.1)
-        self.ravq = ARAVQ(5, 1.0, 1.2, .2)
+    def __init__(self, network, ravq, threshold):
+        self.net = network
+        self.ravq = ravq
         self.threshold = threshold
     def setLearning(self):
         count = self.ravq.getWinnerCount()

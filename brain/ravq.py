@@ -191,9 +191,9 @@ class RAVQ:
             self.oldWinnerIndex= self.winnerIndex
             self.winnerIndex = Numeric.argmin(min)
             if self.oldWinnerIndex == self.winnerIndex:
-                self.winnerCount = 0
-            else:
                 self.winnerCount += 1
+            else:
+                self.winnerCount = 0
             self.winner = self.models[self.winnerIndex]
             self.counters[self.winnerIndex] += 1
             self.totalCount += 1
