@@ -465,6 +465,11 @@ class RAVQ:
         pickle.dump(self, fp)
         fp.close()
 
+    def loadRAVQFromFile(self, filename):
+        import pickle
+        fp = open(filename, 'r')
+        self = pickle.load(fp)
+
     def openLog(self, filename):
         self.logName = filename
         self.log = open(filename, 'w')
@@ -771,5 +776,9 @@ if __name__ == '__main__':
     # test order of getHistory calls
     for x in range(8):
         print stringArray(ravq.getHistory(x),0)
-        
+
+    print ravq
+    ravq.saveRAVQToFile('test.ravq')
+    ravq.loadRAVQFromFile('test.ravq')
+    print ravq
 
