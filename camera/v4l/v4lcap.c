@@ -77,15 +77,17 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
   //Start caputring
   if (ioctl(dev, VIDIOCMCAPTURE, &vidmmap)){
     perror("Cgrab_image, ioctl CMCAPTURE");
+    munmap(map, vidmbuf.size);
     close(dev);
-    free(image);
+    free(image_struct);
     return NULL;
   }
 
   if (ioctl(dev, VIDIOCSYNC, &vidmmap)){
     perror("Cgrab_image, ioctl CSYNC");
+    munmap(map, vidmbuf.size);
     close(dev);
-    free(image);
+    free(image_struct);
     return NULL;
   }
     
@@ -148,22 +150,40 @@ int Cfree_image(struct image_cap *image_struct){
 }
 
 #ifdef DEBUG__
-#define PGM_HEADER "P6\n384 240\n65535\n"
+#define PGM_HEADER "P6\n384 240\n65536\n"
 
 int main(void){
   struct image_cap *image;
+  struct video_capability vcap;
   int savefile;
+  int testhandle;
 
-  printf("Starting test...");
+  testhandle = open("/dev/video0", O_RDWR);
+  if (testhandle < 0){
+    perror("Error opening");
+    return 1;
+  }
 
-  image = Cgrab_image("/dev/video0", 384, 240);
+  if (ioctl (testhandle, VIDIOCGCAP, &vcap)) {
+    perror ("ioctl error");
+    close(testhandle);
+    return 1;
+  }
+  close(testhandle);
 
-  printf("called Cgrab_image");
+  
+
+  printf("Starting test...\n");
+
+  image = Cgrab_image("/dev/video0", 384, 240, 1);
+  printf("Handle: %d\n", image->handle);
+
+  printf("called Cgrab_image\n");
 
   savefile = open("./vcap.ppm", O_CREAT | O_WRONLY, S_IRWXU);
   if (savefile < 0){
     perror("Opening savefile");
-    free(image);
+    Cfree_image(image);
     exit(1);
   }
 
@@ -172,8 +192,38 @@ int main(void){
 
   close(savefile);
 
-  free(image->data);
-  free(image);
+
+  if (testhandle < 0){
+    perror("Error opening again");
+    return 1;
+  }
+  image->handle = testhandle;
+
+  if (Cfree_image(image)){
+    printf("Error in Cfree_image\n");
+    return 1;
+  }
+  printf("Called Cfree_image\n");
+
+  image = Cgrab_image("/dev/video0", 384, 240, 1);
+  if (image == NULL){
+    printf("Error in Cgrab_image(2)\n");
+    return 1;
+  }
+  printf("Called Cgrab_image(2)\n");
+  
+  if (Crefresh_image(image, 384, 240)){
+    printf("Error in Crefresh_image\n");
+    return 1;
+  }
+	   
+  printf("Called Crefresh_image(2)\n");
+
+  if (Cfree_image(image)){
+    printf("Error in Cfree_image(2)\n");
+    return 1;
+  }
+  printf("Called Cfree_image(2)\n");
 
   return 0;
 }
