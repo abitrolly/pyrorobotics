@@ -218,7 +218,10 @@ class Device:
             if type(path[0]) == type(1) and len(self.subDataFunc) > 0:
                 return deviceDirectoryFormat(self.subDataFunc, 0)
             else:
-                raise AttributeError, "no such item: '%s'" % path[0]
+                if path[0] in self.groups:
+                    return deviceDirectoryFormat(self.subDataFunc, 0)
+                else:
+                    raise AttributeError, "no such item: '%s'" % path[0]
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]

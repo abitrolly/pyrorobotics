@@ -47,6 +47,50 @@ class AriaGripperDevice(AriaDevice):
         AriaDevice.__init__(self, robot, "gripper")
         self.dev = ArGripper(self.robot)
         self.startDevice()
+        self.devData[".help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
+                                """     down, store, deploy, halt.\n""" \
+                                """.get('/robot/gripper/KEYWORD') where KEYWORD is: state, breakBeamState,\n""" \
+                                """     isClosed, isMoving, isLiftMoving, isLiftMaxed"""
+        #self.notGetables.extend( [] )
+        self.notSetables.extend( ["state", "breakBeamState", "isClosed",
+                                  "isMoving", "isLiftMoving", "isLiftMaxed"] )
+        self.devData.update( {"state": None, "breakBeamState": None, "isClosed": None,
+                              "isMoving": None, "isLiftMoving": None, "isLiftMaxed": None} )
+
+    def postSet(self, keyword):
+        if keyword == "command":
+            if self.devData["command"] == "open":
+                self.devData["command"] = self.dev.gripOpen() 
+            elif self.devData["command"] == "close":
+                self.devData["command"] = self.dev.gripClose() 
+            elif self.devData["command"] == "stop":
+                self.devData["command"] = self.dev.gripStop()
+            elif self.devData["command"] == "up":
+                self.devData["command"] = self.dev.liftUp()
+            elif self.devData["command"] == "down":
+                self.devData["command"] = self.dev.liftDown()
+            elif self.devData["command"] == "store":
+                self.devData["command"] = self.dev.gripperStore() 
+            elif self.devData["command"] == "deploy":
+                self.devData["command"] = self.dev.gripperDeploy()
+            elif self.devData["command"] == "halt":
+                self.devData["command"] = self.dev.gripperHalt()
+            else:
+                raise AttributeError, "invalid command to ptz: '%s'" % keyword
+
+    def preGet(self, keyword):
+        if keyword == "state":
+            self.devData[keyword] = self.dev.getGripState() # help!
+        elif keyword == "breakBeamState":
+            self.devData[keyword] = self.getBreakBeamState()
+        elif keyword == "isClosed":
+            self.devData[keyword] = self.isClosed()
+        elif keyword == "isMoving":
+            self.devData[keyword] = self.dev.isGripMoving() #ok
+        elif keyword == "isLiftMoving":
+            self.devData[keyword] = self.dev.isLiftMoving() # ok
+        elif keyword == "isLiftMaxed":
+            self.devData[keyword] = self.dev.isLiftMaxed() # ok
 
     def open(self):
         self.dev.gripOpen()
@@ -107,7 +151,27 @@ class AriaPTZDevice(AriaDevice):
         else:
             raise TypeError, "invalid type: '%s'" % type
         self.dev.init()
+        self.devData["pose"] = self.getPose()
+        self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
+                                """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
+        self.notGetables.extend (["tilt", "pan", "zoom"])
+        self.devData.update( {"tilt": None, "pan": None,
+                              "zoom": None, "command": None, "pose": None} )
         self.startDevice()
+
+    def preGet(self, keyword):
+        if keyword == "pose": # make sure it is the current pose
+            self.devData["pose"] = self.getPose()
+
+    def postSet(self, keyword):
+        if keyword == "pose":
+            self.setPose( self.devData[keyword] )
+        elif keyword == "pan":
+            self.pan( self.devData[keyword] )
+        elif keyword == "tilt":
+            self.tilt( self.devData[keyword] )
+        elif keyword == "zoom":
+            self.zoom( self.devData[keyword] )
 
     def setPose(self, *args):
         if len(args) == 3:

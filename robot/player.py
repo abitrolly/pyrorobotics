@@ -500,9 +500,8 @@ class PlayerRobot(Robot):
         self.devData["y"] = 0.0
         self.devData["th"] = 0.0
         self.devData["thr"] = 0.0
-        self.devData["noise"] = .05 # 5 % noise
         # Can we get these from player?
-        self.devData["radius"] = 0.25
+        self.devData["radius"] = 0.75
         self.devData["type"] = "Player"
         self.devData["subtype"] = 0
         self.devData["units"] = "METERS"
