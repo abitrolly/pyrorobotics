@@ -318,7 +318,8 @@ class Robot (Drawable):
                 dict[service].startService()
                 if dict[service].getServiceState() == "started":
                     self.service[service] = dict[service]
-                    self.senses[service] = self.service[service]
+                    if service not in self.senses:
+                        self.senses[service] = self.service[service]
                 else:
                     raise AttributeError, "service '%s' not available" % service
             return "Ok"
