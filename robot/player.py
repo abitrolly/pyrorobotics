@@ -595,6 +595,14 @@ class PlayerRobot(Robot):
         self.dev = player(hostname=self.hostname, port=self.port)
         time.sleep(1)
         #self.localize(0.0, 0.0, 0.0)
+
+    def removeDevice(self, item):
+        Robot.removeDevice(self, item)
+        try:
+            self.dev.stop(item)
+        except:
+            pass
+
         
 if __name__ == '__main__':
     myrobot = PlayerBase()
