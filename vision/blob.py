@@ -372,6 +372,29 @@ class Bitmap(PyroImage):
       blob.equivList = self.equivList[:]
       return blob
 
+   def maskify(self):
+      
+      blob = Bitmap(self.width, self.height)
+      count = 1
+      mask = Bitmap(3, 3)
+      mask.reset([1,1,1,
+                  1,1,1,
+                  1,1,1])
+      i=mask.get(1,1)
+      mask.display()
+      print self.width
+      print self.height
+      for w in range(self.width-2):
+         for h in range(self.height-2):
+            if self.get(w, h)== mask.get(0,0) and self.get(w, h+1)==mask.get(0,1)\
+               and self.get(w, h+2)==mask.get(0,2) and self.get(w+1,h)==mask.get(1,0)\
+               and self.get(w+2,h)==mask.get(2,0) and self.get(w+2,h+1)==mask.get(2,1)\
+               and self.get(w+1,h+2)==mask.get(1,2) and self.get(w+2,h+2)==mask.get(2,2):
+                   self.set(w+1,h+1,i)
+                   self.display()
+
+
+
 """
 assume that we are starting our x,y coordinates from the upper-left,
 and starting at (0,0), such that (0,0) represents the upper-left-most
@@ -401,7 +424,7 @@ class Blob:
       self.next = 0
 
    def addpixel(self, pixel):
-      if pixel.x < self.ul.x:
+      if pixel.x < self.ul.x:te(
          self.ul.x = pixel.x
       elif pixel.x > self.lr.x:
          self.lr.x = pixel.x
@@ -738,5 +761,15 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
+   print "Do you want to run test 11: find edges in bitmap ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      bitmap.display()
+      mask = bitmap.maskify()
+      print "Here is your final image"
+      bitmap.display()
+   else:
+      print "skipping..."
+
 
    print "All done!"
