@@ -361,6 +361,12 @@ class Robot (Drawable):
         else:
             raise "UnknownService", item
 
+    def getServiceDevice(self, item):
+        if self.service.has_key(item):
+            return self.service[item].dev
+        else:
+            raise "UnknownService", item
+
     def getServiceData(self, item, *args):
         if self.service.has_key(item):
             return self.service[item].getServiceData(*args)
