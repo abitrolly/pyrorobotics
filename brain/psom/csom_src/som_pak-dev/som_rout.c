@@ -181,6 +181,10 @@ float dotprod(float *v, float *w, int n)
   int j;
 
   for (j=0; j<n; j++) sum+=v[j]*w[j];
+  /* protection added DSB Jul 15, 2002 */
+  if (sum == 0.0)
+    sum = 0.0000001;
+
   return (sum);
 }
 
