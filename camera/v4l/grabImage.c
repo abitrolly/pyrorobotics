@@ -121,7 +121,6 @@ static PyObject *refresh_image(PyObject *self, PyObject *args){
 }
 
 
-
 static PyObject *super_red(PyObject *self, PyObject *args)
 {
   int w, h;
@@ -703,7 +702,7 @@ static PyObject *blobify(PyObject *self, PyObject *args)
 	  break;
 	  }
       */
-      
+    }
   image=map;
   if(drawBox)
     {

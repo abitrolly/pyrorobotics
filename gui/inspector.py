@@ -10,10 +10,11 @@ class Inspector(Tkinter.Tk):
         # first the obj window:
         leftFrame = Tkinter.Frame(self)
         leftFrame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 
-                        'fill' :'both'})
+                        'fill' :'y'})
+        leftFrame.winfo_toplevel().title("Pyro Object Inspector")
         frame = Tkinter.Frame(leftFrame)
         frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 
-                    'fill' :'both'})
+                    'fill' :'y'})
         frame['relief'] = 'raised'
         frame['bd']	 = '2'
         filesFrame = Tkinter.Frame(frame)
@@ -28,20 +29,21 @@ class Inspector(Tkinter.Tk):
         scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
         self.dirLb = Tkinter.Listbox(filesFrame, {'yscroll':scrollBar.set})
         self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
-                         'fill' :'both'})
+                         'fill' :'y'})
         self.dirLb.bind('<Button-1>', self.selectItem)
         scrollBar['command'] = self.dirLb.yview
+        self.dirLb.configure(yscroll=scrollBar.set)
 
         # methods:
         frame = Tkinter.Frame(leftFrame)
         frame.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
-                    'fill' :'both'})
+                    'fill' :'y'})
         frame['relief'] = 'raised'
         frame['bd']	 = '2'
         filesFrame = Tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']	 = '2'
-        filesFrame.pack({'side':'top', 'expand':'yes', 'fill':'x'})
+        filesFrame.pack({'side':'top', 'expand':'yes', 'fill':'y'})
         # Methods:
         label = Tkinter.Label(filesFrame)
         label['text'] = 'Methods:'
@@ -51,17 +53,19 @@ class Inspector(Tkinter.Tk):
         scrollBar.pack({'expand':'yes', 'side':'right', 'fill':'y'})
         self.methods = Tkinter.Listbox(filesFrame, {'yscroll':scrollBar.set})
         self.methods.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
-                           'fill' :'both'})
+                           'fill' :'y'})
+        scrollBar['command'] = self.methods.yview
+
         # variables:
         frame = Tkinter.Frame(leftFrame)
         frame.pack({'expand':'yes', 'side' :'bottom', 'pady' :'1', 
-                    'fill' :'both'})
+                    'fill' :'y'})
         frame['relief'] = 'raised'
         frame['bd']	 = '2'
         filesFrame = Tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']	 = '2'
-        filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
+        filesFrame.pack({'side':'top', 'expand':'yes', 'fill':'y'})
         # Variables:
         label = Tkinter.Label(filesFrame)
         label['text'] = 'Variables:'
@@ -71,7 +75,8 @@ class Inspector(Tkinter.Tk):
         scrollBar.pack({'expand':'yes', 'side':'right', 'fill':'y'})
         self.variables = Tkinter.Listbox(filesFrame, {'yscroll':scrollBar.set})
         self.variables.pack({'expand':'yes', 'side' :'bottom', 'pady' :'1', 
-                             'fill' :'both'})        
+                             'fill' :'y'})        
+        scrollBar['command'] = self.variables.yview
 
         # help text:
         frame = Tkinter.Frame(self)
@@ -82,10 +87,10 @@ class Inspector(Tkinter.Tk):
         filesFrame = Tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']	 = '2'
-        filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
+        filesFrame.pack({'side':'top', 'expand':'yes', 'fill':'both'})
         label = Tkinter.Label(filesFrame)
         label['text'] = 'Help:'
-        label.pack({'side':'top', 'expand':'yes', 'anchor':'w',
+        label.pack({'side':'top', 'expand':'no', 'anchor':'w',
                     'fill':'none'})
         # help:
         scrollBar = Tkinter.Scrollbar(filesFrame, {'orient':'vertical'})
@@ -93,6 +98,7 @@ class Inspector(Tkinter.Tk):
         self.helptext = Tkinter.Text(filesFrame, {'yscroll':scrollBar.set, "width": 70})
         self.helptext.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
                             'fill' :'both'})        
+        scrollBar['command'] = self.helptext.yview
 
         self.methods.bind('<Button-1>', self.methodItem)
         self.variables.bind('<Button-1>', self.variableItem)
