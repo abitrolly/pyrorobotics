@@ -337,6 +337,7 @@ class AiboRobot(Robot):
         jointDict = query.split()
         pos = 0
         check = 0 #used to check if the joint request is correct
+        normalize = 1.0 # need to normalize joint position because of setPose
         if "leg" in jointDict:
             if len(jointDict) == 4:
                 pos += legOffset
@@ -356,12 +357,15 @@ class AiboRobot(Robot):
                 if "rotator" in jointDict:
                     pos +=0
                     check +=1
+                    normalize = 2.4
                 elif "elevator" in jointDict:
                     pos +=1
                     check +=1
+                    normalize = 1.6
                 elif "knee" in jointDict:
                     pos +=2
                     check +=1
+                    normalize = 2.3
                 if check !=4:
                     raise AttributeError, "incorrect joint request"
             else:
@@ -403,12 +407,13 @@ class AiboRobot(Robot):
         elif "mouth" in jointDict:
                 if len(jointDict) == 1:
                     pos += mouthOffset
+                    normalize = -1.0
                 else:
                     raise AttributeError, "incorrect joint request"
 
         else:
             raise AttributeError, "no such joint"
-        return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
+        return self.devData["positionRaw"][pos]/normalize, self.devData["dutyCycleRaw"][pos]
 
     def getButton(self, query):
         """ Get value of button by name """
@@ -592,71 +597,103 @@ class AiboRobot(Robot):
     def setPose(self, joint, amtx, amty=None, amtz=None):
         """ Set the position of a joint """
         # all values passed in are between -1.0 and 1.0
-        l = list(self.devData["positionRaw"])
-        jointDict = joint.split()
-        check = 0
-        if "mouth" in jointDict:
-            # original: 0.0(closed) and -1.0(open)
-            # pyro: 0.0(closed) and 1.0(open)
-            if len(jointDict) == 1:
-                l[17] = -amtx
-            else:
-                raise AttributeError, "incorrect joint name"    
-        elif "tail" in jointDict:
-            # original: 
-            if len(jointDict) == 1:
-                l[15] = amtx; #pan
-                l[16] = amty; #tilt
-            elif len(jointDict) == 2:
-                if "pan" in jointDict:
-                    l[15] = amtx;
-                elif "tilt" in jointDict:
-                    l[16] = amtx;
+        if (amtx>=-1.0 and amtx<=1.0) and \
+           ((amty==None) or ( amty>=-1.0 and amty<=1.0)) and \
+           ((amtz==None) or ( amtz>=-1.0 and amtz<=1.0)):
+            l = list(self.devData["positionRaw"])
+            jointDict = joint.split()
+            check = 0
+            if "mouth" in jointDict:
+                # original: 0.0(closed) and -1.0(open)
+                # pyro: 0.0(closed) and 1.0(open)
+                if len(jointDict) == 1:
+                    if amtx < 0:
+                        amtx = 0
+                    l[17] = -amtx
                 else:
-                    raise AttributeError, "incorrect joint name"     
-            else:
-                raise AttributeError, "incorrect joint name"    
-        elif "leg" in jointDict:
-            if len(jointDict) == 3 or len(jointDict) == 4:
-                check +=1
-                offset = 0
-                if "front" in jointDict:
-                    offset = 0
-                    check += 1
-                elif "back" in jointDict:
-                    offset = 6
-                    check += 1
-                if "left" in jointDict:
-                    offset +=0
-                    check += 1
-                elif "right" in jointDict:
-                    offset +=3
-                    check += 1
-                if check == 3:
-                    if len(jointDict) == check:
-                        l[offset] = amtx #rotator
-                        l[offset+1] = amty #elevator
-                        l[offset+2] = amtz #knee
+                    raise AttributeError, "incorrect joint name"    
+            elif "tail" in jointDict:
+                if len(jointDict) == 1:
+                    l[15] = amtx; #pan
+                    l[16] = amty; #tilt
+                elif len(jointDict) == 2:
+                    if "pan" in jointDict:
+                        l[15] = amtx;
+                    elif "tilt" in jointDict:
+                        l[16] = amtx;
                     else:
-                        if "rotator" in jointDict:
-                            offset +=0
-                            check +=1
-                        elif "elevator" in jointDict:
-                            offset +=1
-                            check +=1
-                        elif "knee" in jointDict:
-                            offset +=2
-                            check +=1
-                        if check !=4:
-                            raise AttributeError, "incorrect joint name"
-                        l[offset] = amtx
+                        raise AttributeError, "incorrect joint name"     
+                else:
+                    raise AttributeError, "incorrect joint name"    
+            elif "leg" in jointDict:
+                # back rotator original: -2.4(fwd) to 2.2 (bwd)
+                #   pyro: -1.0(fwd) to 1.0(bwd) where 0 is straight
+                # front rotator, original: -2.2(bwd) to 2.4(fwd)
+                #   pyro: -1.0(bwd) to 1.0(fwd) where 0 is straight down
+                # elevator, original: -0.3 to 1.6 (up)
+                #   pyro: -1.0 to 1.0(up) where 0 is straight down
+                # knee, original: -0.6 to 2.3 (contraction)
+                #   pyro: -1.0 to 1.0(contraction)
+                if len(jointDict) == 3 or len(jointDict) == 4:
+                    check +=1
+                    offset = 0
+                    if "front" in jointDict:
+                        offset = 0
+                        check += 1
+                    elif "back" in jointDict:
+                        offset = 6
+                        check += 1
+                    if "left" in jointDict:
+                        offset +=0
+                        check += 1
+                    elif "right" in jointDict:
+                        offset +=3
+                        check += 1
+                    if check == 3:
+                        if len(jointDict) == check:
+                            amtx = amtx*2.4
+                            if amtx >2.2:
+                                amtx = 2.2
+                            amty = amty*1.6
+                            if amty<-0.3:
+                                amty = -0.3
+                            amtz = amtz*2.3
+                            if amtz < -0.6:
+                                amtx = -0.6
+                            l[offset] = amtx #rotator
+                            l[offset+1] = amty #elevator
+                            l[offset+2] = amtz #knee
+                        else:
+                            if "rotator" in jointDict:
+                                offset +=0
+                                check +=1
+                                amtx = amtx*2.4
+                                if amtx >2.2:
+                                    amtx = 2.2
+                            elif "elevator" in jointDict:
+                                offset +=1
+                                check +=1
+                                amtx = amtx*1.6
+                                if amtx<-0.3:
+                                    amtx = -0.3
+                            elif "knee" in jointDict:
+                                offset +=2
+                                check +=1
+                                amtx = amtx*2.3
+                                if amtx < -0.6:
+                                    amtx = -0.6
+                            if check !=4:
+                                raise AttributeError, "incorrect joint name"
+                            l[offset] = amtx
+                    else:
+                        raise AttributeError, "incorrect joint name"
                 else:
                     raise AttributeError, "incorrect joint name"
             else:
-                raise AttributeError, "incorrect joint name"
+                raise AttributeError, "no such joint"  
+            self.joint_socket.write(struct.pack("<18f",*l))
         else:
-            raise AttributeError, "no such joint"  
-        self.joint_socket.write(struct.pack("<18f",*l))
+            raise AttributeError, "values out of range -1.0, 1.0"
 
 #TODO:
 
