@@ -33,5 +33,29 @@ def safe_queen(new_row, new_col, sol):
             return 0
     return 1
 
-for sol in n_queens(16, 16):
+def check_solution(sol):
+    set = []
+    row = 0
+    for col in sol:
+        set.append( col )
+        if not safe_queen( row, col, set):
+            return 0
+        row += 1
+    return 1
+
+def fitness(sol):
+    set = []
+    row = 0
+    sum = 0
+    for col in sol:
+        set.append( col )
+        if col < 0:
+            return 0
+        sum += safe_queen( row, col, set)
+        row += 1
+    return sum
+
+
+for sol in n_queens(8, 8):
     print sol
+    print fitness(sol)
