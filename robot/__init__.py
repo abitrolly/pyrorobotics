@@ -254,7 +254,8 @@ class Robot (Drawable):
                     minpos = pos
             if minpos == -1:
                 return None
-            return (minpos, min)
+            angle = self.senses[sensor]['th'](self.dev, minpos)
+            return (minpos, min, angle)
         elif func == 'max':
             max = -100000
             maxpos = -1
@@ -265,7 +266,8 @@ class Robot (Drawable):
                     maxpos = pos
             if maxpos == -1:
                 return None
-            return (maxpos, max)
+            angle = self.senses[sensor]['th'](self.dev, maxpos)
+            return (maxpos, max, angle)
 
     def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
         if sensor != 'all':
