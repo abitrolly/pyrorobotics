@@ -371,7 +371,6 @@ class AriaRobot(Robot):
         self.devData['x'] = 0.0
         self.devData['y'] = 0.0
         self.devData['z'] = 0.0
-        self.devData['datestamp'] = time.time()
         self.devData['radius'] = self.params.getRobotRadius() / 1000.0 # in MM, convert to meters
         self.devData['th'] = 0.0 # in degrees
         self.devData['thr'] = 0.0 # in radians
