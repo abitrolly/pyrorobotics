@@ -103,7 +103,8 @@ class psom:
 		self.log_fprefix = "psom"
 		self.log_count = 0
 		self.log_file = 'unopened'
-
+		self.log_padding = 4
+		self.log_format = "%C: [%i] maps to %p at time %d-%t\n"
 
 	def init_training(self,alpha_0,radius_0,runlen,errorwindow=1):
 		csom.init_training_session(self.params,alpha_0,radius_0,runlen,
@@ -147,7 +148,8 @@ class psom:
 	def get_training_time(self):
 		return csom.get_training_time(self.params)
 
-	def logging_on(self, mode='unset', type='unset', dir='unset', prefix='unset'):
+	def logging_set(self, mode='unset', type='unset', dir='unset', prefix='unset',
+		padding='unset', format='unset'):
 		"""
 		use this to turn logging on and to initialize logging settings
 		mode specifies what kind of data vectors are logged -- those that
@@ -157,10 +159,27 @@ class psom:
 		on a separate line
 		dir and prefix specify the directory and file prefix for the target
 		file(s)
+		---------------
+		the 'format' parameter specifies a format string:
+			%i: input vector (entries separated by spaces)
+			%m: model vector (entries separated by spaces)
+			%p: coordinates of model vector as '(x,y)'
+			%x: x coordinate of model vector
+			%y: y coordinate of model vector
+			%c: the current log count
+			%C: a padded version of the current log count
+			%d: the current date as 'MM/DD/YY'
+			%D: date as 'Mon DD, YYYY'
+			%e: date as 'MM/DD'
+			%E: date as 'Mon DD'
+			%t: the current 24-hour time as 'HH:MM:SS'
+			%T: 12-hour time as 'HH:MM:SS:AM/PM'
+			%u: 24-hour time as 'HH:MM'
+			%U: 12-hour time as 'HH:MM:AM/PM'
+			\n: newline
+			\t: tab
+			%%: a literal '%' sign
 		"""
-		if(self.logging == 1):
-			raise "logging facility already turned on, silly!"
-		self.logging = 1
 		if(mode != 'unset'):
 			if(mode != 'map' and mode != 'train' and mode != 'both'):
 				raise "unrecognized logging mode '" + mode + "'"
@@ -179,6 +198,15 @@ class psom:
 			self.log_dir = dir
 		if(prefix != 'unset'):
 			self.log_fprefix = prefix
+		if(padding != 'unset'):
+			self.log_padding = padding
+		if(format != 'unset'):
+			self.log_format = format
+	def logging_on(self):
+		"""
+		turn logging on
+		"""
+		self.logging = 1
 		if(self.log_type == 'file'):
 			fname = self.log_dir + self.log_fprefix + ".log"
 			self.log_file = open(fname, "a")
@@ -194,16 +222,48 @@ class psom:
 		reset the log count
 		"""
 		self.log_count = 0
-	def log(self):
+	def logging_clear(self):
+		"""
+		remove log files
+		"""
+		from os import system	
 		if(self.log_type == 'dir'):
-			fname = self.log_dir + self.log_fprefix + str(self.log_count) +".log"
-			self.log_file = open(fname, "w")
-			s = time.strftime("%x-%X") + "\n" 
-			s += str(self.last.point) + "\n"
-			s += str(self.last)
+			fname = self.log_dir + self.log_fprefix + "[0-9]*.log"
+			system("rm " + fname)
 		else:
-			s = str(self.last) + str(self.last.point)
-			s += " " + time.strftime("%x-%X") +"\n"
+			if(self.logging):
+				self.log_file.close()
+			fname = self.log_dir + self.log_fprefix + ".log"
+			system("rm " + fname)
+			if(self.logging):
+				self.log_file = open(fname, "a")
+	def log(self, model_vec):
+		import re
+		tag = "____%____%____"  # this should be something no one will ever use
+		padcnt = str(self.log_count)
+		while(len(padcnt) < self.log_padding):
+			padcnt = "0" + padcnt
+		s = self.log_format
+		s = re.sub("%%", tag, s)
+		s = re.sub("%i", str(self.last), s)
+		s = re.sub("%m", str(self.get_model_vector(self.last.point)), s)
+		s = re.sub("%p", str(self.last.point), s)
+		s = re.sub("%x", str(self.last.point.x), s)
+		s = re.sub("%y", str(self.last.point.y), s)
+		s = re.sub("%c", str(self.log_count), s)
+		s = re.sub("%C", padcnt, s)
+		s = re.sub("%t", time.strftime("%X"), s)
+		s = re.sub("%T", time.strftime("%I:%M:%S:%p"), s)
+		s = re.sub("%u", time.strftime("%H:%M"), s)
+		s = re.sub("%U", time.strftime("%I:%M:%p"), s)
+		s = re.sub("%d", time.strftime("%x"), s)
+		s = re.sub("%D", time.strftime("%h %d, %Y"), s)
+		s = re.sub("%e", time.strftime("%m/%d"), s)
+		s = re.sub("%E", time.strftime("%h %d"), s)
+		s = re.sub(tag, "%", s)
+		if(self.log_type == 'dir'):
+			fname = self.log_dir + self.log_fprefix + padcnt +".log"
+			self.log_file = open(fname, "w")
 		self.log_file.write(s)
 		if(self.log_type == 'dir'):
 			self.log_file.close()
@@ -214,17 +274,19 @@ class psom:
 		pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
 		self.last = vector
 		self.last.point = pt
+		model = self.get_model_vector(pt)
 		if(self.logging and self.log_mode != 'train'):
-			self.log()
-		return self.get_model_vector(pt)
+			self.log(model)
+		return model
 	def train(self,vector):
 		coords = csom.train_one(self.params,vector.entry)
 		pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
 		self.last = vector
 		self.last.point = pt
+		model = self.get_model_vector(pt)
 		if(self.logging and self.log_mode != 'map'):
-			self.log()
-		return self.get_model_vector(pt)
+			self.log(model)
+		return model
 	def train_from_dataset(self,dataset,mode='cyclic'):
 		if(mode=='rand'):
 			mode = csom.RAND
@@ -356,6 +418,7 @@ class vector:
 		s = ""
 		for elt in mylist:
 			s += "%.3f" % (elt) + " "
+		s = s[:-1]
 		return s
 	def display(self):
 		mylist = self.get_elts();
@@ -604,7 +667,9 @@ if(__name__ == '__main__'):
 		mydataset.addvec(vecs[i])
 	mydataset.display()
 
-	mysom.logging_on(type="file", prefix="psomtest", mode="train")
+	mysom.logging_set(type="file", prefix="psomtest", mode="train")
+	mysom.logging_clear()
+	mysom.logging_on()
 	for v in vecs:
 		m = mysom.train(v)
 		print "input vector",
@@ -630,3 +695,4 @@ if(__name__ == '__main__'):
 
 	mysom.save_to_file("test4.cod")
 	print "output written to \"test4.cod\""
+	print "log written to \"psomtest.log\""
