@@ -309,7 +309,7 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to setActivations()', \
                    self.activationSet)
-        if value < 0 or value > 1:
+        if (value < 0 or value > 1) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
@@ -327,7 +327,7 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet) 
-        if Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1):
+        if (Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1)) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, array) 
         self.activation = array
         self.activationSet = 1
@@ -1644,13 +1644,15 @@ class Network:
         """
         fp = open(filename, "r")
         line = fp.readline()
-        lineno = 1
+        lineno = 0
         lastLength = None
         data = []
         while line:
             if lineno % everyNrows == 0:
                 linedata1 = [float(x) for x in line.strip().split(delim)]
             else:
+                lineno += 1
+                line = fp.readline()
                 continue
             if cols == None: # get em all
                 newdata = linedata1
@@ -1672,6 +1674,7 @@ class Network:
         """
         Loads inputs from file. We lose patterning.
         """
+        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
     def saveInputsToFile(self, filename):
         """
         Saves inputs to file.
