@@ -52,7 +52,8 @@ class VisPsom(psom):
 
         
       psom.__init__(self, *args, **keys)
-
+      self.app = Tkinter.Tk()
+      self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.win.wm_title(title)
 

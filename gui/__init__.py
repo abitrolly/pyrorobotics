@@ -118,7 +118,7 @@ class gui(Drawable):
       else:
          # elif len(retval) > 0 and retval[0] == "!":
          exp1 = "self.inform( repr(" + string.strip(retval) + ") )"
-         #exp2 = string.strip(retval)
+         exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
          engine = self.engine
@@ -127,12 +127,12 @@ class gui(Drawable):
          try:
             exec exp1
          except:
-            #try:
-            #   exec exp2
-            #   #print ''
-            #except:
-            import sys
-            self.inform(sys.exc_value)
+            try:
+               exec exp2
+               self.inform("Ok")
+            except:
+               import sys
+               self.inform(sys.exc_value)
          #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0
 

@@ -20,6 +20,8 @@ class Scatter: # Plot
                       'black', 'azure', 'beige', 'brown', 'coral', \
                       'gold', 'ivory', 'moccasin', 'navy', 'salmon', \
                       'tan', 'ivory']
+        self.app = Tkinter.Tk()
+        self.app.wm_state('withdrawn')
         self.win = Toplevel()
         if title == None:
             self.win.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))

@@ -19,14 +19,12 @@ import sys
 # A GL gui
 
 class GLgui(gui): 
-   def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1,
-                mode = 1): # mode = 1 opengl, 0 = tk
+   def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1):
       gui.__init__(self, 'GL gui', {}, engine)
       # This needs to be done here:
       self.app = Tkinter.Tk()
       self.app.withdraw()
       # And other main windows should use Tkinter.Toplevel()
-      self.graphicsMode = mode
       self.width = width
       self.height = height
       self.genlist = 0
@@ -95,17 +93,13 @@ class GLgui(gui):
          for b in button1:
             Tkinter.Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = 1)
 
-      if self.graphicsMode == 1: # GL
-         self.win = Opengl.Opengl(master = self.frame, width = width, \
-                                   height = height, double = db, depth = depth)
-         self.win.pack(side = 'top', expand = 1, fill = 'both')
-         self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
-         self.win.redraw = self.redraw_pass
-         self.mode = Tkinter.IntVar(self.win)
-         self.mode.set(GL_EXP)
-      else: # TK, no display
-         self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
-         self.win = self.frame
+      self.win = Opengl.Opengl(master = self.frame, width = width, \
+                               height = height, double = db, depth = depth)
+      self.win.pack(side = 'top', expand = 1, fill = 'both')
+      self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
+      self.win.redraw = self.redraw_pass
+      self.mode = Tkinter.IntVar(self.win)
+      self.mode.set(GL_EXP)
 
       self.commandFrame = Tkinter.Frame(self.frame)
       self.commandFrame['relief'] = 'raised'
@@ -128,16 +122,17 @@ class GLgui(gui):
       # create a status bar
       self.status = TKwidgets.StatusBar(self.frame)
       self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
-      if self.graphicsMode == 1: # GL
-         self.init()
+      self.init()
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def openBrainWindow(self):
       try:
          self.windowBrain.state()
       except:
+         self.app = Tkinter.Tk()
+         self.app.wm_state('withdrawn')
          self.windowBrain = Tkinter.Toplevel()
-         self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
+         self.windowBrain.wm_title("Brain View")
          self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
          self.canvasBrain.pack()
 
@@ -263,7 +258,7 @@ class GLgui(gui):
       return menu
 
    def run(self, command = []):
-      if self.graphicsMode == 1: # GL
+      if 1: # GL
          self.done = 0
          while len(command) > 0:
             print command[0],
@@ -285,27 +280,6 @@ class GLgui(gui):
                #   print "Exiting main loop...", self.done
                self.done = 1
             sleep(self.update_interval)
-      else:
-         self.done = 0
-         while not self.done:
-            needToUpdateState = 1
-            try: needToUpdateState = self.engine.brain.needToStop
-            except: pass
-            if needToUpdateState:
-               try: self.engine.robot.update()
-               except: pass
-            #try:
-            self.redrawWindowBrain()
-            try:
-               self.windowCamera.updateWindow()
-            except:
-               pass
-            while self.win.tk.dooneevent(2): pass
-            #except:
-            #   print "Exiting main loop...", self.done
-            #   self.done = 1
-            sleep(self.update_interval)
-         #self.win.mainloop()
 
    def init(self):
       # Do not specify a material property here.
@@ -363,7 +337,7 @@ class GLgui(gui):
    def redraw_pass(self, win = 0): pass
 
    def redraw(self, win = 0):
-      if self.graphicsMode == 1: # GL
+      if 1: # GL
          glClearColor(0.5, 0.5, 0.5, 0)
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
          #glLoadIdentity()

@@ -40,6 +40,8 @@ class GeneralPlot:
       width - The displayed width of the graph (in pixels).  Defaults to 400.
       height - The displaed height of the graph (in pixels).  Defaults to 120.
       """
+      self.app = Tkinter.Tk()
+      self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.robot = robot
       self.brain = brain

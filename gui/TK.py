@@ -19,7 +19,7 @@ class TKgui(gui):
       gui.__init__(self, 'TK gui', {}, engine)
       # This needs to be done here:
       self.app = Tkinter.Tk()
-      self.app.withdraw()
+      self.app.wm_state('withdrawn')
       # And other main windows should use Tkinter.Toplevel()
       self.width = width
       self.height = height
@@ -157,7 +157,7 @@ class TKgui(gui):
          self.windowBrain.state()
       except:
          self.windowBrain = Tkinter.Toplevel()
-         self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
+         self.windowBrain.wm_title("Brain View")
          self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
          self.canvasBrain.pack()
 

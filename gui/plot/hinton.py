@@ -16,6 +16,8 @@ class Hinton: # Plot
       maxvalue: The maximum magnitude of the plots [1.0]
       data: The vector to initialize the plot with [None]
       """
+      self.app = Tkinter.Tk()
+      self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.maxvalue=maxvalue
       self.width=width

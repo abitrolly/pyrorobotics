@@ -22,6 +22,8 @@ class KheperaViewer:
       whole viewer is calculated with respect to this measure.
       """
       self.imageSize = imageSize
+      self.app = Tkinter.Tk()
+      self.app.wm_state('withdrawn')
       self.win = Toplevel()
       if not self.imageSize:
          self.radius = radius

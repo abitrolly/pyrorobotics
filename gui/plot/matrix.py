@@ -13,6 +13,8 @@ class Matrix: # Plot
 
       """
       self.type = type
+      self.app = Tkinter.Tk()
+      self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.maxvalue=maxvalue
       self.width=width
