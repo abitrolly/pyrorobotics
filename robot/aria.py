@@ -78,7 +78,7 @@ class AriaRobot(Robot):
         self.senses['sonar']['y'] = lambda dev, pos: self.getSonarY(pos)
 	self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
         self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
-        self.senses['sonar']['maxvalue'] = lambda dev: self.rawToUnits(dev, 2.99, 'sonar')
+        self.senses['sonar']['maxvalue'] = lambda dev: self.getSonarMaxRange(dev)
         self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
 
