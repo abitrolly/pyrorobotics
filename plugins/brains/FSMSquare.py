@@ -28,7 +28,7 @@
 # that by using the onGoto() and Goto() methods. But you would have to
 # make the next state to goto a parameter that you pass in. Why?
 
-from pyro.brain.behaviors.core import *   # import distance function
+from pyro.geometry import *   # import distance function
 from pyro.brain.behaviors.fsm import State, FSMBrain
 
 class edge (State):
