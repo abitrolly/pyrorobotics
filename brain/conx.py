@@ -320,28 +320,18 @@ class Layer:
         """
         Sets all targets the the value of the argument.
         """
-        if not self.targetSet == 0:
-            raise LayerError, \
-                  ('Target flag not reset before call to setTargets()', \
-                   self.targetSet)
-        else:
-            self.targetSet = 1
+        self.targetSet = 1
         for i in range(self.size):
             self.target[i] = value
     def copyTargets(self, arr, symmetric = 0):
         """
         Copies the targets of the argument array into the self.target attribute.
         """
+        self.targetSet = 1
         if not len(arr) == self.size:
             raise LayerError, \
                   ('Mismatched target size and layer size in call to copyTargets()', \
                    (len(arr), self.size))
-        if not self.targetSet == 0:
-            raise LayerError, \
-                  ('Target flag not reset before call to copyTargets()', \
-                   self.targetSet)
-        else:
-            self.targetSet = 1
         if symmetric:
             for i in range(self.size):
                 self.target[i] = arr[i] - 0.5
