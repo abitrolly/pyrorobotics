@@ -115,6 +115,9 @@ void Vision::filterByColor(int lr, int lg, int lb,
   }
 }
 
+int Vision::saveImage(char *filename) {
+} 
+
 int Vision::getWidth() { return width; }
 int Vision::getHeight() { return height; }
 int Vision::getDepth() { return depth; }

@@ -26,7 +26,7 @@ public:
   int getWidth();
   int getHeight();
   int getDepth();
-  int saveImage(char filename[]);
+  int saveImage(char *filename);
   PyObject *getMMap();
 
 

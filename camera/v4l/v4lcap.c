@@ -14,7 +14,6 @@
 
 #define verbose 1
 
-
 /**************
  * For use by fake_grab_image and fake_refresh.
  * This is going to assume that the file is the right
@@ -177,9 +176,6 @@ struct image_cap* Cgrab_image(char* device, int width,
   image_struct->bpp  = depth * 8;
   image_struct->handle = dev;
   return image_struct;
-}
-
-int Cset_image_location(int x, int y, int value) {
 }
 
 int Crefresh_image(struct image_cap *image_struct, int width, int height){
