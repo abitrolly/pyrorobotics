@@ -158,11 +158,15 @@ class GovernorNetwork(Governor, Network):
             if self.verbosity:
                 print "mask:", self.ravq.mask
 
-    def setEpsilon(self, liveEpsilon, govEpsilon):
+    def setEpsilon(self, liveEpsilon, govEpsilon = None):
+        if govEpsilon == None:
+            govEpsilon = liveEpsilon
         Network.setEpsilon(self, liveEpsilon)
         self.trainingNetwork.setEpsilon(govEpsilon)
 
-    def setMomentum(self, liveMomentum, govMomentum):
+    def setMomentum(self, liveMomentum, govMomentum = None):
+        if govMomentum == None:
+            govMomentum = liveMomentum
         Network.setMomentum(self, liveMomentum)
         self.trainingNetwork.setMomentum(govMomentum)
 
@@ -289,11 +293,15 @@ class GovernorSRN(Governor, SRN):
                                       context=context)
         return Network.step(self, **args)
 
-    def setEpsilon(self, liveEpsilon, govEpsilon):
+    def setEpsilon(self, liveEpsilon, govEpsilon = None):
+        if govEpsilon == None:
+            govEpsilon = liveEpsilon
         SRN.setEpsilon(self, liveEpsilon)
         self.trainingNetwork.setEpsilon(govEpsilon)
 
-    def setMomentum(self, liveMomentum, govMomentum):
+    def setMomentum(self, liveMomentum, govMomentum = None):
+        if govMomentum == None:
+            govMomentum = liveMomentum
         SRN.setMomentum(self, liveMomentum)
         self.trainingNetwork.setMomentum(govMomentum)
 
