@@ -131,7 +131,11 @@ if pyro.startup_check():
         from pyro.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)
     gui.engine.postinit()
-    gui.run(evalcommand.split(';'))
+    if evalcommand != "":
+        evalcommand = evalcommand.split(';')
+    else:
+        evalcommand = []
+    gui.run(evalcommand)
     gui.cleanup()
 else:
     basichelp()
