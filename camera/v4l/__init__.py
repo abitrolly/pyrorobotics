@@ -9,6 +9,22 @@ import PIL.PpmImagePlugin
 import time
 import re
 
+
+class BlobData:
+   def __init__(self, width, height):
+      self.min_x = width
+      self.min_y = height
+      self.max_x = 0
+      self.max_y = 0
+      self.mass = 0
+   
+class Hist:
+   def __init__(self):
+      self.red = 0
+      self.green = 0
+      self.blue = 0
+      
+
 class V4LGrabber(Camera):
    """
    A Wrapper class for the C fuctions that capture data from the Khepera robot.
@@ -69,16 +85,9 @@ class V4LGrabber(Camera):
       # sleeptime tells how long to sleep for.
       self.sleepFlag = 0
       self.sleepTime = 2
-      
-      self.min_x = width
-      self.min_y = height
-      self.max_x = 0
-      self.max_y = 0
-      #self.cm_x = 0
-      #self.cm_y = 0
-      self.mass  = 0
 
-
+      self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
+      self.maxBlob = self.blob[0]
 
    def _update(self):
       """
@@ -117,23 +126,39 @@ class V4LGrabber(Camera):
 
 
 
-   def maxBlob(self, channel, low_threshold, high_threshold,sortMethod, drawBox=1):
+   def maxBlobs(self, channel, low_threshold, high_threshold, sortMethod, number, drawBox=1):
 
       if(cmp(sortMethod.lower(),"mass")==0):
-         self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,0,drawBox,self.width, self.height);
+         method = 0
 
       elif(cmp(sortMethod.lower(),"area")==0):
-         self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,1,drawBox,self.width, self.height);
+         method = 1
+
+      else:
+         print "Invalid Sort Parameter to maxBlobs."
+
+      if number == 1:
+         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = blobify( channel,low_threshold,high_threshold,method,number,drawBox,self.width,self.height);
+
+      elif number == 2:
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+               
+      elif number == 3:
+         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+
+      elif number == 4:
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+
+      elif number == 5:
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+
+      else:
+         print "Invalid parameter to maxBlobs: number, must be 1-5"
 
       #not good, 1 pixel is very dense.
       #elif(cmp(sortMethod.lower(),"density")==0):
       #   self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,2,drawBox,self.width, self.height);
 
-      else:
-         print "Invalid Sort Parameter to Blob."
-         
-
-      print "Min x: %d  Min y: %d  Max x: %d  Max y: %d  Mass: %d" % (self.min_x, self.min_y, self.max_x, self.max_y,self.mass)
       self.sleepCheck();
 
 
@@ -159,13 +184,10 @@ class V4LGrabber(Camera):
          channel = 0;
 
       if(cmp(color.lower(), "red") == 0):
-         print "in super red"
          super_red(channel,lighten,self.width,self.height)
       elif(cmp(color.lower(), "green") == 0):
-         print "in super green"
          super_green(channel,lighten,self.width,self.height)
       elif(cmp(color.lower(), "blue") == 0):
-         print "in super blue"
          super_blue(channel,lighten,self.width,self.height)
 ##       elif(cmp(color.lower(), "magenta") == 0):
 ##          print "in super magenta"
@@ -200,8 +222,9 @@ class V4LGrabber(Camera):
 
 
    def trainColor(self):
-      self.histRed, self.histGreen, self.histBlue = train_color(self.width,
-                                                                self.height);
+      self.histogram = Hist()
+      self.histogram.red, self.histogram.green, self.histogram.blue = train_color(self.width,
+                                                                                  self.height);
 
 
    def __del__(self):
@@ -308,7 +331,7 @@ class FakeCamera(V4LGrabber):
       self.current = start
       currname = self.pattern[:self.match.start()] + \
                  self.fstring % self.current + \
-                 self.pattern[self.match.end():]       
+                 self.pattern[self.match.end():]
       self.width, self.height, self.depth, self.cbuf = fake_grab_image(currname)
       if self.depth == 8:
          self.color = 0
