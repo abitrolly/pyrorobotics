@@ -50,20 +50,19 @@ class VisPsom(psom):
       else:
          self.opts = None
 
-        
       psom.__init__(self, *args, **keys)
       self.app = Tk()
       self.app.wm_state('withdrawn')
       self.win = Toplevel()
       self.win.wm_title(title)
 
-      cellwidth = (self.vis_padding + self.vis_radius) * 2
+      self.cellwidth = (self.vis_padding + self.vis_radius) * 2
       #offset to set off the rows for a hexagonal topology
       if self.topol == 'hexa':
-         offset = cellwidth/2
+         self.offset = self.cellwidth/2
       else: #topol = 'rect'
-         offset = 0
-      self.width = self.xdim*(2*self.vis_radius+2*self.vis_padding) + offset
+         self.offset = 0
+      self.width = self.xdim*(2*self.vis_radius+2*self.vis_padding) + self.offset
       self.height = self.ydim*(2*self.vis_radius+2*self.vis_padding)
       self.canvas = Canvas(self.win,
                            width=self.width,
@@ -72,102 +71,10 @@ class VisPsom(psom):
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.win.bind("<Configure>", self.changeSize)
-      self.canvas.pack(side=TOP, fill="both")
-
-      """
-      # Toggle Button stuff (DEPRECATED)
-      f = Frame(self.win)
-      self.showCount = "Train"
-      self.toggleCount = Button(f, text="Show Map Count",
-                                command=self.countSwitch)
-      self.toggleCount.pack()
-      f.pack(side=BOTTOM)
-      """
-      
+      self.canvas.pack(side=TOP, expand="yes", fill="both")
       self.lastMapped = (-1,-1)
-      self.cells = []
-      self.cellhash = {}
       self.history = {}
-
-      # draw connection lines first:
-      for y in range(self.ydim):
-         self.cells.append([])
-         for x in range(self.xdim):
-            x0 = (cellwidth * x) + self.vis_padding + (offset * (y % 2))
-            y0 = (cellwidth * y) + self.vis_padding
-            x1 = x0 + (self.vis_radius * 2)
-            y1 = y0 + (self.vis_radius * 2)
-            #    1    2
-            #     \  /
-            #   0 -  - 3
-            #     /  \
-            #    5    4
-            connection = [1] * 6
-            if y == 0:               # top row
-               connection[1] = 0; connection[2] = 0
-            if x == 0:               # left row
-               connection[0] = 0;
-            if y % 2 == 0 and x == 0:
-               connection[1] = 0
-            if y % 2 == 1 and x == self.xdim - 1:
-               connection[2] = 0
-            if connection[0]: self.canvas.create_line(x0 + cellwidth / 2,
-                                                      y0 + cellwidth / 2,
-                                                      x0 - cellwidth / 2,
-                                                      y0 + cellwidth / 2,
-                                                      tags = 'cell')
-            if connection[1]: self.canvas.create_line(x0 + cellwidth / 2,
-                                                      y0 + cellwidth / 2,
-                                                      x0,
-                                                      y0 - cellwidth / 2,
-                                                      tags = 'cell')
-            if connection[2]: self.canvas.create_line(x0 + cellwidth / 2,
-                                                      y0 + cellwidth / 2,
-                                                      x0 + cellwidth,
-                                                      y0 - cellwidth / 2,
-                                                      tags = 'cell')
-
-      for y in range(self.ydim):
-         self.cells.append([])
-         for x in range(self.xdim):
-            x0 = (cellwidth * x) + self.vis_padding + (offset * (y % 2))
-            y0 = (cellwidth * y) + self.vis_padding
-            x1 = x0 + (self.vis_radius * 2)
-            y1 = y0 + (self.vis_radius * 2)
-            cell = self.canvas.create_oval(x0, y0, x1, y1, fill='white',
-                                           tags = 'cell')
-            center = ((x0 + x1)/2, (y0 + y1)/2)
-            
-            # display settings for train count
-            traintext = self.canvas.create_text(center[0], center[1],
-                                                text = "",
-                                                fill = 'red',
-                                                tags = 'traincount')
-            # display settings for map count
-            maptext = self.canvas.create_text(center[0], center[1],
-                                              text = "",
-                                              fill = 'blue',
-                                              tags = 'mapcount')
-            # display settings for label
-            labeltext = self.canvas.create_text(center[0], center[1],
-                                                text = "",
-                                                fill = 'purple',
-                                                tags = 'label')
-            # dictionary associated with each cell
-            pt = point(x, y)
-            self.cells[y].append({"cell": cell,
-                                  #"traincount": self.get_reg_counter(pt, 'train'),
-                                  #"mapcount": self.get_reg_counter(pt, 'map'),
-                                  "traintext": traintext,
-                                  "maptext": maptext,
-                                  "labeltext": labeltext})
-                                  #"label": self.get_model_vector(pt).get_label()})
-            self.cellhash[cell] = (x, y)
-
-      self.canvas.tag_lower('cell', 'traincount')
-      self.canvas.tag_lower('mapcount', 'cell')
-      self.canvas.tag_lower('label', 'cell')
-
+      self.drawCells(init=1)
       # Set labels
       for y in range(self.ydim):
          for x in range(self.xdim):
@@ -192,11 +99,116 @@ class VisPsom(psom):
       ShowBtn.invoke(ShowBtn.index('Train Count')) 
       # end menu bar
       #print self.width, self.height
-      self.win.aspect(self.width, self.height, self.width, self.height)
+      self.win.aspect(self.width, self.height + 32, self.width, self.height + 32)
+
+   def drawCells(self, init=0):
+      # draw connection lines first:
+      if init:
+         self.cells = []
+      self.cellhash = {}
+      self.canvas.delete("cell")
+      for y in range(self.ydim):
+         for x in range(self.xdim):
+            x0 = (self.cellwidth * x) + self.vis_padding + (self.offset * (y % 2))
+            y0 = (self.cellwidth * y) + self.vis_padding
+            x1 = x0 + (self.vis_radius * 2)
+            y1 = y0 + (self.vis_radius * 2)
+            #    1    2
+            #     \  /
+            #   0 -  - 3
+            #     /  \
+            #    5    4
+            connection = [1] * 6
+            if y == 0:               # top row
+               connection[1] = 0; connection[2] = 0
+            if x == 0:               # left row
+               connection[0] = 0;
+            if y % 2 == 0 and x == 0:
+               connection[1] = 0
+            if y % 2 == 1 and x == self.xdim - 1:
+               connection[2] = 0
+            if connection[0]: self.canvas.create_line(x0 + self.cellwidth / 2,
+                                                      y0 + self.cellwidth / 2,
+                                                      x0 - self.cellwidth / 2,
+                                                      y0 + self.cellwidth / 2,
+                                                      tags = 'cell')
+            if connection[1]: self.canvas.create_line(x0 + self.cellwidth / 2,
+                                                      y0 + self.cellwidth / 2,
+                                                      x0,
+                                                      y0 - self.cellwidth / 2,
+                                                      tags = 'cell')
+            if connection[2]: self.canvas.create_line(x0 + self.cellwidth / 2,
+                                                      y0 + self.cellwidth / 2,
+                                                      x0 + self.cellwidth,
+                                                      y0 - self.cellwidth / 2,
+                                                      tags = 'cell')
+
+      for y in range(self.ydim):
+         if init:
+            self.cells.append([])
+         for x in range(self.xdim):
+            x0 = (self.cellwidth * x) + self.vis_padding + (self.offset * (y % 2))
+            y0 = (self.cellwidth * y) + self.vis_padding
+            x1 = x0 + (self.vis_radius * 2)
+            y1 = y0 + (self.vis_radius * 2)
+            cell = self.canvas.create_oval(x0, y0, x1, y1, fill='white',
+                                           tags = 'cell')
+            center = ((x0 + x1)/2, (y0 + y1)/2)
+            
+            # display settings for train count
+            traintext = self.canvas.create_text(center[0], center[1],
+                                                text = "",
+                                                fill = 'red',
+                                                tags = 'traincount')
+            # display settings for map count
+            maptext = self.canvas.create_text(center[0], center[1],
+                                              text = "",
+                                              fill = 'blue',
+                                              tags = 'mapcount')
+            # display settings for label
+            labeltext = self.canvas.create_text(center[0], center[1],
+                                                text = "",
+                                                fill = 'purple',
+                                                tags = 'label')
+            # dictionary associated with each cell
+            pt = point(x, y)
+            if init:
+               self.cells[y].append({"cell": cell,
+                                     "traintext": traintext,
+                                     "maptext": maptext,
+                                     "labeltext": labeltext})
+            else:
+               self.cells[y][x]["cell"] = cell
+               px,py = map(int, self.canvas.coords(self.cells[y][x]["traintext"]))
+               self.canvas.move(self.cells[y][x]["traintext"],center[0] - px, center[1] - py)
+               self.canvas.move(self.cells[y][x]["maptext"],center[0] - px, center[1] - py)
+               self.canvas.move(self.cells[y][x]["labeltext"],center[0] - px, center[1] - py)
+               fontsize = self.cellwidth / 8
+               self.canvas.itemconfigure(self.cells[y][x]["traintext"], font=(('MS', 'Sans', 'Serif'), fontsize))
+               self.canvas.itemconfigure(self.cells[y][x]["maptext"], font=(('MS', 'Sans', 'Serif'), fontsize))
+               self.canvas.itemconfigure(self.cells[y][x]["labeltext"], font=(('MS', 'Sans', 'Serif'), fontsize))
+
+            self.cellhash[cell] = (x, y)
+
+      self.canvas.tag_lower('cell', 'traincount')
+      self.canvas.tag_lower('mapcount', 'cell')
+      self.canvas.tag_lower('label', 'cell')
 
    def changeSize(self, event):
-      #self.width = self.win.winfo_width() - 2
-      pass
+      #print self.width, self.height
+      #print self.vis_padding, self.vis_radius
+      #print self.offset, self.cellwidth
+      #return
+      self.vis_padding = 2
+      self.width = self.win.winfo_width() - 2
+      self.vis_radius = ((self.width - self.offset) / (2 * self.xdim)) - self.vis_padding
+      self.cellwidth = (self.vis_padding + self.vis_radius) * 2
+      if self.topol == 'hexa':
+         self.offset = self.cellwidth/2
+      else: #topol = 'rect'
+         self.offset = 0
+      self.height = self.ydim*(2*self.vis_radius+2*self.vis_padding)
+      self.drawCells()
 
    def destroy(self):
       self.win.destroy()

@@ -23,7 +23,7 @@ class Hinton: # Plot
       self.width=width
       if data:
          blocks = len(data)
-      self.height = abs(width / float(blocks))
+      self.height = int(abs(width / float(blocks)))
       if title == None:
          self.win.wm_title("hinton@%s:"%os.getenv('HOSTNAME'))
       else:
@@ -36,12 +36,14 @@ class Hinton: # Plot
          self.update(data)
       else:
          self.update([1.0] * blocks)
+      #self.win.aspect(self.width - 60, self.height + 32, self.width - 60, self.height + 32)
+
         
    def setTitle(self, title):
       self.win.wm_title(title)
 
    def changeSize(self, event):
-      self.width = self.win.winfo_width() - 2
+      self.width = self.win.winfo_width() - 60
       self.update(self.last)
       
    def update(self, vec):
