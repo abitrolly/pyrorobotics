@@ -197,7 +197,7 @@ class Camera(PyroImage):
       PyroImage.__init__(self, 0, 0, 3, 0) # will get info from file
       self.count = 0
 
-   def update(self):
+   def update(self, detectMotion = 0):
       """
       Update method for getting next sequence in simulated video camera.
       This will loop when it gets to the end.
@@ -211,34 +211,25 @@ class Camera(PyroImage):
          import sys
          print "Can't find $PYRO/vision/snaps/ images!"
          sys.exit(1)
+      if detectMotion:
+         self.previous = self.data[:]
       self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
-   def motion(self)
-      mimage = Camera()
-      image1 = mimage.update()
-      image2 = mimage.update()
-      image1.grayScale()
-      image2.grayScale()
-      compMotion = image()
-      compMotion.width = image1.width
-      compMotion.height = image1.height
-      compMotion.depth = 1
-      compMotion.data = [0] * compMotion.height * compMotion.width * 1
-      x = 0
-      movedPixelCount = 0
-      while (x < compMotion.width * compMotion.height):
-         if (abs(image1.data[x] - image2.data[x]) > 20):
-            compMotion.data[x] = "M"
-            movedPixelCount += 1
-         else:
-            compMotion.data[x] = "."
-         x += 1
-      compMotion.saveToFile(MotionBitMap)
-#if we want return values, uncomment this. I was unsure.
-      if (movedPixelCount > 5):
-         return 1
-      else:
-         return 0
+      if detectMotion:
+         self.motion = Bitmap(self.width, self.height)
+         movedPixelCount = 0
+         for x in range(self.width):
+            for y in range(self.height):
+               if (abs((self.previous[(x + y * self.width) * self.depth + 0] +
+                        self.previous[(x + y * self.width) * self.depth + 1] +
+                        self.previous[(x + y * self.width) * self.depth + 2])
+                       / 3.0 -
+                       (self.get(x, y, 0) +
+                        self.get(x, y, 1) +
+                        self.get(x, y, 2)) / 3.0) > .1):
+                  self.motion.set(x, y, 1)
+                  movedPixelCount += 1
+         print "moved:", movedPixelCount
 
 class Histogram(PyroImage):
    """
@@ -519,7 +510,20 @@ if __name__ == '__main__':
       image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
       filter = image.filter(.65, .35, .22, .01) # r, g, b, threshold
       filter.saveToFile("filter.ppm")
+      blob = filter.blobify()
+      blob.display()
       print "Done! View filter bitmap with 'xv filter.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 10: find motion in 100 frames? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      camera = Camera()
+      camera.update()
+      for x in range(100):
+         camera.update(1)
+         camera.motion.display()
+      print "Done!"
    else:
       print "skipping..."
       
