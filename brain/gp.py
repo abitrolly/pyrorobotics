@@ -1,20 +1,4 @@
-import random
 from pyro.brain.ga import *
-
-terminals = ['i1', 'i2']
-# inputs for XOR:
-values = [ {'i1' : 0, 'i2' : 0},
-           {'i1' : 0, 'i2' : 1},
-           {'i1' : 1, 'i2' : 0},
-           {'i1' : 1, 'i2' : 1} ]
-goals = [ 0, 1, 1, 0 ] # outputs for XOR
-# These go together:
-operators = ['+', '-', '*', '/']
-# how many operands (arguments):
-operands  = {'+'   : 2,
-             '-'   : 2,
-             '*'   : 2,
-             '/'   : 2 }
 
 class GPGene(Gene):
     def __init__(self, **args):
@@ -187,39 +171,63 @@ class GPGene(Gene):
         else:
             raise "unknownTreetype", tree
 
-class GP(GA):
-    def __init__(self, cnt, **args):
-        GA.__init__(self, Population( cnt, GPGene, **args))
 
-    def fitnessFunction(self, pos):
-        score = 0
-        for i in range(len(values)):
-            set, goal = values[i], goals[i]
-            item  = self.pop.data[pos].eval_tree(set) - goal
-            score += abs(item)
-        return -score
-            
-    def isDoneFunction(self):
-        return self.fitnessFunction(0) == 0
+if __name__ == '__main__2':
+    terminals = ['i1', 'i2']
+    # inputs for XOR:
+    values = [ {'i1' : 0, 'i2' : 0},
+               {'i1' : 0, 'i2' : 1},
+               {'i1' : 1, 'i2' : 0},
+               {'i1' : 1, 'i2' : 1} ]
+    goals = [ 0, 1, 1, 0 ] # outputs for XOR
+    # These go together:
+    operators = ['+', '-', '*', '/']
+    # how many operands (arguments):
+    operands  = {'+'   : 2,
+                 '-'   : 2,
+                 '*'   : 2,
+                 '/'   : 2 }
 
-class PI_GP(GA):
-    def __init__(self, cnt, **args):
-        GA.__init__(self, Population( cnt, GPGene, **args))
-
-    def fitnessFunction(self, pos, pr = 0):
-        val = self.pop.data[pos].eval_tree(values) 
-        score  = abs(val - 3.1415)
-        if pr:
-            print val
-        return -score
-            
-    def isDoneFunction(self):
-        return self.fitnessFunction(0, 1) == 0
-
-if __name__ == '__main__':
+    class GP(GA):
+        def __init__(self, cnt, **args):
+            GA.__init__(self, Population( cnt, GPGene, **args))
+    
+        def fitnessFunction(self, pos):
+            score = 0
+            for i in range(len(values)):
+                set, goal = values[i], goals[i]
+                item  = self.pop.data[pos].eval_tree(set) - goal
+                score += abs(item)
+            return -score
+    
+        def isDoneFunction(self):
+            return self.fitnessFunction(0) == 0
+    
     gp = GP(300, bias = .6)
     gp.evolve()
     print " -----------------------------------------------------------------"
+
+if __name__ == '__main__':
+    class PI_GP(GA):
+        def __init__(self, cnt, **args):
+            GA.__init__(self, Population( cnt, GPGene, **args))
+    
+        def fitnessFunction(self, pos, pr = 0):
+            val = self.pop.data[pos].eval_tree(values) 
+            score  = abs(val - 3.1415)
+            if pr:
+                print val
+            return -score
+                
+        def isDoneFunction(self):
+            return self.fitnessFunction(0, 1) == 0
+
+    operators = ['+', '-', '*', '/']
+    # how many operands (arguments):
+    operands  = {'+'   : 2,
+                 '-'   : 2,
+                 '*'   : 2,
+                 '/'   : 2 }
     terminals = ['s0', 's1']
     values = {'s0' : 0.1, 's1' : 0.2}
     gp = PI_GP(1000, bias = .6)
