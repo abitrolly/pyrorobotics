@@ -21,10 +21,8 @@ class SaphiraSenseDriver(driver.Driver):
         self.senses['robot']['z'] = Saphira_getZ
         self.senses['robot']['th'] = Saphira_getTh # in degrees
         self.senses['robot']['thr'] = Saphira_getThr # in radians
-	self.senses['robot']['type'] = lambda self: 'saphira'
-
-	self.senses['robot']['name'] = lambda self: 'saphira-1'
-
+        self.senses['robot']['type'] = lambda self, x = Saphira_getType(machine.dev): x
+	self.senses['robot']['name'] = lambda self: 'pioneer-1'
 	self.senses['sonar'] = {}
 	self.senses['sonar']['count'] = \
 		lambda self, x = Saphira_getSonarCount(machine.dev) : x
@@ -88,6 +86,7 @@ class SaphiraControlDriver(driver.Driver):
     def __init__(self, machine):
         driver.Driver.__init__(self)
         self.controls['move'] = Saphira_Move
+        self.controls['move_now'] = Saphira_Move
         #self.controls['accelerate'] = Saphira_Accelerate
         self.controls['translate'] = Saphira_Translate
         self.controls['rotate'] = Saphira_Rotate

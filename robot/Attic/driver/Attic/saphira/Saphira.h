@@ -47,6 +47,7 @@ public:
   double sonar_th (int pos);
   double sonar_x (int pos);
   double sonar_y (int pos);
+  char * getType(void);
 
  private:
   double px;

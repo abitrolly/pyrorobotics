@@ -13,6 +13,7 @@ from time import sleep
 class KheperaRobot(Robot):
     def __init__(self, name = None, simulator = 0): # 0 makes it real
         Robot.__init__(self, name, "khepera") # robot constructor
+        self.simulated = simulator
         if simulator == 1:
             self.sc = "Fix: Make Simulated Connection"
         else:
@@ -112,6 +113,7 @@ class KheperaRobot(Robot):
         console.log(console.INFO,'khepera sense drivers loaded')
 
         self.controls['move'] = self._move
+        self.controls['move_now'] = self._move_now
         self.controls['accelerate'] = self.accelerate
         self.controls['translate'] = self.translate
         self.controls['rotate'] = self.rotate
@@ -168,7 +170,7 @@ class KheperaRobot(Robot):
             y2, x2, z2 = -self.get('ir', 'ox', i), \
                          -self.get('ir', 'oy', i), \
                          self.get('ir', 'oz', i)
-            x2, y2, z2 = 0, 0, 0
+            #x2, y2, z2 = 0, 0, 0
             arc    = self.get('ir', 'arc', i) # in radians
             renderer.ray((x1, y1, z1), (x2, y2, z2), arc)
 
@@ -359,6 +361,22 @@ class KheperaRobot(Robot):
     def light_th(self, dev, pos):
         return self.light_thd(dev, pos) / 180.0 * math.pi
     
+    def move_now(self, trans, rotate):
+        """
+        This is only neaded if there is an accelleration model.
+        There currently isn't, so this not useful yet.
+        """
+        self._move_now(self, trans, rotate)
+        self.update()
+
+    def _move_now(self, dev, trans, rotate):
+        left  = int((trans * dev.translateFactor - \
+                     rotate * dev.rotateFactor))
+        right  = int((trans * dev.translateFactor + \
+                      rotate * dev.rotateFactor))
+        dev.sendMsg('D,%i,%i' % (left, right))
+        self.update()
+
     def move(self, trans, rotate):
         self._move(self, trans, rotate)
         self.update()
@@ -373,12 +391,13 @@ class KheperaRobot(Robot):
         right  = int((dev.lastTranslate * dev.translateFactor + \
                       dev.lastRotate * dev.rotateFactor))
         # FIX: add acceleration, and assume that adjustSpeed
-        # is bing continuously called.
+        # is being continuously called.
         dev.sendMsg('D,%i,%i' % (left, right))
         
     def _move(self, dev, trans, rotate):
         self.lastTranslate = trans
         self.lastRotate = rotate
+        # FIX: do min/max here
         self.adjustSpeed()
 
     def accelerate(self, trans, rotate): # incr

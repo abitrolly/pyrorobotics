@@ -56,9 +56,9 @@ class gui(Drawable):
          help()
       elif retval == "reload":
          self.engine.reset()
-      elif retval == "robot":
+      elif retval == "load robot":
          self.loadRobot()
-      elif retval == "brain":
+      elif retval == "load brain":
          self.loadBrain()
       elif retval == "stop":
          self.engine.pleaseStop()
@@ -77,9 +77,10 @@ class gui(Drawable):
             print "Need to load a brain first"
       else:
          # elif len(retval) > 0 and retval[0] == "!":
-         exp = string.strip(retval)
+         exp = "print " + string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
+         print "> " + string.strip(retval) + ":",
          try:
             exec exp
          except:

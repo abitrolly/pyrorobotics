@@ -53,6 +53,10 @@ double Saphira::getZ(void) {
   return pz;
 }
 
+char * Saphira :: getType(void) {
+  return sfRobotSubclass;
+}
+
 int Saphira :: Connect(int sim_robot = 1) {
   SaphiraInit(); 
   sfStartup(1);
