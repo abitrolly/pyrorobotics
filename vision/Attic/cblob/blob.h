@@ -1,18 +1,25 @@
 #ifndef __BLOB_H__
 #define __BLOB_H__
 
+#include "config.h"
+
 #include "v4lcap.h"
 #include <stdint.h>
+
+#ifdef HAVE_PLAYER_H
 #include <player.h>
+#endif
 
 #define BLOBLIST_SIZE 10000
 #define BITMAP_CUTOFF 0.5
 #define PLAYERBLOB_MAX_CHANNELS 8
-//#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
-//#define max(X, Y)  ((X) > (Y) ? (X) : (Y))
+#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
+#define max(X, Y)  ((X) > (Y) ? (X) : (Y))
 
 //Given a bitmap, computes an (x,y) offset (row-major)
 //#define bm_offset(bm, x, y)  x*bm->width + y
+
+typedef uint8_t* cbuf_t;
 
 struct point{
   int x;
@@ -46,13 +53,14 @@ struct blobdata{
 /*Very similar to a really player_blobfinder_data_t, but
   the size of the array is set at runtime.
 */
+#ifdef HAVE_PLAYER_H
 typedef struct player_blobfinder_data_varsize{
   uint16_t width, height;
   int n_channels;
   player_blobfinder_header_elt_t* header;
   player_blobfinder_blob_elt_t* blobs;
 } playerblob_t;
-
+#endif
 
 /*----------- Blob manipulation functions -----------
   Mostly for internal use by the Blobdata functions
@@ -70,6 +78,11 @@ void Bitmap_set(struct bitmap* map, int x, int y, uint16_t in);
 uint16_t Bitmap_get(struct bitmap* map, int x, int y);
 void Bitmap_del(struct bitmap* map);
 int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels);
+struct bitmap* Bitmap_invert_and_copy(struct bitmap* thebitmap);
+void Bitmap_invert(struct bitmap* thebitmap);
+//void Bitmap_swap_colors(struct bitmap* image, int color1, int color2, int color3);
+void Bitmap_or(struct bitmap* bmp1, struct bitmap* bmp2);
+void Bitmap_and(struct bitmap* bmp1, struct bitmap* bmp2);
 
 /*----------- Blobdata functions ----------
  */
@@ -77,6 +90,8 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels);
 struct blobdata* Blobdata_init(struct bitmap* theBitmap);
 //void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
 void Blobdata_del(struct blobdata* data);
+//SWIG support
+
 
 /*---------- transducer functions -------------
      These functions should take image data in some format, filter
@@ -106,17 +121,15 @@ struct bitmap* bitmap_from_8bitGrayArray(uint8_t* array, int width, int height,
 struct bitmap* bitmap_from_8bitRGBArray(uint8_t* array, int width, int height,
 					 double (*filter)(double, double, double),
 					 double threshold);
+struct bitmap* bitmap_from_8bitBGRArray(cbuf_t array, int width, int height,
+					double (*filter)(double, double, double),
+					double threshold);
 //Import a 1D array of packed 32-bit RGB values,
 //i.e., array[0] = 0x00RRGGBB
 struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int height,
 					       double (*filter)(double, double, double),
 					       double threshold);
 
-struct bitmap* get_inverted_bitmap(struct bitmap* thebitmap);
-void invert_bitmap(struct bitmap* thebitmap);
-void swap_colors(struct image_cap* image, int color1, int color2, int color3);
-void or_bitmap(struct bitmap* bmp1, struct bitmap* bmp2);
-void and_bitmap(struct bitmap* bmp1, struct bitmap* bmp2);
 
 /*--------- filter functions -----------
     Must conform to the prototype double func(double r, double g, double b).
@@ -146,9 +159,11 @@ double filter_brightness (double r, double g, double b);
   on blobs per channel or number of channels.  The struct cannot
   be dynamically resized, however.
 */
+#ifdef HAVE_PLAYER_H
 player_blobfinder_data_t* make_player_blob_default(struct blobdata** blobs);
 player_blobfinder_data_t* make_player_blob(struct blobdata** blobs, uint32_t* channels, int n_channels);
 playerblob_t* make_player_blob_varsize(struct blobdata** blobs, uint32_t* channels, int n_channels);
 void playerblob_del(playerblob_t* blobs);
+#endif //HAVE_PLAYER_H
 
 #endif

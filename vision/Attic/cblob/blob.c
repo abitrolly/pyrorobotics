@@ -91,7 +91,7 @@ void Bitmap_init(struct bitmap* map, int w, int h){
   int i;
   map->width = w;
   map->height = h;
-  map->data = (uint16_t *) malloc(sizeof(uint16_t) * w*h);
+  map->data = (uint16_t *) calloc(w*h, sizeof(uint16_t));
 }
 
 void Bitmap_set(struct bitmap* map, int x, int y, uint16_t in){
@@ -156,6 +156,54 @@ int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels){
   fclose(out);
   return 1;
 }
+/*
+void Bitmap_swap_colors(struct bitmap* image, int color1, int color2, int color3) {
+  // used to swap color positions
+  // swap_colors(im, 2, 1, 0) will swap 1st and 3rd colors
+  int i;
+  int c1, c2, c3;
+  for (i = 0; i < image->width*image->height; i += 3) {
+    c1 = ((uint8_t *)image->data)[i + 0];
+    c2 = ((uint8_t *)image->data)[i + 1];
+    c3 = ((uint8_t *)image->data)[i + 2];
+    ((uint8_t *)image->data)[i + color1] = c1;
+    ((uint8_t *)image->data)[i + color2] = c2;
+    ((uint8_t *)image->data)[i + color3] = c3;
+  }
+  }*/
+
+struct bitmap* Bitmap_invert_and_copy(struct bitmap* thebitmap) {
+  int i;
+  struct bitmap * bmp;
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, thebitmap->width, thebitmap->height);
+  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
+    bmp->data[i] = ! thebitmap->data[i];
+  }
+  return bmp;
+}  
+
+void Bitmap_invert(struct bitmap* thebitmap) {
+  int i;
+  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
+    thebitmap->data[i] = ! thebitmap->data[i];
+  }
+}  
+
+void Bitmap_or(struct bitmap* bmp1, struct bitmap* bmp2) {
+  int i;
+  for (i = 0; i < bmp1->width * bmp1->height; i++){
+    bmp1->data[i] = bmp1->data[i] || bmp2->data[i];
+  }
+}  
+
+void Bitmap_and(struct bitmap* bmp1, struct bitmap* bmp2) {
+  int i;
+  for (i = 0; i < bmp1->width * bmp1->height; i++){
+    bmp1->data[i] = bmp1->data[i] && bmp2->data[i];
+  }
+}
+
   
 /* -------------- Blobdata operations ---------------*/
 
@@ -175,9 +223,7 @@ struct blobdata* Blobdata_init(struct bitmap* theBitmap){
   for (i = 0; i < BLOBLIST_SIZE; i++){
     data->equivList[i] = i;
   }
-  data->bloblist = (struct blob**) malloc(sizeof(struct blob*) * BLOBLIST_SIZE);
-  memset(data->bloblist, 0,
-	 sizeof(struct blob*)*BLOBLIST_SIZE);
+  data->bloblist = (struct blob**) calloc(BLOBLIST_SIZE, sizeof(struct blob*));
 
   for (w = 0; w < theBitmap->width; w++){
     for (h = 0; h < theBitmap->height; h++){
@@ -283,36 +329,27 @@ struct blobdata* Blobdata_init(struct bitmap* theBitmap){
       m--;
     }
   }
+  //Shrink bloblist to the size of the list blobs
+  data->bloblist = (struct blob**)realloc(data->bloblist,
+					   sizeof(struct blob*)*data->nblobs);
   return data;
 }
 
 void Blobdata_del(struct blobdata* data){
   int i;
-  for (i = 0; i < BLOBLIST_SIZE; i++){
-    if (data->bloblist[i] != NULL){
-      free(data->bloblist[i]);
+  if (data->bloblist){
+    for (i = 0; i < data->nblobs; i++){
+      if (data->bloblist[i] != NULL){
+	free(data->bloblist[i]);
+      }
     }
+    free(data->bloblist);
   }
-  free(data->bloblist);
   free(data->equivList);
   Bitmap_del(data->blobmap);
   free(data->blobmap);
 }
 
-void swap_colors(struct image_cap* image, int color1, int color2, int color3) {
-  // used to swap color positions
-  // swap_colors(im, 2, 1, 0) will swap 1st and 3rd colors
-  int i;
-  int c1, c2, c3;
-  for (i = 0; i < image->size; i += 3) {
-    c1 = ((uint8_t *)image->data)[i + 0];
-    c2 = ((uint8_t *)image->data)[i + 1];
-    c3 = ((uint8_t *)image->data)[i + 2];
-    ((uint8_t *)image->data)[i + color1] = c1;
-    ((uint8_t *)image->data)[i + color2] = c2;
-    ((uint8_t *)image->data)[i + color3] = c3;
-  }
-}
 
 /* --------------- transducers -----------------
    These functions take image data of some form and return a bitmap
@@ -374,7 +411,7 @@ struct bitmap* bitmap_from_ppm(char* filename,
     maxval.
   */
   if (maxval <= 255){
-    rgb = (uint8_t*)malloc(rows*cols*3);
+    rgb = (uint8_t*)calloc(rows*cols*3, 1);
     fread(rgb, 1, rows*cols*3, theFile);
     for (i = 0; i < rows*cols*3; i += 3) {
       red  = rgb[i + 0]/(double)maxval;
@@ -385,7 +422,7 @@ struct bitmap* bitmap_from_ppm(char* filename,
     free(rgb);
   }
   else{
-    RGB = (uint16_t*)malloc(2*rows*cols*3);
+    RGB = (uint16_t*)calloc(rows*cols*3, 2);
     fread(RGB, 2, rows*cols*3, theFile);
     for (i = 0; i < rows*cols*3; i += 3) {
       red  = RGB[i]/(double)maxval;
@@ -415,8 +452,8 @@ struct bitmap* bitmap_from_pgm(char* filename,
     perror("bitmap_from_pgm: Error openeing file for read");
   }
 
-  fscanf(theFile, "%*s%d%d%d", &rows, &cols, &maxval);
-  gray = (unsigned char*)malloc(rows*cols);
+  fscanf(theFile, "%*s%d%d%d", &cols, &rows, &maxval);
+  gray = (unsigned char*)calloc(rows*cols, 1);
   bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
   Bitmap_init(bmp, cols, rows);
   fread(gray, 1, rows*cols, theFile);
@@ -466,7 +503,23 @@ struct bitmap* bitmap_from_8bitRGBArray(uint8_t* array, int width, int height,
   }
   return bmp;
 }
-
+struct bitmap* bitmap_from_8bitBGRArray(cbuf_t pyarray, int width, int height,
+					double (*filter)(double, double, double),
+					double threshold){
+  int i;
+  double r, g, b;
+  struct bitmap* bmp;
+  uint8_t* array = (uint8_t*)pyarray;
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, width, height);
+  for (i = 0; i < width*height*3; i += 3){
+    r = array[i+2]/255.0;
+    g = array[i+1]/255.0;
+    b = array[i]/255.0;
+    bmp->data[i/3] = ((*filter)(r, g, b) > threshold);
+  }
+  return bmp;
+}
 /* array should be a 1D, width*height length array of packed 32-bit RGB values,
    i.e., array[0] = 0x00RRGGBB */
 struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int height,
@@ -485,38 +538,7 @@ struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int h
   }
   return bmp;
 }
-  
-struct bitmap* get_inverted_bitmap(struct bitmap* thebitmap) {
-  int i;
-  struct bitmap * bmp;
-  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
-  Bitmap_init(bmp, thebitmap->width, thebitmap->height);
-  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
-    bmp->data[i] = ! thebitmap->data[i];
-  }
-  return bmp;
-}  
-
-void invert_bitmap(struct bitmap* thebitmap) {
-  int i;
-  for (i = 0; i < thebitmap->width * thebitmap->height; i++){
-    thebitmap->data[i] = thebitmap->data[i] < .5;
-  }
-}  
-
-void or_bitmap(struct bitmap* bmp1, struct bitmap* bmp2) {
-  int i;
-  for (i = 0; i < bmp1->width * bmp1->height; i++){
-    bmp1->data[i] = bmp1->data[i] > .5 || bmp2->data[i] > .5;
-  }
-}  
-
-void and_bitmap(struct bitmap* bmp1, struct bitmap* bmp2) {
-  int i;
-  for (i = 0; i < bmp1->width * bmp1->height; i++){
-    bmp1->data[i] = bmp1->data[i] > .5 && bmp2->data[i] > .5;
-  }
-}  
+   
 
 //---------- Filter functions ------------------
 
@@ -556,7 +578,7 @@ double filter_brightness (double r, double g, double b){
    representing the length of the previous two arrays (which much be equal),
    return a struct that looks like the player-stage blob struct
 */
-
+#ifdef HAVE_PLAYER_H
 player_blobfinder_data_t* make_player_blob_default(struct blobdata** blobs) {
   int channel_data[] = {255, 255, 255, 
 			255, 0, 0,   
@@ -687,3 +709,4 @@ void playerblob_del(playerblob_t* blobs){
   free(blobs->header);
   free(blobs->blobs);
 }
+#endif
