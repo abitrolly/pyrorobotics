@@ -65,8 +65,9 @@ if pyro.startup_check():
         gui = GLgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TK':
-        from pyro.gui.TK import *
-        gui = TKgui(eng)
+        from pyro.gui.GL import *
+        gui = GLgui(eng, mode = 0)
+        gui.win.redraw = gui.redraw
     elif window == 'TTY':
         gui = pyro.gui.gui("tty gui", {}, eng)
     elif window == 'CURSES':

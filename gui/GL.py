@@ -16,10 +16,11 @@ from time import time
 
 # A GL gui
 
-class GLgui(gui):
-   def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1):
+class GLgui(gui): 
+   def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1,
+                mode = 1): # mode = 1 opengl, 0 = tk
       gui.__init__(self, 'GL gui', {}, engine)
-
+      self.graphicsMode = mode
       self.width = width
       self.height = height
       self.genlist = 0
@@ -30,29 +31,30 @@ class GLgui(gui):
       self.lastRun = 0
 
       #store the gui structure in something nice insted of python code
-      menu = [('file',[('exit',self.cleanup)]),
-              ('simulators',[['load',self.loadSim]]),
-              ('robot',[['load',self.loadRobot],
-                        ['free',self.freeRobot]]),
-              ('brain',[['load',self.loadBrain],
-                        ['free',self.freeBrain],
-                        ['view', self.viewBrain]]),
+      menu = [('File',[('Exit',self.cleanup)]),
+              ('Simulators',[['Load...',self.loadSim]]),
+              ('Robot',[['Load...',self.loadRobot],
+                        ['Unload',self.freeRobot]]),
+              ('Brain',[['Load...',self.loadBrain],
+                        ['Unload',self.freeBrain],
+                        ['View', self.viewBrain]]),
+              ('Plot',[['Load...',self.loadPlot]]),
               # ['robot', self.viewRobot]
-              ('help',[['about',system.usage]])
+              ('Move', [['Forward',self.stepForward],
+                        ['Back',self.stepBack],
+                        ['Left',self.stepLeft],
+                        ['Right',self.stepRight],
+                        ['Stop',self.stopEngine]]),
+              ('Help',[['About',system.usage]])
               ]
 
-      button1 = [('step',self.stepEngine),
-                 ('reload',self.resetEngine),
-                 ('refresh',self.refresh),
-                 ('run',self.runEngine),
-                 ('edit', self.editBrain),
-                 ('stop',self.stopEngine)]
+      button1 = [('Step',self.stepEngine),
+                 ('Reload',self.resetEngine),
+                 ('Refresh',self.refresh),
+                 ('Run',self.runEngine),
+                 ('Edit', self.editBrain),
+                 ('Stop',self.stopEngine)]
 
-      button2 = [('F',self.stepForward),
-                 ('B',self.stepBack),
-                 ('L',self.stepLeft),
-                 ('R',self.stepRight)]
-      
       # create menu
       self.mBar = Frame(self.frame, relief=RAISED, borderwidth=2)
       self.mBar.pack(fill=X)
@@ -61,28 +63,23 @@ class GLgui(gui):
          self.mBar.tk_menuBar(self.makeMenu(entry[0],entry[1]))
 
       # if show main buttons:
-      if 1:
+      if 1: # FIX: add a preference about showing buttons someday
          toolbar = Frame(self.frame)
          toolbar.pack(side=TOP, fill=X)
          for b in button1:
             Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
 
-      # if show manual control buttons:
-      if 0:
-         toolbar = Frame(self.frame)
-         toolbar.pack(side=TOP, fill=X)
-         for b in button2:
-            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
-      
-      self.win = Opengl(master = self.frame, width = width, \
-                        height = height, double = db, depth = depth)
-
-      self.win.pack(side = 'top', expand = 1, fill = 'both')
-      self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
-      self.win.redraw = self.redraw
-
-      self.mode = IntVar(self.win)
-      self.mode.set(GL_EXP)
+      if self.graphicsMode == 1: # GL
+         self.win = Opengl(master = self.frame, width = width, \
+                           height = height, double = db, depth = depth)
+         self.win.pack(side = 'top', expand = 1, fill = 'both')
+         self.win.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
+         self.win.redraw = self.redraw
+         self.mode = IntVar(self.win)
+         self.mode.set(GL_EXP)
+      else: # TK, no display
+         self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
+         self.win = self.frame
 
       # create a status bar
       self.status = StatusBar(self.frame)
@@ -93,12 +90,12 @@ class GLgui(gui):
       self.windowRobot = Tk()
       self.windowRobot.wm_title("pyro@%s: Robot View" % os.getenv('HOSTNAME'))
       self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
-      canvasRobot.pack()
+      self.canvasRobot.pack()
 
    def viewBrain(self):
       self.windowBrain = Tk()
       self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
-      self.canvasBrain = Canvas(self.windowBrain,width=400,height=300)
+      self.canvasBrain = Canvas(self.windowBrain,width=500,height=300)
       self.canvasBrain.pack()
 
    def redrawPie(self, pie, percentSoFar, piececnt, controller, percent, name):
@@ -111,7 +108,7 @@ class GLgui(gui):
       try:
          self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
          self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-         self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
+         self.canvasBrain.create_text(xoffset + 275,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
       except:
          pass
 
@@ -247,6 +244,11 @@ class GLgui(gui):
       # This probably doesn't need to update this often:
       self.redrawWindowBrain()
       self.redrawWindowRobot()
+      for p in self.engine.plot:
+         try:
+            p.redraw(()) # pass in options
+         except:
+            pass # window closed, remove p?
 
 if __name__ == '__main__':
    gui = GLgui()

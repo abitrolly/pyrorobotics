@@ -154,6 +154,7 @@ class gui(Drawable):
       
    def loadBrain(self):
       f = self.fileloaddialog("brains","*.py")
+      self.redraw()
       if f != '':
          #try:
          self.engine.loadBrain(f)
@@ -161,17 +162,26 @@ class gui(Drawable):
          #except:
          #raise "Error loading Brain File"
 
+   def loadPlot(self):
+      f = self.fileloaddialog("plots","*.py")
+      self.redraw()
+      if f != '':
+         self.engine.loadPlot(f)
+         self.redraw()
+
    def freeBrain(self):
       self.engine.freeBrain()
 
    def loadSim(self):
       f = self.fileloaddialog("simulators","*")
+      self.redraw()
       if f != '':
          import os
          os.system(f + " &")
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py")
+      self.redraw()
       if f != '':
          self.engine.loadRobot(f)
          self.redraw()
