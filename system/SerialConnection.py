@@ -127,7 +127,7 @@ class SerialConnection:
 
     ########################################################################
 
-    def writeline(self, aData):
+    def writeline(self, aData, newline = "\n"):
         """
         Write out just one line 
         """
@@ -150,7 +150,7 @@ class SerialConnection:
                                           [])
         #  Write out the data
         self.mSerial_id.write(aData)
-        self.mSerial_id.write("\n")
+        self.mSerial_id.write(newline)
         self.mSerial_id.flush()
 
         # Release the IO-lock
