@@ -1,7 +1,7 @@
 # Defines AriaRobot, a subclass of robot
 
 from pyro.robot import *
-from pyro.robot.service import Service, ServiceError
+from pyro.robot.device import Device, DeviceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
@@ -33,25 +33,25 @@ BIT15 = 0x8000
 BITPOS = (BIT0, BIT1, BIT2,  BIT3,  BIT4,  BIT5,  BIT6,  BIT7,
           BIT8, BIT9, BIT10, BIT11, BIT12, BIT13, BIT14, BIT15 )
 
-class AriaService(Service):
+class AriaDevice(Device):
     def __init__(self, robot, type):
-        Service.__init__(self, type)
+        Device.__init__(self, type)
         self.robot = robot
 
-    def checkService(self):
+    def checkDevice(self):
         if self.dev == 0:
-            raise ServiceError, "Service '%s' not available" % self.name
+            raise DeviceError, "Device '%s' not available" % self.name
 
-    #def getServiceData(self, pos = 0):
-    #    self.checkService()
+    #def getDeviceData(self, pos = 0):
+    #    self.checkDevice()
     #    return self.dev.__dict__[self.name][pos]
 
 
-class AriaGripperService(AriaService):
+class AriaGripperDevice(AriaDevice):
         ## Methods for gripper from Aria
 
     def __init__(self, robot):
-        AriaService.__init__(self, robot, "gripper")
+        AriaDevice.__init__(self, robot, "gripper")
         self.dev = ArGripper(self.robot)
 
     def open(self):
@@ -99,12 +99,12 @@ class AriaGripperService(AriaService):
     def isLiftMaxed(self):
         return self.dev.isLiftMaxed()
 
-class AriaPTZService(AriaService):
+class AriaPTZDevice(AriaDevice):
     ## Methods for PTZ from Aria
 
     def __init__(self, robot, type = "sony"):
         # here, robot is the robot.device
-        AriaService.__init__(self, robot, "ptz")
+        AriaDevice.__init__(self, robot, "ptz")
         self.devData["model"] = type
         if type == "sony":
             self.dev = ArSonyPTZ(self.robot)
@@ -203,9 +203,9 @@ class AriaPTZService(AriaService):
     def getMinZoom(self):
         return self.dev.getMinZoom()
 
-class AriaSensor(Service):
+class AriaSensor(Device):
     def __init__(self, params, device, type):
-        Service.__init__(self, type)
+        Device.__init__(self, type)
         self.params = params
         self.device = device
 
