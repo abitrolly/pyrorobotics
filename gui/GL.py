@@ -15,8 +15,6 @@ from pyro.gui.renderer.streams import *
 from time import time
 
 import sys
-from pyro.gui.widgets.TKwidgets import *
-
 
 # A GL gui
 
@@ -37,7 +35,9 @@ class GLgui(gui):
       self.history_pointer = 0
 
       #store the gui structure in something nice insted of python code
-      menu = [('File',[('Exit',self.cleanup)]),
+      menu = [('File',[['Edit Brain', self.editBrain],
+                       ['Exit',self.cleanup]
+                       ]),
               ('Simulators',[['Load...',self.loadSim]]),
               ('Robot',[['Load...',self.loadRobot],
                         ['Unload',self.freeRobot]]),
@@ -215,8 +215,12 @@ class GLgui(gui):
 
    def editBrain(self):
       import os
-      os.system("emacs " + self.engine.brainfile + "&")
-
+      from os import getcwd, getenv, chdir, system
+      if getenv("EDITOR"):
+         os.system(getenv("EDITOR") + " " + self.engine.brainfile + "&")
+      else:
+         os.system("emacs " + self.engine.brainfile + "&")
+         
    def makeMenu(self,name,commands):
       menu = Menubutton(self.mBar,text=name,underline=0)
       menu.pack(side=LEFT,padx="2m")
@@ -314,7 +318,7 @@ class GLgui(gui):
                self.engine.plot.remove(p)
 
 if __name__ == '__main__':
-   gui = GLgui()
+   gui = GLgui(Engine())
    gui.inform("Ready...")
    gui.win.redraw = gui.redraw
    gui.init()
