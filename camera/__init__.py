@@ -78,12 +78,6 @@ class Camera(PyroImage, Service):
       # buffer, so refresh_image will not update
       self.lockCamera = 0
 
-      # puts a sleep in the update function to slow down video
-      # to beable to see the video screen update.
-      # sleeptime tells how long to sleep for.
-      self.sleepFlag = 0
-      self.sleepTime = 2
-
       self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
       self.maxBlob = self.blob[0]
 
@@ -92,51 +86,54 @@ class Camera(PyroImage, Service):
 
       self.update() # call it once to initialize
 
+   def setFilterList(self, filterList):
+      """
+      Filters take the form: ("name", (args))
+      Example: [ ("superColor" (1, -1, -1, 0)), ("meanBlur", (3,)) ] 
+      """
+      self.cobj.setFilterList( filterList)
+
    def saveImage(self, filename="image.ppm"):
       self.cobj.saveImage(filename)      
 
    def colorFilterOneTol(self, red, green, blue, tol=30, channel=1):
       self.cobj.filterByColor(red, green, blue, tol, channel)
-      self.sleepCheck()
       
    def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30, channel=1):
       self.cobj.filterByColor(red-t1, green-t2, blue-t3,
                                     red+t1, green+t2, blue+t3,
                                     channel)
-      self.sleepCheck();
 
    def colorFilterHiLow(self, lred, hred, lgreen,
                         hgreen, lblue,hblue, channel=1):
       self.cobj.filterByColor(lred, lgreen, lblue, hred, hgreen, hblue,
                               channel)
-      self.sleepCheck();
-
 
    def maxBlobs(self, channel, low_threshold, high_threshold, sortMethod, number, drawBox=1):
 
-      if(cmp(self.cobj.sortMethod.lower(),"mass")==0):
+      if(sortMethod.lower() == "mass"):
          method = 0
 
-      elif(cmp(self.cobj.sortMethod.lower(),"area")==0):
+      elif(sortMethod.lower() =="area"):
          method = 1
 
       else:
          print "Invalid Sort Parameter to maxBlobs."
 
       if number == 1:
-         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = self.cobj.blobify( channel,low_threshold,high_threshold,method,number,drawBox,self.width,self.height);
+         self.maxBlob.min_x, self.maxBlob.min_y, self.maxBlob.max_x,self.maxBlob.max_y, self.maxBlob.mass = self.cobj.blobify( channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 2:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
                
       elif number == 3:
-         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+         self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 4:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       elif number == 5:
-               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox,self.width, self.height);
+               self.blob[0].min_x,self.blob[0].min_y,self.blob[0].max_x,self.blob[0].max_y,self.blob[0].mass,self.blob[1].min_x,self.blob[1].min_y,self.blob[1].max_x,self.blob[1].max_y,self.blob[1].mass,self.blob[2].min_x,self.blob[2].min_y,self.blob[2].max_x,self.blob[2].max_y,self.blob[2].mass,self.blob[3].min_x,self.blob[3].min_y,self.blob[3].max_x,self.blob[3].max_y,self.blob[3].mass,self.blob[4].min_x,self.blob[4].min_y,self.blob[4].max_x,self.blob[4].max_y,self.blob[4].mass = self.cobj.blobify(channel,low_threshold,high_threshold,method,number,drawBox);
 
       else:
          print "Invalid parameter to maxBlobs: number, must be 1-5"
@@ -145,18 +142,16 @@ class Camera(PyroImage, Service):
       #elif(cmp(sortMethod.lower(),"density")==0):
       #   self.min_x, self.min_y,self.max_x,self.max_y,self.mass = blobify(channel, low_threshold,high_threshold,2,drawBox,self.width, self.height);
 
-      self.sleepCheck();
-
-
    def meanBlur(self, kernel=3):
       self.cobj.meanBlur(kernel)
-      self.sleepCheck()
 
    def medianBlur(self, kernel = 3):
       self.cobj.medianBlur(kernel)
-      self.sleepCheck()
+
+   def superColor(self, redWeight, greenWeight, blueWeight, outChannel):
+      self.cobj.superColor(redWeight, greenWeight, blueWeight, outChannel)
    
-   def superColor(self, color, channel):
+   def superColorByName(self, color, channel):
 
       if(channel < 0 or channel > 3):
          print "Invalid Color Channel to Super Color"
@@ -170,36 +165,26 @@ class Camera(PyroImage, Service):
          self.cobj.superColor(-1, -1, 1, channel)
       # fix the following; they need fractional weights:
       elif (color.lower() == "magenta"):
-         self.cobj.superColor(-1, -1, 1, channel)
+         self.cobj.superColor(1, -1, 0.5, channel)
       elif (color.lower() == "yellow"):
-         self.cobj.superColor(-1, -1, 1, channel)
+         self.cobj.superColor(1.0/6.0, 2.0/6.0, -1, channel)
       elif (color.lower() == "cyan"):
-         self.cobj.superColor(-1, -1, 1, channel)
+         self.cobj.superColor(-1, 1/2.0, 1/2.0, channel)
       else:
          print "Invalid Super Color"
          
-      self.sleepCheck()
-
    def gaussianBlur(self):
       self.cobj.gaussianBlur()
-      self.sleepCheck()
 
    def edgeDetection(self):
       self.cobj.sobel(1)
-      self.sleepCheck()
 
    def toGreyScale(self):
       self.cobj.greyScale(3)
-      self.sleepCheck()
-
-   def sleepCheck(self):
-      if(self.sleepFlag):
-         sleep(self.sleepTime)
 
    def trainColor(self):
       self.histogram = self.cobj.Hist()
       self.histogram.red, self.histogram.green, self.histogram.blue = self.cobj.trainColor();
-
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
@@ -259,7 +244,6 @@ class Camera(PyroImage, Service):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                  (self.width, self.height),
                                                  self.cbuf, 'raw', self.format)
-
    def makeWindow(self):
       if self.app != 0:
          self.window.deiconify()

@@ -56,5 +56,6 @@ void Fake::updateMMap(char filename[]) {
   width = w;
   height = h;
   fclose(theFile);
+  applyFilterList();
 }
 

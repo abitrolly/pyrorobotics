@@ -8,7 +8,7 @@ include Makefile.cfg
 
 # Failing subdir: robot/driver/testc
 
-SUBDIRS = $(CONFIGDIRS) camera/fake
+SUBDIRS = camera/fake camera/vision $(CONFIGDIRS) 
 
 ifeq ($(SAPHIRA),)
 else

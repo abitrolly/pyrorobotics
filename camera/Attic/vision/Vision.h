@@ -3,6 +3,34 @@
 
 #include <Python.h>
 
+typedef struct bitmap
+{
+  int height;
+  int width;
+  int depth;
+  unsigned int data[384][240];
+  int *equivList;
+}Bitmap;
+
+typedef struct point{
+  int x;
+  int y;
+} Point;
+
+typedef struct blob{
+
+  Point ul;
+  Point lr;
+  Point cm;
+
+  int mass;
+  int next;
+}Blob;
+
+
+#define SWAP(a,b) { int itemp=(a);(a)=(b);(b)=itemp;}
+#define MAXBLOBS 2000
+
 class Vision {
   static const int RED = 0;
   static const int GREEN = 1;
@@ -30,10 +58,35 @@ public:
   int getWidth();
   int getHeight();
   int getDepth();
-  int saveImage(char *filename);
+  PyObject *saveImage(char *filename);
   PyObject *getMMap();
 
   unsigned char *image;
+
+
+  PyObject *Vision::colorHistogram();
+  PyObject *Vision::trainColor();
+  void gaussianBlur();
+  void grayScale(int value);
+  PyObject *sobel(int val);
+  void medianBlur(int kernel);
+
+  Blob *initBlob(Blob *b);
+  Blob *initBlob( Blob *b, int y, int x );
+  Blob *addPixel( Blob *b, int y,int x );
+  void joinBlob( Blob *self, Blob *other );
+  void deleteBlob( Blob *b );
+  int getBlobWidth( Blob *b );
+  int getBlobHeight( Blob *b );
+  int getBlobArea( Blob *b );
+  void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
+  PyObject *blobify(int inChannel, int low, int high, 
+			    int sortmethod, 
+			    int size, int drawBox);
+  PyObject *applyFilters(PyObject *filterList);
+  PyObject *applyFilterList();
+  PyObject *setFilterList(PyObject *filterList);
+  PyObject *filterList;
 
  protected:
   int width;
