@@ -13,6 +13,7 @@ from pyro.gui.renderer.gl import *
 from pyro.gui.renderer.streams import *
 
 from time import time
+from pyro.gui.widgets.TKwidgets import *
 
 # A GL gui
 
@@ -224,7 +225,6 @@ class GLgui(gui):
       #self.win.tkRedraw()
 
    def fileloaddialog(self, filetype, skel):
-      from pyro.gui.widgets.TKwidgets import *
       from string import replace
       import pyro
       from os import getcwd, getenv, chdir
