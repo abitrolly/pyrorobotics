@@ -26,6 +26,8 @@ endif
 
 cleanall:: 
 	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
+	- $(RM) `find . | grep \.pyc$$`
+	- $(RM) `find . | grep ~$$`
 
 ifeq ($(SUBDIRS),)
 else
