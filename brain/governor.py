@@ -114,6 +114,12 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.addThreeLayers(i, h, o)
         self.shareWeights(self.trainingNetwork)
 
+    def sweep(self):
+        if self.epoch % self.reportRate == 0:
+            print "MODEL VECTORS: ", len(self.ravq.models), self.histogram
+            self.histogram = {}
+        return SRN.sweep(self)
+
     def networkStep(self, **args):
         if self.governing:
             # map the ravq input context and target
@@ -162,7 +168,7 @@ if __name__ == '__main__':
     inSize = len(map(lambda x: float(x), sensors[0].rstrip().split()))
     govMask = [1] * (inSize - 1) + [16] + [inSize/4] * 4
     # create network
-    net = GovernorNetwork(ravqBuffer, govEpsilon, delta, govBuffer, alpha, govMask)
+    net = GovernorSRN(ravqBuffer, govEpsilon, delta, govBuffer, alpha)
     net.addThreeLayers(inSize, inSize/2, 4)
     # the output will code the robots current region
     # network:
@@ -176,64 +182,8 @@ if __name__ == '__main__':
     net.setTolerance(0.05)
     net.setLearning(1)
     # initialize network
-    net.initialize()
-    totalSteps = 0
-    lastNumberOfModelVectors = 0
-    for sweeps in range(1):
-        epochCount = 0
-        epochCorrect = 0
-        epochTSS = 0
-        i = 0
-        # prime the RAVQ
-        print "Priming..."
-        while len(net.ravq.models) < 25 and i < 5000:  
-            sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
-            locationlist = map(lambda x: float(x), locations[i].rstrip().split())
-            index, modelVector = net.map(sensorlist + locationlist)
-            i += 1
-        # ok, now let's start
-        for i in range(5000):  # about 80 is one room; loops about every 410
-            sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
-            locationlist = map(lambda x: float(x), locations[i].rstrip().split())
-            index, modelVector = net.map(sensorlist + locationlist)
-            array = net.nextItem()
-            if array == None:
-                array = sensorlist + locationlist
-            if lastNumberOfModelVectors != len(net.ravq.models):
-                print "*" * 50, "New model vector!"
-                print "Distances from new model vector at all others:"
-                print ["%.2f" % v for v in net.distancesTo( net.ravq.winner )]
-                lastNumberOfModelVectors = len(net.ravq.models)
-            error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
-            epochTSS += error
-            epochCorrect += correct
-            epochCount += total
-            if (totalSteps+1) % 80 == 0 or totalSteps == 5000 - 1:
-                print "-" * 50
-                print "Step: %5d Error: %9.4f Correct: %9.4f" % (totalSteps+1, epochTSS, epochCorrect/float(epochCount))
-                print "Histogram:", net.histogram
-                net.histogram = {}
-                epochTSS = 0
-                epochCorrect = 0
-                epochCount = 0
-            totalSteps += 1
-        print net.ravq
-        print "Distance map:\n"
-        print net.ravq.distanceMapAsString()
-        print "*" * 50
-    print "Testing..."
-    net.setLearning(0)
-    epochTSS = 0
-    epochCorrect = 0
-    epochCount = 0
-    for i in range(5000):  
-        sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
-        locationlist = map(lambda x: float(x), locations[i].rstrip().split())
-        array = sensorlist + locationlist
-        error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
-        epochTSS += error
-        epochCorrect += correct
-        epochCount += total
-    print "OVERALL Error: %9.4f Correct: %9.4f" % (epochTSS, epochCorrect/float(epochCount))
+    #net.initialize()
+    net.train()
+
 
 # plot map with: gnuplot: splot "datafile" matrix with pm3d

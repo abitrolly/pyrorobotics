@@ -2182,6 +2182,10 @@ class SRN(Network):
         an example.
         """
         return Network.step(self, **args)
+    def sweepCrossValidation(self):
+        self.setContext()
+        return Network.sweepCrossValidation(self)
+
 
 if __name__ == '__main__':
     # Con-x: Sample Networks
