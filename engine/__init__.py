@@ -11,7 +11,6 @@ class Engine:
       self.robot = 0
       self.brain = 0
       self.gui = None
-      self.view = []
       if brainfile != None:
          self.brainfile = brainfile
       else:
@@ -105,20 +104,6 @@ class Engine:
       time.sleep(1)
       print ".",
       sys.stdout.flush()
-
-   def loadView(self,file):
-      import os
-      if file[-3:] != '.py':
-         file = file + '.py'
-      if system.file_exists(file):
-         self.view.append(system.loadINIT(file, self, 0, self.brain))
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/views/' + file): 
-         self.view.append(system.loadINIT(os.getenv('PYRO') + \
-                                          '/plugins/views/' + file, \
-                                          self.robot, 0, self.brain))
-      else:
-         raise 'View file not found: ' + file
 
    def loadRobot(self,file):
       import os
