@@ -51,10 +51,11 @@ class Engine(drawable.Drawable):
    def reset(self):
       self.pleaseStop()
       time.sleep(.1) # give it time to stop
-      if self.brain:
+      if self.brain is not 0:
          self.brain.pleaseQuit()
          time.sleep(.1) # give it time to stop
          #self.robot = system.loadINIT(self.robotfile, redo = 1)
+         self.brain.destroy()
          self.brain = system.loadINIT(self.brainfile, self, 1)
 
    def resetFirstAttempts(self):
@@ -219,10 +220,12 @@ class Engine(drawable.Drawable):
    def pleaseStop(self):
       if self.brain is not 0:
          self.brain.pleaseStop()
-         time.sleep(.5) # FIX: because there is no queue for commands
       if self.robot is not 0:
          self.robot.stop()
 
    def _draw(self,options,renderer):
 	pass # overload, if you want to draw it
       
+   def destroyBrain(self):
+      if self.brain is not 0:
+         self.brain.destroy()
