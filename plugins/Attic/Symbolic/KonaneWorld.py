@@ -17,7 +17,6 @@ class GUI(Tkinter.Toplevel):
         self.title("SymbolicSimulator: KonaneWorld")
         self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
         self.mBar.pack(fill=Tkinter.X)
-
         #menubar = self.tk_menuBar(self.makeMenu(self.mBar,
         #                                        "Game",
         #                                        [["Done with move", self.playDone],
@@ -37,7 +36,6 @@ class GUI(Tkinter.Toplevel):
         self.notSetables = ["world"]
         self.movements = ["remove", "jump"]
         self.ports = [60000, 60001]
-        self.whosMove = int(round(random.random()))
         self.initWorld()
 
     def makeMenu(self, bar, name, commands):
@@ -87,6 +85,7 @@ class GUI(Tkinter.Toplevel):
         self.redraw()
 
     def initWorld(self):
+        self.whosMove = int(round(random.random()))
         self.world = [['' for y in range(8)] for x in range(8)]
         for x in range(0, 8):
             for y in range(0, 8):
