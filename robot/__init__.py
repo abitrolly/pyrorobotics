@@ -124,8 +124,7 @@ class Robot (Drawable):
             self.senses[device] = data # dictionary?
 	else:
             # make it a function:
-            self.senses[device][data] = val
-            # no function, only some are writeable
+            self.senses[device][data] = lambda self, x = val: x
 
     def step(self, dir):
         if dir == 'L':
