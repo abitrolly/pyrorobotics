@@ -35,6 +35,8 @@ def stringArray(a, width = 0):
     """
     s = ""
     cnt = 0
+    if type(a) == type('string'):
+        return a
     for i in a:
         s += "%4.4f " % i
         if width > 0 and (cnt + 1) % width == 0:
@@ -146,25 +148,27 @@ class RAVQ:
         """
         s = ""
         s += "Time: " + str(self.time) + "\n"
-        if self.time < self.size:
-            s += self.bufferString()
-            return s
-        else:
-            s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
-            s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
-            s += "Moving average:\n"
-            s += stringArray(self.movingAverage)
-            s += "Winning model vector:\n"
-            s += stringArray(self.winner)
-            s += "Winning label:\n"
-            s += self.getLabel(self.winner) + "\n"
-            s += self.bufferString()
-            s += self.modelString()
-            s += self.labelString()
-            s += "Distance map:\n"
-            s += stringArray(self.distanceMap(), len(self.models))
-            s += self.historyString()
-            return s
+        s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
+        s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
+        s += "Moving average:\n"
+        s += stringArray(self.movingAverage)
+        s += "Winning model vector:\n"
+        s += stringArray(self.winner)
+        s += "Winning label:\n"
+        s += self.getLabel(self.winner) + "\n"
+        s += self.bufferString()
+        s += self.modelString()
+        s += self.labelString()
+        s += "Distance map:\n"
+        s += stringArray(self.distanceMap(), len(self.models))
+        s += self.historyString()
+        return s
+
+    def saveRAVQToFile(self, filename):
+        import pickle
+        fp = open(filename, 'w')
+        pickle.dump(self, fp)
+        fp.close()
 
     # helpful string methods
     def modelString(self):
