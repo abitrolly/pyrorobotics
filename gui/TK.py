@@ -38,7 +38,9 @@ class TKgui(gui):
                        ['Save Map...', self.saveMap],
                        ['Exit',self.cleanup] 
                        ]),
-              ('Window', [['Fast Update 10/sec',self.fastUpdate],
+              ('Window', [['Open all service windows', lambda: map( lambda serv: self.engine.robot.getService(serv).makeWindow(), self.engine.robot.getServices())],
+                          None,
+                          ['Fast Update 10/sec',self.fastUpdate],
                           ['Medium Update 3/sec',self.mediumUpdate],
                           ['Slow Update 1/sec',self.slowUpdate],
                           None,

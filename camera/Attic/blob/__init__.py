@@ -56,8 +56,7 @@ class BlobCamera(Camera):
       if currentTime - self.lastUpdate > self.interval:
          blobdata = self.robot.getServiceData('blob')[1]
          self.cameraDevice.updateMMap(blobdata)
-         if self.vision != None:
-            self.vision.processAll()
+         self.processAll()
          self.lastUpdate = currentTime
 
 

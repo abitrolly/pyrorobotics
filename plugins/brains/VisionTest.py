@@ -1,34 +1,23 @@
-# A bare brain
-
 from pyro.brain import Brain
-from time import sleep
 
-def process(self):
-   self.apply('match', 255 , 166 , 120 , )
-   self.apply('match', 132 , 52 , 46 , )
-   #self.apply("match", ) 
-   #camera.apply("maxBlobs", 0, 1, 255, "mass") 
+def process(camera):
+   camera.apply('match', 158 , 71 , 48 , )
+   camera.apply('match', 225 , 129 , 89 , )
+   camera.apply('match', 188 , 109 , 68 , )
+   camera.apply("superColor")
+   retval = camera.apply("blobify", 0)
+   camera.userData = retval
 
-class SimpleBrain(Brain):
+class VisionBrain(Brain):
 
-   def setup(self, **args):
-      print "Loading arg: '%s'" % args.get('my_arg')
+   def setup(self):
       self.camera = self.getRobot().startService("FakeCamera")[0]
       self.camera.makeWindow()
-      self.camera.setVisionCallBack( lambda self=self: process(self.camera) )
-      # initialize your vars here!
+      # callback is a function that takes one arg, the camera
+      self.camera.setCallback( process )
       
-   # Only method you have to define is the step method:
-
    def step(self):
-      print "robot setpping..."
+      print self.camera.userData
             
-
-# -------------------------------------------------------
-# This is the interface for calling from the gui engine.
-# Takes one param (an engine), and returns a Brain object:
-# -------------------------------------------------------
-
 def INIT(engine):
-   return SimpleBrain('SimpleBrain', engine, my_arg = "testing")
-      
+   return VisionBrain('SimpleBrain', engine)

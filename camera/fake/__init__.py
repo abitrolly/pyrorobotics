@@ -64,8 +64,7 @@ class FakeCamera(Camera):
                           self.fstring % self.current + \
                           self.pattern[self.match.end():]
                self.cameraDevice.updateMMap(currname)
-               if self.vision != None:
-                  self.vision.processAll()
+               self.processAll()
                self.current += 1
                self.lastUpdate = currentTime
          else:

@@ -20,25 +20,10 @@ class VisionSystem(vision.Vision):
     7. vision.get(x, y)
 
     Other functions, here or there:
-    1. processAll()
-    2. process() # extended method
-    3. getCopyMode()
+    1. getCopyMode()
     
     """
 
     def __init__(self):
         vision.Vision.__init__(self)
-        self.filterMode = 1
-
-    def processAll(self):
-        if self.filterMode:
-            self.applyFilterList()
-            self.process()
-
-    def toggleFilterMode(self):
-        self.filterMode = not self.filterMode
-
-    def process(self):
-        # designed to be extended
-        pass
 

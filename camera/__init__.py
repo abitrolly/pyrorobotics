@@ -8,11 +8,11 @@ import PIL.PpmImagePlugin
 import Image, ImageTk, types
 
 def listFilter(allArgs):
-   print "camera.addFilter('%s'," % allArgs[0],
-   for a in allArgs[1]:
-      print a, ",",
+   print 'camera.apply("%s",' % allArgs[0],
+   if len(allArgs) > 1:
+      for a in allArgs[1]:
+         print a, ",",
    print ")"
-
 
 def makeArgList(item):
    if type(item) == type(""):
@@ -83,7 +83,8 @@ class Camera(PyroImage, Service):
       Service.__init__(self, 'camera')
       self.app = 0
       self.title = title
-
+      self.filterMode = 1
+      self.callback = None
       self.blob = [BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height),BlobData(width,height)]
       self.maxBlob = self.blob[0]
 
@@ -100,14 +101,14 @@ class Camera(PyroImage, Service):
       myList = map(makeArgList, filterList)
       self.vision.setFilterList(myList)
       # if paused, update the screen
-      if self.active == 0:
-         self.update()
+      if not self.active:
+         self.updateOnce()
 
    def popFilterList(self):
       self.vision.popFilterList()
       # if paused, update the screen
-      if self.active == 0:
-         self.update()
+      if not self.active:
+         self.updateOnce()
 
    def getFilterList(self):
       return self.vision.getFilterList()
@@ -255,7 +256,7 @@ class Camera(PyroImage, Service):
          self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
          self.canvas.bind("<1>", self.processLeftClick)
          #self.canvas.bind("<Enter>", self.togglePlay)
-         self.canvas.focus_set()
+         #self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
          menu = [('File',[['Load Filters...',self.loadFilters],
                           ['Save Filters...', self.saveFilters],
@@ -271,7 +272,7 @@ class Camera(PyroImage, Service):
                              None,
                              ['Clear last filter', self.popFilterList],
                              ['Clear all filters', lambda self=self: self.setFilterList( [] )],
-                             ['Clear callback function', lambda self=self: self.setVisionCallBack( lambda: None )],
+                             ['Clear callback function', lambda self=self: self.setCallback( None )],
                              ]),
                  ('Add', [['blur edges', lambda self=self: self.addFilter( "meanBlur") ],
                           ['detect edges', lambda self=self: self.addFilter( "sobel") ],
@@ -353,10 +354,9 @@ class Camera(PyroImage, Service):
       self.active = not self.active
 
    def toggleFilterMode(self):
-      self.vision.toggleFilterMode()
-      if self.active == 0:
-         self.update()
-      
+      self.filterMode = not self.filterMode
+      if not self.active:
+         self.updateOnce()
 
    def processLeftClick(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
@@ -404,8 +404,18 @@ class Camera(PyroImage, Service):
    def updateService(self):
       self.update()
 
-   def setVisionCallBack(self, callback):
-      self.vision.process = callback
+   def setCallback(self, callback):
+      # callback is a function that has first param
+      # as self (ie, the visionSystem object)
+      self.callback = callback
+      if self.active == 0:
+         self.update()
+
+   def processAll(self):
+      if self.filterMode:
+         self.vision.applyFilterList()
+         if self.callback:
+            self.callback(self)
 
 if __name__ == '__main__':
    cam = Camera(100, 80)
