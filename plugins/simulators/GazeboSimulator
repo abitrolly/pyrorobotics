@@ -5,39 +5,33 @@
 
 pyropid=$1
 shift
+config="/usr/local/share/player/config/gazebo.cfg"
 
 if [ "$1" = "-g" ]
 then
     if [ "$2" = "" ]
     then
-	world="-g /usr/local/share/gazebo/worlds/pioneer2dxSonars.world"
-	config="/usr/local/share/player/config/gazebo.cfg"
+	world="-g /usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
     else
 	world="-g $2"
-	config=$2.cfg
     fi
 else
     if [ "$1" = "" ]
     then
-	world="/usr/local/share/gazebo/worlds/pioneer2dxSonars.world"
-	config="/usr/local/share/player/config/gazebo.cfg"
-
+	world="/usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
     else
 	world="$1"
-	config=$1.cfg
     fi
 fi
+# clean up any old starts
+rm -rf /tmp/gazebo-$USER*
 # Start gazebo
-gazebo $world &
-gpid=$!
-# Wait a sec for it to get started
-sleep 1
+wxgazebo $world &
+# Wait a bit for it to get started
+sleep 3
 # Now, start the player layer
 player -g default $config &
-ppid=$!
-# wait for pyro or gazebo to quit
+# wait for pyro to quit
 while ps --noheaders $pyropid && ps --noheaders $gpid; do sleep 1; done > /dev/null
-# Kill gazebo
-kill $gpid
-# Kill player
-kill $ppid
+# Kill wxgazebo and player
+kill 0
