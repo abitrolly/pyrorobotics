@@ -677,7 +677,7 @@ class Network:
             raise NetworkError, ('Connections out of order', (fromLayer.name, toLayer.name))
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
-            if fromLayer.kind == 'Undefined':
+            if toLayer.kind == 'Undefined':
                 toLayer.kind = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
         self.connections[len(self.connections) - 1].setEpsilon(self.epsilon)
