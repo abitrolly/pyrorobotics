@@ -1915,12 +1915,13 @@ class SRN(Network):
         for context in self.contextLayers.values():
             context.resetFlags() # hidden activations have already been copied in
             context.setActivations(value)
-    def propagate(self):
+    def backprop(self):
         """
-        Extends propagate() from Network to automatically deal with context layers.
+        Extends backprop() from Network to automatically deal with context layers.
         """
-        Network.propagate(self)
-        self.copyHiddenToContext() # must go after, may make display misleading after propagate
+        retval = Network.backprop(self)
+        self.copyHiddenToContext() # must go after error computation
+        return retval
     def step(self, **args):
         """
         Extends network step method by automatically copying hidden
@@ -2048,6 +2049,7 @@ if __name__ == '__main__':
         return ans == 'y'
 
     n = Network()
+    n.setSeed(114366.64)
     n.addThreeLayers(2, 2, 1)
     n.setInputs([[0.0, 0.0],
                  [0.0, 1.0],
@@ -2197,7 +2199,8 @@ if __name__ == '__main__':
             
     if ask("Do you want to test an AND network?"):
         print "Creating and running and network..."
-        n = Network() 
+        n = Network()
+        n.setSeed(114366.64)
         n.add(Layer('input',2)) 
         n.add(Layer('output',1)) 
         n.connect('input','output') 
@@ -2214,6 +2217,7 @@ if __name__ == '__main__':
         print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
         print "follow."
         n = SRN()
+        n.setSeed(114366.64)
         n.addSRNLayers(3,2,3)
         n.predict('input','output')
         seq1 = [1,0,0, 0,1,0, 0,0,1]
@@ -2235,6 +2239,7 @@ if __name__ == '__main__':
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
         print "Auto-associate .........................................."
         n = Network()
+        n.setSeed(114366.64)
         n.addThreeLayers(3,2,3)
         n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
         n.associate('input','output')
@@ -2252,6 +2257,7 @@ if __name__ == '__main__':
         print "Raam ...................................................."
         # create network:
         raam = SRN()
+        raam.setSeed(114366.64)
         raam.setPatterns({"john"  : [0, 0, 0, 1],
                           "likes" : [0, 0, 1, 0],
                           "mary"  : [0, 1, 0, 0],
@@ -2316,6 +2322,7 @@ if __name__ == '__main__':
     if ask("Do you want to train a network to both predict and auto-associate?"):
         print "SRN and auto-associate ..................................."
         n = SRN()
+        n.setSeed(114366.64)
         n.addSRNLayers(3,3,3)
         n.add(Layer('assocInput',3))
         n.connect('hidden', 'assocInput')
