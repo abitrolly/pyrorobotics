@@ -25,12 +25,16 @@ class TkMap(Map, Tkinter.Tk):
         self.colScale = self.width / self.cols
         self.rowScale = self.height / self.rows
         self.addMenu(menu)
-        self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
-        self.canvas.pack()
+        self.frame = Tkinter.Frame(self,relief=Tkinter.RAISED,borderwidth=2)
+        self.frame.pack(side = "top", expand = "yes", fill = "both")
+        self.canvas = Tkinter.Canvas(self.frame,width=self.width,height=self.height)
+        self.canvas.pack(side = "top", expand = "yes", fill = "both")
         self.addKeyBindings(keybindings)
         self.protocol('WM_DELETE_WINDOW', self.destroy)
         self.update_idletasks()
         self.canvas.focus_set()
+        self.canvas_width_diff = int(self.winfo_width()) - int(self.canvas["width"])
+        self.canvas_height_diff = int(self.winfo_height()) - int(self.canvas["height"])
 
     def addKeyBindings(self, keybindings):
         """ Bind keys and mice events to the canvas """
@@ -43,6 +47,7 @@ class TkMap(Map, Tkinter.Tk):
         self.mBar.pack(fill=Tkinter.X)
         for entry in menu:
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0],entry[1]))
+        self.mBar.pack(side = "top")
 
     def makeMenu(self, bar, name, commands):
         """ Assumes self.menuButtons exists """
@@ -56,9 +61,14 @@ class TkMap(Map, Tkinter.Tk):
         return menu
 
     def changeSize(self, event = 0):
-        self.width = self.winfo_width() - 2
-        self.height = self.winfo_height() - 30
+        try:
+            self.width = int(self.winfo_width()) - self.canvas_width_diff
+            self.height = int(self.winfo_height()) - self.canvas_height_diff
+        except:
+            return
+        print self.width, self.height
         self.canvas.configure(width = self.width, height = self.height)
+        #print self.canvas["width"], self.canvas["height"]
         self.colScale = self.width / self.cols
         self.rowScale = self.height / self.rows
         self.redraw()

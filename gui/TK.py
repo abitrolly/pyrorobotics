@@ -85,28 +85,8 @@ class TKgui(gui):
       self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
       self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)
 
-      self.commandFrame = Tkinter.Frame(self.frame)
-      self.commandFrame['relief'] = 'raised'
-      self.commandFrame['bd']	 = '2'
-      self.commandFrame.pack({'expand':'no', 'side':'bottom', 'fill':'x'})
-
-      self.commandLabel = Tkinter.Label(self.commandFrame)
-      self.commandLabel["text"] = "Command:"
-      self.commandLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-      # create a command 
-      self.commandEntry = Tkinter.Entry(self.commandFrame)
-      self.commandEntry.bind('<Return>', self.CommandReturnKey)
-      self.commandEntry.bind('<Control-p>', self.CommandPreviousKey)
-      self.commandEntry.bind('<Control-n>', self.CommandNextKey)
-      self.commandEntry.bind('<Up>', self.CommandPreviousKey)
-      self.commandEntry.bind('<Down>', self.CommandNextKey)
-      self.commandEntry["relief"] = "ridge"
-      self.commandEntry.pack({'expand':'yes', 'side':'bottom', 'fill':'x'})
-
-      # create a status bar
-      #self.status = TKwidgets.StatusBar(self.frame)
-      #self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
-
+      # create a command text area:
+      self.makeCommandArea()
       # Display:
       self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld),
                          ('button', 'Robot:', self.loadRobot, self.editRobot),
@@ -125,24 +105,42 @@ class TKgui(gui):
       for b in button1:
          self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],command=b[1])
          self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = "yes", anchor="n")
-
-      toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "yes")
-      #self.makeRow(('status', 'Pose:', '', ''))
+      #toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "yes")
       ## ----------------------------------
       self.makeRow(('status', 'Pose:', '', ''))
       ## ----------------------------------
       self.textframe = Tkinter.Frame(self.frame)
+      self.textframe.pack(side="top", expand = "yes", fill="both")
       self.status = Tkinter.Text(self.textframe, width = 40, height = 10,
                                  state='disabled', wrap='word')
       self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
       self.status.configure(yscrollcommand=self.scrollbar.set)
       
-      self.scrollbar.pack(side="right", fill="y")
-      self.status.pack(side=Tkinter.LEFT, expand = "yes", fill="both")
-      self.textframe.pack(side = "bottom", anchor = "nw", fill = "both")
-      
+      self.scrollbar.pack(side="right", expand = "no", fill="y")
+      self.status.pack(side="top", expand = "yes", fill="both")
+      self.textframe.pack(side="top", fill="both")
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def makeCommandArea(self):
+      # ---------------------------------
+      self.commandFrame = Tkinter.Frame(self.frame)
+      self.commandFrame['relief'] = 'raised'
+      self.commandFrame['bd']	 = '2'
+      self.commandLabel = Tkinter.Label(self.commandFrame)
+      self.commandLabel["text"] = "Command:"
+      self.commandLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+      # create a command 
+      self.commandEntry = Tkinter.Entry(self.commandFrame)
+      self.commandEntry.bind('<Return>', self.CommandReturnKey)
+      self.commandEntry.bind('<Control-p>', self.CommandPreviousKey)
+      self.commandEntry.bind('<Control-n>', self.CommandNextKey)
+      self.commandEntry.bind('<Up>', self.CommandPreviousKey)
+      self.commandEntry.bind('<Down>', self.CommandNextKey)
+      self.commandEntry["relief"] = "ridge"
+      self.commandEntry.pack({'expand':'yes', 'side':'bottom', 'fill':'x'})
+      self.commandFrame.pack({'expand':'no', 'side':'bottom', 'fill':'x'})
+      # ---------------------------------      
 
    def makeRow(self, item):
       type, load, loadit, editit = item
