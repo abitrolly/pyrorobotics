@@ -38,5 +38,5 @@ lowlevelmodule.cc: Saphira.i Saphira.h
 lowlevelmodule.o: lowlevelmodule.cc
 	$(CC) -c $(PYTHON_INCLUDE) $^ -o $@
 
-cleanall::
+clean::
 	$(RM) obj/*.o
