@@ -403,10 +403,13 @@ class PlayerRobot(Robot):
                 deviceName = self.startDevice(device)
                 if device == "laser":
                     self.devDataFunc["range"] = self.get("/devices/laser0/object")
-                if device == "ir":
+                    self.devDataFunc["laser"] = self.get("/devices/laser0/object")
+                elif device == "ir":
                     self.devDataFunc["range"] = self.get("/devices/ir0/object")
-                if device == "sonar":
+                    self.devDataFunc["ir"] = self.get("/devices/ir0/object")
+                elif device == "sonar":
                     self.devDataFunc["range"] = self.get("/devices/sonar0/object")
+                    self.devDataFunc["sonar"] = self.get("/devices/sonar0/object")
         # specific things about this robot type:
         self.devData["port"] = port
         # default values for all robots:
