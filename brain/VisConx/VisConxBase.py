@@ -12,15 +12,20 @@ import pyro.brain.VisConx.ArchDiag as ArchDiag
 class NNSettingsDialog(tkSimpleDialog.Dialog):
     def __init__(self, parent, network):
         self.entryList = [("Learning rate (epsilon)",network.setEpsilon, network.epsilon, Tkinter.StringVar(parent),
-                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()),
+                           "Value must on the interval [0,1]."),
                           ("Momentum",network.setMomentum, network.momentum, Tkinter.StringVar(parent),
-                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()),
+                           "Value must on the interval [0,1]."),
                           ("Correctness tolerance",network.setTolerance, network.tolerance, Tkinter.StringVar(parent),
-                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()),
+                           "Value must on the interval [0,1]."),
                           ("Reset epoch",network.setResetEpoch, network.resetEpoch, Tkinter.StringVar(parent),
-                           lambda val: val > 0, lambda var: int(var.get()), "Value must be an integer greater than 0."),
+                           lambda val: val > 0, lambda var: int(var.get()),
+                           "Value must be an integer greater than 0."),
                           ("Reset limit",network.setResetLimit, network.resetLimit, Tkinter.StringVar(parent),
-                           lambda val: val >= 0, lambda var: int(var.get()), "Value must be an integer greater than or equal to 0.")]
+                           lambda val: val >= 0, lambda var: int(var.get()),
+                           "Value must be an integer greater than or equal to 0.")]
         self.checkList = [("Learn",network.setLearning, network.learning, Tkinter.IntVar(parent)),
                           ("Batch mode",network.setBatch, network.batch, Tkinter.IntVar(parent)),
                           ("Ordered inputs",network.setOrderedInputs, network.orderedInputs, Tkinter.IntVar(parent))]
@@ -96,9 +101,11 @@ class VisConxBase:
         self.root.title("VisConx")
         self.root.resizable(0,0)
         self.root.protocol("WM_DELETE_WINDOW", self.handleWindowClose)
-        
+
+        # --BEGIN visualFrame
         self.visualFrame = Tkinter.Frame(self.root)
-        Tkinter.Label(self.visualFrame, text="Visualization Tools:", font=("Arial", 14, "bold")).grid(row=0, col=0, columnspan=2, sticky=Tkinter.W)
+        Tkinter.Label(self.visualFrame, text="Visualization Tools:",
+                      font=("Arial", 14, "bold")).grid(row=0, col=0, columnspan=2, sticky=Tkinter.W)
         
         #setup options for basic data plots
         Tkinter.Label(self.visualFrame, text="Plot:").grid(col=0, row=1, sticky= Tkinter.W)
@@ -106,7 +113,8 @@ class VisConxBase:
         self.TSSCheck.grid(col=1,row=1, sticky=Tkinter.W)
         self.RMSCheck = Tkinter.Checkbutton(self.visualFrame, text="Show RMS Plot", command = self.handleRMSBox)
         self.RMSCheck.grid(col=1,row=2, sticky=Tkinter.W)
-        self.pCorrectCheck = Tkinter.Checkbutton(self.visualFrame, text="Show % Correct  Plot", command = self.handlePCorrectBox)
+        self.pCorrectCheck = Tkinter.Checkbutton(self.visualFrame, text="Show % Correct  Plot",
+                                                 command = self.handlePCorrectBox)
         self.pCorrectCheck.grid(col=1,row=3, sticky=Tkinter.W)
 
         #options for displaying hinton diagrams
@@ -114,7 +122,8 @@ class VisConxBase:
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
         self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.NSEW)
         conButtonFrame = Tkinter.Frame(self.visualFrame)
-        Tkinter.Button(conButtonFrame,text="Show connection weights", command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
+        Tkinter.Button(conButtonFrame,text="Show connection weights",
+                       command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
         Tkinter.Button(conButtonFrame, text="Save all weights", command=self.saveAllWeights).grid(row=1, col=0)
         Tkinter.Button(conButtonFrame, text="Load all weights", command=self.loadAllWeights).grid(row=1, col=1)
         conButtonFrame.grid(col=1, row=5)
@@ -122,14 +131,18 @@ class VisConxBase:
 
         #options for displaying the network topology
         Tkinter.Label(self.visualFrame, text="Network Architecture:").grid(col=0,row=6, sticky=Tkinter.W)
-        self.archButton = Tkinter.Checkbutton(self.visualFrame, text="Draw network architecture", command=self.handleNetworkArchBox)
+        self.archButton = Tkinter.Checkbutton(self.visualFrame, text="Draw network architecture",
+                                              command=self.handleNetworkArchBox)
         self.archButton.grid(col=1,row=6, sticky=Tkinter.W)
 
         #options for displaying node activations
         Tkinter.Label(self.visualFrame, text="Node Activations:").grid(col=0,row=7,sticky=Tkinter.W)
-        self.activButton = Tkinter.Checkbutton(self.visualFrame, text="Examine Node Activations", command=self.handleActivDiag)
+        self.activButton = Tkinter.Checkbutton(self.visualFrame, text="Examine Node Activations",
+                                               command=self.handleActivDiag)
         self.activButton.grid(col=1,row=7,sticky=Tkinter.W)
+        #END - visualFrame
 
+        #BEGIN - Command evaluation
         #evaluation window
         self.inputFrame = Tkinter.Frame(self.root)
 
@@ -152,7 +165,8 @@ class VisConxBase:
         self.commandEntry = Tkinter.Entry(self.inputFrame)
         self.commandEntry.bind("<Return>", self.handleCommand)
         self.commandEntry.pack(side=Tkinter.LEFT,expand=Tkinter.YES,fill="x")
-              
+        #END - Command evaluation
+        
         self.root.update_idletasks()
     
     #overloading methods from Network/SRN
@@ -208,8 +222,8 @@ class VisConxBase:
             self.pCorrectPlot = None
             self.pCorrectCheck.deselect()
         else:
-            self.pCorrectPlot = TwoDimPlot.TwoDimPlot(self.root, plotName="Percent Correct", xTitle="Epoch", yTitle="% Correct", \
-                                           closeCallback=self.handlePCorrectBox)
+            self.pCorrectPlot = TwoDimPlot.TwoDimPlot(self.root, plotName="Percent Correct", xTitle="Epoch",
+                                                      yTitle="% Correct", closeCallback=self.handlePCorrectBox)
             self.pCorrectPlot.addPoints(self.pCorrectData)
             self.pCorrectPlot.protocol("WM_DELETE_WINDOW", self.handlePCorrectBox)
             self.pCorrectCheck.select()
@@ -250,8 +264,9 @@ class VisConxBase:
                 self.hintonDiags[connectName].protocol("WM_DELETE_WINDOW", lambda name=connectName: self.destroyHintonDiag(name))
 
     def destroyHintonDiag(self, name):
-        self.hintonDiags[name].destroy()
+        tempDiag = self.hintonDiags[name]
         self.hintonDiags[name] = None
+        tempDiag.destroy()
 
     # handlers for network architecture diagram
     def handleNetworkArchBox(self):
