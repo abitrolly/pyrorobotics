@@ -33,7 +33,9 @@ class Sample(Brain):
         else:
             self.getRobot().stop()
             self.pleaseStop()
-            print "done collecting samples"
+            for file in self.file.values():
+                file.close()
+            print "Done collecting samples!"
 
     def getValue(self, name, moveit = 1):
         if name == 'wheel':
@@ -51,4 +53,3 @@ class Sample(Brain):
 
 def INIT(engine):
     return Sample('Sample', engine, modality = ('sonar','wheel','bumper'))
-
