@@ -519,6 +519,21 @@ class Network:
             if self.learning and self.batch:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
+    def step(self):
+        self.init_slopes() 
+        self.propagate()
+        (error, correct, total) = self.backprop() # compute_error()
+        if self.verbosity > 0 or self.interactive:
+            self.display()
+            if self.interactive:
+                print "--More-- [quit, go] ",
+                chr = sys.stdin.readline()
+                if chr[0] == 'g':
+                    self.interactive = 0
+                elif chr[0] == 'q':
+                    sys.exit(1)
+        self.change_weights()
+        return (error, correct, total)        
     def reset_error(self):
         for x in range(self.layerCount):
             for i in range(self.layer[x].size):

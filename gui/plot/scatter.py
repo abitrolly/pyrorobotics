@@ -14,7 +14,7 @@ class Line:
 
 class Scatter: # Plot
     def __init__(self, history = 100, xLabel = 'X', yLabel = 'Y',
-                 title = None, width = 150, height = 150):
+                 title = None, width = 200, height = 200):
         self.win = Tk()
         if title == None:
             self.win.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
@@ -22,25 +22,57 @@ class Scatter: # Plot
             self.win.wm_title(title)
         self.canvas = Canvas(self.win,width=width,height=height)
         self.canvas.pack()
+        self.xBorder = 30
+        self.yBorder = 30
+        self.plotWidth = width - 2 * self.xBorder # / max value
+        self.plotHeight = height - 2 * self.yBorder # / max value
+        # title
+        self.canvas.create_text(self.xBorder, 10,
+                                text=title, fill='black')
         # border 
-        self.canvas.create_line(30, 30, 30, 130, width = 1, fill='black')
-        self.canvas.create_line(30, 30, 130, 30, width = 1, fill='black')
-        self.canvas.create_line(30, 130, 130, 130, width = 1, fill='black')
-        self.canvas.create_line(130, 30, 130, 130, width = 1, fill='black')
+        self.canvas.create_line(self.xBorder, self.yBorder,
+                                self.xBorder, height - self.yBorder,
+                                width = 1, fill='black')
+        self.canvas.create_line(self.xBorder, self.yBorder,
+                                width - self.xBorder, self.yBorder,
+                                width = 1, fill='black')
+        self.canvas.create_line(self.xBorder, height - self.yBorder,
+                                width - self.xBorder, width - self.yBorder,
+                                width = 1, fill='black')
+        self.canvas.create_line(width - self.xBorder, self.yBorder,
+                                width - self.xBorder, width - self.yBorder,
+                                width = 1, fill='black')
         # markers
-        self.canvas.create_line(25, 30, 35, 30, width = 2, fill='black')
-        self.canvas.create_line(25, 80, 35, 80, width = 2, fill='black')
-        self.canvas.create_line(25, 130, 35, 130, width = 2, fill='black')
-        self.canvas.create_line(30, 25, 30, 35, width = 2, fill='black')
-        self.canvas.create_line(80, 25, 80, 35, width = 2, fill='black')
-        self.canvas.create_line(130, 25, 130, 35, width = 2, fill='black')
+        self.canvas.create_line(self.xBorder - 5, self.yBorder,
+                                self.xBorder + 5, self.yBorder,
+                                width = 2, fill='black')
+        self.canvas.create_line(self.xBorder - 5, self.yBorder + self.plotHeight / 2,
+                                self.xBorder + 5, self.yBorder + self.plotHeight / 2,
+                                width = 2, fill='black')
+        self.canvas.create_line(self.xBorder - 5, height - self.yBorder,
+                                self.xBorder + 5, height - self.yBorder,
+                                width = 2, fill='black')
+        self.canvas.create_line(self.xBorder, height - self.yBorder - 5,
+                                self.xBorder, height - self.yBorder + 5,
+                                width = 2, fill='black')
+        self.canvas.create_line(self.xBorder + self.plotWidth / 2, height - self.yBorder - 5,
+                                self.xBorder + self.plotWidth / 2, height - self.yBorder + 5,
+                                width = 2, fill='black')
+        self.canvas.create_line(width - self.xBorder, height - self.yBorder - 5,
+                                width - self.xBorder, height - self.yBorder + 5,
+                                width = 2, fill='black')
         # text
-        self.canvas.create_text(10, 30, text='0.0', fill='black')
-        self.canvas.create_text(10, 80, text='0.5', fill='black')
-        self.canvas.create_text(10, 130, text='1.0', fill='black')
-        self.canvas.create_text(30, 10, text='0.0', fill='black')
-        self.canvas.create_text(80, 10, text='0.5', fill='black')
-        self.canvas.create_text(130, 10, text='1.0', fill='black')
+        self.canvas.create_text(self.xBorder, height - 10,
+                                text='0.0', fill='black')
+        self.canvas.create_text(self.xBorder + self.plotWidth / 2, height - 10,
+                                text='0.5', fill='black')
+        self.canvas.create_text(width - self.xBorder, height - 10,
+                                text='1.0', fill='black')
+        self.canvas.create_text(10, self.yBorder, text='1.0', fill='black')
+        self.canvas.create_text(10, self.yBorder + self.plotHeight / 2,
+                                text='0.5', fill='black')
+        self.canvas.create_text(10, height - self.yBorder,
+                                text='0.0', fill='black')
         # ----------------------------------------------------------
         self.hist = [0] * history
         self.history = history
@@ -51,7 +83,13 @@ class Scatter: # Plot
 
     def setTitle(self, title):
         self.win.wm_title(title)
-        
+
+    def _x(self, val):
+        return int(val * self.plotWidth) + self.xBorder
+
+    def _y(self, val):
+        return int(self.plotHeight - val * self.plotHeight + self.yBorder)
+
     def addPoint(self, x, y):
         if self.count >= self.history:
             self.count = 0
@@ -63,10 +101,10 @@ class Scatter: # Plot
             self.canvas.delete( self.last.pointId)
             x1 = self.last.x
             y1 = self.last.y
-            self.last.pointId = self.canvas.create_oval(int(x1 * 100.0) - 2 + self.offset,
-                                                        int(y1 * 100.0) - 2 + self.offset,
-                                                        int(x1 * 100.0) + 2 + self.offset,
-                                                        int(y1 * 100.0) + 2 + self.offset,
+            self.last.pointId = self.canvas.create_oval(self._x(x1) - 2,
+                                                        self._y(y1) - 2,
+                                                        self._x(x1) + 2,
+                                                        self._y(y1) + 2,
                                                         width = 0,
                                                         tag = 'object',
                                                         fill = 'coral')
@@ -75,17 +113,17 @@ class Scatter: # Plot
             self.firstEver = 0
             lid = -1
         else:
-            lid = self.canvas.create_line(int(self.last.x * 100.0) +self.offset,
-                                          int(self.last.y * 100.0) +self.offset,
-                                          int(x * 100.0) + self.offset,
-                                          int(y * 100.0)+ self.offset,
+            lid = self.canvas.create_line(self._x(self.last.x),
+                                          self._y(self.last.y),
+                                          self._x(x),
+                                          self._y(y),
                                           width = 1,
                                           tag = 'object',
                                           fill = 'tan')
-        pid = self.canvas.create_oval(int(x * 100.0) - 3 + self.offset,
-                                      int(y * 100.0) - 3 + self.offset,
-                                      int(x * 100.0) + 3 + self.offset,
-                                      int(y * 100.0) + 3 + self.offset,
+        pid = self.canvas.create_oval(self._x(x) - 3,
+                                      self._y(y) - 3,
+                                      self._x(x) + 3,
+                                      self._y(y) + 3,
                                       width = 0,
                                       tag = 'object',
                                       fill = 'red')
