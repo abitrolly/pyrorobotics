@@ -55,20 +55,28 @@ class GA:
     """
     Class which defines everything needed to run a GA.
     """
-    def __init__(self, population, fitnessFunc, isDoneFunc, batch = 0):
+    def __init__(self, population, batch = 0):
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
         self.pop = population
         self.popsize = len(population)
         self.geneLength = len(population[0])
         self.fitness = [0.0] * self.popsize
-        self.fitnessFunction = fitnessFunc
-        self.isDoneTestFunction = isDoneFunc
         self.mutationRate = 0.05
         self.crossoverRate = 0.3
         self.maxEpoch = 0
         self.batch = batch
         self.integer = 0
+
+    def isDoneFunction(self):
+        pass
+
+    def fitnessFunction(self, genePosition):
+        pass
+
+    def applyFitnessFunction(self):
+        for i in range( self.popsize ):
+            self.fitness[i] = self.fitnessFunction(i)
 
     def setSeed(self, value):
         self.seed1 = value
@@ -139,7 +147,7 @@ class GA:
             return p
 
     def sweep(self):
-        self.fitness = map(self.fitnessFunction, self.pop)
+        self.applyFitnessFunction() # sets self.fitness
         self.sort()
         self.crossover()
         self.mutate()
@@ -181,59 +189,62 @@ class GA:
             self.display(self.popsize/2)
             print "Worst: (position #", self.popsize - 1, ")"
             self.display(self.popsize - 1)
-            if self.isDoneTestFunction(self.pop):
+            if self.isDoneFunction():
                 print "Completed!"
                 return
 
 if __name__ == '__main__':
     # Here is a test to evolve a list of big numbers:
-    print "Do you want to evolve a list of big numbers? ",
-    if sys.stdin.readline().lower()[0] == 'y':
-        ga = GA(makeRandomPop(300, 10), lambda p: sum(p), \
-                lambda pop: sum(pop[0]) > 20)
-        ga.evolve()
+    from pyro.brain.conx import *
+    class TestGA(GA):
+        def fitnessFunction(self, genePos):
+            return sum(self.pop[genePos])
+        def isDoneFunction(self):
+            return sum(self.pop[0]) > 20
 
     # Here is a test to evolve the weights/biases in a neural network
     # that solves the XOR problem:
-    from pyro.brain.conx import *
 
-    n = Network()
-    n.add( Layer('input', 2) )
-    n.add( Layer('hidden', 2) )
-    n.add( Layer('output', 1) )
+    class NNGA(GA):
+        def __init__(self):
+            n = Network()
+            n.add( Layer('input', 2) )
+            n.add( Layer('hidden', 2) )
+            n.add( Layer('output', 1) )
+            n.connect('input', 'hidden')
+            n.connect('hidden', 'output')
+            n.setInputs([[0.0, 0.0],
+                         [0.0, 1.0],
+                         [1.0, 0.0],
+                         [1.0, 1.0]])
+            n.setOutputs([[0.0],
+                          [1.0],
+                          [1.0],
+                          [0.0]])
+            n.setVerbosity(0)
+            g = n.arrayify()
+            self.network = n
+            GA.__init__(self, makeRandomPop(300, len(g)))
+        def fitnessFunction(self, genePos):
+            self.network.unArrayify(self.pop[genePos])
+            error, correct, count = self.network.sweep()
+            return -error
+        def isDoneFunction(self):
+            self.network.unArrayify(self.pop[0])
+            error, correct, count = self.network.sweep()
+            return correct == 4
 
-    n.connect('input', 'hidden')
-    n.connect('hidden', 'output')
 
-    n.setInputs([[0.0, 0.0],
-                 [0.0, 1.0],
-                 [1.0, 0.0],
-                 [1.0, 1.0]])
-
-    n.setOutputs([[0.0],
-                  [1.0],
-                  [1.0],
-                  [0.0]])
-
-    n.setVerbosity(0)
-
-    def fitnessFunc(gene):
-        n.unArrayify(gene)
-        error, correct, count = n.sweep()
-        return -error
-
-    def isDoneFunc(genes):
-        n.unArrayify(genes[0])
-        error, correct, count = n.sweep()
-        return correct == 4
-        
-    g = n.arrayify()
+    print "Do you want to evolve a list of big numbers? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        ga = TestGA(makeRandomPop(300, 10))
+        ga.evolve()
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = GA(makeRandomPop(300, len(g)), fitnessFunc, isDoneFunc)
+        ga = NNGA()
         ga.evolve()
-        n.unArrayify(ga.pop[0])
-        n.setInteractive(1)
-        n.sweep()
+        ga.network.unArrayify(ga.pop[0])
+        ga.network.setInteractive(1)
+        ga.network.sweep()
 
