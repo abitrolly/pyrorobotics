@@ -305,6 +305,12 @@ class KheperaRobot(Robot):
         self.sendMsg('H', 'position')
         self.sendMsg('E', 'speed')
         self.sendMsg('K', 'stall')  # motor status, used by isStall
+        if 'gripper0' in self.device:
+            gripper = self.device['gripper0']
+            self.senseData['gripState'] = gripper._getGripState()
+            self.senseData['beamState'] = gripper._getBreakBeamState()
+            self.senseData['armPosition'] = gripper._getArmPosition()
+            self.senseData['resistivity'] = gripper._getResistivity()
         """
         The 'K' message returns 6 numbers dealing with the status of the
         motors.  The 3rd and 6th are error codes representing the left and
@@ -435,9 +441,9 @@ class KheperaRobot(Robot):
         self.thr = self.th * PIOVER180
     
 class Gripper(Device):
-    def __init__(self, dev, type = "gripper"):
+    def __init__(self, robot, type = "gripper"):
         Device.__init__(self, type)
-        self.dev = dev
+        self.robot = robot
         self.lowestArmPosition = 255
         self.highestArmPosition = 165
         self.liftUpPosition = 175
@@ -445,29 +451,41 @@ class Gripper(Device):
         self.startDevice()
 
     def send(self, message):
-        self.dev.sc.writeline(message)
-        return self.dev.sc.readline().split(',')
+        self.robot.sc.writeline(message)
+        return self.robot.sc.readline().split(',')
 
     # preGet methods
-    def getGripState(self):
+    def _getGripState(self):
         gripState = int(self.send('T,1,H,0')[3])
         if gripState < 100:
             return 'closed'
         else:
             return 'open'
 
-    def getBreakBeamState(self):
+    def _getBreakBeamState(self):
         beamState = int(self.send('T,1,G')[3])
         if beamState < 100:
             return 'nothing'
         else:
             return 'something'
 
-    def getArmPosition(self):
+    def _getArmPosition(self):
         return int(self.send('T,1,H,1')[3])
 
-    def getResistivity(self):
+    def _getResistivity(self):
         return int(self.send('T,1,F')[3])
+
+    def getGripState(self):
+        return self.robot.senseData['gripState']
+
+    def getBreakBeamState(self):
+        return  self.robot.senseData['beamState']
+
+    def getArmPosition(self):
+        return self.robot.senseData['armPosition']
+
+    def getResistivity(self):
+        return self.robot.senseData['resistivity']
 
     def getSoftwareVersion(self):
         version = int(self.send('T,1,B')[3])
@@ -496,12 +514,12 @@ class Gripper(Device):
     def gripStop(self):
         pass
 
-    def setArmPosition(self, position):
-        if position > 255:
-            position = 255
-        elif position < 165:
-            position = 165
-        self.send('T,1,E,' + str(position))
+    def setArmPosition(self, angle):
+        if angle > self.lowestArmPosition:
+            angle = self.lowestArmPosition
+        elif angle < self.highestArmPosition:
+            angle = self.highestArmPosition
+        self.send('T,1,E,' + str(angle))
 
     def liftUp(self):
         self.setArmPosition(self.liftUpPosition)
