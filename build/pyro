@@ -18,6 +18,7 @@ if os.environ.has_key('LD_LIBRARY_PATH'):
     os.environ['LD_LIBRARY_PATH'] += (':' + pyropath + '/lib')
 else:
     os.environ['LD_LIBRARY_PATH'] = (pyropath + '/lib')
+os.putenv('LD_LIBRARY_PATH', pyropath + '/lib')
 
 try:
     from pyro.engine import *
