@@ -1,4 +1,5 @@
 from pyro.camera import *
+from struct import pack
 
 class FakeCamera(Camera):
    """
@@ -32,35 +33,9 @@ class FakeCamera(Camera):
       self.loadFromFile(self.file % self.count)
       self.count += self.incr
 
-   def makeWindow(self):
-      import Tkinter, os
-      import PIL.PpmImagePlugin
-      import Image, ImageTk
-      from struct import pack
-      self.window = Tkinter.Tk()
-      while self.window.tk.dooneevent(2): pass
-      self.window.wm_title("pyro@%s: Camera View" \
-                           % os.getenv('HOSTNAME') )
+   def getImage(self):
       c = ''
       for x in range(len(self.data)):
          c += pack('h', self.data[x])[0]
-      self.im = PIL.PpmImagePlugin.Image.fromstring('RGB',
-                                                (self.width, self.height),c)
-      self.image = ImageTk.PhotoImage(self.im)
-      self.label = Tkinter.Label(self.window, image=self.image, bd=0)
-      self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
-
-   def updateWindow(self):
-      import Tkinter, os
-      import PIL.PpmImagePlugin
-      import Image, ImageTk
-      from struct import pack
-      self.update()
-      while self.window.tk.dooneevent(2): pass
-      c = ''
-      for x in range(len(self.data)):
-         c += pack('h', self.data[x])[0]
-      self.im = PIL.PpmImagePlugin.Image.fromstring('RGB',
-                                                (self.width, self.height),c)
-      self.image = ImageTk.PhotoImage(self.im)
-      self.label.configure(image = self.image)
+      return PIL.PpmImagePlugin.Image.fromstring('RGB',
+                                                 (self.width, self.height),c)

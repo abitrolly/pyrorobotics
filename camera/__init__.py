@@ -3,7 +3,10 @@
 from pyro.vision import *
 from pyro.brain.fuzzy import *
 
-#from pyro.system import file_exists
+import Tkinter
+import PIL.PpmImagePlugin
+import Image, ImageTk
+import os
 
 class Camera(PyroImage):
    """
@@ -162,8 +165,6 @@ class Camera(PyroImage):
       return(float(pan_mult*pan_mult + tilt_mult*tilt_mult +  \
                    zoom_mult*zoom_mult)/3.0)
 
-
-
    # the methods in PyroImage for color filtering look pretty
    # wacky at the moment...
    
@@ -186,7 +187,26 @@ class Camera(PyroImage):
          targetBlob = blobdata.bloblist[0]
          self.frame(targetBlob.ul, targetBlob.lr, fill)
 
+   def getImage(self):
+      raise "MethodNotDefined", "getImage()"
 
+   def makeWindow(self):
+      import Tkinter
+      self.window = Tkinter.Tk()
+      while self.window.tk.dooneevent(2): pass
+      self.window.wm_title("pyro@%s: Camera View" \
+                           % os.getenv('HOSTNAME') )
+      self.im = self.getImage()
+      self.image = ImageTk.PhotoImage(self.im)
+      self.label = Tkinter.Label(self.window, image=self.image, bd=0)
+      self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+
+   def updateWindow(self):
+      self.update()
+      while self.window.tk.dooneevent(2): pass
+      self.im = self.getImage()
+      self.image = ImageTk.PhotoImage(self.im)
+      self.label.configure(image = self.image)
 
 if __name__ == '__main__':
    from os import getenv
