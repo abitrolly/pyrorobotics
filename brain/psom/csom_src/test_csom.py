@@ -1,8 +1,7 @@
+#import csom
+#import sys
 import pyro.brain.psom._csom as csom
 from pyro.brain.psom import _ptrset
-
-#import csom
-import sys
 
 def init_float_array(mylist):
 	nitems = len(mylist)
@@ -27,6 +26,7 @@ def build_short_array(mylist):
 def list_to_arr(mylist,myarr):
 	i = 0
 	for item in mylist:
+		#ptrset(myarr,item,i)
 		_ptrset(myarr,item,i)
 		i = i+1
 	return myarr
@@ -142,7 +142,8 @@ def test3():
 	while(input != None):
 		print "input:", input
 		coords = csom.train_one(params, input)
-		points = csom._csom.data_entry_points_get(input)
+		#points = csom._csom.data_entry_points_get(input)
+		points = csom.data_entry_points_get(input)
 		mylist = build_list(points,5)
 		output = csom.get_model_vector(codes, coords)
 		print "input: [",
@@ -151,7 +152,8 @@ def test3():
 		print "]"
 		if(output == "NULL"):
 			print "output null"
-		points = csom._csom.data_entry_points_get(output)
+		#points = csom._csom.data_entry_points_get(output)
+		points = csom.data_entry_points_get(output)
 		mylist = build_list(points,5)
 		print "maps to model: [",
 		for pt in mylist:
