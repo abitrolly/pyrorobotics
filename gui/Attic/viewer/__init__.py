@@ -28,6 +28,8 @@ class KheperaViewer:
       else:
          #inscribe the image in the circle representing the robot
          self.radius = int(sqrt((imageSize[0]/2)**2 + (imageSize[1]/2)**2)) + 3
+         if self.radius < radius:
+            self.radius = radius
       
       self.maxVals = {
          "ir" : 60.0/55.0, #going to assume that ir units are Robots for now
@@ -181,8 +183,8 @@ class KheperaViewer:
    
 if __name__ == "__main__":
    print "Testing w/vision:"
-   kv = KheperaViewer((20, 10))
-   a = [int(x*(200.0/255.0)) for x in range(200)]
+   kv = KheperaViewer((30, 25))
+   a = [int(x*((255.0/(30.0*25.0)))) for x in range(30*25)]
    
    kv.update([.2, .4, .6, .8, 1.0, 1.03, .3, .5],
              [0.0, 25.0, 50.0, 75.0, 100.0, 125.0, 150.0, 175.0, 199.0],
