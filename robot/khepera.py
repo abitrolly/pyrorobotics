@@ -303,7 +303,7 @@ class KheperaRobot(Robot):
                         self.senseData[data] = array.array(type, map(int, irs))
                     except:
                         print "khepera packet error: type=", data, "vals=", irs
-        return self.senseData[data]
+            return self.senseData[data]
         
     def update(self):
         self.sendMsg('N', 'ir')     # proximity
