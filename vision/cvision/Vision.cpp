@@ -62,7 +62,7 @@ PyObject *Vision::setImage(int newImage) {
     PyErr_SetString(PyExc_ValueError, "invalid image ID in setImage()");
     return NULL;
   }
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 // set(): works on current image
@@ -159,6 +159,7 @@ PyObject *Vision::get(int w, int h) {
 PyObject *Vision::superColor(float w1, float w2, float w3, 
 			int outChannel) {
   float weight[3] = {w1, w2, w3};
+  int count = 0;
   for (int w=0; w<width; w++) {
     for (int h=0; h<height; h++) {
       int brightness = 0;
@@ -168,12 +169,14 @@ PyObject *Vision::superColor(float w1, float w2, float w3,
 	// blacken all pixels:
 	Image[(h * width + w) * depth + rgb[d]] = 0;
       }
-      if (brightness > 0)
+      if (brightness > 0) {
 	// reset outChannel pixel to brightness level:
 	Image[(h * width + w) * depth + rgb[outChannel] ] = MAX(MIN(brightness,255),0); 
+	count++;
+      }
     }
   }
-  return PyInt_FromLong(0L);
+  return PyInt_FromLong(count);
 }  
 
 // match() - match pixels by tolerance
@@ -248,15 +251,21 @@ PyObject *Vision::saveImage(char *filename) {
     }
   if (0 != rgb[0])
     swapPlanes(0, rgb[0]);
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 } 
 
 PyObject *Vision::drawRect(int x1, int y1, int x2, int y2, 
-		      int fill, int channel) {
+			   int fill, int channel) {
+  if (x1 > x2)
+    SWAP(x1, x2);
+  if (y1 > y2)
+    SWAP(y1, y2);
+  x2 = MAX(MIN(width - 1, x2),0);
+  y2 = MAX(MIN(height - 1, y2),0);
   for(int w=x1; w<=x2; w++) {
       for(int h=y1; h<=y2; h++ ) {
-	if (fill == 1 || (h == x1 || h == x2 ||
-			  w == y1 || w == y2))
+	if (fill == 1 || ((h == x1) || (h == x2) ||
+			  (w == y1) || (w == y2)))
 	  if (channel == ALL)
 	    for(int d=0; d<depth; d++) {
 	      Image[(h * width + w) * depth + d] = 255;
@@ -264,6 +273,44 @@ PyObject *Vision::drawRect(int x1, int y1, int x2, int y2,
 	  else
 	    Image[(h * width + w) * depth + rgb[channel]] = 255;
       }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::drawCross(int x1, int y1, int length, int channel) {
+  int startX = x1 - length/2;
+  int startY = y1 - length/2;
+  int stopX = x1 + length/2;
+  int stopY = y1 + length/2;
+  int pos = 0;
+  for(int w=startX; w<=stopX; w++) {
+    if (channel == ALL) {
+      for(int d=0; d<depth; d++) {
+	pos = (y1 * width + w) * depth + d;
+	if (pos < (((height - 1) * width) + (width - 1)) * depth + 2) {
+	  Image[pos] = 255;
+	}
+      }
+    } else {
+      pos = (y1 * width + w) * depth + rgb[channel];
+      if (pos < (((height - 1) * width) + (width - 1)) * depth + 2) {
+	Image[pos] = 255;
+      }
+    }
+  }
+  for(int h=startY; h<=stopY; h++ ) {
+    if (channel == ALL) {
+      for(int d=0; d<depth; d++) {
+	pos = (h * width + x1) * depth + d;
+	if (pos < (((height - 1) * width) + (width - 1)) * depth + 2) {
+	  Image[pos] = 255;
+	}
+      }
+    } else {
+      pos = (h * width + x1) * depth + rgb[channel];
+      if (pos < (((height - 1) * width) + (width - 1)) * depth + 2)
+	Image[pos] = 255;
+    }
   }
   return PyInt_FromLong(0L);
 }
@@ -366,7 +413,7 @@ PyObject *Vision::threshold(int channel, int value) {
 	Image[(x+y*width)*depth + rgb[channel]] = 0;
       }
     }
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::inverse(int channel) {
@@ -375,7 +422,7 @@ PyObject *Vision::inverse(int channel) {
     for(x=0; x<width; x++) {
       Image[(x+y*width)*depth + rgb[channel]] = 255 - Image[(x+y*width)*depth + rgb[channel]];
     }
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::sobel(int thresh) {
@@ -565,11 +612,6 @@ PyObject *Vision::meanBlur(int kernel) {
   return PyInt_FromLong(0L);
 }
 
-int Vision::getWidth() { return width; }
-int Vision::getHeight() { return height; }
-int Vision::getDepth() { return depth; }
-
-
 // ----------------------- Blob Functions ------------------
 
 Blob *Vision::initBlob(Blob *b) {
@@ -737,7 +779,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   Blob bloblist[MAXBLOBS];
   
   int w,h,n,m,i,j, k, l;
-  int offset, mark1, mark2;
+  int offset = 0, mark1 = 0, mark2 = 0;
   int count;
   int minBlobNum=0, maxBlobNum=0;
 
@@ -926,7 +968,7 @@ PyObject *Vision::setFilterList(PyObject *newList) {
   Py_DECREF(filterList);
   filterList = newList;
   Py_INCREF(filterList);
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::popFilterList() {
@@ -949,7 +991,7 @@ PyObject *Vision::addFilter(PyObject *newFilter) {
   //}
   Py_INCREF(newFilter);
   PyList_Append(filterList, newFilter);
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::gaussianBlur() {
@@ -1005,35 +1047,6 @@ PyObject *Vision::applyFilterList() {
   return applyFilters(filterList);
 }
 
-PyObject *Vision::getMenu() {
-  PyObject *menu = PyList_New( 0 );
-  PyList_Append(menu, Py_BuildValue("sss", "Blur", "meanBlur", "meanBlur"));
-  PyList_Append(menu, Py_BuildValue("sss", "Blur", "gaussianBlur", "gaussianBlur"));
-  PyList_Append(menu, Py_BuildValue("sss", "Blur", "medianBlur", "medianBlur"));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Red", "setPlane", 0));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Green", "setPlane", 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Blue", "setPlane", 2));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2));
-  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Red", "threshold", 0));
-  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Green", "threshold", 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Blue", "threshold", 2));
-  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Red", "inverse", 0));
-  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Green", "inverse", 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Blue", "inverse", 2));
-  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
-  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
-  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
-  PyList_Append(menu, Py_BuildValue("sssi", "Detect", "Motion", "motion", 30));
-  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Gray scale", "grayScale"));
-  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
-  return menu;
-}
-
 PyObject *Vision::backup() { 
   return copy(0); // 0 backup, 1 restore
 }
@@ -1061,7 +1074,7 @@ PyObject *Vision::motion(int threshold) {
   }
   memcpy(motion, Image, width * height * depth);
   memcpy(Image, temp, width * height * depth);
-  return Py_BuildValue("");
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::copy(int fromto) { // 0 backup, 1 restore
@@ -1070,8 +1083,98 @@ PyObject *Vision::copy(int fromto) { // 0 backup, 1 restore
     memcpy(backup, Image, width * height * depth);
   } else if (fromto == 1) { // restore
     memcpy(Image, backup, width * height * depth);
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Invalid argument to copy()");
+    return NULL;
   }
   return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::applyFilters(PyObject *newList) {
+  PyObject *filter;
+  if (!PyList_Check(newList)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
+    return NULL;
+  }
+  PyObject *retvals = PyList_New( PyList_Size(newList) );
+  for (int i = 0; i < PyList_Size(newList); i++) {
+    filter = PyList_GetItem(newList, i);
+    PyList_SetItem(retvals, i, applyFilter( filter ));
+  }
+  return retvals;
+}
+
+// For upside down cameras:
+PyObject *Vision::rotate() {
+  unsigned int thisPos;
+  unsigned int otherPos;
+  unsigned int temp;
+  for (int h = 0; h < height/2; h++) {
+    for (int w = 0; w < width; w++) {
+      thisPos = (h * width + w) * depth;
+      otherPos = (height * width * depth) - thisPos;
+      for (int d=0; d<depth; d++) {
+	temp = Image[thisPos + d];
+	Image[thisPos + d] = Image[otherPos - depth + d];
+	Image[otherPos - depth + d] = temp;
+      }
+    }
+  }
+  if ((height % 2) == 1) { // if odd, do the middle row
+    for (int w = 0; w < width/2; w++) {
+      thisPos = ((height/2) * width + w) * depth;
+      otherPos = (height * width * depth) - thisPos;
+      for (int d=0; d<depth; d++) {
+	temp = Image[thisPos + d];
+	Image[thisPos + d] = Image[otherPos - depth + d];
+	Image[otherPos - depth + d] = temp;
+      }
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::swapPlanes(int d1, int d2) {
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      unsigned int temp = Image[(h * width + w) * depth + d1];
+      Image[(h * width + w) * depth + d1] = Image[(h * width + w) * depth + d2];
+      Image[(h * width + w) * depth + d2] = temp;
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::getMenu() {
+  PyObject *menu = PyList_New( 0 );
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "meanBlur", "meanBlur"));
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "gaussianBlur", "gaussianBlur"));
+  PyList_Append(menu, Py_BuildValue("sss", "Blur", "medianBlur", "medianBlur"));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Red", "setPlane", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Green", "setPlane", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Blue", "setPlane", 2));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Red", "threshold", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Green", "threshold", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Blue", "threshold", 2));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Red", "inverse", 0));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Green", "inverse", 1));
+  PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Blue", "inverse", 2));
+  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
+  PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
+  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
+  PyList_Append(menu, Py_BuildValue("sssi", "Detect", "Motion", "motion", 30));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Gray scale", "grayScale"));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "Swap planes", "swapPlanes", rgb[0], rgb[2]));
+  PyList_Append(menu, Py_BuildValue("sssiiii", "Draw", "Box", "drawRect", 10, 10, 30, 30));
+  PyList_Append(menu, Py_BuildValue("sssiii", "Draw", "Cross", "drawCross", 20, 20, 10));
+  return menu;
 }
 
 PyObject *Vision::applyFilter(PyObject *filter) {
@@ -1093,7 +1196,7 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     } else if (strcmp((char *)command, "scale") == 0) {
       f1 = 1.0, f2 = 1.0, f3 = 1.0;
       if (!PyArg_ParseTuple(list, "|fff", &f1, &f2, &f3)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: scale()");
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: scale");
 	return NULL;
       }
       retval = scale(f1, f2, f3);
@@ -1132,28 +1235,45 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     } else if (strcmp((char *)command, "set") == 0) {
       i1 = 0; i2 = 0, i3 = 255, i4 = 255, i5 = 255;
       if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: set");
 	return NULL;
       }
       retval = set(i1, i2, i3, i4, i5);
     } else if (strcmp((char *)command, "drawRect") == 0) {
-      i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = ALL;
+      // x, y, x, y, fill, outChannel
+      i1 = 10; i2 = 10; i3 = 30; i4 = 30; i5 = 0; i6 = ALL;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
 	return NULL;
       }
       retval = drawRect(i1, i2, i3, i4, i5, i6);
+    } else if (strcmp((char *)command, "drawCross") == 0) {
+      // x, y, size, outChannel
+      i1 = 20; i2 = 20; i3 = 10; i4 = ALL;
+      if (!PyArg_ParseTuple(list, "|iiii", &i1, &i2, &i3, &i4)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawCross");
+	return NULL;
+      }
+      retval = drawCross(i1, i2, i3, i4);
+    } else if (strcmp((char *)command, "swapPlanes") == 0) {
+      // plane1, plane2 (red, blue)
+      i1 = rgb[0]; i2 = rgb[2];
+      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: swapPlanes");
+	return NULL;
+      }
+      retval = swapPlanes(rgb[i1], rgb[i2]);
     } else if (strcmp((char *)command, "match") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
       if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match()");
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match");
 	return NULL;
       }
       retval = match(i1, i2, i3, i4, i5);
     } else if (strcmp((char *)command, "matchRange") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 255; i5 = 255; i6 = 255, i7 = 0;
       if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4,&i5,&i6,&i7)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchRange()");
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchRange");
 	return NULL;
       }
       retval = matchRange(i1, i2, i3, i4, i5, i6, i7);
@@ -1208,56 +1328,3 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     return retval;
 }
 
-PyObject *Vision::applyFilters(PyObject *newList) {
-  PyObject *filter;
-  if (!PyList_Check(newList)) {
-    PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
-    return NULL;
-  }
-  PyObject *retvals = PyList_New( PyList_Size(newList) );
-  for (int i = 0; i < PyList_Size(newList); i++) {
-    filter = PyList_GetItem(newList, i);
-    PyList_SetItem(retvals, i, applyFilter( filter ));
-  }
-  return retvals;
-}
-
-// For upside down cameras:
-PyObject *Vision::rotate() {
-  unsigned int thisPos;
-  unsigned int otherPos;
-  unsigned int temp;
-  for (int h = 0; h < height/2; h++) {
-    for (int w = 0; w < width; w++) {
-      thisPos = (h * width + w) * depth;
-      otherPos = (height * width * depth) - thisPos;
-      for (int d=0; d<depth; d++) {
-	temp = Image[thisPos + d];
-	Image[thisPos + d] = Image[otherPos - depth + d];
-	Image[otherPos - depth + d] = temp;
-      }
-    }
-  }
-  if ((height % 2) == 1) { // if odd, do the middle row
-    for (int w = 0; w < width/2; w++) {
-      thisPos = ((height/2) * width + w) * depth;
-      otherPos = (height * width * depth) - thisPos;
-      for (int d=0; d<depth; d++) {
-	temp = Image[thisPos + d];
-	Image[thisPos + d] = Image[otherPos - depth + d];
-	Image[otherPos - depth + d] = temp;
-      }
-    }
-  }
-  return PyInt_FromLong(0L);
-}
-
-void Vision::swapPlanes(int d1, int d2) {
-  for (int h = 0; h < height; h++) {
-    for (int w = 0; w < width; w++) {
-      unsigned int temp = Image[(h * width + w) * depth + d1];
-      Image[(h * width + w) * depth + d1] = Image[(h * width + w) * depth + d2];
-      Image[(h * width + w) * depth + d2] = temp;
-    }
-  }
-}

@@ -69,6 +69,7 @@ public:
   PyObject *set(int w, int h, int d, int val);
   PyObject *drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
+  PyObject *drawCross(int x1, int y1, int length, int channel);
   PyObject *scale(float r, float g, float b);
   PyObject *meanBlur(int kernel);
   PyObject *gaussianBlur();
@@ -76,9 +77,9 @@ public:
   PyObject *threshold(int channel, int value);
   int getMiddleIndex(int median[4][400], int kernel);
   PyObject *inverse(int channel);
-  int getWidth();
-  int getHeight();
-  int getDepth();
+  int getWidth() { return width; }
+  int getHeight() { return height; }
+  int getDepth() { return depth; }
   PyObject *saveImage(char *filename);
   PyObject *getMMap();
 
@@ -110,6 +111,7 @@ public:
   PyObject *motion(int threshold);
   PyObject *rotate();
   PyObject *getMenu();
+  PyObject *swapPlanes(int d1, int d2);
 
  protected:
   unsigned char *Image; // current image (image, original, workspace)
@@ -136,7 +138,6 @@ public:
   int getBlobArea( Blob *b );
   void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
   PyObject *copy(int);
-  void swapPlanes(int d1, int d2);
 };
 
 #endif
