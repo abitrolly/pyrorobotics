@@ -20,11 +20,12 @@ from pyro.brain.behaviors.core import distance
 from math import pi
 
 # Units of measure for sense, map, and motors:
-ROBOTS = 0 # unit is given interms of self.radius's
-METERS = 1 # meters
-CM = 2     # centimeters
-MM = 3     # millimeters
-SCALED = 4 # scaled [0,1]
+# -------------------------------------------
+# ROBOTS - unit is given interms of self.radius's
+# METERS - meters
+# CM     - centimeters
+# MM     - millimeters
+# SCALED - scaled [-1,1]
 
 class Robot (Drawable):
     """
@@ -44,9 +45,9 @@ class Robot (Drawable):
         self.drivers = [] # something that implements the driver interface
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
-        self.senseUnits = ROBOTS # default values
-        self.mapUnits   = METERS
-        self.motorUnits = SCALED
+        self.senseUnits = "ROBOTS" # default values
+        self.mapUnits   = "METERS"
+        self.motorUnits = "SCALED"
 
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
