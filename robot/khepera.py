@@ -4,7 +4,7 @@ from pyro.system.share import config
 from pyro.robot import *
 from pyro.robot.device import *
 #from pyro.system.SerialConnection import *
-#from pyro.system.serial import *
+from pyro.system.serial import *
 import pyro.robot.driver as driver
 import pyro.gui.console as console
 import string, array, math #, termios
@@ -226,8 +226,7 @@ class KheperaRobot(Robot):
                 if rate == None:
                     rate = 115200
             print "K-Team opening port", port, "..."
-            #self.sc = SerialConnection(port, rate)
-            self.sc = Serial(port, baudrate=rate)
+            self.sc = Serial(port, baudrate=rate, xonxoff=0, rtscts=0)
             self.sc.setTimeout(0)
             self.sc.readlines() # to clear out the line
         self.stallTolerance = 0.25
@@ -315,22 +314,29 @@ class KheperaRobot(Robot):
         return self.dataTypes[ message[0].lower() ]
 
     def sendMsg(self, msg):
+        #if self.sc.inWaiting() == 0:
+        if self.debug: print "DEBUG: sendMsg:", msg
         self.sc.writeline(msg, self.newline)
+        #else:
+        #    self.readData()
+        
 
     def readData(self):
+        if self.sc.inWaiting() == 0: return
         retval = self.sc.readline() # 1 = block till we get something
         if retval:
             lines = string.split(retval, "\r\n")
             for line in lines:
                 if line != '':
                     rawdata = string.split(line, ",")
+                    if self.debug: print "DEBUG: read:", rawdata
                     dtype, data = rawdata[0], rawdata[1:]
                     key = self.dataTypes.get(dtype, None)
                     try:
                         self.senseData[key] = map(int,data)
                     except:
-                        pass
-                        #print "K-Team packet error: key=",key,"vals=", data
+                        #pass
+                        if self.debug: print "K-Team packet error:", rawdata
         
     def update(self):
         self._update()
@@ -341,8 +347,9 @@ class KheperaRobot(Robot):
             self.sendMsg('E') #, 'speed')
             self.sendMsg('K') #, 'stall')  # motor status, used by isStall
         elif self.devData["subtype"] == "Hemisson":
-            self.sendMsg('N') #, 'ir')     # proximity
-            self.sendMsg('O') #, 'light')  # ambient light
+            #self.sendMsg('N') #, 'ir')     # proximity
+            #self.sendMsg('O') #, 'light')  # ambient light
+            pass
         while self.sc.inWaiting(): self.readData()
         gripperID = self.hasA('gripper')
         if gripperID:

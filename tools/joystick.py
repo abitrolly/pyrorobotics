@@ -20,10 +20,7 @@ class Joystick(Tkinter.Toplevel):
                                    width = 220,
                                    height = 220,
                                    bg = 'white')
-      
-      self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
-      self.canvas.bind("<Button-1>", self.canvas_clicked_down)
-      self.canvas.bind("<B1-Motion>", self.canvas_moved)
+      self.initHandlers()
       self.canvas.pack(side=Tkinter.BOTTOM)
 
       self.circle_dim = (10, 10, 210, 210) #x0, y0, x1, y1
@@ -34,6 +31,11 @@ class Joystick(Tkinter.Toplevel):
       self.translate = 0.0
       self.rotate = 0.0
       self.threshold = 0.10
+
+   def initHandlers(self):
+      self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
+      self.canvas.bind("<Button-1>", self.canvas_clicked_down)
+      self.canvas.bind("<B1-Motion>", self.canvas_moved)
 
    def getValue(self, event = None):
       return self.translate, self.rotate
