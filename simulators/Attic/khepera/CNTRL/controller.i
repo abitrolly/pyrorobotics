@@ -5,4 +5,4 @@
 %}
 
 %include "controller.h"
-%include pointer.i
+%include cpointer.i
