@@ -34,6 +34,7 @@ class BehaviorBasedBrain(Brain):
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
       state.engine = self.engine
+      state.robot = self.engine.robot
       state.brain = self
       state.setup()
       if state.status:
@@ -164,6 +165,9 @@ class Behavior:
       self.type = self.__class__.__name__
       self.name = name or self.type
       self.effects = effects
+      self.robot = 0 # filled in later
+      self.brain = 0 # filled in later
+      self.engine = 0 # filled in later
    def setup(self):
       pass # this will get over written, normally
    def onActivate(self):
@@ -178,12 +182,7 @@ class Behavior:
       if name == '':
          name = "Rule%d" % (len(self.rules) + 1)
       self.rules.append([float(fvalue), controller, float(amount), name])
-   def getRobot(self):
-      return self.engine.robot
-   def getEngine(self):
-      return self.engine
-   def getBrain(self):
-      return self.brain
    def get(self, *args):
-      self.robot.get(*args)
-   robot = property(getRobot, doc="get the associated robot")
+      return self.robot.get(*args)
+   def set(self, path, value):
+      return self.robot.set(path, value)

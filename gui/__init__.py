@@ -5,13 +5,10 @@ import sys
 import signal
 import time
 import string
-from pyro.gui.drawable import *
-from pyro.gui.renderer.tty import *
-from pyro.gui.renderer.streams import *
 from pyro.system.version import version as version
 from pyro.system import help, usage, about, file_exists
 
-class gui(Drawable):
+class gui:
    """
    This is the base class for a gui.
    """
@@ -21,12 +18,10 @@ class gui(Drawable):
       Child classes should do initialization pertaining to the creation
       of the GUI in the constructor.
       """
-      Drawable.__init__(self, name, options)
       self.alreadyCleanedUp = 0
       self.engine = engine
       self.engine.gui = self
       self.prevsighandler = signal.signal(signal.SIGINT, self.INThandler)
-      self.append(self.engine)  # append engine to drawable
       self.history = []
       self.history_pointer = 0
       self.MAXHISTORY = 50
@@ -213,7 +208,7 @@ class gui(Drawable):
 
    def fileloaddialog(self, type, skel, olddir = ''):
       """ Read a line from user """
-      print "\nFilename: ",
+      print "\n%s Filename: " % type,
       retval =  sys.stdin.readline()
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
@@ -276,37 +271,29 @@ class gui(Drawable):
       
    def loadBrain(self):
       f = self.fileloaddialog("brains","*.py", self.lastDir.get("brain", ''))
-      self.redraw()
       if f != '':
          self.lastDir["brain"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.engine.loadBrain(f)
-         self.redraw()
 
    def loadMap(self):
       f = self.fileloaddialog("maps","*.py", self.lastDir.get("map", ''))
-      self.redraw()
       if f != '':
          self.lastDir["map"] = string.join(f.split('/')[:-1],'/')
          self.engine.loadMap(f)
-         self.redraw()
 
    def loadView(self):
       f = self.fileloaddialog("views","*.py", self.lastDir.get("view", ''))
-      self.redraw()
       if f != '':
          self.lastDir["view"] = string.join(f.split('/')[:-1],'/')
          self.engine.loadView(f)
-         self.redraw()
 
    def loadDevice(self):
       f = self.fileloaddialog("devices","*.py",self.lastDir.get("devices",''))
-      self.redraw()
       if f != '':
          self.lastDir["devices"] = string.join(f.split('/')[:-1],'/')
          if self.engine != 0 and self.engine.robot != 0:
             self.engine.robot.startDevice(f)
-            self.redraw()
 
    def freeBrain(self):
       self.engine.pleaseStop()
@@ -317,7 +304,6 @@ class gui(Drawable):
    def loadSim(self, worldfile = ''):
       pyropath = os.getenv('PYRO')
       f = self.fileloaddialog("simulators","*",self.lastDir.get("sim", ''))
-      self.redraw()
       if f != '':
          self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')
          if worldfile == '':
@@ -326,21 +312,19 @@ class gui(Drawable):
                                             self.lastDir.get("%s-world" % simulatorName,
                                                              "%s/plugins/worlds/%s/" %
                                                              (pyropath, simulatorName)))
-         if worldfile != '':
+         else:
+            simulatorName = worldfile
             self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
             self.engine.worldfile = worldfile
             os.system(f + " " + worldfile + " &")
-         self.redraw()
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))
-      self.redraw()
       if f != '':
          self.lastDir["robot"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.freeRobot()
          self.engine.loadRobot(f)
-         self.redraw()
 
    def freeRobot(self):
       self.engine.pleaseStop()

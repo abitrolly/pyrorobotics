@@ -9,6 +9,7 @@ class FSMBrain (Brain):
    def __init__(self, engine = 0):
       Brain.__init__(self, 'FSMBrain', engine)
       self.states = {}
+      self.robot = self.engine.robot
 
    def activate(self, name):
       self.states[name].status = 1
@@ -22,7 +23,8 @@ class FSMBrain (Brain):
       if state.name in self.states.keys():
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
-      state.engine = self.getEngine()
+      state.engine = self.engine
+      state.robot = self.engine.robot
       state.brain = self
       state.setup()
       if state.status:
@@ -44,11 +46,6 @@ class FSMBrain (Brain):
          self.states[s].activatelist = []
          self.states[s].deactivatelist = []
 
-   def getBrain(self):
-      return self.brain
-   def getEngine(self):
-      return self.engine
-
 class State:
    """
    Collections of behaviors. this gets subclassed by each collection
@@ -61,6 +58,7 @@ class State:
       self.status = status
       self.type = self.__class__.__name__
       self.name = name or self.type
+
    def getState(self, statename):
       if statename in self.brain.states.keys():
          return self.brain.states[statename]
@@ -98,7 +96,8 @@ class State:
          self.behaviors[b.name] = b
       # keep a pointer to parent engine, from the beh:
       b.engine = self.engine
-      b.brain = self.brain
+      b.brain = self.engine.brain
+      b.robot = self.engine.robot
       # keep a pointer to parent state, from the beh:
       b.state = self
       b.setup() # init the behavior, just once
@@ -120,11 +119,8 @@ class State:
                self.brain.effectsTotal[b.state.name+":"+b.name+":"+r[1]] = b.effects[r[1]]
       self.update()
 
-   def getRobot(self):
-      return self.brain.robot
+   def get(self, *args):
+      return self.robot.get(*args)
 
-   def getEngine(self):
-      return self.engine
-
-   def getBrain(self):
-      return self.brain
+   def set(self, path, value):
+      return self.robot.set(path, value)

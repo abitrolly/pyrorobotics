@@ -26,7 +26,7 @@ class Avoid (Behavior):
             self.lasttime =  time.time()
         else:
             self.count += 1
-        close = select(min, "value", self.robot.get('/robot/range/front-all/value,thr'))
+        close = select(min, "value", self.get('/robot/range/front-all/value,thr'))
         close_dist, angle = close["value"], close["thr"]
         max_sensitive = self.robot.get('/robot/range/maxvalue') * 0.8
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'translate', 0.0, "TooClose")
@@ -34,11 +34,21 @@ class Avoid (Behavior):
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'rotate', self.direction(angle), "TooClose")
         self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'rotate', 0.0, "Ok")
 
+class TurnAround(State):
+    def update(self):
+        if min(self.get("/robot/range/front-all/value")) < 1:
+            self.robot.move(0, .2)
+        else:
+            self.goto("state1")
+
 class state1 (State):
     """ sample state """
     def setup(self):
         self.add(Avoid(1, {'translate': .3, 'rotate': .3}))
         print "initialized state", self.name
+    def update(self):
+        if min(self.get("/robot/range/front-all/value")) < 1:
+            self.goto("TurnAround")
 
 def INIT(engine): # passes in robot, if you need it
     brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
@@ -46,6 +56,7 @@ def INIT(engine): # passes in robot, if you need it
                                 'update' : engine.robot.update }, engine)
     # add a few states:
     brain.add(state1()) # non active
+    brain.add(TurnAround()) # non active
 
     # activate a state:
     brain.activate('state1') # could have made it active in constructor
