@@ -23,6 +23,8 @@ class GLgui(gui):
       self.genlist = 0
       self.frame = Frame()
       self.frame.pack(side = 'top')
+      self.windowBrain = 0
+      self.windowRobot = 0
 
       #store the gui structure in something nice insted of python code
       menu = [('file',[('exit',self.cleanup)]),
@@ -31,16 +33,19 @@ class GLgui(gui):
                         ['free',self.freeRobot]]),
               ('brain',[['load',self.loadBrain],
                         ['free',self.freeBrain]]),
+              ('view', [['robot', self.viewRobot],
+                        ['brain', self.viewBrain]]),
               ('help',[['about',system.usage]])
               ]
 
-      buttons = [('step',self.stepEngine),
+      button1 = [('step',self.stepEngine),
                  ('reload',self.resetEngine),
                  ('refresh',self.refresh),
                  ('run',self.runEngine),
                  ('edit', self.editBrain),
-                 ('stop',self.stopEngine),
-                 ('F',self.stepForward),
+                 ('stop',self.stopEngine)]
+
+      button2 = [('F',self.stepForward),
                  ('B',self.stepBack),
                  ('L',self.stepLeft),
                  ('R',self.stepRight)]
@@ -52,13 +57,20 @@ class GLgui(gui):
       for entry in menu:
          self.mBar.tk_menuBar(self.makeMenu(entry[0],entry[1]))
 
-      #make the buttons    
-      toolbar = Frame(self.frame)
-      toolbar.pack(side=TOP, fill=X)
+      # if show main buttons:
+      if 1:
+         toolbar = Frame(self.frame)
+         toolbar.pack(side=TOP, fill=X)
+         for b in button1:
+            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
+
+      # if show manual control buttons:
+      if 0:
+         toolbar = Frame(self.frame)
+         toolbar.pack(side=TOP, fill=X)
+         for b in button2:
+            Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
       
-      for b in buttons:
-         Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
-         
       self.win = Opengl(master = self.frame, width = width,
                         height = height, double = db, depth = depth)
 
@@ -75,6 +87,23 @@ class GLgui(gui):
       self.status = StatusBar(self.frame)
       self.status.pack(side=BOTTOM, fill=X)
       self.inform("Pyro Version " + version() + ": Ready...")
+
+   def viewRobot(self):
+      self.windowRobot = Tk()
+
+   def viewBrain(self):
+      self.windowBrain = Tk()
+
+   def redrawWindowBrain(self):
+      if self.windowBrain != 0:
+         print "---------------------------------------------"
+         for desire in self.engine.brain.desires:
+            print "Desire:", desire[4], desire[3], "IF", desire[0], "THEN", desire[1], desire[2]
+            # truth amount, controller, amount, bname, sname
+
+   def redrawWindowRobot(self):
+      if self.windowRobot != 0:
+         print dir(self.engine.robot),
 
    def editBrain(self):
       import os
@@ -165,6 +194,9 @@ class GLgui(gui):
          self.win.yspin = 0
          self.win.after(500, self.win.do_AutoSpin)
          self.genlist = 1
+      # This probably doesn't need to update this often:
+      self.redrawWindowBrain()
+      self.redrawWindowRobot()
 
 if __name__ == '__main__':
    gui = GLgui()

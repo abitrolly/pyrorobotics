@@ -194,8 +194,12 @@ class State:
                      if total[r[1]]:
                         portion[r[1]] = r[0]/total[r[1]] * r[2]
             for p in portion.keys():
-               self.behaviorEngine.desires.append([portion[p], p, \
-                                                   b.effects[p]])
+               # truth, controller, amount, beh name, state name
+               self.behaviorEngine.desires.append([portion[p], \
+                                                   p, \
+                                                   b.effects[p], \
+                                                   b.name, \
+                                                   b.state.name])
       self.update()
 
    def getRobot(self):

@@ -116,8 +116,10 @@ class Fuzzy:
    def __or__ (self, other):
       ret = Fuzzy(self.Min, self.Max)
       if (self.Value > other.Value):
+         print "TEST1"
          ret.Set(self.Value)
       else:
+         print "TEST2"
          ret.Set(other.Value)
       return ret
 
