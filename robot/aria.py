@@ -413,6 +413,11 @@ class AriaRobot(Robot):
         pose = self.dev.getPose()
         pose.setPose(int(x * 1000), int(y * 1000), int(th))
         self.dev.moveTo(pose)
+        # let's check to make sure:
+        self.x = self.dev.getX() / 1000.0
+        self.y = self.dev.getY() / 1000.0
+        self.th = self.dev.getTh()
+        self.thr = self.th * PIOVER180
 
     def disconnect(self):
         print "Disconnecting..."
