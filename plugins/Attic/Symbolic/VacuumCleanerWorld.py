@@ -36,7 +36,7 @@ class GUI(Tkinter.Toplevel):
     
     def process(self, request):
         retval = "error"
-        if 'connectionNum' in request:
+        if request.count('connectionNum'):
             connectionNum, port = request.split(":")
             retval = self.ports.index( int(port) )
         elif request == 'reset':

@@ -125,7 +125,7 @@ class GUI(Tkinter.Toplevel):
         dirs = {'up':0, 'right':1, 'down':2, 'left':3}
         pos  = {0:'up', 1:'right', 2:'down', 3:'left'}
         retval = "error"
-        if 'connectionNum' in request:
+        if request.count('connectionNum'):
             connectionNum, port = request.split(":")
             retval = self.ports.index( int(port) )
         elif request == 'location':

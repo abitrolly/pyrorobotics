@@ -18,11 +18,15 @@ class GUI(Tkinter.Toplevel):
         self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
         self.mBar.pack(fill=Tkinter.X)
 
-        menubar = self.tk_menuBar(self.makeMenu(self.mBar,
-                                                "Game",
-                                                [["Done with move", self.playDone],
-                                                 ["Reset", self.initWorld],
-                                                 ]))
+        #menubar = self.tk_menuBar(self.makeMenu(self.mBar,
+        #                                        "Game",
+        #                                        [["Done with move", self.playDone],
+        #                                         ["Reset", self.initWorld],
+        #                                         ]))
+        button = Tkinter.Button(self.mBar, text="Done!", command=self.playDone)
+        button.pack(side="left")
+        button = Tkinter.Button(self.mBar, text="Reset!", command=self.initWorld)
+        button.pack(side="left")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.click)
@@ -165,6 +169,12 @@ class GUI(Tkinter.Toplevel):
             self.canvas.create_line(i * self.width/8,   0, i * self.width/8, self.height, width = 2, fill = "black", tag = self.tag)
         for i in range(1,  8 + 1):
             self.canvas.create_line(  0, i * self.height/8, self.width, i * self.height/8, width = 2, fill = "black", tag = self.tag)
+        for x in range(8):
+            for y in range(8):
+                self.canvas.create_text(x * self.width/8 + self.width/8/2,
+                                        self.height - self.height/8/4 - (y * self.height/8),
+                                        text="(%d,%d)" % (x+1,y+1), font=("times", 12), fill = "black", tag = self.tag)
+
         # ------------------------------------------------------------------------        
         self.canvas.delete(oldtag)
         
