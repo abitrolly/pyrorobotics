@@ -88,7 +88,7 @@ class Engine(drawable.Drawable):
                                '/plugins/worlds/%s/%s' % (simulatorName, worldfile)):
          worldfile = os.getenv('PYRO') + \
                      '/plugins/worlds/%s/%s' % (simulatorName, worldfile)
-      if self.config.get("pyro", "gui") == 'TTY':
+      if self.config.get("pyro", "gui") .lower() == 'tty':
          guiflag = '-g'
       if system.file_exists(options[0]):
          os.system(file + " " + guiflag + " " + worldfile + " &")
