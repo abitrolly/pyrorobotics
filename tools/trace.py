@@ -38,7 +38,7 @@ class Trace:
             dataList += [[float(x) for x in lines.split()] + [0]]
             dataList[-1][0] = dataList[-1][0]/self.resolution
             dataList[-1][1] = dataList[-1][1]/self.resolution
-            dataList[-1][2] = dataList[-1][2]*math.pi/180.0
+            dataList[-1][2] = (dataList[-1][2] + 90.0) * math.pi/180.0
             if dataList[-1][3] > maxIndex:
                 maxIndex = dataList[-1][3] + 1
         return (dataList, maxIndex)
