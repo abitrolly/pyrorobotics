@@ -1388,7 +1388,7 @@ class Network:
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                layer.netinput = layer.bias[:]
+                layer.netinput = layer.bias.tolist() # is [:] safe here?
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
@@ -1409,7 +1409,7 @@ class Network:
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                layer.netinput = layer.bias[:]
+                layer.netinput = layer.bias.tolist() # was slice [:]; is that safe here?
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
@@ -1446,6 +1446,13 @@ class Network:
         during backprop(). Learning must be set.
         """
         dw_count, dw_sum = 0, 0.0
+        for layer in self.layers:
+            if layer.active and layer.type != 'Input':
+                layer.dbias = layer.epsilon * layer.bed + self.momentum * layer.dbias
+                layer.bias = layer.bias + layer.dbias
+                layer.bed = layer.bed * 0.0
+                dw_count += len(layer.dbias)
+                dw_sum += Numeric.add.reduce(abs(layer.dbias))
         for connection in self.connections:
             if not connection.frozen:
                 if connection.fromLayer.active and connection.toLayer.active:
@@ -1453,14 +1460,14 @@ class Network:
                     connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
                     connection.weight = connection.weight + connection.dweight
                     connection.wed = connection.wed * 0.0
-                    toLayer.dbias = toLayer.epsilon * toLayer.bed + \
-                                    self.momentum * toLayer.dbias
-                    toLayer.bias = toLayer.bias + toLayer.dbias
-                    toLayer.bed = toLayer.bed * 0.0
+                    #toLayer.dbias = toLayer.epsilon * toLayer.bed + \
+                    #                self.momentum * toLayer.dbias
+                    #toLayer.bias = toLayer.bias + toLayer.dbias
+                    #toLayer.bed = toLayer.bed * 0.0
                     dw_count += Numeric.multiply.reduce(connection.dweight.shape)
-                    dw_count += len(toLayer.dbias)
+                    #dw_count += len(toLayer.dbias)
                     dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
-                    dw_sum += Numeric.add.reduce(abs(toLayer.dbias))
+                    #dw_sum += Numeric.add.reduce(abs(layer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
