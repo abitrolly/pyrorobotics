@@ -269,11 +269,12 @@ class GLgui(gui):
             if needToUpdateState:
                try: self.engine.robot.update()
                except: pass
-            #try:
-            self.win.tkRedraw()
-            while self.win.tk.dooneevent(2): pass
-            #except:
-            #   self.done = 0
+            try:
+               self.win.tkRedraw()
+               while self.win.tk.dooneevent(2): pass
+            except:
+               print "Exiting main loop..."
+               self.done = 0
             sleep(self.update_interval)
       else:
          self.win.mainloop()
