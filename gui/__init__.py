@@ -107,7 +107,7 @@ class gui:
       elif retval == "load brain":
          self.loadBrain()
       elif retval == "load simulator":
-         print "Enter path (i.e., plugins/simulators/[Aria|Stage|Khepera])"
+         print "Enter path (i.e., plugins/simulators/AriaSimulator)"
          self.loadSim(self.engine.worldfile)
       elif retval == "stop":
          self.engine.pleaseStop()
@@ -299,15 +299,27 @@ class gui:
          self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')
          if worldfile == '':
             simulatorName = f.split('/')[-1]
-            worldfile = self.fileloaddialog("worlds","*.world",
-                                            self.lastDir.get("%s-world" % simulatorName,
-                                                             "%s/plugins/worlds/%s/" %
-                                                             (pyropath, simulatorName)))
+            if simulatorName[-6:] == "Server":
+               configDirName = simulatorName[:-6]
+               worldfile = self.fileloaddialog("configs","*.cfg",
+                                               self.lastDir.get("%s-config" % simulatorName,
+                                                                "%s/plugins/configs/%s/" %
+                                                                (pyropath, configDirName)))
+               self.lastDir["%s-config" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
+            else:
+               # ends with "Simulator"
+               simDirName = simulatorName[:-9]
+               worldfile = self.fileloaddialog("worlds","*.world",
+                                               self.lastDir.get("%s-world" % simulatorName,
+                                                                "%s/plugins/worlds/%s/" %
+                                                                (pyropath, simDirName)))
+               self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          else:
             simulatorName = worldfile
-         self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
+            self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          self.engine.worldfile = worldfile
-         os.system(f + " " + worldfile + " &")
+         pyroPID = os.getpid()
+         os.system(f + (" %d " % pyroPID) + worldfile + " &")
          
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py", self.lastDir.get("robot", ''))

@@ -1,3 +1,20 @@
 #!/bin/sh
 
-player ../configs/Player/pioneer.cfg
+# get pyro pid:
+pyropid=$1
+if [ "$2" = "" ]
+then
+    world="/usr/local/pyro/configs/pioneer.cfg"
+else
+    world="$2"
+fi
+# start player
+player $world &
+# get player pid
+ppid=$!
+# wait till pyro stops
+while ps --noheaders $pyropid; do sleep 1; done > /dev/null
+# then kill player
+kill $ppid
+
+
