@@ -851,13 +851,13 @@ class Network:
         """
         For compatiblity.
         """
-        if not self.verifyArguments(outputs):
-            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', outputs)
         self.setTargets(outputs)
     def setTargets(self, targets):
         """
         Sets the targets.
         """
+        if not self.verifyArguments(targets):
+            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', outputs)
         self.targets = targets
     def associate(self, inName, outName):
         """
@@ -2765,6 +2765,16 @@ if __name__ == '__main__':
         n.step() 
 
     if ask("Additional tests?"):
+        n = Network()
+        n.addThreeLayers(2,2,1)
+        try:
+            n.setInputs([0.0,1.0])
+        except Exception, err:
+            print err
+        try:
+            n.setInputs([[[0.0]]])
+        except Exception, err:
+            print err
         try:
             n = Network()
             n.add(Layer('1',2))
