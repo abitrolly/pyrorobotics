@@ -207,7 +207,7 @@ class Engine(drawable.Drawable):
       if self.brain is not 0:
          self.brain.pleaseStep()
          time.sleep(.5) # arbitrary time to allow it to do something
-         self.robot.act('move', 0, 0)
+         self.robot.move(0, 0)
 
    def pleaseStop(self):
       if self.brain is not 0:
