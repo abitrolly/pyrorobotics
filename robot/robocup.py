@@ -121,7 +121,12 @@ class RobocupRobot(Robot):
 
 	def keepGoing(self):
 		# only one per cycle!
-		if self.lastTranslate and self.updateNumber % 2:
+		if self.lastTranslate and self.lastRotate:
+			if self.updateNumber % 2:
+				self.translate(self.lastTranslate)
+			else:
+				self.rotate(self.lastRotate)
+		elif self.lastTranslate:
 			self.translate(self.lastTranslate)
 		elif self.lastRotate:
 			self.rotate(self.lastRotate)
