@@ -329,14 +329,16 @@ class Robot (Drawable):
                 console.log(console.INFO,"Loading service '%s'..." % service)
                 if self.service.has_key(service):
                     print "Service is already running: '%s'" % service
-                    continue
-                retval.append(item[service].startService())
+                    retval.append( self.service[service] )
+                else:
+                    retval.append(item[service].startService())
                 if item[service].getServiceState() == "started":
                     self.service[service] = item[service]
                     if service not in self.senses:
                         self.senses[service] = self.service[service]
                 else:
-                    raise AttributeError, "service '%s' not available" % service
+                    print "service '%s' not available" % service
+                    retval.append( None )
             return retval
         elif type(item) == type([0,]) or \
              type(item) == type((0,)):
@@ -348,15 +350,15 @@ class Robot (Drawable):
         elif self.supportsService(item): # built-in name
             if self.service.has_key(item):
                 print "Service is already running: '%s'" % item
-                return
+                return [self.service[item]]
             console.log(console.INFO,"Loading service '%s'..." % item)
             retval = self.supports[item].startService()
             if self.supports[item].getServiceState() == "started":
                 self.service[item] = self.supports[item]
                 self.senses[item] = self.service[item]
             else:
-                raise AttributeError, "service '%s' not available" % item
-            return retval
+                print "service '%s' not available" % item
+            return [retval]
         else: # from a file
             file = item
             if file[-3:] != '.py':
@@ -369,7 +371,8 @@ class Robot (Drawable):
                                                    '/plugins/services/'+ \
                                                    file, self))
             else:
-                raise AttributeError, 'Service not found: ' + file
+                print 'Service not found: ' + file
+                return []
 
     def stopService(self, item):
         self.getService(self, item).stopService()
