@@ -182,7 +182,7 @@ class SerialSimulator:
         return self.last_msg #+ ',0,0,0,0,0,0,0,0'
     
 class KheperaRobot(Robot):
-    def __init__(self, port = "/dev/ttyS1", simulator = 0): # 0 makes it real
+    def __init__(self, port = None, simulator = 0): # 0 makes it real
         Robot.__init__(self) # robot constructor
         if simulator == 1:
             self.sc = SerialSimulator()
@@ -193,6 +193,8 @@ class KheperaRobot(Robot):
                 port = config.get('khepera', 'port')
             except:
                 pass
+            if port == None:
+                port = "/dev/ttyS1"
             print "Khepera opening port", port, "..."
             self.sc = SerialConnection(port, termios.B38400)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
