@@ -1,6 +1,22 @@
 import struct
 from pyro.system import file_exists
 
+# Standard convolution matrices:
+
+laplace  = ([-1, -1, -1, -1,  8, -1, -1, -1, -1], 1)
+hipass   = ([-1, -1, -1, -1,  9, -1, -1, -1, -1], 1)
+topedge  = ([ 1,  1,  1,  1, -2,  1, -1, -1, -1], 1)
+sharpen  = ([-1, -1, -1, -1, 16, -1, -1, -1, -1], 8)
+sharpen2 = ([-1, -2, -1, -1, 19, -2, -1, -2, -1], 7)
+edge     = ([ 0, -1,  0, -1,  5, -1,  0, -1,  0], 1)
+emboss   = ([ 1,  0,  1,  0,  0,  0,  1,  0, -2], 1)
+soften   = ([ 2,  2,  2,  2,  0,  2,  2,  2,  2], 16)
+blur     = ([ 3,  3,  3,  3,  8,  3,  3,  3,  3], 32)
+softest  = ([ 0,  1,  0,  1,  2,  1,  0,  1,  0], 6)
+fill     = ([ 1,  1,  1,  1,  1,  1,  1,  1,  1], 5)
+smooth   = ([ 1,  2,  1,  2,  4,  2,  1,  2,  1], 16)
+bw       = ([ 0,  0,  0,  0,  1,  0,  0,  0,  0], 1)
+
 class PyroImage:
    """
    A Basic Image class. 
@@ -192,6 +208,29 @@ class PyroImage:
             histogram.incr(br, gr)
       return histogram
    
+   def convolve(self, convmask, bit = 0, threshold = 0):
+      (mask, z) = convmask
+      data = PyroImage(self.width, self.height, self.depth)
+      for x in range(1, self.width-2):
+         for y in range(1, self.height-2):
+            for c in range(self.depth):
+               val = (self.get(x - 1, y - 1, c) * mask[0] + \
+                      self.get(x    , y - 1, c) * mask[1] + \
+                      self.get(x + 1, y - 1, c) * mask[2] + \
+                      self.get(x - 1, y    , c) * mask[3] + \
+                      self.get(x    , y    , c) * mask[4] + \
+                      self.get(x + 1, y    , c) * mask[5] + \
+                      self.get(x - 1, y + 1, c) * mask[6] + \
+                      self.get(x    , y + 1, c) * mask[7] + \
+                      self.get(x + 1, y + 1, c) * mask[8] ) / float(z)
+               val = min(max(val, 0), 1)
+               if val > threshold:
+                  if bit:
+                     data.set(x,y,1,c)
+                  else:
+                     data.set(x,y,val,c)
+      return data
+
 class Histogram(PyroImage):
    """
    Histogram class. Based on Image, but has methods for display.
@@ -331,19 +370,6 @@ class Bitmap(PyroImage):
                      count += 1
       blob.equivList = self.equivList[:]
       return blob
-
-   def convolve(self, maskVector):
-      mask = Bitmap(3, 3)
-      mask.reset(maskVector)
-      print self.width
-      print self.height
-      for w in range(self.width-2):
-         for h in range(self.height-2):
-            if self.get(w, h)== mask.get(0,0) and self.get(w, h+1)==mask.get(0,1)\
-               and self.get(w, h+2)==mask.get(0,2) and self.get(w+1,h)==mask.get(1,0)\
-               and self.get(w+2,h)==mask.get(2,0) and self.get(w+2,h+1)==mask.get(2,1)\
-               and self.get(w+1,h+2)==mask.get(1,2) and self.get(w+2,h+2)==mask.get(2,2):
-               self.set(w+1,h+1,mask.get(1, 1))
 
 """
 assume that we are starting our x,y coordinates from the upper-left,
@@ -564,14 +590,15 @@ if __name__ == '__main__':
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                  0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+   """
    print "Do you want to run test 1: create bitmap, blobify, and display results? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
@@ -716,13 +743,16 @@ if __name__ == '__main__':
       print "skipping..."
    print "Do you want to run test 11: find edges in bitmap ",
    if sys.stdin.readline().lower()[0] == 'y':
+   """
+   if 1:
       print "Running..."
-      bitmap.display()
-      mask = bitmap.convolve([1,1,1,
-                              1,1,1,
-                              1,1,1])
+      image = PyroImage(0,0)
+      image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
+      image.grayScale()
+      mask = image.convolve(edge, 1, .5)
+      #mask = mask.convolve(fill, 1)
       print "Here is your final image"
-      bitmap.display()
+      mask.saveToFile('convolve.ppm')
    else:
       print "skipping..."
 
