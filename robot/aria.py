@@ -1,7 +1,8 @@
 # Defines AriaRobot, a subclass of robot
 
 from pyro.robot import *
-from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection
+from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
+     ArRobotParams
 from math import pi
 from os import getuid
 
@@ -27,6 +28,7 @@ class AriaRobot(Robot):
                           'back-left' : (12, 13, 14), 
                           'back' : (11, 12),
                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        self.z = 0
         self.senses = {}
         simulated = self.simulated
 	# robot senses (all are functions):
@@ -35,59 +37,102 @@ class AriaRobot(Robot):
         self.senses['robot']['stall'] = self.getStallValue
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
-        self.senses['robot']['z'] = lambda dev: 0
+        self.senses['robot']['z'] = self.getZ
         self.senses['robot']['th'] = self.getTh # in degrees
-        #self.senses['robot']['thr'] = self.getThr # in radians
+        self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda dev: dev.getRobotType()
         self.senses['robot']['units'] = lambda dev: 'METERS'
-
-	self.senses['robot']['name'] = lambda dev, x = name: name
-
+        if name != 'Aria':
+            self.senses['robot']['name'] = lambda dev, x = name: name
+        else:
+            self.senses['robot']['name'] = lambda dev: dev.getRobotName()
 	self.senses['sonar'] = {}
-	self.senses['sonar']['count'] = lambda dev: dev.getSonarPacCount()
+	self.senses['sonar']['count'] = lambda dev: dev.getNumSonar()
 	self.senses['sonar']['type'] = lambda dev: 'range'
 
 	# location of sensors' hits:
-	self.senses['sonar']['x'] = 0 # self.getSonarXCoord
-	self.senses['sonar']['y'] = 0 # self.getSonarYCoord
-	self.senses['sonar']['z'] = lambda dev, pos: 0.03
-	self.senses['sonar']['value'] = 0 # self.getSonarRange
-        self.senses['sonar']['all'] = 0 # self.getSonarRangeAll
-        self.senses['sonar']['maxvalue'] = 0 # self.getSonarMaxRange
-	self.senses['sonar']['flag'] = 0 # self.getSonarFlag
+        self.senses['sonar']['ox'] = 0 # self.light_ox
+        self.senses['sonar']['oy'] = lambda dev, pos: 0 # self.light_oy
+	self.senses['sonar']['oz'] = lambda dev, pos: 0.03 # meters
+        self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
+        self.senses['sonar']['maxvalue'] = lambda dev: 0 # self.getSonarMaxRange
+        self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
         self.senses['sonar']['units'] = lambda dev: "ROBOTS"
 
 	# location of origin of sensors:
-        self.senses['sonar']['ox'] = 0 # self.light_ox
-	self.senses['sonar']['oy'] = 0 # self.light_oy
-	self.senses['sonar']['oz'] = lambda dev, pos: 0.03 # meters
-	self.senses['sonar']['th'] = 0 # self.light_th
+        self.senses['sonar']['x'] = lambda dev, pos: self.params.getSonarX(pos)
+        self.senses['sonar']['y'] = lambda dev, pos: self.params.getSonarY(pos)
+	self.senses['sonar']['z'] = lambda dev, pos: 0.03
+        self.senses['sonar']['th'] = lambda dev, pos: 0 # self.light_th
         # in radians:
         self.senses['sonar']['arc'] = lambda dev, pos, \
                                       x = (15 * pi / 180) : x
+
+        # bumper sensors
+	self.senses['bumper'] = {}
+        self.senses['bumper']['type'] = lambda dev: 'tactile'
+        self.senses['bumper']['count'] = lambda dev: 0
+        self.senses['bumper']['x'] = lambda dev, pos: 0
+        self.senses['bumper']['y'] = lambda dev, pos: 0
+        self.senses['bumper']['z'] = lambda dev, pos: 0
+        self.senses['bumper']['th'] = lambda dev, pos: 0 
+        self.senses['bumper']['value'] = lambda dev, pos: 0
+
+        # gripper sensors
+	self.senses['gripper'] = {}
+        self.senses['gripper']['type'] = lambda dev: 'special'
+        self.senses['gripper']['frontbeam'] = lambda dev, pos: 0
+        self.senses['gripper']['backbeam'] = lambda dev, pos: 0
+        self.senses['gripper']['status'] = lambda dev, pos: 0
+
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
         self.senses['self'] = self.senses['robot']
 
         console.log(console.INFO,'aria sense drivers loaded')
 
-        self.controls['move'] = self.move
-        self.controls['translate'] = self.translate
-        self.controls['rotate'] = self.rotate
-        self.controls['update'] = self.update 
+        self.controls['move'] = self.moveDev
+        self.controls['translate'] = self.translateDev
+        self.controls['rotate'] = self.rotateDev
+        self.controls['update'] = self.update
         self.controls['localize'] = self.localize
+        self.controls['gripper'] = self.setGripper
 
         console.log(console.INFO,'aria control drivers loaded')
         self.SanityCheck()
-
+        self.dev.runAsync(1)
 	self.update() 
         self.inform("Done loading Aria robot.")
 
-    def move(self, dev, translate_velocity, rotate_velocity):
-        dev.setVel((int)(translate_velocity * 1100.0))
-        dev.setVel2((int)(rotate_velocity * 75.0))
+    def setGripper(self, dev, option):
+        pass
 
-    def getStallValue(self, dev):
+    def translateDev(self, dev, translate_velocity):
+        dev.setVel((int)(translate_velocity * 1100.0))
+
+    def rotateDev(self, dev, rotate_velocity):
+        print "Rotating:", rotate_velocity
+        dev.setRotVel((int)(rotate_velocity * 75.0))
+
+    def moveDev(self, dev, translate_velocity, rotate_velocity):
+        print "movDev: Moving:", translate_velocity, rotate_velocity
+        dev.setVel((int)(translate_velocity * 1100.0))
+        dev.setRotVel((int)(rotate_velocity * 75.0))
+
+    def translate(self, translate_velocity):
+        print "translate: Translating:", translate_velocity
+        self.dev.setVel((int)(translate_velocity * 1100.0))
+
+    def rotate(self, rotate_velocity):
+        print "rotate: Rotating:", rotate_velocity
+        self.dev.setRotVel((int)(rotate_velocity * 75.0))
+
+    def move(self, translate_velocity, rotate_velocity):
+        print "move: Moving:", translate_velocity, rotate_velocity
+        self.dev.setVel((int)(translate_velocity * 1100.0))
+        self.dev.setRotVel((int)(rotate_velocity * 75.0))
+
+    def getStallValue(dev):
         return dev.getStallValue()
 
     def getX(self, dev):
@@ -105,13 +150,10 @@ class AriaRobot(Robot):
     def getThr(self, dev):
         return self.thr
 
-    def update(self, dev = None):
-        # update the state reflector
-        if dev == None:
-            dev = self.dev
-        self.x = dev.getX() / 1000.0
-        self.y = dev.getY() / 1000.0
-        self.th = dev.getTh()
+    def update(self):
+        self.x = self.dev.getX() / 1000.0
+        self.y = self.dev.getY() / 1000.0
+        self.th = self.dev.getTh()
         self.thr = self.th * PIOVER180
     
     def _draw(self, options, renderer): # overloaded from robot
@@ -211,36 +253,24 @@ class AriaRobot(Robot):
             self.conn = ArSerialConnection()
             self.conn.setPort()
             self.dev.setDeviceConnection(self.conn)
-            raise "FailedConnection"
+            if (self.dev.blockingConnect() != 1):
+                raise "FailedConnection"
         self.simulated = 1 # how do you tell?
+        self.params = self.dev.getRobotParams()
+        # now, can say self.params.getSonarX(4)
         self.localize(0.0, 0.0, 0.0)
 
-    def localize(self, x = 0.0, y = 0.0, z = 0.0, th = 0.0):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.th = th
-        self.thr = th * PIOVER180
-
-    def __del__(self):
-        try:
-            self.dev.disconnect()
-        except:
-            pass
+    def localize(self, x = 0.0, y = 0.0, th = 0.0):
+        self.diffX = x - self.dev.getX()
+        self.diffY = y - self.dev.getY()
+        self.diffTh = th - self.dev.getTh()
 
     def disconnect(self):
         print "Disconnecting..."
         self.dev.disconnect()
 
-    def localize(self, x = 0.0, y = 0.0, thr = 0.0):
-        #self.x = x
-        #self.y = y
-        #self.thr = thr
-        #self.th = self.thr * (180.0 / pi)
-        pass
-
-    def getSonarRange(self, dev, pos):
-        return self.rawToUnits(dev, dev.getSonarRange(pos), 'sonar')
+    def getSonarRangeDev(self, dev, pos):
+        return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
 
     def getSonarMaxRange(self, dev):
         return self.rawToUnits(dev, 2.99, 'sonar')
@@ -264,18 +294,10 @@ class AriaRobot(Robot):
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
-    def getSonarAll(self, dev):
-        vector = [0] * dev.getSonarPacCount()
-        for i in range(dev.getSonarPacCount()):
-            vector[i] = dev.getSonarRange(i)
-        return vector
-
-
     
 if __name__ == '__main__':
-    myrobot = AriaRobot('Test')
+    myrobot = AriaRobot()
     myrobot.update()
-    #cm = new_CameraMover()
-    #CameraMover_Init(cm)
-    #CameraMover_Pan(cm, 45)
-    #x.disconnect()
+    #myrobot.translate(.2)
+    #myrobot.translate(.0)
+    #myrobot.disconnect()
