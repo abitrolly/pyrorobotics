@@ -8,12 +8,6 @@ class Behavior:
         self.rotate = 0
         self.flag = 0
 
-    def setRobot(self, robot):
-        self.robot = robot
-
-    def getRobot(self):
-        return self.robot        
-
     def move(self, translate, rotate):
         self.translate = translate
         self.rotate = rotate
@@ -23,18 +17,15 @@ class SubsumptionBrain(Brain):
     def setup(self):
         self.behaviors = []
 
-    def getRobot(self):
-        return self.robot
-
     def add(self, behavior):
-        behavior.setRobot( self.robot )
+        behavior.robot = self.robot
         self.behaviors.append( behavior )
 
     def step(self):
         b = self.updateAll()
         print "%s is in control" % self.behaviors[b].__class__.__name__
-        self.getRobot().move(self.behaviors[b].translate,
-                             self.behaviors[b].rotate)
+        self.robot.move(self.behaviors[b].translate,
+                        self.behaviors[b].rotate)
         time.sleep(1)
 
     def updateAll(self):
@@ -57,7 +48,7 @@ class Wander(Behavior):
 
 class Avoid(Behavior):
     def update(self):
-        if self.getRobot().get('range', 'value', 'front-all', 'close')[0] < 1:
+        if min(self.robot.get('/robot/range/front-all/value')) < 1:
             self.move( -.2, 0)
 
 def INIT(engine):

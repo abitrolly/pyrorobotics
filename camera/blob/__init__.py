@@ -5,13 +5,23 @@ import time
 class BlobCamera(Camera):
    """
    """
-   def __init__(self, robot, camera = "camera0", depth = 3, interval = 1.0,
+   def __init__(self, robot, camera = None, depth = 3, interval = 1.0,
                 visionSystem = None):
       """
       """
       self.robot = robot
-      self.deviceName = self.robot.startDevice('blob')
-      self.blobData = self.robot.getDeviceData(self.blobName)
+      # if no camera given, we'll try a blobfinder
+      if camera == None:
+         # is there a default one?
+         try:
+            self.deviceName = self.robot.get("/devices/blobfinder0/name")
+         except AttributeError:
+            # no,then we'll try to start one:
+            self.deviceName = self.robot.startDevice('blobfinder')
+      else:
+         # else, you better have supplied a name, like "blobfinder0"
+         self.deviceName = camera
+      self.blobData = self.robot.getDeviceData(self.deviceName)
       if len(self.blobData[0]) == 2: 
          self.width, self.height = self.blobData[0]
       else:
@@ -34,12 +44,15 @@ class BlobCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Blob Camera View")
+      self.devData["requires"] = ["blobfinder"]
+      self.devData["subtype"] = "blob"
+      self.devData["source"] = self.deviceName
       self.data = CBuffer(self.cbuf)
       
    def _update(self):
       currentTime = time.time()
       if currentTime - self.lastUpdate > self.interval:
-         blobdata = self.robot.getDeviceData('blob')[1]
+         blobdata = self.robot.getDeviceData(self.deviceName)[1]
          self.cameraDevice.updateMMap(blobdata)
          self.processAll()
          self.lastUpdate = currentTime

@@ -150,16 +150,21 @@ class gui:
          print ">>> ",
          print retval
          try:
-            exec exp1 in self.environment
+            _retval = eval(exp2, self.environment)
          except:
             try:
-               exec exp2 in self.environment
+               exec exp1 in self.environment
             except:
-               print self.formatExceptionInfo()
+               try:
+                  exec exp2 in self.environment
+               except:
+                  print self.formatExceptionInfo()
+               else:
+                  print "Ok"
             else:
                print "Ok"
          else:
-            print self.environment["_retval"]
+            print _retval
       return 0
 
    def formatExceptionInfo(self, maxTBlevel=1):
@@ -311,6 +316,9 @@ class gui:
          self.freeBrain()
          self.freeRobot()
          self.engine.loadRobot(f)
+         #if self.engine.robot:
+         #   for device in self.engine.robot.supports:
+         #      self.menuButtons["Built-in Devices"].add_command(label=device,command=lambda:self.startDevice(device))
 
    def freeRobot(self):
       self.engine.pleaseStop()

@@ -92,15 +92,24 @@ class Camera(PyroImage, Device):
       self.devData["width"] = self.width
       self.devData["depth"] = self.depth
       self.devData["filters"] = self.callbackTextList
+      # Required:
+      self.startDevice()
 
    def preGet(self, keyword):
       #print "preGet", keyword
       if keyword == "grayscale":
          self.devData["grayscale"] = self.getGrayScale()
       elif keyword == "image":
-         self.devData["image"] = self.data[:]
+         self.devData["image"] = self.data
       else:
          self.devData["filters"] = self.callbackTextList
+
+   def postSet(self, keyword):
+      if keyword == "visible":
+         if self.devData["visible"]:
+            self.makeWindow()
+         else:
+            self.hideWindow()
 
    def setFilterList(self, filterList):
       """
@@ -422,7 +431,7 @@ class Camera(PyroImage, Device):
       return "Ok"
 
    def getDeviceData(self):
-      return self.data[:]
+      return self.data
 
    def getDeviceState(self):
       return self.devData["state"]

@@ -59,7 +59,8 @@ class TKgui(Tkinter.Toplevel, gui):
                        ['Robot...',self.loadRobot],
                        ['Brain...',self.loadBrain],
                        None,
-                       ['Device...',self.loadDevice],
+                       ['Devices...',self.loadDevice],
+                       #['Built-in Devices', None],
                        ]),
               ('Robot',[['Connect robot', self.connectRobot],
                         ['Disconnect robot', self.disconnectRobot],
@@ -99,6 +100,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.menuButtons = {}
       for entry in menu:
          self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
+
+      #self.menuButtons["Built-in Devices"] = Tkinter.Menubutton(self.mBar,text="Test",underline=0)
 
       self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
       self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)

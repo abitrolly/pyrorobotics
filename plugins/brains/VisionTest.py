@@ -11,10 +11,8 @@ def process(camera):
 
 class VisionBrain(Brain):
    def setup(self):
-      if "FakeCamera" not in self.robot.getServices():
-         self.camera = self.getRobot().startService("TutorialCamera")[0]
-      else:
-         self.camera = self.getRobot().getService("FakeCamera")
+      cameraID = self.robot.startDevice("TutorialCamera")
+      self.camera = self.get("devices/%s/object" % cameraID)
       self.camera.makeWindow()
       self.camera.addFilter( process )
       

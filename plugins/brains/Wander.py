@@ -16,11 +16,8 @@ class SimpleBrain(Brain):
    def step(self):
       #self.robot.move(0, -.2) # negative is to the right!
       print "IR : ----------------------------"
-      print "Min distance:", self.robot.get('range', 'value', 'all', 'min')[1]
-      print "Max distance:", self.robot.get('range', 'value', 'all', 'max')[1]
-
-      print "Min angle:", self.robot.get('range', 'value', 'all', 'close')[1]
-      print "Max angle:", self.robot.get('range', 'value', 'all', 'far')[1]
+      print "Min distance:", min(self.get('/robot/range/all/value'))
+      print "Max distance:", max(self.get('/robot/range/all/value'))
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui.
