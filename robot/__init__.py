@@ -26,6 +26,7 @@ from math import pi
 # CM     - centimeters
 # MM     - millimeters
 # SCALED - scaled [-1,1]
+# RAW    - right from the sensor
 
 class Robot (Drawable):
     """
