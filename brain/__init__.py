@@ -19,6 +19,7 @@ class Brain(threading.Thread):
         self.needToStop = 1
         self.needToQuit = 0
         self.needToStep = 0
+        self.pauseTime = 0.1 # time to sleep() in main loop. 0.1 means brain step() runs at max 10/sec
         if self.robot != 0:
             self.robot.localize()
         # user setup:
@@ -77,7 +78,7 @@ class Brain(threading.Thread):
             self.robot.update()
             self.step()
             self.couldBeMoving = 1
-            time.sleep(.1)
+            time.sleep(self.pauseTime)
             self.lastRun = time.time() # seconds
             #print "release()"
             self.condition.release()
@@ -86,55 +87,26 @@ class Brain(threading.Thread):
         #print "End of run!"
             
     def pleaseQuit(self):
-        #count = 0
-        #while self.condition.acquire(0) == 0:
-        #    print "q",
-        #    count += 1
-        #    if count > 20:
-        #        return
-        #self.condition.acquire()
         self.needToQuit = 1
-        #self.condition.notify()
-        #self.condition.release()
         
     def pleaseStep(self):
         count = 0
         while self.isAlive() and self.condition.acquire(0) == 0:
-            #print "t",
             count += 1
             if count > 20:
                 return
-        #self.condition.acquire()
         self.needToStep += 1 #protected variable
         self.condition.notify()
         self.condition.release()
         self.pleaseRun()
         
     def pleaseStop(self):
-        #count = 0
-        #while self.condition.acquire(0) == 0:
-        #    print "s",
-        #    count += 1
-        #    if count > 20:
-        #        return
-        #self.condition.acquire()
         self.needToStop = 1
-        #self.condition.notify()
-        #self.condition.release()
         
     def pleaseRun(self, callback = 0):
         if not self.isAlive():
             pyro.gui.console.log(pyro.gui.console.WARNING,"Brain thread is not alive but request to run was made.");
-        #count = 0
-        #while self.condition.acquire(0) == 0:
-        #    print "R",
-        #    count += 1
-        #    if count > 20:
-        #        return
-        #self.condition.acquire()
         self.needToStop = 0
-        #self.condition.notify()
-        #self.condition.release()
         if callback != 0:
             callback()
 		
