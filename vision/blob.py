@@ -127,11 +127,11 @@ class PyroImage:
          self.data[v] = vector[v]
 
    def histogram(self):
-      for a in range(9):
-         for b in range(9):
-            ratio[a][b] = 0
-            print ratio[a][b]
-         print ''
+
+      ratio = [0] * 10
+      for r in range(10):
+         ratio[r] = [0] * 10
+      ratio.display()
 
       for h in range(self.height):
          for w in range(self.width):
@@ -146,8 +146,7 @@ class PyroImage:
             rg = red/green
             bg = blue/green
 
-            
-            
+                        
 class Camera(PyroImage):
    """
    A Fake camera class. Simulates live vision. Call update() to get image.
