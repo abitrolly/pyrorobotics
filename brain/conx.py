@@ -7,7 +7,7 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.2"
+version = "6.3"
 
 def sum(a):
     mysum = 0
@@ -35,14 +35,13 @@ def displayArray(name, a, width = 0):
     """
     Prints an array (any sequence of floats, really) to the screen.
     """
-    print name + ": "
+    print name + ": ",
     cnt = 0
     for i in a:
         print "%4.2f" % i,
         if width > 0 and (cnt + 1) % width == 0:
             print ''
         cnt += 1
-    print ""
 
 def writeArray(fp, a):
     for i in a:
@@ -65,6 +64,7 @@ class Layer:
         self._logPtr = 0
         self.bepsilon = 0.1
         self.active = 1
+        self.maxRandom = 0.1
         self.initialize()
     def initialize(self):
         self.randomize()
@@ -78,7 +78,7 @@ class Layer:
     def changeSize(self, newsize):
         # Overwrites current data!
         minSize = min(self.size, newsize)
-        bias = randomArray(newsize, 0.1)
+        bias = randomArray(newsize, self.maxRandom)
         for i in range(minSize):
             bias[i] = self.bias[i]
         self.bias = bias
@@ -127,17 +127,17 @@ class Layer:
     def setDisplayWidth(self, val):
         self.displayWidth = val
     def randomize(self):
-        self.bias = randomArray(self.size, 0.1)
+        self.bias = randomArray(self.size, self.maxRandom)
     def toString(self):
         return "Layer " + self.name + ": type " + self.type + " size " + str(self.size) + "\n"
     def display(self):
         print "============================="
         print "Display Layer '" + self.name + "' (type " + self.type + "):"
         if (self.type == 'Output'):
-            displayArray('Target', self.target, self.displayWidth)
+            displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
         if (self.type != 'Input' and self.verbosity > 0):
-            displayArray('Error', self.error, self.displayWidth)
+            displayArray('Error     ', self.error, self.displayWidth)
         if (self.verbosity > 4 and self.type != 'Input'):
             print "    ", ; displayArray('bias', self.bias)
             print "    ", ; displayArray('dbias', self.dbias)
@@ -205,7 +205,8 @@ class Connection:
     def changeSize(self, toLayerSize, fromLayerSize):
         dweight = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
         wed = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
-        weight = randomArray((toLayerSize, fromLayerSize), 0.1)
+        weight = randomArray((toLayerSize, fromLayerSize),
+                             self.toLayer.maxRandom)
         # copy from old to new, considering one is smaller
         minToLayerSize = min( toLayerSize, self.toLayer.size)
         minFromLayerSize = min( fromLayerSize, self.fromLayer.size)
@@ -261,7 +262,8 @@ class Connection:
             return self.epsilon
     def randomize(self):
         self.weight = randomArray((self.toLayer.size, \
-                                   self.fromLayer.size), 0.1)
+                                   self.fromLayer.size),
+                                  self.toLayer.maxRandom)
 
 # A neural Network
 
@@ -393,6 +395,9 @@ class Network:
                 pos = int(random.random() * len(self.input))
             flag[pos] = 1
             self.loadOrder[pos] = i
+    def setMaxRandom(self, value):
+        for l in range(self.layerCount):
+            self.layer[l].maxRandom = value
     def setEpsilon(self, value):
         self.epsilon = value
         for l in range(self.layerCount):
