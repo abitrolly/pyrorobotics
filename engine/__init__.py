@@ -77,7 +77,6 @@ class Engine(drawable.Drawable):
          #reload(self.brainfile)
 
    def loadSimulator(self, file, worldfile):
-      console.log(console.INFO,'Loading ' + file)
       import os, string
       options = string.split(file)
       guiflag = ''
@@ -98,7 +97,6 @@ class Engine(drawable.Drawable):
                    " " + guiflag + " " + worldfile + " &")
       else:
          raise 'Simulator file not found: ' + file
-      console.log(console.INFO,"Loaded '%s' with world file '%s'" %(file, worldfile))
       print "Loading.",
       sys.stdout.flush()
       time.sleep(1)
@@ -107,7 +105,6 @@ class Engine(drawable.Drawable):
 
    def loadView(self,file):
       import os
-      console.log(console.INFO,'Loading '+file)
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
@@ -119,12 +116,9 @@ class Engine(drawable.Drawable):
                                           self.robot, 0, self.brain))
       else:
          raise 'View file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
-      #self.append(self.robot)
 
    def loadRobot(self,file):
       import os
-      console.log(console.INFO,'Loading '+file)
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
@@ -137,7 +131,6 @@ class Engine(drawable.Drawable):
          self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
       else:
          raise 'Robot file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
 
    def setRobot(self,robot):
@@ -147,27 +140,10 @@ class Engine(drawable.Drawable):
    def setBrain(self,brain):
       self.brain = brain
 
-   def loadMap(self,file):
-      import os
-      console.log(console.INFO,'Loading '+file)
-      if file[-3:] != '.py':
-         file = file + '.py'
-      if system.file_exists(file):
-         self.robot.map.append( system.loadINIT(file, self) )
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/maps/' + file): 
-         self.robot.map.append( system.loadINIT(os.getenv('PYRO') + \
-                                                '/plugins/maps/' + \
-                                                file, self))
-      else:
-         raise 'Map file not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
-
    def loadBrain(self,file):
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
       import os
-      console.log(console.INFO,'Loading '+file)
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
@@ -180,7 +156,6 @@ class Engine(drawable.Drawable):
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
       else:
          raise 'File not found: ' + file
-      console.log(console.INFO,'Loaded ' + file)
 
    def freeBrain(self):
       if self.brain != 0:
