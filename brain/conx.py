@@ -589,6 +589,7 @@ class Network:
         self.resetLimit = 5
         self.batch = 0
         self.epoch = 0
+        self.count = 0 # number of times propagate is called
         self.verbosity = verbosity
         self.stopPercent = 1.0
         self.sigmoid_prime_offset = 0.1
@@ -1354,6 +1355,7 @@ class Network:
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
+        self.count += 1 # counts number of times propagate() is called
     def prop_process(self, connect):
         """
         Calculates net input for each node.
@@ -1971,7 +1973,7 @@ class SRN(Network):
         else:
             self.contextLayers[hiddenLayerName] = layer
             layer.kind = 'Context'
-            self.clearContext() # initializes context
+
     # new methods for sweep, step, propagate
     def copyHiddenToContext(self):
         """
@@ -1990,6 +1992,13 @@ class SRN(Network):
         for context in self.contextLayers.values():
             context.resetFlags() # hidden activations have already been copied in
             context.setActivations(value)
+    def propagate(self):
+        """
+        Clears context layer the first time.
+        """
+        if self.count == 0:
+            self.clearContext()
+        Network.propagate(self)
     def backprop(self):
         """
         Extends backprop() from Network to automatically deal with context layers.
