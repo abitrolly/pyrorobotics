@@ -32,7 +32,6 @@ class Robot (Drawable):
     """
     this be the one.
     """
-    
     def __init__(self, name = None, type = None):
         """
         if you extend Robot please call this function!
@@ -256,143 +255,6 @@ class Robot (Drawable):
                         self.senses['robot']['x'](self.dev), \
                         self.senses['robot']['y'](self.dev))
 
-    def getMin(self, sensor = 'all', type = 'range', srange = 'all'):
-        if sensor != 'all':
-            type = self.senses[sensor]['type'](self.dev)
-        mindist = 10000
-        minangle = 0
-        if sensor == 'all':
-            for sensor in self.senses.keys():
-                if self.senses[sensor]['type'](self.dev) == type:
-                    if srange == 'all':
-                        srange = range(self.senses[sensor]['count'](self.dev))
-                    for i in srange:
-                        dist = self.senses[sensor]['value'](self.dev, i)
-                        if dist < mindist:
-                            mindist = dist
-                            minangle = self.senses[sensor]['th'](self.dev, i)
-        else: # specific sensor
-            if self.senses[sensor]['type'](self.dev) == type:
-                if srange == 'all':
-                    srange = range(self.senses[sensor]['count'](self.dev))
-                for i in srange:
-                    dist = self.senses[sensor]['value'](self.dev, i)
-                    if dist < mindist:
-                        mindist = dist
-                        minangle = self.senses[sensor]['th'](self.dev, i)
-            else:
-                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
-        return Vector(mindist, minangle)
-    
-    def getMax(self, sensor = 'all', type = 'range', srange = 'all'):
-        if sensor != 'all':
-            type = self.senses[sensor]['type'](self.dev)
-        maxdist = -10000
-        maxangle = 0
-        if sensor == 'all':
-            for sensor in self.senses.keys():
-                if self.senses[sensor]['type'](self.dev) == type:
-                    if srange == 'all':
-                        srange = range(self.senses[sensor]['count'](self.dev))
-                    for i in srange:
-                        dist = self.senses[sensor]['value'](self.dev, i)
-                        if dist > maxdist:
-                            maxdist = dist
-                            maxangle = self.senses[sensor]['th'](self.dev, i)
-        else: # specific sensor
-            if self.senses[sensor]['type'](self.dev) == type:
-                if srange == 'all':
-                    srange = range(self.senses[sensor]['count'](self.dev))
-                for i in srange:
-                    dist = self.senses[sensor]['value'](self.dev, i)
-                    if dist > maxdist:
-                        maxdist = dist
-                        maxangle = self.senses[sensor]['th'](self.dev, i)
-            else:
-                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
-        return Vector(maxdist, maxangle)
-
-    def getSensorGroup(self, func = 'avg', name = 'front'):
-        if not (name in self.sensorGroups.keys()):
-            print "WARN: name not in sensor groups!"
-            return None
-        if func == 'avg':
-            sum = 0.0 
-            for sensor in self.sensorGroups[name]:
-                pos, type = sensor
-                sum += self.get(type, 'value', pos)
-            if sum == 0.0:
-                return None
-            return sum / len(self.sensorGroups[name])
-        elif func == 'sum':
-            sum = 0.0 
-            for sensor in self.sensorGroups[name]: 
-                pos, type = sensor
-                sum += self.get(type, 'value', pos)
-            if sum == 0.0:
-                return None
-            return sum
-        elif func == 'min':
-            min = 100000
-            minpos = -1
-            minangle = -1
-            for sensor in self.sensorGroups[name]:
-                pos, type = sensor
-                if self.get(type, 'value', pos) < min:
-                    min = self.get(type, 'value', pos)
-                    minpos = pos
-                    minangle = self.senses[type]['th'](self.dev, minpos)
-            if minpos == -1:
-                print "WARN: no minimum found!"
-                return None
-            return (minpos, min, minangle)
-        elif func == 'max':
-            max = -100000
-            maxpos = -1
-            maxangle = -1
-            for sensor in self.sensorGroups[name]:
-                pos, type = sensor
-                if self.get(type, 'value', pos) > max:
-                    max = self.get(type, 'value', pos)
-                    maxpos = pos
-                    maxangle = self.senses[type]['th'](self.dev, maxpos)
-            if maxpos == -1:
-                print "WARN: no maximum found!"
-                return None
-            return (maxpos, max, maxangle)
-        elif func == 'count':
-            return len(self.sensorGroups[name])
-        else:
-            raise 'InvalidType', 'Function is unknown type'
-
-    def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
-        if sensor != 'all':
-            type = self.senses[sensor]['type'](self.dev)
-        if area == 'front':
-            area = 0 # angle of highest weighting
-        maxdist = -10000
-        maxangle = 0
-        if sensor == 'all':
-            for sensor in self.senses.keys():
-                if self.senses[sensor]['type'](self.dev) == type:
-                    # compute which are in srange
-                    for i in srange:
-                        dist = self.senses[sensor]['value'](self.dev, i)
-                        if dist > maxdist:
-                            maxdist = dist
-                            maxangle = self.senses[sensor]['th'](self.dev, i)
-        else: # specific sensor
-            if self.senses[sensor]['type'](self.dev) == type:
-                # compute which are in srange
-                for i in srange:
-                    dist = self.senses[sensor]['value'](self.dev, i)
-                    if dist > maxdist:
-                        maxdist = dist
-                        maxangle = self.senses[sensor]['th'](self.dev, i)
-            else:
-                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
-        return Vector(maxdist, maxangle)
-
     def getObstacle(self, angle):
         # angle
         pass
@@ -428,8 +290,6 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'sense has NO robot')
 	if (not self.controls.has_key('move')):
 	        console.log(console.FATAL,'control has NO move')
-	if (not self.controls.has_key('move_now')):
-	        console.log(console.FATAL,'control has NO move_now')
 	if (not self.controls.has_key('translate')):
 	        console.log(console.FATAL,'control has NO translate')
 	if (not self.controls.has_key('rotate')):
