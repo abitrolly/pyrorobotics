@@ -1,0 +1,52 @@
+# An example of Blending
+# Goto a particular Point
+# D.S. Blank
+
+from pyro.brain.fuzzy import *
+from pyro.brain.behaviors import *
+
+class Goto (Behavior):
+    def init(self): # called when created
+        self.Effects('translate', .3) 
+        self.Effects('rotate', .3)
+        # Hardcode a position to goto for testing:
+        self.goalX = 5.0
+        self.goalY = 5.0
+
+    def update(self):
+       interval = Fuzzy(0, 2.0) # meters
+       right_of_goal = Fuzzy(0.1,   1.0)
+       left_of_goal  = Fuzzy(-0.1, -1.0)
+       # These angles are in radians:
+       phi = self.getRobot().getAngleToPoint(self.goalX, self.goalY)
+       dist = self.getRobot().getDistanceToPoint(self.goalX, self.goalY)
+       # --------------------------------------------
+       # Here is an example that does use a discontinuity, but we
+       # need to decide to go to left, or right:
+       # --------------------------------------------
+       # Too much to the left:
+       if ( phi < -0.1 ):
+          too_left = left_of_goal >> phi;
+          self.IF(too_left, 'rotate', - float(too_left))
+       # Too much to the right:
+       if ( phi > 0.1 ):
+          too_right = right_of_goal >> phi
+          self.IF(too_right, 'rotate', too_right)
+       # Closeness?
+       close = interval << dist
+       self.IF(close, 'translate', 1.0 - close)
+       self.IF(1.0 - float(close), 'translate', 1.0)
+
+class Main (State):
+    def init(self):
+        self.add(Goto(1))
+
+def INIT(robot): 
+    brain = BehaviorBasedBrain({'translate' : robot.translate, \
+                                'rotate' : robot.rotate, \
+                                'update' : robot.update }, robot)
+    brain.add(Main(1)) 
+    brain.init()
+    return brain
+
+

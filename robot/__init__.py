@@ -13,7 +13,10 @@
 import pyro.gui.console as console
 from pyro.gui.drawable import *
 from pyro.geometry.Vector import *
+from pyro.geometry.Polar import *
 import time
+from pyro.brain.behaviors.core import distance
+from math import pi
 
 class Robot (Drawable):
     """
@@ -118,6 +121,42 @@ class Robot (Drawable):
 
     def rotate(self, val):
         self.act('rotate', val)
+
+    def getAngleToAngle(self, phi): # phi is in radians
+        '''
+        Given an angle in radians (0 front, to left to PI), what is the
+        shortest way to turn there?  returns -PI to PI, neg to right,
+        to use with turning
+        '''
+        theta = self.senses['robot']['thr'](self.dev)
+        if (phi > theta):  # turn left
+            phi = phi - theta;
+        else: # // turn right
+            phi = (theta - phi) * -1.0;
+        if (phi > pi): # // oops, shorter to turn other direction
+            phi = (2 * pi - phi) * -1.0;
+        if (phi < -pi): #// oops, shorter to turn other direction
+            phi = (2 * pi + phi);
+        return phi
+
+    def getAngleToPoint(self, x, y):
+        return self.getAngleToPoints(x, y, \
+                                     self.senses['robot']['x'](self.dev), \
+                                     self.senses['robot']['y'](self.dev))
+                                     
+    def getAngleToPoints(self, x1, y1, x2, y2):
+        p = Polar()
+        p.setCartesian(x1 - x2, y1 - y2) # range pi to -pi
+        if (p.t < 0.0):
+            phi = p.t + 2 * pi # 0 to pi to left; 0 to -pi to right
+        else:
+            phi = p.t;
+        return self.getAngleToAngle(phi)
+
+    def getDistanceToPoint(self, x, y):
+        return distance(x, y, \
+                        self.senses['robot']['x'](self.dev), \
+                        self.senses['robot']['y'](self.dev))
 
     def getMin(self, sensor = 'all', type = 'range', srange = 'all'):
         if sensor != 'all':
