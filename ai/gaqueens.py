@@ -25,7 +25,10 @@ class GAQueens(GA):
         return fitness( self.pop[genePos].data)
                 
     def isDoneFunction(self):
-        return fitness( self.pop[0].data) == len(self.pop[0].data)
+        self.pop[0].display()
+        fit = fitness( self.pop[0].data)
+        print "Best Fitness:", fit
+        return fit == len(self.pop[0].data)
 
 class MyGene(Gene):
     def display(self):
@@ -36,13 +39,12 @@ class MyGene(Gene):
                 else:
                     print ".",
             print ""
-        print ""
 
 if __name__ == '__main__':    
-    ga = GAQueens(Population(5000, MyGene, size = 16, mode = 'integer', max = 16))
-    ga.evolve()
+    ga = GAQueens(Population(300, MyGene, size = 100, mode = 'integer', max = 100))
+    ga.evolve(0)
 
-# after 83 epochs:
+# after 83 generations:
 # mygene = MyGene(size = 16)
 # mygene.data = [8, 1, 7, 13, 6, 0, 9, 5, 12, 15, 3, 10, 2, 14, 11, 4]
 # mygene.display()
