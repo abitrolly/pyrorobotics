@@ -42,7 +42,7 @@ class GUI(Tkinter.Toplevel):
         self.checkMovement()
         self.count = 0
         self.tag = "data-%d" % self.count
-        self.updateables = ["location", "direction"]
+        self.updateables = ["percept", "location", "direction", "arrow", "score", "alive"]
         self.notSetables = ["percept", "location", "direction", "arrow", "score", "alive"]
         self.movements = ["left", "right", "forward", "shoot", "grab"]
         self.redraw()

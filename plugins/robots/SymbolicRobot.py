@@ -33,16 +33,19 @@ class TCPRobot(Robot):
 			self.devData[item] = self.move(item)
 		self._update()
 
-	def preGet(self, item):
-		self.devData[item] = self.move(item)
-
 	def getItem(self, item):
 		return self.move(item)
 
 	def move(self, message, other = None):
 		exp = None
+		if self.socket == 0: return "not connected"
 		if other != None: return # rotate,translate command ignored
 		if (self.socket.sendto(message, self.addr)):
+			if message == "quit":
+				self.socket.close()
+				self.socket = 0
+				# FIX: unload self, if you can
+				return "ok"
 			try:
 				retval, addr = self.socket.recvfrom(self.BUFSIZE)
 			except:
@@ -57,7 +60,6 @@ class TCPRobot(Robot):
 	def disconnect(self):
 		# Close socket
 		self.getItem("quit")
-		self.socket.close()
 
 def INIT():
 	robot = TCPRobot("localhost", 60000)
