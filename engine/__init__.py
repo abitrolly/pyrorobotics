@@ -8,7 +8,7 @@ import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                pyroargs=[], config = {}, camerafile = 0, worldfile = 0):
+                pyroargs=[], config = {}, worldfile = 0, services = 0):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
@@ -21,10 +21,6 @@ class Engine(drawable.Drawable):
          self.robotfile = robotfile
       else:
          self.robotfile = ''
-      if camerafile != None:
-         self.camerafile = camerafile
-      else:
-         self.camerafile = ''
       if worldfile != None:
          self.worldfile = worldfile
       else:
@@ -39,8 +35,8 @@ class Engine(drawable.Drawable):
          self.loadSimulator(self.simfile, self.worldfile)
       if self.robotfile:
          self.loadRobot(self.robotfile)
-         if self.camerafile:
-            self.loadCamera(self.camerafile)      
+         if services:
+            self.robot.startServices(services)
       elif self.brainfile:
          self.loadBrain(self.brainfile)
          time.sleep(2)
@@ -134,25 +130,6 @@ class Engine(drawable.Drawable):
          raise 'Robot file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
-
-   def loadCamera(self,file):
-      import os
-      console.log(console.INFO,'Loading '+file)
-      if file[-3:] != '.py':
-         file = file + '.py'
-      if system.file_exists(file):
-         self.robot.camera = system.loadINIT(file, self)
-         self.camerafile = file
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/cameras/' + file): 
-         self.robot.camera = system.loadINIT(os.getenv('PYRO') + \
-                                      '/plugins/cameras/' + file, self)
-         self.camerafile = os.getenv('PYRO') + '/plugins/cameras/' + file
-      else:
-         raise 'Camera file not found: ' + file
-      self.robot.camera.makeWindow()
-      console.log(console.INFO,'Loaded ' + file)
-      #self.append(self.robot.camera)
 
    def loadMap(self,file):
       import os
