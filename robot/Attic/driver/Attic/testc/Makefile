@@ -1,6 +1,7 @@
 OBJS = testcmodule.o testc.o
 CLEAN = testc.o testcmodule.c testcmodule.o testcmodule.so
 
+include ../../../Makefile.cfg
 include ../../../Makefile.src
 
 testcmodule.so : testcmodule.o testc.o

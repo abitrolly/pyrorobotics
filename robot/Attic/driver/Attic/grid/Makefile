@@ -10,6 +10,7 @@ LDFLAGS = -L$(PYRO)/geometry -lm -lgeometry -L../../../lib
 
 everything : $(OBJS) $(LIB) $(BIN) $(MODULE)
 
+include ../../../Makefile.cfg
 include ../../../Makefile.src
 
 %module.cc : %.i 

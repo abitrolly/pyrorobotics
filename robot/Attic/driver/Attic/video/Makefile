@@ -2,6 +2,7 @@
 
 OBJS = low_videomodule.o low_video.o
 
+include ../../../Makefile.cfg
 include ../../../Makefile.src
 
 low_videomodule.so : low_videomodule.o low_video.o

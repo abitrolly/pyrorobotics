@@ -5,6 +5,7 @@
 
 OBJS = libptzsys.so
 
+include ../Makefile.cfg
 include ../Makefile.src
 
 #############################################################

@@ -1,7 +1,18 @@
-SUBDIRS = lib robot/driver/saphira camera/bt848 geometry gui/3DArray \
-	robot/driver/grid robot/driver/video camera/v4l brain/psom/csom_src \
-	tools/cluster
-# Failing: robot/driver/testc
+# Main Makefile for the Pyro Python Robotics System
+# Please edit Makefile.cfg
+
+include Makefile.cfg
+
+SUBDIRS = camera/bt848 geometry gui/3DArray robot/driver/grid \
+	robot/driver/video camera/v4l brain/psom/csom_src \
+	tools/cluster 
+
+# Failing subdir: robot/driver/testc
+
+ifeq ($(SAPHIRA),)
+else
+SUBDIRS += lib robot/driver/saphira 
+endif
 
 everything: system/version.py all bin/pyro
 

@@ -2,6 +2,7 @@
 
 OBJS = lowlevelmodule.so
 
+include ../../../Makefile.cfg
 include ../../../Makefile.src
 
 SAPHIRA_LIB = -L$(SAPHIRA)/handler/obj -L../../../lib 

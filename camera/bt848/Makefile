@@ -4,6 +4,7 @@ CLEAN = bt848grab
 bt848grab: $(OBJS)
 	$(CC) $(OBJS) -o $@
 
+include ../../Makefile.cfg
 include ../../Makefile.src
 
 %.o: %.cpp

@@ -1,6 +1,7 @@
 SO = .so
 OBJS = grabImage.o grabImage$(SO)
 
+include ../../Makefile.cfg
 include ../../Makefile.src
 
 v4lcap.o: v4lcap.c v4lcap.h

@@ -6,6 +6,7 @@ CLEAN = $(OBJS) $(LIB) $(MODULE) $(BIN) *~
 
 everything : $(OBJS) $(LIB) $(BIN) $(MODULE)
 
+include ../Makefile.cfg
 include ../Makefile.src
 
 CFLAGS = -Wall -g

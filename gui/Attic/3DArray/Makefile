@@ -2,6 +2,7 @@ OBJS = array3dmodule.o Matrix.o Canvas3D.o
 INC = -DHAVE_NUMPY -DHAVE_NUMERIC_ARRAYOBJECT_H -D__cplusplus
 LIBS = -lm 
 
+include ../../Makefile.cfg
 include ../../Makefile.src
 
 array3dmodule.so : $(OBJS)
