@@ -411,10 +411,10 @@ if __name__ == '__main__':
       image.update()
       histogram = image.histogram(15, 20)
       histogram.display()
-      for x in range(99):
-         image.update()
-         histogram = image.histogram(15, 20, histogram)
-         histogram.display()
+      #for x in range(99):
+      #   image.update()
+      #   histogram = image.histogram(15, 20, histogram)
+      #   histogram.display()
       print "Done!"
    else:
       print "skipping..."
