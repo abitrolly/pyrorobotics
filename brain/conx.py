@@ -399,11 +399,10 @@ class Network:
                                           connect.fromLayer.activation[j])
                 connect.toLayer.bed[i] += connect.toLayer.delta[i]
     def ACTPRIME(self, act):
-        #if self.symmetric:
-        #    return ((0.25 - act * act) + self.sigmoid_prime_offset)
-        #else:
-        #    return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
-        return act * (1.0 - act)
+        if self.symmetric:
+            return ((0.25 - act * act) + self.sigmoid_prime_offset)
+        else:
+            return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
     def diff(self, value):
         if math.fabs(value) < 0.001:
             return 0.0
