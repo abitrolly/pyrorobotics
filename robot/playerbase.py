@@ -22,6 +22,7 @@ class PlayerService(Service):
     def startService(self):
         try:
             self.dev.start(self.name)
+            time.sleep(.5)
         except:
             print "Device not supported: '%s'" % self.name
             self.dev = 0
