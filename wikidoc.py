@@ -16,7 +16,7 @@ includeOthers = 0
 # Process data  ---------------------------------------------
 for module in args:
     print "= Module %s =\n" % module
-    print "This is a reference page for the module '''%s'''. You can find the entire reference manual" % module
+    print "This is a reference page for the module {{{%s}}}. You can find the entire reference manual" % module
     print """at ["PyroReferenceManual"], and more on the whole project at ["Pyro"].\n""" 
     exec("import %s" % module)
     exec("items = dir(%s)" % module)
@@ -26,7 +26,7 @@ for module in args:
             exec("moduleName = %s.%s.__module__" % (module, i))
         else:
             moduleName = ""
-        if not include__ and not (i[:2] != "__" and i[:-2] != "__"): continue
+        if not include__ and not (i[:2] != "__" and i[:-2] != "__" and i != "__init__"): continue
         if not includeOthers and moduleName == '': continue
         print "== Class %s ==\n" % i
         exec("docString = %s.%s.__doc__" % (module, i))
@@ -47,8 +47,8 @@ for module in args:
             exec("obj = %s.%s.%s" % (module, i, m))
             mType = type(obj)
             if mType == types.MethodType and moduleName == module:
-                if include__ or (m[:2] != "__" and m[:-2] != "__"):
-                    print "=== Method %s.%s ===\n" % (module, m)
+                if include__ or (m[:2] != "__" and m[:-2] != "__" and m != "__init__"):
+                    print "=== Method %s.%s ===\n" % (i, m)
                     if obj.__doc__:
                         print "{{{"
                         print obj.__doc__
