@@ -6,11 +6,13 @@ from OpenGL.Tk import *
 import os
 
 class Matrix: # Plot
-   def __init__(self, cols = 1, rows = 1, title = None, width = 275, height = 275, maxvalue = 255.0, data = None):
+   def __init__(self, cols = 1, rows = 1, title = None, width = 275,
+                height = 275, maxvalue = 255.0, data = None, type = 'grid'):
       """
       Arguments:
 
       """
+      self.type = type
       self.win = Tk()
       self.maxvalue=maxvalue
       self.width=width
@@ -35,6 +37,7 @@ class Matrix: # Plot
 
    def changeSize(self, event):
       self.width = self.canvas.winfo_width() - 2
+      self.height = self.canvas.winfo_height() - 2
       self.update(self.last)
       
    def update(self, vec):
@@ -46,7 +49,10 @@ class Matrix: # Plot
          label = 'odd'
          last = 'even'
       self.even = not self.even
-      x_blocksize = int(self.width / float(self.cols))
+      if self.type == 'som':
+         x_blocksize = int(self.width / float(self.cols + .5))
+      else:
+         x_blocksize = int(self.width / float(self.cols))
       y_blocksize = int(self.height / float(self.rows))
       x_b = x_blocksize / 2.0
       y_b = y_blocksize / 2.0
@@ -57,13 +63,24 @@ class Matrix: # Plot
             x = x_blocksize * c + x_b
             y = y_blocksize * r + y_b
             try:
-               self.canvas.create_rectangle(x - x_b,
-                                            y - y_b,
-                                            x + x_b,
-                                            y + y_b,
-                                            width = 0,
-                                            tag = label,
-                                            fill = color)
+               if self.type == 'grid':
+                  self.canvas.create_rectangle(x - x_b,
+                                               y - y_b,
+                                               x + x_b,
+                                               y + y_b,
+                                               width = 0,
+                                               tag = label,
+                                               fill = color)
+               else: # som
+                  if r % 2 == 1:
+                     x += x_b
+                  self.canvas.create_oval(x - x_b,
+                                          y - y_b,
+                                          x + x_b,
+                                          y + y_b,
+                                          width = 0,
+                                          tag = label,
+                                          fill = color)
             except:
                pass
       try:
@@ -72,11 +89,13 @@ class Matrix: # Plot
          pass
 
 if __name__ == '__main__':
-   matrix1 = Matrix(3, 2)
-   matrix1.update([0.0, 1.0, .5, 0.0, -1.0, -.5])
-   matrix2 = Matrix(4, 2)
-   v = [1.0, 1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -5.0, 5.0]
+   matrix1 = Matrix(3, 2, type = 'grid', maxvalue = 1)
+   matrix3 = Matrix(3, 2, type = 'som', maxvalue = 1)
+   matrix1.update([0.0, 1.0, .5, 0.0, .74, .5])
+   matrix3.update([0.0, 1.0, .5, 0.0, .74, .5])
+   matrix2 = Matrix(4, 2, type = 'som', maxvalue = 5)
+   v = [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 5.0, 5.0]
    matrix2.update(v)
-   print v
    matrix1.win.mainloop()
    matrix2.win.mainloop()
+   matrix3.win.mainloop()

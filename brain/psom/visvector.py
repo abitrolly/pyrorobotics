@@ -126,6 +126,22 @@ class MatrixVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
       b = Button(self.win, text="Close", command=self.close)
       b.pack()
 
+class SOMVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
+   """
+   Use the SOM plot to display the vector as a SOM
+   """
+   def __init__(self, vector, title="", opts = (None,)):
+      maxval = opts[0]
+      if not maxval:
+         maxval = max(vector)
+      cols, rows = opts
+      pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
+                                           rows = rows, cols = cols,
+                                           maxvalue=255, title=title,
+                                           type = 'som')
+      b = Button(self.win, text="Close", command=self.close)
+      b.pack()
+
 class BarGraphVisVector(VisVector):
    """
    Display a vector as a series of horizonal bars
@@ -188,6 +204,8 @@ def getVisVectorByName(type):
       return HintonVisVector
    elif type =="Matrix":
       return MatrixVisVector
+   elif type =="SOM":
+      return SOMVisVector
    else:
       raise "VisVector type not supported"
 
