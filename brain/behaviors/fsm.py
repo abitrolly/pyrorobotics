@@ -138,29 +138,29 @@ class State:
       else:
          raise AttributeError, "pop without a push in state '%s'" % self.name
 
-    # wrappers here to talk to default robot:
-    def set(self, path, value):
-        return self.robot.set(path, value)
-    def get(self, *args):
-        return self.robot.get(*args)
-    def move(self, *args):
-        return self.robot.move(*args)
-    def translate(self, *args):
-        return self.robot.translate(*args)
-    def rotate(self, *args):
-        return self.robot.rotate(*args)
-    def stop(self):
-        return self.robot.stop()
-    def startDevice(self, *args, **keywords):
-        return self.robot.startDevice(*args, **keywords)
-    def removeDevice(self, *args, **keywords):
-        return self.robot.removeDevice(*args, **keywords)
-    def motors(self, *args):
-        return self.robot.motors(*args)
-    def getDevice(self, *args):
-        return self.robot.getDevice(*args)
-    def hasA(self, *args):
-        return self.robot.hasA(*args)
-    def requires(self, *args):
-        return self.robot.requires(*args)
+   # wrappers here to talk to default robot:
+   def set(self, path, value):
+      return self.robot.set(path, value)
+   def get(self, *args):
+      return self.robot.get(*args)
+   def move(self, *args):
+      return self.robot.move(*args)
+   def translate(self, *args):
+      return self.robot.translate(*args)
+   def rotate(self, *args):
+      return self.robot.rotate(*args)
+   def stop(self):
+      return self.robot.stop()
+   def startDevice(self, *args, **keywords):
+      return self.robot.startDevice(*args, **keywords)
+   def removeDevice(self, *args, **keywords):
+      return self.robot.removeDevice(*args, **keywords)
+   def motors(self, *args):
+      return self.robot.motors(*args)
+   def getDevice(self, *args):
+      return self.robot.getDevice(*args)
+   def hasA(self, *args):
+      return self.robot.hasA(*args)
+   def requires(self, *args):
+      return self.robot.requires(*args)
 
