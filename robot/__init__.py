@@ -425,6 +425,7 @@ class Robot:
                 self.device[deviceName] = item[dev]
                 item[dev].devData["name"] = deviceName
                 self.devDataFunc[dev] = item[dev]
+                item[dev].setTitle( deviceName )
                 retval.append(deviceName)
                 retval.append( None )
             return retval
