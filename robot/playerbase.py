@@ -4,6 +4,7 @@ from pyro.robot import *
 from math import pi, cos, sin
 from os import getuid
 from pyro.robot.driver.player import *
+import random
 
 PIOVER180 = pi / 180.0
 DEG90RADS = 0.5 * pi
@@ -24,6 +25,7 @@ class PlayerBase(Robot):
         self.th = 0.0
         self.thr = 0.0
         self.stall = 0
+        self.noise = .2 # 20 % noise
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)
@@ -44,6 +46,9 @@ class PlayerBase(Robot):
         dev.set_speed(translate_velocity * 1100.0,
                       0,
                       rotate_velocity * 75.0)
+
+    # FIX: either sonar values are changing between calls to X, Y
+    # or sin/cos values are not taking into account offset from center
         
     def localXDev(self, dev, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
@@ -93,6 +98,12 @@ class PlayerBase(Robot):
 
     def rawToUnits(self, dev, raw, name):
         raw = raw / 1000.0
+        if self.noise > 0:
+            if random.random() > .5:
+                raw += (raw * (self.noise * random.random()))
+            else:
+                raw -= (raw * (self.noise * random.random()))
+                
         if name == 'sonar':
             val = min(max(raw, 0.0), 2.99)
         else:
