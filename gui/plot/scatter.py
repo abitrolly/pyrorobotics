@@ -121,13 +121,16 @@ class Scatter: # Plot
             last_x = self._x(self.last[line].x)
             last_y = self._y(self.last[line].y)
             self.canvas.delete( self.last[line].pointId)
-            self.last[line].pointId = self.canvas.create_oval(last_x - 2,
-                                                        last_y - 2,
-                                                        last_x + 2,
-                                                        last_y + 2,
-                                                        width = 0,
-                                                        tag = 'object',
-                                                        fill = 'coral')
+            try:
+                self.last[line].pointId = self.canvas.create_oval(last_x - 2,
+                                                                  last_y - 2,
+                                                                  last_x + 2,
+                                                                  last_y + 2,
+                                                                  width = 0,
+                                                                  tag = 'object',
+                                                                  fill = 'coral')
+            except:
+                pass
         my_x = self._x(x)
         my_y = self._y(y)
         if self.firstEver[line]:
@@ -143,13 +146,16 @@ class Scatter: # Plot
                                           width = 1,
                                           tag = 'object',
                                           fill = 'tan')
-        pid = self.canvas.create_oval(my_x - 3,
-                                      my_y - 3,
-                                      my_x + 3,
-                                      my_y + 3,
-                                      width = 0,
-                                      tag = 'object',
-                                      fill = self.color[line])
+        try:
+            pid = self.canvas.create_oval(my_x - 3,
+                                          my_y - 3,
+                                          my_x + 3,
+                                          my_y + 3,
+                                          width = 0,
+                                          tag = 'object',
+                                          fill = self.color[line])
+        except:
+            pass
         self.hist[line][self.count[line]] = Line(x, y, lid, pid)
         self.last[line] = self.hist[line][self.count[line]]
         self.count[line] += 1
