@@ -17,7 +17,8 @@ class Camera(PyroImage, Service):
       constructor with one that initalizes the dimensions itself
       """
       PyroImage.__init__(self, width, height, depth, 0)
-      Service.__init__(self)
+      Service.__init__(self, 'camera')
+      self.app = 0
       self.update() # call it once to initialize
       
    def _update(self):
@@ -54,16 +55,24 @@ class Camera(PyroImage, Service):
       raise "MethodNotDefined", "getImage()"
 
    def makeWindow(self):
-      self.app = Tkinter.Tk()
-      self.app.wm_state('withdrawn')
-      self.window = Tkinter.Toplevel()
-      self.window.wm_title("Camera View")
-      self.im = self.getImage()
-      self.image = ImageTk.PhotoImage(self.im)
-      self.label = Tkinter.Label(self.window, image=self.image, bd=0)
-      self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+      if self.app != 0:
+         self.window.wm_state('normal')
+      else:
+         self.app = Tkinter.Tk()
+         self.app.wm_state('withdrawn')
+         self.window = Tkinter.Toplevel()
+         self.window.wm_title("Camera View")
+         self.im = self.getImage()
+         self.image = ImageTk.PhotoImage(self.im)
+         self.label = Tkinter.Label(self.window, image=self.image, bd=0)
+         self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
+         self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
       self.visible = 1
       while self.window.tk.dooneevent(2): pass
+
+   def hideWindow(self):
+      self.visible = 0
+      self.window.wm_state('withdrawn')
       
    def updateWindow(self):
       self.im = self.getImage()

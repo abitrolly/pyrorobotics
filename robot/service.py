@@ -8,11 +8,14 @@ class ServiceError(AttributeError):
 class Service:
     """ A basic service class """
 
-    def __init__(self):
+    def __init__(self, serviceType = 'basic', visible = 0):
         self.active = 1
-        self.visible = 0
+        self.visible = visible
         self.dev = 0
+        self.type = serviceType
         self.state = "stopped"
+        if visible:
+            self.makeWindow()
 
     def startService(self):
         self.state = "started"

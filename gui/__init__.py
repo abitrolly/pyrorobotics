@@ -86,6 +86,8 @@ class gui(Drawable):
          while not self.done:
             pass
          return 1
+      elif retval == "step":
+         self.stepEngine()
       elif retval == "info":
          print "-------------------------------------------------------------"
          print "Brain file:\t%s" % self.engine.brainfile

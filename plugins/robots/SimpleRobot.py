@@ -10,7 +10,7 @@ class SimpleRobot(Robot):
     # the robot. 
     def act(self, action = '', value1 = '', value2 = ''):
         #print "Acting: action =", action, "v1 =", value1, "v2 =", value2
-        pass
+        self._update()
     
     def setup(self):
         # -------------------------------------------

@@ -177,7 +177,7 @@ class GeneralPlot:
       self.freeze()
       if len(args) == 3:
          #One of the arrow buttons was pressed
-         #multiply args[1] (which will be 1 or -1) by the deisred scroll
+         #multiply args[1] (which will be 1 or -1) by the desired scroll
          #interval
          self.canvas.xview(args[0], int(args[1])*self.scrollInterval, args[2])
       else:
