@@ -22,7 +22,7 @@ class Trace:
         self.fontFilename = path + "/tools/pilfonts/courR12.pil"
         self.symbols = 0        # activates/deactivates symbol mode
         self.color = 1          # activates/deactivates color
-        self.lineWidth = 16     # the length of lines in non-symbol mode
+        self.lineWidth = 30     # the length of lines in non-symbol mode
         # the resolution given for the bitmap in the world file
         self.resolution = 0.01
         self.interval = 1       # frequency datapoints should be displayed
@@ -129,6 +129,6 @@ if __name__ == "__main__":
     testTrace = Trace(sys.argv[1],sys.argv[2])
     #testTrace = Trace("/home/dblank/pyro/experiments/colorful.gif","ffgoalposes.dat")
     testTrace.output()
-    testTrace.makeWindow()
-    testTrace.run()
-    testTrace.app.mainloop()
+    #testTrace.makeWindow()
+    #testTrace.run()
+    #testTrace.app.mainloop()
