@@ -8,7 +8,7 @@
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.10"
+version = "6.11"
 
 # better to use Numeric.add.reduce()
 def sum(a):
@@ -1376,7 +1376,7 @@ class Network:
         Changes the weights according to the error values calculated
         during backprop(). Learning must be set.
         """
-        dweight_sum = 0.0
+        dw_count, dw_sum = 0, 0.0
         for connection in self.connections:
             if not connection.frozen:
                 if connection.fromLayer.active:
@@ -1388,12 +1388,14 @@ class Network:
                                     self.momentum * toLayer.dbias
                     toLayer.bias = toLayer.bias + toLayer.dbias
                     toLayer.bed = toLayer.bed * 0.0
-                    dweight_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
-                    dweight_sum += Numeric.add.reduce(abs(toLayer.dbias))
+                    dw_count += Numeric.multiply.reduce(connection.dweight.shape)
+                    dw_count += len(toLayer.dbias)
+                    dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
+                    dw_sum += Numeric.add.reduce(abs(toLayer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
-        return dweight_sum
+        return (dw_count, dw_sum)
 
     def ce_init(self):
         """
