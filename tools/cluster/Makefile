@@ -125,7 +125,7 @@ install:	$(PROG)
 	-ln -s $(PROG) $(BINDIR)/$(ALIAS)
 	install -c $(PROG).man $(MANDIR)/$(PROG).$(MANEXT)
 	install -c $(ALIAS).man $(MANDIR)/$(ALIAS).$(MANEXT)
-	
+
 manroff:	$(PROG).man
 	nroff -man $(PROG).man | $${PAGER-more}
 
@@ -146,7 +146,7 @@ $(PROG)$(RELEASE).shar:	$(FILES)
 
 ftp:	tar
 	cp $(PROG)$(RELEASE).tar.Z $(FTPDIR)
-	
+
 #
 # some help in code cleanup
 #
@@ -159,3 +159,6 @@ IFLAGS = -bap -nce -di8 -nfc1 -i4 -lp
 
 .h.h.indent:
 	indent $< $@ $(IFLAGS) 
+
+cleanall::
+	$(RM) *.o cluster
