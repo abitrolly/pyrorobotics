@@ -410,21 +410,21 @@ class KheperaRobot(Robot):
         # if greater than % of last history is stall, then stall
         return (stalls / self.stallHistorySize) > 0.5
 
-    def getX(self, dev):
+    def getX(self, dev = 0):
         #return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
         return self.x / 1000.0
     
-    def getY(self, dev):
+    def getY(self, dev = 0):
         #return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
         return self.y / 1000.0
     
-    def getZ(self, dev):
+    def getZ(self, dev = 0):
         return 0
     
-    def getTh(self, dev):
+    def getTh(self, dev = 0):
         return self.th
 
-    def getThr(self, dev):
+    def getThr(self, dev = 0):
         return self.thr
 
     def getIRMaxRange(self, dev):

@@ -66,19 +66,19 @@ class PlayerBase(Robot):
         y = self.rawToUnits(dev, self.sonarGeometry[pos][1], 'sonar') 
         return sin(thr) * dist
 
-    def getX(self, dev):
+    def getX(self, dev = 0):
         return self.x
 
-    def getY(self, dev):
+    def getY(self, dev = 0):
         return self.y
     
-    def getZ(self, dev):
+    def getZ(self, dev = 0):
         return self.z
     
-    def getTh(self, dev):
+    def getTh(self, dev = 0):
         return self.th
     
-    def getThr(self, dev):
+    def getThr(self, dev = 0):
         return self.thr
 
     def update(self):

@@ -4,6 +4,7 @@ from pyro.brain import Brain
 from random import random
 from time import sleep
 from pyro.map.lps import LPS
+from pyro.map.gps import GPS
 
 class SimpleBrain(Brain):
    def setup(self):
@@ -16,15 +17,18 @@ class SimpleBrain(Brain):
       self.lps = LPS( 10, 10,
                       widthMM = sizeMM,
                       heightMM = sizeMM)
+      self.gps = GPS(100, 100)
 
    def destroy(self):
       self.lps.destroy()
+      self.gps.destroy()
 
    def step(self):
       robot = self.getRobot()
       self.lps.reset() # reset counts
       self.lps.sensorHits(robot, 'range')
       self.lps.redraw()
+      self.gps.updateFromLPS(self.lps, robot)
       
       FTOLERANCE = 1.0
       LTOLERANCE = 1.0
