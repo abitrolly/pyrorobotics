@@ -6,7 +6,7 @@ from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
 
 class Goto (Behavior):
-    def init(self): # called when created
+    def setup(self): # called when created
         self.Effects('translate', .3) 
         self.Effects('rotate', .3)
         # Hardcode a position to goto for testing:
@@ -38,7 +38,7 @@ class Goto (Behavior):
        self.IF(1.0 - float(close), 'translate', 1.0)
 
 class Main (State):
-    def init(self):
+    def setup(self):
         self.add(Goto(1))
 
 def INIT(engine): 

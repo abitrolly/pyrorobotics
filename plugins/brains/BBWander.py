@@ -1,18 +1,14 @@
-# A Behavior-based system
+# A Behavior-based control system
 
 from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
-from pyro.brain.behaviors.core import *  # Stop
-
-import math
-from random import random
-import time
+import math, time
 
 class Avoid (Behavior):
     """Avoid Class"""
-    def init(self): # called when created
-        """init method"""
-        self.lasttime = time.mktime(time.localtime())
+    def setup(self): # called when created
+        """setup method"""
+        self.lasttime = time.time()
         self.count = 0
 
     def direction(self, dir, dist):
@@ -24,10 +20,10 @@ class Avoid (Behavior):
 
     def update(self):
         if self.count == 50:
-            currtime = time.mktime(time.localtime())
+            currtime = time.time()
             #print "=======  50 Loops. Average time per loop =", (currtime - self.lasttime)/50.0, "seconds."
             self.count = 0
-            self.lasttime =  time.mktime(time.localtime())
+            self.lasttime =  time.time()
         else:
             self.count += 1
         # Normally :
@@ -42,12 +38,8 @@ class Avoid (Behavior):
 
 class state1 (State):
     """ sample state """
-    def init(self):
-        #self.add(StraightBehavior(1))
+    def setup(self):
         self.add(Avoid(1, {'translate': .3, 'rotate': .3}))
-        #self.Effects('translate', .3) 
-        #self.Effects('rotate', .3)
-
         print "initialized state", self.name
 
 def INIT(engine): # passes in robot, if you need it

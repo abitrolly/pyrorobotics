@@ -22,7 +22,8 @@ class FSMBrain (Brain):
       if state.name in self.states.keys():
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
-      state.behaviorEngine = self
+      state.engine = self.getEngine()
+      state.brain = self
       state.setup()
       if state.status:
          state.onActivate()
@@ -43,6 +44,11 @@ class FSMBrain (Brain):
          self.states[s].activatelist = []
          self.states[s].deactivatelist = []
 
+   def getBrain(self):
+      return self.brain
+   def getEngine(self):
+      return self.engine
+
 class State:
    """
    Collections of behaviors. this gets subclassed by each collection
@@ -55,14 +61,15 @@ class State:
       self.type = self.__class__.__name__
       self.name = name or self.type
    def getState(self, statename):
-      if statename in self.behaviorEngine.states.keys():
-         return self.behaviorEngine.states[statename]
+      if statename in self.brain.states.keys():
+         return self.brain.states[statename]
       else:
          raise "ERROR: no such statename"
    def goto(self, state, *args):
+      print "Leaving state '%s'; going to state '%s'..." % (self.name, state)
       self.deactivate(self.name)
       self.activate(state)
-      self.behaviorEngine.states[state].onGoto(args)
+      self.brain.states[state].onGoto(args)
    def onGoto(self, args = []):
       # FIX: could make a nice way of setting class vars here.
       # Currently:
@@ -91,7 +98,8 @@ class State:
       else:
          self.behaviors[b.name] = b
       # keep a pointer to parent engine, from the beh:
-      b.behaviorEngine = self.behaviorEngine
+      b.engine = self.engine
+      b.brain = self.brain
       # keep a pointer to parent state, from the beh:
       b.state = self
       b.setup() # init the behavior, just once
@@ -108,14 +116,16 @@ class State:
             for r in b.rules:
                # r = truth, controller, amount, beh name, state name
                r.extend([b.name, b.state.name])
-               self.behaviorEngine.desires.append( r )
+               self.brain.desires.append( r )
                # what is the controller effect for this state/behavior?
-               self.behaviorEngine.effectsTotal[b.state.name+":"+b.name+":"+r[1]] = b.effects[r[1]]
+               self.brain.effectsTotal[b.state.name+":"+b.name+":"+r[1]] = b.effects[r[1]]
       self.update()
 
    def getRobot(self):
-      return self.behaviorEngine.robot
+      return self.brain.robot
 
    def getEngine(self):
-      return self.behaviorEngine.getEngine()
+      return self.engine
 
+   def getBrain(self):
+      return self.brain

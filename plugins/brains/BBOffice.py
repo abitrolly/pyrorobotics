@@ -33,7 +33,7 @@ import time
 #
 
 class Straight (Behavior):
-    def init(self): 
+    def setup(self): 
         self.Effects('translate', .1) 
         self.Effects('rotate', .1) 
 
@@ -42,7 +42,7 @@ class Straight (Behavior):
         self.IF(1, 'rotate', 0) 
 
 class TurnLeft (Behavior):
-    def init(self):
+    def setup(self):
         self.Effects('translate', .2) 
         self.Effects('rotate', .1)
 
@@ -51,7 +51,7 @@ class TurnLeft (Behavior):
         self.IF(1, 'translate', 0) 
 
 class TurnRight (Behavior):
-    def init(self):
+    def setup(self):
         self.Effects('translate', .2) 
         self.Effects('rotate', .1)
 
@@ -61,7 +61,7 @@ class TurnRight (Behavior):
 
 class Start (State):
     # go straight for 8 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -77,7 +77,7 @@ class Start (State):
 
 class A1 (State):
     # turn left 90 degrees
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnLeft(1))
 
@@ -91,7 +91,7 @@ class A1 (State):
 
 class A2 (State):
     # go straight for 1.5 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -107,7 +107,7 @@ class A2 (State):
 
 class B1 (State):
     # turn right 90 degrees
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnRight(1))
 
@@ -116,12 +116,12 @@ class B1 (State):
 
     def update(self):
         th = self.getRobot().get('robot', 'th')
-        #if angleEqual(angleAdd(th, -self.th), 270)
-        #    self.goto('B2')
+        if angleEqual(angleAdd(th, -self.th), 270):
+            self.goto('B2')
             
 class B2 (State):
     # go straight for 6.5 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -137,7 +137,7 @@ class B2 (State):
 
 class C1 (State):
     # turn left 90 degrees
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnLeft(1))
 
@@ -151,7 +151,7 @@ class C1 (State):
 
 class C2 (State):
     # go straight for 8 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -167,7 +167,7 @@ class C2 (State):
 
 class D1 (State):
     # turn left 90 degrees
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnLeft(1))
 
@@ -181,7 +181,7 @@ class D1 (State):
             
 class D2 (State):
     # go straight for 12 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -197,7 +197,7 @@ class D2 (State):
 
 class E1 (State):
     # turn right 90 degrees
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnRight(1))
 
@@ -211,7 +211,7 @@ class E1 (State):
             
 class E2 (State):
     # go straight for 2 meters
-    def init(self):
+    def setup(self):
         self.add(Straight(1))
 
     def onActivate(self): # method called when activated or gotoed
@@ -226,7 +226,8 @@ class E2 (State):
             self.goto('Done')
 
 class Done(State):
-    pass
+    def update(self):
+        self.getRobot().move(0,0)
 
 def INIT(engine): # passes in robot, if you need it
     brain = BehaviorBasedBrain({'translate' : engine.robot.translate, \
@@ -243,6 +244,6 @@ def INIT(engine): # passes in robot, if you need it
     brain.add(D1()) # non active
     brain.add(D2()) # non active
     brain.add(E1()) # non active
-    brain.add(E2()) # non active
+    brain.add(E2(1)) # non active
     brain.add(Done()) # non active
     return brain

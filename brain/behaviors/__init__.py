@@ -2,10 +2,9 @@
 # BehaviorBased Brain
 
 # defines the Behavior-based brain, behaviors, and states
-
-from time import *
+import time
 from pyro.brain import *
-from pyro.brain.behaviors.fsm import State # not used here, but needed when you import this
+from pyro.brain.behaviors.fsm import State # State is not used here, but needed when you import this
 
 class BehaviorBasedBrain(Brain):
    """
@@ -34,7 +33,8 @@ class BehaviorBasedBrain(Brain):
       if state.name in self.states.keys():
          raise "ERROR: state already exists: '" + state.name + "'"
       self.states[state.name] = state
-      state.behaviorEngine = self
+      state.engine = self.engine
+      state.brain = self
       state.setup()
       if state.status:
          state.onActivate()
@@ -103,7 +103,7 @@ class BehaviorBasedBrain(Brain):
       # at most 10 cycles per second
       # an improved version is expected
       # -------------------------------------------------
-      sleep(0.01)
+      time.sleep(0.01)
       # change states' status if necessary
       for s in self.states.keys():
          for d in self.states[s].deactivatelist: #deactivate first
@@ -178,7 +178,9 @@ class Behavior:
          name = "Rule%d" % (len(self.rules) + 1)
       self.rules.append([float(fvalue), controller, float(amount), name])
    def getRobot(self):
-      return self.behaviorEngine.robot
+      return self.engine.robot
    def getEngine(self):
-      return self.behaviorEngine.getEngine()
+      return self.engine
+   def getBrain(self):
+      return self.brain
 

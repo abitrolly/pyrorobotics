@@ -56,5 +56,5 @@ def angleAdd(angle, degree):
     return ((angle + degree) + 360) % 360 # make positive, in range 0-360
 
 def angleEqual(angle1, angle2, tolerance = 5):
-    pass
+    return abs((angle1 + 720) - (angle2 + 720)) < tolerance
 
