@@ -37,7 +37,7 @@ void V4L:: updateMMap( )
 	fprintf(stderr,"Error: VivioCsync");
 	perror("ioctl VIDIOCSYNC");
       } else {
-	swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
+	//swap_rgb24((char *)image,grab_buf.width*grab_buf.height);
 	width  = grab_buf.width;
 	height = grab_buf.height;
 	//image = grab_data;
