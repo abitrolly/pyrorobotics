@@ -523,6 +523,7 @@ if __name__ == '__main__':
       for x in range(100):
          camera.update(1)
          camera.motion.display()
+         print "avg color of motion:", camera.motion.avgColor(camera)
       print "Done!"
    else:
       print "skipping..."
