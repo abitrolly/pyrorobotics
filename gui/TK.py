@@ -105,7 +105,7 @@ class TKgui(gui):
       for b in button1:
          self.goButtons[b[0]] = Tkinter.Button(toolbar,text=b[0],command=b[1])
          self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = "yes", anchor="n")
-      #toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "yes")
+      toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "no")
       ## ----------------------------------
       self.makeRow(('status', 'Pose:', '', ''))
       ## ----------------------------------
