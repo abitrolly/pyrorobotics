@@ -99,7 +99,7 @@ class AriaPTZDevice(AriaDevice):
     ## Methods for PTZ from Aria
 
     def __init__(self, robot, type = "sony"):
-        # here, robot is the robot.device
+        # here, robot is the lowlevel robot.dev driver
         AriaDevice.__init__(self, robot, "ptz")
         self.devData["model"] = type
         if type == "sony":
@@ -203,7 +203,7 @@ class AriaSensor(Device):
     def __init__(self, params, device, type):
         Device.__init__(self, type)
         self.params = params
-        self.device = device
+        self.dev = device
 
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
@@ -235,16 +235,17 @@ class AriaSonar(AriaSensor):
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
         self.subDataFunc['oz']    = lambda pos: 0.03
         self.subDataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
+        self.subDataFunc['thr']    = lambda pos: self.params.getSonarTh(pos)
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
-        self.subDataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
-        self.subDataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
+        self.subDataFunc['x']     = lambda pos: self.dev.getSonarReading(pos).getLocalX()
+        self.subDataFunc['y']     = lambda pos: self.dev.getSonarReading(pos).getLocalY()
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
         self.subDataFunc['value'] = lambda pos: self.getSonarRange(pos)
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = lambda pos: self.getGroupNames(pos)
 
     def getSonarRange(self, pos):
-        return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
+        return self.rawToUnits(self.dev.getSonarRange(pos) / 1000.0)
 
     def getSonarMaxRange(self):
         return self.rawToUnits(2.99)
@@ -273,6 +274,7 @@ class AriaLaser(AriaSensor):
         self.devData["count"] = self.params.getNumLaser()
         self.devData["x"] = self.params.getLaserX()
         self.devData["y"] = self.params.getLaserY()
+        self.devData["th"] = self.params.getLaserTh()
         if self.devData["count"] == 181:
             self.groups = {'all': range(16),
                            'front': (3, 4),
@@ -293,12 +295,13 @@ class AriaLaser(AriaSensor):
         #    raise AttributeError, ("Need to define sensor groups for lasers "
         #                           "with %d sensors" % self.params.getNumSonar())
         self.subDataFunc['oz']    = lambda pos: 0.03
-        self.subDataFunc['th']    = lambda pos: pos
+        self.subDataFunc['th']    = lambda pos: self.params.getLaserTh(pos) * PIOVER180
+        self.subDataFunc['thr']    = lambda pos: self.params.getLaserTh(pos)
         self.subDataFunc['arc']   = lambda pos: 1.0
-        self.subDataFunc['x']     = lambda pos: self.params.getLaserX()
-        self.subDataFunc['y']     = lambda pos: self.params.getLaserX()
+        self.subDataFunc['x']     = lambda pos: 0.0 #
+        self.subDataFunc['y']     = lambda pos: 0.0 #
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
+        self.subDataFunc['value'] = lambda pos: self.dev.getSonarRange(pos) # METERS? FIX: make in units
         self.subDataFunc['pos']   = lambda pos: pos
 
 class AriaBumper(AriaSensor):
@@ -363,13 +366,13 @@ class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
         Robot.__init__(self) # robot constructor
         self.connect()
-        self.devData['stall'] = 0
-        self.devData['x'] = 0.0
-        self.devData['y'] = 0.0
+        self.devData["x"] = self.dev.getX() / 1000.0
+        self.devData["y"] = self.dev.getY() / 1000.0
+        self.devData["th"] = (self.dev.getTh() + 360) % 360
+        self.devData["thr"] = self.devData["th"] * PIOVER180
+        self.devData["stall"] = self.dev.getStallValue()
         self.devData['z'] = 0.0
         self.devData['radius'] = self.params.getRobotRadius() / 1000.0 # in MM, convert to meters
-        self.devData['th'] = 0.0 # in degrees
-        self.devData['thr'] = 0.0 # in radians
 	self.devData['type'] = self.dev.getRobotType()
 	self.devData['subtype'] = self.params.getSubClassName()
         self.devData['units'] = 'METERS' # x,y,z units
