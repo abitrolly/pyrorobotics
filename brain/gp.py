@@ -19,7 +19,7 @@ class GPGene(Gene):
             for i in range( share.operands[ share.operators[pos] ] ):
                 self.genotype.append( GPGene(**args).genotype )
 
-    def mutate(self, mode, mutationRate):
+    def mutate(self, mutationRate):
         """
         Depending on the mutationRate, will mutate particular terminal.
         """

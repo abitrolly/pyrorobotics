@@ -91,7 +91,7 @@ class Gene:
         else:
             raise "unknownMode", self.mode
 
-    def mutate(self, mode, mutationRate):
+    def mutate(self, mutationRate):
         """
         Depending on the mutationRate, will mutate the genotype.
         """
@@ -99,22 +99,22 @@ class Gene:
             if flip(mutationRate):
                 if self.verbose > 2:
                     print "mutating at position", i
-                if mode == 'bit': 
+                if self.mode == 'bit': 
                     self.genotype[i] = not self.genotype[i]
-                elif mode == 'integer': 
+                elif self.mode == 'integer': 
                     r = random.random()
                     if (r < .5):
                         self.genotype[i] += 1
                     else:
                         self.genotype[i] -= 1
-                elif mode == 'float': 
+                elif self.mode == 'float': 
                     r = random.random()
                     if (r < .5):
                         self.genotype[i] -= random.random()
                     else:
                         self.genotype[i] += random.random()
                 else:
-                    raise "unknownMode", mode
+                    raise "unknownMode", self.mode
 
     def crossover(self, parent2, crossoverRate):
         """
@@ -195,8 +195,10 @@ class Population:
         """
         Maintains important statistics about the current population.
         It calculates total fitness, average fitness, best fitness,
-        and worst fitness.  Also stores the best individual in
-        the variable self.bestMember.
+        and worst fitness.  Stores the best individual in the variable
+        self.bestMember.  When the elitePercent is greater than zero,
+        this method also maintains a list of the elite members of the
+        population so that they can be saved for the next generation.
         """
         self.sumFitness = 0
         best = self.individuals[0]
@@ -206,7 +208,7 @@ class Population:
         self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
         for i in range(self.size):
             current = self.individuals[i]
-            current.position = i
+            current.position = i #needed to save the elite members of the population
             self.sumFitness += current.fitness
             if current.fitness < worst.fitness:
                 worst = current
@@ -240,8 +242,6 @@ class GA:
             self.verbose = args['verbose']
         if args.has_key('mutationRate'):
             self.mutationRate = args['mutationRate']
-        if args.has_key('selectionRate'):
-            self.selectionRate = args['selectionRate']
         if args.has_key('crossoverRate'):
             self.crossoverRate = args['crossoverRate']
         if args.has_key('maxGeneration'):
@@ -292,20 +292,19 @@ class GA:
         occurring is determined by the crossoverRate and the mutationRate.
         Overwrites the old population with the new population.
         """
-        mode = self.pop.individuals[0].mode
         newpop = range(self.pop.size)
         i = 0
         while i < self.pop.size - 1:
             parent1 = self.pop.select()
             parent2 = self.pop.select()
             newpop[i], newpop[i+1] = parent1.crossover(parent2, self.crossoverRate)
-            newpop[i].mutate(mode, self.mutationRate)
-            newpop[i+1].mutate(mode, self.mutationRate)
+            newpop[i].mutate(self.mutationRate)
+            newpop[i+1].mutate(self.mutationRate)
             i += 2
         # For odd sized populations, need to create the last child
         if self.pop.size % 2 == 1:
-            newpop[self.pop.size-1] = deepcopy(self.pop.select())
-            newpop[self.pop.size-1].mutate(mode, self.mutationRate)
+            newpop[self.pop.size-1] = self.pop.select()
+            newpop[self.pop.size-1].mutate(self.mutationRate)
         # Copy new generation into population
         elitePositions = map( lambda x: x.position, self.pop.eliteMembers)
         for i in range(self.pop.size):
@@ -344,7 +343,7 @@ if __name__ == '__main__':
     print "Do you want to evolve a list of integers to maximize their sum? ",
     if sys.stdin.readline().lower()[0] == 'y':
         print
-        ga = MaxSumGA(Population(15, Gene, size=10, mode='integer',
+        ga = MaxSumGA(Population(20, Gene, size=10, mode='integer',
                                  verbose=1, elitePercent = .1),
                       mutationRate=0.1, crossoverRate=0.5, verbose=1,
                       maxGeneration=50)
