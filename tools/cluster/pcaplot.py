@@ -1,13 +1,5 @@
 import Gnuplot
 
-class FakeFile:
-    def __init__(self):
-        pass
-    def readline(self):
-        return ""
-    def close(self):
-        pass
-
 class PCAPlot:
     def __init__(self, eigenfile, namefile = None, debug = 0,
                  dimensions = 2, title = None, datatitle = None,
@@ -22,13 +14,19 @@ class PCAPlot:
         if namefile:
             nfp = open(namefile, "r")
         else:
-            nfp = FakeFile()
+            nfp = None
         eline = efp.readline()
-        nline = nfp.readline()
+        if nfp:
+            nline = nfp.readline()
+        else:
+            nline = eline.split()[-1]
         dataset = []
         while eline:
             eline = eline.strip()
-            label = nline.strip()
+            if nfp:
+                label = nline.strip()
+            else:
+                label = eline.split()[-1]
             data = eline.split(" ")
             if dimensions == 2:
                 if label and showlabels:
@@ -46,9 +44,11 @@ class PCAPlot:
                 raise "DimensionError", \
                       "cannot handle dimensions of %d" % dimensions
             eline = efp.readline()
-            nline = nfp.readline()
+            if nfp:
+                nline = nfp.readline()
         efp.close()
-        nfp.close()
+        if nfp:
+            nfp.close()
         self.data = Gnuplot.Data(dataset)
         if showpoints:
             self.gp('set data style points')
