@@ -51,26 +51,6 @@ class KheperaRobot(Robot):
                           'back-right' : (6, ), 
                           'back-all' : (6, 7), 
                           'back' : (6, 7)} 
-        
-        self.sensorGroups = {'all' : [ (0, 'ir'), (4, 'ir'),
-                                       (1, 'ir'), (5, 'ir'),
-                                       (2, 'ir'), (6, 'ir'),
-                                       (3, 'ir'), (7, 'ir') ],
-                             'front' : [(2, 'ir'), (3, 'ir')], 
-                             'front-left' : [(0, 'ir'), (1, 'ir')], 
-                             'front-right' : [(4, 'ir'), (5, 'ir')],
-                             'front-all' : [(1, 'ir'), (2, 'ir'),
-                                            (3, 'ir'), (4, 'ir')], 
-                             'left' : [(0, 'ir')], 
-                             'right' : [(5, 'ir')], 
-                             'left-front' : [(0, 'ir')], 
-                             'right-front' : [(5, 'ir')], 
-                             'left-back' : [(7, 'ir')], 
-                             'right-back' : [(6, 'ir')], 
-                             'back-left' : [(7, 'ir')], 
-                             'back-right' : [(6, 'ir')], 
-                             'back-all' : [(6, 'ir'), (7, 'ir')], 
-                             'back' : [(6, 'ir'), (7, 'ir')]} 
         self.senseData = {}
         self.lastTranslate = 0
         self.lastRotate = 0
