@@ -663,7 +663,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 	{
 	  if(*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high )
 	    {  
-	      if(h == 0 && w == 0)
+	      if(h == 0 && w == 0 && count < MAXBLOBS)
 		{ /*in upper left corner - new blob */
 		  initBlob(&bloblist[count],h,w);
 		  blobdata[w][h]= count;
@@ -676,7 +676,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		      addPixel(&bloblist[blobdata[w][h-1]],h,w);
 		      blobdata[w][h]=blobdata[w][h-1];
 		    }
-		  else /*above is off -- new blob*/
+		  else if (count < MAXBLOBS) /*above is off -- new blob*/
 		    {
 		      initBlob(&bloblist[count], h,w);		      
 		      blobdata[w][h]=count;
@@ -690,7 +690,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		      addPixel(&bloblist[blobdata[w-1][h]],h,w);
 		      blobdata[w][h]= blobdata[w-1][h];
 		    }
-		  else  /* left is off -- new blob */
+		  else if (count < MAXBLOBS)  /* left is off -- new blob */
 		    {
 		      initBlob(&bloblist[count], h,w);
 		      blobdata[w][h]=count;
@@ -714,7 +714,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		      addPixel(&bloblist[blobdata[w-1][h]],h,w);		      
 		      joinBlob(&bloblist[blobdata[w-1][h]],&bloblist[blobdata[w][h-1]]);
 		      blobdata[w][h] = blobdata[w-1][h];
-
+		      
 		      n = blobdata[w][h-1];		      
 		      for(i=0;i<=h;i++)
 			for(j=0;j<width;j++)
@@ -737,7 +737,7 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 		      addPixel(&bloblist[blobdata[w][h-1]],h,w);
 		      blobdata[w][h]=blobdata[w][h-1];
 		    }
-		  else /* neither left or top on. -- new blob.*/
+		  else if (count < MAXBLOBS) /* neither left or top on. -- new blob.*/
 		    {
 		      initBlob(&bloblist[count],h,w);		      
 		      blobdata[w][h]=count;		      

@@ -54,19 +54,44 @@ class FakeCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Fake Camera View")
-      
+      self.optionsInitialized = 0
+      self.oldStart = None
+      self.oldLimit = None
+
+   def makeWindow(self):
+      Camera.makeWindow(self)
+      if not self.optionsInitialized:
+         self.mBar.tk_menuBar(self.makeMenu(self.mBar,
+                                            "Options",
+                                            [["Freeze", self.freezeFrame],
+                                             ["UnFreeze", self.unFreezeFrame]]))
+         self.optionsInitialized = 1
+
+   def freezeFrame(self):
+      if self.oldStart == None:
+         self.oldStart = self.start
+         self.oldLimit = self.limit
+         self.limit = self.current
+         self.start = max(self.current - 1, 0)
+
+   def unFreezeFrame(self):
+      if self.oldStart != None:
+         self.limit = self.oldLimit
+         self.start = self.oldStart
+         self.oldStart = None
+         self.oldLimit = None
+         
    def _update(self):
-      if self.limit > 0:
-         if (self.current < self.limit):
-            currentTime = time.time()
-            if currentTime - self.lastUpdate > self.interval:
-               currname = self.pattern[:self.match.start()] + \
-                          self.fstring % self.current + \
-                          self.pattern[self.match.end():]
-               self.cameraDevice.updateMMap(currname)
-               self.processAll()
-               self.current += 1
-               self.lastUpdate = currentTime
-         else:
-            self.current = self.start 
+      if (self.current < self.limit):
+         currentTime = time.time()
+         if currentTime - self.lastUpdate > self.interval:
+            currname = self.pattern[:self.match.start()] + \
+                       self.fstring % self.current + \
+                       self.pattern[self.match.end():]
+            self.cameraDevice.updateMMap(currname)
+            self.processAll()
+            self.current += 1
+            self.lastUpdate = currentTime
+      else:
+         self.current = self.start 
 
