@@ -1,5 +1,5 @@
 #!/bin/sh
-SIM_DIR=$PYRO/plugins/simulators/KheperaSim_src
+SIM_DIR=../../simulators/khepera
 SIM=sim
 
 cd $SIM_DIR
