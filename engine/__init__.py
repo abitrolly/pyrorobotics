@@ -12,6 +12,7 @@ class Engine(drawable.Drawable):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
+      self.gui = None
       self.view = []
       if brainfile != None:
          self.brainfile = brainfile
@@ -216,3 +217,6 @@ class Engine(drawable.Drawable):
             self.brain.destroy()
          except:
             print "I was unable to properly destroy the brain"
+
+   def getGUI(self):
+      return self.gui
