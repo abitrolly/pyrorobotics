@@ -130,7 +130,9 @@ class Layer:
     def setDisplayWidth(self, val):
         self.displayWidth = val
     def randomize(self):
-        self.bias = randomArray(self.size, 0.4)
+        self.bias = randomArray(self.size, 0.1)
+    def toString(self):
+        return "Layer " + self.name + ": type " + self.type + " size " + str(self.size) + "\n"
     def display(self):
         print "============================="
         print "Display Layer '" + self.name + "' (type " + self.type + "):"
@@ -211,7 +213,7 @@ class Connection:
             return self.epsilon
     def randomize(self):
         self.weight = randomArray((self.toLayer.size, \
-                                   self.fromLayer.size), 0.4)
+                                   self.fromLayer.size), 0.1)
 
 # A neural Network
 
@@ -685,6 +687,11 @@ class Network:
             if self.connection[i].fromLayer.name == fromName and \
                self.connection[i].toLayer.name == toName:
                 return self.connection[i].weight
+    def toString(self):
+        output = ""
+        for i in range(self.layerCount):
+            output += self.layer[i].toString()
+        return output
     def display(self, seeWeights = 0):
         print "Display network '" + self.name + "':"
         size = range(self.layerCount)
