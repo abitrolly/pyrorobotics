@@ -1,4 +1,5 @@
 from OpenGL.Tk import *
+from string import *
 
 class GeneralPlot:
    """
@@ -68,7 +69,7 @@ class GeneralPlot:
       if self.dataWindowSize < 1:
          self.dataWindowSize = 1
       self.frozen = 0
-      self.scrollInterval = 14.
+      self.scrollInterval = 14
       
       #a hack to prevent a gap in the plot the first time
       #canvas.move is called in redraw
@@ -76,56 +77,112 @@ class GeneralPlot:
 
       #setup Tk components
 
-#      self.scrollhoriz = Scrollbar(self.win, orient="horiz",
-                                   command=self.scroll)
-#      self.scrollhoriz.pack(side=BOTTOM,expand="yes",fill="both",padx=1,pady=1)
+      self.scrollhoriz = Scrollbar(self.win, command=self.scroll, orient=HORIZONTAL)
       self.canvas = Canvas(self.win, width=self.width, height=self.height,
                            scrollregion=(0, 0,
                                          history * stepLength, self.height),
-                           xscrollincrement=self.stepLength)
+                           xscrollincrement=self.stepLength,
+                           xscrollcommand=self.scrollhoriz.set)
+      self.canvas.create_line(0, self.height-1,
+                              history * stepLength, self.height-1,
+                              width=1, fill='black')
       yaxis = Canvas(self.win, width=20, height = self.height)
       yaxis.create_line(20, 0, 20, self.height, width=1, fill='black')
       yaxis.create_text(20, 0, text=str(self.dataMax), anchor=NE)
       yaxis.create_text(20, self.height, text=str(self.dataMin), anchor=SE)
-      b1 = Button(self.win, text="<==", command=self.scrollLeft)
+#        self.xaxis = Canvas(self.win, width=self.width, height=20,
+#                            scrollregion=(0, 0,
+#                                          history * stepLength, self.height),
+#                            xscrollincrement=self.stepLength,
+#                            xscrollcommand=self.scrollhoriz.set)
+#        self.xaxis.create_line(0, 3, history * stepLength, 3,
+#                               width=1, fill='black')
+#        for x in range(0, history * stepLength, 30 * stepLength):
+#           #draw ticks every thirty steps
+#           self.xaxis.create_line(x, 0, x, 20, width=1, fill='black')
+#           self.xaxis.create_text(x, 5, text=str(x), anchor=NE)
+#           self.canvas.create_line(x, 0, x, self.height, width=1, fill='gray')
       self.freezeButton = Button(self.win, text="Freeze",
                                  command=self.freezePress)
-      b3 = Button(self.win, text="==>", command=self.scrollRight)
-
-#                           xscrollincrement=self.stepLength,
-#                           xscrollcommand=self.xposition)
-      self.canvas.pack() 
 
       #Do the layout
       yaxis.grid(row=0, column=0)
       self.canvas.grid(row=0, column=1, columnspan=3)
-      b1.grid(row=1, column=1, sticky=W)
-      self.freezeButton.grid(row=1, column=2)
-      b3.grid(row=1, column=3, sticky=E)
+      #to put the next line back in, make sure to add one to the
+      #row argument on the next two lines
+#      self.xaxis.grid(row=1, column=1, columnspan=3)
+      self.scrollhoriz.grid(row=1, column=1, columnspan=3, sticky=W+E)
+      self.freezeButton.grid(row=2, column=2)
 
-   def xposition(self, left, right):
-      #print "LEFT=", left, "RIGHT=", right
-      pass
-
-   def scroll(self, amount):
-      #print "Amount:", amount
-      self.canvas.xview(SCROLL, int(amount) * 10, UNITS)
-
-   def scrollLeft(self):
+   def saveToFile(self, fname):
       """
-      Cause the graph to scroll left by self.scrollInterval * stepLength
-      units.  Called by the left scroll button.
+      Writes the plot to file fname.
+      
+      File Format:
+      dataMin
+      dataMax
+      Sensor1 Sensor2 Sensor3...Sensorn
+      val1 val2 val3...valn
+      val1 val2 val3...valn
+      .
+      .
+      .
+      val1 val2 val3...valn
       """
-      self.canvas.xview(SCROLL, -self.scrollInterval, UNITS)
+      try:
+         file = open(fname, "w")
+      except:
+         raise "Save: Error opening file " + fname
+
+      file.write(str(self.dataMin + "\n"))
+      file.write(str(self.dataMax + "\n"))
+      for n in range(len(self.sensorList)):
+         file.write(str(self.sensorList[n]) + " ")
+      file.write("\n")
+      for n in range(len(self.history)):
+         for m in range(len(self.sensorList)):
+            file.write(str(self.history[n][m] + " "))
+         file.write("\n")
+
+      file.close()
+
+   def loadFromFile(self, fname):
+      """
+      Loads a plot from file fname
+      """
+
+      try:
+         file = open(fname, "r")
+      except:
+         raise "Load: Error opening file " + fname
+
+      self.dataMin = int(file.readline())
+      self.dataMax = int(file.readline())
+      self.sensorList = map(lambda(x): int(x),
+                            split(strip(file.readline()), " "))
+      self.history = []
+      line = strip(file.readline())
+      while line != "":
+         self.history.append(map(lambda(x): float(x), split(line, " ")))
+         line = strip(file.readline())
+
+      file.close() 
+   
+   def scroll(self, *args):
+      """
+      This method intercepts the scroll message from the scrollbar.  It
+      calls freeze(), and, if one of the arrow buttons on the scrollbar
+      was pressed, it increases the amount by which the canvas is scrolled.
+      """
       self.freeze()
-
-   def scrollRight(self):
-      """
-      Cause the graph to scroll right by self.scrollInterval * stepLength
-      units.  Called by the right scroll button.
-      """
-      self.canvas.xview(SCROLL, self.scrollInterval, UNITS)
-      self.freeze()
+      if len(args) == 3:
+         #One of the arrow buttons was pressed
+         #multiply args[1] (which will be 1 or -1) by the deisred scroll
+         #interval
+         self.canvas.xview(args[0], int(args[1])*self.scrollInterval, args[2])
+      else:
+         #otherwise just pass the arguments on to xview
+         self.canvas.xview(*args)
 
    def freeze(self):
       """
@@ -220,7 +277,7 @@ class GeneralPlot:
             if self.lastHist < self.dataWindowSize:
                pass
             elif self.dataWindowSize <= self.lastHist < self.maxHist:
-               self.canvas.xview(SCROLL, 1, UNITS)
+               self.canvas.scroll(SCROLL, 1, UNITS)
             elif self.firstMove:
                self.firstMove = 0
             else:
