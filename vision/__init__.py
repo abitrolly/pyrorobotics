@@ -36,24 +36,24 @@ class PyroImage:
       (color binary).
       """
       fp = open(filename, "r")
-      type = fp.readline() # P6
+      type = fp.readline().strip() # P6
+      if type == 'P6':
+         self.depth = 3
+      elif type == 'P5':
+         self.depth = 1
+      else:
+         raise 'Unknown PPM mode: %s' % type
       (width, height) = fp.readline().split(' ')
       self.width = int(width)
       self.height = int(height)
-      self.depth = 3
       self.data = [0] * self.height * self.width * self.depth
       irange = int(fp.readline())
       x = 0
       while (x < self.width * self.height):
-         c = fp.read(1)
-         r = float(struct.unpack('h', c + '\x00')[0]) / float(irange)
-         c = fp.read(1)
-         g = float(struct.unpack('h', c + '\x00')[0]) / float(irange)
-         c = fp.read(1)
-         b = float(struct.unpack('h', c + '\x00')[0]) / float(irange)
-         self.data[x * self.depth + 0] = r
-         self.data[x * self.depth + 1] = g
-         self.data[x * self.depth + 2] = b
+         for i in range(self.depth):
+            c = fp.read(1)
+            r = float(struct.unpack('h', c + '\x00')[0]) / float(irange)
+            self.data[x * self.depth + i] = r
          x += 1
 
    def saveToFile(self, filename):
