@@ -1118,10 +1118,6 @@ class Network:
         for layer in self.layers:
             if self.path(layer, layer):
                 raise NetworkError, ('Network contains a cycle.', layer.name)   
-        temp = self.verbosity
-        self.setVerbosity(10)
-        self.display()
-        self.setVerbosity(temp)
     def verifyInputs(self):
         """
         Used in propagate() to verify that the network input
