@@ -17,7 +17,7 @@ class Vehicle(Brain):
        left = self.robot.get('light', 'value', 1)  # Khepera specific
        right = self.robot.get('light', 'value', 4) # Khepera specific
 
-       turn = (right - left) / self.robot.getMax('light').distance
+       turn = (right - left) / max(self.robot.get('light', 'all'))
        forward = .3 - fabs(turn * .3) # go when no light
 
        self.robot.move(forward, turn)
