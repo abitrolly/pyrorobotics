@@ -8,7 +8,7 @@ import pyro.gui.drawable as drawable
 
 class Engine(drawable.Drawable):
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
-                brainargs=[], config = {}, camerafile = 0, worldfile = 0):
+                pyroargs=[], config = {}, camerafile = 0, worldfile = 0):
       drawable.Drawable.__init__(self,'engine')
       self.robot = 0
       self.brain = 0
@@ -33,7 +33,7 @@ class Engine(drawable.Drawable):
          self.simfile = simfile
       else:
          self.simfile = ''
-      self.brainargs = brainargs
+      self.args = pyroargs
       self.config = config
       if self.simfile:
          self.loadSimulator(self.simfile, self.worldfile)
@@ -41,9 +41,6 @@ class Engine(drawable.Drawable):
          self.loadRobot(self.robotfile)
          if self.camerafile:
             self.loadCamera(self.camerafile)      
-      if self.brainargs != [] and self.brainfile:
-         self.loadBrain(self.brainfile, self.brainargs)
-         time.sleep(2)
       elif self.brainfile:
          self.loadBrain(self.brainfile)
          time.sleep(2)
@@ -206,7 +203,7 @@ class Engine(drawable.Drawable):
       console.log(console.INFO,'Loaded ' + file)
 
 
-   def loadBrain(self,file, args=None):
+   def loadBrain(self,file):
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
       import os
@@ -214,26 +211,16 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         if args:
-            self.brain = system.loadINIT(file, self, args=args)
-         else:
-            self.brain = system.loadINIT(file, self)
+         self.brain = system.loadINIT(file, self)
          self.brainfile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
-         if args:
-            self.brain = system.loadINIT(os.getenv('PYRO') + \
-                                         '/plugins/brains/' + file,
-                                         self, args=args)
-         else:
-            self.brain = system.loadINIT(os.getenv('PYRO') + \
-                                         '/plugins/brains/' + file, self)
+         self.brain = system.loadINIT(os.getenv('PYRO') + \
+                                      '/plugins/brains/' + file, self)
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
       else:
          raise 'File not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
-      # FIX: currently, brain is not a drawable
-      #self.append(self.brain)
 
    def freeBrain(self):
       if self.brain != 0:
