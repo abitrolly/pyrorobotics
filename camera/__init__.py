@@ -11,7 +11,7 @@ class Camera(PyroImage, Service):
    """
    A base class for Camera
    """
-   def __init__(self, width, height, depth = 3):
+   def __init__(self, width, height, depth = 3, title = "Camera View"):
       """
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
@@ -19,6 +19,7 @@ class Camera(PyroImage, Service):
       PyroImage.__init__(self, width, height, depth, 0)
       Service.__init__(self, 'camera')
       self.app = 0
+      self.title = title
       self.update() # call it once to initialize
       
    def _update(self):
@@ -61,7 +62,7 @@ class Camera(PyroImage, Service):
          self.app = Tkinter.Tk()
          self.app.withdraw()
          self.window = Tkinter.Toplevel()
-         self.window.wm_title("Camera View")
+         self.window.wm_title(self.title)
          self.im = self.getImage()
          self.image = ImageTk.PhotoImage(self.im)
          self.label = Tkinter.Label(self.window, image=self.image, bd=0)
