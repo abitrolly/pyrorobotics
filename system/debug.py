@@ -125,6 +125,10 @@ class PyroDebugger(code.InteractiveConsole):
             return
         return code.InteractiveConsole.push(self, line)
 
+def Break():
+    import inspect
+    handler(None, inspect.currentframe())
+
 def handler(signum, frame):
     console = PyroDebugger(frame=frame)
     console.interact()
@@ -132,4 +136,4 @@ def handler(signum, frame):
     print colorize("\nContinuing...", "yellow")
 signal.signal(signal.SIGTSTP, handler) # suspend
 
-print colorize("PyroDebugger is installed. Press <CONTROL+Z> to activate.")
+print colorize("Pyro debugger is installed. Press <CONTROL+Z> to activate.")

@@ -347,9 +347,9 @@ class Layer:
         """
         Sets all activations to the value of the argument. Value should be in the range [0,1].
         """
-        if self.verify and not self.activationSet == 0:
-            raise LayerError, \
-                  ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
+        #if self.verify and not self.activationSet == 0:
+        #    raise LayerError, \
+        #          ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
         if (value < self.minActivation or value > self.maxActivation) and self.kind == 'Input':
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
@@ -635,7 +635,9 @@ class Network:
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
-
+        self.setup()
+    def setup(self):
+        pass
     # general methods
     def path(self, startLayer, endLayer):
         """
@@ -1304,6 +1306,7 @@ class Network:
         
         """
         # First, copy the values into either activations or targets:
+        self.preStep()
         for key in args:
             layer = self.getLayer(key)
             if layer.type == 'Input':
@@ -1338,16 +1341,22 @@ class Network:
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
+        self.postStep()
         return (error, correct, total)
     def preStep(self):
         pass
     def postStep(self):
+        pass
+    def preSweep(self):
+        pass
+    def postSweep(self):
         pass
     def sweep(self):
         """
         Runs through entire dataset. 
         Returns TSS error, total correct, and total count.
         """
+        self.preSweep()
         if self.loadOrder == []:
             raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
         if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
@@ -1368,9 +1377,7 @@ class Network:
             else:
                 self.currentSweepCount = None
             self._sweeping = 1
-            self.preStep()
             (error, correct, total) = self.step( **datum )
-            self.postStep()
             self._sweeping = 0
             if self.saveResults:
                 self.results[i] = (error, correct, total)
@@ -1385,6 +1392,7 @@ class Network:
             cnt += 1
         if self.learning and self.batch:
             self.change_weights() # batch mode, otherwise change weights in step
+        self.postSweep()
         return (tssError, totalCorrect, totalCount)
     def sweepCrossValidation(self):
         """
@@ -1404,9 +1412,7 @@ class Network:
                 if self.targets:
                     set["output"] = self.targets[i]
                 self._sweeping = 1
-                self.preStep()
                 (error, correct, total) = self.step( **set )
-                self.postStep()
                 self._sweeping = 0
                 if self.crossValidationReportLayers != []:
                     (error, correct, total) = self.getError( *self.crossValidationReportLayers )
@@ -1416,9 +1422,7 @@ class Network:
         else:
             for set in self.crossValidationCorpus:
                 self._sweeping = 1
-                self.preStep()
                 (error, correct, total) = self.step( **set )
-                self.postStep()
                 self._sweeping = 0
                 if self.crossValidationReportLayers != []:
                     (error, correct, total) = self.getError( *self.crossValidationReportLayers )
@@ -2345,9 +2349,7 @@ class SRN(Network):
         # This should really loop over each arg that is kind Input
         # For now, just assumes an "input" layer
         if not args.has_key("input"):
-            self.preStep()
             retval = self.networkStep(**args)
-            self.postStep()
             return retval
         # The rest of this assumes at least an "input" parameter!
         # compute length of sequence:
@@ -2397,10 +2399,8 @@ class SRN(Network):
             if step < sequenceLength - 1: # not the last one
                 if not self.learnDuringSequence:
                     self.learning = 0
-            self.preStep()
             retvals = self.networkStep(**dict)
             self.learning = learning # in case we turned it off
-            self.postStep()
             totalRetvals = map(lambda x,y: x+y, totalRetvals, retvals)
         return totalRetvals
     def networkStep(self, **args):
