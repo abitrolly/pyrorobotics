@@ -183,7 +183,7 @@ class Robot (Drawable):
         A method to set the above get.
 	"""
 	if (data == None):
-            raise "Need value to set"
+            raise AttributeError, "Need value to set"
 	elif (val == None):
             # this probably doesn't make sense:
             self.senses[device] = data # dictionary?
@@ -316,9 +316,11 @@ class Robot (Drawable):
                     print "Service is already running: '%s'" % service
                     continue
                 dict[service].startService()
-                # fix: did it start? if not do not do the following:
-                self.service[service] = dict[service]
-                self.senses[service] = self.service[service]
+                if dict[service].getServiceState() == "started":
+                    self.service[service] = dict[service]
+                    self.senses[service] = self.service[service]
+                else:
+                    raise AttributeError, "service '%s' not available" % service
             return "Ok"
         else: # list of services
             for service in dict:
@@ -335,8 +337,11 @@ class Robot (Drawable):
             console.log(console.INFO,"Loading service '%s'..." % item)
             self.supports[item].startService()
             # fix: did it start? if not do not do the following:
-            self.service[item] = self.supports[item]
-            self.senses[item] = self.service[item]
+            if self.supports[item].getServiceState() == "started":
+                self.service[item] = self.supports[item]
+                self.senses[item] = self.service[item]
+            else:
+                raise AttributeError, "service '%s' not available" % item
         else:
             file = item
             if file[-3:] != '.py':
@@ -349,8 +354,11 @@ class Robot (Drawable):
                                                    '/plugins/services/'+ \
                                                    file, self))
             else:
-                raise 'Service not found: ' + file
+                raise AttributeError, 'Service not found: ' + file
         return "Ok"
+
+    def stopService(self, item):
+        self.getService(self, item).stopService()
 
     def supportsService(self, item):
         return self.supports.has_key(item)
@@ -359,19 +367,19 @@ class Robot (Drawable):
         if self.service.has_key(item):
             return self.service[item]
         else:
-            raise "UnknownService", item
+            raise AttributeError, "unknown service '%s'" % item
 
     def getServiceDevice(self, item):
         if self.service.has_key(item):
             return self.service[item].dev
         else:
-            raise "UnknownService", item
+            raise AttributeError, "unknown service '%s'" % item
 
     def getServiceData(self, item, *args):
         if self.service.has_key(item):
             return self.service[item].getServiceData(*args)
         else:
-            raise "UnknownService", item
+            raise AttributeError, "unknown service '%s'" % item
 
     def getServices(self):
         return self.service.keys()
@@ -389,7 +397,7 @@ class Robot (Drawable):
         del self.service[item]
 
     def sendMessage(self, message):
-        raise "NoSendMessageInterface"
+        raise AttributeError, "no send message interface"
 
     def getMessages(self):
         return []
