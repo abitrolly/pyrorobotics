@@ -10,16 +10,14 @@ TARGET=csom.so
 # -----------------------
 
 
-
 $(TARGET): $(LIB)/$(TARGET)
-	cp $(LIB)/$(TARGET) .
+	mv $(LIB)/$(TARGET) .
 
 $(LIB)/$(TARGET): 
 	(cd $(LIB) && make $(TARGET))
 
-
-clean:
+clean::
 	rm -f $(TARGET)
 
-cleanall:
+cleanall::
 	(make clean && cd $(LIB) && make cleanall)

@@ -23,11 +23,8 @@ get_activations() to feed information to an SRN
 all classes have a display() method
 """
 
-
 import csom
 csom.set_globals()
-
-
 
 
 """
