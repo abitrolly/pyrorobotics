@@ -1114,16 +1114,17 @@ class vector:
         """
         mylist = self.get_elts()
         if isinstance(key, types.SliceType):
-            """
-            WKV 2003-07-28
+            print key.start
+            print key.stop
+            #WKV 2003-07-28
             
             if key.stop > len(self):
                 stop = len(self)
             else:
                 stop = key.stop
             return mylist[key.start:stop]
-            """
-            return mylist[key.start:key.stop] # WKV 2003-07-28
+
+            #return mylist[key.start:key.stop] # WKV 2003-07-28
         else:
             return mylist[key]
     
@@ -1583,17 +1584,18 @@ class point:
 #################################################################################
 if(__name__ == '__main__'):
     """
-    main function for testing purposes
-    these tests closely follow the tests implemented for csom.so (test_csom.py)
-    and for som_pak-dev (test_devrobs.c)
+    Main function for testing purposes
+    these tests closely follow the tests implemented for csom.so
+    (test_csom.py) and for som_pak-dev (test_devrobs.c)
     
     To test, run this file as a program, i.e. python __init__.py
     """
 
     # test 1:
-    # SOM's model vectors are read in from ex.cod.  SOM is then trained using
-    # a dataset created from ex.dat.  After training, model vectors are saved to
-    # test1.cod.
+    # SOM's model vectors are read in from ex.cod.  SOM is then trained
+    # using a dataset created from ex.dat.  After training, model vectors
+    # are saved to test1.cod.
+    # The training/map counters are saved to test1.<train/map>_counter.
     print "test 1: som from file, data from file, train from dataset"
     print "---------------------------------------------------------"
     mysom = psom(file='ex.cod')
@@ -1602,6 +1604,7 @@ if(__name__ == '__main__'):
     mysom.timing_start()
     # test train_from_dataset
     mysom.train_from_dataset(mydataset)
+    #mysom.train_from_dataset(mydataset)
     mysom.timing_stop()
     ttime = mysom.get_training_time()
     mysom.save_to_file("test1.cod")
@@ -1610,7 +1613,6 @@ if(__name__ == '__main__'):
     print "for verification, compare to test_csom.py output \"test1.cod\""
     print "  and to test_devrobs output \"test1_verify.cod\""
     print "test 1 successfully completed"
-    print ""
 
     # test train counters
     test1t_fd = open("test1.train_counter", "w")
@@ -1641,19 +1643,19 @@ if(__name__ == '__main__'):
                             (pt.__str__(), maxconsec_tcounter))
     test1t_fd.write("*** End Max Consec Train Counter ***\n")
     test1t_fd.close()
-    print "Test 1: Train counters written to: %s\n" % 'test1.train_counter'
+    print "==> Test 1: Train counters written to: %s\n" % \
+          'test1.train_counter'
 
-    """
     # test map_from_dataset
     print "Testing map from dataset"
     mysom1a = psom(file='ex.cod')
     mysom1a.timing_start()
     mysom1a.map_from_dataset(mydataset)
+    mysom1a.map_from_dataset(mydataset)
     mysom1a.timing_stop()
     ttime = mysom1a.get_training_time()
-    print "Mapping took", ttime, " seconds"
-    print ""
-    
+    print "Mapping took", ttime, "seconds"
+
     # test map counters
     test1m_fd = open("test1.map_counter", "w")
     test1m_fd.write("*** Map Counter ***\n")
@@ -1683,13 +1685,13 @@ if(__name__ == '__main__'):
                             (pt.__str__(), maxconsec_mcounter))
     test1m_fd.write("*** End Max Consec Counter ***\n")
     test1m_fd.close()
-    print "Test 1: Map counters written to: %s\n" % 'test1.map_counter'
-    """
+    print "==> Test 1: Map counters written to: %s\n" % 'test1.map_counter'
+    
     
     # test 2:
-    # SOM is randomly initialized using dataset created from ex.dat.  SOM is then
-    # trained using the same dataset.  After training, model vectors are saved to
-    # test2.cod.
+    # SOM is randomly initialized using dataset created from ex.dat.  SOM is
+    # then trained using the same dataset.  After training, model vectors
+    # are saved to test2.cod.
     print "test 2: dataset from file, som randinit from data, train from dataset"
     print "---------------------------------------------------------------------"
     mysom2 = psom(12,8,data=mydataset)
@@ -1707,8 +1709,7 @@ if(__name__ == '__main__'):
     myact = mysom2.get_activations('error')
     mysom2.display_activations(myact)
     print "output written to file \"test2.cod\""
-    print "test 2 successfully completed"
-    print ""
+    print "test 2 successfully completed\n"
 
     # test 3:
     # SOM is randomly initialized to values between 0 and 10.  The initial model
@@ -1734,9 +1735,7 @@ if(__name__ == '__main__'):
     myact = mysom3.get_activations('error')
     mysom3.display_activations(myact)
     print "output written to file \"test3b.cod\""
-    print "test 3 successfully completed"
-    print ""
-
+    print "test 3 successfully completed\n"
 
     # test 4:
     # SOM's model vectors are read in from ex.cod.  SOM is then trained on
@@ -1780,6 +1779,7 @@ if(__name__ == '__main__'):
     # Make sure model vectors were updated during training
     # Compare this output with the ones printed under
     # "AFTER TRAINING"
+    """
     print "****** BEFORE TRAINING *******"
     print "Model vector at point:"
     print "(0,4): ", mysom4.get_model_vector(point(0,4))
@@ -1789,7 +1789,7 @@ if(__name__ == '__main__'):
     print "(3,4): ", mysom4.get_model_vector(point(3,4))
     print "(0,6): ", mysom4.get_model_vector(point(0,6))
     print "******************************"
-    
+    """
     # Training
     i=0
     for v in vecs:
@@ -1807,6 +1807,7 @@ if(__name__ == '__main__'):
     # Make sure model vectors were updated during training
     # Compare this output with the ones printed under
     # "BEFORE TRAINING"
+    """
     print "\n****** AFTER TRAINING *******"
     print "Model vector at point:"
     print "(0,4): ", mysom4.get_model_vector(point(0,4))
@@ -1816,8 +1817,8 @@ if(__name__ == '__main__'):
     print "(3,4): ", mysom4.get_model_vector(point(3,4))
     print "(0,6): ", mysom4.get_model_vector(point(0,6))
     print "******************************\n"
-    
-    print "last mapping produces the following bubble srn activations:"
+    """
+    print "\nlast mapping produces the following bubble srn activations:"
     myact = mysom4.get_activations()
     mysom4.display_activations(myact)
     print "last mapping produces the following gaussian srn activations:"
@@ -1833,7 +1834,6 @@ if(__name__ == '__main__'):
     mysom4.save_to_file("test4.cod")
     print "output written to \"test4.cod\""
     print "log written to \"psomtest.log\""
-    print "\n"
 
     test4t_fd = open("test4.train_counter", "w")    
     test4t_fd.write("*** Train Counter ***\n")
@@ -1863,10 +1863,12 @@ if(__name__ == '__main__'):
                             (pt.__str__(), maxconsec_tcounter))
     test4t_fd.write("*** End Max Consec Train Counter ***\n")
     test4t_fd.close()
-    print "Test 4: Train counters written to: %s\n" % 'test4.train_counter'
+    print "==> Test 4: Train counters written to: %s\n" % \
+          'test4.train_counter'
 
     # Make sure model vectors were not updated during mapping
     # Compare with "AFTER MAPPING"
+    """
     print "\n******* BEFORE MAPPING ********"
     print "Model vector at point:"
     print "(0,4): ", mysom4.get_model_vector(point(0,4))
@@ -1876,8 +1878,9 @@ if(__name__ == '__main__'):
     print "(3,4): ", mysom4.get_model_vector(point(3,4))
     print "(0,6): ", mysom4.get_model_vector(point(0,6))
     print "*******************************"
-    
+    """
     # Mapping
+
     i=0
     for v in vecs:
         print "\nMapping vector #%s" % i
@@ -1890,6 +1893,7 @@ if(__name__ == '__main__'):
         print "at point",
         m.point.display()
 
+    """
     print "\n******* AFTER MAPPING ********"
     print "Model vector at point:"
     print "(0,4): ", mysom4.get_model_vector(point(0,4))
@@ -1899,7 +1903,7 @@ if(__name__ == '__main__'):
     print "(3,4): ", mysom4.get_model_vector(point(3,4))
     print "(0,6): ", mysom4.get_model_vector(point(0,6))
     print "********************************\n"
-    
+    """
     test4m_fd = open("test4.map_counter", "w")    
     test4m_fd.write("*** Map Counter ***\n")
     for i in range(mysom4.xdim):
@@ -1928,4 +1932,4 @@ if(__name__ == '__main__'):
                             (pt.__str__(), maxconsec_mcounter))
     test4m_fd.write("*** End Max Consec Map Counter ***\n")
     test4m_fd.close()
-    print "Test 4: Map counters written to: %s\n" % 'test4.map_counter'
+    print "==> Test 4: Map counters written to: %s\n" % 'test4.map_counter'

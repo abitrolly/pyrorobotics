@@ -17,16 +17,20 @@
 #include "lvq_pak.h"
 #include "som_rout.h"
 #include "datafile.h"
-
 #include "som_devrobs.h"
 
-/* just a silly wrapper for the save_entries() macro because swig does
- * not support macros */
+/* write_entries()
+ * ---------------
+ * just a silly wrapper for the save_entries() macro because swig does
+ * not support macros 
+ */
 int write_entries(struct entries *codes, char *out_code_file) {
   return save_entries(codes, out_code_file); }
 
-
-/* set global som_pak parameters */
+/* set_globals()
+ * -------------
+ * set global som_pak parameters 
+ */
 void set_globals(void) {
   use_fixed(0);
   use_weights(1);
@@ -34,7 +38,10 @@ void set_globals(void) {
   init_random((int) time(NULL));
 }
 
-/* create an eptr */
+/* get_eptr()
+ * ----------
+ * create an eptr 
+ */
 eptr *get_eptr(void) {
   eptr *p;
   //p = (eptr *) malloc(sizeof(eptr)); /* WKV 2003-07-28 */
@@ -42,7 +49,10 @@ eptr *get_eptr(void) {
   return p;
 }
 
-/* free eptr WKV 2003-07-23 */
+/* free_eptr()
+ * -----------
+ * WKV 2003-07-23 
+ */
 void free_eptr(eptr *p) { 
   free(p);
 }
@@ -105,8 +115,8 @@ void free_dataset (struct entries *data) {
  * ---------------
  * Adds a data_entry struct to a pre-existing (already called init_dataset())
  * set of data.  Often used in conjunction with make_data_entry_*(). 
- * Returns 1 if an error occurs, 0 otherwise.  */
-
+ * Returns 1 if an error occurs, 0 otherwise.  
+ */
 int addto_dataset(struct entries *data, struct data_entry *entry) {
   eptr p;
   struct data_entry *next;
@@ -125,7 +135,6 @@ int addto_dataset(struct entries *data, struct data_entry *entry) {
   data->num_entries++;
   return 0;
 }
-
 
 
 /* make_data_entry_weighted_masked()
@@ -157,7 +166,7 @@ struct data_entry *make_data_entry_weighted_masked(float *points, short weight,
   char *charmask = NULL;
   int i;
   
-  // this check has been moved to __init__.py
+  // this check has been moved to __init__.py. YT
   /*
   if(weight < 0.0) {
     fprintf(stderr, "make_data_entry_weighted_masked(): invalid weight: ");
@@ -216,15 +225,19 @@ struct data_entry *make_data_entry(float *points) {
   return make_data_entry_weighted_masked(points, 1, NULL, 0, 0);
 }
 
-/* Returns 0 if label setting is successful, 1 otherwise.
+
+
+/* set_label_data_entry()
+ * ----------------------
+ * DEPRECATED 
+ * use clear_label() and add_label() instead.  YT
+ *
+ * Returns 0 if label setting is successful, 1 otherwise.
  * The difference between add_label and set_label is that 
  * set_label removes all labels previously associated with
  * the entry before setting the new label.
- * --added June 17, 2003
+ * --added June 17, 2003 (YT)
  */
-
-//DEPRECATED
-//use clear_label() and add_label() instead
 /*
 int set_label_data_entry(struct data_entry *entry, char **label) {
   int i;
@@ -240,7 +253,9 @@ int set_label_data_entry(struct data_entry *entry, char **label) {
 }
 */
 
-/* Returns 0 if adding a label is successful, 1 otherwise. 
+/* add_label_data_entry()
+ * ----------------------
+ * Returns 0 if adding a label is successful, 1 otherwise. 
  * add_label simply adds a label to the entry; any previous
  * associations remain the same. 
  * --added June 17, 2003 (YT)
@@ -253,7 +268,9 @@ void add_label_data_entry(struct data_entry *entry, char **label) {
   }
 }
 
-/* Clears all labels associated with a data entry 
+/* clear_labels_data_entry()
+ * -------------------------
+ * Clears all labels associated with a data entry 
  * --added June 17, 2003 (YT)
  */
 void clear_labels_data_entry(struct data_entry *entry) {
@@ -272,7 +289,8 @@ void clear_labels_data_entry(struct data_entry *entry) {
  * randinit(), or open_entries().  'codes' will then contain info
  * about topology, map dimension, vector dimension, and neighborhood
  * type.  'alpha_mode' and 'radius_mode' specify the alpha and radius
- * decay functions.  */
+ * decay functions.  
+ */
 struct teach_params_counters *construct_teach_params(struct entries *codes,
 						     short alpha_mode,
 						     short radius_mode) {
@@ -348,8 +366,7 @@ int init_training_session(struct teach_params_counters *params,
     return 1;
   }
 
-  /* these error checks are now done in the python code: __init__.py
-   * -- YT */
+  /* these error checks are now done in the python code: __init__.py. YT */
   /* 
   if(alpha_0 < 0.0) {
     fprintf(stderr, "init_training_session(): invalid alpha_0: %f, ",
@@ -391,16 +408,14 @@ int init_training_session(struct teach_params_counters *params,
   return 0;
 }
 
-
-
 /* setup_snapshot()
  * ----------------
  * Sets up file snapshots of code vectors; these files will be saved
  * every 'interval' number of iterations.
  * If 'snapfile_prefix' is "snap.cod" and interval is 100
  * then the resulting files will be "snap.cod.100", "snap.cod.200", etc.
- * Returns 1 if an error occurs, 0 otherwise.  */
-
+ * Returns 1 if an error occurs, 0 otherwise.  
+ */
 int setup_snapshot(struct teach_params_counters *params,
 		   char *snapfile_prefix, long interval) {
   struct snapshot_info *snap;
@@ -536,9 +551,9 @@ void update_counters(unsigned int ***counters, int *curr_coords,
   if(!(last_coords[0] == -1     && last_coords[1] == -1) &&
      !(last_coords[0] == curr_x && last_coords[1] == curr_y)) {
     /*
-    printf("Reseting consec counter %d->%d for last point:(%d,%d)\n", 
-	   counters[last_coords[0]][last_coords[1]][1], 0, 
-	   last_coords[0], last_coords[1]);
+      printf("Reseting consec counter %d->%d for last point:(%d,%d)\n", 
+      counters[last_coords[0]][last_coords[1]][1], 0, 
+      last_coords[0], last_coords[1]);
     */
     counters[last_coords[0]][last_coords[1]][1] = 0;
   }
@@ -647,14 +662,14 @@ int get_counter(struct teach_params_counters *params,
 
 /* input_one()
  * -----------
- * Takes teach_params_counters and a data_entry and applies the mapping algorithm
- * to the data vector, returning a pointer to integer coordinates of the
- * winning model vector, or NULL if an error occurs.
+ * Takes teach_params_counters and a data_entry and applies the mapping 
+ * algorithm to the data vector, returning a pointer to integer coordinates 
+ * of the winning model vector, or NULL if an error occurs.
  * If mode is NO_TRAIN, then that is all that happens.
  * If mode is TRAIN, then the map is trained in accordance with alpha,
  *  radius, and whatnot, and the count is increased.
- * If appropriate, snapshots are also taken from here. */
-
+ * If appropriate, snapshots are also taken from here. 
+ */
 int *map_one(struct teach_params_counters *params, 
 	     struct data_entry *sample, 
 	     int *last_coords, int update_counter_flag) {
@@ -761,7 +776,6 @@ int *input_one(struct teach_params_counters *params,
 }
 
 
-
 /* train_fromdataset()
  * -------------------
  * Runs an entire training session from teach_params and a data set
@@ -780,7 +794,7 @@ int *input_one(struct teach_params_counters *params,
  */
 struct data_entry *train_fromdataset(struct teach_params_counters *params, 
 				     struct entries *data, short mode) {
-  struct data_entry *entry = NULL, *last;
+  struct data_entry *entry, *last;
   eptr p;
   int j = 0, *coords, *last_coords;
   
@@ -815,6 +829,13 @@ struct data_entry *train_fromdataset(struct teach_params_counters *params,
    */
   last_coords = (int *) malloc(2*sizeof(int));
   last_coords[0] = last_coords[1] = -1;
+  //entry = rewind_entries(data, &p);
+  /* if a user has been so ignorant as to issue two
+     training requests, his program gets killed with a segfault in the
+     get_label routine.  The problem is once again garbage being returned
+     to the python level (the last entry was uninitialized).
+     WKV 2003-07-31 */
+  last = entry = rewind_entries(data, &p); 
 
   while(params->teach->count < params->teach->length) {
     if(entry == NULL) entry = rewind_entries(data, &p);
@@ -827,7 +848,7 @@ struct data_entry *train_fromdataset(struct teach_params_counters *params,
     last = entry;
     entry = next_entry(&p);
   }
-
+  free(last_coords); /* YT 2003-07-31 */
   return last;
 }
 
@@ -841,7 +862,7 @@ struct data_entry *train_fromdataset(struct teach_params_counters *params,
  */
 struct data_entry *map_fromdataset(struct teach_params_counters *params, 
 				   struct entries *data) {
-  struct data_entry *entry = NULL, *last;
+  struct data_entry *entry, *last;
   eptr p;
   int *coords, *last_coords;
 
@@ -871,24 +892,23 @@ struct data_entry *map_fromdataset(struct teach_params_counters *params,
   /* last_coords == (-1,-1) tells update_counters() that this
    * is the first run, so no need to check consecutive counter
    */
-  last_coords == (int *)malloc(2*sizeof(int));
+  last_coords = (int *)malloc(2*sizeof(int));
   last_coords[0] = last_coords[1] = -1;
-  entry = rewind_entries(data, &p);
+  //entry = rewind_entries(data, &p); 
+  last = entry = rewind_entries(data, &p); /* same reason as above 
+					      YT 2003-07-31 */
 
   while(entry != NULL){
     if((coords = map_one(params, entry, last_coords, 1)) == NULL) {
       fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
       return NULL;
     }
-    /* for some reason, last_coords cannot be freed here, unlike in
-       train_fromdataset().  It segfaults, and I'm not sure why.  YT 2003-07-30
-    */
-    //free(last_coords); 
+    free(last_coords); /* WKV 2003-07-31 */
     last_coords = coords;
     last = entry;
     entry = next_entry(&p);
   }
-  free(last_coords); /* WKV 2003-07-28 */
+  free(last_coords); /* WKV 2003-07-31 */
   return last;
 }
 
@@ -915,8 +935,8 @@ int get_training_time(struct teach_params_counters *params) {
  * -----------
  * just returns a data element.  nothing too fancy.  
  * see init_training_session() and input_one() for info about how error
- * is actually calculated.  */
-
+ * is actually calculated.  
+ */
 float get_error(struct teach_params_counters *params) {
   return params->teach->qerror;
 }
@@ -1001,7 +1021,7 @@ float *get_activation_levels(struct teach_params_counters *params,
  * ---------------------
  * returns SRN appropriate activation levels based on error calculations
  * for each model vector 
-*/
+ */
 float *get_levels_by_error(struct teach_params_counters *params,
 			   struct data_entry *sample, float tolerance) {
   DIST_FUNCTION *distf = params->teach->dist;
@@ -1155,7 +1175,7 @@ void print_dataset(struct entries *data) {
 
 /* Returns the mask array (char *) associated with the 
  * given data entry 
- * --added June 20, 2003 (Yee Lin Tan)
+ * --added June 20, 2003 (YT)
  */
 char *get_mask_data_entry(struct data_entry *entry, int dim) {
   return entry->mask;
@@ -1164,7 +1184,7 @@ char *get_mask_data_entry(struct data_entry *entry, int dim) {
 
 /* Returns the label array associated with the given
  * data entry as a array of strings.
- * --added June 20, 2003 (Yee Lin Tan)
+ * --added June 20, 2003 (YT)
  * Malloc'ed an extra spot for the NULL pointer at the end of char **.
  * --added July 22, 2003 (WKV)
  */

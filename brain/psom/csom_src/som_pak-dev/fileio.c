@@ -220,7 +220,7 @@ static struct file_info *alloc_file_info(void)
   //fi->flags.compressed = 0;
   //fi->flags.eof = 0;
   //fi->lineno = 0;
-  memset(fi, 0, sizeof(struct file_info)); /* WKV */
+  memset(fi, 0, sizeof(struct file_info)); /* WKV 2003-07-23 */
   return fi;
 }
 
@@ -234,19 +234,22 @@ int close_file(struct file_info *fi)
     {
       if (fi->name)
 	free(fi->name);
-      if(fi->buf) /* -- WKV 2003-07-23 */
+      if(fi->buf) /* WKV 2003-07-23 */
 	{
 	  free(fi->buf);
 	  fi->buf = NULL;
 	  fi->len = 0;
 	} 
-      if (fi->fp)
+      //if (fi->fp)
+      if (fi->fp) {
 #ifndef NO_PIPED_COMMANDS
 	if (fi->flags.pipe) /* piped commands + compressed files */
 	  retcode = pclose(fi->fp);
 	else
 #endif /* NO_PIPED_COMMANDS */
 	  retcode = fclose(fi->fp);
+	fi->fp = 0; /* WKV */
+      }
       free(fi);
     }
   return retcode;
@@ -392,9 +395,14 @@ char *mygetline(struct file_info *fi)
 char *mygetline(struct file_info *fi)
 {
   char *s;
-  int  pos;
-  int  curlen;
-  
+  int pos;
+  int curlen;
+
+  if (fi == NULL) {
+    fprintf(stderr, "mygetline: called with bad file_info pointer %p\n", fi);
+    return NULL;
+  }
+
   /* Allocate memory for line buffer */
   if (fi->len == 0 || fi->buf == NULL) {
     fi->buf = malloc(sizeof(char) * STR_LNG);
