@@ -64,6 +64,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.update_interval = 100
       self.update_interval_detail = 1.0
       self.lastButtonUpdate = 0
+      self.printBuffer = []
       self.maxBufferSize = 50000 # 50k characters in buffer
                                  #set to 0 for infinite
       #store the gui structure in something nice insted of python code
@@ -434,6 +435,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.redrawWindowBrain()
       if self.watcher:
          self.watcher.update(self.environment)
+      self.updateStatus()
       # -----------------------
       if self.engine.robot != 0:
          if self.engine.robot.get('/robot/stall'):
@@ -587,7 +589,7 @@ class TKgui(Tkinter.Toplevel, gui):
       pass
 
    def inform(self, message):
-      self.write(message + "\n", echo = 1)
+      self.write(message + "\n")
 
    def parsePrint(self, message, tag = None):
       if tag:
@@ -617,23 +619,35 @@ class TKgui(Tkinter.Toplevel, gui):
             self.status.insert('end', message, "red")
          else:
             self.status.insert('end', message)
-      
-   def write(self, item, echo = 0, tag = None):
+
+   def write(self, item, tag = None):
       try:
-         self.status.config(state='normal')
-         self.parsePrint("%s" % item, tag)
-         self.status.config(state='disabled')
-         self.status.see('end')
-         if self.maxBufferSize:
-            text = self.status.get(1.0, 'end')
-            lenText = len(text)
-            if lenText > self.maxBufferSize:
-               self.status.config(state='normal')
-               self.status.delete(1.0, float(lenText - self.maxBufferSize))
-               self.status.config(state='disabled')
-               self.status.see('end')
+         self.printBuffer.append(item)
       except:
-         if echo: print item
+         pass
+
+   def updateStatus(self):
+      try:
+         origLen = len(self.printBuffer)
+         for i in range(origLen):
+            line = self.printBuffer.pop(0)
+            self.printStatus(line)
+      except:
+         pass
+      
+   def printStatus(self, item, tag = None):
+      self.status.config(state='normal')
+      self.parsePrint("%s" % item, tag)
+      self.status.config(state='disabled')
+      self.status.see('end')
+      if self.maxBufferSize:
+         text = self.status.get(1.0, 'end')
+         lenText = len(text)
+         if lenText > self.maxBufferSize:
+            self.status.config(state='normal')
+            self.status.delete(1.0, float(lenText - self.maxBufferSize))
+            self.status.config(state='disabled')
+            self.status.see('end')
    def flush(self):
       pass
 

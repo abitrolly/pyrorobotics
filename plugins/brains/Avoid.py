@@ -25,7 +25,7 @@ class Avoid(Brain):
       left = min(self.get('/robot/range/left-front/value'))
       right = min(self.get('/robot/range/right-front/value'))
       translation, rotate = self.determineMove(front, left, right)  
-      self.robot.move(translation, rotate)  
+      self.robot.move(translation, rotate)
 
 def INIT(engine):  
    assert (engine.robot.requires("range-sensor") and
