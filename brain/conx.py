@@ -1126,8 +1126,8 @@ class Network:
         activations have been set.
         """
         for layer in self.layers:
-            if layer.type == 'Input' and not layer.activationSet:
-                raise LayerError, ('Inputs are not set and verifyInputs() was called.',\
+            if layer.type == 'Input' and layer.active and not layer.activationSet:
+                raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
                                    (layer.name, layer.type))
             else:
                 layer.resetActivationFlag()
@@ -1137,7 +1137,7 @@ class Network:
         been set.
         """
         for layer in self.layers:
-            if layer.type == 'Output' and not layer.targetSet:
+            if layer.type == 'Output' and layer.active and not layer.targetSet:
                 raise LayerError, ('Targets are not set and verifyTargets() was called.',\
                                    (layer.name, layer.type))
             else:
@@ -2054,6 +2054,10 @@ class SRN(Network):
         retval = Network.backprop(self)
         if self.contextCopying:
             self.copyHiddenToContext() # must go after error computation
+        else:
+            for layer in self.layers:
+                if layer.kind == "Context":
+                    layer.activationSet = 1
         return retval
     def step(self, **args):
         """
