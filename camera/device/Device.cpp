@@ -7,6 +7,10 @@ Device::Device(int wi, int he, int de, int r, int g, int b) {
   initialize(wi, he, de, r, g, b);
 }
 
+Device::Device(int wi, int he, int de) {
+  initialize(wi, he, de, 0, 1, 2);
+}
+
 Device::~Device() {
   delete [] image;
 }
