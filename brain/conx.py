@@ -76,6 +76,8 @@ class Layer:
         self.bed = Numeric.zeros(self.size, 'f')
         self.targetSet = 0
         self.activationSet = 0
+    def __len__(self):
+        return len(self.activation)
     def changeSize(self, newsize):
         # Overwrites current data!
         if newsize <= 0:
@@ -526,7 +528,7 @@ class Network:
         layer.copyActivations(vector[start:start+layer.size], self.symmetric)
     # CopyTargets to be parallel with CopyActivations
     def copyTargets(self, layer, vec, start):
-        copyTarget(self, layer, vec, start):
+        copyTarget(self, layer, vec, start)
     def copyTarget(self, layer, vec, start):
         vector = self.replacePatterns(vec)
         if self.verbosity > 1:
