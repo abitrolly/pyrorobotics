@@ -45,8 +45,10 @@ class Engine(drawable.Drawable):
    def postinit(self):
       if self.brainargs != [] and self.brainfile:
          self.loadBrain(self.brainfile, self.brainargs)
+         time.sleep(2)
       elif self.brainfile:
          self.loadBrain(self.brainfile)
+         time.sleep(2)
 
    def reset(self):
       self.pleaseStop()
