@@ -62,11 +62,11 @@ def process_options():
            pyroargs, configfile, evalcommand, worldfile, devices
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:a:i:e:w:d:", \
+                                   "r:b:hg:s:a:i:e:w:d:c:", \
                                    ["robot=", "brain=", "help", \
                                     "gui=", "sim=", "args=",\
                                     "init=", "eval=", "world=",
-                                    "devices="])
+                                    "devices=", "config="])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -88,7 +88,7 @@ def process_options():
             pyroargs = a
 	elif o in ("-i", "--init"):
             configfile = a
-	elif o in ("-w", "--world"):
+	elif o in ("-w", "--world", "-c", "--config"):
             worldfile = a
 	elif o in ("-d", "--devices"):
             devices = a
