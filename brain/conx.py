@@ -159,6 +159,7 @@ class Connection:
         self.split_epsilon = 0
         self.fromLayer = fromLayer
         self.toLayer = toLayer
+        self.frozen = 0
         self.initialize()
     def initialize(self):
         self.randomize()
@@ -624,39 +625,40 @@ class Network:
     def change_weights(self):
         qp_shrink_factor = self.qp_mu / (1.0 + self.qp_mu);
         for l in range(self.connectionCount):
-            for i in range(self.connection[l].toLayer.size):
-                for j in range(self.connection[l].fromLayer.size):
-                    nextstep = 0.0
-                    if self.qp_mode and self.connection[l].dweight[i][j] > self.qp_mode_threshold:
-                        if (self.connection[l].slope[i][j] > 0.0):
-                            nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                        if (self.connection[l].slope[i][j] > (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                            nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+            if not self.connection[l].frozen:
+                for i in range(self.connection[l].toLayer.size):
+                    for j in range(self.connection[l].fromLayer.size):
+                        nextstep = 0.0
+                        if self.qp_mode and self.connection[l].dweight[i][j] > self.qp_mode_threshold:
+                            if (self.connection[l].slope[i][j] > 0.0):
+                                nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
+                            if (self.connection[l].slope[i][j] > (qp_shrink_factor * self.connection[l].prevslope[i][j])):
+                                nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+                            else:
+                                try:
+                                    nextstep += ((self.connection[l].slope[i][j] / \
+                                                  (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
+                                                 * self.connection[l].dweight[i][j])
+                                except: # Divide by Zero
+                                    nextstep = 0.0
+                            self.connection[l].dweight[i][j] = nextstep
+                        elif (self.qp_mode and self.connection[l].dweight[i][j] < -self.qp_mode_threshold):
+                            if (self.connection[l].slope[i][j] < 0.0):
+                                nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
+                            if (self.connection[l].slope[i][j] < (qp_shrink_factor * self.connection[l].prevslope[i][j])):
+                                nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+                            else:
+                                try:
+                                    nextstep += ((self.connection[l].slope[i][j] / \
+                                                  (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
+                                                 * self.connection[l].dweight[i][j])
+                                except:
+                                    nextstep = 0.0
+                            self.connection[l].dweight[i][j] = nextstep
                         else:
-                            try:
-                                nextstep += ((self.connection[l].slope[i][j] / \
-                                              (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                             * self.connection[l].dweight[i][j])
-                            except: # Divide by Zero
-                                nextstep = 0.0
-                        self.connection[l].dweight[i][j] = nextstep
-                    elif (self.qp_mode and self.connection[l].dweight[i][j] < -self.qp_mode_threshold):
-                        if (self.connection[l].slope[i][j] < 0.0):
-                            nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                        if (self.connection[l].slope[i][j] < (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                            nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
-                        else:
-                            try:
-                                nextstep += ((self.connection[l].slope[i][j] / \
-                                              (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                             * self.connection[l].dweight[i][j])
-                            except:
-                                nextstep = 0.0
-                        self.connection[l].dweight[i][j] = nextstep
-                    else:
-                        self.connection[l].dweight[i][j] = self.connection[l].getEpsilon() * self.connection[l].wed[i][j] + \
-                                                           self.momentum * self.connection[l].dweight[i][j]
-                    self.connection[l].weight[i][j] += self.connection[l].dweight[i][j]
+                            self.connection[l].dweight[i][j] = self.connection[l].getEpsilon() * self.connection[l].wed[i][j] + \
+                                                               self.momentum * self.connection[l].dweight[i][j]
+                        self.connection[l].weight[i][j] += self.connection[l].dweight[i][j]
                     self.connection[l].wed[i][j] = 0.0
         for l in range(self.layerCount):
             for i in range(self.layer[l].size):
@@ -670,6 +672,16 @@ class Network:
             if self.connection[i].fromLayer.name == fromName and \
                self.connection[i].toLayer.name == toName:
                 return self.connection[i].weight
+    def freeze(self, fromName, toName):
+        for i in range(self.connectionCount):
+            if self.connection[i].fromLayer.name == fromName and \
+               self.connection[i].toLayer.name == toName:
+                self.connection[i].frozen = 1
+    def unFreeze(self, fromName, toName):
+        for i in range(self.connectionCount):
+            if self.connection[i].fromLayer.name == fromName and \
+               self.connection[i].toLayer.name == toName:
+                self.connection[i].frozen = 0
     def toString(self):
         output = ""
         for i in range(self.layerCount):
@@ -927,14 +939,19 @@ if __name__ == '__main__':
     # (c) 2001, D.S. Blank
     # Bryn Mawr College
     # http://emergent.brynmawr.edu/
-
+    def ask(question):
+        print question, '[y/n/q] ',
+        ans = sys.stdin.readline()[0].lower()
+        if ans == 'q':
+            sys.exit()
+        return ans == 'y'
     try:
         import psyco
         psyco.bind(Layer)
         psyco.bind(Connection)
         psyco.bind(Network)
     except:
-        print "WARNING: psyco not installed!"
+        print "WARNING: psyco not installed! Running at regular speed."
 
     n = Network()
     n.addThreeLayers(2, 2, 1)
@@ -948,13 +965,11 @@ if __name__ == '__main__':
                   [0.0]])
     n.setReportRate(100)
 
-    print "Do you want to see some test values? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to see some test values?"):
         print 'Input Activations:', n.getLayer('input').getActivations()
         print 'Output Targets:', n.getLayer('output').getTarget()
 
-    print "Do you want to run an XOR BACKPROP network in BATCH mode? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
         print "XOR Backprop batch mode: .............................."
         n.setBatch(1)
         n.reset()
@@ -963,8 +978,7 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.train()
 
-    print "Do you want to run an XOR BACKPROP network in NON-BATCH mode? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
         print "XOR Backprop non-batch mode: .........................."
         n.setBatch(0)
         n.initialize()
@@ -973,16 +987,14 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.train()
 
-    print "Do you want to run an XOR QUICKPROP network? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to run an XOR QUICKPROP network?"):
         print "XOR Quickprop: ........................................"
         n.reset()
         n.setBatch(1)
         n.setQuickProp(1)
         n.train()
 
-    print "Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3a,2?"):
         print "SRN ..................................................."
         print "It is not possible to perfectly predict the sequences"
         print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
@@ -1005,8 +1017,7 @@ if __name__ == '__main__':
         n.setResetLimit(0)
         n.train()
 
-    print "Do you want to auto-associate on 3 bit binary patterns? "
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to auto-associate on 3 bit binary patterns?"):
         print "Auto-associate .........................................."
         n = Network()
         n.addThreeLayers(3,2,3)
@@ -1023,8 +1034,7 @@ if __name__ == '__main__':
         n.setResetLimit(2)
         n.train()
 
-    print "Do you want to train a network to both predict and auto-associate? "
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to train a network to both predict and auto-associate?"):
         print "SRN and auto-associate ..................................."
         n = SRN()
         n.addSRNLayers(3,3,3)
@@ -1046,8 +1056,7 @@ if __name__ == '__main__':
         n.setOrderedInput(1)
         n.train()
 
-    print "Do you want to see (and save) the final network? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to see (and save) the final network?"):
         print "Filename to save network (.py): ",
         filename = sys.stdin.readline().strip()
         n.saveNetworkToFile(filename)
@@ -1055,8 +1064,7 @@ if __name__ == '__main__':
         n.setInteractive(1)
         n.sweep()
 
-    print "Do you want to save weights of final network? ",
-    if sys.stdin.readline().lower()[0] == 'y':
+    if ask("Do you want to save weights of final network?"):
         print "Filename to save weights (.wts): ",
         filename = sys.stdin.readline().strip()
         n.saveWeightsToFile(filename)
