@@ -40,6 +40,8 @@ class GUI(Tkinter.Toplevel):
         # --------------------------------------------------------
         self.initWorld()
         self.checkMovement()
+        self.count = 0
+        self.tag = "data-%d" % self.count
         self.redraw()
 
     def initWorld(self):
@@ -199,48 +201,52 @@ class GUI(Tkinter.Toplevel):
 
     def drawDir(self, x, y, dir):
         if dir == "left":
-            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red", tag = self.tag)
         elif dir == "right":
-            self.canvas.create_line(x + 100, y + 50, x + 50, y + 50, width = 2, fill = "red")
-            self.canvas.create_line(x + 100, y + 50, x + 75, y + 50, width = 2, fill = "red")
-            self.canvas.create_line(x + 100, y + 50, x + 75, y + 75, width = 2, fill = "red")
+            self.canvas.create_line(x + 100, y + 50, x + 50, y + 50, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 100, y + 50, x + 75, y + 25, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 100, y + 50, x + 75, y + 75, width = 2, fill = "red", tag = self.tag)
         elif dir == "up":
-            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
+            self.canvas.create_line(x + 50, y, x + 50, y + 50, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 50, y, x + 25, y + 25, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 50, y, x + 75, y + 25, width = 2, fill = "red", tag = self.tag)
         elif dir == "down":
-            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
-            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
+            self.canvas.create_line(x + 50, y + 100, x + 50, y + 50, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 50, y + 100, x + 25, y + 75, width = 2, fill = "red", tag = self.tag)
+            self.canvas.create_line(x + 50, y + 100, x + 75, y + 75, width = 2, fill = "red", tag = self.tag)
 
     def redraw(self):
-        self.canvas.delete('all')
+        oldtag = self.tag
+        self.count = int(not self.count)
+        self.tag = "data-%d" % self.count
         for x in range(4):
             for y in range(4):
                 posx = x * 100
                 posy = 300 - y * 100
                 if self.location[0] == x and self.location[1] == y:
-                    self.canvas.create_image(posx, posy, image = self.agentImageTk, anchor=Tkinter.NW)
+                    self.canvas.create_image(posx, posy, image = self.agentImageTk, anchor=Tkinter.NW,tag=self.tag)
                     self.drawDir(posx, posy, self.direction)
                 if 'P' in self.world[x][y]:
-                    self.canvas.create_image(posx, posy, image = self.pitImageTk, anchor=Tkinter.NW)
+                    self.canvas.create_image(posx, posy, image = self.pitImageTk, anchor=Tkinter.NW,tag=self.tag)
                 if 'W' in self.world[x][y]:
-                    self.canvas.create_image(posx, posy, image = self.wumpusImageTk, anchor=Tkinter.NW)
+                    self.canvas.create_image(posx, posy, image = self.wumpusImageTk, anchor=Tkinter.NW,tag=self.tag)
                 if 'G' in self.world[x][y]:
-                    self.canvas.create_image(posx, posy + 75, image = self.goldImageTk, anchor=Tkinter.NW)
-        self.canvas.create_line(  2,   2,   2, 400, width = 2, fill = "black")
-        self.canvas.create_line(100,   0, 100, 400, width = 2, fill = "black")
-        self.canvas.create_line(200,   0, 200, 400, width = 2, fill = "black")
-        self.canvas.create_line(300,   0, 300, 400, width = 2, fill = "black")
-        self.canvas.create_line(400,   0, 400, 400, width = 2, fill = "black")
-        # ------------------------------------------------------------------------
-        self.canvas.create_line(  2,   2, 400,   2, width = 2, fill = "black")
-        self.canvas.create_line(  0, 100, 400, 100, width = 2, fill = "black")
-        self.canvas.create_line(  0, 200, 400, 200, width = 2, fill = "black")
-        self.canvas.create_line(  0, 300, 400, 300, width = 2, fill = "black")
-        self.canvas.create_line(  0, 400, 400, 400, width = 2, fill = "black")
+                    self.canvas.create_image(posx, posy + 75, image = self.goldImageTk, anchor=Tkinter.NW,tag=self.tag)
+        # ------------------------------------------------------------------------        
+        self.canvas.create_line(  2,   2,   2, 400, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(100,   0, 100, 400, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(200,   0, 200, 400, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(300,   0, 300, 400, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(400,   0, 400, 400, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(  2,   2, 400,   2, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(  0, 100, 400, 100, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(  0, 200, 400, 200, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(  0, 300, 400, 300, width = 2, fill = "black", tag = self.tag)
+        self.canvas.create_line(  0, 400, 400, 400, width = 2, fill = "black", tag = self.tag)
+        # ------------------------------------------------------------------------        
+        self.canvas.delete(oldtag)
         
     def destroy(self):
         self.done = 1 # stop processing requests, if handing
