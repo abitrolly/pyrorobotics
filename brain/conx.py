@@ -8,9 +8,9 @@
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.11"
+version = "6.12"
 
-# better to use Numeric.add.reduce()
+# better to use Numeric.add.reduce() when you know that it is a Numeric list
 def sum(a):
     """
     Sums elements in a sequence.
@@ -27,7 +27,7 @@ def randomArray(size, max):
     temp = RandomArray.random(size) * 2 * max
     return temp - max
 
-# better to use array.tolist()
+# better to use array.tolist() when you know that it has a tolist()
 def toArray(thing):
     """
     Converts any sequence (such as a NumericArray) to a Python List.
@@ -591,6 +591,8 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
+        self.crossValidationReportRate = 0
+        self.crossValidationCorpus = ()
         self.patterns = {}
         self.patterned = 0 # used for file IO with inputs and targets
 
@@ -845,6 +847,11 @@ class Network:
         Sets self.reportRate to value. train() will report when epoch % reportRate == 0.
         """
         self.reportRate = value
+    def setCrossValidationReportRate(self, value):
+        """
+        Sets self.crossValidationReportRate to value. train() will report when epoch % crossValidationreportRate == 0.
+        """
+        self.crossValidationReportRate = value
     def setSeed1(self, value):
         """
         Sets seed1 to value. Does not initialize the random number generator.
@@ -1168,10 +1175,14 @@ class Network:
             (tssErr, totalCorrect, totalCount) = self.sweep()
             rmsErr = math.sqrt(tssErr / totalCount)
             if self.epoch % self.reportRate == 0:
-#                print "totalCorrect =", totalCorrect, "totalCount =", totalCount
-                print "Epoch #%6d" % self.epoch, "| TSS Error: %f" % tssErr, \
-                      "| Correct =", totalCorrect * 1.0 / totalCount, \
-                      "| RMS Error: %f" % rmsErr
+                print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                      (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
+            if self.crossValidationReportRate and len(self.crossValidationCorpus) > 0 and \
+                   self.epoch % self.crossValidationReportRate == 0:
+                (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
+                rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
+                print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                      (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
             if self.resetEpoch == self.epoch:
                 if self.resetCount == self.resetLimit:
                     print "Reset limit reached; ending without reaching goal"
@@ -1191,6 +1202,25 @@ class Network:
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
+    def sweepCrossValidation(self):
+        """
+        sweepCrossValidation() will go through each of the crossvalidation input/targets.
+        The crossValidationCorpus is a list of dictionaries of input/targets
+        referenced by layername.
+        Example: ({"input": [0.0, 0.1], "output": [1.0]}, {"input": [0.5, 0.9], "output": [0.0]})
+        """
+        # get learning value and then turn it off
+        oldLearning = self.learning
+        self.learning = 0
+        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        for set in self.crossValidationCorpus:
+            (error, correct, total) = self.step( **set )
+            tssError += error
+            totalCorrect += correct
+            totalCount += total
+        self.learning = oldLearning
+        return (tssError, totalCorrect, totalCount)
+        
     def sweep(self):
         """
         Runs through entire dataset. Must call setInputs(),
@@ -1206,19 +1236,12 @@ class Network:
         if not self.orderedInputs:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
-#        print 'performing sweep...'
         for i in self.loadOrder:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
             self.preprop(i)
             self.propagate()
             (error, correct, total) = self.backprop() # compute_error()
-##            print '   pattern', i, ':', self.getLayer('input').activation
-##            print '   pattern', i, 'targets =', self.getLayer('output').target
-##            print '   pattern', i, 'outputs =', self.getLayer('output').activation
-##            print '   pattern', i, 'errors =', self.getLayer('output').error
-##            print '   pattern', i, 'deltas =', self.getLayer('output').delta
-##            print '   sum squared error for pattern', i, '=', error
             tssError += error
             totalCorrect += correct
             totalCount += total
@@ -1226,18 +1249,12 @@ class Network:
                 self.display()
             if self.interactive:
                 self.prompt()
-            # the following could be in this loop, or not
             self.postprop(i)
             sys.stdout.flush()
             if self.learning and not self.batch:
                 self.change_weights()
         if self.learning and self.batch:
             self.change_weights() # batch
-##        print 'tssError =', tssError
-##        print '   TOTAL SUM SQUARED ERROR =', tssError
-##        print self.connections[1]
-##        print self.connections[0]
-##        self.prompt()
         return (tssError, totalCorrect, totalCount)
     def cycle(self):
         """
@@ -2116,7 +2133,7 @@ if __name__ == '__main__':
                   [1.0],
                   [0.0]
                   ])
-    n.setReportRate(100)
+    n.setReportRate(10)
 
     if ask("Do you want to test the pattern replacement utility?"):
         net = Network()
@@ -2227,17 +2244,48 @@ if __name__ == '__main__':
         n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
-        n.setReportRate(10)
+        n.setReportRate(100)
         n.train()
+
+    if ask("Do you want to run an XOR BACKPROP network in BATCH mode with cross validation?"):
+        print "XOR Backprop batch mode: .............................."
+        n.crossValidationCorpus = ({"input" : [0.1, 0.1], "output" : [0.0]},
+                                   {"input" : [0.2, 0.2], "output" : [0.0]},
+                                   {"input" : [0.3, 0.3], "output" : [0.0]},
+                                   {"input" : [0.4, 0.4], "output" : [0.0]},
+                                   {"input" : [0.5, 0.5], "output" : [0.0]},
+                                   {"input" : [0.6, 0.6], "output" : [0.0]},
+                                   {"input" : [0.7, 0.7], "output" : [0.0]},
+                                   {"input" : [0.8, 0.8], "output" : [0.0]},
+                                   {"input" : [0.9, 0.9], "output" : [0.0]},
+                                   )
+        n.setBatch(1)
+        n.reset()
+        n.setEpsilon(0.5)
+        n.setMomentum(.975)
+        n.setReportRate(100)
+        n.setCrossValidationReportRate(n.reportRate)
+        n.train()
+        n.setCrossValidationReportRate(0)
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
         print "XOR Backprop non-batch mode: .........................."
         n.setBatch(0)
-        n.initialize()
+        n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(10)
         n.train()
+        if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with cross validation?"):
+            print "XOR Backprop non-batch mode: .........................."
+            n.setBatch(0)
+            n.reset()
+            n.setEpsilon(0.5)
+            n.setMomentum(.975)
+            n.setReportRate(10)
+            n.setCrossValidationReportRate(n.reportRate)
+            n.train()
+            n.setCrossValidationReportRate(0)
         if ask("Do you want to test prop_from() method?"):
             n.prop_from([n.getLayer('input')])
             print "Output activations: ", n.getLayer('output').getActivations()
