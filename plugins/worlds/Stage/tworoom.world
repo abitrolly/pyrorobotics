@@ -1,0 +1,38 @@
+
+# the resolution of Stage's raytrace model in meters
+#
+
+resolution 0.02
+
+# GUI settings
+#
+
+gui
+(
+  size [ 502.000 506.000 ]
+  origin [5.018 4.950 0]
+  scale 0.021 # the size of each bitmap pixel in meters
+)
+
+# load a bitmapped environment from a file
+#
+
+bitmap
+(
+  file "tworoom.pnm.gz"
+  resolution 0.07
+)
+
+
+include "usc_pioneer.inc"
+
+usc_pioneer
+(
+  color "green" 
+  name "robot" 
+  port 6665
+  pose [.796 2.211 92] 
+  truth()
+)
+
+
