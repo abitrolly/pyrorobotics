@@ -38,12 +38,18 @@ class VisPsom(psom):
          del keys['vis_vectortype']
       else:
          self.vectortype = "Generic"
+      if 'title' in keys.keys():
+         title = keys['title']
+         del keys['title']
+      else:
+         title = "VisPsom"
 
         
       psom.__init__(self, *args, **keys)
 
       self.win = Tk()
-      
+      self.win.wm_title(title)
+
       cellwidth = (self.vis_padding + self.vis_radius) * 2
       #offset to set off the rows for a hexagonal topology
       if self.topol == 'hexa':
