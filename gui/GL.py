@@ -120,7 +120,7 @@ class GLgui(gui):
          if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
             self.lastRun = self.engine.brain.lastRun
             self.canvasBrain.delete('pie')
-            total = {}
+            total = {} # total effect
             for d in self.engine.brain.desires:
                if d[1] in total.keys():
                   total[d[1]] += d[2]
@@ -136,11 +136,11 @@ class GLgui(gui):
                for d in self.engine.brain.desires:
                   if control == d[1] and total[d[1]] != 0:
                      piececnt += 1
-                     portion = d[2]/total[d[1]] # * d[0]
+                     portion = float(d[2])/float(total[d[1]]) # * d[0]
                      self.redrawPie(piecnt, percentSoFar, \
                                     piececnt, \
-                                    d[1], \
-                                    portion, d[4] + ":" + d[3] + " = %.2f * %.2f" % (d[0], d[5]))
+                                    d[1] + " effects", \
+                                    portion, d[4] + ":" + d[3] + " IF %.2f THEN %.2f" % (d[0], d[5]))
                      percentSoFar += portion
 
    def redrawWindowRobot(self):
