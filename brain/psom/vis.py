@@ -68,13 +68,13 @@ class VisPsom(psom):
                            bg='white')
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
-      self.canvas.pack(side=LEFT)
+      self.canvas.pack(side=TOP)
       f = Frame(self.win)
       self.showCount = "Train"
       self.toggleCount = Button(f, text="Show Map Count",
                                 command=self.countSwitch)
       self.toggleCount.pack()
-      f.pack(side=RIGHT)
+      f.pack(side=BOTTOM)
 
       self.lastMapped = (0,0)
       self.cells = []
@@ -92,11 +92,11 @@ class VisPsom(psom):
                                            tags = 'cell')
             center = ((x0 + x1)/2, (y0 + y1)/2)
             traintext = self.canvas.create_text(center[0], center[1],
-                                                text = "0",
+                                                text = "",
                                                 fill = 'blue',
                                                 tags = 'traincount')
             maptext = self.canvas.create_text(center[0], center[1],
-                                              text = "0",
+                                              text = "",
                                               fill = 'red',
                                               tags = 'mapcount')
             self.cells[y].append({"cell" : cell,"traincount" : 0,"mapcount": 0,
