@@ -37,6 +37,7 @@ class SaphiraSenseDriver(driver.Driver):
         self.senses['range']['all'] = self.getSonarAll
         self.senses['range']['count'] = \
 		lambda self, x = Saphira_getSonarCount(machine.dev) : x
+        self.senses['range']['maxvalue'] = lambda self: 2.99
 	self.senses['sonar']['flag'] = Saphira_getSonarFlag
 
 	# location of origin of sensors:

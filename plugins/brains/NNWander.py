@@ -4,9 +4,6 @@
 from pyro.brain import Brain
 from pyro.brain.conx import *
 
-def scale(val):
-   return (val / 2.99)
-   
 class NNBrain(Brain):
    """
    This is an example brain controlled by a neural network.
@@ -24,10 +21,14 @@ class NNBrain(Brain):
       self.net.setQuickProp(0)
       self.net.setEpsilon(0.5)
       self.net.setMomentum(.975)
+      self.maxvalue = self.getRobot().get('range', 'maxvalue')
 
+   def scale(val):
+      return (val / self.maxvalue)
+   
    def step(self):
       # First, set inputs and targets:
-      ins = map(scale, self.getRobot().get('range', 'all'))
+      ins = map(self.scale, self.getRobot().get('range', 'all'))
       self.net.setInputs([ ins ])
       # Compute targets:
       #print "Front:", self.getRobot().getSensorGroup('min', 'front')[1]

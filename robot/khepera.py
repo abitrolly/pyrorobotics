@@ -67,6 +67,7 @@ class KheperaRobot(Robot):
         self.senses['range'] = {}
         self.senses['range']['all'] = self.getIRRangeAll
         self.senses['range']['count'] = lambda self: 8
+        self.senses['range']['maxvalue'] = lambda self: 60.0
 	self.senses['ir']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
