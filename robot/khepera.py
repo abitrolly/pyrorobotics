@@ -146,6 +146,7 @@ class KheperaRobot(Robot):
         console.log(console.INFO,'khepera sense drivers loaded')
 
         self.controls['move'] = self._move
+        self.controls['raw_move'] = self._raw_move
         self.controls['move_now'] = self._move_now
         self.controls['accelerate'] = self.accelerate
         self.controls['translate'] = self.translate
@@ -531,6 +532,14 @@ class KheperaRobot(Robot):
         self.lastRotate = rotate
         # FIX: do min/max here
         self.adjustSpeed()
+
+    def _raw_move(self, dev, left, right):
+        """
+        Give direct values to the Khepera's motors.
+        There are in the robot's units, which go from -100 to 100
+        """
+        self.currSpeed = [left, right]
+        dev.sendMsg('D,%i,%i' % (left, right))
 
     def accelerate(self, trans, rotate): # incr
         self.lastTranslate += trans
