@@ -112,9 +112,12 @@ class VisConxBase:
         #options for displaying hinton diagrams
         Tkinter.Label(self.visualFrame, text="Connections:").grid(col=0, row=4, sticky=Tkinter.NW)
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
-        self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.W)
-        Tkinter.Button(self.visualFrame,text="Show weights", command=self.createHintonDiag).grid(col=1,row=5, sticky=Tkinter.N)
-        Tkinter.Button(self.visualFrame, text="Save all weights", command=self.saveAllWeights).grid(col=0, row=5, sticky=Tkinter.W)
+        self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.NSEW)
+        conButtonFrame = Tkinter.Frame(self.visualFrame)
+        Tkinter.Button(conButtonFrame,text="Show weights", command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
+        Tkinter.Button(conButtonFrame, text="Save all weights", command=self.saveAllWeights).grid(row=1, col=0)
+        Tkinter.Button(conButtonFrame, text="Load all weights", command=self.loadAllWeights).grid(row=1, col=1)
+        conButtonFrame.grid(col=1, row=5)
         self.refreshHintonListBox()
 
         #options for displaying the network topology
@@ -332,13 +335,22 @@ class VisConxBase:
 
     #handler to save weights
     def saveAllWeights(self):
-        fileWindow = tkFileDialog.SaveAs(self.root)
-        fileName = fileWindow.show()
+        fileName = tkFileDialog.asksaveasfilename()
 
-        try:
-            self.saveWeightsToFile(filename)
-        except:
-            tkMessageBox.showerror("File Error", "Writing to file failed.")
+        if fileName:
+            try:
+                self.saveWeightsToFile(fileName)
+            except Exception, err:
+                self.write(err + "  Writing to file failed.")
+
+    def loadAllWeights(self):
+        fileName = tkFileDialog.askopenfilename()
+
+        if fileName:
+            try:
+                self.loadWeightsFromFile(fileName)
+            except Exception, err:
+                self.write(err + "  Loading from file failed.")
 
     #routine to update diagrams if changes occur
     def updateStructureDiags(self):

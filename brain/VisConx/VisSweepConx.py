@@ -142,12 +142,13 @@ class SweepGUIBase(VisConxBase.VisConxBase):
                 self.write(err)
 
             #set buttons and flags back after train concludes
-            self.trainButton.config(state=Tkinter.NORMAL)
-            self.pauseButton.config(state=Tkinter.DISABLED)
-            self.pauseButton.config(text="Pause")
-            self.stopButton.config(state=Tkinter.DISABLED)
-            self.pausedFlag=0
-            self.stopFlag=0
+            if self.root:
+                self.trainButton.config(state=Tkinter.NORMAL)
+                self.pauseButton.config(state=Tkinter.DISABLED)
+                self.pauseButton.config(text="Pause")
+                self.stopButton.config(state=Tkinter.DISABLED)
+                self.pausedFlag=0
+                self.stopFlag=0
 
     def handlePauseButton(self):
         if not self.pausedFlag:
