@@ -92,6 +92,10 @@ class Device:
                 return raw
             else:
                 raw = raw / 1000.0
+        elif self.devData["rawunits"] == "RAW":
+            if units == "RAW":
+                return raw
+            # else going to be problems!
         elif self.devData["rawunits"] == "CM":
             if units == "CM":
                 return raw
@@ -102,7 +106,7 @@ class Device:
                 return raw
             # else, no conversion necessary
         else:
-            raise AttributeError, "device can't work in rawunits as %s" % self.devData["rawunits"]
+            raise AttributeError, "device can't convert '%s' to '%s'" % (self.devData["rawunits"], units)
         # now, it is in meters. convert it to output units:
         if units == "ROBOTS":
             return raw / self.devData["radius"] # in meters
