@@ -628,6 +628,8 @@ class Network:
         self.saveResults = 0 # will save error, correct, total in sweep()
         self.results = []
         self.autoCrossValidation = 0
+        self.autoSaveWeightsFile = None
+        self.lastTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
 
     # general methods
@@ -786,6 +788,8 @@ class Network:
         return self.layersByName[name]
     def setAutoCrossValidation(self, value):
         self.autoCrossValidation = value
+    def setAutoSaveWeightsFile(self, filename):
+        self.autoSaveWeightsFile = filename
     def setPatterned(self, value):
         """
         Sets the network to use patterns for inputs and targets.
@@ -1222,6 +1226,7 @@ class Network:
         if not cont:
             self.resetCount = 1
             self.epoch = 1
+            self.lastTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
             (tssErr, totalCorrect, totalCount) = self.sweep()
             if totalCount != 0:
@@ -1231,11 +1236,15 @@ class Network:
             if self.epoch % self.reportRate == 0:
                 print "Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
+                sys.stdout.flush()
                 if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                     (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                     print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                           (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                    sys.stdout.flush()
+                    if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
+                        self.saveWeightsToFile(self.autoSaveWeightsFile)
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
                         break
@@ -1255,11 +1264,15 @@ class Network:
         if totalCount > 0:
             print "Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                   (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr)
+            sys.stdout.flush()
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 print "CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                       (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
+                sys.stdout.flush()
+                if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
+                    self.saveWeightsToFile(self.autoSaveWeightsFile)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
