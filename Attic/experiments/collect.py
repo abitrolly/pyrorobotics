@@ -19,6 +19,7 @@ class Collect(Brain):
         self.camera = self.getRobot().getService("BlobCamera")
         self.sonar = open("sonar.dat","w")
         self.vision = open("camera.dat","w")
+        self.motors = open("motors.dat", "w")
         self.currStep = 1
         self.wasStalled = 0
         self.direction = 1
@@ -108,6 +109,7 @@ class Collect(Brain):
         saveListToFile(self.scaleList(image.data, 255.0),
                        self.vision)
         motVals = self.avoidObstacles()
+        saveListToFile( self.scaleMotor( motVals ), self.motors)
         self.getRobot().move(motVals[0],motVals[1])
         sleep(.7)
         self.getRobot().stop()
