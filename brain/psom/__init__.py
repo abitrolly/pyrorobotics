@@ -14,7 +14,7 @@
 from os import getenv
 import time
 from posixpath import exists
-import csom
+import _csom as csom
 csom.set_globals()  # neither worry about nor change this
                     # doug, trust me, this sets global parameters that
                     # are invariant from som to som
