@@ -68,6 +68,7 @@ class RAVQ:
         self.history = {} # time indexed list of winners
         self.tolerance = delta
         self.counters = []
+        self.addModels = 1
 
     # update the RAVQ
     def input(self, vec):
@@ -87,6 +88,8 @@ class RAVQ:
         self.recordHistory = value
     def setTolerance(self, value):
         self.tolerance = value
+    def setAddModels(self, value):
+        self.addModels = value
         
     # process happens once the buffer is full
     def process(self):
@@ -110,7 +113,8 @@ class RAVQ:
         self.setMovingAverage()
         self.setMovingAverageDistance()
         self.setModelVectorsDistance()
-        self.updateModelVectors()
+        if self.addModels:
+            self.updateModelVectors()
         self.updateWinner()
         self.updateHistory()
     def setMovingAverage(self):
