@@ -1,3 +1,5 @@
+""" Base GUI Class for Pyro Robotics. This is used for the -g tty GUI. """
+
 import os
 import sys
 import signal
@@ -210,7 +212,7 @@ class gui(Drawable):
       """ Could bind a key right here ^1, ^2, ^3..."""
       pass
 
-   def fileloaddialog(self, type, skel):
+   def fileloaddialog(self, type, skel, olddir = ''):
       """ Read a line from user """
       print "\nFilename: ",
       retval =  sys.stdin.readline()
