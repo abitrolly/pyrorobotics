@@ -4,11 +4,11 @@ Fake::Fake(char filename[]) {
   int limit, w, h, num, maxval, color, d;
   PyObject *buffer, *tuple;
   FILE* theFile;
-  theFile = fopen(filename, "r");
+  theFile = fopen(filename, "rb");
   if (!theFile){
     PyErr_SetString(PyExc_IOError, "Fake: Error loading file");
   }
-  fscanf(theFile, "P%d\n%d %d\n%d\n", &num, &w, &h, &maxval);
+  fscanf(theFile, "P%d\n%d %d\n%3d%*c", &num, &w, &h, &maxval);
   fclose(theFile);
   switch(num){
   case 5:
@@ -32,14 +32,14 @@ Fake::Fake(char filename[]) {
 }
 
 PyObject *Fake::updateMMap(char filename[]) {
-  int w, h, num;
+  int w, h, num, maxval;
   FILE *theFile;
-  theFile = fopen(filename, "r");
+  theFile = fopen(filename, "rb");
   if (!theFile){
     PyErr_SetString(PyExc_IOError, "Fake: Error loading file");
     return NULL;
   }
-  fscanf(theFile, "P%d\n%d %d\n%*d\n", &num, &w, &h);
+  fscanf(theFile, "P%d\n%d %d\n%3d%*c", &num, &w, &h, &maxval);
   if (w != width || h != height || 
       (num == 5 && depth != 1) ||
       (num != 5 && depth != 3)){

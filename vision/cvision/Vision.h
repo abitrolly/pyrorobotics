@@ -30,6 +30,8 @@ typedef struct blob{
 
 
 #define SWAP(a,b) { int itemp=(a);(a)=(b);(b)=itemp;}
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAXBLOBS 2000
 
 class Vision {
@@ -59,15 +61,19 @@ public:
 		  int outChannel);
   PyObject *matchRange(int lr, int lg, int lb,
 		       int hr, int hg, int hb,
-		       int outChannel, int mode);
+		       int outChannel);
   PyObject *match(int r, int g, int b, int tolerance,
-		  int outChannel, int mode);
+		  int outChannel);
   PyObject *get(int w, int h);
   PyObject *set(int w, int h, int d, int val);
   PyObject *drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
+  PyObject *scale(float r, float g, float b);
   PyObject *meanBlur(int kernel);
+  PyObject *gaussianBlur();
+  PyObject *medianBlur(int kernel);
   PyObject *threshold(int channel, int value);
+  int getMiddleIndex(int median[4][400], int kernel);
   PyObject *inverse(int channel);
   int getWidth();
   int getHeight();
@@ -77,10 +83,8 @@ public:
 
   PyObject *colorHistogram();
   PyObject *trainColor();
-  PyObject *gaussianBlur();
   PyObject *grayScale();
   PyObject *sobel(int val);
-  PyObject *medianBlur(int kernel);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
@@ -96,6 +100,9 @@ public:
   void setCopyMode(int value) {copyMode = value;}
   int getMotionDetection() { return motionDetection; }
   void setMotionDetection(int val) { motionDetection = val; }
+  PyObject *getRGB();
+  PyObject *setRGB(int r, int g, int b); 
+
   PyObject *setImage(int newImage);
   PyObject *copyOriginal();
 
