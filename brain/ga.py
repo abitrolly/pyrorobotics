@@ -180,12 +180,14 @@ class GA:
                 self.pop[rand][pos] = not self.pop[rand][pos]
             else:
                 r = random.random()
-                if (r < .33):
+                if (r < .25):
                     self.pop[rand][pos] -= random.random()
-                elif (r < .66):
+                elif (r < .50):
                     self.pop[rand][pos] += random.random()
-                else:
+                elif (r < .75):
                     self.pop[rand][pos] = random.random()
+                else:
+                    self.pop[rand][pos] = -random.random()
     
     def evolve(self):
         self.generation = 0
