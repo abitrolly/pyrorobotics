@@ -203,155 +203,260 @@ class AriaPTZService(AriaService):
     def getMinZoom(self):
         return self.dev.getMinZoom()
 
+class AriaSensor:
+    def __init__(self, params, device):
+        self.params = params
+        self.device = device
+        self.data = {}
+        self.subdataFunc = {}
+        self.data['type'] = 'range'
+                
+    def _get(self, path):
+        if len(path) == 0:
+            # return all of the things a sensor can show
+            return self.data.keys() + self.groups.keys()
+        elif len(path) == 1 and path[0] in self.data:
+            # return a value
+            return self.data[path[0]]
+        # otherwise, dealing with numbers or group
+        if len(path) == 1: # no specific data request
+            return self.subdataFunc.keys()
+        else:
+            keys = path[0]
+            elements = path[1]
+            if elements == "*":
+                elements = self.subdataFunc.keys()
+            if issubclass(type(keys), (type((1,)), type([1,]))):
+                keyList, keys = keys, []
+                for k in keyList:
+                    if k in self.groups.keys():
+                        keys.extend( self.groups[k] )
+                    else:
+                        keys.append( k )
+            elif keys in self.groups.keys():
+                keys = self.groups[keys]
+            # 4 cases:
+            # 1 key 1 element
+            if type(keys) == type(1) and type(elements) == type("value"):
+                return self.subdataFunc[elements](keys)
+            # 1 key many elements
+            elif type(keys) == type(1):
+                dict = {}
+                for e in elements:
+                    dict[e] = self.subdataFunc[e](keys)
+                return dict
+            # many keys 1 element
+            elif type(elements) == type("value"):
+                retval = []
+                for i in keys:
+                    retval.append( self.subdataFunc[elements](i))
+                return retval
+            # many keys many elements
+            else:
+                retval = []
+                for i in keys:
+                    dict = {}
+                    for e in elements:
+                        dict[e] = self.subdataFunc[e](i)
+                    retval.append( dict )
+                return retval
+
+class AriaSonar(AriaSensor):
+    def __init__(self,  params, device):
+        AriaSensor.__init__(self, params, device)
+        self.data['maxvalueraw'] = 2.99
+        self.data['units']    = "ROBOTS"
+        self.data['maxvalue'] = self.getSonarMaxRange() # FIX: this should change when you change units
+        self.data["count"] = self.params.getNumSonar()
+        if self.data["count"] == 16:
+            self.groups = {'all': range(16),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1,2, 3, 4, 5, 6),
+                           'left' : (0, 15), 
+                           'right' : (7, 8), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        elif self.params.getNumSonar() > 16:
+            raise AttributeError, ("Need to define sensor groups for sonars "
+                                   "with %d sensors" % self.params.getNumSonar())
+        self.subdataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
+        self.subdataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
+        self.subdataFunc['oz']    = lambda pos: 0.03
+        self.subdataFunc['th']    = lambda pos: self.params.getSonarTh(pos) * PIOVER180
+        self.subdataFunc['arc']   = lambda pos: (7.5 * PIOVER180)
+        self.subdataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
+        self.subdataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
+	self.subdataFunc['z']     = lambda pos: 0.03 # meters
+        self.subdataFunc['value'] = self.getSonarRangeDev
+        self.subdataFunc['pos']   = lambda pos: pos
+
+    def getSonarRangeDev(self, pos):
+        return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
+
+    def getSonarMaxRange(self):
+        return self.rawToUnits(2.99)
+
+    def rawToUnits(self, raw):
+        val = min(max(raw, 0.0), self.data['maxvalueraw'])
+        units = self.data["units"]
+        if units == "ROBOTS":
+            return val / 0.75 # Pioneer is about .5 meters diameter
+        elif units == "MM":
+            return val * 1000.0
+        elif units == "CM":
+            return (val) * 100.0 # cm
+        elif units == "METERS" or units == "RAW":
+            return (val) 
+        elif units == "SCALED":
+            return val / self.data['maxvalueraw']
+        else:
+            raise 'InvalidType', "Units are set to invalid type"
+
+class AriaLaser(AriaSensor):
+    def __init__(self,  params, device):
+        AriaSensor.__init__(self, params, device)
+        self.data['maxvalue'] = 15.0 # FIX
+        self.data['units']    = "ROBOTS"
+        self.data["count"] = self.params.getNumLaser()
+        self.data["x"] = self.params.getLaserX()
+        self.data["y"] = self.params.getLaserY()
+        if self.data["count"] == 181:
+            self.groups = {'all': range(16),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1,2, 3, 4, 5, 6),
+                           'left' : (0, 15), 
+                           'right' : (7, 8), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        #elif self.params.getNumSonar() > 181:
+        #    raise AttributeError, ("Need to define sensor groups for lasers "
+        #                           "with %d sensors" % self.params.getNumSonar())
+        self.subdataFunc['oz']    = lambda pos: 0.03
+        self.subdataFunc['th']    = lambda pos: pos
+        self.subdataFunc['arc']   = lambda pos: 1.0
+        self.subdataFunc['x']     = lambda pos: self.params.getLaserX()
+        self.subdataFunc['y']     = lambda pos: self.params.getLaserX()
+	self.subdataFunc['z']     = lambda pos: 0.03 # meters
+        self.subdataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS?
+        self.subdataFunc['pos']   = lambda pos: pos
+
+class AriaBumper(AriaSensor):
+    def __init__(self,  params, device):
+        AriaSensor.__init__(self, params, device)
+        self.data['maxvalue'] = 1.0 # FIX
+        self.data['units']    = "BOOLEAN"
+        self.data["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
+        if self.data["count"] == 5:
+            self.groups = {'all': range(16),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1,2, 3, 4, 5, 6),
+                           'left' : (0, 15), 
+                           'right' : (7, 8), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        elif self.data["count"] == 10:
+            self.groups = {'all': range(16),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1,2, 3, 4, 5, 6),
+                           'left' : (0, 15), 
+                           'right' : (7, 8), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        elif self.params.getNumSonar() > 10:
+            raise AttributeError, ("Need to define sensor groups for bumpers "
+                                   "with %d sensors" % self.data["count"])
+        self.subdataFunc['pos']   = lambda pos: pos
+        self.subdataFunc['value']   = lambda pos: pos
+
+##     def getBumpersPosDev(self, dev, pos):
+##         return self.getBumpersDev(dev)[pos]
+
+##     def getBumpersDev(self, dev):
+##         # bumpers: front first, numbers 1 - 5
+##         retval = []
+##         if self.params.haveFrontBumpers():
+##             for i in range(1, 6):
+##                 retval.append( dev.getStallValue() >> 8 & BITPOS[i] )
+##         if self.params.haveRearBumpers():
+##             for i in range(1, 6):
+##                 retval.append( dev.getStallValue() & BITPOS[i] )
+##         return retval
+
 class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
-        Robot.__init__(self, name, "aria") # robot constructor
         self.inform("Loading Aria robot interface...")
+        Robot.__init__(self) # robot constructor
         self.connect()
-        self.sensorSet = {'all': range(16),
-                          'front': (3, 4),
-                          'front-left' : (1,2,3),
-                          'front-right' : (4, 5, 6),
-                          'front-all' : (1,2, 3, 4, 5, 6),
-                          'left' : (0, 15), 
-                          'right' : (7, 8), 
-                          'left-front' : (0,), 
-                          'right-front' : (7, ),
-                          'left-back' : (15, ),
-                          'right-back' : (8, ),
-                          'back-right' : (9, 10, 11),
-                          'back-left' : (12, 13, 14), 
-                          'back' : (11, 12),
-                          'back-all' : ( 9, 10, 11, 12, 13, 14)}
-        self.z = 0
-        self.senses = {}
-        simulated = self.simulated
-	# robot senses (all are functions):
-        self.senses['robot'] = {}
-        self.senses['robot']['simulator'] = lambda dev, x = simulated: x
-        self.senses['robot']['stall'] = lambda dev: dev.getStallValue()
-        self.senses['robot']['x'] = self.getX
-        self.senses['robot']['y'] = self.getY
-        self.senses['robot']['z'] = self.getZ
-        self.senses['robot']['radius'] = lambda self: 250.0 # in MM
-        self.senses['robot']['th'] = self.getTh # in degrees
-        self.senses['robot']['thr'] = self.getThr # in radians
-	self.senses['robot']['type'] = lambda dev: dev.getRobotType()
-        self.senses['robot']['units'] = lambda dev: 'METERS'
-        if name != 'Aria':
-            self.senses['robot']['name'] = lambda dev, x = name: name
-        else:
-            self.senses['robot']['name'] = lambda dev: dev.getRobotName()
-	self.senses['sonar'] = {}
-	self.senses['sonar']['count'] = lambda dev: dev.getNumSonar()
-	self.senses['sonar']['type'] = lambda dev: 'range'
-
-	# location of sensors' hits:
-        self.senses['sonar']['x'] = lambda dev, pos: self.getSonarX(pos)
-        self.senses['sonar']['y'] = lambda dev, pos: self.getSonarY(pos)
-	self.senses['sonar']['z'] = lambda dev, pos: 0.03 # meters
-        self.senses['sonar']['value'] = lambda dev, pos: self.getSonarRangeDev(dev, pos)
-        self.senses['sonar']['maxvalue'] = lambda dev: self.getSonarMaxRange(dev)
-        self.senses['sonar']['flag'] = lambda dev, pos: 0 # self.getSonarFlag
-        self.senses['sonar']['units'] = lambda dev: "ROBOTS"
-
-	# location of origin of sensors:
-        self.senses['sonar']['ox'] = lambda dev, pos: self.params.getSonarX(pos)
-        self.senses['sonar']['oy'] = lambda dev, pos: self.params.getSonarY(pos)
-	self.senses['sonar']['oz'] = lambda dev, pos: 0.03
-        self.senses['sonar']['th'] = lambda dev, pos: self.params.getSonarTh(pos) * PIOVER180 # self.light_th
-        # in radians:
-        self.senses['sonar']['arc'] = lambda dev, pos, \
-                                      x = (7.5 * PIOVER180) : x
-
-	self.senses['laser'] = {}
-	self.senses['laser']['count'] = lambda dev: dev.getNumLaser()
-	self.senses['laser']['type'] = lambda dev: 'range'
-
-	# location of sensors' hits:
-        self.senses['laser']['x'] = lambda dev, pos: self.getLaserX(pos)
-        self.senses['laser']['y'] = lambda dev, pos: self.getLaserY(pos)
-	self.senses['laser']['z'] = lambda dev, pos: 0.03 # meters
-        self.senses['laser']['value'] = lambda dev, pos: self.getLaserRangeDev(dev, pos)
-        self.senses['laser']['maxvalue'] = lambda dev: self.getLaserMaxRange(dev)
-        self.senses['laser']['flag'] = lambda dev, pos: 0 # self.getLaserFlag
-        self.senses['laser']['units'] = lambda dev: "ROBOTS"
-
-	# location of origin of sensors:
-        self.senses['laser']['ox'] = lambda dev, pos: self.params.getLaserX(pos)
-        self.senses['laser']['oy'] = lambda dev, pos: self.params.getLaserY(pos)
-	self.senses['laser']['oz'] = lambda dev, pos: 0.03
-        self.senses['laser']['th'] = lambda dev, pos: self.params.getLaserTh(pos) * PIOVER180 # self.light_th
-        # in radians:
-        self.senses['laser']['arc'] = lambda dev, pos, \
-                                      x = (7.5 * PIOVER180) : x
-
-        if self.params.haveFrontBumpers() or self.params.haveRearBumpers():
-            # bumper sensors
-            self.senses['bumper'] = {}
-            self.senses['bumper']['type'] = lambda dev: 'tactile'
-            self.senses['bumper']['count'] = lambda dev: self.params.numFrontBumpers() + self.params.numRearBumpers()
-            self.senses['bumper']['x'] = lambda dev, pos: 0
-            self.senses['bumper']['y'] = lambda dev, pos: 0
-            self.senses['bumper']['z'] = lambda dev, pos: 0
-            self.senses['bumper']['th'] = lambda dev, pos: 0 
-            self.senses['bumper']['value'] = lambda dev, pos: self.getBumpersPosDev(dev, pos)
-
-        # Make a copy, for default:
-        self.senses['range'] = self.senses['sonar']
-        self.senses['self'] = self.senses['robot']
-
+        self.data['stall'] = 0
+        self.data['x'] = 0.0
+        self.data['y'] = 0.0
+        self.data['z'] = 0.0
+        self.data['radius'] = self.params.getRobotRadius() # in MM
+        self.data['th'] = 0.0 # in degrees
+        self.data['thr'] = 0.0 # in radians
+	self.data['type'] = self.dev.getRobotType()
+        self.data['units'] = 'METERS'
+        self.data['name'] = self.dev.getRobotName()
         console.log(console.INFO,'aria sense drivers loaded')
-
-        self.controls['move'] = self.moveDev
-        self.controls['translate'] = self.translateDev
-        self.controls['rotate'] = self.rotateDev
-        self.controls['update'] = self.update
-        self.controls['localize'] = self.localize
-
-        #self.supports["blob"] = PlayerService(self.dev, "blobfinder")
-        #self.supports["comm"] = PlayerService(self.dev, "comms")
-        self.supports["gripper"] = AriaGripperService(self.dev)
-        #self.supports["power"] = PlayerService(self.dev, "power")
-        #self.supports["position"] = PlayerService(self.dev, "position")
-        #self.supports["sonar"] = PlayerService(self.dev, "sonar")
-        #self.supports["laser"] = PlayerService(self.dev, "laser")
-        self.supports["ptz"] = AriaPTZService(self.dev)
-        #self.supports["gps"] = PlayerService(self.dev, "gps")
-        #self.supports["bumper"] = PlayerService(self.dev, "bumper")
-        #self.supports["truth"] = PlayerService(self.dev, "truth")
-
-        console.log(console.INFO,'aria control drivers loaded')
-        self.SanityCheck()
         self.dev.runAsync(1)
+        if self.params.getNumSonar() > 0:
+            self.dataFunc["sonar"] = AriaSonar(self.params, self.dev)
+            self.dataFunc["range"] = self.dataFunc["sonar"]
+        if self.params.getLaserPossessed():
+            self.dataFunc["laser"] = AriaLaser(self.params, self.dev)
+            self.dataFunc["range"] = self.dataFunc["laser"]
+        if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
+            self.dataFunc["bumper"] = AriaBumper(self.params, self.dev)
 	self.update() 
         self.inform("Done loading Aria robot.")
 
-    def getSonarX(self, pos):
-        self.dev.lock()
-        x = self.dev.getSonarReading(pos).getLocalX() 
-        y = self.dev.getSonarReading(pos).getLocalY()
-        self.dev.unlock()
-        return (COSDEG90RADS * x - SINDEG90RADS * y)
-
-    def getSonarY(self, pos):
-        self.dev.lock()
-        x = self.dev.getSonarReading(pos).getLocalX() 
-        y = self.dev.getSonarReading(pos).getLocalY() 
-        self.dev.unlock()
-        return -(SINDEG90RADS * x - COSDEG90RADS * y)
-
-    def translateDev(self, dev, translate_velocity):
-        dev.setVel((int)(translate_velocity * 1100.0))
-
-    def rotateDev(self, dev, rotate_velocity):
-        dev.setRotVel((int)(rotate_velocity * 75.0))
-
-    def moveDev(self, dev, translate_velocity, rotate_velocity):
-        dev.lock()
-        dev.setVel((int)(translate_velocity * 1100.0))
-        dev.setRotVel((int)(rotate_velocity * 75.0))
-        dev.unlock()
+    def _get(self, pathList):
+        if len(pathList) == 0:
+            return self.data.keys() + self.dataFunc.keys()
+        key = pathList[0]
+        args = pathList[1:]
+        if key in self.data:
+            return self.data[key]
+        elif key in self.dataFunc:
+            return self.dataFunc[key]._get(args)
+        if key == '*':
+            tmp = self.data.copy()
+            tmp.update( self.dataFunc )
+            return tmp #map(lambda obj: obj._get(args), self.dataFunc)
+        else:
+            raise AttributeError, "robot has no such item '%s'" % key
 
     def translate(self, translate_velocity):
         self.dev.lock()
@@ -364,121 +469,35 @@ class AriaRobot(Robot):
         self.dev.unlock()
 
     def move(self, translate_velocity, rotate_velocity):
+        print "move:", translate_velocity, rotate_velocity
         self.dev.lock()
         self.dev.setVel((int)(translate_velocity * 1100.0))
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
         self.dev.unlock()
 
-    def getX(self, dev = 0):
-        return self.x
-
-    def getY(self, dev = 0):
-        return self.y
-
-    def getZ(self, dev = 0):
-        return self.z
-
-    def getTh(self, dev = 0):
-        return self.th
-
-    def getThr(self, dev = 0):
-        return self.thr
-
     def update(self):
         self.dev.lock()
         self._update()
-        self.x = self.dev.getX() / 1000.0
-        self.y = self.dev.getY() / 1000.0
-        self.th = (self.dev.getTh() + 360) % 360
-        self.thr = self.th * PIOVER180
+        self.data["x"] = self.dev.getX() / 1000.0
+        self.data["y"] = self.dev.getY() / 1000.0
+        self.data["th"] = (self.dev.getTh() + 360) % 360
+        self.data["thr"] = self.data["th"] * PIOVER180
+        self.data["stall"] = self.dev.getStallValue()
         self.dev.unlock()
     
-    def _draw(self, options, renderer): # overloaded from robot
-        #self.setLocation(self.senses['robot']['x'], \
-        #                 self.senses['robot']['y'], \
-        #                 self.senses['robot']['z'], \
-        #                 self.senses['robot']['thr'] )
-        renderer.xformPush()
-        renderer.color((1, 0, 0))
-        #print "position: (", self.get('robot', 'x'), ",",  \
-        #      self.get('robot', 'y'), ")"
+    def enableMotors(self):
+        self.dev.enableMotors()
 
-        #renderer.xformXlate((self.get('robot', 'x'), \
-        #                     self.get('robot','y'), \
-        #                     self.get('robot','z')))
-        renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
+    def disableMotors(self):
+        self.dev.disableMotors()
 
-        renderer.xformXlate(( 0, 0, .15))
-
-        renderer.box((-.25, .25, 0), \
-                     (.25, .25, 0), \
-                     (.25, -.25, 0), \
-                     (-.25, .25, .35)) # d is over a, CW
-
-        renderer.color((1, 1, 0))
-
-        renderer.box((.13, -.05, .35), \
-                     (.13, .05, .35), \
-                     (.25, .05, .35), \
-                     (.13, -.05, .45)) # d is over a, CW
-
-        renderer.color((.5, .5, .5))
-
-        # wheel 1
-        renderer.xformPush()
-        renderer.xformXlate((.25, .3, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .12, 12, 24)
-        renderer.xformPop()
-
-        # wheel 2
-        renderer.xformPush()
-        renderer.xformXlate((-.25, .3, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .12, 12, 24)
-        renderer.xformPop()
-
-        # wheel 3
-        renderer.xformPush()
-        renderer.xformXlate((.25, -.3, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .12, 12, 24)
-        renderer.xformPop()
-
-        # wheel 4
-        renderer.xformPush()
-        renderer.xformXlate((-.25, -.3, 0))
-        renderer.xformRotate(90, (1, 0, 0))
-        renderer.torus(.06, .12, 12, 24)
-        renderer.xformPop()        
-
-        # sonar
-        renderer.xformPush()
-        renderer.color((0, 0, .7))
-        for i in range(self.get('sonar', 'count')):
-            y1, x1, z1 = -self.get('sonar', 'x', i), \
-                         -self.get('sonar', 'y', i), \
-                         self.get('sonar', 'z', i)
-            #y2, x2, z2 = -self.get('sonar', 'ox', i), \
-            #             -self.get('sonar', 'oy', i), \
-            #             self.get('sonar', 'oz', i)
-            # Those above values are off!
-            # FIXME: what are the actual positions of sensor x,y?
-            x2, y2, z2 = 0, 0, z1
-            arc    = self.get('sonar', 'arc', i) # in radians
-            renderer.ray((x1, y1, z1), (x2, y2, z2), arc)
-
-        renderer.xformPop()        
-
-        # end of robot
-        renderer.xformPop()
-
-    def getOptions(self): # overload 
-        pass
+    def disconnect(self):
+        print "Disconnecting..."
+        self.dev.disconnect()
 
     def connect(self):
         Aria.init()
-        self.simulated = 1 
+        self.data["simulated"] = 1 
         self.dev = ArRobot()
         self.conn = ArTcpConnection()
         print "Attempting to open TCP port at localhost:%d..." % (8000 + getuid())
@@ -487,7 +506,7 @@ class AriaRobot(Robot):
         if (self.dev.blockingConnect() != 1):
             # could not connect to TCP; let's try a serial one
             # this is a real robot
-            self.simulated = 0 
+            self.data["simulated"] = 0 
             print "Attempting to open Serial TTY port..."
             self.conn = ArSerialConnection()
             self.conn.setPort()
@@ -508,55 +527,6 @@ class AriaRobot(Robot):
         self.y = self.dev.getY() / 1000.0
         self.th = (self.dev.getTh() + 360) % 360
         self.thr = self.th * PIOVER180
-
-    def disconnect(self):
-        print "Disconnecting..."
-        self.dev.disconnect()
-
-    def getBumpersPosDev(self, dev, pos):
-        return self.getBumpersDev(dev)[pos]
-
-    def getBumpersDev(self, dev):
-        # bumpers: front first, numbers 1 - 5
-        retval = []
-        if self.params.haveFrontBumpers():
-            for i in range(1, 6):
-                retval.append( dev.getStallValue() >> 8 & BITPOS[i] )
-        if self.params.haveRearBumpers():
-            for i in range(1, 6):
-                retval.append( dev.getStallValue() & BITPOS[i] )
-        return retval
-
-    def getSonarRangeDev(self, dev, pos):
-        return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
-
-    def getSonarMaxRange(self, dev):
-        return self.rawToUnits(dev, 2.99, 'sonar')
-
-    def rawToUnits(self, dev, raw, name):
-        if name == 'sonar':
-            val = min(max(raw, 0.0), 2.99)
-        else:
-            raise 'InvalidType', "Type is invalid"
-        if self.senses[name]['units'](dev) == "ROBOTS":
-            return val / 0.75 # Pioneer is about .5 meters diameter
-        elif self.senses[name]['units'](dev) == "MM":
-            return val * 1000.0
-        elif self.senses[name]['units'](dev) == "CM":
-            return (val) * 100.0 # cm
-        elif self.senses[name]['units'](dev) == "METERS" or \
-             self.senses[name]['units'](dev) == "RAW":
-            return (val) 
-        elif self.senses[name]['units'](dev) == "SCALED":
-            return val / 2.99
-        else:
-            raise 'InvalidType', "Units are set to invalid type"
-
-    def enableMotors(self):
-        self.dev.enableMotors()
-
-    def disableMotors(self):
-        self.dev.disableMotors()
 
 if __name__ == '__main__':
     myrobot = AriaRobot()
