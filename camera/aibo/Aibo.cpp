@@ -1,65 +1,68 @@
 #include "Aibo.h"
 
+long convert(char *buff) {
+  long retval = 0;
+  retval += (buff[0] <<  0);
+  retval += (buff[1] <<  8);
+  retval += (buff[2] << 16);
+  retval += (buff[3] << 24);
+  return retval;
+}
+
 PyObject *Aibo::updateMMap() {
+  char *header, *type, *creator, *fmt, *image;
+  long format, compression, newWidth, newHeight, timeStamp, frameNum, unknown1;
+  long chanWidth, chanHeight, layer, chanID, unknown2, size;
   // get an image from socket
-  /*
-        ## Got type=TekkotsuImage
-        ## Got format=0
-        ## Got compression=1
-        ## Got newWidth=104
-        ## Got newHeight=80
-        ## Got timest=121465
-        ## Got frameNum=3185
-  */
-  char *header;
+  // Got type=TekkotsuImage
+  // Got format=0
+  // Got compression=1
+  // Got newWidth=104
+  // Got newHeight=80
+  // Got timest=121465
+  // Got frameNum=3185
   header = sock->read(4);  // \r\0\0\0
-  printf("read: %d %d %d %d\n", 
-	 header[0], 
-	 header[1], 
-	 header[2], 
-	 header[3] );
-  
-    /*
-    type = rawimage_data.readUntil(chr(0)) # "TekkotsuImage"
-    print "type:", type
-    format = rawimage_data.read()
-    print "format:", format
-    compression = rawimage_data.read()
-    print "compression:", compression
-    newWidth = rawimage_data.read()
-    print "newWidth:", newWidth
-    newHeight = rawimage_data.read()
-    print "newHeight:", newHeight
-    timeStamp = rawimage_data.read()
-    print "timeStamp:", timeStamp
-    frameNum = rawimage_data.read()
-    print "frameNum:", frameNum
-    unknown1 = rawimage_data.read()
-    print "unknown1:", unknown1
-        ## Got creator=FbkImage
-        ## Got chanwidth=104
-        ## Got chanheight=80
-        ## Got layer=3
-        ## Got chan_id=0
-        ## Got fmt=JPEGColor
-        ## read JPEG: len=2547
-    creator = rawimage_data.readUntil(chr(0)) # creator
-    print "creator:", creator
-    chanWidth = rawimage_data.read()
-    print "chanWidth:", chanWidth
-    chanHeight = rawimage_data.read()
-    print "chanHeight:", chanHeight
-    layer = rawimage_data.read()
-    print "layer:", layer
-    chanID = rawimage_data.read()
-    print "chanID:", chanID
-    chanWidth = rawimage_data.read()
-    print "chanWidth:", chanWidth
-    fmt = rawimage_data.readUntil(chr(0)) # fmt
-    print "fmt:", fmt
-    size = rawimage_data.read()
-  */
-  return PyInt_FromLong(0L);
+  type = sock->readUntil((char)0); // "TekkotsuImage"
+  printf("type: %s\n", type);
+  format = convert(sock->read(4));
+  printf("format: %ld\n", format);
+  compression = convert(sock->read(4));
+  printf("compression: %ld\n", compression);
+  newWidth = convert(sock->read(4));
+  printf("newWidth: %ld\n", newWidth);
+  newHeight = convert(sock->read(4));
+  printf("newHeight: %ld\n", newHeight);
+  timeStamp = convert(sock->read(4));
+  printf("timeStamp: %ld\n", timeStamp);
+  frameNum = convert(sock->read(4));
+  printf("frameNum: %ld\n", frameNum);
+  unknown1 = convert(sock->read(4));
+  printf("unknown1: %ld\n", unknown1);
+  //// Got creator=FbkImage
+  //// Got chanwidth=104
+  //// Got chanheight=80
+  //// Got layer=3
+  //// Got chan_id=0
+  //// Got fmt=JPEGColor
+  //// read JPEG: len=2547
+  creator = sock->readUntil((char)0); // creator
+  printf("creator: %s\n", creator);
+  chanWidth = convert(sock->read(4));
+  printf("chanWidth: %ld\n", chanWidth);
+  chanHeight = convert(sock->read(4));
+  printf("chanHeight: %ld\n", chanHeight);
+  layer = convert(sock->read(4));
+  printf("layer: %ld\n", layer);
+  chanID = convert(sock->read(4));
+  printf("chanID: %ld\n", chanID);
+  unknown2 = convert(sock->read(4));
+  printf("unknown2: %ld\n", unknown2);
+  fmt = sock->readUntil((char)0); // fmt
+  printf("fmt: %s\n", fmt);
+  size = convert(sock->read(4));
+  image = sock->read(size);
+  // convert image from JPEG to RGB in mmap
+  return PyInt_FromLong(size);
 }
 
 Aibo::Aibo(char *hostname) {

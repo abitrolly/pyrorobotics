@@ -3,7 +3,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
-#define MAXBUFSIZE 1024
+#define MAXBUFSIZE 10000
 
 Socket::Socket(char *hostname, int port) {
   host = hostname;
