@@ -58,6 +58,7 @@ class Gene:
         self.max = 1 # inclusive
         self.maxStep = 1
         self.args = args
+        self.alphabet = "abcdefghijklmnopqrstuvwxyz "
         if args.has_key('verbose'):
             self.verbose = args['verbose']
         if args.has_key('min'):
@@ -80,6 +81,8 @@ class Gene:
                                                  (self.max - self.min + 1)) + self.min)
             elif self.mode == 'float':
                 self.genotype.append( (random.random() * (self.max - self.min)) + self.min)
+            elif self.mode == 'char':
+                self.genotype.append( self.alphabet[int(random.random() * len(self.alphabet)) ] )
             else:
                 raise "unknownMode", self.mode
 
@@ -94,6 +97,8 @@ class Gene:
             print string.join(map(lambda v: `int(v)`, self.genotype), "")
         elif self.mode == 'float':
             map(lambda v: display("%3.2f" % v), self.genotype)
+        elif self.mode == 'char':
+            print string.join(self.genotype, '')
         else:
             raise "unknownMode", self.mode
 
@@ -123,6 +128,8 @@ class Gene:
                         self.genotype[i] -= (random.random() * self.maxStep)
                     else:
                         self.genotype[i] = (random.random() * (self.max - self.min)) + self.min
+                elif self.mode == 'char':
+                    self.genotype[i] = self.alphabet[ int(random.random() * len(self.alphabet)) ]
                 else:
                     raise "unknownMode", self.mode
 
@@ -549,4 +556,28 @@ if __name__ == '__main__':
         ga.network.sweep()
         ga.saveGenesToFile("gann.pop")
         ga.initGenesFromFile("gann.pop")
+
+    print "Do you want to evolve a phrase? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        phrase = "evolution is one cool search mechanism"
+        size = len(phrase)
+        print
+        class PhraseGA(GA):
+            def fitnessFunction(self, i):
+                sum = 0
+                for c in range(len(self.pop.individuals[i].genotype)):
+                    if self.pop.individuals[i].genotype[c] == phrase[c]:
+                        sum += 1
+                return sum
+            def isDone(self):
+                print "Best:",
+                self.pop.bestMember.display()
+                return (phrase == string.join(self.pop.bestMember.genotype, ""))
+
+        ga = PhraseGA(Population(300, Gene, size=size, mode='char',
+                                 verbose=1, elitePercent = .1,
+                                 crossoverPoints = 2),
+                      mutationRate=0.06, crossoverRate=0.6, verbose=1,
+                      maxGeneration=0)
+        ga.evolve()
 
