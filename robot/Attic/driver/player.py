@@ -75,7 +75,7 @@ class player:
 
 	except socket.error, errstr:
 	    self.__socket = None
-	    raise 'cannot create a socket: %s' % errstr
+	    raise 'cannot create a socket: %s; type starting with -v gui.sim_start_delay=N where N is seconds to pause' % errstr
 
 	except thread.error:
 	    raise 'cannot run an update thread.'

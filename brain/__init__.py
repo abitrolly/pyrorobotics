@@ -35,6 +35,8 @@ class Brain(threading.Thread):
     def __init__(self, name = 'brain', engine = 0, **kwargs):
         threading.Thread.__init__(self)
         self.debug = 0
+        self.devData = {}
+        self.devData["stepCount"] = 0
         self.lastRun = time.time() # seconds
         self.name = name
         self.engine = engine
@@ -57,6 +59,16 @@ class Brain(threading.Thread):
 
     def get(self, *args):
         return self.robot.get(*args)
+
+    def __getattr__(self, attr):
+        """ Overides default get attribute to return devData if exists """
+        # avoid calling self. as that will call this recursively!
+        if attr in self.__dict__["devData"]:
+            return self.__dict__["devData"][attr]
+        elif attr in self.__dict__:
+            return self.__dict__[attr]
+        else:
+            raise AttributeError, ("'<type %s>' object has no attribute '%s'" % (self.__class__.__name__, attr))
 
     def getAll(self, *args):
         return self.robot.getAll(*args)
@@ -111,6 +123,7 @@ class Brain(threading.Thread):
             #print "step()"
             self.robot.update()
             self.step()
+            self.devData["stepCount"] += 1
             self.couldBeMoving = 1
             time.sleep(self.pauseTime)
             if self.profilePerformance == 2:
@@ -177,3 +190,4 @@ class Brain(threading.Thread):
         Method to override of you create objects.
         """
         pass
+

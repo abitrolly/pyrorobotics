@@ -141,6 +141,7 @@ class Robot:
         If you need to initialize things, call setup()
         """
         self.directory = {} # toplevel place for paths
+        self.brain = None
         # In this list are the things that can NOT be set()ed:
         self.notSetables = ['timestamp', "builtinDevices", 'x','y','z','th','thr','stall','model','type','subtype',"simulated"] 
         # In this list are the things that can NOT be get()ed.

@@ -57,6 +57,7 @@ except ImportError:
 
 robotfile = 0
 devices = 0
+vars = []
 brainfile = 0
 window = 'TK'
 pyroargs = []
@@ -87,11 +88,11 @@ def process_options():
            pyroargs, configfile, evalcommand, worldfile, devices
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:a:i:e:w:d:c:", \
+                                   "r:b:hg:s:a:i:e:w:d:c:v:", \
                                    ["robot=", "brain=", "help", \
                                     "gui=", "sim=", "args=",\
                                     "init=", "eval=", "world=",
-                                    "devices=", "config="])
+                                    "devices=", "config=", "var="])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -119,6 +120,8 @@ def process_options():
             devices = a
 	elif o in ("-e", "--eval"):
             evalcommand = a
+	elif o in ("-v", "--var"):
+            vars.append( a )
 
 if pyro.startup_check():
     import pyro.system
@@ -152,6 +155,10 @@ if pyro.startup_check():
     else:
         c.put('pyro', 'args', pyroargs)
     c.put('pyro', 'gui', window)
+    for var in vars:
+        section, variableValue = var.split(".")
+        variable, value = variableValue.split("=")
+        c.put(section, variable, value)
     share.config = c
     if devices == None:
         devices = ""

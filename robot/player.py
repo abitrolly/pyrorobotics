@@ -38,13 +38,13 @@ class PlayerDevice(Device):
     def postSet(self, keyword):
         if keyword == "pose":
             if ("set_%s_pose" % self.name) in self.dev.__class__.__dict__:
-                self.setPose( self.devData[keyword] )
+                self.setPose( *self.devData[keyword] )
 
     def startDevice(self):
         try:
             self.dev.start(self.name)
             # self.devData["index"] get index here for this device (ie, dev.laser[index])
-            time.sleep(1) # required!
+            #time.sleep(1) # required!
             Device.startDevice(self)
         except:
             print "Pyro error: player device did not start: '%s'" % self.name
@@ -62,7 +62,7 @@ class PlayerDevice(Device):
             raise DeviceError, "Function 'getPose' is not available for device '%s'" % self.name
 
 
-    def setPose(self, (xM, yM, thDeg)):
+    def setPose(self, xM, yM, thDeg):
         """ Move the device. x, y are in meters """
         function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
         if function != None:
@@ -254,7 +254,7 @@ class PlayerPTZDevice(PlayerDevice):
 
     def postSet(self, keyword):
         if keyword == "pose":
-            self.setPose( self.devData[keyword] )
+            self.setPose( *self.devData[keyword] )
         elif keyword == "pan":
             self.pan( self.devData[keyword] )
         elif keyword == "tilt":
@@ -263,7 +263,7 @@ class PlayerPTZDevice(PlayerDevice):
             self.zoom( self.devData[keyword] )
 
     def init(self):
-        self.setPose( self.origPose )
+        self.setPose( *self.origPose )
 
     def setPose(self, *args):
         if len(args) == 3:
@@ -302,7 +302,7 @@ class PlayerPTZDevice(PlayerDevice):
         return self.dev.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
 
     def center(self):
-        return self.setPose( self.origPose )
+        return self.setPose( *self.origPose )
 
     def zoom(self, numDegrees):
         ptz = self.getPose()
@@ -593,7 +593,7 @@ class PlayerRobot(Robot):
     def connect(self):
         print "hostname=", self.hostname, "port=", self.port
         self.dev = player(hostname=self.hostname, port=self.port)
-        time.sleep(1)
+        #time.sleep(1)
         #self.localize(0.0, 0.0, 0.0)
 
     def removeDevice(self, item):

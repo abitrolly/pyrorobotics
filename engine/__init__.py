@@ -3,6 +3,7 @@
 import time, sys, os
 import pyro.gui.console as console
 import pyro.system as system
+import pyro.system.share as share
 
 class Engine:
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
@@ -30,7 +31,7 @@ class Engine:
       self.config = config
       if self.simfile:
          self.loadSimulator(self.simfile, self.worldfile)
-         time.sleep(2)
+         #time.sleep(2)
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if devices != ['']:
@@ -38,7 +39,7 @@ class Engine:
                self.robot.startDevice(dev)
       if self.brainfile:
          self.loadBrain(self.brainfile)
-         time.sleep(2)
+         #time.sleep(2)
 
    def reset(self):
       self.pleaseStop()
@@ -122,7 +123,11 @@ class Engine:
             raise 'Simulator file not found: ' + file
       print "Loading.",
       sys.stdout.flush()
-      time.sleep(1)
+      wait = share.config.get("gui", "sim_start_delay")
+      if wait == None:
+         time.sleep(1) # default
+      elif wait:
+         time.sleep(float(wait)) 
       print ".",
       sys.stdout.flush()
 
