@@ -17,7 +17,7 @@ INTERFACE=som_pak.i
 OBJS:=som_devrobs.o lvq_pak.o som_rout.o datafile.o fileio.o version.o labels.o
 OBJLIB=som_pak-dev
 
-PYINCL=-I/usr/local/include/python2.1 -I/usr/include/python2.1 -I/usr/local/include/python2 -I/usr/include/python2 -I/usr/local/include/python -I/usr/include/python -I/usr/local/include/python2.2 -I/usr/include/python2.2
+include ../../../Makefile.src
 
 CC=gcc
 SWIG=swig
@@ -27,8 +27,6 @@ SWIG_FLAGS=-python
 LD_FLAGS=-shared
 
 OBJS:=$(patsubst %.o, $(OBJLIB)/%.o, $(OBJS))
-
-
 
 $(TARGET): $(INTERFACE:.i=_wrap.o) $(OBJS) 
 	$(LD) $(LD_FLAGS) $^ -o $@
@@ -42,21 +40,18 @@ $(INTERFACE:.i=_wrap.c): $(INTERFACE)
 $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && make $(@F)) 
 
+clean::
+	rm -f $(TARGET) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core
 
-clean:
-	rm -f $(TARGET) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod
-cleanall:
+cleanall::
 	(make clean && cd $(OBJLIB) && make clean)
-
-
-
-
 
 
 # notes on some make details:
 # ---------------------------
 # := variable assignments work like a normal language;
 # = is a recursive variable assignment
+# :: allows multiple definitions
 #
 # $(patsubt a, b, c) returns a string with all instances of the pattern
 #   'a' found in 'c' replaced by 'b'
