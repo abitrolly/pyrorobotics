@@ -27,6 +27,9 @@ text = """
 # Leave empty if your python binary is just "python"
 PYTHON_VERSION=%s
 
+# Where exactly is python?
+PYTHON_BIN=%s
+
 # Where is this version of Python's include files?
 PYTHON_INCLUDE=-I%s
 
@@ -49,14 +52,17 @@ python_script_name = ask("1. Python version number?", "")
 python_include_files = ask("2. Where are Python's include files?",
                            "/usr/local/include/python" + python_script_name)
 
-saphira =ask("3. Where is Saphira? (Type 'none' if you don't have it)",
+python_bin_path = ask("3. Where is Python's binary? (enter path and name)",
+                           "/usr/local/bin/python" + python_script_name)
+
+saphira =ask("4. Where is Saphira? (Type 'none' if you don't have it)",
              "/usr/local/saphira/ver62")
 
-x11_include_dir = ask("4. Where is the X11 include directory?",
+x11_include_dir = ask("5. Where is the X11 include directory?",
                       "/usr/X11")
 
 fp = open("Makefile.cfg", "w")
-fp.write(text % (python_script_name, python_include_files,
+fp.write(text % (python_script_name, python_bin_path, python_include_files,
                  saphira, x11_include_dir))
 fp.close()
 
