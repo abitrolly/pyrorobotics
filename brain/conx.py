@@ -5,6 +5,13 @@
 # (c) 2001-2003, Developmental Robotics Research Group
 # ----------------------------------------------------
 
+## I removed SRN specific code from Network to SRN class and
+## replaced copyVectors() with copyActivations() and copyTargets()
+## For now targetSet and activationSet flags in Layer class must be
+## reset if calling copyActivations() or copyTarget(). The SRN class
+## extension supports only one context layer, but this can be changed.
+## I still need to work on the step() methods. -Jeremy
+
 import RandomArray, Numeric, math, random, time, sys, signal
 
 version = "6.4"
@@ -54,10 +61,12 @@ class Layer:
     error, bias, etc)
     """
     def __init__(self, name, size):
+        if size <= 0:
+            raise 'EmptyLayerError', size
         self.name = name
         self.size = size
         self.displayWidth = size
-        self.type = 'Input' # determined by connectivity
+        self.type = 'Undefined' # determined later by connectivity
         self.verbosity = 0
         self.log = 0
         self.logFile = ''
@@ -75,8 +84,12 @@ class Layer:
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
         self.bed = Numeric.zeros(self.size, 'f')
+        self.targetSet = 0
+        self.activationSet = 0
     def changeSize(self, newsize):
         # Overwrites current data!
+        if newsize <= 0:
+            raise 'EmptyLayerError', newsize
         minSize = min(self.size, newsize)
         bias = randomArray(newsize, self.maxRandom)
         for i in range(minSize):
@@ -84,6 +97,8 @@ class Layer:
         self.bias = bias
         self.size = newsize
         self.displayWidth = newsize
+        self.targetSet = 0
+        self.activationSet = 0
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
@@ -110,7 +125,7 @@ class Layer:
         if self.size > 0:
             avgvalue = ttlvalue / float(self.size)
         else:
-            avgvalue = 0.0
+            raise 'EmptyLayerError', self.size
         return maxpos, maxvalue, avgvalue
     def setLog(self, fileName):
         self.log = 1
@@ -149,12 +164,23 @@ class Layer:
     def setActivations(self, value):
         for i in range(self.size):
             self.activation[i] = value
-    def copyActivations(self, arr, rest_value = 0.0):
-        for i in range(self.size):
-            if i < len(arr):
+        if not self.activationSet == 0:
+            raise 'ActivationFlagNotReset', self.activationSet
+        else:
+            self.activationSet = 1
+    def copyActivations(self, arr, symmetric = 0):
+        if not len(arr) == self.size:
+            raise 'MismatchedActivationSizeLayerSize', (len(arr), self.size)
+        if symmetric:
+            for i in range(self.size):
+                self.activation[i] = arr[i] - 0.5
+        else:
+            for i in range(self.size):
                 self.activation[i] = arr[i]
-            else: # arr is short; fill with rest_value
-                self.activation[i] = rest_value
+        if not self.activationSet == 0:
+            raise 'ActivationFlagNotReset', self.activationSet
+        else:
+            self.activationSet = 1
     def getTarget(self):
         return toArray(self.target)
     def TSSError(self):
@@ -175,12 +201,30 @@ class Layer:
     def setTarget(self, value):
         for i in range(self.size):
             self.target[i] = value
-    def copyTarget(self, arr, rest_value = 0.0):
-        for i in range(self.size):
-            if i < len(arr):
+        if not self.targetSet == 0:
+            raise 'TargetFlagNotReset', self.targetSet
+        else:
+            self.targetSet = 1
+    def copyTarget(self, arr, symmetric = 0):
+        if not len(arr) == self.size:
+            raise 'MismatchedTargetSizeLayerSize', (len(arr), self.size)
+        if symmetric:
+            for i in range(self.size):
+                self.target[i] = arr[i] - 0.5
+        else:
+            for i in range(self.size):
                 self.target[i] = arr[i]
-            else: # arr is short; fill with rest_value
-                self.target[i] = rest_value
+        if not self.targetSet == 0:
+            raise 'TargetFlagNotReset', self.targetSet
+        else:
+            self.targetSet = 1
+    def resetFlags(self):
+        self.targetSet = 0
+        self.activationSet = 0
+    def resetTargetFlag(self):
+        self.targetSet = 0
+    def resetActivationFlag(self):
+        self.activationSet = 0
 
 # A neural Network connection between layers
 
@@ -199,10 +243,12 @@ class Connection:
     def initialize(self):
         self.randomize()
         self.dweight = Numeric.zeros((self.toLayer.size, \
-                                           self.fromLayer.size), 'f')
+                                      self.fromLayer.size), 'f')
         self.wed = Numeric.zeros((self.toLayer.size, \
                                   self.fromLayer.size), 'f')
     def changeSize(self, toLayerSize, fromLayerSize):
+        if toLayerSize <= 0 or fromLayerSize <= 0:
+            raise 'EmptyLayer', (toLayerSize, fromLayerSize)        
         dweight = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
         wed = Numeric.zeros((toLayerSize, fromLayerSize), 'f')
         weight = randomArray((toLayerSize, fromLayerSize),
@@ -285,23 +331,18 @@ class Network:
         self.inputMapCount = 0
         self.outputMap = []
         self.outputMapCount = 0
-        self.prediction = []
         self.association = []
         self.input = []
         self.output = []
         self.orderedInput = 0
         self.loadOrder = []
         self.learning = 1
-        self.initContext = 1
         self.momentum = 0.9
         self.resetEpoch = 5000
         self.resetCount = 1
         self.resetLimit = 5
-        self.sequenceLength = 1
-        self.autoSequence = 1 # auto detect length of sequence from input size
         self.batch = 0
         self.epoch = 0
-        self.learnDuringSequence = 0
         self.verbosity = verbosity
         self.stopPercent = 1.0
         self.sigmoid_prime_offset = 0.1
@@ -312,6 +353,9 @@ class Network:
         self.reportRate = 25
         self.patterns = {}
         self.patterned = 0
+        self.inputLayerCount = 0
+        self.outputLayerCount = 0
+        self.hiddenLayerCount = 0
     def __getitem__(self, name):
         return self.layerByName[name]
     def arrayify(self):
@@ -355,8 +399,6 @@ class Network:
         return self.getLayer(layerName).getActive()
     def setLearning(self, value):
         self.learning = value
-    def setInitContext(self, value):
-        self.initContext = value
     def setMomentum(self, value):
         self.momentum = value
     def setResetLimit(self, value):
@@ -365,8 +407,6 @@ class Network:
         self.resetEpoch = value
     def setBatch(self, value):
         self.batch = value
-    def setLearnDuringSequence(self, value):
-        self.learnDuringSequence = value
     def reset(self):
         random.seed(self.seed1)
         RandomArray.seed(int(self.seed1), int(self.seed2))
@@ -471,6 +511,7 @@ class Network:
             else:
                 vec.append( v )
         return vec
+    # use copyActivations or copyTarget
     def copyVector(self, vector1, vec2, start):
         vector2 = self.replacePatterns(vec2)
         length = min(len(vector1), len(vector2))
@@ -486,29 +527,36 @@ class Network:
             for i in range(start, start + length):
                 vector1[p] = vector2[i]
                 p += 1
+    def copyActivations(self, layer, vec, start):
+        vector = self.replacePatterns(vec)
+        if self.verbosity > 1:
+            print "Copying Activations: ", vector[start:start+layer.size]
+        layer.copyActivations(vector[start:start+layer.size], self.symmetric)
+    def copyTarget(self, layer, vec, start):
+        vector = self.replacePatterns(vec)
+        if self.verbosity > 1:
+            print "Copying Target: ", vector[start:start+layer.size]
+        layer.copyTarget(vector[start:start+layer.size], self.symmetric)
     def loadInput(self, pos, start = 0):
         if pos >= len(self.input):
-            raise "LoadPatternBeyondRange", pos
+            raise "LoadInputPatternBeyondRange", pos
         if self.verbosity > 0: print "Loading input", pos, "..."
         if self.inputMapCount == 0:
-            self.copyVector(self.layer[0].activation, self.input[pos], start)
+            self.copyActivations(self.layer[0], self.input[pos], start)
         else: # mapInput set manually
             for vals in self.inputMap:
                 (v1, offset) = vals
-                self.copyVector(self.getLayer(v1).activation, \
-                                self.input[pos], offset)
+                self.copyActivations(self.getLayer(v1), self.input[pos], offset)
     def loadTarget(self, pos, start = 0):
         if pos >= len(self.output):
-            return
+            return  # there may be no target 
         if self.verbosity > 1: print "Loading target", pos, "..."
         if self.outputMapCount == 0:
-            self.copyVector(self.layer[self.layerCount-1].target, \
-                            self.output[pos], start)
+            self.copyTarget(self.layer[self.layerCount-1], self.output[pos], start)
         else: # mapOutput set manually
             for vals in self.outputMap:
                 (v1, offset) = vals
-                self.copyVector(self.getLayer(v1).target,
-                                self.output[pos], offset)
+                self.copyTarget(self.getLayer(v1), self.output[pos], offset)
     def RMSError(self):
         tss = 0.0
         size = 0
@@ -547,73 +595,73 @@ class Network:
         print "----------------------------------------------------"
     def cycle(self):
         return self.sweep()
-    def preprop(self, pattern, step):
+    def preprop(self, pattern, step = 0):
         self.loadInput(pattern, step*self.layer[0].size)
         self.loadTarget(pattern, step*self.layer[self.layerCount-1].size)
         for aa in self.association:
             (inName, outName) = aa
             inLayer = self.getLayer(inName)
+            if not inLayer.type == 'Input':
+                raise 'AssociateInputLayerTypeError', inLayer.type
             outLayer = self.getLayer(outName)
+            if not outLayer.type == 'Output':
+                raise 'AssociateOutputLayerTypeError', outLayer.type
             outLayer.copyTarget(inLayer.activation)
-        for p in self.prediction:
-            (inName, outName) = p
-            inLayer = self.getLayer(inName)
-            outLayer = self.getLayer(outName)
-            if self.sequenceLength == 1:
-                position = (pattern + 1) % len(self.input)
-                outLayer.copyTarget(self.input[position])
-            else:
-                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.input[pattern]))
-                self.copyVector(outLayer.target, self.input[pattern], start)
-    def postprop(self, pattern, sequence):
-        pass
+    def verifyInputs(self):
+        verified = 1
+        for l in self.layer:
+            if l.type == 'Input' and not l.activationSet:
+                verified = 0
+        return verified
+    def verifyTargets(self):
+        verified = 1
+        for l in self.layer:
+            if l.type == 'Output' and not l.targetSet:
+                verified = 0
+        return verified
+    def resetFlags(self):
+        for l in self.layer:
+            l.resetFlags()
+    def postprop(self, pattern, sequence = 0):
+        self.resetFlags()
     def sweep(self):
+        if self.loadOrder == []:
+            raise 'LoadOrderEmpty'
         if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInput:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         for i in self.loadOrder:
-            if self.autoSequence:
-                self.sequenceLength = len(self.replacePatterns(self.input[i])) / self.layer[0].size
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
-            for s in range(self.sequenceLength):
-                if self.verbosity > 0 or self.interactive:
-                    print "Step #", s + 1
-                self.preprop(i, s)
-                self.propagate()
-                if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
-                    pass # don't update error or count
-                else:
-                    (error, correct, total) = self.backprop() # compute_error()
-                    tssError += error
-                    totalCorrect += correct
-                    totalCount += total
-                if self.verbosity > 0 or self.interactive:
-                    self.display()
-                    if self.interactive:
-                        print "--More-- [quit, go] ",
-                        chr = sys.stdin.readline()
-                        if chr[0] == 'g':
-                            self.interactive = 0
-                        elif chr[0] == 'q':
-                            sys.exit(1)
-                # the following could be in this loop, or not
-                self.postprop(i, s)
-                if self.sequenceLength > 1:
-                    if self.learning and self.learnDuringSequence:
-                        self.change_weights()
-                # else, do nothing here
-                sys.stdout.flush()
-            if self.sequenceLength > 1:
-                if self.learning and not self.learnDuringSequence:
-                    self.change_weights()
-            else:
-                if self.learning and not self.batch:
-                    self.change_weights()
-        if self.sequenceLength == 1:
-            if self.learning and self.batch:
-                self.change_weights() # batch
+            if self.verbosity > 0 or self.interactive:
+                print "Step #", s + 1
+            self.preprop(i)
+            if not self.verifyInputs():
+                raise 'MissingInputs'
+            if not self.verifyTargets():
+                raise 'MissingTargets'
+            self.propagate()
+            (error, correct, total) = self.backprop() # compute_error()
+            tssError += error
+            totalCorrect += correct
+            totalCount += total
+            if self.verbosity > 0 or self.interactive:
+                self.display()
+            if self.interactive:
+                print "--More-- [quit, go] ",
+                chr = sys.stdin.readline()
+                if chr[0] == 'g':
+                    self.interactive = 0
+                elif chr[0] == 'q':
+                    sys.exit(1)
+            # the following could be in this loop, or not
+            self.postprop(i)
+            sys.stdout.flush()
+            if self.learning and not self.batch:
+                self.change_weights()
+        if self.learning and self.batch:
+            self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
     def step(self):
         self.epoch += 1
@@ -661,8 +709,18 @@ class Network:
         toLayer   = self.getLayer(toName)
         if (fromLayer.type == 'Output'):
             fromLayer.type = 'Hidden'
+            self.outputLayerCount -= 1
+            self.hiddenLayerCount += 1
+        elif (fromLayer.type == 'Undefined'):
+            fromLayer.type = 'Input'
+            self.inputLayerCount += 1
         if (toLayer.type == 'Input'):
             toLayer.type = 'Output'
+            self.inputLayerCount -= 1
+            self.outputLayerCount += 1
+        elif (toLayer.type == 'Undefined'):
+            toLayer.type = 'Output'
+            self.outputLayerCount += 1
         self.connection.append(Connection(fromLayer, toLayer))
         self.connection[self.connectionCount].setEpsilon(self.epsilon)
         self.connectionCount += 1
@@ -677,6 +735,8 @@ class Network:
         self.outputMap.append((vector1, offset))
         self.outputMapCount += 1
     def propagate(self):
+        if self.layerCount == 0:
+            raise "NoNetworkLayersError", self.layerCount
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # Initialize netinput:
         for n in range(self.layerCount):
@@ -695,6 +755,7 @@ class Network:
         for n in range(self.layerCount):
             if self.layer[n].log and self.layer[n].active:
                 self.layer[n].writeLog()
+        assert self.connectionCount > 0, "Network contains no connections."
     def prop_process(self, connect):
         if self.verbosity > 5:
             print "Prop_process from " + connect.fromLayer.name + " to " + \
@@ -1005,7 +1066,7 @@ class Network:
         for w in self.patterns:
             if self.compare( self.patterns[w], pattern ):
                 return w
-        return ""
+        return "none"
     def setPattern(self, word, vector):
         self.patterns[word] = vector
     def compare(self, v1, v2):
@@ -1017,29 +1078,113 @@ class Network:
             return 1
         except:
             return 0
+
 class SRN(Network):
+    def __init__(self):
+        self.sequenceLength = 1
+        self.learnDuringSequence = 0
+        self.autoSequence = 1 # auto detect length of sequence from input size
+        self.prediction = []
+        self.initContext = 1
+        Network.__init__(self)
+    def setInitContext(self, value):
+        self.initContext = value
+    def setLearnDuringSequence(self, value):
+        self.learnDuringSequence = value
     def addSRNLayers(self, numInput, numHidden, numOutput):
         self.add(Layer('input', numInput))
-        self.add(Layer('context', numHidden))
+        self.addContext(Layer('context', numHidden))
         self.add(Layer('hidden', numHidden))
         self.add(Layer('output', numOutput))
         self.connect('input', 'hidden')
         self.connect('context', 'hidden')
         self.connect('hidden', 'output')
-    def preprop(self, patnum, step):
+    def addContext(self, layer, verbosity = 0):
+        self.add(layer, verbosity)
+        self.contextLayer = layer
+    def clearContext(self):
+        self.contextLayer.resetFlags()
+        self.contextLayer.setActivations(.5)
+    def preprop(self, pattern, step):
+        Network.preprop(self, pattern, step)
+        for p in self.prediction:
+            (inName, outName) = p
+            inLayer = self.getLayer(inName)
+            if not inLayer.type == 'Input':
+                raise 'PredictionInputLayerTypeError', inLayer.type
+            outLayer = self.getLayer(outName)
+            if not outLayer.type == 'Output':
+                raise 'PredictionOutputLayerTypeError', outLayer.type
+            if self.sequenceLength == 1:
+                position = (pattern + 1) % len(self.input)
+                outLayer.copyTarget(self.input[position])
+            else:
+                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.input[pattern]))
+                self.copyTarget(outLayer, self.input[pattern], start)
         if self.sequenceLength > 1:
             if step == 0 and self.initContext:
                 self.clearContext()
         else: # if seq length is one, you better be doing ordered
-            if patnum == 0 and self.initContext:
+            if pattern == 0 and self.initContext:
                 self.clearContext()
-        Network.preprop(self, patnum, step)
     def postprop(self, patnum, step):
-        self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
         Network.postprop(self, patnum, step)
-    def clearContext(self):
-        c = self.getLayer('context')
-        c.activation = Numeric.ones(c.size, 'f') * .5
+        self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
+    def sweep(self):
+        if self.loadOrder == []:
+            raise 'LoadOrderEmpty'
+        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
+        if not self.orderedInput:
+            self.randomizeOrder()
+        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        for i in self.loadOrder:
+            if self.autoSequence:
+                self.sequenceLength = len(self.replacePatterns(self.input[i])) / self.layer[0].size
+            if self.verbosity > 0 or self.interactive:
+                print "-----------------------------------Pattern #", i + 1
+            if self.sequenceLength <= 0:
+                raise 'SequenceLengthError', self.sequenceLength
+            if self.sequenceLength == 1 and self.learnDuringSequence:
+                raise 'LearningDuringSequenceError', (self.sequenceLength, self.learnDuringSequence)
+            for s in range(self.sequenceLength):
+                if self.verbosity > 0 or self.interactive:
+                    print "Step #", s + 1
+                self.preprop(i, s)
+                self.propagate()
+                if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
+                    pass # don't update error or count - accumulate history without learning in context layer
+                else:
+                    (error, correct, total) = self.backprop() # compute_error()
+                    tssError += error
+                    totalCorrect += correct
+                    totalCount += total
+                if self.verbosity > 0 or self.interactive:
+                    self.display()
+                    if self.interactive:
+                        print "--More-- [quit, go] ",
+                        chr = sys.stdin.readline()
+                        if chr[0] == 'g':
+                            self.interactive = 0
+                        elif chr[0] == 'q':
+                            sys.exit(1)
+                # the following could be in this loop, or not
+                self.postprop(i, s)
+                if self.sequenceLength > 1:
+                    if self.learning and self.learnDuringSequence:
+                        self.change_weights()
+                # else, do nothing here
+                sys.stdout.flush()
+            if self.sequenceLength > 1:
+                if self.learning and not self.learnDuringSequence:
+                    self.change_weights()
+            else:
+                if self.learning and not self.batch:
+                    self.change_weights()
+        if self.sequenceLength == 1:
+            if self.learning and self.batch:
+                self.change_weights() # batch
+        return (tssError, totalCorrect, totalCount)
+
 try:
     import psyco
     psyco.bind(Layer)
@@ -1082,9 +1227,11 @@ if __name__ == '__main__':
         print net.getPattern("two")
         net.setInputs([ "one", "two" ])
         net.loadInput(0)
+        net.resetFlags()
         print "one is: ",
         print net["input"].activation
         net.loadInput(1)
+        net.resetFlags()
         print "two is: ",
         print net["input"].activation
         net.setPattern("1", 1)
@@ -1092,6 +1239,7 @@ if __name__ == '__main__':
         print "Setting patterns to 0 and 1..."
         net.setInputs([ [ "0", "1", "0" ], ["1", "1", "1"]])
         net.loadInput(0)
+        net.resetFlags()
         print "0 1 0 is: ",
         print net["input"].activation
         net.loadInput(1)
