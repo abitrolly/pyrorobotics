@@ -348,7 +348,7 @@ class FileDialog(ModalDialog):
 		self.dirLb = Tkinter.Listbox(frame, {'yscroll':scrollBar.set})
 		self.dirLb.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
 			'fill' :'both'})
-		#self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
+		self.dirLb.bind('<Double-Button-1>', self.DoDoubleClickDir)
 		scrollBar['command'] = self.dirLb.yview
 
 	#	create the files list box
