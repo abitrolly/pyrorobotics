@@ -2,7 +2,7 @@
 # A simple Genetic Algorithm in Python
 # (See bottom for examples, and tests)
 # ------------------------------------------------
-# (c) D.S. Blank, Bryn Mawr College 2001
+# (c) D.S. Blank, Bryn Mawr College 2003
 # ------------------------------------------------
 
 # Assumptions:
@@ -20,28 +20,6 @@ BAD = 2
 def display(v):
     print v,
 
-def displayln(v):
-    print v
-
-def makeRandomGene(size, real = 1, bias = .5):
-    # Possible Change: Initialization is made beween -1, and 1
-    gene = []
-    for i in range(size):
-        if real:
-            gene.append( random.random() * 2.0 - 1.0)
-        else:
-            gene.append( random.random() < bias)
-    return gene
-
-def makeRandomPop(cnt, size, real = 1, bias = .5):
-    pop = []
-    for i in range(cnt):
-        if bias == -1:
-            pop.append( makeRandomGene(size, real, float(i) / cnt) )
-        else:
-            pop.append( makeRandomGene(size, real, bias) )
-    return pop
-
 def sum(a):
     # FIX: I think this is built in somewhere
     sum = 0
@@ -49,34 +27,135 @@ def sum(a):
         sum += n
     return sum
 
-# The classes:
 
+# The classes:
+#  Population - collection of Gene (shouldn't have to change)
+#  Gene - specifics of gene representation (subclass this)
+#  GA - the parameters of evolution (shouldn't have to change)
+
+class Gene:
+    def __init__(self, **args):
+        # Possible Change: Initialization is made beween -1, and 1
+        self.data = []
+        self.integer = 0
+        self.bias = 0.5
+        if args.has_key('integer'):
+            self.integer = args['integer']
+        if args.has_key('bias'):
+            self.integer = args['bias']
+        for i in range(args['size']):
+            if self.integer:
+                self.data.append( random.random() < self.bias)
+            else:
+                self.data.append( random.random() * 2.0 - 1.0)
+
+    def fitnessFunction(self, **args):
+        # Overload this, or the one in GA.
+        pass
+
+    def crossover(self, otherGene, **args):
+        """
+        Takes another gene, produces a mixture, and returns it.
+        """
+        crosspoint = int(random.random() * len(self.data))
+        temp = self.data[:crosspoint]
+        temp.extend(otherGene.data[crosspoint:])
+        return temp
+
+    def display(self):
+        map(lambda v: display("%3.2f" % v), self.data)
+
+    def mutate(self, **args):
+        """
+        If mutationRate = .1, then .1 of the pop will get mutated.
+        If self.integer, flip bit
+        Else mutate with momentum (+- previous value) or
+        other amount
+        """
+        pos = int(random.random() * len(self.data))
+        if self.integer: # flip it
+            self.data[pos] = not self.data[pos]
+        else:
+            r = random.random()
+            if (r < .25):
+                self.data[pos] -= random.random()
+            elif (r < .50):
+                self.data[pos] += random.random()
+            elif (r < .75):
+                self.data[pos] = random.random()
+            else:
+                self.data[pos] = -random.random()
+
+class Population:
+    """
+    Class to abstract gene-related items.
+    """
+    def __init__(self, cnt, geneConstructor, **args): 
+        self.data = []
+        self.size = cnt
+        self.geneConstructor = geneConstructor
+        self.args = args
+        for i in range(cnt):
+            self.data.append( geneConstructor(**args))
+
+    def mutate(self, rate, **args):
+        for i in range(int(rate * self.size)):
+            pos = self.pick(RANDOM)
+            self.data[pos].mutate(**args)
+
+    def crossover(self, rate, **args):
+        """
+        If crossoverRate = .3, then .3 of pop will be replaced.
+        """
+        for i in range(int(rate * self.size)):
+            self.data[ self.pick(BAD) ].data = self.data[ self.pick(GOOD) ].crossover(self.data[ self.pick(GOOD) ], **args)
+
+    def pick(self, type):
+	p = int(random.random() * len(self.data))
+        if (type == BAD):
+            if (random.random() > self.probability(p)):
+                return p
+            else:
+                return self.pick(type)
+        elif (type == GOOD):
+            if (random.random() < self.probability(p)):
+                return p
+            else:
+                return self.pick(type);
+        else:
+            return p
+
+    def probability(self, pos):
+        return ((len(self.data) - pos) + 0.0) / len(self.data)
+
+            
 class GA:
     """
     Class which defines everything needed to run a GA.
     """
-    def __init__(self, population, batch = 0):
+    def __init__(self, population, **args):
         x = random.random() * 100000 + time.time()
         self.setSeed(x)
         self.pop = population
-        self.popsize = len(population)
-        self.geneLength = len(population[0])
-        self.fitness = [0.0] * self.popsize
+        self.fitness = [0.0] * len(self.pop.data)
         self.mutationRate = 0.05
         self.crossoverRate = 0.3
+        if args.has_key('mutationRate'):
+            self.mutationRate = args['mutationRate']
+        if args.has_key('crossoverRate'):
+            self.crossoverRate = args['crossoverRate']
         self.maxEpoch = 0
-        self.batch = batch
-        self.integer = 0
         self.generation = 0
 
     def isDoneFunction(self):
+        # Overload this
         pass
 
-    def fitnessFunction(self, genePosition):
-        pass
+    def fitnessFunction(self, genePosition, **args):
+        return self.pop.data[genePosition].fitnessFunction(**args)
 
     def applyFitnessFunction(self):
-        for i in range( self.popsize ):
+        for i in range( len(self.pop.data) ):
             self.fitness[i] = self.fitnessFunction(i)
 
     def setSeed(self, value):
@@ -86,12 +165,8 @@ class GA:
         RandomArray.seed(int(self.seed1), int(self.seed2))
 
     def swap(self, a, b):
-        t = self.fitness[a]
-        self.fitness[a] = self.fitness[b]
-        self.fitness[b] = t
-        t = self.pop[a]
-        self.pop[a] = self.pop[b]
-        self.pop[b] = t
+        self.fitness[a], self.fitness[b] = self.fitness[b], self.fitness[a]
+        self.pop.data[a], self.pop.data[b] = self.pop.data[b], self.pop.data[a]
 
     def partition(self, first, last):
         pivot = self.fitness[ (first + last) / 2 ]
@@ -113,82 +188,23 @@ class GA:
             self.quickSort(piv_index, last )
 
     def sort(self):
-        self.quickSort(0, self.popsize - 1)
-        # FIX: have two sorts (minimize, maximize)
-        #self.fitness.reverse()
-        #self.pop.reverse()
+        self.quickSort(0, len(self.pop.data) - 1)
 
-    def display(self, i = -1):
-        if i == -1:
-            print "Pop    :"
-            for p in range(len(self.pop)):
-                map(lambda v: display("%3.2f" % v), self.pop[p])
-                print "Fitness:", self.fitness[p]
-        else:
-            map(lambda v: display("%3.2f" % v), self.pop[i])
-            print "Fitness:", self.fitness[i]
+    def display_one(self, p):
+        self.pop.data[p].display()
+        print "Fitness:", self.fitness[p]
 
-    def probability(self, pos):
-        return ((self.popsize - pos) + 0.0) / self.popsize
-
-    def pick(self, type):
-	p = int(random.random() * self.popsize)
-        if (type == BAD):
-            if (random.random() > self.probability(p)):
-                return p
-            else:
-                return self.pick(type)
-        elif (type == GOOD):
-            if (random.random() < self.probability(p)):
-                return p
-            else:
-                return self.pick(type);
-        else:
-            return p
-
+    def display(self):
+        print "Population:"
+        for p in range(len(self.pop.data)):
+            self.display_one(p)
+            
     def sweep(self):
         self.applyFitnessFunction() # sets self.fitness
         self.sort()
-        self.crossover()
-        self.mutate()
+        self.pop.crossover(self.crossoverRate)
+        self.pop.mutate(self.mutationRate)
 
-    def crossover(self):
-        """
-        If crossoverRate = .3, then .3 of pop will be replaced.
-        """
-        number = int(self.crossoverRate * self.popsize)
-        for i in range(number):
-            g1 = self.pick(GOOD)
-            g2 = self.pick(GOOD)
-            b1 = self.pick(BAD)
-            cross = int(random.random() * self.geneLength)
-            temp = self.pop[g1][:cross]
-            temp.extend(self.pop[g2][cross:])
-            self.pop[b1] = temp
-            
-    def mutate(self):
-        """
-        If mutationRate = .1, then .1 of the pop will get mutated.
-        If self.integer, flip bit
-        Else mutate with momentum (+- previous value)
-        """
-        number = int(self.mutationRate * self.popsize)
-        for i in range(number):
-            rand = self.pick(RANDOM)
-            pos = int(random.random() * self.geneLength)
-            if self.integer:
-                self.pop[rand][pos] = not self.pop[rand][pos]
-            else:
-                r = random.random()
-                if (r < .25):
-                    self.pop[rand][pos] -= random.random()
-                elif (r < .50):
-                    self.pop[rand][pos] += random.random()
-                elif (r < .75):
-                    self.pop[rand][pos] = random.random()
-                else:
-                    self.pop[rand][pos] = -random.random()
-    
     def evolve(self):
         self.generation = 0
         while (self.generation < self.maxEpoch or self.maxEpoch == 0):
@@ -197,11 +213,11 @@ class GA:
             print "-" * 30
             print "Epoch #", self.generation, ":"
             print "Best : (position # 0 )"
-            self.display(0)
-            print "Median: (position #", self.popsize/2, ")"
-            self.display(self.popsize/2)
-            print "Worst: (position #", self.popsize - 1, ")"
-            self.display(self.popsize - 1)
+            self.display_one(0)
+            print "Median: (position #", len(self.pop.data)/2, ")"
+            self.display_one(len(self.pop.data)/2)
+            print "Worst: (position #", len(self.pop.data) - 1, ")"
+            self.display_one(len(self.pop.data) - 1)
             if self.isDoneFunction():
                 print "Completed!"
                 return
@@ -211,9 +227,14 @@ if __name__ == '__main__':
     from pyro.brain.conx import *
     class TestGA(GA):
         def fitnessFunction(self, genePos):
-            return sum(self.pop[genePos])
+            return sum(self.pop.data[genePos].data)
         def isDoneFunction(self):
-            return sum(self.pop[0]) > 20
+            return sum(self.pop.data[0].data) > 20
+
+    print "Do you want to evolve a list of big numbers? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        ga = TestGA(Population(300, Gene, size = 10))
+        ga.evolve()
 
     # Here is a test to evolve the weights/biases in a neural network
     # that solves the XOR problem:
@@ -238,28 +259,22 @@ if __name__ == '__main__':
             n.setTolerance(.4)
             g = n.arrayify()
             self.network = n
-            GA.__init__(self, makeRandomPop(300, len(g)))
+            GA.__init__(self, Population( 300, Gene, size = len(g)))
         def fitnessFunction(self, genePos):
-            self.network.unArrayify(self.pop[genePos])
+            self.network.unArrayify(self.pop.data[genePos].data)
             error, correct, count = self.network.sweep()
             return -error
         def isDoneFunction(self):
-            self.network.unArrayify(self.pop[0])
+            self.network.unArrayify(self.pop.data[0].data)
             error, correct, count = self.network.sweep()
             print "Correct:", correct
             return correct == 4
-
-
-    print "Do you want to evolve a list of big numbers? ",
-    if sys.stdin.readline().lower()[0] == 'y':
-        ga = TestGA(makeRandomPop(300, 10))
-        ga.evolve()
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
         ga = NNGA()
         ga.evolve()
-        ga.network.unArrayify(ga.pop[0])
+        ga.network.unArrayify(ga.pop.data[0].data)
         ga.network.setInteractive(1)
         ga.network.sweep()
 
