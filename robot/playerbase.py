@@ -49,15 +49,17 @@ class PlayerService(Service):
     def getPose(self):
         function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
         if function != None:
-            return function(self.dev)
+            x, y, th = function(self.dev)
+            return (x / 1000.0, y / 1000.0, th)
         else:
             raise ServiceError, "Function 'getPose' is not available for service '%s'" % self.name
 
 
-    def setPose(self, xMM, yMM, thDeg):
+    def setPose(self, xM, yM, thDeg):
+        """ Move the robot. x, y are in meters """
         function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
         if function != None:
-            return function( self.dev, xMM, yMM, thDeg)
+            return function( self.dev, xM * 1000.0, yM * 1000.0, thDeg)
         else:
             raise ServiceError, "Function 'setPose' is not available for service '%s'" % self.name
 
