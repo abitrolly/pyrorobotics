@@ -221,6 +221,10 @@ class B21RRobot(Robot):
 
     def update(self):
 	self.dev.UpdateReadings()
+	self.x = self.dev.getX()
+	self.y = self.dev.getY()
+	self.th = self.dev.getTh()
+	self.thr = self.dev.getThr()
 	self.senseData["laser"] = self.dev.getLaser()
 	self.senseData["sonar"] = self.dev.getSonarHigh()
 	self.senseData["lowsonar"] = self.dev.getSonarLow()
