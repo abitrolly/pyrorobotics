@@ -504,6 +504,12 @@ class AriaRobot(Robot):
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
+    def enableMotors(self):
+        self.dev.enableMotors()
+
+    def disableMotors(self):
+        self.dev.disableMotors()
+
 if __name__ == '__main__':
     myrobot = AriaRobot()
     myrobot.update()
