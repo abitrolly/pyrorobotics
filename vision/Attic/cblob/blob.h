@@ -59,6 +59,8 @@ void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
 void Blobdata_del(struct blobdata* data);
 
 struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height);
+struct bitmap* bitmap_from_ppm(char* filename);
+struct bitmap* bitmap_from_pgm(char* filename);
 
   //struct playerblob* make_player_blob(struct blobdata** blobs, int* channels, int n_channels);
 
