@@ -179,10 +179,13 @@ class GA:
             if self.integer:
                 self.pop[rand][pos] = not self.pop[rand][pos]
             else:
-                if (random.random() < .5):
+                r = random.random()
+                if (r < .33):
                     self.pop[rand][pos] -= random.random()
-                else:
+                elif (r < .66):
                     self.pop[rand][pos] += random.random()
+                else:
+                    self.pop[rand][pos] = random.random()
     
     def evolve(self):
         self.generation = 0
@@ -230,6 +233,7 @@ if __name__ == '__main__':
                           [1.0],
                           [0.0]])
             n.setVerbosity(0)
+            n.setTolerance(.4)
             g = n.arrayify()
             self.network = n
             GA.__init__(self, makeRandomPop(300, len(g)))
@@ -240,6 +244,7 @@ if __name__ == '__main__':
         def isDoneFunction(self):
             self.network.unArrayify(self.pop[0])
             error, correct, count = self.network.sweep()
+            print "Correct:", correct
             return correct == 4
 
 
