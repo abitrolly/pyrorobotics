@@ -67,15 +67,10 @@ def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
     module = modulefile.split(".")[0]
     search = string.join(path, "/")
     oldpath = sys.path[:] # copy
-
     sys.path.append(search)
-    
     exec("import " + module + " as userspace")
-    print 'Loaded ' + module
-
-    if redo:
-        reload(userspace)
-
+    reload(userspace)
+    print 'Loaded ' + module + "!"
     sys.path = oldpath
     if brain is 0:
         if engine is 0:
