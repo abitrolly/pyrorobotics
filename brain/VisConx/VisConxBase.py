@@ -114,7 +114,7 @@ class VisConxBase:
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
         self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.NSEW)
         conButtonFrame = Tkinter.Frame(self.visualFrame)
-        Tkinter.Button(conButtonFrame,text="Show weights", command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
+        Tkinter.Button(conButtonFrame,text="Show connection weights", command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
         Tkinter.Button(conButtonFrame, text="Save all weights", command=self.saveAllWeights).grid(row=1, col=0)
         Tkinter.Button(conButtonFrame, text="Load all weights", command=self.loadAllWeights).grid(row=1, col=1)
         conButtonFrame.grid(col=1, row=5)

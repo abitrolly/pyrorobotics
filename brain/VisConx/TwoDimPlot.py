@@ -130,7 +130,7 @@ class TwoDimPlot(Tkinter.Toplevel):
         """
         Draws a point (x,y) on the canvas.
         """
-        self.plotArea.create_oval(self.xToCanvas(x)-.2, self.yToCanvas(y)+.2, self.xToCanvas(x)+.2, self.yToCanvas(y)-.2)
+        self.plotArea.create_oval(self.xToCanvas(x), self.yToCanvas(y), self.xToCanvas(x), self.yToCanvas(y))
 
     def drawLine(self, x1, y1, x2, y2):
         """
