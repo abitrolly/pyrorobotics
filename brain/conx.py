@@ -784,6 +784,8 @@ class Network:
         Returns the layer with the argument (string) name.
         """
         return self.layersByName[name]
+    def setAutoCrossValidation(self, value):
+        self.autoCrossValidation = value
     def setPatterned(self, value):
         """
         Sets the network to use patterns for inputs and targets.
