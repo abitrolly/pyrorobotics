@@ -512,6 +512,10 @@ class FileDialog(ModalDialog):
            filename = self.fileNameEntry.get()
            myfilename = os.getenv("HOME") + "/my" + filename.split("/")[-1]
            os.system("cp -i %s %s" %(filename, myfilename))
+           if filename[-6:] == ".world":
+              configFilename = filename + ".cfg"
+              if file_exists(configFilename) != 0:
+                 os.system("cp -i %s.cfg %s.cfg" %(filename, myfilename))
            self.fileNameEntry.delete(0, 'end')
            self.fileNameEntry.insert(0, myfilename)
            self.EditPressed(myfilename, 1)
@@ -524,7 +528,10 @@ class FileDialog(ModalDialog):
               editor = os.getenv("EDITOR")
            else:
               editor = "emacs"
-           os.system("%s %s &" % (editor, filename))
+           if file_exists(filename + ".cfg"):
+              os.system("%s %s %s.cfg &" % (editor, filename, filename))
+           else:
+              os.system("%s %s &" % (editor, filename))
            self.TerminateDialog(0) #selectIt)
 
 	def GetFileName(self):

@@ -305,6 +305,8 @@ class gui:
                                                self.lastDir.get("%s-config" % simulatorName,
                                                                 "%s/plugins/configs/%s/" %
                                                                 (pyropath, configDirName)))
+               if worldfile == "":
+                  return
                self.lastDir["%s-config" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
             else:
                # ends with "Simulator"
@@ -313,6 +315,8 @@ class gui:
                                                self.lastDir.get("%s-world" % simulatorName,
                                                                 "%s/plugins/worlds/%s/" %
                                                                 (pyropath, simDirName)))
+               if worldfile == "":
+                  return
                self.lastDir["%s-world" % simulatorName] = string.join(worldfile.split('/')[:-1],'/')
          else:
             simulatorName = worldfile
