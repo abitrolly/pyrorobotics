@@ -12,14 +12,7 @@ import struct, time, sys
 def makeControlCommand(control, amt):
     # HEAD: control is tilt 't', pan 'p', or roll 'r'
     # WALK: control is forward 'f', strafe 's', and rotate 'r'
-    sequence = [0] * 5
-    bits = struct.pack('f', amt) # Java's FloatToIntBits
-    sequence[0] = ord(control) # single char
-    sequence[4] = struct.unpack('b', bits[3])[0] 
-    sequence[3] = struct.unpack('b', bits[2])[0] 
-    sequence[2] = struct.unpack('b', bits[1])[0] 
-    sequence[1] = struct.unpack('b', bits[0])[0]
-    return struct.pack('bbbbb', *sequence)
+    return struct.pack('<bf', ord(control), amt) 
 
 class Listener:
     def __init__(self, port = -1, host ="", protocol = "TCP"):
