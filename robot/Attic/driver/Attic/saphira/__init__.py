@@ -85,6 +85,7 @@ class SaphiraSenseDriver(driver.Driver):
 class SaphiraControlDriver(driver.Driver):
     def __init__(self, machine):
         driver.Driver.__init__(self)
+        self.machine = machine
         self.controls['move'] = Saphira_Move
         self.controls['move_now'] = Saphira_Move
         #self.controls['accelerate'] = Saphira_Accelerate
@@ -95,5 +96,5 @@ class SaphiraControlDriver(driver.Driver):
         console.log(console.INFO,'saphira control drivers loaded')
 
     def update(self, dev):
-        self._update()
+        self.machine._update()
         Saphira_UpdateReadings(dev)
