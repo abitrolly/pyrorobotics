@@ -8,10 +8,6 @@ class Pioneer2AT(SaphiraRobot):
         SaphiraRobot.__init__(self, "Pioneer2AT", 0)
         # 0 makes it a real robot
 	self.camera = BT848Camera(new_CameraMover())
-        #self.camera = BT848Camera()
-	#self.camera = Camera(0,0)
-        #	self.cameraMover = new_CameraMover()
-
 
 def INIT():
     return Pioneer2AT()
