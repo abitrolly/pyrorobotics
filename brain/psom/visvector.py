@@ -155,11 +155,10 @@ class BarGraphVisVector(VisVector):
          len(maxval)
          self.max = maxval
       except TypeError:
-         if max == None:
+         if maxval == None:
             self.max = [max(self.vector)] * self.length
          else:
             self.max = [maxval] * self.length
-
       self.win = Tk()
       self.win.title(title)
       for i in range(len(self.vector)):
@@ -193,9 +192,9 @@ def getVisVectorByName(type):
    else:
       raise "VisVector type not supported"
 
-#  if __name__=="__main__":
-#     from pyro.brain.psom import *
-#     grayvis = getVisVectorByName("Grayscale")
-#     piclist = [float(x)/255.0 for x in range(256)]
-#     grayvis(vector(piclist), 16, 16)
-#     print "Done"
+#if __name__=="__main__":
+#   from pyro.brain.psom import *
+#   grayvis = getVisVectorByName("BarGraph")
+#   piclist = [float(x)/16.0 for x in range(16)]
+#   grayvis(vector(piclist))
+#   print "Done"
