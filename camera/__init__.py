@@ -81,6 +81,8 @@ class Camera(PyroImage, Service):
       self.lastWindowUpdate = 0
       self.updateWindowInterval = 1.0 # update window once a second
       self.update() # call it once to initialize
+      self.devDataFunc["image"] = self.getData
+      self.devDataFunc["grayscale"] = self.getGrayScale
 
    def setFilterList(self, filterList):
       """

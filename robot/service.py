@@ -1,7 +1,7 @@
 
 import types, random
 
-def serviceDirectoryFormat(serviceDict, retdict = 1):
+def serviceDirectoryFormat(serviceDict, retdict = 1, showstars = 0):
     """
     Takes a service directory dictionary and makes it presentable for viewing.
 
@@ -20,7 +20,7 @@ def serviceDirectoryFormat(serviceDict, retdict = 1):
         #print keyword, type(serviceDict[keyword])
         if type(serviceDict[keyword]) == types.InstanceType:
             # HACK: to make it so range is an alias link
-            if keyword == "range":
+            if keyword == "range" and showstars:
                 keyword = "*" + keyword
             if retdict:
                 retval[keyword + "/"] = None
@@ -45,6 +45,8 @@ class Service:
     def __init__(self, serviceType = 'unspecified', visible = 0):
         self.devData = {}
         self.devDataFunc = {}
+        self.subData = {}
+        self.subDataFunc = {}
         self.groups = {}
         self.dev = 0
         self.devData["active"] = 1
@@ -139,24 +141,33 @@ class Service:
         else:
             raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
-    def _get(self, path):
+    def _get(self, path, showstars = 0):
         #print "path=", path
         if len(path) == 0:
             # return all of the things a sensor can show
             tmp = self.devData.copy()
-            tmp.update( dict([("*" + key + "/", self.groups[key]) for key in self.groups]))
+            tmp.update( self.devDataFunc )
+            if showstars:
+                tmp.update( dict([("*" + key + "/", self.groups[key]) for key in self.groups]))
+            else:
+                tmp.update( dict([(key + "/", self.groups[key]) for key in self.groups]))
             return serviceDirectoryFormat(tmp, 0)
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
             return self.devData[path[0]]
+        elif len(path) == 1 and path[0] in self.devDataFunc:
+            # return a value
+            return self.devDataFunc[path[0]]()
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
-            return serviceDirectoryFormat(self.devDataFunc, 0)
+            tmp = self.subData.copy()
+            tmp.update( self.subDataFunc )
+            return serviceDirectoryFormat(tmp, 0)
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]
             if elements == "*":
-                elements = self.devDataFunc.keys() 
+                elements = self.subDataFunc.keys() + self.subData.keys()
             # if keys is a collection:
             if isinstance(keys, (type((1,)), type([1,]))):
                 keyList, keys = keys, []
@@ -171,19 +182,19 @@ class Service:
             # 4 cases:
             # 1 key 1 element
             if type(keys) == type(1) and type(elements) == type(""):
-                return self.devDataFunc[elements](keys)
+                return self.subDataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
                 mydict = {}
                 for e in elements:
-                    mydict[e] = self.devDataFunc[e](keys)
+                    mydict[e] = self.subDataFunc[e](keys)
                 return mydict
             # many keys 1 element
             elif type(elements) == type(""):
                 retval = []
                 if keys != None:
                     for i in keys:
-                        retval.append( self.devDataFunc[elements](i))
+                        retval.append( self.subDataFunc[elements](i))
                 return retval
             # many keys many elements
             else:
@@ -192,7 +203,7 @@ class Service:
                     for i in keys:
                         mydict = {}
                         for e in elements:
-                            mydict[e] = self.devDataFunc[e](i)
+                            mydict[e] = self.subDataFunc[e](i)
                         retval.append( mydict )
                 return retval
 
