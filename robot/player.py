@@ -376,16 +376,16 @@ class PlayerRobot(Robot):
         devNameList = map(lambda triplet: triplet[0], devList)
         self.devData["supports"] = devNameList
         self.supports = devNameList
-        for device in ["position", "ir", "laser", "sonar", "bumper"]:
+        for device in ["position", "laser", "ir", "sonar", "bumper"]:
             #is it supported? if so start it up:
             if device in devNameList:
                 deviceName = self.startDevice(device)
-        if "laser" in self.supports:
-            self.devData["range"] = self.get("/device/laser0/object")
-        if "ir" in self.supports:
-            self.devData["range"] = self.get("/device/ir0/object")
-        if "sonar" in self.supports:
-            self.devData["range"] = self.get("/device/sonar0/object")
+                if device == "laser":
+                    self.devDataFunc["range"] = self.get("/device/laser0/object")
+                if device == "ir":
+                    self.devDataFunc["range"] = self.get("/device/ir0/object")
+                if device == "sonar":
+                    self.devDataFunc["range"] = self.get("/device/sonar0/object")
         # default values
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
