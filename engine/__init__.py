@@ -37,14 +37,6 @@ class Engine(drawable.Drawable):
       self.config = config
       if self.simfile:
          self.loadSimulator(self.simfile, self.worldfile)
-      # this has to be here before making Tk gui:
-      #if self.robotfile:
-      #   self.loadRobot(self.robotfile)
-      #   if self.camerafile:
-      #      self.loadCamera(self.camerafile)
-
-   def postinit(self):
-      # this can't be here:
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if self.camerafile:
@@ -86,6 +78,7 @@ class Engine(drawable.Drawable):
          #reload(self.brainfile)
 
    def loadSimulator(self,file, worldfile):
+      self.worldfile = worldfile
       console.log(console.INFO,'Loading ' + file)
       import os, string
       options = string.split(file)
@@ -136,13 +129,13 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.robotfile = file
          self.robot = system.loadINIT(file)
+         self.robotfile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/robots/' + file): 
-         self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
          self.robot = system.loadINIT(os.getenv('PYRO') + \
                                       '/plugins/robots/' + file)
+         self.robotfile = os.getenv('PYRO') + '/plugins/robots/' + file
       else:
          raise 'Robot file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
@@ -154,13 +147,13 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.camerafile = file
          self.robot.camera = system.loadINIT(file)
+         self.camerafile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/cameras/' + file): 
-         self.camerafile = os.getenv('PYRO') + '/plugins/cameras/' + file
          self.robot.camera = system.loadINIT(os.getenv('PYRO') + \
                                       '/plugins/cameras/' + file)
+         self.camerafile = os.getenv('PYRO') + '/plugins/cameras/' + file
       else:
          raise 'Camera file not found: ' + file
       self.robot.camera.makeWindow()
@@ -175,14 +168,13 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.brainfile = file
          if args:
             self.brain = system.loadINIT(file, self, args=args)
          else:
             self.brain = system.loadINIT(file, self)
+         self.brainfile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
-         self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
          if args:
             self.brain = system.loadINIT(os.getenv('PYRO') + \
                                          '/plugins/brains/' + file,
@@ -190,6 +182,7 @@ class Engine(drawable.Drawable):
          else:
             self.brain = system.loadINIT(os.getenv('PYRO') + \
                                          '/plugins/brains/' + file, self)
+         self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
       else:
          raise 'File not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
