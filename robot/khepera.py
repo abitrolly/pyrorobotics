@@ -71,6 +71,7 @@ class KheperaRobot(Robot):
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda self: 'khepera'
+        self.senses['robot']['units'] = lambda self: 'CM'
 
 	self.senses['robot']['name'] = lambda self: 'khepera-1'
 
@@ -135,13 +136,14 @@ class KheperaRobot(Robot):
         console.log(console.INFO,'khepera control drivers loaded')
         self.SanityCheck()
 
-	self.update() 
-        self.w0 = self.senseData['position'][0]
-        self.w1 = self.senseData['position'][0]
+        self.sendMsg('H', 'position')
         self.x = 0.0
         self.y = 0.0
         self.thr = 0.0
         self.th = 0.0 
+        self.w0 = self.senseData['position'][0]
+        self.w1 = self.senseData['position'][1]
+	self.update() 
         self.inform("Done loading robot.")
 
     def _draw(self, options, renderer): # overloaded from robot
@@ -318,37 +320,43 @@ class KheperaRobot(Robot):
         self.sendMsg('K', 'stall')  # motor status, used by isStall
         self.deadReckon()
 
-    def deadReackon(self):
-        """ Called after each little update in positions """
+    def deadReckon(self):
+        """ Called after each little update in position """
         # get wheel positions:
         w0 = self.senseData['position'][0]
         w1 = self.senseData['position'][1]
         if w0 == self.w0 and w1 == self.w1:
             return
         # get diff:
-        delta_w0 = w0 - self.w0
-        delta_w1 = w1 - self.w1
+        delta_w0 = (w0 - self.w0) * 0.08 # mm FIX?
+        delta_w1 = (w1 - self.w1) * 0.08 # mm
+        print "delta w0, w1:", delta_w0, delta_w1
         # get diff / diameter of wheel base, in mm:
-        delta_th   = (delta_w1 - delta_w0) / 644.5
+        delta_thr   = (delta_w1 - delta_w0) / .6445
         # average diff (dist):
         delta_dist = (delta_w0 + delta_w1) / 2.0
         # compute change in x, y:
-        delta_x = delta_dist * math.cos(self.thr + delta_th/2.0)
-        delta_y = delta_dist * math.sin(self.thr + delta_th/2.0)
-        if delta_th != 0:
-            delta_x *= (2.0 * math.cos(delta_alpha/2.0) / delta_th)
-            delta_y *= (2.0 * math.sin(delta_alpha/2.0) / delta_th)
-        # keep in range 0 - 2pi:
+        delta_x = delta_dist * math.cos(self.thr + delta_thr/2.0)
+        delta_y = delta_dist * math.sin(self.thr + delta_thr/2.0)
+        print "delta x, y:", delta_x, delta_y
+        if delta_thr != 0:
+            delta_x *= (2.0 * math.cos(delta_thr/2.0) / delta_thr)
+            delta_y *= (2.0 * math.sin(delta_thr/2.0) / delta_thr)
+        # update everything:
+        # FIX: I think that this needs to be subtracted for our th?
+        self.thr += delta_thr
+        # keep thr in range 0 - 2pi:
         while (self.thr > 2.0 * math.pi):
             self.thr -= (2.0 * math.pi)
         while (self.thr < 0):
             self.thr += (2.0 * math.pi)
-        # update everything:
+        # save old values:
         self.w0 = w0
         self.w1 = w1
         self.x += delta_x
         self.y += delta_y
         self.th = self.thr * (math.pi / 180.0)
+        print "location:", self.x, self.y, self.th
 
     def isStall(self, dev):
         if self.senseData['stall'][2] > 3 or self.senseData['stall'][5] > 3:
@@ -357,10 +365,10 @@ class KheperaRobot(Robot):
             return 0
 
     def getX(self, dev):
-        return self.x
+        return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
     
     def getY(self, dev):
-        return self.y
+        return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
     
     def getZ(self, dev):
         return 0
