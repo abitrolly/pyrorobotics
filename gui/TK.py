@@ -330,7 +330,8 @@ class TKgui(Tkinter.Toplevel, gui):
       except: pass
       if needToUpdateState:
          #try:
-         self.engine.robot.update()
+         if type(self.engine.robot) != type(1):
+            self.engine.robot.update()
          #except: pass
       self.redrawWindowBrain()
       # -----------------------

@@ -5,8 +5,7 @@ import time
 class BlobCamera(Camera):
    """
    """
-   def __init__(self, robot, camera = None, depth = 3, interval = 1.0,
-                visionSystem = None):
+   def __init__(self, robot, camera = None, depth = 3, visionSystem = None):
       """
       """
       self.robot = robot
@@ -28,7 +27,6 @@ class BlobCamera(Camera):
          raise "didn't load blob camera"
       self.depth = depth
       self.interval = interval
-      self.lastUpdate = 0
       self.cameraDevice = Blob(self.width, self.height,
                                self.depth)
       # connect vision system: --------------------------
@@ -50,9 +48,6 @@ class BlobCamera(Camera):
       self.data = CBuffer(self.cbuf)
       
    def _update(self):
-      currentTime = time.time()
-      if currentTime - self.lastUpdate > self.interval:
-         blobdata = self.robot.getDeviceData(self.deviceName)[1]
-         self.cameraDevice.updateMMap(blobdata)
-         self.processAll()
-         self.lastUpdate = currentTime
+      blobdata = self.robot.getDeviceData(self.deviceName)[1]
+      self.cameraDevice.updateMMap(blobdata)
+      self.processAll()

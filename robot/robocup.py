@@ -7,7 +7,7 @@ import threading
 
 class ReadUDP(threading.Thread):
     """
-    A thread class for reading UDP data
+    A thread class for reading UDP data.
     """
     BUF = 10000
     def __init__(self, robot):
@@ -108,16 +108,115 @@ def parse(str):
         return []
     return currentlist[0]
 
-class TruthDevice(Device):
+class RobocupTruthDevice(Device):
     """ A Truth Device for the Robocup robot"""
-    def __init__(self, dev, type = "truth"):
-        Device.__init__(self, type)
-        self.dev = dev
+    def __init__(self, robot):
+        Device.__init__(self, "truth")
+        self.robot = robot
         self.devData["pose"] = (0, 0)
     def postSet(self, item):
         if item == "pose":
-            self.dev.sendMsg("(move %f %f)" % (self.devData["pose"][0], self.devData["pose"][1] ))
+            self.robot.sendMsg("(move %f %f)" % (self.devData["pose"][0], self.devData["pose"][1] ))
             
+class RobocupLaserDevice(Device):
+    def __init__(self, robot):
+        Device.__init__(self, "laser")
+        self.robot = robot
+        count = 90
+        part = int(count/8)
+        start = 0
+        posA = part
+        posB = part * 2
+        posC = part * 3
+        posD = part * 4
+        posE = part * 5
+        posF = part * 6
+        posG = part * 7
+        end = count
+        self.groups = {'all': range(count),
+                       'right': range(0, posB),
+                       'left': range(posF, end),
+                       'front': range(posC, posE),
+                       'front-right': range(posB, posD),
+                       'front-left': range(posD, posF),
+                       'front-all': range(posB, posF),
+                       'right-front': range(posA, posB),
+                       'right-back': range(start, posA),
+                       'left-front': range(posF,posG),
+                       'left-back': range(posG,end),
+                       'back-right': [],
+                       'back-left': [],
+                       'back': [],
+                       'back-all': []}
+        self.devData['units']    = "ROBOTS"
+        self.devData["noise"]    = 0.0
+        # -------------------------------------------
+        self.devData["rawunits"] = "METERS"
+        self.devData['maxvalueraw'] = 100.0
+        # -------------------------------------------
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.devData["radius"] = 0.750 # meters
+        # ----------------------------------------------------------
+        # MM to units:
+        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        # -------------------------------------------
+        self.devData['index'] = 0 # self.dev.laser.keys()[0] FIX
+        self.devData["count"] = count
+        self.subDataFunc['ox']    = lambda pos: 0
+        self.subDataFunc['oy']    = lambda pos: 0
+        self.subDataFunc['oz']    = lambda pos: 0
+        # FIX: the index here should come from the "index"
+        self.subDataFunc['th']    = lambda pos: pos - 45 # in degrees
+        self.subDataFunc['arc']   = lambda pos: 1
+        self.subDataFunc['x']     = self.getX
+        self.subDataFunc['y']     = self.getY
+	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.getVal(pos), self.devData["noise"]) 
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['group']   = self.getGroupNames
+
+    def postSet(self, keyword):
+        """ Anything that might change after a set """
+        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+
+    def updateDevice(self):
+        self.values = [self.devData["maxvalueraw"]] * self.devData["count"]
+        try:
+            see = self.robot.get("robot/see")
+        except:
+            print "waiting for Robocup laser to come online..."
+            return # not ready yet
+        see.sort(lambda x,y: cmp(y[1],x[1]))
+        # compute hits
+        # TODO: make these hits a little wider; just one degree right now
+        for item in see:
+            # item is something like: [['f', 'c'], 14, 36, 0, 0]
+            if len(item) >= 3: # need distance, angle
+                if item[0][0] == 'f' and item[0][1] == 'l' or \
+                       item[0][0] == 'f' and item[0][1] == 'b' or \
+                       item[0][0] == 'f' and item[0][1] == 't' or \
+                       item[0][0] == 'f' and item[0][1] == 'r':
+                    pos = min(max(int(item[2]) + 45,0),89)
+                    self.values[pos] = item[1]
+                elif item[0][0] == 'p':
+                    pos = min(max(int(item[2]) + 45,0),89)
+                    self.values[ pos ] = item[1]
+                elif item[0][0] == 'b':
+                    pos = min(max(int(item[2]) + 45,0),89)
+                    self.values[ pos ] = item[1]
+                    
+    def getVal(self, pos):
+        return self.values[pos] # zero based, from right
+
+    def getX(self, pos):
+        thr = (pos - 45.0) * PIOVER180
+        dist = self.getVal(pos) # METERS
+        return cos(thr) * dist
+
+    def getY(self, pos):
+        thr = (pos - 45.0) * PIOVER180
+        dist = self.getVal(pos) # METERS
+        return sin(thr) * dist
 
 class RobocupRobot(Robot):
     """ A robot to interface with the Robocup simulator. """
@@ -137,7 +236,7 @@ class RobocupRobot(Robot):
         self.devData["port"] = port
         self.devData["continuous"] = 1
         self.devData["goalie"] = goalie
-        self.address = (self.devData["host"], self.devData["port"])
+        self.devData["address"] = (self.devData["host"], self.devData["port"])
         self.socket = socket(AF_INET, SOCK_DGRAM)
         self.reader = ReadUDP(self)
         self.reader.start()
@@ -145,23 +244,25 @@ class RobocupRobot(Robot):
         if goalie:
             msg += "(goalie)"
         msg += ")" 
-        self.socket.sendto(msg, self.address)
-        # get the real address
-        sleep(1)
-        self.devData["builtinDevices"] = ["truth"]
+        self.socket.sendto(msg, self.devData["address"])
+        # wait to get the real address
+        while self.devData["address"][1] == self.devData["port"]: pass
+        self.devData["builtinDevices"] = ["truth", "laser"]
         self.startDevice("truth")
         self.set("/devices/truth0/pose", (random() * 100 - 50,
                           random() * 20 - 10))
         
     def startDeviceBuiltin(self, item):
         if item == "truth":
-            return {"truth": TruthDevice(self, "truth")}
+            return {"truth": RobocupTruthDevice(self)}
+        if item == "laser":
+            return {"laser": RobocupLaserDevice(self)}
         else:
             raise AttributeError, "robocup robot does not support device '%s'" % item
         
     def sendMsg(self, msg, address = None):
         if address == None:
-            address = self.address
+            address = self.devData["address"]
         self.socket.sendto(msg + chr(0), address)
 
     def disconnect(self):
@@ -180,7 +281,7 @@ class RobocupRobot(Robot):
             self.historyNumber += 1
             if msg[0] == "init":
                 self.devData[msg[0]] = msg[1:]
-                self.address = addr
+                self.devData["address"] = addr
             elif msg[0] == "server_param":
                 # next is list of pairs
                 self.devData[msg[0]] = makeDict(msg[1:])
