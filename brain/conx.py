@@ -1489,7 +1489,7 @@ class Network:
         # go backwards through each proj but don't redo output errors!
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            if connect.toLayer.active:
+            if connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
