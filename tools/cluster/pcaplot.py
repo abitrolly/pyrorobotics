@@ -10,7 +10,8 @@ class FakeFile:
 
 class PCAPlot:
     def __init__(self, eigenfile, namefile = None, debug = 0,
-                 dimensions = 2, title = None, datatitle = None, showpoints = 1, showlabels = 1):
+                 dimensions = 2, title = None, datatitle = None,
+                 showpoints = 1, showlabels = 1):
         self.gp = Gnuplot.Gnuplot(debug = debug)
         self.dimensions = dimensions
         self.showpoints = showpoints
@@ -32,15 +33,13 @@ class PCAPlot:
                 if label and showlabels:
                     self.gp('set label "%s" at %f,%f' %
                             (label, float(data[0]), float(data[1])))
-                if showpoints:
-                    dataset.append( (float(data[0]), float(data[1])))
+                dataset.append( (float(data[0]), float(data[1])))
             elif dimensions == 3:
                 if label and showlabels:
                     self.gp('set label "%s" at %f,%f,%f' %
                             (label, float(data[0]),
                              float(data[1]), float(data[2])))
-                if showpoints:
-                    dataset.append( (float(data[0]), float(data[1]),
+                dataset.append( (float(data[0]), float(data[1]),
                                      float(data[2])))
             else:
                 raise "DimensionError", \
@@ -50,7 +49,10 @@ class PCAPlot:
         efp.close()
         nfp.close()
         self.data = Gnuplot.Data(dataset)
-        self.gp('set data style points')
+        if showpoints:
+            self.gp('set data style points')
+        else:
+            self.gp('set data style dots')
         self.gp.title(title)
         self.data.set_option(title = datatitle)
 
@@ -70,7 +72,7 @@ class PCAPlot:
         self.gp.hardcopy(output)
 
 if __name__ == '__main__':
-    pca = PCAPlot("data.pca", "names", title = "Sample PCA Plot")
+    pca = PCAPlot("data.pca", "names", title = "Sample PCA Plot", showpoints = 0)
     pca.plot()
     raw_input()
     pca.data.set_option(title = "Data name")
