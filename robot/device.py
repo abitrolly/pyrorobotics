@@ -170,9 +170,12 @@ class Device:
             return self
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
+            #print "HERE", path[0], showstars
             if showstars and path[0] in self.printFormat:
+                #print "RETURNING", self.printFormat[path[0]]
                 return self.printFormat[path[0]]
             else:
+                #print "RETURNING real thing", 
                 self.preGet(path[0])
                 return self.devData[path[0]]
         elif len(path) == 1 and path[0] in self.devDataFunc:
@@ -193,6 +196,7 @@ class Device:
             if elements == "*":
                 elements = self.subDataFunc.keys() #+ self.subData.keys()
             # if keys is a collection:
+            #print "keys=", keys, "elements=", elements
             if isinstance(keys, (type((1,)), type([1,]))):
                 keyList, keys = keys, []
                 for k in keyList:
@@ -206,10 +210,12 @@ class Device:
             # 4 cases:
             # 1 key 1 element
             if type(keys) == type(1) and type(elements) == type(""):
+                #print "CASE 2"
                 self.preGet(elements) 
                 return self.subDataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
+                #print "CASE 3"
                 self.preGet(elements)
                 mydict = {}
                 for e in elements:
@@ -217,6 +223,9 @@ class Device:
                 return mydict
             # many keys 1 element
             elif type(elements) == type(""):
+                #print "CASE 4", elements
+                if elements not in self.subDataFunc:
+                    return elements
                 self.preGet(elements)
                 retval = []
                 if keys != None:
@@ -225,6 +234,9 @@ class Device:
                 return retval
             # many keys many elements
             else:
+                #print "CASE 5", elements, keys
+                #if type(elements) == type(1):
+                #    return keys
                 self.preGet(elements)
                 retval = []
                 if keys != None:
