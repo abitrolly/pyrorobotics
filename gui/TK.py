@@ -461,13 +461,16 @@ class TKgui(Tkinter.Toplevel, gui):
       d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel, \
                                    pyro.pyrodir() + "/plugins/" + filetype)
       try:
-         if d.Show() == 1:
+         retval = d.Show()
+         if retval == 1:
             doc = d.GetFileName()
             d.DialogCleanup()
             retval = doc
          else:
             d.DialogCleanup()
+            return ""
       except:
+         print "failed!"
          # double-click bug. What should we do?
          doc = d.GetFileName()
          d.DialogCleanup()

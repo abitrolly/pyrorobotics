@@ -135,6 +135,7 @@ class BehaviorBasedBrain(Brain):
          self.canvas.delete('pie')
          piecnt = 0
          for control in self.controls:
+            if control == "update": continue
             piecnt += 1
             percentSoFar = 0
             piececnt = 0
@@ -142,16 +143,16 @@ class BehaviorBasedBrain(Brain):
                if control == d[0]:
                   piececnt += 1
                   portion = d[2]
-                  try:
-                     self.redrawPie(piecnt, percentSoFar, \
-                                    piececnt, \
-                                    "%s effects: %.2f" % \
-                                    (d[0], self.history[0][d[0]]),
-                                    portion, \
-                                    "(%.2f) %s IF %.2f THEN %.2f = %.2f" % \
-                                    (d[1], d[5], d[2], d[3], d[4]))
-                  except:
-                     pass
+                  #try:
+                  self.redrawPie(piecnt, percentSoFar, \
+                                 piececnt, \
+                                 "%s effects: %.2f" % \
+                                 (d[0], self.history[0][d[0]]),
+                                 portion, \
+                                 "(%.2f) %s IF %.2f THEN %.2f = %.2f" % \
+                                 (d[1], d[5], d[2], d[3], d[4]))
+                  #except:
+                  #     pass
                   percentSoFar += portion
       else:
          self.canvas.create_text(200,130, tags='pie',fill='black', text = "Ready...")

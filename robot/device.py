@@ -58,6 +58,7 @@ class Device:
 
     def __init__(self, deviceType = 'unspecified', visible = 0):
         self.devData = {}
+        self.window = 0
         self.devDataFunc = {} # not currently working
         self.subDataFunc = {}
         self.groups = {}

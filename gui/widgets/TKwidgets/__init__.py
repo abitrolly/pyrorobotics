@@ -38,7 +38,7 @@ class Dialog:
 		self.top.focus()
 
 	def TerminateDialog(self, withValue):
-		self.top.setvar(self.myWaitVar, withValue)
+                self.top.setvar(self.myWaitVar, withValue)
 		self.top.withdraw()
 		
 	def DialogCleanup(self):
@@ -80,7 +80,9 @@ class ModalDialog(Dialog):
 		self.top.focus()
 		self.top.deiconify()
 		self.top.waitvar(self.myWaitVar)
-		return string.atoi(self.top.getvar(self.myWaitVar))
+                #print "waitvar =", self.top.getvar(self.myWaitVar), type(self.top.getvar(self.myWaitVar))
+		#return string.atoi(self.top.getvar(self.myWaitVar))
+                return self.top.getvar(self.myWaitVar)
 ####
 #	Class AlertDialog
 #
@@ -519,7 +521,7 @@ class FileDialog(ModalDialog):
            else:
               editor = "emacs"
            os.system("%s %s &" % (editor, filename))
-           self.TerminateDialog(selectIt)
+           self.TerminateDialog(0) #selectIt)
 
 	def GetFileName(self):
 		return self.fileNameEntry.get()
