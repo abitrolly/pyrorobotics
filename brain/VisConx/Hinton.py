@@ -95,7 +95,7 @@ class MatrixHinton(Tkinter.Toplevel):
             
         #show values checkbox
         buttonFrame = Tkinter.Frame(self, bg="white")
-        self.showValues = Tkinter.IntVar()
+        self.showValues = Tkinter.IntVar(self)
         self.showValues.set(0)
         Tkinter.Label(buttonFrame, bg=self.OUTSIDE_COL, text="Options:").grid(col=0, row=1, sticky=Tkinter.W)
         self.valueButton = Tkinter.Checkbutton(buttonFrame, text="Show Values", bg=self.OUTSIDE_COL, activebackground=self.OUTSIDE_COL, \

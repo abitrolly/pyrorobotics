@@ -12,19 +12,19 @@ import time
 
 class NNSettingsDialog(tkSimpleDialog.Dialog):
     def __init__(self, parent, network):
-        self.entryList = [("Learning rate (epsilon)",network.setEpsilon, network.epsilon, Tkinter.StringVar(),
-                                                     lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
-                          ("Momentum",network.setMomentum, network.momentum, Tkinter.StringVar(),
-                                      lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),                       
-                          ("Correctness tolerance",network.setTolerance, network.tolerance, Tkinter.StringVar(),
-                                                     lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),                   
-                          ("Reset epoch",network.setResetEpoch, network.resetEpoch, Tkinter.StringVar(),
-                                         lambda val: val > 0, lambda var: int(var.get()), "Value must be an integer greater than 0."),
-                          ("Reset limit",network.setResetLimit, network.resetLimit, Tkinter.StringVar(),
-                                    lambda val: val >= 0, lambda var: int(var.get()), "Value must be an integer greater than or equal to 0.")]
-        self.checkList = [("Learn",network.setLearning, network.learning, Tkinter.IntVar()),
-                     ("Batch mode",network.setBatch, network.batch, Tkinter.IntVar()),
-                     ("Ordered inputs",network.setOrderedInputs, network.orderedInputs, Tkinter.IntVar())]
+        self.entryList = [("Learning rate (epsilon)",network.setEpsilon, network.epsilon, Tkinter.StringVar(parent),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                          ("Momentum",network.setMomentum, network.momentum, Tkinter.StringVar(parent),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                          ("Correctness tolerance",network.setTolerance, network.tolerance, Tkinter.StringVar(parent),
+                           lambda val: 0.0 <= val <= 1.0, lambda var: float(var.get()), "Value must on the interval [0,1]."),
+                          ("Reset epoch",network.setResetEpoch, network.resetEpoch, Tkinter.StringVar(parent),
+                           lambda val: val > 0, lambda var: int(var.get()), "Value must be an integer greater than 0."),
+                          ("Reset limit",network.setResetLimit, network.resetLimit, Tkinter.StringVar(parent),
+                           lambda val: val >= 0, lambda var: int(var.get()), "Value must be an integer greater than or equal to 0.")]
+        self.checkList = [("Learn",network.setLearning, network.learning, Tkinter.IntVar(parent)),
+                          ("Batch mode",network.setBatch, network.batch, Tkinter.IntVar(parent)),
+                          ("Ordered inputs",network.setOrderedInputs, network.orderedInputs, Tkinter.IntVar(parent))]
         
         #set the widget variables
         for paramTuple in self.entryList+self.checkList:
@@ -73,7 +73,7 @@ class NNSettingsDialog(tkSimpleDialog.Dialog):
             setFunction(var.get())
                               
 class ConxGUIBase:
-    def __init__(self, parent=None):
+    def __init__(self):
         #interactive mode causes problems
         self.interactive = 0
         
@@ -93,11 +93,7 @@ class ConxGUIBase:
         self.RMSData = []
         self.pCorrectData = []
 
-        #setup up GUI for selecting features
-        if parent:
-            self.root = Tkinter.Toplevel(parent)
-        else:
-            self.root = Tkinter.Tk()
+        self.root = Tkinter.Tk()
         self.root.title("VisConx")
         self.root.resizable(0,0)
 
@@ -341,8 +337,8 @@ class ConxGUIBase:
         self.refreshActivDiag()
 
 class SweepGUIBase(ConxGUIBase):
-    def __init__(self, parent=None):
-        ConxGUIBase.__init__(self, parent)
+    def __init__(self):
+        ConxGUIBase.__init__(self)
         self.pausedFlag = 0
         self.stopFlag = 0
         
@@ -496,22 +492,22 @@ class SweepGUIBase(ConxGUIBase):
 
 
 class VisNetwork(SweepGUIBase, Network): 
-    def __init__(self, parent=None):
+    def __init__(self):
         Network.__init__(self)
-        SweepGUIBase.__init__(self, parent)
+        SweepGUIBase.__init__(self)
         
 class VisSRN(SweepGUIBase, SRN):
-    def __init__(self, parent=None):
+    def __init__(self):
         SRN.__init__(self)
-        SweepGUIBase.__init__(self, parent)
+        SweepGUIBase.__init__(self)
 
     def predict(self, fromLayer, toLayer):
         SRN.predict(self, fromLayer, toLayer)
         self.updateStructureDiags()
 
 class RobotGUIBase(ConxGUIBase):
-    def __init__(self,parent=None):
-        ConxGUIBase.__init__(self, parent)
+    def __init__(self):
+        ConxGUIBase.__init__(self)
         buttonFrame = Tkinter.Frame(self.root)
         Tkinter.Label(buttonFrame, text="Controls:", font=("Arial", 14, "bold")).grid(row=0, col=0, sticky=Tkinter.W)
         Tkinter.Button(buttonFrame, text="Settings...", command=lambda: NNSettingsDialog(self.root, self.netStruct.network)).grid(row=1, col=0, sticky=Tkinter.W)
@@ -558,16 +554,16 @@ class RobotGUIBase(ConxGUIBase):
 
     def updateGUI(self):
         self.root.update()
-        
+            
 class VisRobotNetwork(RobotGUIBase, Network):
-    def __init__(self, parent=None):
+    def __init__(self):
         Network.__init__(self)
-        RobotGUIBase.__init__(self,parent)
+        RobotGUIBase.__init__(self)
 
 class VisRobotSRN(RobotGUIBase, SRN):
-    def __init__(self, parent=None):
+    def __init__(self):
         SRN.__init__(self)
-        RobotGUIBase.__init__(self, parent)
+        RobotGUIBase.__init__(self)
 
     def predict(self, fromLayer, toLayer):
         SRN.predict(self, fromLayer, toLayer)
@@ -575,7 +571,7 @@ class VisRobotSRN(RobotGUIBase, SRN):
     
 if __name__ == "__main__":
     def testXORBatch():
-        n = VisNetwork(root)
+        n = VisNetwork()
         n.addThreeLayers(2, 2, 1)
         n.setInputs([[0.0, 0.0],
                      [0.0, 1.0],
@@ -592,7 +588,7 @@ if __name__ == "__main__":
         n.setMomentum(.975)
         
     def testXORNonBatch():
-        n = VisNetwork(root)
+        n = VisNetwork()
         n.addThreeLayers(2, 2, 1)
         n.setInputs([[0.0, 0.0],
                      [0.0, 1.0],
@@ -610,7 +606,7 @@ if __name__ == "__main__":
         n.train()
         
     def testAND():
-        n = VisNetwork(root)
+        n = VisNetwork()
         #n.setSeed(114366.64)
         n.add(Layer('input',2)) 
         n.add(Layer('output',1)) 
@@ -622,7 +618,7 @@ if __name__ == "__main__":
         n.setReportRate(5) 
    
     def testSRN():
-        n = VisSRN(root)
+        n = VisSRN()
         #n.setSeed(114366.64)
         n.addSRNLayers(3,2,3)
         n.predict('input','output')
@@ -642,7 +638,7 @@ if __name__ == "__main__":
         #n.verbosity = 3
 
     def testAutoAssoc():
-        n = VisNetwork(root)
+        n = VisNetwork()
         #n.setSeed(114366.64)
         n.addThreeLayers(3,2,3)
         n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
@@ -658,7 +654,7 @@ if __name__ == "__main__":
 
     def testRAAM():
         # create network:
-        raam = VisSRN(root)
+        raam = VisSRN()
         #raam.setSeed(114366.64)
         raam.setPatterns({"john"  : [0, 0, 0, 1],
                           "likes" : [0, 0, 1, 0],
@@ -689,7 +685,7 @@ if __name__ == "__main__":
         raam.setResetLimit(0)
 
     def testSRNPredictAuto():
-        n = VisSRN(root)
+        n = VisSRN()
         #n.setSeed(114366.64)
         n.addSRNLayers(3,3,3)
         n.add(Layer('assocInput',3))
@@ -709,7 +705,7 @@ if __name__ == "__main__":
         n.setOrderedInputs(1)
 
     def testChangeLayerSize():
-        n = VisNetwork(root)
+        n = VisNetwork()
         n.addThreeLayers(3,3,3)
         n.archButton.invoke()
         size = tkSimpleDialog.askinteger("Change hidden layer size", "Enter new hidden layer size", minvalue=0)

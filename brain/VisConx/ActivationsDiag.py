@@ -23,6 +23,7 @@ class LayerCanvas(Tkinter.Canvas):
         for i in xrange(numNodes):
             coords = self.nodeNumToCoords(i)
             self.nodeItems += [self.create_oval(coords[0], coords[1], coords[0]+nodeSize, coords[1]+nodeSize, outline="black")]
+            self.create_text(coords[0] + nodeSize/2 + 1, coords[1]+nodeSize/2 + 1, text="%u" % (i,), fill="red", font=("Arial", 10, "bold"))
 
     def nodeNumToCoords(self, nodeNum):
         xCoord = (nodeNum//self.numRows)*(self.nodeSize + self.PADDING) + self.PADDING
@@ -32,7 +33,10 @@ class LayerCanvas(Tkinter.Canvas):
     
     def updateActivs(self, newActivs):
         for i in xrange(len(self.nodeItems)):
-            self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535*newActivs[i],)*3))
+            if newActivs[i] > 1.0:
+                self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535,)*3))
+            else:
+                self.itemconfigure(self.nodeItems[i], fill ="#%04x%04x%04x" % ((65535*newActivs[i],)*3))
 
     def getWidth(self):
         return int(self.cget("width"))
@@ -91,6 +95,7 @@ class LayerSelectionDialog(tkSimpleDialog.Dialog):
         self.levelFrameList = levelFrameList
         self.varLists = []
         tkSimpleDialog.Dialog.__init__(self, parent, title="Select Layers")
+        self.parent=parent
         
     def body(self, master):
         nameLists = []
@@ -102,7 +107,7 @@ class LayerSelectionDialog(tkSimpleDialog.Dialog):
         for i in xrange(len(nameLists)):
             levelVarList = []
             for j in xrange(len(nameLists[i])):
-                levelVarList += [Tkinter.IntVar()]
+                levelVarList += [Tkinter.IntVar(self.parent)]
                 levelVarList[-1].set(visLists[i][j])
                 Tkinter.Checkbutton(master, text=nameLists[i][j], variable=levelVarList[-1]).grid(row=j, col=i)
             self.varLists += [levelVarList]
@@ -144,6 +149,7 @@ class ActivDiag(Tkinter.Toplevel):
         for i in xrange(len(self.levelFrameList)-1):
             self.levelFrameList[i].updateActivs([vertex.layerObj.activation for vertex in self.netStruct.levelList[i]])
 
+        self.levelFrameList[-1].updateActivs([vertex.layerObj.target for vertex in self.netStruct.levelList[-1]])
         self.update_idletasks()
 
     def drawScale(self, width):
