@@ -11,7 +11,7 @@ class SimpleBrain(Brain):
    def setup(self): 
       self.blockedFront = 0 
       self.direction = 1 
-      self.ravq = pyro.brain.ravq.ARAVQ(20, .7, 3, .1) 
+      self.ravq = pyro.brain.ravq.ARAVQ(10, 1, 2, .1) 
       self.ravq.setHistory(0)
       self.ravq.setLog('ravq.log')
       self.counter = 0 
@@ -70,10 +70,10 @@ class SimpleBrain(Brain):
       target = self.avoidObstacles() 
       self.getRobot().move(target[0], target[1]) 
       self.recordRAVQ()          
-      if self.counter == 1000:
+      if self.counter == 100:
          self.ravq.logRAVQ()
          self.pleaseStop()
-         self.ravq.log.close()
+         self.ravq.closeLog()
       self.counter += 1 
  
 def INIT(engine): 

@@ -16,9 +16,9 @@ def euclideanDistance(x, y):
     """
     return math.sqrt(Numeric.add.reduce((x - y) ** 2))
 
-def SetDistance(X, V):
+def SetDistance(V, X):
     """
-    d(X,V) = (1/|X|) Sum[i = 1 to |X|]{ min[j = 1 to |V|] {|| x_i - v_j||} }
+    d(V, X) = (1/|X|) Sum[i = 1 to |X|]{ min[j = 1 to |V|] {|| x_i - v_j||} }
     where x_i is in X and v_j is in V.  
     """
     min = []
@@ -125,6 +125,9 @@ class RAVQ:
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
             self.models.append(self.movingAverage)
+            print 'Adding model vector', self.movingAverage
+            print 'Moving avg dist', self.movingAverageDistance
+            print 'Model vec dist', self.modelVectorsDistance
     def updateWinner(self):
         min = []
         for m in self.models:
@@ -173,6 +176,8 @@ class RAVQ:
 
     def setLog(self, filename):
         self.log = open(filename, 'w')
+    def closeLog(self):
+        self.log.close()
     def logHistory(self, labels = 1, tag = 'None'):
         """
         Writes time winner label tag to file in four column format.
@@ -268,6 +273,7 @@ class ARAVQ(RAVQ):
         if not self.winner == 'No Winner':
             if euclideanDistance(self.movingAverage, self.winner) < self.epsilon / 2:
                 self.deltaWinner = self.alpha * (self.movingAverage - self.winner)
+                print 'Learning'
             else:
                 self.deltaWinner = Numeric.zeros(len(self.winner)) 
         else:
@@ -278,7 +284,7 @@ class ARAVQ(RAVQ):
         next time step anyway.
         """
         if self.deltaWinner != 'No Winner' and self.learning:
-            self.models[self.winnerIndex] = self.winner + self.deltaWinner
+            self.models[self.winnerIndex] = self.models[self.winnerIndex] + self.deltaWinner
         else:
             pass 
     def process(self):
