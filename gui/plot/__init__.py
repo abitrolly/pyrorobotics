@@ -75,7 +75,7 @@ class GeneralPlot:
       self.firstMove = 1
 
       #setup Tk components
-=======
+
 #      self.scrollhoriz = Scrollbar(self.win, orient="horiz",
                                    command=self.scroll)
 #      self.scrollhoriz.pack(side=BOTTOM,expand="yes",fill="both",padx=1,pady=1)
