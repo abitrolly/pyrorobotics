@@ -116,13 +116,14 @@ class MatrixVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
    Use the Matrix plot to display the vector
    """
    def __init__(self, vector, title="", opts = (None,)):
-      maxval = opts[0]
-      if not maxval:
+      if len(opts) == 3:
+         maxval = opts[2]
+      else:
          maxval = max(vector)
-      cols, rows = opts
+      cols, rows = opts[0], opts[1]
       pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
                                            rows = rows, cols = cols,
-                                           maxvalue=255, title=title)
+                                           maxvalue=maxval, title=title)
       b = Button(self.win, text="Close", command=self.close)
       b.pack()
 
