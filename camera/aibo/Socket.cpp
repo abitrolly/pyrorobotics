@@ -25,9 +25,19 @@ Socket::Socket(char *hostname, int port) {
 
 char *Socket::read(int cnt) {
   static char buf[MAXBUFSIZE];
+  char ch[5];
   bzero(buf, MAXBUFSIZE);
   int numbytes;
-  numbytes = recv(sock, buf, cnt, 0);
+  for (int i = 0; i < cnt; i++) {
+    numbytes = recv(sock, ch, 1, 0);
+    if (numbytes == 1) {
+      //printf("%d ", (int)ch[0]);
+      buf[i] = ch[0];
+    } else {
+      i--;
+    }
+  }
+  //printf("\nread %d bytes: ", cnt);
   return buf;
 }
 
@@ -46,7 +56,7 @@ char *Socket::readUntil(char stop) {
     numbytes = recv(sock, &ch, 1, 0);
   }
   retval[pos] = 0; // end of string
-  printf("readUntil: read %d chars\n", pos);
+  //printf("readUntil: read %d chars\n", pos);
   return retval;
 }
 

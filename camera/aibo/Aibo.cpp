@@ -4,10 +4,10 @@
 
 long convert(char *buff) {
   long retval = 0;
-  retval += (buff[0] <<  0);
-  retval += (buff[1] <<  8);
-  retval += (buff[2] << 16);
-  retval += (buff[3] << 24);
+  retval += (buff[0] & 0xFF) <<  0;
+  retval += (buff[1] & 0xFF) <<  8;
+  retval += (buff[2] & 0xFF) << 16;
+  retval += (buff[3] & 0xFF) << 24;
   return retval;
 }
 
@@ -163,21 +163,21 @@ PyObject *Aibo::updateMMap() {
   // Got frameNum=3185
   header = sock->read(4);  // \r\0\0\0
   type = sock->readUntil((char)0); // "TekkotsuImage"
-  printf("type: %s\n", type);
+  //printf("type: %s\n", type);
   format = convert(sock->read(4));
-  printf("format: %ld\n", format);
+  //printf("format: %ld\n", format);
   compression = convert(sock->read(4));
-  printf("compression: %ld\n", compression);
+  //printf("compression: %ld\n", compression);
   newWidth = convert(sock->read(4));
-  printf("newWidth: %ld\n", newWidth);
+  //printf("newWidth: %ld\n", newWidth);
   newHeight = convert(sock->read(4));
-  printf("newHeight: %ld\n", newHeight);
+  //printf("newHeight: %ld\n", newHeight);
   timeStamp = convert(sock->read(4));
-  printf("timeStamp: %ld\n", timeStamp);
+  //printf("timeStamp: %ld\n", timeStamp);
   frameNum = convert(sock->read(4));
-  printf("frameNum: %ld\n", frameNum);
+  //printf("frameNum: %ld\n", frameNum);
   unknown1 = convert(sock->read(4));
-  printf("unknown1: %ld\n", unknown1);
+  //printf("unknown1: %ld\n", unknown1);
   //// Got creator=FbkImage
   //// Got chanwidth=104
   //// Got chanheight=80
@@ -186,26 +186,26 @@ PyObject *Aibo::updateMMap() {
   //// Got fmt=JPEGColor
   //// read JPEG: len=2547
   creator = sock->readUntil((char)0); // creator
-  printf("creator: %s\n", creator);
+  //printf("creator: %s\n", creator);
   chanWidth = convert(sock->read(4));
-  printf("chanWidth: %ld\n", chanWidth);
+  //printf("chanWidth: %ld\n", chanWidth);
   chanHeight = convert(sock->read(4));
-  printf("chanHeight: %ld\n", chanHeight);
+  //printf("chanHeight: %ld\n", chanHeight);
   layer = convert(sock->read(4));
-  printf("layer: %ld\n", layer);
+  //printf("layer: %ld\n", layer);
   chanID = convert(sock->read(4));
-  printf("chanID: %ld\n", chanID);
+  //printf("chanID: %ld\n", chanID);
   unknown2 = convert(sock->read(4));
-  printf("unknown2: %ld\n", unknown2);
+  //printf("unknown2: %ld\n", unknown2);
   fmt = sock->readUntil((char)0); // fmt
-  printf("fmt: %s\n", fmt);
+  //printf("fmt: %s\n", fmt);
   size = convert(sock->read(4));
   image_buffer = sock->read(size);
   // convert image from JPEG to RGB in mmap
   if (width == 0 && height == 0) {
     width = newWidth;
     height = newHeight;
-    printf("New image size: %d x %d; %ld\n", width, height, size);
+    printf("New Aibo image size: %d x %d; %ld\n", width, height, size);
     return PyInt_FromLong(0);
   }
   if (size > 0 && size < 10000) {
