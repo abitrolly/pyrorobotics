@@ -70,21 +70,18 @@ class GeneralPlot:
       self.frozen = 0
       self.scrollInterval = 14.
       
-<<<<<<< __init__.py
       #a hack to prevent a gap in the plot the first time
       #canvas.move is called in redraw
       self.firstMove = 1
 
       #setup Tk components
 =======
-      self.scrollhoriz = Scrollbar(self.win, orient="horiz",
+#      self.scrollhoriz = Scrollbar(self.win, orient="horiz",
                                    command=self.scroll)
-      self.scrollhoriz.pack(side=BOTTOM,expand="yes",fill="both",padx=1,pady=1)
->>>>>>> 1.4
+#      self.scrollhoriz.pack(side=BOTTOM,expand="yes",fill="both",padx=1,pady=1)
       self.canvas = Canvas(self.win, width=self.width, height=self.height,
                            scrollregion=(0, 0,
                                          history * stepLength, self.height),
-<<<<<<< __init__.py
                            xscrollincrement=self.stepLength)
       yaxis = Canvas(self.win, width=20, height = self.height)
       yaxis.create_line(20, 0, 20, self.height, width=1, fill='black')
@@ -94,11 +91,10 @@ class GeneralPlot:
       self.freezeButton = Button(self.win, text="Freeze",
                                  command=self.freezePress)
       b3 = Button(self.win, text="==>", command=self.scrollRight)
-=======
-                           xscrollincrement=self.stepLength,
-                           xscrollcommand=self.xposition)
+
+#                           xscrollincrement=self.stepLength,
+#                           xscrollcommand=self.xposition)
       self.canvas.pack() 
->>>>>>> 1.4
 
       #Do the layout
       yaxis.grid(row=0, column=0)
@@ -107,19 +103,6 @@ class GeneralPlot:
       self.freezeButton.grid(row=1, column=2)
       b3.grid(row=1, column=3, sticky=E)
 
-<<<<<<< __init__.py
-
-=======
-      #b1 = Button(self.win, text="<==", command=self.scrollLeft)
-      #b1.pack(side=LEFT)
-      #self.freezeButton = Button(self.win, text="Freeze", command=self.freezePress)
-      #self.freezeButton.pack(anchor=S)
-
-      #b3 = Button(self.win, text="==>", command=self.scrollRight)
-      #b3.pack(side=RIGHT)
-
-      #sbv = Scrollbar(self.win, command = "$c yview")
-
    def xposition(self, left, right):
       #print "LEFT=", left, "RIGHT=", right
       pass
@@ -127,7 +110,6 @@ class GeneralPlot:
    def scroll(self, amount):
       #print "Amount:", amount
       self.canvas.xview(SCROLL, int(amount) * 10, UNITS)
->>>>>>> 1.4
 
    def scrollLeft(self):
       """
