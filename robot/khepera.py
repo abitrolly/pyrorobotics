@@ -216,7 +216,7 @@ class KheperaRobot(Robot):
         self.senseData['light'] = []
         self.senseData['stall'] = []
         
-        self.devData["builtinDevices"] = ['ir', 'light']
+        self.devData["builtinDevices"] = ['ir', 'light', 'gripper']
         self.startDevice("ir")
         self.devDataFunc["range"] = self.get("/devices/ir0/object")
         self.devDataFunc["ir"] = self.get("/devices/ir0/object")
@@ -254,6 +254,8 @@ class KheperaRobot(Robot):
             return {"ir": IRSensor(self)}
         elif item == "light":
             return {"light": LightSensor(self)}
+        elif item == "gripper":
+            return {"gripper": Gripper(self)}
         else:
             raise AttributeError, "khepera robot does not support device '%s'" % item
 
@@ -432,6 +434,92 @@ class KheperaRobot(Robot):
         self.th = th
         self.thr = self.th * PIOVER180
     
+class Gripper(Device):
+    def __init__(self, dev, type = "gripper"):
+        Device.__init__(self, type)
+        self.dev = dev
+        self.lowestArmPosition = 255
+        self.highestArmPosition = 165
+        self.liftUpPosition = 175
+        self.putDownPosition = 240
+        self.startDevice()
+
+    def send(self, message):
+        self.dev.sc.writeline(message)
+        return self.dev.sc.readline().split(',')
+
+    # preGet methods
+    def getGripState(self):
+        gripState = int(self.send('T,1,H,0')[3])
+        if gripState < 100:
+            return 'closed'
+        else:
+            return 'open'
+
+    def getBreakBeamState(self):
+        beamState = int(self.send('T,1,G')[3])
+        if beamState < 100:
+            return 'nothing'
+        else:
+            return 'something'
+
+    def getArmPosition(self):
+        return int(self.send('T,1,H,1')[3])
+
+    def getResistivity(self):
+        return int(self.send('T,1,F')[3])
+
+    def getSoftwareVersion(self):
+        version = int(self.send('T,1,B')[3])
+        revision = int(self.send('T,1,B')[4])
+        return version + 0.1 * revision
+
+    def isClosed(self):
+        return self.getGripState() == 'closed'
+
+    def isGripMoving(self):
+        pass
+
+    def isLiftMoving(self):
+        pass
+
+    def isLiftMaxed(self):
+        return self.getArmPosition() == self.highestArmPosition
+
+    # postSet methods
+    def gripOpen(self):
+        self.send('T,1,D,0')
+
+    def gripClose(self):
+        self.send('T,1,D,1')
+
+    def gripStop(self):
+        pass
+
+    def setArmPosition(self, position):
+        if position > 255:
+            position = 255
+        elif position < 165:
+            position = 165
+        self.send('T,1,E,' + str(position))
+
+    def liftUp(self):
+        self.setArmPosition(self.liftUpPosition)
+
+    def liftDown(self):
+        self.setArmPosition(self.putDownPosition)
+
+    def gripperStore(self):
+        self.gripClose()
+        self.liftUp()
+
+    def gripperDeploy(self):
+        self.liftDown()
+        self.gripOpen()
+
+    def gripperHalt(self):
+        pass
+
 if __name__ == '__main__':
     x = KheperaRobot()
     x.update()

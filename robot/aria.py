@@ -85,7 +85,8 @@ class AriaGripperDevice(AriaDevice):
                                 """     down, store, deploy, halt.\n""" \
                                 """.get('/robot/gripper/KEYWORD') where KEYWORD is: state, breakBeamState,\n""" \
                                 """     isClosed, isMoving, isLiftMoving, isLiftMaxed"""
-        #self.notGetables.extend( [] )
+        # "command" is already in notGetables of Device
+        #self.notGetables.extend( ["command"] )
         self.notSetables.extend( ["state", "breakBeamState", "isClosed",
                                   "isMoving", "isLiftMoving", "isLiftMaxed"] )
         self.devData.update( {"state": None, "breakBeamState": None, "isClosed": None,
@@ -94,21 +95,21 @@ class AriaGripperDevice(AriaDevice):
     def postSet(self, keyword):
         if keyword == "command":
             if self.devData["command"] == "open":
-                self.devData["command"] = self.dev.gripOpen() 
+                self.dev.gripOpen() 
             elif self.devData["command"] == "close":
-                self.devData["command"] = self.dev.gripClose() 
+                self.dev.gripClose() 
             elif self.devData["command"] == "stop":
-                self.devData["command"] = self.dev.gripStop()
+                self.dev.gripStop()
             elif self.devData["command"] == "up":
-                self.devData["command"] = self.dev.liftUp()
+                self.dev.liftUp()
             elif self.devData["command"] == "down":
-                self.devData["command"] = self.dev.liftDown()
+                self.dev.liftDown()
             elif self.devData["command"] == "store":
-                self.devData["command"] = self.dev.gripperStore() 
+                self.dev.gripperStore() 
             elif self.devData["command"] == "deploy":
-                self.devData["command"] = self.dev.gripperDeploy()
+                self.dev.gripperDeploy()
             elif self.devData["command"] == "halt":
-                self.devData["command"] = self.dev.gripperHalt()
+                self.dev.gripperHalt()
             else:
                 raise AttributeError, "invalid command to ptz: '%s'" % keyword
 
