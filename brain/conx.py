@@ -303,6 +303,8 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
+    def __getitem__(self, name):
+        return self.layerByName[name]
     def arrayify(self):
         gene = []
         for lay in self.layer:

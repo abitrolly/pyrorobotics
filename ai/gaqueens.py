@@ -39,6 +39,13 @@ class GAQueens(GA):
         print "Best Fitness:", fit
         return fit == len(self.pop.individuals[0].genotype)
 
+    def mutate(self, **args):
+        pos = int(random.random() * len(self.genotype))
+        if self.verbose == 2:
+            print "at position", pos
+        self.genotype[pos] =  math.floor(random.random() * \
+                                   (self.max - self.min + 1)) + self.min
+
 class MyGene(Gene):
     def display(self):
         for row in range(len(self.genotype)):

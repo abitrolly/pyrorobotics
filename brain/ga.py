@@ -116,12 +116,18 @@ class Gene:
                 self.genotype[pos] += 1
             else:
                 self.genotype[pos] -= 1
+            #else:
+            #    self.genotype[pos] =  math.floor(random.random() * \
+            #                          (self.max - self.min + 1)) + self.min
         elif self.mode == 'float': 
             r = random.random()
             if (r < .5):
                 self.genotype[pos] -= random.random()
             else:
                 self.genotype[pos] += random.random()
+            #else:
+            #    self.genotype[pos] = ( random.random() * \
+            #                          (self.max - self.min + 1) + self.min)
         else:
             raise "unknownMode", self.mode
         
@@ -337,7 +343,7 @@ if __name__ == '__main__':
             self.network = n
             GA.__init__(self, Population( cnt, Gene, size = len(g)),
                         mutationRate = 0.5, crossoverRate = 0.25,
-                        maxGeneration = 400, verbose = 1)
+                        maxGeneration = 400, verbose = 1, min = -2, max = 2)
         def fitnessFunction(self, genePos):
             self.network.unArrayify(self.pop.individuals[genePos].genotype)
             error, correct, count = self.network.sweep()
