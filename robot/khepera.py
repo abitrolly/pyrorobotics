@@ -11,7 +11,7 @@ import math
 import termios
 from time import sleep
 
-from pyro.simulators.khepera.CNTRL import ksim
+from pyro.simulators.khepera.CNTRL import _ksim as ksim
 
 class SerialSimulator:
     def __init__(self):
