@@ -1,6 +1,7 @@
 CC = gcc
 CXX = gcc
-PYTHONINCLUDE = -I/usr/include/python2.1
+#PYTHONINCLUDE = -I/usr/include/python2.1
+PYTHONINCLUDE = -I/usr/local/include/python2.2/
 
 BASEDIR=.
 
