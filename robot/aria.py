@@ -2,7 +2,7 @@
 
 from pyro.robot import *
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
-     ArRobotParams
+     ArRobotParams, ArGripper
 from math import pi, cos, sin
 from os import getuid
 
@@ -66,27 +66,26 @@ class AriaRobot(Robot):
         self.senses['sonar']['ox'] = lambda dev, pos: self.params.getSonarX(pos)
         self.senses['sonar']['oy'] = lambda dev, pos: self.params.getSonarY(pos)
 	self.senses['sonar']['oz'] = lambda dev, pos: 0.03
-        self.senses['sonar']['th'] = lambda dev, pos: 0 # self.light_th
+        self.senses['sonar']['th'] = lambda dev, pos: self.params.getSonarTh(pos) * PIOVER180 # self.light_th
         # in radians:
         self.senses['sonar']['arc'] = lambda dev, pos, \
-                                      x = (7.5 * pi / 180) : x
+                                      x = (7.5 * PIOVER180) : x
 
-        # bumper sensors
-	self.senses['bumper'] = {}
-        self.senses['bumper']['type'] = lambda dev: 'tactile'
-        self.senses['bumper']['count'] = lambda dev: 0
-        self.senses['bumper']['x'] = lambda dev, pos: 0
-        self.senses['bumper']['y'] = lambda dev, pos: 0
-        self.senses['bumper']['z'] = lambda dev, pos: 0
-        self.senses['bumper']['th'] = lambda dev, pos: 0 
-        self.senses['bumper']['value'] = lambda dev, pos: 0
+        if self.params.haveFrontBumpers() or self.params.haveRearBumpers():
+            # bumper sensors
+            self.senses['bumper'] = {}
+            self.senses['bumper']['type'] = lambda dev: 'tactile'
+            self.senses['bumper']['count'] = lambda : self.params.numFrontBumpers() + self.params.numRearBumpers()
+            self.senses['bumper']['x'] = lambda dev, pos: 0
+            self.senses['bumper']['y'] = lambda dev, pos: 0
+            self.senses['bumper']['z'] = lambda dev, pos: 0
+            self.senses['bumper']['th'] = lambda dev, pos: 0 
+            self.senses['bumper']['value'] = lambda dev, pos: 0
 
+        self.controls['gripper'] = ArGripper(self.dev)
         # gripper sensors
 	self.senses['gripper'] = {}
         self.senses['gripper']['type'] = lambda dev: 'special'
-        self.senses['gripper']['frontbeam'] = lambda dev, pos: 0
-        self.senses['gripper']['backbeam'] = lambda dev, pos: 0
-        self.senses['gripper']['status'] = lambda dev, pos: 0
 
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
@@ -99,7 +98,6 @@ class AriaRobot(Robot):
         self.controls['rotate'] = self.rotateDev
         self.controls['update'] = self.update
         self.controls['localize'] = self.localize
-        self.controls['gripper'] = self.setGripper
 
         console.log(console.INFO,'aria control drivers loaded')
         self.SanityCheck()
