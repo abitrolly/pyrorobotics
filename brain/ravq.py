@@ -137,6 +137,8 @@ class RAVQ:
         return self.winnerCount
     def getMinimumCount(self):
         return self.counters[Numeric.argmin(self.counters)]
+    def getTotalCount(self):
+        return Numeric.add.reduce(self.counters)
     def setVerbosity(self, value):
         self.verbosity = value
     def setHistory(self, value):
