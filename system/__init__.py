@@ -7,6 +7,7 @@ def usage():
     print "  -h this help"
     print "  -r load a robot file"
     print "  -b load a brain file"
+    print "  -o pass arguments to a brain (separated by ':')"
     print "  -s load a simulator"
     print ""
 
@@ -43,7 +44,7 @@ def file_exists(file_name):
     else:
         return exists(file_name)
     
-def loadINIT(filename, robot=0, redo=0, brain=0):
+def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
     path = filename.split("/")
     modulefile = path.pop() # module name
     module = modulefile.split(".")[0]
@@ -63,6 +64,9 @@ def loadINIT(filename, robot=0, redo=0, brain=0):
         if robot is 0:
             return userspace.INIT()
         else:
-            return userspace.INIT(robot)
+            if args:
+                return userspace.INIT(robot, args)
+            else:
+                return userspace.INIT(robot)
     else:
         return userspace.INIT(robot, brain)
