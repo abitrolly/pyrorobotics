@@ -31,6 +31,8 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
                 retval[keyword] = deviceDict[keyword]
             else:
                 retval.append( keyword )
+    #if isinstance(retval, (type((1,)), type([1,]))):
+    #    retval.sort()
     return retval
 
 class WindowError(AttributeError):
