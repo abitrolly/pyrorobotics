@@ -1,8 +1,9 @@
 import pyro.robot.armor as armor
 
-class ArmorSimulated(armor.ArmorSimulated):
+class ArmorSimulated(armor.ArmorRobot):
    def __init__(self):
-      armor.ArmorSimulated.__init__(self, "ArmorSimulated", 1)
+      armor.ArmorRobot.__init__(self, "ArmorRobot", 1)
 
 def INIT():
    return ArmorSimulated()
+
