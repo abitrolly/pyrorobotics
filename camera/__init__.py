@@ -378,12 +378,20 @@ class Camera(PyroImage, Service):
    def updateService(self):
       self.update()
 
+   def delFilter(self, pos):
+      self.callbackList.remove(pos)
+      self.callbackTextList.remove(pos)
+      if not self.active:
+         self.updateOnce()
+      return "Ok"
+
    def popCallbackList(self):
       if len(self.callbackList) > 0:
          self.callbackList.pop()
          self.callbackTextList.pop()
       if not self.active:
          self.updateOnce()
+      return "Ok"
 
    def clearCallbackList(self):
       # callback is a function that has first param
@@ -392,6 +400,7 @@ class Camera(PyroImage, Service):
       self.callbackTextList = []
       if not self.active:
          self.updateOnce()
+      return "Ok"
 
    def processAll(self):
       if self.filterMode:
