@@ -143,12 +143,13 @@ int main(int argc,char *argv[]) {
   int               shmid_in, shmid_out;
   struct shmid_ds   ds;
   int               key_in, key_out;
+  int index;
 
   if(GetOption("r",argc,argv))
     initButtonValue = RUN_ROBOT;
   if(GetOption("f",argc,argv))
     initButtonValue = RUN_ROBOT_NO_GUI;
-  int index = GetOption("w",argc,argv); // position of -w flag, if one
+  index = GetOption("w",argc,argv); // position of -w flag, if one
   if (index > 0) {
     strcpy(file_name, argv[index + 1]);
   } else {
