@@ -279,8 +279,6 @@ class Robot (Drawable):
 	else:
 		self.controls[action](self.dev, value1, value2, val3)
         self.needToRedraw = 1
-        #self.update() # updates the robot's state reflector
-        #self.gui.win.tkRedraw()
 
     def _update(self):
         for service in self.getServices():
@@ -307,51 +305,54 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'control has NO update')
         console.log(console.INFO,'robot sanity check completed')
 
-    def startServices(self, dict):
-        """ Load services from a dictionary of items:objects """
-        if type(dict) == type({}):
-            for service in dict.keys():
+    def startServices(self, item):
+        """ Alias for startService() """
+        self.startService(item)
+        
+    def startService(self, item):
+        """ Load a service: dict, list, or name or filename """
+        import pyro.system as system
+        import os
+        # Item can be: dict, list, or string. string can be name or filename
+        if type(item) == type({}):
+            for service in item.keys():
                 console.log(console.INFO,"Loading service '%s'..." % service)
                 if self.service.has_key(service):
                     print "Service is already running: '%s'" % service
                     continue
-                dict[service].startService()
-                if dict[service].getServiceState() == "started":
-                    self.service[service] = dict[service]
+                item[service].startService()
+                if item[service].getServiceState() == "started":
+                    self.service[service] = item[service]
                     if service not in self.senses:
                         self.senses[service] = self.service[service]
                 else:
                     raise AttributeError, "service '%s' not available" % service
             return "Ok"
-        else: # list of services
-            for service in dict:
+        elif type(item) == type([0,]) or \
+             type(item) == type((0,)):
+            # list of services
+            for service in item:
                 self.startService(service)
-
-    def startService(self, item):
-        """ Load a service by either name or filename """
-        import pyro.system as system
-        import os
-        if self.supportsService(item):
+        elif self.supportsService(item): # built-in name
             if self.service.has_key(item):
                 print "Service is already running: '%s'" % item
                 return
             console.log(console.INFO,"Loading service '%s'..." % item)
             self.supports[item].startService()
-            # fix: did it start? if not do not do the following:
             if self.supports[item].getServiceState() == "started":
                 self.service[item] = self.supports[item]
                 self.senses[item] = self.service[item]
             else:
                 raise AttributeError, "service '%s' not available" % item
-        else:
+        else: # from a file
             file = item
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                self.startServices( system.loadINIT(file, self) )
+                self.startService( system.loadINIT(file, self) )
             elif system.file_exists(os.getenv('PYRO') + \
                                     '/plugins/services/' + file): 
-                self.startServices( system.loadINIT(os.getenv('PYRO') + \
+                self.startService( system.loadINIT(os.getenv('PYRO') + \
                                                    '/plugins/services/'+ \
                                                    file, self))
             else:
