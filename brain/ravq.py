@@ -178,10 +178,22 @@ class RAVQ:
         pickle.dump(self, fp)
         fp.close()
 
-    def setLog(self, filename):
+    def openLog(self, filename):
+        self.logName = filename
         self.log = open(filename, 'w')
     def closeLog(self):
         self.log.close()
+
+    # used so pickle will work
+    def __getstate__(self):
+        odict = self.__dict__.copy() 
+        del odict['log']             
+        return odict
+    def __setstate__(self,dict):
+        self.log = open(dict['logName'], 'a') 
+        self.__dict__.update(dict)            
+
+    
     def logHistory(self, labels = 1, tag = 'None'):
         """
         Writes time winner label tag to file in four column format.

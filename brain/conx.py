@@ -223,6 +223,15 @@ class Layer:
                                self.size)
         return maxpos, maxvalue, avgvalue
 
+    # used so pickle will work
+    def __getstate__(self):
+        odict = self.__dict__.copy() 
+        del odict['_logPtr']             
+        return odict
+    def __setstate__(self,dict):
+        self._logPtr = open(dict['logFile'], 'a') 
+        self.__dict__.update(dict)
+        
     # log methods
     def setLog(self, fileName):
         """
