@@ -144,7 +144,7 @@ class RAVQ:
         self.addModels = 1
         self.winnerCount = 0
         self.printDistance = 0
-        self.addNewModelCallback = None
+        self.addNewModelCallback = None # called when new one is made
       
     # update the RAVQ
     def input(self, vec):
@@ -265,6 +265,7 @@ class RAVQ:
                 print 'Adding model vector', self.movingAverage
                 print 'Moving avg dist', self.movingAverageDistance
                 print 'Model vec dist', self.modelVectorsDistance
+
     def updateWinner(self):
         """
         Calculate the current winner based on which model vector is

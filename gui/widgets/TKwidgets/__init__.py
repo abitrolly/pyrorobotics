@@ -236,7 +236,7 @@ class AskDialog(AlertDialog):
 class Watcher(Tkinter.Toplevel):
    def __init__(self, root):
       Tkinter.Toplevel.__init__(self, root)
-      self.winfo_toplevel().title("Pyro Variable Watcher")
+      self.winfo_toplevel().title("Pyro Expression Watcher")
       self.data = []
       self.textbox = {}
 

@@ -2015,6 +2015,7 @@ class SRN(Network):
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self, name = name, verbosity = verbosity)
+        self.orderedInputs = 1
         self.learnDuringSequence = 1
         self.prediction = []
         self.initContext = 1

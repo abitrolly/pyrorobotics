@@ -9,7 +9,7 @@ from pyro.brain.ravq import ARAVQ, euclideanDistance
 
 class Governor:
     """
-    A Network + RAVQ. 
+    An RAVQ baseclass for combination with Network. 
     """
     def incompatibility(self):
         """
@@ -84,10 +84,23 @@ class GovernorNetwork(Governor, Network):
         self.governing = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
-        self.ravq.setVerbosity(verbosity)
+        self.setVerbosity(verbosity)
         self.histogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
+
+    def setVerbosity(self, val):
+        Network.setVerbosity(self, val)
+        self.ravq.setVerbosity(val)
+
+    def addThreeLayers(self, i, h, o):
+        Network.addThreeLayers(self, i, h, o)
+        if not self.ravq.mask:
+            sum = float(max(i, h, o))
+            mask = [sum/i] * i + [sum/h] * h + [sum/o] * o
+            self.ravq.setMask( mask )
+            if self.verbosity:
+                print "mask:", self.ravq.mask
 
 class GovernorSRN(Governor, SRN): 
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
@@ -102,30 +115,49 @@ class GovernorSRN(Governor, SRN):
         self.setInitContext(0)
         # ravq:
         self.governing = 1
+        self.decay = 0
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
-        self.ravq.setVerbosity(verbosity)
+        self.setVerbosity(verbosity)
         self.histogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
+
+    def setVerbosity(self, val):
+        Network.setVerbosity(self, val)
+        self.ravq.setVerbosity(val)
 
     def addThreeLayers(self, i, h, o):
         SRN.addThreeLayers(self, i, h, o)
         self.trainingNetwork.addThreeLayers(i, h, o)
         self.shareWeights(self.trainingNetwork)
+        if not self.ravq.mask:
+            sum = float(max(i, h, o))
+            mask = [sum/i] * i + [sum/h] * h + [sum/o] * o
+            self.ravq.setMask( mask )
+            if self.verbosity:
+                print "mask:", self.ravq.mask
 
     def sweep(self):
         retval = SRN.sweep(self)
         if self.epoch % self.reportRate == 0:
             print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
             self.histogram = {}
+        if self.decay:
+            for i in range(5):
+                if len(self.ravq.models.contents):
+                    self.ravq.models.contents.pop(0)
+                    self.ravq.models.next = (self.ravq.models.next + 1) % \
+                                            len(self.ravq.models.contents)
+            
+            self.next = 0
         return retval
 
     def networkStep(self, **args):
         if self.governing:
             # map the ravq input context and target
             actContext = list(self["context"].activation)
-            vector = args["input"] + actContext + args["output"]
+            vector = list(args["input"]) + actContext + list(args["output"])
             self.map(vector)
             # get the next
             inLen = self["input"].size

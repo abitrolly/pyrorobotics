@@ -71,7 +71,7 @@ class TKgui(Tkinter.Toplevel, gui):
       menu = [('File',[['New brain...', self.newBrain],
                        None,
                        ['Editor',self.editor],
-                       ['Variable Watcher', self.makeWatcher],
+                       ['Expression Watcher', self.makeWatcher],
                        ['Exit',self.cleanup] 
                        ]),
               ('Window', [['Open all device windows', self.makeWindows],
