@@ -252,8 +252,8 @@ class Camera(PyroImage, Service):
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
          
       self.visible = 1
-      self.window.aspect(self.width, self.height + 28,
-                         self.width, self.height + 28)
+      self.window.aspect(self.width, self.height,
+                         self.width, self.height)
       self.window.minsize(200, 0)
       while self.window.tk.dooneevent(2): pass
 

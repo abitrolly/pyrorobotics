@@ -147,7 +147,9 @@ class ActivDiag(Tkinter.Toplevel):
         nameSizeList = [("Desired %s" % (layer[0],), layer[1]) for layer in nameSizeList]
         self.levelFrameList += [LevelFrame(self, nameSizeList)]
         self.levelFrameList[-1].grid(row=0, column=len(self.netStruct.levelList))
-        
+        for i in xrange(len(self.levelFrameList)):
+            self.levelFrameList[i].setVisible([0] * len(self.levelFrameList[i].visibleList))
+    
     def updateActivs(self):
         for i in xrange(len(self.levelFrameList)-1):
             self.levelFrameList[i].updateActivs([vertex.layerObj.activation for vertex in self.netStruct.levelList[i]])
