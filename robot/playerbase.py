@@ -25,6 +25,7 @@ class PlayerBase(Robot):
         self.th = 0.0
         self.thr = 0.0
         self.stall = 0
+        self.messages = []
         self.noise = .2 # 20 % noise
         
     def translate(self, translate_velocity):
@@ -89,6 +90,11 @@ class PlayerBase(Robot):
         self.th = pos[2] # degrees
         self.thr = self.th * PIOVER180
         self.stall = stall
+        if self.dev.comms[0] != '':
+            for i in self.dev.comms:
+                self.messages.append(self.dev.comms[i][0][:-1])
+            self.dev.comms = {0: ''}
+        # else, comms interface not on
         
     def getOptions(self): # overload 
         pass
@@ -122,6 +128,25 @@ class PlayerBase(Robot):
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
+    def sendMessage(self, message):
+        if self.dev.comms == {}:
+            print "Need to start 'comms' interface in robot"
+            return
+        self.dev.send_message(message)
+
+    def getMessages(self):
+        if self.dev.comms == {}:
+            print "Need to start 'comms' interface in robot"
+            return
+        if self.dev.comms[0] != '':
+            self.update()
+        tmp = self.messages
+        # reset queue:
+        self.messages = []
+        return tmp
+
+    def start(self, item):
+        self.dev.start(item)
     
 if __name__ == '__main__':
     myrobot = PlayerBase()
