@@ -56,10 +56,10 @@ usc_pioneer(color "red" name "robot1" port 6665 pose [3.195 1.237 40 ]
             mcom())
 
 usc_pioneer_gripper( color "green" name "robot2" 
-                     port 6666 pose [3.753 7.901 -2.915 ])
+                     port 6666 pose [3.753 7.901 -2.915 ] truth () )
 
 usc_pioneer_bumper( color "blue" name "robot3" 
-                    port 6667 pose [7.950 1.381 89.451] )
+                    port 6667 pose [7.950 1.381 89.451] truth () )
 
 amigobot( color "red" name "amigo1" port 6670 pose [11.774 4.104 -135.514] )
 amigobot( color "red" name "amigo2" port 6671 pose [11.514 4.754 -121.652] )
