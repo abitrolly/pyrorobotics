@@ -42,17 +42,21 @@ class Gene:
     def __init__(self, **args):
         # Possible Change: Initialization is made beween -1, and 1
         self.data = []
-        self.integer = 0
+        self.mode = 'float'
         self.bias = 0.5
-        if args.has_key('integer'):
-            self.integer = args['integer']
+        if args.has_key('mode'):
+            self.mode = args['mode']
         if args.has_key('bias'):
-            self.integer = args['bias']
+            self.bias = args['bias']
         for i in range(args['size']):
-            if self.integer:
+            if self.mode == 'bit':
                 self.data.append( random.random() < self.bias)
-            else:
+            elif self.mode == 'integer':
+                self.data.append( random.random() < self.bias)
+            elif self.mode == 'float':
                 self.data.append( random.random() * 2.0 - 1.0)
+            else:
+                raise "unknownMode", self.mode
 
     def __getitem__(self, val):
         return self.data[val]
@@ -79,14 +83,20 @@ class Gene:
     def mutate(self, **args):
         """
         If mutationRate = .1, then .1 of the pop will get mutated.
-        If self.integer, flip bit
+        If self.mode == integer, flip bit
         Else mutate with momentum (+- previous value) or
         other amount
         """
         pos = int(random.random() * len(self.data))
-        if self.integer: # flip it
+        if self.mode == 'bit': # flip it
             self.data[pos] = not self.data[pos]
-        else:
+        elif self.mode == 'integer': 
+            r = random.random()
+            if (r < .25):
+                self.data[pos] += 1
+            else:
+                self.data[pos] -= 1
+        elif self.mode == 'float': 
             r = random.random()
             if (r < .25):
                 self.data[pos] -= random.random()
@@ -96,6 +106,9 @@ class Gene:
                 self.data[pos] = random.random()
             else:
                 self.data[pos] = -random.random()
+        else:
+            raise "unknownMode", self.mode
+        
 
 class Population:
     """
@@ -250,7 +263,7 @@ if __name__ == '__main__':
 
     print "Do you want to evolve a list of big numbers? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = TestGA(Population(300, Gene, size = 10))
+        ga = TestGA(Population(300, Gene, size = 10, mode = 'integer'))
         ga.evolve()
 
     # Here is a test to evolve the weights/biases in a neural network
