@@ -12,12 +12,21 @@ class GUI(Tkinter.Toplevel):
         self.root = root
         self.width = width
         self.height = height
+        self.lastMove = (0,0)
         self.visible = 1
         self.title("SymbolicSimulator: KonaneWorld")
+        self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
+        self.mBar.pack(fill=Tkinter.X)
+
+        menubar = self.tk_menuBar(self.makeMenu(self.mBar,
+                                                "Game",
+                                                [["Done with move", self.playDone],
+                                                 ["Reset", self.initWorld],
+                                                 ]))
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
+        self.canvas.bind('<Button-1>', self.click)
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.initWorld()
         self.count = 0
         self.tag = "data-%d" % self.count
         self.updateables = []
@@ -25,6 +34,52 @@ class GUI(Tkinter.Toplevel):
         self.movements = ["remove", "jump"]
         self.ports = [60000, 60001]
         self.whosMove = int(round(random.random()))
+        self.initWorld()
+
+    def makeMenu(self, bar, name, commands):
+        """ Assumes self.menuButtons exists """
+        menu = Tkinter.Menubutton(bar,text=name,underline=0)
+        #self.menuButtons[name] = menu
+        menu.pack(side=Tkinter.LEFT,padx="2m")
+        menu.filemenu = Tkinter.Menu(menu)
+        for cmd in commands:
+            if cmd:
+                menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+            else:
+                menu.filemenu.add_separator()
+        menu['menu'] = menu.filemenu
+        return menu
+
+    def playDone(self):
+        self.whosMove = int(not self.whosMove)
+        self.redraw()
+
+    def click(self, event):
+        posx = int((event.x / float(self.width)) * 8 + 1)
+        posy = 8 - int((event.y / float(self.height)) * 8)
+        if self.world[posx - 1][posy - 1] != '':
+            print "remove(%d,%d) (or picking up for jump)" % (posx, posy)
+            self.world[posx - 1][posy - 1] = ''
+            self.lastMove = (posx, posy)
+        elif self.lastMove == (posx, posy):
+            print "Took back move at (%d,%d)" % (posx, posy)
+            if posx % 2 == posy % 2:
+                self.world[posx - 1][posy - 1] = 'O'
+            else:
+                self.world[posx - 1][posy - 1] = 'X'
+        else:
+            if posx % 2 == posy % 2:
+                self.world[posx - 1][posy - 1] = 'O'
+            else:
+                self.world[posx - 1][posy - 1] = 'X'
+            x1,y1 = self.lastMove
+            x2,y2 = posx, posy
+            if x1 == x2:
+                self.world[x1-1][(y2+y1)/2 - 1] = ''
+            else:
+                self.world[(x1+x2)/2 - 1][y1-1] = ''
+            self.lastMove = (x2, y2)
+            print "jump(%d,%d,%d,%d)" % (x1, y1, posx, posy)
         self.redraw()
 
     def initWorld(self):
@@ -35,6 +90,7 @@ class GUI(Tkinter.Toplevel):
                     self.world[x][y] = 'O'
                 else:
                     self.world[x][y] = 'X'
+        self.redraw()
 
     def process(self, request):
         retval = "error"
@@ -45,21 +101,32 @@ class GUI(Tkinter.Toplevel):
             self.world[x-1][y-1] = ''
             retval = "ok"
             self.redraw()
-        elif request == "done":
-            self.whosMove = int(not self.whosMove)
+        elif request.count("jump"):
+            request = request.replace(")", "")
+            jump, pos = request.split("(")
+            x1,y1,x2,y2 = map(int, pos.split(","))
+            piece = self.world[x1-1][y1-1]
+            self.world[x1-1][y1-1] = ''
+            self.world[x2-1][y2-1] = piece
+            if x1 == x2:
+                self.world[x1-1][(y2+y1)/2 - 1] = ''
+            else:
+                self.world[(x1+x2)/2 - 1][y1-1] = ''
+            retval = "ok"
             self.redraw()
+        elif request == "done":
+            self.playDone()
             return "ok"
         elif request == "whosMove":
             retval = self.whosMove
         elif request.count('connectionNum'):
             connectionNum, port = request.split(":")
             retval = self.ports.index( int(port) )
-        elif request == 'world':
+        elif request == 'board':
             retval = self.world
         elif request == 'reset':
             self.initWorld()
             retval = "ok"
-            self.redraw()
         elif request == 'end' or request == 'exit':
             retval = "ok"
             self.done = 1
