@@ -1,7 +1,7 @@
 # Defines AriaRobot, a subclass of robot
 
 from pyro.robot import *
-from pyro.robot.service import Service, ServiceError
+from pyro.robot.service import Service, ServiceError, Device
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
@@ -204,73 +204,12 @@ class AriaPTZService(AriaService):
     def getMinZoom(self):
         return self.dev.getMinZoom()
 
-class AriaSensor:
+class AriaSensor(Device):
     def __init__(self, params, device):
+        Device.__init__(self)
         self.params = params
         self.device = device
-        self.data = {}
-        self.subdataFunc = {}
         self.data['type'] = 'range'
-
-    def _set(self, path, value):
-        if path[0] in self.data:
-            self.data[path[0]] = value
-        else:
-            raise AttributeError, "invalid item to set: '%s'" % path[0]
-                
-    def _get(self, path):
-        if len(path) == 0:
-            # return all of the things a sensor can show
-            tmp = self.data.copy()
-            tmp.update( dict([(key + "/", self.groups[key]) for key in self.groups]))
-            return serviceDirectoryFormat(tmp, 0)
-        elif len(path) == 1 and path[0] in self.data:
-            # return a value
-            return self.data[path[0]]
-        # otherwise, dealing with numbers or group
-        if len(path) == 1: # no specific data request
-            return serviceDirectoryFormat(self.subdataFunc, 0)
-        else: # let's get some specific data
-            keys = path[0]
-            elements = path[1]
-            if elements == "*":
-                elements = self.subdataFunc.keys() #serviceDirectoryFormat(self.subdataFunc, 1)
-            # if keys is a collection:
-            if isinstance(keys, (type((1,)), type([1,]))):
-                keyList, keys = keys, []
-                for k in keyList:
-                    if k in self.groups.keys():
-                        keys.extend( self.groups[k] )
-                    else:
-                        keys.append( k )
-            elif keys in self.groups.keys():
-                # single keyword, so just replace keys with the numeric values
-                keys = self.groups[keys]
-            # 4 cases:
-            # 1 key 1 element
-            if type(keys) == type(1) and type(elements) == type("value"):
-                return self.subdataFunc[elements](keys)
-            # 1 key many elements
-            elif type(keys) == type(1):
-                mydict = {}
-                for e in elements:
-                    mydict[e] = self.subdataFunc[e](keys)
-                return mydict
-            # many keys 1 element
-            elif type(elements) == type("value"):
-                retval = []
-                for i in keys:
-                    retval.append( self.subdataFunc[elements](i))
-                return retval
-            # many keys many elements
-            else:
-                retval = []
-                for i in keys:
-                    mydict = {}
-                    for e in elements:
-                        mydict[e] = self.subdataFunc[e](i)
-                    retval.append( mydict )
-                return retval
 
 class AriaSonar(AriaSensor):
     def __init__(self,  params, device):
@@ -306,7 +245,7 @@ class AriaSonar(AriaSensor):
         self.subdataFunc['x']     = lambda pos: self.device.getSonarReading(pos).getLocalX()
         self.subdataFunc['y']     = lambda pos: self.device.getSonarReading(pos).getLocalY()
 	self.subdataFunc['z']     = lambda pos: 0.03 # meters
-        self.subdataFunc['value'] = self.getSonarRangeDev
+        self.subdataFunc['value'] = lambda pos: self.getSonarRange(pos)
         self.subdataFunc['pos']   = lambda pos: pos
         self.subdataFunc['group']   = lambda pos: self.getGroupNames(pos)
 
@@ -317,7 +256,7 @@ class AriaSonar(AriaSensor):
                 retval.append( key )
         return retval
 
-    def getSonarRangeDev(self, pos):
+    def getSonarRange(self, pos):
         return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
 
     def getSonarMaxRange(self):
@@ -372,13 +311,13 @@ class AriaLaser(AriaSensor):
         self.subdataFunc['x']     = lambda pos: self.params.getLaserX()
         self.subdataFunc['y']     = lambda pos: self.params.getLaserX()
 	self.subdataFunc['z']     = lambda pos: 0.03 # meters
-        self.subdataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS?
+        self.subdataFunc['value'] = lambda pos: self.device.getSonarRange(pos) # METERS? FIX: make in units
         self.subdataFunc['pos']   = lambda pos: pos
 
 class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device)
-        self.data['maxvalue'] = 1.0 # FIX
+        self.data['maxvalue'] = 1.0 
         self.data['units']    = "RAW"
         self.data["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
         if self.data["count"] == 5:
@@ -447,6 +386,7 @@ class AriaRobot(Robot):
         self.data['th'] = 0.0 # in degrees
         self.data['thr'] = 0.0 # in radians
 	self.data['type'] = self.dev.getRobotType()
+	self.data['subtype'] = self.params.getSubClassName()
         self.data['units'] = 'METERS' # x,y,z units
         self.data['name'] = self.dev.getRobotName()
         console.log(console.INFO,'aria sense drivers loaded')
@@ -487,7 +427,6 @@ class AriaRobot(Robot):
         self.data["th"] = (self.dev.getTh() + 360) % 360
         self.data["thr"] = self.data["th"] * PIOVER180
         self.data["stall"] = self.dev.getStallValue()
-        self.data['datestamp'] = time.time()
         self.dev.unlock()
     
     def enableMotors(self):
