@@ -215,6 +215,8 @@ class GPGene(Gene):
         p2 = deepcopy( parent2 )
         self.replaceTree(p2, subtree1 )
         self.replaceTree(p1, subtree2 )
+        p1.genotype.resetCounts()
+        p2.genotype.resetCounts()
         return p1, p2
                
 # A standard environment:
