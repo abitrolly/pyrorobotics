@@ -491,6 +491,9 @@ class Camera(PyroImage, Device):
          self.updateOnce()
       return "Ok"
 
+   def clearFilters(self):
+      self.clearCallbackList()
+      
    def processAll(self):
       if self.filterMode:
          self.vision.applyFilterList()
