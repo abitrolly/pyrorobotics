@@ -29,6 +29,8 @@ class FakeCamera(Camera):
          pattern = "vision/snaps/som-?.ppm"
       self.pattern = pattern
       self.stop = stop
+      self.start = start
+      self.current = start
       self.setUpdateInterval(interval)
       self.verbose = verbose
       self.lastUpdate = 0
@@ -36,12 +38,13 @@ class FakeCamera(Camera):
       self.match = re.search(re.escape(char) + "+", pattern)
       #create a format string that we can use to replace the
       #replace characters
-      self.fstring = "%%0%dd" % len(self.match.group())
-      self.start = start
-      self.current = start
-      currname = self.pattern[:self.match.start()] + \
-                 self.fstring % self.current + \
-                 self.pattern[self.match.end():]
+      if self.match:
+         self.fstring = "%%0%dd" % len(self.match.group())
+         currname = self.pattern[:self.match.start()] + \
+                    self.fstring % self.current + \
+                    self.pattern[self.match.end():]
+      else:
+         currname = self.pattern
       if system.file_exists(currname):
          self.path = ''
       elif system.file_exists( os.getenv('PYRO') + "/" + currname):
@@ -97,9 +100,12 @@ class FakeCamera(Camera):
       if (self.current < self.stop):
          currentTime = time.time()
          if currentTime - self.lastUpdate > self.interval:
-            currname = self.pattern[:self.match.start()] + \
-                       self.fstring % self.current + \
-                       self.pattern[self.match.end():]
+            if self.match:
+               currname = self.pattern[:self.match.start()] + \
+                          self.fstring % self.current + \
+                          self.pattern[self.match.end():]
+            else:
+               currname = self.pattern
             if self.verbose:
                print "info: readings file '%s'..." % (self.path + currname)
             self.cameraDevice.updateMMap(self.path + currname)
