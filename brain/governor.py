@@ -101,14 +101,6 @@ class Governor:
         """ Loads RAVQ data from a file. """
         self.ravq.loadRAVQFromFile(filename)
 
-    def setLearning(self, value):
-        if self.governing:
-            self.trainingNetwork.learning = value
-            self.governing = value
-            self.ravq.setAddModels(value)
-        else:
-            self.learning = value
-
 class GovernorNetwork(Governor, Network):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
@@ -117,8 +109,7 @@ class GovernorNetwork(Governor, Network):
                          verbosity = verbosity)
         # ravq
         self.governing = 1
-        self.learning = 0
-        self.trainingNetwork.learning = 1
+        self.learning = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
         self.setVerbosity(verbosity)
@@ -159,17 +150,9 @@ class GovernorNetwork(Governor, Network):
             if self.verbosity:
                 print "mask:", self.ravq.mask
 
-    def setEpsilon(self, liveEpsilon, govEpsilon = None):
-        if govEpsilon == None:
-            govEpsilon = liveEpsilon
-        Network.setEpsilon(self, liveEpsilon)
-        self.trainingNetwork.setEpsilon(govEpsilon)
-
-    def setMomentum(self, liveMomentum, govMomentum = None):
-        if govMomentum == None:
-            govMomentum = liveMomentum
-        Network.setMomentum(self, liveMomentum)
-        self.trainingNetwork.setMomentum(govMomentum)
+    def setLearning(self, value):
+        self.ravq.setAddModels(value)
+        self.learning = value
 
 class GovernorSRN(Governor, SRN): 
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
@@ -223,8 +206,8 @@ class GovernorSRN(Governor, SRN):
             print "mask:", self.ravq.mask
 
     def addThreeLayers(self, i, h, o):
-        SRN.addThreeLayers(self, i, h, o)
-        self.trainingNetwork.addThreeLayers(i, h, o)
+        SRN.addThreeLayers(self, i, h, o) 
+        self.trainingNetwork.addThreeLayers(i, h, o) 
         self.trainingNetwork.setLayerVerification(0)
         self.trainingNetwork.shareWeights(self)
         if not self.ravq.mask:
@@ -234,14 +217,6 @@ class GovernorSRN(Governor, SRN):
             if self.verbosity:
                 print "mask:", self.ravq.mask
                 
-    def add(self, layer, verbosity = 0):
-        SRN.add(self, layer, verbosity)
-        self.trainingNetwork.add(layer, verbosity)
-
-    def connect(self, fromName, toName):
-        SRN.connect(self, fromName, toName)
-        self.trainingNetwork.connect(fromName, toName)
-
     def decayModelVectors(self):
         good = []
         goodNames = []
@@ -281,32 +256,52 @@ class GovernorSRN(Governor, SRN):
 
     def networkStep(self, **args):
         if self.governing and not self._cv:
+            argLayerNames = args.keys()
+            argLayerNames.sort()
             if self.trainingNetwork.sharedWeights == 0:
                 self.trainingNetwork.setLayerVerification(0)
                 self.trainingNetwork.shareWeights(self)
             # map the ravq input context and target
-            actContext = list(self["context"].activation)
-            vector = list(args["input"]) + actContext + list(args["output"])
+            # get all of the context layer's activations:
+            actContext = []
+            for layer in self.layers:
+                if layer.kind == 'Context':
+                    actContext += list(self["context"].activation)
+            # get all of the input layer's values
+            # and all of the ouptut layer's targets mentioned in args:
+            inputValues = []
+            targetValues = []
+            for layerName in argLayerNames:
+                if self[layerName].kind == 'Input':
+                    inputValues += list(args[layerName])
+                elif self[layerName].kind == 'Output':
+                    targetValues += list(args[layerName])
+            vector = inputValues + actContext + targetValues
             self.map(vector)
             # get the next
-            inLen = 0
-            outLen = 0
-            for layer in self.layers:
-                if layer.type == 'Input' and layer.name != 'context':
-                    inLen += len(layer)
-                elif layer.type == 'Output':
-                    outLen += len(layer)            
-            conLen = self["context"].size
             array = self.nextItem()
             if array == None:
                 array = vector
-            input = array[0:inLen]
-            context = array[inLen:inLen+conLen]
-            output  = array[inLen+conLen:]
+            # get the pieces out of array:
+            govNet = {}
+            current = 0
+            for layerName in argLayerNames: # from args
+                if self[layerName].kind == 'Input':
+                    length = self[layerName].size
+                    govNet[layerName] = array[current:current+length]
+                    current += length
+            for layer in self.layers:       # from network
+                if layer.kind == 'Context':
+                    length = layer.size
+                    govNet[layer.name] = array[current:current+length]
+                    current += length
+            for layerName in args:          # from args
+                if self[layerName].kind == 'Output':
+                    length = self[layerName].size
+                    govNet[layerName] = array[current:current+length]
+                    current += length
             # load them and train training Network
-            self.trainingNetwork.step(input=input,
-                                      output=output,
-                                      context=context)
+            self.trainingNetwork.step(**govNet)
         return Network.step(self, **args)
 
     def setEpsilon(self, liveEpsilon, govEpsilon = None):
@@ -323,14 +318,22 @@ class GovernorSRN(Governor, SRN):
 
     def setSequenceType(self, value):
         self.trainingNetwork.setSequenceType(value)
-        SRN.setSequenceType(self, value)
+        # needs to be set, but ordered/random doesn't matter:
+        SRN.setSequenceType(self, value) 
         
-    def setInteractive(self, value):
-        self.trainingNetwork.setInteractive(value)
-        SRN.setInteractive(self, value)
-        
+    def setLearning(self, value):
+        if self.governing:
+            self.trainingNetwork.learning = value
+            self.governing = value
+            self.ravq.setAddModels(value)
+        else:
+            self.learning = value
+
 if __name__ == '__main__':
     import os, gzip, sys
+    if len(sys.argv) != 4:
+        print "call with: python govenor.py governing resetEpoch decay"
+        sys.exit(1)
     # read in 20,000 lines of experimental training data
     locationfile = gzip.open('location.dat.gz', 'r')
     sensorfile = gzip.open('sensors.dat.gz', 'r')
@@ -363,8 +366,7 @@ if __name__ == '__main__':
     # one. Use of a high weight value is more to reflect that that
     # node is important in determining the function of the network.
     net = GovernorSRN(5, 2.1, 0.3, 5, 0.2, mask=govMask)
-    net.setSequenceType("epoch")
-    net.trainingNetwork.setSequenceType("epoch")
+    net.setSequenceType("ordered-continuous")
     net.addThreeLayers(inSize, inSize/2, 4)
     net.setTargets( targets[:389] ) # 389 = one trip around
     net.setInputs( inputs[:389] ) # has some pauses in there too
