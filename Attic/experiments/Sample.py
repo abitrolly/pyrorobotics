@@ -32,6 +32,7 @@ class Sample(Brain):
             self.count += 1
         else:
             self.getRobot().stop()
+            self.pleaseStop()
             print "done collecting samples"
 
     def getValue(self, name, moveit = 1):
