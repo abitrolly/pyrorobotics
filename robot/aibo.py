@@ -51,22 +51,26 @@ class Listener:
             ch = self.s.recvfrom(1)[0]
         return retval
 
-    def read(self, bytes = 4, format = 'l'):
+    def read(self, bytes = 4, format = 'l', all=False):
         data = ""
         for i in range(bytes):
             data += self.s.recvfrom(1)[0]
-        return struct.unpack(format, data)[0]
+        if all:
+            return struct.unpack(format, data)
+        else:
+            return struct.unpack(format, data)[0]
 
     def write(self, message):
         retval = self.s.send(message)
         return retval
 
     def clear(self):
-        try:
-            while 1:
-                self.s.recvfrom(4096)
-        except:
-            pass # socket timeout
+        #try:
+        #    while 1:
+        #        self.s.recvfrom(4096)
+        #except:
+        #    pass # socket timeout
+        pass
 
 class AiboHeadDevice(Device):
     def __init__(self, robot):
@@ -208,13 +212,15 @@ class AiboRobot(Robot):
         self.estop_control    = Listener(10053, self.host) # stop control
         #wsjoints_port   =10031 # world state read sensors
         #wspids_port     =10032 # world state read pids        
-        #self.sensor_socket    = Listener(10031, self.host) # sensors
+        self.sensor_socket    = Listener(10031, self.host) # sensors
         #self.pid_socket       = Listener(10032, self.host) # sensors
         time.sleep(1) # let all of the servers get going...
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
         self.devData["servers"] = self.menuData['TekkotsuMon']
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
+        self.startDevice("ptz")
+        self.startDevice("camera")
 
         # Commands available on menu_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,
@@ -284,14 +290,21 @@ class AiboRobot(Robot):
     def update(self):
         self._update()
         # read sensor/pid states:
-        #print "update"
         # TODO: not quite decoding correctly:
-        #self.devData["timestamp"] = self.sensor_socket.read(4, "l")
-        #self.devData["position"] = self.sensor_socket.read(18 * 4, "<18f")
-        #self.devData["sensor"] = self.sensor_socket.read(6 * 4, "<6f")
-        #self.devData["button"] = self.sensor_socket.read(8 * 4, "<8f")
-        #self.devData["duties"] = self.sensor_socket.read(18 * 4, "18f")
-        #print self.devData["timestamp"]
+        self.devData["timestamp"] = self.sensor_socket.read(4, "l")
+        self.devData["position"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
+        self.devData["sensor"] = self.sensor_socket.read(6 * 4, "<6f",all=1)
+        self.devData["button"] = self.sensor_socket.read(8 * 4, "<8f",all=1)
+        self.devData["duties"] = self.sensor_socket.read(18 * 4, "<18f",all=1)
+
+        self.devData["extra"] = self.sensor_socket.read(10 * 4, "<10f",all=1)
+
+        print >> sys.stderr, "timestamp", self.devData["timestamp"]
+        print >> sys.stderr, "position", self.devData["position"]
+        print >> sys.stderr, "sensor", self.devData["sensor"]
+        print >> sys.stderr, "button", self.devData["button"]
+        print >> sys.stderr, "duties", self.devData["duties"]
+        print >> sys.stderr, "extra", self.devData["extra"]
 
         #self.pid_socket.clear()
 
