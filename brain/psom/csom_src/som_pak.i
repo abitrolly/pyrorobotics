@@ -15,8 +15,12 @@
 %}
 
 
-%include cpointer.i
-
+//%include cpointer.i
+%include typemaps.i
+%include carrays.i
+%array_functions(float,floatarray)
+%array_functions(short,shortarray)
+%array_functions(int,intarray)
 
 #define CYCLIC    0   // for train_fromdataset()
 #define RAND      1   // for train_fromdataset()
@@ -93,12 +97,6 @@ struct teach_params {
   time_t start_time, end_time;
 };
 
-
-
-
-
-
-
 /* ------------------- from datafile.h: ------------------------------ */
 /* ------------------------------------------------------------------- */
 
@@ -115,16 +113,12 @@ extern struct entries *lininit_codes(struct entries *data, int topol,
 extern struct entries *randinit_codes(struct entries *data, int topol, 
                                    int neigh, int xdim, int ydim);
 
-
-
-
 /* ------------------- from som_devrobs.h: --------------------------- */
 /* ------------------------------------------------------------------- */
 
 extern int write_entries(struct entries *codes, char *out_code_file);
 extern void set_globals(void);
 extern eptr *get_eptr(void);
-
 
 /* --------------------- data set manipulation functions ----------------- */
 
@@ -133,9 +127,6 @@ extern int addto_dataset(struct entries *data, struct data_entry *entry);
 extern struct data_entry *make_data_entry_weighted_masked(float *points, 
                                            short weight, short *mask, int dim);
 extern struct data_entry *make_data_entry(float *points);
-
-
-
 
 /* ------------------ training session initialization functions ---------- */
 
@@ -148,8 +139,6 @@ extern int init_training_session(struct teach_params *params,
 extern int setup_snapshot(struct teach_params *params,
                    char *snapfile_prefix, long interval);
 
-
-
 /* ------------------ training/mapping functions ---------------------- */
 
 extern int *input_one(struct teach_params *teach,
@@ -161,15 +150,11 @@ extern int *train_one(struct teach_params *teach, struct data_entry *sample);
 extern struct data_entry* train_fromdataset(struct teach_params *teach, 
 							struct entries *data, short mode);
 
-
-
 /* ------------------- training timing functions ---------------------- */
 
 extern void timing_start(struct teach_params *teach);
 extern void timing_stop(struct teach_params *teach);
 extern int get_training_time(struct teach_params *teach);
-
-
 
 /* -------------- functions for getting info about SOM state ---------- */
 
@@ -180,5 +165,3 @@ extern float *get_levels_by_error(struct teach_params *teach,
                 struct data_entry *sample, float tolerance);
 extern struct data_entry *get_model_vector(struct entries *codes, int *coords);
 extern void print_dataset(struct entries *data);
-
-

@@ -1,15 +1,16 @@
 import csom
 import sys
 
-
 def init_float_array(mylist):
 	nitems = len(mylist)
-	return csom.ptrcreate("float",0,nitems)
+	#return csom.ptrcreate("float",0,nitems)
+	return csom.new_floatarray(nitems)
 
 def init_short_array(mylist):
 	nitems = len(mylist)
-	return csom.ptrcreate("short",0,nitems)
-
+	#return csom.ptrcreate("short",0,nitems)
+	return csom.new_shortarray(nitems)
+	
 def build_float_array(mylist):
 	myarr = init_float_array(mylist)
 	list_to_arr(mylist,myarr)
@@ -23,17 +24,25 @@ def build_short_array(mylist):
 def list_to_arr(mylist,myarr):
 	i = 0
 	for item in mylist:
-		csom.ptrset(myarr,item,i)
+		ptrset(myarr,item,i)
 		i = i+1
 	return myarr
+
+def ptrvalue(myarr, i):
+	if myarr[-5:] == 'float':
+		return csom.floatarray_getitem(myarr, i)
+	elif myarr[-5:] == 'short':
+		return csom.shortarray_getitem(myarr, i)
+	elif myarr[-3:] == 'int':
+		return csom.intarray_getitem(myarr, i)
+	else:
+		raise TypeError, myarr
 
 def build_list(myarr,nitems):
 	mylist = []
 	for i in range(0,nitems):
-		mylist.append(csom.ptrvalue(myarr,i))
+		mylist.append(ptrvalue(myarr,i))
 	return mylist
-
-
 
 p0 = build_float_array([13.57, 12.61, -1.38, -1.99, 399.77])
 p1 = build_float_array([19.58, 13.08, -1.17, -0.84, 400.03])
@@ -127,9 +136,10 @@ def test3():
 		
 	p = csom.get_eptr()
 	input = csom.rewind_entries(data, p)
-	while(input != "NULL"):
+	while(input != None):
+		print "input:", input
 		coords = csom.train_one(params, input)
-		points = csom.data_entry_points_get(input)
+		points = csom._csom.data_entry_points_get(input)
 		mylist = build_list(points,5)
 		output = csom.get_model_vector(codes, coords)
 		print "input: [",
@@ -138,17 +148,17 @@ def test3():
 		print "]"
 		if(output == "NULL"):
 			print "output null"
-		points = csom.data_entry_points_get(output)
+		points = csom._csom.data_entry_points_get(output)
 		mylist = build_list(points,5)
 		print "maps to model: [",
 		for pt in mylist:
 			print "%.2f" % (pt),
-		print "] coords: (", csom.ptrvalue(coords,0), csom.ptrvalue(coords,1), ")"
+		print "] coords: (", ptrvalue(coords,0), ptrvalue(coords,1), ")"
 		sample = input
 		input = csom.next_entry(p)
 	print "last mapping produces the following gaussian SRN activations:"
 	levels = csom.get_activation_levels(params, coords, radius2,
-										csom.NEIGH_GAUSSIAN)
+					    csom.NEIGH_GAUSSIAN)
 	levels_list = build_list(levels,96)
 	i = 0
 	for level in levels_list:
@@ -159,7 +169,7 @@ def test3():
 		if(i%12 == 0):
 			print ""
 	print "last mapping produces the following dynamic error SRN activations:"
-	levels = csom.get_levels_by_error(params, sample, "NULL")
+	levels = csom.get_levels_by_error(params, sample, 0.0)
 	levels_list = build_list(levels,96)
 	i = 0
 	for level in levels_list:

@@ -19,6 +19,39 @@ csom.set_globals()  # neither worry about nor change this
                     # doug, trust me, this sets global parameters that
                     # are invariant from som to som
 
+def _ptrset(myarr, item, i):
+	if myarr[-5:] == 'float':
+		csom.floatarray_setitem(myarr, i, item)
+	elif myarr[-5:] == 'short':
+		csom.shortarray_setitem(myarr, i, item)
+	elif myarr[-3:] == 'int':
+		csom.intarray_setitem(myarr, i, item)
+	else:
+		raise TypeError, myarr		
+
+def _ptrvalue(myarr, i):
+	if myarr[-5:] == 'float':
+		return csom.floatarray_getitem(myarr, i)
+	elif myarr[-5:] == 'short':
+		return csom.shortarray_getitem(myarr, i)
+	elif myarr[-3:] == 'int':
+		return csom.intarray_getitem(myarr, i)
+	else:
+		raise TypeError, myarr
+
+def _ptrcreate(type, init, nitems):
+	if type == "short":
+		return csom.new_shortarray(nitems)
+	elif type == "float":
+		return csom.new_floatarray(nitems)
+	elif type == "int":
+		return csom.new_intarray(nitems)
+	else:
+		raise TypeError, type
+
+csom.ptrcreate = _ptrcreate
+csom.ptrset = _ptrset
+csom.ptrvalue = _ptrvalue
 
 class psom:
 	"""
