@@ -545,6 +545,12 @@ class Robot:
         return (feature in self.devData["supportedFeatures"])
 
     def requires(self, feature):
+        if isinstance(feature, (list, tuple)):
+            if len(feature) == 0:
+                return 1
+            if len(feature) > 0:
+                if self.requires(feature[0]):
+                    return self.requires(features[1:])
         if (feature in self.devData["supportedFeatures"]):
             return 1
         else:
