@@ -162,11 +162,6 @@ class PlayerRobot(PlayerBase):
         #    self.senses['bumper']['th'] = lambda dev, pos: 0 
         #    self.senses['bumper']['value'] = lambda dev, pos: self.getBumpersPosDev(dev, pos)
 
-        #         self.controls['gripper'] = ArGripper(self.dev)
-        #         # gripper sensors
-        # 	self.senses['gripper'] = {}
-        #         self.senses['gripper']['type'] = lambda dev: 'special'
-        
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
         self.senses['self'] = self.senses['robot']
@@ -178,13 +173,3 @@ class PlayerRobot(PlayerBase):
         #self.controls['localize'] = self.localizeDev
         console.log(console.INFO,'Player control drivers loaded')
 
-    def localize(self, x = 0, y = 0, th = 0):
-        """
-        Set robot's internal pose to x (meters), y (meters),
-        th (radians)
-        """
-        self.dev.set_odometry(x * 1000, y * 1000, th)
-        self.x = x
-        self.y = y
-        self.th = th
-        self.thr = self.th * PIOVER180
