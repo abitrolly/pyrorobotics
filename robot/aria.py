@@ -247,13 +247,6 @@ class AriaSonar(AriaSensor):
         self.devDataFunc['pos']   = lambda pos: pos
         self.devDataFunc['group']   = lambda pos: self.getGroupNames(pos)
 
-    def getGroupNames(self, pos):
-        retval = []
-        for key in self.groups:
-            if pos in self.groups[key]:
-                retval.append( key )
-        return retval
-
     def getSonarRange(self, pos):
         return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
 
@@ -372,7 +365,6 @@ class AriaBumper(AriaSensor):
 
 class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
-        self.inform("Loading Aria robot interface...")
         Robot.__init__(self) # robot constructor
         self.connect()
         self.devData['stall'] = 0
