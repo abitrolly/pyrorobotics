@@ -128,7 +128,6 @@ class GLgui(gui):
       # create a status bar
       self.status = TKwidgets.StatusBar(self.frame)
       self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
-      print self.graphicsMode
       if self.graphicsMode == 1: # GL
          self.init()
       self.inform("Pyro Version " + version() + ": Ready...")
@@ -422,6 +421,13 @@ class GLgui(gui):
       glRasterPos2f(x, y)
       for i  in range(len(str)):
          glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(str[i]))
+
+   def inform(self, message):
+      try:
+         self.status.set(message[0:50])
+      except AttributeError: # gui not created yet
+         print message
+
 
 if __name__ == '__main__':
    gui = GLgui(Engine())

@@ -406,6 +406,16 @@ class TKgui(gui):
 
    def redraw(self, win = 0):
       pass
+
+   def inform(self, message):
+      try:
+         #self.status.set(message[0:50])
+         self.status.config(state='normal')
+         self.status.insert('end', "%s\n" % (message))
+         self.status.config(state='disabled')
+         self.status.see('end')
+      except AttributeError: # gui not created yet
+         print message
    
 if __name__ == '__main__':
    gui = TKgui(Engine())

@@ -257,12 +257,5 @@ class gui(Drawable):
       self.cleanup()
 
    def inform(self, message):
-      try:
-         #self.status.set(message[0:50])
-         self.status.config(state='normal')
-         self.status.insert('end', "%s\n" % (message))
-         self.status.config(state='disabled')
-         self.status.see('end')
-      except AttributeError: # gui not created yet
-         print message
-
+      print message
+      
