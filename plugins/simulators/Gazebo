@@ -16,5 +16,8 @@ else
 	world="$1"
     fi
 fi
+config=$world.cfg
+echo $config
 gazebo $world &
-player -g default $world.cfg &
+sleep 2
+player -g default $config &
