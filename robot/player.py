@@ -101,17 +101,17 @@ class PlayerSonarService(PlayerService):
         self.devData["count"] = len(self.sonarGeometry)
         self.devData["noise"] = 0.05 # 5 percent
         # These are per reading:
-        self.devDataFunc['ox']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][0])
-        self.devDataFunc['oy']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][1])
-        self.devDataFunc['oz']    = lambda pos: 0.03 # meters
-        self.devDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
-        self.devDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
-        self.devDataFunc['x']     = self.getX
-        self.devDataFunc['y']     = self.getY
-	self.devDataFunc['z']     = lambda pos: self.rawToUnits(0.03) # meters
-        self.devDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.sonar[0][pos], self.devData["noise"])
-        self.devDataFunc['pos']   = lambda pos: pos
-        self.devDataFunc['group'] = self.getGroupNames
+        self.subDataFunc['ox']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][0])
+        self.subDataFunc['oy']    = lambda pos:self.rawToUnits(self.sonarGeometry[pos][1])
+        self.subDataFunc['oz']    = lambda pos: 0.03 # meters
+        self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
+        self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
+        self.subDataFunc['x']     = self.getX
+        self.subDataFunc['y']     = self.getY
+	self.subDataFunc['z']     = lambda pos: self.rawToUnits(0.03) # meters
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.sonar[0][pos], self.devData["noise"])
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['group'] = self.getGroupNames
 
     def postSet(self):
         """ Anything that might change after a set """
@@ -163,17 +163,17 @@ class PlayerLaserService(PlayerService):
         self.devData['maxvalue'] = 8.000
         self.devData['index'] = self.dev.laser.keys()[0]
         self.devData["count"] = count
-        self.devDataFunc['ox']    = lambda pos: 0
-        self.devDataFunc['oy']    = lambda pos: 0
-        self.devDataFunc['oz']    = lambda pos: 0
-        self.devDataFunc['th']    = lambda pos: self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos) # in degrees
-        self.devDataFunc['arc']   = lambda pos: self.dev.laser[0][0][2] # in degrees
-        self.devDataFunc['x']     = lambda pos: 0
-        self.devDataFunc['y']     = lambda pos: 0
-	self.devDataFunc['z']     = lambda pos: 0.03 # meters
-        self.devDataFunc['value'] = lambda pos: self.dev.laser[0][1][pos] / 1000.0 # fix, get in units
-        self.devDataFunc['pos']   = lambda pos: pos
-        self.devDataFunc['group']   = self.getGroupNames
+        self.subDataFunc['ox']    = lambda pos: 0
+        self.subDataFunc['oy']    = lambda pos: 0
+        self.subDataFunc['oz']    = lambda pos: 0
+        self.subDataFunc['th']    = lambda pos: self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos) # in degrees
+        self.subDataFunc['arc']   = lambda pos: self.dev.laser[0][0][2] # in degrees
+        self.subDataFunc['x']     = lambda pos: 0
+        self.subDataFunc['y']     = lambda pos: 0
+	self.subDataFunc['z']     = lambda pos: 0.03 # meters
+        self.subDataFunc['value'] = lambda pos: self.dev.laser[0][1][pos] / 1000.0 # fix, get in units
+        self.subDataFunc['pos']   = lambda pos: pos
+        self.subDataFunc['group']   = self.getGroupNames
 
 class PlayerCommService(PlayerService):
 
