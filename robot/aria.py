@@ -69,7 +69,7 @@ class AriaRobot(Robot):
         self.senses['sonar']['th'] = lambda dev, pos: 0 # self.light_th
         # in radians:
         self.senses['sonar']['arc'] = lambda dev, pos, \
-                                      x = (15 * pi / 180) : x
+                                      x = (7.5 * pi / 180) : x
 
         # bumper sensors
 	self.senses['bumper'] = {}
@@ -108,13 +108,13 @@ class AriaRobot(Robot):
         self.inform("Done loading Aria robot.")
 
     def getSonarX(self, pos):
-        x = self.dev.getSonarReading(pos).getX()
-        y = self.dev.getSonarReading(pos).getY()
+        x = self.dev.getSonarReading(pos).getSx() 
+        y = self.dev.getSonarReading(pos).getSy()
         return (COSDEG90RADS * x - SINDEG90RADS * y)
 
     def getSonarY(self, pos):
-        x = self.dev.getSonarReading(pos).getX()
-        y = self.dev.getSonarReading(pos).getY()
+        x = self.dev.getSonarReading(pos).getSx() 
+        y = self.dev.getSonarReading(pos).getSy() 
         return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
     def setGripper(self, dev, option):
@@ -124,24 +124,19 @@ class AriaRobot(Robot):
         dev.setVel((int)(translate_velocity * 1100.0))
 
     def rotateDev(self, dev, rotate_velocity):
-        print "Rotating:", rotate_velocity
         dev.setRotVel((int)(rotate_velocity * 75.0))
 
     def moveDev(self, dev, translate_velocity, rotate_velocity):
-        print "movDev: Moving:", translate_velocity, rotate_velocity
         dev.setVel((int)(translate_velocity * 1100.0))
         dev.setRotVel((int)(rotate_velocity * 75.0))
 
     def translate(self, translate_velocity):
-        print "translate: Translating:", translate_velocity
         self.dev.setVel((int)(translate_velocity * 1100.0))
 
     def rotate(self, rotate_velocity):
-        print "rotate: Rotating:", rotate_velocity
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
 
     def move(self, translate_velocity, rotate_velocity):
-        print "move: Moving:", translate_velocity, rotate_velocity
         self.dev.setVel((int)(translate_velocity * 1100.0))
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
 
