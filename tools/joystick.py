@@ -10,7 +10,7 @@ class Joystick:
 
       self.frame = Frame(self.win)
       self.canvas = Canvas(self.frame,
-                           width = 360,
+                           width = 220,
                            height = 220,
                            bg = 'white')
       
@@ -19,12 +19,12 @@ class Joystick:
       self.canvas.bind("<B1-Motion>", self.canvas_moved)
       self.canvas.pack(side=BOTTOM)
 
-      self.circle_dim = (150, 10, 350, 210)
+      self.circle_dim = (10, 10, 210, 210) #x0, y0, x1, y1
       self.circle = self.canvas.create_oval(self.circle_dim, fill = 'white')
-      self.canvas.create_oval(245, 105, 255, 115, fill='black')
+      self.canvas.create_oval(105, 105, 115, 115, fill='black')
 
-      self.panicButton = Button(self.frame, text="STOP!!", command=self.stop)
-      self.panicButton.pack(side = TOP)
+#      self.panicButton = Button(self.frame, text="STOP!!", command=self.stop)
+#      self.panicButton.pack(side = TOP)
       self.frame.pack()
       self.translate = 0
       self.rotate = 0
