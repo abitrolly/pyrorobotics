@@ -1,28 +1,28 @@
-#
-# This file contains the class that represents a computer controlled
-# physical agent (robot). A robot is a bunch of drivers that offer
-# senses and controllers
-#
-# - stephen -
-#
-# -----------------------------
-# Main interfaces:
-# .get()             - interface to robot, sensors
-# .move(), .translate(), .rotate(), .motors(), .stop() - controls
+""" The main Pyro robot object, and support functions
+
+
+ This file contains the class that represents a computer controlled
+ physical agent (robot). A robot is a bunch of drivers that offer
+ senses and controllers
+ -----------------------------
+ Main interfaces:
+ .get()             - interface to robot, sensors
+ .move(), .translate(), .rotate(), .motors(), .stop() - controls
+
+ Units of measure for sense, map, and motors:
+ -------------------------------------------
+ ROBOTS - unit is given interms of robot's diameter
+ METERS - meters
+ CM     - centimeters
+ MM     - millimeters
+ SCALED - scaled [-1,1]
+ RAW    - right from the sensor
+"""
 
 import pyro.gui.console as console
 from pyro.geometry import Polar, distance
 from pyro.robot.device import deviceDirectoryFormat
 import math, string, time
-
-# Units of measure for sense, map, and motors:
-# -------------------------------------------
-# ROBOTS - unit is given interms of robot's diameter
-# METERS - meters
-# CM     - centimeters
-# MM     - millimeters
-# SCALED - scaled [-1,1]
-# RAW    - right from the sensor
 
 def expand(part):
     """
@@ -131,7 +131,8 @@ class Robot:
     def getAll(self, path = '', depth = 0):
         retval = ''
         pathList = self.get(path, showstars = 1)
-        pathList.sort()
+        if isinstance(pathList, (type((1,)), type([1,]))):
+            pathList.sort()
         for item in pathList:
             if item[0] == "*": # a group (link), do not recur
                 if item == "*range/":
@@ -310,7 +311,7 @@ class Robot:
         shortest way to turn there?  returns -PI to PI, neg to right,
         to use with turning
         '''
-        theta = self.get("/robot/thr/")
+        theta = self.get("/robot/thr")
         if (phi > theta):  # turn left
             phi = phi - theta;
         else: # // turn right
@@ -319,7 +320,7 @@ class Robot:
             phi = (2 * math.pi - phi) * -1.0;
         if (phi < -math.pi): #// oops, shorter to turn other direction
             phi = (2 * math.pi + phi);
-        return phi
+        return min(max(phi / math.pi, -1.0), 1.0)
 
     def getAngleToPoint(self, x, y):
         return self.getAngleToPoints(x, y, self.get('robot/x'), self.get('robot/y'))
@@ -338,45 +339,45 @@ class Robot:
 
     # ------------------------- Device functions:
 
-    def startDevices(self, item):
-        """ Alias for startDevice() """
-        return self.startDevice(item)
-        
+    def getNextDeviceName(self, devname):
+        for i in range(100):
+            if ("%s%d" % (devname, i)) not in self.device:
+                return ("%s%d" % (devname, i))
+        raise AttributeError, "too many devices of type '%s'" % devname
+
     def startDevice(self, item):
-        """ Load a devvice: dict, list, or name or filename """
+        """ Alias for startDevices(), but returns just 1 name """
+        return self.startDevices(item)
+        
+    def startDevices(self, item):
+        """ Load a device: dict, list, or name or filename """
         import pyro.system as system
         import os
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
             retval = []
-            for device in item.keys():
+            for dev in item.keys():
+                device = self.getNextDeviceName(dev)
                 console.log(console.INFO,"Loading device '%s'..." % device)
-                if self.device.has_key(device):
-                    print "Device is already running: '%s'" % device
-                    retval.append( self.device[device] )
-                else:
-                    retval.append(item[device].startDevice())
-                if item[device].getDeviceState() == "started":
-                    self.device[device] = item[device]
+                retval.append(item[dev].startDevice())
+                if item[dev].getDeviceState() == "started":
+                    self.device[device] = item[dev]
                 else:
                     print "device '%s' not available" % device
                     retval.append( None )
             return retval
-        elif type(item) == type([0,]) or \
-             type(item) == type((0,)):
+        elif type(item) == type([0,]) or type(item) == type((0,)):
             # list of devices
             retval = []
-            for device in item:
-                retval.append(self.startDevice(device))
+            for dev in item:
+                retval.append(self.startDevice(dev))
             return retval
         elif self.supportsDevice(item): # built-in name
-            if self.device.has_key(item):
-                print "Device is already running: '%s'" % item
-                return [self.device[item]]
             console.log(console.INFO,"Loading device '%s'..." % item)
             retval = self.supports[item].startDevice()
             if self.supports[item].getDeviceState() == "started":
-                self.device[item] = self.supports[item]
+                device = self.getNextDeviceName(item)
+                self.device[device] = self.supports[item]
             else:
                 print "device '%s' not available" % item
             return [retval]
