@@ -1,4 +1,7 @@
-import csom
+import pyro.brain.psom._csom as csom
+from pyro.brain.psom import _ptrset
+
+#import csom
 import sys
 
 def init_float_array(mylist):
@@ -24,7 +27,7 @@ def build_short_array(mylist):
 def list_to_arr(mylist,myarr):
 	i = 0
 	for item in mylist:
-		ptrset(myarr,item,i)
+		_ptrset(myarr,item,i)
 		i = i+1
 	return myarr
 
