@@ -208,13 +208,13 @@ class Robot (Drawable):
     def accelerate(self, translate, rotate):
         self.act('accelerate', translate, rotate)
 
-    def move2(self, leftValue, rightValue):
+    def motors(self, leftValue, rightValue):
         """
         Move function that takes desired motor values
         and converts to trans and rotate.
         """
-        trans = (leftValue + rightValue) / 2.0
-        rotate = (leftValue - rightValue) / 2.0
+        trans = (rightValue + leftValue) / 2.0
+        rotate = (rightValue - leftValue) / 2.0
         self.move(trans, rotate)
         
     def move(self, translate, rotate):
