@@ -247,27 +247,29 @@ class Robot (Drawable):
         elif func == 'min':
             min = 100000
             minpos = -1
+            minangle = -1
             for sensor in self.sensorGroups[name]:
                 pos, type = sensor
                 if self.get(type, 'value', pos) < min:
                     min = self.get(type, 'value', pos)
                     minpos = pos
+                    minangle = self.senses[sensor]['th'](self.dev, minpos)
             if minpos == -1:
                 return None
-            angle = self.senses[sensor]['th'](self.dev, minpos)
             return (minpos, min, angle)
         elif func == 'max':
             max = -100000
             maxpos = -1
+            maxangle = -1
             for sensor in self.sensorGroups[name]:
                 pos, type = sensor
                 if self.get(type, 'value', pos) > max:
                     max = self.get(type, 'value', pos)
                     maxpos = pos
+                    maxangle = self.senses[sensor]['th'](self.dev, maxpos)
             if maxpos == -1:
                 return None
-            angle = self.senses[sensor]['th'](self.dev, maxpos)
-            return (maxpos, max, angle)
+            return (maxpos, max, maxangle)
 
     def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
         if sensor != 'all':
