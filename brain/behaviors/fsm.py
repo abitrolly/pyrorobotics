@@ -66,7 +66,8 @@ class State:
       else:
          raise "ERROR: no such statename"
    def goto(self, state, *args):
-      print "Leaving state '%s'; going to state '%s'..." % (self.name, state)
+      if self.debug:
+         print "Leaving state '%s'; going to state '%s'..." % (self.name, state)
       self.deactivate(self.name)
       self.activate(state)
       self.brain.states[state].onGoto(args)
@@ -90,9 +91,6 @@ class State:
    def setup(self):
       pass # normally will overload
    def add(self, b):
-      print b
-      print b.name
-      print self.behaviors
       if b.name in self.behaviors.keys():
          raise "ERROR: beh already exists: '" + b.name + "'"
       else:

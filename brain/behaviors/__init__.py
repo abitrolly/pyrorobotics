@@ -90,6 +90,7 @@ class BehaviorBasedBrain(Brain):
       for c in self.controls.keys():
          if c in control.keys():
             # set that controller to act with a value
+            #print "setting %s to value %f" % (c, control[c])
             self.controls[c](control[c])
             self.history[0][c] = control[c]
       # -------------------------------------------------
