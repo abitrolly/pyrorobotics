@@ -26,7 +26,6 @@ class predict(Brain):
       self.net.initialize()
       self.net.setVerbosity(0)
       self.net.setInitContext(0)
-      self.net.setQuickProp(0)
       self.net.setEpsilon(0.5)
       self.net.setMomentum(.1)
       self.net.setLearning(1)
