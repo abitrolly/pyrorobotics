@@ -59,7 +59,7 @@ struct file_info {
 #define STR_LNG 1000
 #endif
 #ifndef ABS_STR_LNG
-#define ABS_STR_LNG 10000
+#define ABS_STR_LNG 100000
 #endif
 
 /* prototypes */
