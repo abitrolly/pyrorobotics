@@ -4,10 +4,15 @@
 import os 
 import sys 
 # Where are we? Add ../../cwd to our PYTHON search path
-cwd = os.getcwd()
-(pyropath,spare) = os.path.split(cwd) # peel off bin dir
+if sys.argv[0][0] == '/':
+    cwd = sys.argv[0]
+else:
+    cwd = os.getcwd() + '/' + sys.argv[0]
+print "cwd=", cwd
+(binpath,spare) = os.path.split(cwd) # peel off pyro filename
+(pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
-sys.path.insert(0, path) # put at front of list PARENT/pyro/bin/pyro
+sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
 os.environ['PYRO'] = pyropath
 os.environ['LD_LIBRARY_PATH'] += (':' + pyropath + '/lib')
 
