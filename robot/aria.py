@@ -3,7 +3,7 @@
 from pyro.robot import *
 from pyro.robot.service import Service, ServiceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
-     ArRobotParams, ArGripper, ArSonyPTZ
+     ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
 from os import getuid
 
@@ -103,9 +103,17 @@ class AriaGripperService(AriaService):
 class AriaPTZService(AriaService):
     ## Methods for PTZ from Aria
 
-    def __init__(self, robot):
+    def __init__(self, robot, type = "sony"):
+        # here, robot is the robot.device
         AriaService.__init__(self, robot, "ptz")
-        self.dev = ArSonyPTZ(self.robot)
+        if type == "sony":
+            self.dev = ArSonyPTZ(self.robot)
+        elif type == "canon":
+            self.dev = ArVCC4(self.robot)
+        else:
+            raise TypeError, "invalid type: '%s'" % type
+        # this should happen until the robot is connected:
+        self.dev.init()
 
     ## Methods for moving camera
 
