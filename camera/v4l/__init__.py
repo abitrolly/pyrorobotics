@@ -42,6 +42,8 @@ class V4LGrabber(Camera):
       #handle is the file handle for device
       #it needs to get passed back to refresh
       #and free
+      self.handle=None
+      self.cbuf=None
       self.size, self.depth, self.handle, self.cbuf = \
                  grab_image(device, width, height, self.color)
       self.data = CBuffer(self.cbuf)
@@ -59,7 +61,10 @@ class V4LGrabber(Camera):
       This deconstructor method makes sure that the mmap is freed before the
       Camera is deleted.
       """
-      free_image(self.handle, self.cbuf)
+      if self.handle and self.cbuf:
+         #if __init__ was not successful in acquiring the video device,
+         #a call to free_image will be unsuccessful.
+         free_image(self.handle, self.cbuf)
 
    def center(self):
       """Not supported by this camera"""
