@@ -66,6 +66,9 @@ class Device:
             self.makeWindow()
         self.setup()
 
+    def setTitle(self, title):
+        pass
+
     def setup(self):
         pass
     
