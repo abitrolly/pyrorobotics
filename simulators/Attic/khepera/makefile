@@ -27,7 +27,10 @@ cc = gcc -g $(CFLAGS) $(INCDIRS) -c
 
 CC = gcc -g $(LIBDIRS) $(LIBS)
 
-all: sim sim_control _ksim.so
+all: sim sim_control _ksim.so WORLD
+
+WORLD:
+	ln -s ../../plugins/worlds/Khepera/ WORLD
 
 sim_control:
 	(cd ./CNTRL && make)
