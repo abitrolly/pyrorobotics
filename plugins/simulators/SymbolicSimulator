@@ -73,6 +73,8 @@ if __name__ == "__main__":
     if worldFile[-3:] != '.py':
         worldFile += '.py'
     gui = INIT(worldFile)
-    thread = Thread(gui, 60000)
-    thread.start()
+    for port in gui.ports:
+        print "Simulator starting listener on port", port, "..."
+        thread = Thread(gui, port)
+        thread.start()
     gui.mainloop()

@@ -45,6 +45,7 @@ class GUI(Tkinter.Toplevel):
         self.updateables = ["percept", "location", "direction", "arrow", "score", "alive"]
         self.notSetables = ["percept", "location", "direction", "arrow", "score", "alive"]
         self.movements = ["left", "right", "forward", "shoot", "grab"]
+        self.ports = [60000]
         self.redraw()
 
     def initWorld(self):
@@ -124,7 +125,10 @@ class GUI(Tkinter.Toplevel):
         dirs = {'up':0, 'right':1, 'down':2, 'left':3}
         pos  = {0:'up', 1:'right', 2:'down', 3:'left'}
         retval = "error"
-        if request == 'location':
+        if 'connectionNum' in request:
+            connectionNum, port = request.split(":")
+            retval = self.ports.index( int(port) )
+        elif request == 'location':
             retval = (self.location[0] + 1, self.location[1] + 1)
         elif request == 'direction':
             retval = self.direction
@@ -137,6 +141,7 @@ class GUI(Tkinter.Toplevel):
         elif request == 'reset':
             self.initWorld()
             retval = "ok"
+            self.redraw()
         elif request == 'end' or request == 'exit':
             retval = "ok"
             self.done = 1
@@ -158,12 +163,14 @@ class GUI(Tkinter.Toplevel):
                       {1:"scream", 0:None}[self.scream])
         elif self.dead:
             retval = "you died a miserable death!"
+            self.redraw()
         elif request == 'left': # ------------------------below here, you are alive!
             self.bump = 0
             self.scream = 0
             self.score -= 1
             self.direction = pos[(dirs[self.direction] - 1) % 4]
             retval = self.checkMovement()
+            self.redraw()
         elif request == 'shoot':
             # shoot arrow
             self.scream = 0
@@ -179,17 +186,20 @@ class GUI(Tkinter.Toplevel):
                 elif self.direction == 'down':
                     self.inLine( self.location, (0, -1) )
                 retval = 'ok'
+            self.redraw()
         elif request == 'grab':
             if 'G' in self.world[self.location[0]][self.location[1]]:
                 self.score += 1000
                 self.world[self.location[0]][self.location[1]] = self.world[self.location[0]][self.location[1]].replace('G','')
                 retval = "you win!"
+            self.redraw()
         elif request == 'right':
             self.bump = 0
             self.scream = 0
             self.score -= 1
             self.direction = pos[(dirs[self.direction] + 1) % 4]
             retval = self.checkMovement()
+            self.redraw()
         elif request == 'forward':
             self.bump = 0
             self.scream = 0
@@ -203,9 +213,9 @@ class GUI(Tkinter.Toplevel):
             elif self.direction == 'down':
                 self.add( self.location, (0, -1) )
             retval = self.checkMovement()
+            self.redraw()
         else:   # unknown command; returns "error"
             pass
-        self.redraw()
         return pickle.dumps(retval)
 
     def drawDir(self, x, y, dir):

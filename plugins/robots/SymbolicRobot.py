@@ -1,67 +1,12 @@
-import socket, pickle
-from pyro.robot import Robot
-
-class TCPRobot(Robot):
-	"""
-	A simple TCP-based socket robot for talking to SymbolicSimulator.
-	"""
-	BUFSIZE = 1024
-	def __init__(self, host, port):
-		Robot.__init__(self)
-		# Set the socket parameters
-		self.devData["host"] = host
-		self.devData["port"] = port
-		self.addr = (host, port)
-		# Create socket
-		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-		try:
-			self.socket.settimeout(1)
-		except:
-			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
-		self.socket.connect( self.addr )
-		notsetables = self.getItem("notsetables")
-		for item in notsetables:
-			self.devData[item] = None
-		self.notSetables.extend( notsetables )
-
-	def localize(self, x = 0, y = 0, th = 0):
-		pass
-		
-	def update(self):
-		updateables = self.getItem("updateables")
-		for item in updateables:
-			self.devData[item] = self.move(item)
-		self._update()
-
-	def getItem(self, item):
-		return self.move(item)
-
-	def move(self, message, other = None):
-		exp = None
-		if self.socket == 0: return "not connected"
-		if other != None: return # rotate,translate command ignored
-		if (self.socket.sendto(message, self.addr)):
-			if message == "quit":
-				self.socket.close()
-				self.socket = 0
-				# FIX: unload self, if you can
-				return "ok"
-			try:
-				retval, addr = self.socket.recvfrom(self.BUFSIZE)
-			except:
-				retval = ""
-			retval = retval.strip()
-			try:
-				exp = pickle.loads( retval )
-			except:
-				exp = retval
-		return exp
-
-	def disconnect(self):
-		# Close socket
-		self.getItem("quit")
+from pyro.robot.symbolic import TCPRobot
+from pyro.system.share import ask
 
 def INIT():
-	robot = TCPRobot("localhost", 60000)
-	return robot
+	retval = ask("Please enter the Simulator Connection Data",
+		     (("Port", "60000"),
+		      ("Host", "localhost")))
+	if retval["ok"]:
+		return TCPRobot(retval["Host"], int(retval["Port"]))
+	else:
+		raise "Cancelled!"
 

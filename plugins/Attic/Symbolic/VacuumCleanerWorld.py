@@ -17,8 +17,6 @@ class GUI(Tkinter.Toplevel):
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.world = {"A": "dirty", "B": "clean"}
-        self.location = "A"
         self.dirtFilename = os.environ["PYRO"] + "/images/dirt.gif" 
         self.vacFilename = os.environ["PYRO"] + "/images/vac.gif" 
         self.dirtImage = Image.open(self.dirtFilename)
@@ -28,24 +26,41 @@ class GUI(Tkinter.Toplevel):
         self.notSetables = ["location", "status"]
         self.updateables = ["location", "status"]
         self.movements = ["left", "right", "suck", "dump"]
+        self.ports = [60000]
+        self.initWorld()
         self.redraw()
+
+    def initWorld(self):
+        self.world = {"A": "dirty", "B": "clean"}
+        self.location = "A"
     
     def process(self, request):
         retval = "error"
-        if request == 'right':
+        if 'connectionNum' in request:
+            connectionNum, port = request.split(":")
+            retval = self.ports.index( int(port) )
+        elif request == 'reset':
+            self.initWorld()
+            self.redraw()
+            retval = "ok"
+        elif request == 'right':
             if self.location == 'A':
                 self.location = 'B'
             retval = "ok"
+            self.redraw()
         elif request == 'left':
             if self.location == 'B':
                 self.location = 'A'
             retval = "ok"
+            self.redraw()
         elif request == 'suck':
             self.world[self.location] = "clean"
             retval = "ok"
+            self.redraw()
         elif request == 'dump':
             self.world[self.location] = "dirty"
             retval = "ok"
+            self.redraw()
         elif request == 'location':
             retval = self.location
         elif request == 'status':
@@ -65,7 +80,6 @@ class GUI(Tkinter.Toplevel):
             retval = self.movements
         else:   # unknown command; returns "error"
             pass
-        self.redraw()
         return pickle.dumps(retval)
 
     def redraw(self):
