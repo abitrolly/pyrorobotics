@@ -408,10 +408,11 @@ class AriaRobot(Robot):
         # now, can say self.params.getSonarX(4)
         self.localize(0.0, 0.0, 0.0)
 
-    def localize(self, x = 0.0, y = 0.0, th = 0.0):
-        self.diffX = x - self.dev.getX()
-        self.diffY = y - self.dev.getY()
-        self.diffTh = th - self.dev.getTh()
+    def localize(self, x = 0, y = 0, th = 0):
+        """ x, y, th = meters, meters, degrees """
+        pose = self.dev.getPose()
+        pose.setPose(int(x * 1000), int(y * 1000), int(th))
+        self.dev.moveTo(pose)
 
     def disconnect(self):
         print "Disconnecting..."
