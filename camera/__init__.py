@@ -1,11 +1,11 @@
 # A Base Camera class
 
-#from pyro.vision import *
+from pyro.vision import PyroImage
 from pyro.robot.service import Service
 
 import Tkinter
 import PIL.PpmImagePlugin
-import Image, ImageTk, types, time
+import Image, ImageTk, types, time, struct
 
 def display(item):
    print item
@@ -73,7 +73,7 @@ class CBuffer:
    def __str__(self):
       return str(self[:])   
 
-class Camera(Service):
+class Camera(PyroImage, Service):
    """
    A base class for Camera
    """
@@ -126,10 +126,10 @@ class Camera(Service):
       data = [0 for y in range(self.height * self.width * self.depth)]
       for x in range(self.width):
          for y in range(self.height):
-            rgb = camera.getVal(x, y)
-            data[0] = rgb[0]
-            data[1] = rgb[0]
-            data[2] = rgb[0]
+            rgb = self.getVal(x, y)
+            data[(x + y * self.width) * self.depth + 0] = rgb[self.rgb[0]]
+            data[(x + y * self.width) * self.depth + 1] = rgb[self.rgb[1]]
+            data[(x + y * self.width) * self.depth + 2] = rgb[self.rgb[2]]
       return data
 
    def saveImage(self, filename = "pyro-vision.ppm"):
@@ -337,8 +337,33 @@ class Camera(Service):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       self.lastX, self.lastY = int(x * self.width), int(y * self.height)
 
-   def getVal(self, x, y):
-      return self.vision.get(int(x), int(y))
+#    def get(self, x, y, offset = 0):
+#       """
+#       Get a pixel value. offset is r, g, b = 0, 1, 2.
+#       """
+#       rgb = self.vision.get(int(x), int(y))
+#       return rgb[offset]
+
+#    def getVal(self, x, y):
+#       return self.vision.get(int(x), int(y))
+
+#    def getRow(self, y):
+#       """ Get the entire row, in tuples """
+#       retval = [0] * self.width
+#       for x in range(self.width):
+#          retval[x] = self.getVal(x, y)
+#       return retval
+
+#    def getDim(self):
+#       return self.width, self.height
+
+#    def getCol(self, x):
+#       """ Get the entire col, in tuples """
+#       retval = [0] * self.height
+#       for y in range(self.height):
+#          retval[y] = self.getVal(x, y)
+#       return retval
+
 
    def processLeftClickUp(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
