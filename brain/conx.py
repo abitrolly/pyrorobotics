@@ -877,6 +877,11 @@ class Network:
         """
         for layer in self.layers:
             layer.maxRandom = value
+    def getEpsilon(self):
+        """
+        Returns the epsilon for the Network instance.
+        """
+        return self.epsilon
     def setEpsilon(self, value):
         """
         Sets epsilon value for the network.
@@ -1966,6 +1971,7 @@ class SRN(Network):
         else:
             self.contextLayers[hiddenLayerName] = layer
             layer.kind = 'Context'
+            self.clearContext() # initializes context
     # new methods for sweep, step, propagate
     def copyHiddenToContext(self):
         """
