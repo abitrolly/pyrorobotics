@@ -4,6 +4,8 @@
 from random import random
 from math import log
 
+version = "1.1"
+
 def poisson(_lambda):
     """
     Function to generate Poisson distributed random variable between 0 and
