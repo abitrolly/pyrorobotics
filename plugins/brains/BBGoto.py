@@ -18,8 +18,8 @@ class Goto (Behavior):
        right_of_goal = Fuzzy(0.1,   1.0)
        left_of_goal  = Fuzzy(-0.1, -1.0)
        # These angles are in radians:
-       phi = self.getRobot().getAngleToPoint(self.goalX, self.goalY)
-       dist = self.getRobot().getDistanceToPoint(self.goalX, self.goalY)
+       phi = self.robot.getAngleToPoint(self.goalX, self.goalY)
+       dist = self.robot.getDistanceToPoint(self.goalX, self.goalY)
        # --------------------------------------------
        # Here is an example that does use a discontinuity, but we
        # need to decide to go to left, or right:

@@ -6,7 +6,6 @@ import time
  
 class FindBlobs(Brain):  
     def setup(self):
-        self.robot = self.getRobot()
         self.robot.startService('blob') 
         self.robot.startService('gripper')
         self.gripper = self.robot.getService("gripper")
@@ -40,8 +39,8 @@ class FindBlobs(Brain):
         else: 
             result = self.getClosestBlob(channel) 
             if result == 'None': 
-                leftSide = robot.get('range','value','front-left','min')[1] 
-                rightSide = robot.get('range','value','front-right','min')[1] 
+                leftSide = min(robot.get('/robot/range/front-left/value'))
+                rightSide = min(robot.get('robot/range/front-right/value')
                 if leftSide < rightSide: 
                     robot.move(0.1, -0.5) 
                 else: 
@@ -59,7 +58,7 @@ class FindBlobs(Brain):
     # Returns 1 when the minimum sonar value from the given location group is 
     # less than the minRange. 
     def collisionImminent(self, location, minRange): 
-        if self.getRobot().get('range','value',location,'min')[1] < minRange: 
+        if min(self.robot.get('/robot/range',location,'value')) < minRange: 
             return 1 
         return 0 
  
@@ -77,7 +76,7 @@ class FindBlobs(Brain):
     # Returns a list of all blobs on the given color channel. 
     def getBlobChannel(self, channel): 
         index = 0 
-        data = self.getRobot().getServiceData('blob')
+        data = self.robot.getServiceData('blob')
         if channel == 'red': 
             index = 0 
         elif channel == 'green': 

@@ -2,6 +2,7 @@
 
 from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
+from pyro.brain import select
 import math, time
 
 class Avoid (Behavior):
@@ -27,10 +28,12 @@ class Avoid (Behavior):
         else:
             self.count += 1
         # Normally :
-        close_dist, close_angl = self.getRobot().get('range', 'value', 'front-all', 'close')
+        # FIX: did have close function; now what?
+        close = select(min, "value", self.robot.get('/robot/range/front-all/value,th'))
+        close_dist, close_angl = close.value, close.th
         close_angl /= (math.pi)
         #print "Closest distance =", close_dist, "angle =", close_angl
-        max_sensitive = self.getRobot().get('range', 'maxvalue') * 0.8
+        max_sensitive = self.robot.get('/robot/range/maxvalue') * 0.8
         self.IF(Fuzzy(0.0, max_sensitive) << close_dist, 'translate', 0.0, "TooClose")
         self.IF(Fuzzy(0.0, max_sensitive) >> close_dist, 'translate', .2, "Ok")
         self.IF(Fuzzy(0.0, max_sensitive) << close_dist, 'rotate', self.direction(close_angl, close_dist), "TooClose")

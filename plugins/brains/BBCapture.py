@@ -9,7 +9,7 @@ from random import random
 import time
 
 class Avoid (Behavior):
-    def init(self): # called when created
+    def setup(self): # called when created
         self.Effects('translate', .1) 
         self.Effects('rotate', .1)
         self.lasttime = time.mktime(time.localtime())
@@ -30,39 +30,39 @@ class Avoid (Behavior):
         #self.IF(1, 'translate', .2) 
         #self.IF(1, 'rotate', 0)
         
-        left = self.getRobot().get('range', 'value', 'left', 'min')[1]
-        front = self.getRobot().get('range', 'value', 'front', 'min')[1]
-        right = self.getRobot().get('range', 'value', 'right', 'min')[1]
+        left = min(self.robot.get('robot/range/left/value'))
+        front = min(self.robot.get('robot/range/front/value'))
+        right = min(self.robot.get('robot/range/right/value'))
         
         if (left < LTOLERANCE and right < RTOLERANCE):
-            #self.getRobot().move(0, .2)
+            #self.robot.move(0, .2)
             self.IF(1, 'rotate', .2)
             self.IF(1, 'translate', 0)
             #sleep(.5)
         elif (left < LTOLERANCE):
-            #self.getRobot().move(0, -.2)
+            #self.robot.move(0, -.2)
             self.IF(1, 'rotate', -.2)
             self.IF(1, 'translate', 0)
         elif (right < RTOLERANCE):
-            #self.getRobot().move(0, .2)
+            #self.robot.move(0, .2)
             self.IF(1, 'rotate', .2)
             self.IF(1, 'translate', 0)
         elif (front < FTOLERANCE):
             if random() < .5:
-                #self.getRobot().move(0, .2)
+                #self.robot.move(0, .2)
                 self.IF(1, 'rotate', .2)
                 self.IF(1, 'translate', 0)
             else:
-                #self.getRobot().move(0, .2)
+                #self.robot.move(0, .2)
                 self.IF(1, 'rotate', .2)
                 self.IF(1, 'translate', 0)
         else:
-            #self.getRobot().move(.2, 0)
+            #self.robot.move(.2, 0)
             self.IF(1, 'translate', .2)
             self.IF(1, 'rotate', 0)
 
 class state1 (State):
-    def init(self):
+    def setup(self):
         self.add(Avoid(1))
         print "initialized state", self.name
 
@@ -77,19 +77,20 @@ class state1 (State):
             self.count += 1
 
 class state2 (State):
-    def init(self):
+    def setup(self):
         self.add(StopBehavior(1))
         print "initialized state", self.name
 
     def update(self):
         print "State 2"
         # save the current readings
-        self.behaviorEngine.history[1]['speed'] = self.behaviorEngine.robot.senseData['speed']
-        self.behaviorEngine.history[1]['ir'] = self.behaviorEngine.robot.senseData['ir']
+        # Fix: how to get these two items?
+        #self.engine.history[1]['speed'] = self.engine.robot.senseData['speed']
+        #self.engine.history[1]['ir'] = self.engine.robot.senseData['ir']
         self.goto("state3")
 
 class state3 (State):
-    def init(self):
+    def setup(self):
         print "initialized state", self.name
         self.count = 0
 
@@ -98,15 +99,15 @@ class state3 (State):
 
     def update(self):
         print "State 3"
-        self.behaviorEngine.camera.snap("som4/snap-%d.pgm" % self.count) # can name the file right here
+        self.engine.camera.snap("som4/snap-%d.pgm" % self.count) # can name the file right here
         # save IR, motors
         fp = open("som4/snap-%d.dat" % self.count, "w")
-        fp.write("translate=%f\n" % self.behaviorEngine.history[2]['translate'])
-        fp.write("rotate=%f\nspeed=" % self.behaviorEngine.history[2]['rotate'])
-        for s in self.behaviorEngine.history[2]['speed']:
+        fp.write("translate=%f\n" % self.engine.history[2]['translate'])
+        fp.write("rotate=%f\nspeed=" % self.engine.history[2]['rotate'])
+        for s in self.engine.history[2]['speed']:
             fp.write("%d " % s)
         fp.write("\nir=")
-        for s in self.behaviorEngine.history[2]['ir']:
+        for s in self.engine.history[2]['ir']:
             fp.write("%d " % s)
         fp.write("\n")
         fp.close()
@@ -124,8 +125,7 @@ def INIT(engine): # passes in robot, if you need it
     # activate a state:
     brain.activate('state1') # could have made it active in constructor
 
-    import pyro.camera
-    brain.camera = pyro.camera.Camera()
+    brain.startService("camera")
 
     return brain
 

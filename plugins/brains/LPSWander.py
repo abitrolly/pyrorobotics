@@ -10,11 +10,11 @@ from pyro.tools.joystick import Joystick
 class SimpleBrain(Brain):
    def setup(self):
       # create the Local Perceptiual Space window
-      units = self.getRobot().get('range', 'units')
-      self.getRobot().set('range', 'units', 'MM')
-      sizeMM = self.getRobot().get('range', 'maxvalue') * 3 + \
-               self.getRobot().get('robot', 'radius')
-      self.getRobot().set('range', 'units', units)
+      units = self.robot.get('/robot/range/units')
+      self.robot.set('/robot/range/units', 'MM')
+      sizeMM = self.robot.get('/robot/range/maxvalue') * 3 + \
+               self.robot.get('robot/radius')
+      self.robot.set('/robot/range/units', units)
       self.lps = LPS( 20, 20,
                       widthMM = sizeMM,
                       heightMM = sizeMM)
@@ -27,12 +27,12 @@ class SimpleBrain(Brain):
       self.stick.destroy()
    
    def step(self):
-      robot = self.getRobot()
+      robot = self.robot
       self.lps.reset() # reset counts
       self.lps.sensorHits(robot, 'range')
       self.lps.redraw()
       self.gps.updateFromLPS(self.lps, robot)
-      self.getRobot().move( self.stick.translate, self.stick.rotate)
+      self.robot.move( self.stick.translate, self.stick.rotate)
    
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.

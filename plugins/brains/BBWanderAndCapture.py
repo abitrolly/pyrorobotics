@@ -9,7 +9,7 @@ from random import random
 import time
 
 class Avoid (Behavior):
-    def init(self): # called when created
+    def setup(self): # called when created
         self.Effects('translate', .3) 
         self.Effects('rotate', 1)
         self.lasttime = 0
@@ -28,19 +28,21 @@ class Avoid (Behavior):
             print "================================Loop in", (currtime - self.lasttime)/50.0, "seconds."
             self.count = 0
             self.lasttime =  time.mktime(time.localtime())
-            
-        close_dist = self.getRobot().getMin().distance 
-        close_angl = self.getRobot().getMin().angle / math.pi
+
+        close = select(min, "value", self.robot.get("robot/range/all/value,th"))
+        close_dist = close.value
+        close_angl = close.th / math.pi
         print "Closest distance is:", close_dist
+        # FIX: direction
         self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
         self.IF(Fuzzy(1.0, 3.0) << close_dist, 'rotate', \
                 -self.direction(close_angl) * 1)
 
 class state1 (State):
-    def init(self):
+    def setup(self):
         self.add(StraightBehavior(1))
         self.add(Avoid(1))
-        print "initialized state", self.name
+        print "setupialized state", self.name
 
     def onActivate(self):
         self.count = 0
@@ -53,20 +55,21 @@ class state1 (State):
             self.count += 1
 
 class state2 (State):
-    def init(self):
+    def setup(self):
         self.add(StopBehavior(1))
-        print "initialized state", self.name
+        print "setupialized state", self.name
 
     def update(self):
         print "State 2"
         # save the current readings
-        self.behaviorEngine.history[1]['speed'] = self.behaviorEngine.robot.senseData['speed']
-        self.behaviorEngine.history[1]['ir'] = self.behaviorEngine.robot.senseData['ir']
+        # FIX: how to get this data?
+        self.engine.history[1]['speed'] = self.engine.robot.senseData['speed']
+        self.engine.history[1]['ir'] = self.engine.robot.senseData['ir']
         self.goto("state3")
 
 class state3 (State):
-    def init(self):
-        print "initialized state", self.name
+    def setup(self):
+        print "setupialized state", self.name
         self.count = 0
 
     def onActivate(self):
@@ -74,15 +77,15 @@ class state3 (State):
 
     def update(self):
         print "State 3"
-        self.behaviorEngine.camera.snap("som2/snap-%d.pgm" % self.count) # can name the file right here
+        self.engine.camera.snap("som2/snap-%d.pgm" % self.count) # can name the file right here
         # save IR, motors
         fp = open("som2/snap-%d.dat" % self.count, "w")
-        fp.write("translate=%f\n" % self.behaviorEngine.history[2]['translate'])
-        fp.write("rotate=%f\nspeed=" % self.behaviorEngine.history[2]['rotate'])
-        for s in self.behaviorEngine.history[2]['speed']:
+        fp.write("translate=%f\n" % self.engine.history[2]['translate'])
+        fp.write("rotate=%f\nspeed=" % self.engine.history[2]['rotate'])
+        for s in self.engine.history[2]['speed']:
             fp.write("%d " % s)
         fp.write("\nir=")
-        for s in self.behaviorEngine.history[2]['ir']:
+        for s in self.engine.history[2]['ir']:
             fp.write("%d " % s)
         fp.write("\n")
         fp.close()

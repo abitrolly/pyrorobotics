@@ -34,13 +34,13 @@ class SimpleBrain(Brain):
       scalepos = (self.cwidth/2 - pos)/self.cwidth
       print "%f\t%f" % (pos, scalepos)
       self.nStep = self.nStep + 1
-      if self.robot.get('range', 'value', 'front', 'min')[1] > .4:
+      if min(self.robot.get('robot/range/front/value')) > .4:
          print "Turning..."
-         self.getRobot().move(.1, scalepos*2)
+         self.robot.move(.1, scalepos*2)
          print "Turned"
       else:
          print "Stopping..."
-         self.getRobot().move(0, 0)
+         self.robot.move(0, 0)
          print "Stopped"
       
 

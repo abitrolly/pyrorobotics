@@ -4,6 +4,9 @@ from pyro.robot.service import Service
 
 class Test(Service):
 
+    def setup(self):
+        self.data['specialvalue'] = 42
+
     def makeWindow(self):
         self.visible = 1
         print "made window!"

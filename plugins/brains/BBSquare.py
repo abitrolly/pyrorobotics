@@ -36,7 +36,7 @@ import math
 from random import random
 
 class TurnLeftBehavior (Behavior):
-    def init(self):
+    def setup(self):
         self.Effects('rotate', .1)
         self.Effects('translate', .1) 
 
@@ -45,7 +45,7 @@ class TurnLeftBehavior (Behavior):
         self.IF(1, 'translate', 0)
 
 class StraightBehavior (Behavior):
-    def init(self): # method called when created
+    def setup(self): # method called when created
         self.Effects('translate', .1) 
         self.Effects('rotate', .1) 
 
@@ -54,16 +54,16 @@ class StraightBehavior (Behavior):
         self.IF(1, 'rotate', 0)
 
 class edge (State):
-    def init(self):
+    def setup(self):
         self.add(StraightBehavior(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.getRobot().get('robot', 'x') 
-        self.startY = self.getRobot().get('robot', 'y') 
+        self.startX = self.robot.get('robot', 'x') 
+        self.startY = self.robot.get('robot', 'y') 
         
     def update(self):
-        x = self.getRobot().get('robot', 'x')
-        y = self.getRobot().get('robot', 'y')
+        x = self.robot.get('robot', 'x')
+        y = self.robot.get('robot', 'y')
         dist = distance( self.startX, self.startY, x, y) 
         #print "actual = (%f, %f) start = (%f, %f); dist = %f" \
         #      % (x, y, self.startX, self.startY, dist)
@@ -71,15 +71,15 @@ class edge (State):
             self.goto('turn')
 
 class turn (State):
-    def init(self):
+    def setup(self):
         self.count = 0
         self.add(TurnLeftBehavior(1))
 
     def onActivate(self):
-        self.th = self.getRobot().get('robot', 'th')
+        self.th = self.robot.get('robot', 'th')
 
     def update(self):
-        th = self.getRobot().get('robot', 'th')
+        th = self.robot.get('robot', 'th')
         #print "actual = %f start = %f" % (th, self.th)
         if angleAdd(th, - self.th) > 90: 
             self.goto('edge')

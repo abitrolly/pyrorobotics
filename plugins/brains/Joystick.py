@@ -8,7 +8,7 @@ class JoystickControl(Brain):
       self.stick = joystick.Joystick()
 
    def step(self):
-      self.getRobot().move( self.stick.translate,
+      self.robot.move( self.stick.translate,
                             self.stick.rotate )
 
    def destroy(self):

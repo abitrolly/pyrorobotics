@@ -4,8 +4,8 @@ from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
 
 class beh1 (Behavior):
-    def init(self): # called when created
-        print "---initializing", self.name, "..."
+    def setup(self): # called when created
+        print "---setupializing", self.name, "..."
         self.Effects('translate', .6) # default values
         self.Effects('rotate', .6) # now we don't have to set them again
 
@@ -22,8 +22,8 @@ class beh1 (Behavior):
         print "---done updating"
 
 class beh2 (Behavior):
-    def init(self):
-        print "---initializing", self.name, "..."
+    def setup(self):
+        print "---setupializing", self.name, "..."
         
     def onActivate(self):
         self.Effects('translate', 0.75) # default values
@@ -41,11 +41,11 @@ class beh2 (Behavior):
         print "---done updating"
 
 class state1 (State):
-    def init(self):
+    def setup(self):
         self.add(beh1(1))
         self.add(beh2(1))
         self.add(beh2(1, {}, 'beh3'))
-        print "initialized state", self.name
+        print "setupialized state", self.name
 
     def onActivate(self):
         self.count = 0
@@ -81,7 +81,7 @@ class state_empty (State):
         print "Finished executing step number  ",self.count
 
 class state3 (State):
-    def init(self):
+    def setup(self):
         self.add(beh1())
         self.x = 0
         self.y = 0
