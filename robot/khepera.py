@@ -444,7 +444,7 @@ class KheperaRobot(Robot):
         return self.rawToUnits(dev, self.senseData['light'][pos], 'light')
 
     def getLightMaxRange(self, dev):
-        return self.rawToUnits(dev, 200.0, 'light')
+        return self.rawToUnits(dev, 511.0, 'light')
 
     def mmToUnits(self, mm, units):
         if units == 'MM':
@@ -463,7 +463,7 @@ class KheperaRobot(Robot):
             maxvalue = 60.0
             mm = min(max(((1023.0 - raw) / 1023.0) * maxvalue, 0.0), maxvalue)
         elif name == 'light':
-            maxvalue = 200.0
+            maxvalue = 511.0
             mm = min(max((raw / 511.0) * maxvalue, 0.0), maxvalue)
         else:
             raise 'InvalidType', "Type is invalid"
