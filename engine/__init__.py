@@ -37,12 +37,18 @@ class Engine(drawable.Drawable):
       self.config = config
       if self.simfile:
          self.loadSimulator(self.simfile, self.worldfile)
+      # this has to be here before making Tk gui:
+      #if self.robotfile:
+      #   self.loadRobot(self.robotfile)
+      #   if self.camerafile:
+      #      self.loadCamera(self.camerafile)
+
+   def postinit(self):
+      # this can't be here:
       if self.robotfile:
          self.loadRobot(self.robotfile)
          if self.camerafile:
-            self.loadCamera(self.camerafile)
-
-   def postinit(self):
+            self.loadCamera(self.camerafile)      
       if self.brainargs != [] and self.brainfile:
          self.loadBrain(self.brainfile, self.brainargs)
          time.sleep(2)
