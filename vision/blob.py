@@ -1,10 +1,10 @@
-# Androids Image Library
+# Androids Vision Library
 # Spring 2002
 
 import struct
 from pyro.system import file_exists
 
-class Image:
+class PyroImage:
    """
    A Basic Image class. 
    """
@@ -80,7 +80,7 @@ class Image:
 
    def display(self):
       """
-      Display Image in ASCII Art.
+      Display PyroImage in ASCII Art.
       """
       if self.depth == 3:
          line = ''
@@ -126,12 +126,12 @@ class Image:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-class Camera(Image):
+class Camera(PyroImage):
    """
    A Fake camera class. Simulates live vision. Call update() to get image.
    """
    def __init__(self):
-      Image.__init__(self, 0, 0, 3, 0) # will get info from file
+      PyroImage.__init__(self, 0, 0, 3, 0) # will get info from file
       self.count = 0
 
    def update(self):
@@ -151,12 +151,12 @@ class Camera(Image):
       self.loadFromFile(pyrodir + "/vision/snaps/som-%d.ppm" % self.count)
       self.count += 1
 
-class Bitmap(Image):
+class Bitmap(PyroImage):
    """
    Bitmap class. Based on Image, but has methods for blobs, etc.
    """
    def __init__(self, width, height, init_val = 0):
-      Image.__init__(self, width, height, 1, init_val) # 1 bit depth
+      PyroImage.__init__(self, width, height, 1, init_val) # 1 bit depth
       self.equivList = [0] * 2000
       for n in range(2000):
          self.equivList[n] = n
@@ -235,38 +235,87 @@ class Bitmap(Image):
       return blob
 
 if __name__ == '__main__':
-   # test 1
-   bitmap = Bitmap(20, 15)
-   bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
-                1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
-                1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-                0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
-   bitmap.display()
-   blob = bitmap.blobify()
-   blob.display()
-   # test 2
-   image = Image(0, 0)
    from os import getenv
-   pyrodir = getenv('PYRO')
-   image.loadFromFile(pyrodir + "/vision/snaps/som-1.ppm")
-   image.saveToFile("test.ppm")
-   image.grayScale()
-   image.saveToFile("testgray.ppm")
-   image.display()
-   # test 3
-   image = Camera()
-   for x in range(10):
-      image.update()
-      image.display()
-   print "All done! To see output, use xv to see test.ppm and testgray.ppm"
+   import sys
+   print "Do you want to run test 1: create bitmap, blobify, and display results? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      bitmap = Bitmap(20, 15)
+      bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
+                    1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+                    1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+      bitmap.display()
+      blob = bitmap.blobify()
+      blob.display()
+   print "Do you want to run test 2: create image from file, save it back out? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      image = PyroImage(0, 0)
+      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+      image.saveToFile("test.ppm")
+      print "All done! To see output, use 'xv test.ppm'"
+   print "Do you want to run test 3: create a grayscale image, save to file? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      image.grayScale()
+      image.saveToFile("testgray.ppm")
+      #image.display()
+      print "All done! To see output, use 'xv testgray.ppm'"
+   print "Do you want to run test 4: convert PyroImage to PIL image, and display it using xv? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+      import PIL.PpmImagePlugin
+      from struct import *
+      c = ''
+      for x in range(len(image.data)):
+         c += pack('h', image.data[x] * 255.0)[0]
+      i = PIL.PpmImagePlugin.Image.fromstring('RGB', (image.width, image.height),c)
+      if getenv('DISPLAY'): i.show()
+   print "Do you want to run test 5: convert Bitmap to PIL image, and display it using xv? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      import PIL.PpmImagePlugin
+      from struct import *
+      c = ''
+      for x in range(len(bitmap.data)):
+         c += pack('h', bitmap.data[x] * 255.0)[0]
+      i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
+      if getenv('DISPLAY'): i.show()
+   print "Do you want to run test 6: create a TK window, and display PPM from file or PyroImage? ",
+   if getenv('DISPLAY') and sys.stdin.readline().lower()[0] == 'y':
+      from Tkinter import *
+      import Image, ImageTk
+      class UI(Label):
+         def __init__(self, master, im):
+            if im.mode == "1":
+               # bitmap image
+               self.image = ImageTk.BitmapImage(im, foreground="white")
+               Label.__init__(self, master, image=self.image, bg="black", bd=0)
+            else:
+               # photo image
+               self.image = ImageTk.PhotoImage(im)
+               Label.__init__(self, master, image=self.image, bd=0)
+      root = Tk()
+      filename = 'test.ppm'
+      root.title(filename)
+      #im = Image.open(filename)
+      im = i
+      UI(root, im).pack()
+      root.mainloop()
+   else:
+      print "skipping..."
+   print "Do you want to run test 7: create a camera view, and display 10 frames in ASCII? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      image = Camera()
+      for x in range(10):
+         image.update()
+         image.display()
+   print "All done!"
