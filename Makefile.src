@@ -5,7 +5,7 @@
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYRO_VERSION = 3.1.1
+PYRO_VERSION = 3.1.2
 PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean cleanall all
