@@ -379,7 +379,7 @@ class RAVQ:
         if self.movingAverageDistance <= self.epsilon and \
                self.movingAverageDistance <= self.modelVectorsDistance - self.delta:
             self.models.append(self.movingAverage)
-            self.counters.append(1)
+            self.counters.append(0)
             if self.verbosity > 1:
                 print 'Adding model vector', self.movingAverage
                 print 'Moving avg dist', self.movingAverageDistance
@@ -462,22 +462,24 @@ class RAVQ:
         s += "Settings:\n"
         s += "Delta: " + str(self.delta) + " Epsilon: " + str(self.epsilon) + " Buffer Size: " + str(self.size) + "\n"
         s += "Time: " + str(self.time) + "\n"
-        s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
-        s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
-        s += "Moving average:\n"
-        s += stringArray(self.movingAverage)
-        s += "Winning model vector:\n"
-        s += stringArray(self.winner)
-        s += "Winning label:\n"
-        s += self.getLabel(self.winner) + "\n"
-        s += self.bufferString()
+        if self.verbosity > 0:
+            s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
+            s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
+            s += "Moving average:\n"
+            s += "   " + stringArray(self.movingAverage)
+            s += "Last winning model vector:\n"
+            s += "   " + stringArray(self.winner)
+            s += "Last winning label:\n"
+            s += "   " + self.getLabel(self.winner) + "\n"
+            s += self.bufferString()
         s += self.modelString()
-        s += self.labelString()
+        #s += self.labelString()
         if self.printDistance:
             s += "Distance map:\n"
             s += stringArray(self.distanceMap(), 1, len(self.models))
-        if self.recordHistory:
-            s += self.historyString()
+        if self.verbosity > 0:
+            if self.recordHistory:
+                s += self.historyString()
         return s
 
     def saveRAVQToFile(self, filename):
@@ -530,13 +532,16 @@ class RAVQ:
 
     # helpful string methods, see __str__ method for use.
     def modelString(self):
-        s = "Model vectors:\n"
+        s = ""
         cnt = 0
+        totalCount = 0
         for array in self.models:
-            s += str(self.counters[cnt]) + " "
-            s += stringArray(array)
+            s += "Model: " + stringArray(array) 
+            s += "Count: " + str(self.counters[cnt])
+            totalCount += self.counters[cnt]
+            s += "\n\n"
             cnt += 1            
-        return s
+        return ("%d Model vectors:\n" % cnt) + s + "Total mapped vectors: %d\n\n" % totalCount
     def labelString(self):
         s = "Model vector labels:\n"
         for array in self.models:
