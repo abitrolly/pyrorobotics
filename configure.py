@@ -7,7 +7,9 @@ def ask(question, default):
    print question
    print '[' + default + ']: ',
    retval = raw_input()
-   if retval == '' or retval == 'none':
+   if retval == 'none':
+      return ''
+   elif retval == '':
       return default
    else:
       return retval
