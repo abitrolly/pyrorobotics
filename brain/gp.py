@@ -13,7 +13,10 @@ import operator, sys
 ### in gene
 ### FIX: don't use deepcopy
 
-########## Functions for evaluator
+ALLOW_SELF_EVAL = 1 # self-evaluating terminals (reals, ints, floats, etc)
+
+########## Functions for evaluator. Designed so that you can make your
+########## own, too.
 
 def div_func(*operands):
     """ For protected division. """
@@ -89,7 +92,7 @@ class Environment:
             if isinstance(self.env[item], Operator) and self.env[item].type == "regular":
                 retvals[item] = self.env[item]
         return retvals
-        
+
 class GPTree:
     """ Main tree structure for GP. """
     def __init__(self, op, *children):
@@ -139,7 +142,7 @@ class GPTree:
             if pos - offset < tp:
                 return self.children[i].getPoint(pos - offset)
             offset += tp
-        raise AttributeError, "pos is beyond genotype"
+        raise AttributeError, ("pos %d is beyond genotype length" % pos)
     def __str__(self):
         s = ''
         if self.leaf():
@@ -166,12 +169,17 @@ class GPTree:
         else:
             return (reduce(operator.add, self.internals, 1),
                     reduce(operator.add, self.externals, 0))
-    def eval(self, env = Environment()):
+    def eval(self, env = None):
+        if env == None:
+            env = share.env
         if self.op not in env.operators().keys():
             if self.op in env.env:
                 retval = env.env[self.op]
-            else:
+            elif ALLOW_SELF_EVAL:
                 retval = self.op
+            else:
+                raise AttributeError, ("'%s' is not in env, and ALLOW_SELF_EVAL = 0" % self.op)
+
         else:
             if self.op in env.lazyOps().keys():
                 op = env.lazyOps()[self.op].func
@@ -181,7 +189,7 @@ class GPTree:
                 results = map(lambda x: x.eval(env), self.children)
                 retval = apply(op, results)
             else:
-                # just a terminal
+                # just a terminal? Error?
                 retval = env.env[self.op]
         return retval
 
@@ -262,7 +270,48 @@ class GPGene(Gene):
             subtree.internals = temp.internals
             subtree.externals = temp.externals
                
-# A standard environment:
+def wrapObj(current_symbol, objType = GPTree):
+    """ A wrapper for parse. Should have been recursive... """
+    retval = current_symbol
+    if not isinstance(current_symbol, objType):
+        if current_symbol in share.env.env:
+            retval = objType(current_symbol)
+        elif type(current_symbol) == type(""): # self-evaluating number?
+            if not ALLOW_SELF_EVAL:
+                raise AttributeError, ("'%s' is not in env, and ALLOW_SELF_EVAL = 0" % current_symbol)
+            if "." in current_symbol:
+                retval = GPTree(float(current_symbol))
+            else:
+                retval = GPTree(int(current_symbol))
+    return retval
+
+def parse(exp, objType = GPTree):
+    """ Parser to turn "(+ 4 5)" into a GPTree expression. """
+    stack  = []
+    current_symbol = ''
+    for i in range(len(exp)):
+        if exp[i] == "(":
+            stack.append( [] )
+        elif exp[i] == ")": # end of list
+            if current_symbol != '':
+                if len(stack[-1]) > 0:
+                    stack[-1].append(wrapObj(current_symbol))
+                else:
+                    stack[-1].append(current_symbol) # don't wrap op
+                current_symbol = ''
+            current_symbol = apply(objType, stack.pop(-1))
+        elif exp[i] == ' ': # next symbol
+            if current_symbol != '':
+                if len(stack[-1]) > 0:
+                    stack[-1].append(wrapObj(current_symbol))
+                else:
+                    stack[-1].append(current_symbol) # don't wrap op
+                current_symbol = ''
+        else:
+            current_symbol += exp[i]
+    return wrapObj(current_symbol)
+
+# A standard environment dictionary:
 env = {'+'  : Operator(operator.add, 2, "regular"),
        '-'  : Operator(operator.sub, 2, "regular"),
        '*'  : Operator(operator.mul, 2, "regular"),
@@ -274,8 +323,10 @@ env = {'+'  : Operator(operator.add, 2, "regular"),
        #1: 1, 2:2, 3:3, 4:4,
        }
 
+# The standard environment:
+share.env = Environment(env)
+
 if __name__ == '__main__':
-    share.env = Environment(env)
     share.env.update( {'i1':0, 'i2':0} )
     class GP(GA):
         def __init__(self, cnt, **args):
@@ -323,7 +374,6 @@ if __name__ == '__main__':
                 
         def isDone(self):
             return abs(self.fitnessFunction(0, 1) - pi) < .001
-    share.env = Environment(env)
     share.env.update( {'+1': Operator(lambda obj: obj + 1, 1, "regular"),
                        '1/2': .5,
                        'e': math.e } )
