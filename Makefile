@@ -4,7 +4,8 @@
 include Makefile.cfg
 
 SUBDIRS = camera/bt848 geometry gui/3DArray robot/driver/grid \
-	robot/driver/video camera/v4l brain/psom tools/cluster 
+	robot/driver/video camera/v4l brain/psom tools/cluster \
+	simulators/khepera
 
 # Failing subdir: robot/driver/testc
 
@@ -13,7 +14,7 @@ else
 SUBDIRS += lib robot/driver/saphira 
 endif
 
-everything: system/version.py all bin/pyro
+everything: system/version.py all bin/pyro plugins/simulators/Khepera
 
 include Makefile.src
 
@@ -40,6 +41,12 @@ bin/pyro: Makefile.src build/pyro Makefile.cfg
 	echo -e "#!/usr/bin/env python$(PYTHON_VERSION)" > bin/pyro
 	cat build/pyro >> bin/pyro
 	chmod a+x bin/pyro
+
+plugins/simulators/Khepera: build/Khepera
+	echo -e "#!/bin/sh" > plugins/simulators/Khepera
+	echo -e "SIM_DIR=$(PWD)/simulators/khepera" >> plugins/simulators/Khepera
+	cat build/Khepera >> plugins/simulators/Khepera
+	chmod a+x plugins/simulators/Khepera
 
 cleanall::
 	$(RM) Makefile.cfg

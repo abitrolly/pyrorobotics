@@ -10,7 +10,7 @@ import math
 import termios
 from time import sleep
 
-from pyro.plugins.simulators import ksim
+from pyro.simulators import ksim
 
 class SerialSimulator:
     def __init__(self):
@@ -20,10 +20,10 @@ class SerialSimulator:
     def writeline(self, msg):
         #if len(msg) > 2:
         #    print msg
-        print msg
+        #print msg
         self.last_msg = ksim.sendMessage(self.p, msg)
         sleep(.1)
-        print self.last_msg
+        #print self.last_msg
         #self.last_msg = msg
 
     def readline(self): # 1 = block till we get something
