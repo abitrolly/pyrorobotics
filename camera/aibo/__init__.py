@@ -44,9 +44,7 @@ class AiboCamera(Camera):
       """
       """
       self.robot = robot
-      if self.robot.menuData["TekkotsuMon"]["RawCamServer"][2] == "off":
-         print "Turning on 'RawCamServer'..."
-         self.robot.menu_control.s.send( "0\n")
+      self.robot.setRemoteControl("RawCamServer", "on")
       time.sleep(1)
       self.cameraDevice = Aibo( self.robot.host )
       # connect vision system: --------------------------

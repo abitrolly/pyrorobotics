@@ -15,36 +15,14 @@ def makeControlCommand(control, amt):
     return struct.pack('<bf', ord(control), amt) 
 
 class Listener:
-    def __init__(self, port = -1, host ="", protocol = "TCP"):
+    def __init__(self, port, host, protocol = "TCP"):
         self.port = port
         self.host = host
         self.protocol = protocol
-        if host == "":
-            self.isServer = 1
-        else:
-            self.isServer = 0
-        if self.port == -1:
-            self.isConnected = 0
-        else:
-            self.isConnected = 1
-            self.startThread()
-
-    def startThread(self):
-        self.run()
-
-    def run(self):
-        if(self.port >=0):
-            if self.isServer:
-                self.runServer()
-            else:
-                self.runConnect()
-        else:
-            print "Can't start Listner without port"
+        self.runConnect()
 
     def runConnect(self):
-        self.attempts = 0
-        if (self.attempts == 0):
-            print >> sys.stderr, "[",self.port,"] connecting ...",
+        print >> sys.stderr, "[",self.port,"] connecting ...",
         try:
             if self.protocol == "UDP":
                 self.s = socket(AF_INET, SOCK_DGRAM) # udp socket
@@ -54,6 +32,7 @@ class Listener:
             while not done:
                 try:
                     self.s.connect((self.host,self.port)) # connect to server
+                    #self.s.settimeout(1)
                     done = 1
                 except KeyboardInterrupt:
                     print >> sys.stderr, "aborted!"
@@ -63,8 +42,6 @@ class Listener:
             print >> sys.stderr, "connected!"
         except IOError, e:
             print e
-        self.attempts+=1
-        #self.s.close()
 
     def readUntil(self, stop = "\n"):
         retval = ""
@@ -75,22 +52,28 @@ class Listener:
         return retval
 
     def read(self, bytes = 4, format = 'l'):
-        data = self.s.recvfrom(bytes)
-        #print "read:", data
-        return struct.unpack(format, data[0])[0]
+        data = ""
+        for i in range(bytes):
+            data += self.s.recvfrom(1)[0]
+        return struct.unpack(format, data)[0]
 
     def write(self, message):
         retval = self.s.send(message)
         return retval
+
+    def clear(self):
+        try:
+            while 1:
+                self.s.recvfrom(4096)
+        except:
+            pass # socket timeout
 
 class AiboHeadDevice(Device):
     def __init__(self, robot):
         Device.__init__(self, "ptz")
         self.robot = robot
         # Turn on head remote control if off:
-        if self.robot.menuData["TekkotsuMon"]["Head Remote Control"][2] == "off":
-            print "Turning on 'Head Remote Control'..."
-            self.robot.menu_control.s.send( "2\n")
+        self.robot.setRemoteControl("Head Remote Control", "on")
         time.sleep(1) # pause for a second
         self.dev   = Listener(10052, self.robot.host) # head movement
         self.devData["supports"] = ["pan", "tilt", "roll"]
@@ -176,10 +159,12 @@ class AiboHeadDevice(Device):
 def readMenu(listener, cnt):
     # print "Reading %d menu entries..." % cnt
     retval = {}
+    posDict = {}
+    pos = 0
     for line in range(cnt):
         # TODO: what are these?
         x = listener.readUntil() # a number?
-        y = listener.readUntil() # a number?
+        y = listener.readUntil() # selected
         try:
             x, y = int(x), int(y)
         except:
@@ -187,46 +172,91 @@ def readMenu(listener, cnt):
         item = listener.readUntil() # item name
         explain = listener.readUntil() # explain
         if item[0] == "#":   # on
-            retval[item[1:]] = [x, y, "on", explain]
+            retval[item[1:]] = "on"
+            posDict[item[1:]] = pos
         elif item[0] == "-": # off
-            retval[item[1:]] = [x, y, "off", explain]
+            retval[item[1:]] = "off"
+            posDict[item[1:]] = pos
         else:                # off
-            retval[item] = [x, y, "off", explain]
-    return retval
+            retval[item] = "off"
+            posDict[item] = pos
+        pos += 1
+    return (retval, posDict)
 
 class AiboRobot(Robot):
+    # TODO: put listeners in a dict, referenced by name
+    # Look up port here:
+    PORT = {"Head Remote Control": 10052,
+            "Root Control": 10020,
+            "Walk Remote Control": 10050, 
+            "EStop Remote Control": 10053
+            }
     def __init__(self, host):
         Robot.__init__(self)
         self.host = host
         #---------------------------------------------------
         self.menu_control     = Listener(10020,self.host) # menu controls
-        self.menu_control.s.send("!reset\n") # reset menu (maybe should be "!root"?
-        self.menu_control.s.send("TekkotsuMon\n") # go to monitor menu
-        self.menuData = {}
+        self.menu_control.s.send("!reset\n") # reset menu
         # --------------------------------------------------
+        self.readMenu()
+        # --------------------------------------------------
+        self.setRemoteControl("Walk Remote Control", "on")
+        self.setRemoteControl("EStop Remote Control", "on")
+        self.setRemoteControl("World State Serializer", "on")
+        time.sleep(1) # let the servers get going...
+        self.walk_control     = Listener(10050, self.host) # walk command
+        self.estop_control    = Listener(10053, self.host) # stop control
+        #wsjoints_port   =10031 # world state read sensors
+        #wspids_port     =10032 # world state read pids        
+        #self.sensor_socket    = Listener(10031, self.host) # sensors
+        #self.pid_socket       = Listener(10032, self.host) # sensors
+        time.sleep(1) # let all of the servers get going...
+        self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
+        time.sleep(1) # let all of the servers get going...
+        self.devData["servers"] = self.menuData['TekkotsuMon']
+        self.devData["builtinDevices"] = [ "ptz", "camera" ]
+
+        # Commands available on menu_control (port 10020):
+        # '!refresh' - redisplays the current control (handy on first connecting,
+        #               or when other output has scrolled it off the screen)
+        # '!reset' - return to the root control
+        # '!next' - calls doNextItem() of the current control
+        # '!prev' - calls doPrevItem() of the current control
+        # '!select' - calls doSelect() of the current control
+        # '!cancel' - calls doCancel() of the current control
+        # '!msg text' - broadcasts text as a TextMsgEvent
+        # '!root text' - calls takeInput(text) on the root control
+        # '!hello' - responds with 'hello\ncount\n' where count is the number of times
+        #            '!hello' has been sent.  Good for detecting first connection after
+        #            boot vs. a reconnect.
+        # '!hilight [n1 [n2 [...]]]' - hilights zero, one, or more items in the menu
+        # '!input text' - calls takeInput(text) on the currently hilighted control(s)
+        # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
+        #  any text not beginning with ! - sent to takeInput() of the current control
+
+    def readMenu(self, menu = "TekkotsuMon"):
+        self.menu_control.s.send("%s\n" % menu) # go to monitor menu
+        self.menuData = {}
+        self.posData = {}
         menuRead = None
-        while menuRead != 'TekkotsuMon':
+        while menuRead != menu:
             command = self.menu_control.readUntil()
             while command in ["refresh", "pop", "push"]:
                 command = self.menu_control.readUntil()
             # print "Reading menu '%s'..." % command
             menuCount = int(self.menu_control.readUntil()) # Options count
-            self.menuData[command] = readMenu(self.menu_control, menuCount)
+            self.menuData[command], self.posData[command] = readMenu(self.menu_control, menuCount)
             menuRead = command
-        # --------------------------------------------------
-        # Turn on raw image server if off:
-        #TODO: may not need to do this; just: "!root\n", "#Name of Option\n"
-        # Turn on walk remote control:
-        if self.menuData["TekkotsuMon"]["Walk Remote Control"][2] == "off":
-            print "Turning on 'Walk Remote Control'..."
-            self.menu_control.s.send( "3\n")
-        if self.menuData["TekkotsuMon"]["EStop Remote Control"][2] == "off":
-            print "Turning on 'EStop Remote Control'..."
-            self.menu_control.s.send( "8\n")
-        # TODO: those commands probably left a lot to read on the port
-        # but, so what for now? We aren't currently going back to the
-        # menus.
-        # ######################################################################
+
+    def setRemoteControl(self, item, value):
+        # "Walk Remote Control", "off"
+        if self.menuData["TekkotsuMon"][item] != value:
+            self.menu_control.s.send("!reset\n")
+            self.menu_control.s.send("2\n") # TekkotsuMon menu
+            self.menu_control.s.send("%d\n" % self.posData["TekkotsuMon"][item])
+            self.menu_control.clear()
+            self.menuData["TekkotsuMon"][item] = value
+
         # Main menu:
         # 0 Mode Switch - Contains the "major" apps, mutually exclusive selection
         # 1 Background Behaviors - Background daemons and monitors
@@ -251,84 +281,19 @@ class AiboRobot(Robot):
         #                           and current pid values to port 10032
         # 8 EStop Remote Control
 
-        #print "Aibo servers starting..."
-        # TODO: what are these for:
-        #wsjoints_port   =10031
-        #wspids_port     =10032
+    def update(self):
+        self._update()
+        # read sensor/pid states:
+        #print "update"
+        # TODO: not quite decoding correctly:
+        #self.devData["timestamp"] = self.sensor_socket.read(4, "l")
+        #self.devData["position"] = self.sensor_socket.read(18 * 4, "<18f")
+        #self.devData["sensor"] = self.sensor_socket.read(6 * 4, "<6f")
+        #self.devData["button"] = self.sensor_socket.read(8 * 4, "<8f")
+        #self.devData["duties"] = self.sensor_socket.read(18 * 4, "18f")
+        #print self.devData["timestamp"]
 
-        # System console - port 59000
-
-        #* All output from Aperios, printf, cout, and cerr goes here.
-        #* Output from sout (below) will be redirected here if it is
-        #not connected.  * Output is non-blocking, so if a crash
-        #occurs, the last few lines of output may not be displayed.  *
-        #Reading from this console (cin) is blocking - your code will
-        #freeze until the user hits return, and there is no way (that
-        #we know) to check if input is waiting. (hence the need for
-        #the user to specify when they are ready to input data using
-        #the buttons listed above)
-
-        # Tekkotsu standard out (sout)- port 10001
-
-        # * If you connect to this port, all tekkotsu-generated output
-        # will be sent here instead of the system console. This can
-        # help you separate framework messages from system messages,
-        # or your own debugging messages. (if you are using cout) o As
-        # of 1.4, we are still in the process of moving output from
-        # cout to sout, so many messages will still be sent to cout.
-        # * Output from serr is sent here if there is no other
-        # connection.  * Output is non-blocking.  * Input from this
-        # port is sent to the controller.  If there is a GUI active,
-        # anything you type will be broadcast as a TextMsgEvent.  If
-        # there is no GUI active, the input will be processed by the
-        # controller (commands listed below).
-
-        # Tekkotsu standard error (serr) - port 10002
-
-        # * Output is blocking.  Thus, if you send something here,
-        # your code will stop until the message is sent.  This is very
-        # handy for debugging so you can tell what it was doing right
-        # before a crash, but is also rather slow, so it should be
-        # used sparingly.  o NOTE: It appears this is not completely
-        # blocking.  There appears to be some system buffering, so
-        # that a few lines of output may still be lost.  * If this
-        # port is unconnected, it will be redirected to sout, but then
-        # no claims about blocking can be made (sout is responsible
-        # for its transmission).  * There is no input from this port.
-        
-        time.sleep(1) # let the servers get going...
-        self.walk_control     = Listener(10050, self.host) # walk command
-        self.estop_control    = Listener(10053, self.host) # head movement
-        # C code will handle image:
-        #self.rawimage_data    = Listener(10011, self.host) # raw_image
-        time.sleep(1) # let all of the servers get going...
-        self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
-        time.sleep(1) # let all of the servers get going...
-
-        servers = {}
-        for item in self.menuData["TekkotsuMon"]:
-            servers[item] = self.menuData["TekkotsuMon"][item][2] # on or off
-        self.devData["servers"] = servers # allows robot.get("robot/servers"); returns dictionary
-        self.devData["builtinDevices"] = [ "ptz", "camera" ]
-
-        # Commands available on menu_control (port 10020):
-        # '!refresh' - redisplays the current control (handy on first connecting,
-        #               or when other output has scrolled it off the screen)
-        # '!reset' - return to the root control
-        # '!next' - calls doNextItem() of the current control
-        # '!prev' - calls doPrevItem() of the current control
-        # '!select' - calls doSelect() of the current control
-        # '!cancel' - calls doCancel() of the current control
-        # '!msg text' - broadcasts text as a TextMsgEvent
-        # '!root text' - calls takeInput(text) on the root control
-        # '!hello' - responds with 'hello\ncount\n' where count is the number of times
-        #            '!hello' has been sent.  Good for detecting first connection after
-        #            boot vs. a reconnect.
-        # '!hilight [n1 [n2 [...]]]' - hilights zero, one, or more items in the menu
-        # '!input text' - calls takeInput(text) on the currently hilighted control(s)
-        # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
-        #  any text not beginning with ! - sent to takeInput() of the current control
-
+        #self.pid_socket.clear()
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
@@ -355,26 +320,28 @@ class AiboRobot(Robot):
         self.walk_control.write( makeControlCommand('t', amount)) 
 
     def strafe(self, amount):
+        # strafe (side-to-side) -1 to 1 :(right to left)
         self.walk_control.write( makeControlCommand('s', amount)) 
         
     def move(self, translate, rotate):
-        # WALK:
         # forward: -1 to 1 (backward to forward)
         # rotate: -1 to 1 (right to left)
-        # strafe (side-to-side) -1 to 1 :(right to left)
-        #walk_control.write( makeControlCommand('f', -.3)) # see MechaController.java
-        #walk_control.write( makeControlCommand('s', .25)) # or  WalkGUI.java
-        #walk_control.write( makeControlCommand('r', -1)) 
-        # TODO: what move command is strafe?
         self.walk_control.write( makeControlCommand('f', translate)) 
         self.walk_control.write( makeControlCommand('r', rotate)) 
 
-    def displayServers(self, menu):
-        print "%s Servers:" % menu
-        menuSorted = self.menuData[menu].keys()
-        menuSorted.sort()
-        for item in menuSorted:
-            print "   %s: \"%s\"" % (item, self.menuData[menu][item][2])
+    def setWalk(self, value):
+        # If you change the walk, then you have to reconnect
+        # back onto the walk server
+        code = {"pace":0, "walk":1, "crawl":2}
+        self.walk_control.s.close()
+        self.menu_control.s.send("!reset\n")
+        self.menu_control.s.send("5\n") # walk editor
+        self.menu_control.s.send("9\n") # load walk
+        self.menu_control.s.send("%d\n" % code[value]) # walk number
+        self.menu_control.s.send("0\n") # stop walk socket
+        self.menu_control.s.send("0\n") # start walk socket
+        self.menu_control.clear() # clear the port
+        self.walk_control     = Listener(10050, self.host) # walk command
 
 #TODO:
 
