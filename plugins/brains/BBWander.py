@@ -14,13 +14,10 @@ class Avoid (Behavior):
         self.count = 0
 
     def direction(self, dir, dist):
-        if dist < 1.0:
-            if dir < 0.0:
-                return 1.0 - dir
-            else:
-                return -1.0 - dir
+        if dir < 0.0:
+            return 1.0 - dir
         else:
-            return 0.0
+            return -1.0 - dir
 
     def update(self):
         if self.count == 50:
