@@ -250,7 +250,7 @@ if __name__ == '__main__':
    blob.display()
    # test 2
    image = Image(0, 0)
-   image.loadFromFile("snaps/som-1.ppm")
+   image.loadFromFile("/usr/local/pyro/vision/snaps/som-1.ppm")
    image.saveToFile("test.ppm")
    image.grayScale()
    image.saveToFile("testgray.ppm")
