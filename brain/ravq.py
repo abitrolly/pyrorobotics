@@ -46,6 +46,29 @@ def stringArray(a, newline = 1, width = 0):
         s += '\n'
     return s
 
+def isIterable(x):
+    try:
+        iter(x)
+    except:
+        return 0
+    else:
+        return 1
+
+def nestedLength(list, recurseLimit):
+    if recurseLimit == 0:
+        return 1
+    else:
+        sum = 0
+        for x in list:
+            if type(x) == type('string'):
+                sum += 1
+            elif isIterable(x):
+                sum += nestedLength(x, recurseLimit - 1)
+            else:
+                sum += 1
+        return sum
+        
+
 def logBaseTwo(value):
     """
     Returns integer ceil of log_2 of value.
@@ -176,14 +199,17 @@ class RAVQ:
         flat list.
         """
         # used to limit flat searches of history with getHistory()
-        return self.historySize * len(self.history) 
+        #return self.historySize * len(self.history) 
+        return nestedLength(self.history, 2)
     def getHistory(self, index):
         """
         Index into history as if history were a flat list. Note that
         this method iterates across columns.
         """
         # index into self.history, index into self.history[i], check this logic?
-        i,j = index % len(self.history), index / len(self.history)
+        i = index % len(self.history)
+        # here the mod is for the case where the history isn't full yet
+        j = (index / len(self.history)) % len(self.history[i])
         return self.history[i][j]
     def getWinnerTotalCount(self):
         """
@@ -537,15 +563,24 @@ if __name__ == '__main__':
 
     ravq = ARAVQ(4, 2.1, 1.1, .2)
     ravq.setHistory(1)
+    ravq.setHistorySize(2)
     cnt = 0
-    ravq.setMask([1,0,0,0,1,0,0,0])
+    #ravq.setMask([1,0,0,0,1,0,0,0])
+    index = 0
     for bits in bitlist:
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
+        if ravq.getHistoryLength() > 0:
+            ravq.getHistory(index) # test history features
+            index = (index + 1) % ravq.getHistoryLength() 
         cnt += 1
-
     print ravq
     print ravq.mask
+    # test masking functionality in euclidean distance calc's
     print euclideanDistance(Numeric.array([1,2]),
                             Numeric.array([3,5]),
                             Numeric.array([1,0]))
+    # test order of getHistory calls
+    for x in range(8):
+        print stringArray(ravq.getHistory(x),0)
+        
