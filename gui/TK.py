@@ -399,12 +399,18 @@ class TKgui(gui):
       else:
          chdir(startdir)
       d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel)
-      if d.Show() == 1:
+      try:
+         if d.Show() == 1:
+            doc = d.GetFileName()
+            d.DialogCleanup()
+            retval = doc
+         else:
+            d.DialogCleanup()
+      except:
+         # double-click bug. What should we do?
          doc = d.GetFileName()
          d.DialogCleanup()
          retval = doc
-      else:
-         d.DialogCleanup()
       chdir(cwd)
       return retval
 
@@ -485,12 +491,18 @@ class TKgui(gui):
       else:
          chdir(startdir)
       d = TKwidgets.SaveFileDialog(self.win, "Load " + filetype, skel)
-      if d.Show() == 1:
+      try:
+         if d.Show() == 1:
+            doc = d.GetFileName()
+            d.DialogCleanup()
+            retval = doc
+         else:
+            d.DialogCleanup()
+      except:
+         # double-click bug. What should we do?
          doc = d.GetFileName()
          d.DialogCleanup()
          retval = doc
-      else:
-         d.DialogCleanup()
       chdir(cwd)
       return retval
 
