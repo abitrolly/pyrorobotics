@@ -493,6 +493,11 @@ class PlayerRobot(Robot):
                 elif device == "sonar":
                     self.devDataFunc["range"] = self.get("/devices/sonar0/object")
                     self.devDataFunc["sonar"] = self.get("/devices/sonar0/object")
+                elif device == "position":
+                    self.devData["supportedFeatures"].append( "odometry" )
+                    self.devData["supportedFeatures"].append( "continuous-movement" )
+        if "range" in self.devDataFunc:
+            self.devData["supportedFeatures"].append( "range-sensor" )
         # specific things about this robot type:
         self.devData["port"] = port
         self.devData["hostname"] = hostname

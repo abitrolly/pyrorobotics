@@ -26,7 +26,12 @@ class Avoid(Brain):
       right = min(self.get('/robot/range/right-front/value'))
       translation, rotate = self.determineMove(front, left, right)  
       self.robot.move(translation, rotate)  
-         
-def INIT(robot):  
-   return Avoid('Avoid', robot)  
+
+def REQUIRES(engine):
+   return (engine.robot.requires("odometry") and
+           engine.robot.requires("range-sensor") and
+           engine.robot.requires("continuous-movement"))
+
+def INIT(engine):  
+   return Avoid('Avoid', engine)  
 

@@ -147,6 +147,7 @@ class Robot:
         self.devData['timestamp'] = time.time()
         self.devData['.help'] = "The main robot object. Access the last loaded devices here, plus all of the robot-specific fields (such as x, y, and th). Use robot.move(translate, rotate) to move the robot."
         self.devData["builtinDevices"] = [] # list of built-in devices
+        self.devData["supportedFeatures"] = [] # meta devices
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
@@ -523,6 +524,15 @@ class Robot:
 
     def getSupportedDevices(self):
         return self.devData["builtinDevices"]
+
+    def supports(self, feature):
+        return (feature in self.devData["supportedFeatures"])
+
+    def requires(self, feature):
+        if (feature in self.devData["supportedFeatures"]):
+            return 1
+        else:
+            raise ImportError, "feature not supported by this robot: '%s'" % feature
 
     def hasA(self, dtype):
         for dev in self.device:
