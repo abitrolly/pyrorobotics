@@ -12,7 +12,7 @@
 # OBJDIR is the relative path to your c project directory to the
 #   interface project directory
 
-OBJS=ksim.so
+OBJS=_ksim.so
 INTERFACE=controller.i
 MYOBJS:=controller.o
 OBJLIB=.
@@ -29,7 +29,7 @@ LD_FLAGS=-shared
 
 MYOBJS:=$(patsubst %.o, $(OBJLIB)/%.o, $(MYOBJS))
 
-all::ksim.so sim_control
+all::_ksim.so sim_control
 
 sim_control: sim_control.o controller.o
 	gcc controller.o sim_control.o -o sim_control
@@ -50,7 +50,7 @@ $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && $(CC) $(CC_FLAGS) $(@F:.o=.c))
 
 clean::
-	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core
+	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core ksim.py
 
 
 
