@@ -1,4 +1,9 @@
 """ This device signals the robot to load its PTZ """
 
 def INIT(robot):
-    return ["ptz"]
+    ptz = AriaPTZService(robot.dev, "sony")
+    # init has to be done separate, because the constructor
+    # is called before robot connection (to supply "supports")
+    # so, we need to init now, after connection to robot is made:
+    ptz.init()
+    return {"ptz": ptz}

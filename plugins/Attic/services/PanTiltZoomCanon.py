@@ -8,4 +8,4 @@ def INIT(robot):
     # is called before robot connection (to supply "supports")
     # so, we need to init now, after connection to robot is made:
     ptz.init()
-    return {"ptz": ptz }
+    return {"ptz": ptz}
