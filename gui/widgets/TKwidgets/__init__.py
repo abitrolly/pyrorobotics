@@ -233,14 +233,16 @@ class FileDialog(ModalDialog):
 
 	#	constructor
 
-	def __init__(self, widget, title, filter="*"):
+	def __init__(self, widget, title, filter="*", pyro_dir = ''):
 		from os import getcwd
 		from string import strip
 
 		self.widget = widget
 		self.filter = strip(filter)
 		self.orig_dir = getcwd()
+                self.pyro_dir = pyro_dir
 		self.cwd = getcwd()
+                self.lastCwd = self.cwd
                 #	the logical current working directory
 		Dialog.__init__(self, widget)
 
@@ -527,22 +529,35 @@ class FileDialog(ModalDialog):
 
 class LoadFileDialog(FileDialog):
 
-	def __init__(self, master, title, filter):
-		FileDialog.__init__(self, master, title, filter)
-		self.top.title(title)
+        def __init__(self, master, title, filter, pyro_dir = ''):
+           FileDialog.__init__(self, master, title, filter, pyro_dir)
+           self.top.title(title)
 
         def HomePressed(self):
+           from os import getenv
            if self.goHomeButton['text'] == 'Home':
-              from os import getenv
+              #if self.cwd != getenv('HOME') and \
+              #       self.cwd != self.pyro_dir:
               self.lastCwd = self.cwd
               self.cwd = getenv('HOME')
               self.goHomeButton['text'] = 'Pyro'
               self.UpdateListBoxes()
-           else:
+           elif self.goHomeButton['text'] == 'Last':
               tmp = self.cwd 
               self.cwd = self.lastCwd
+              #if tmp != getenv('HOME') and \
+              #       tmp != self.pyro_dir:
               self.lastCwd = tmp
               self.goHomeButton['text'] = 'Home'
+              self.UpdateListBoxes()
+           elif self.goHomeButton['text'] == 'Pyro':
+              #if self.lastCwd != getenv('HOME') and \
+              #       self.lastCwd != self.pyro_dir:
+              #   self.goHomeButton['text'] = 'Last'
+              #else:
+              self.goHomeButton['text'] = 'Home'
+              self.lastCwd = self.cwd
+              self.cwd = self.pyro_dir
               self.UpdateListBoxes()
 
 	def OkPressed(self):
@@ -594,14 +609,13 @@ class Application(Tkinter.Frame):
         self.pack()
 
     def Press(self):
-        fileDlg = filedlg.LoadFileDialog(app, "Load File", "*")
+        fileDlg = filedlg.LoadFileDialog(app, "Load File", "*", '')
         if fileDlg.Show() != 1:
             fileDlg.DialogCleanup()
             return
         fname = fileDlg.GetFileName()
         self.button['text'] = 'File: ' + fname
         fileDlg.DialogCleanup()
-    
 
 #
 #	Return whether a file exists or not.

@@ -33,6 +33,9 @@ class Joystick:
       self.translate = translate
       self.rotate = rotate
 
+   def destroy(self):
+      self.win.destroy()
+
    def canvas_clicked_up(self, event):
       self.move(0, 0)
 

@@ -97,7 +97,8 @@ class TkMap(Map, Tkinter.Tk):
             chdir(pyro.pyrodir() + "/plugins/" + filetype)
         else:
             chdir(startdir)
-        d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel)
+        d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel,
+                                     pyro.pyrodir() + "/plugins/" + filetype)
         if d.Show() == 1:
             doc = d.GetFileName()
             d.DialogCleanup()

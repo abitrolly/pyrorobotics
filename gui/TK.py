@@ -403,7 +403,8 @@ class TKgui(gui):
          chdir(pyro.pyrodir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
-      d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel)
+      d = TKwidgets.LoadFileDialog(self.win, "Load " + filetype, skel, \
+                                   pyro.pyrodir() + "/plugins/" + filetype)
       try:
          if d.Show() == 1:
             doc = d.GetFileName()
@@ -498,7 +499,8 @@ class TKgui(gui):
          chdir(pyro.pyrodir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
-      d = TKwidgets.SaveFileDialog(self.win, "Load " + filetype, skel)
+      d = TKwidgets.SaveFileDialog(self.win, "Load " + filetype, skel,
+                                   pyro.pyrodir() + "/plugins/" + filetype)
       try:
          if d.Show() == 1:
             doc = d.GetFileName()
