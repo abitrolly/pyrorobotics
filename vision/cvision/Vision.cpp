@@ -157,7 +157,7 @@ PyObject *Vision::get(int w, int h) {
 }
 
 PyObject *Vision::superColor(float w1, float w2, float w3, 
-			int outChannel) {
+			     int outChannel, int threshold) {
   float weight[3] = {w1, w2, w3};
   int count = 0;
   for (int w=0; w<width; w++) {
@@ -170,8 +170,13 @@ PyObject *Vision::superColor(float w1, float w2, float w3,
 	Image[(h * width + w) * depth + rgb[d]] = 0;
       }
       if (brightness > 0) {
-	// reset outChannel pixel to brightness level:
-	Image[(h * width + w) * depth + rgb[outChannel] ] = MAX(MIN(brightness,255),0); 
+	if (threshold) {
+	  if (brightness > threshold) 
+	    Image[(h * width + w) * depth + rgb[outChannel] ] = 255;
+	} else {
+	  // reset outChannel pixel to brightness level:
+	  Image[(h * width + w) * depth + rgb[outChannel] ] = MAX(MIN(brightness,255),0); 
+	}
 	count++;
       }
     }
@@ -761,7 +766,7 @@ void Vision::sortBlobs(int sortMethod, Blob bloblist[],
 
 PyObject *Vision::blobify(int inChannel, int low, int high, 
 			  int sortmethod, 
-			  int size, int drawBox)
+			  int size, int drawBox, int super_color)
 {
   /** 
       This code is a way to find the largest blob.  It will 
@@ -829,7 +834,9 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
     {
       for(w=0;w<width;w++,ImagePtr+=3)
 	{
-	  if(*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high )
+	  // either it is between low and high, or
+	  if((!super_color && (*(ImagePtr+offset) >= low && *(ImagePtr+offset) <= high)) || 
+	     (super_color && (*(ImagePtr+offset) - *(ImagePtr+mark1) - *(ImagePtr+mark2)) > 128))
 	    {  
 	      if(h == 0 && w == 0 && count < MAXBLOBS)
 		{ /*in upper left corner - new blob */
@@ -1150,15 +1157,15 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Blur", "meanBlur", "meanBlur"));
   PyList_Append(menu, Py_BuildValue("sss", "Blur", "gaussianBlur", "gaussianBlur"));
   PyList_Append(menu, Py_BuildValue("sss", "Blur", "medianBlur", "medianBlur"));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1, 1));
+  PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1, 1));
   PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Red", "setPlane", 0));
   PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Green", "setPlane", 1));
   PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Blue", "setPlane", 2));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1));
-  PyList_Append(menu, Py_BuildValue("sssiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2));
+  PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0, 128));
+  PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1, 128));
+  PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2, 128));
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Red", "threshold", 0));
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Green", "threshold", 1));
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Blue", "threshold", 2));
@@ -1187,12 +1194,12 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     }
     // process filters here:
     if (strcmp((char *)command, "superColor") == 0) {
-      f1 = 1.0, f2 = -1.0, f3 = -1.0, i1 = 0;
-      if (!PyArg_ParseTuple(list, "|fffi", &f1, &f2, &f3, &i1)) {
+      f1 = 1.0, f2 = -1.0, f3 = -1.0, i1 = 0, i2 = 128;
+      if (!PyArg_ParseTuple(list, "|fffii", &f1, &f2, &f3, &i1, &i2)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
 	return NULL;
       }
-      retval = superColor(f1, f2, f3, i1);
+      retval = superColor(f1, f2, f3, i1, i2);
     } else if (strcmp((char *)command, "scale") == 0) {
       f1 = 1.0, f2 = 1.0, f3 = 1.0;
       if (!PyArg_ParseTuple(list, "|fff", &f1, &f2, &f3)) {
@@ -1305,14 +1312,14 @@ PyObject *Vision::applyFilter(PyObject *filter) {
       }
       retval = inverse(i1);
     } else if (strcmp((char *)command, "blobify") == 0) {
-      i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1;
+      i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1, i7 = 1;
       // inChannel, low, high, sortmethod 0 = mass, 1 = area, return blobs, 
-      // drawBox
-      if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+      // drawBox, super_color
+      if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4, &i5, &i6, &i7)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: blobify");
 	return NULL;
       }
-      retval = blobify(i1, i2, i3, i4, i5, i6);
+      retval = blobify(i1, i2, i3, i4, i5, i6, i7);
     } else if (strcmp((char *)command, "histogram") == 0) {
       i1 = 0; i2 = 0; i3 = width - 1; i4 = height - 1; i5 = 8;
       // x1, y1, x2, y2, bins

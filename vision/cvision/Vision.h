@@ -58,7 +58,7 @@ public:
   PyObject *registerCameraDevice(void *args);
   //PyObject *registerCameraDevice(Device device);
   PyObject *superColor(float w1, float w2, float w3,
-		  int outChannel);
+		       int outChannel, int threshold);
   PyObject *matchRange(int lr, int lg, int lb,
 		       int hr, int hg, int hb,
 		       int outChannel);
@@ -89,7 +89,7 @@ public:
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
-			    int size, int drawBox);
+		    int size, int drawBox, int super_color);
   PyObject *applyFilter(PyObject *filter);
   PyObject *applyFilters(PyObject *filterList);
   PyObject *addFilter(PyObject *newFilter);

@@ -213,6 +213,8 @@ class Camera(PyroImage, Service):
          self.canvas.pack({'fill': 'both', 'expand': 'y', 'side': 'bottom'})
          self.canvas.bind("<Button-1>", self.processLeftClickDown)
          self.canvas.bind("<ButtonRelease-1>", self.processLeftClickUp)
+         self.canvas.bind("<Button-2>", self.processMiddleClick)
+         self.canvas.bind("<Button-3>", self.processRightClick)
          #self.canvas.bind("<Enter>", self.togglePlay)
          #self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
@@ -241,6 +243,11 @@ class Camera(PyroImage, Service):
                  ('View', [['Pause', lambda self=self: self.setActive(0)],
                            ['Play', lambda self=self: self.setActive(1)],
                            ['Update', lambda self=self: self.updateOnce()],
+                           None,
+                           ['Fast Update (10Hz)', lambda self=self: self.setUpdateInterval(0.1)],
+                           ['Medium Update (5Hz)', lambda self=self: self.setUpdateInterval(0.2)],
+                           ['Normal Update (1Hz)', lambda self=self: self.setUpdateInterval(1.0)],
+                           ['Slow Update (.5Hz)', lambda self=self: self.setUpdateInterval(2.0)],
                            ]),
                  ('Filter', filterList)]
 
@@ -256,6 +263,9 @@ class Camera(PyroImage, Service):
       self.window.aspect(self.width, self.height, self.width, self.height)
       #self.window.minsize(355, 0)
       while self.window.tk.dooneevent(2): pass
+
+   def setUpdateInterval(self, val):
+      self.updateWindowInterval = val
 
    def apply(self, command, *args):
       if type(command) == type(""):
@@ -331,6 +341,20 @@ class Camera(PyroImage, Service):
       else:
          print 'camera.addFilter("histogram", %d, %d, %d, %d, 8)' % (self.lastX, self.lastY, x, y)
          return self.addFilter("histogram", self.lastX, self.lastY, x, y, 8)
+
+   def processMiddleClick(self, event):
+      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = int(x * self.width), int(y * self.height)
+      rgb = self.vision.get(int(x), int(y))
+      print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 1)
+      return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 1)
+
+   def processRightClick(self, event):
+      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = int(x * self.width), int(y * self.height)
+      rgb = self.vision.get(int(x), int(y))
+      print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 2)
+      return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 2)
 
    def hideWindow(self):
       self.visible = 0
