@@ -7,6 +7,7 @@
 from pyro.brain.psom import *
 from Tkinter import *
 import struct
+from types import *
 from PIL import ImageTk
 import pyro.gui.plot.hinton
 import pyro.gui.plot.matrix
@@ -142,19 +143,17 @@ class BarGraphVisVector(VisVector):
       #convert them to vectors of the length of the
       #vector
       
-      try:
-         len(minval)
+      if type(minval) is ListType:
          self.min = minval
-      except TypeError:
+      else:
          if minval == None:
             self.min = [min(self.vector)] * self.length
          else:
             self.min = [minval] * self.length
 
-      try:
-         len(maxval)
+      if type(maxval) is ListType:
          self.max = maxval
-      except TypeError:
+      else:
          if maxval == None:
             self.max = [max(self.vector)] * self.length
          else:
