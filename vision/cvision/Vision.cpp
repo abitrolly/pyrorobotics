@@ -1092,6 +1092,8 @@ PyObject *Vision::applyFilter(PyObject *filter) {
 	return NULL;
       }
       retval = scale(f1, f2, f3);
+    } else if (strcmp((char *)command, "rotate") == 0) {
+      retval = rotate();
     } else if (strcmp((char *)command, "meanBlur") == 0) {
       i1 = 3;
       if (!PyArg_ParseTuple(list, "|i", &i1)) {
@@ -1208,6 +1210,36 @@ PyObject *Vision::applyFilters(PyObject *newList) {
     PyList_SetItem(retvals, i, applyFilter( filter ));
   }
   return retvals;
+}
+
+// For upside down cameras:
+PyObject *Vision::rotate() {
+  unsigned int thisPos;
+  unsigned int otherPos;
+  unsigned int temp;
+  for (int h = 0; h < height/2; h++) {
+    for (int w = 0; w < width; w++) {
+      thisPos = (h * width + w) * depth;
+      otherPos = (height * width * depth) - thisPos;
+      for (int d=0; d<depth; d++) {
+	temp = Image[thisPos + d];
+	Image[thisPos + d] = Image[otherPos - depth + d];
+	Image[otherPos - depth + d] = temp;
+      }
+    }
+  }
+  if ((height % 2) == 1) { // if odd, do the middle row
+    for (int w = 0; w < width/2; w++) {
+      thisPos = ((height/2) * width + w) * depth;
+      otherPos = (height * width * depth) - thisPos;
+      for (int d=0; d<depth; d++) {
+	temp = Image[thisPos + d];
+	Image[thisPos + d] = Image[otherPos - depth + d];
+	Image[otherPos - depth + d] = temp;
+      }
+    }
+  }
+  return PyInt_FromLong(0L);
 }
 
 void Vision::swapPlanes(int d1, int d2) {

@@ -108,6 +108,7 @@ public:
   PyObject *backup();
   PyObject *restore();
   PyObject *motion();
+  PyObject *rotate();
 
  protected:
   unsigned char *Image; // current image (image, original, workspace)

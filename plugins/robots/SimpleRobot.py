@@ -59,9 +59,84 @@ class SimpleRobot(Robot):
                           'back' : (6, 7)}
 
     def _draw(self,options,renderer):
-        # do something to draw yourself
-        pass
-
+        #self.setLocation(self.senses['robot']['x'], \
+        #                 self.senses['robot']['y'], \
+        #                 self.senses['robot']['z'], \
+        #                 self.senses['robot']['thr'] )
+        renderer.xformPush()
+        renderer.color((1, 0, 0))
+        #print "position: (", self.get('robot', 'x'), ",",  \
+        #      self.get('robot', 'y'), ")"
+        
+        #renderer.xformXlate((self.get('robot', 'x'), \
+        #                     self.get('robot','y'), \
+        #                     self.get('robot','z')))
+        renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
+        
+        renderer.xformXlate(( 0, 0, .15))
+        
+        renderer.box((-.25, .25, 0), \
+                     (.25, .25, 0), \
+                     (.25, -.25, 0), \
+                     (-.25, .25, .35)) # d is over a, CW
+        
+        renderer.color((1, 1, 0))
+        
+        renderer.box((.13, -.05, .35), \
+                     (.13, .05, .35), \
+                     (.25, .05, .35), \
+                     (.13, -.05, .45)) # d is over a, CW
+        
+        renderer.color((.5, .5, .5))
+        
+        # wheel 1
+        renderer.xformPush()
+        renderer.xformXlate((.25, .3, 0))
+        renderer.xformRotate(90, (1, 0, 0))
+        renderer.torus(.06, .12, 12, 24)
+        renderer.xformPop()
+        
+        # wheel 2
+        renderer.xformPush()
+        renderer.xformXlate((-.25, .3, 0))
+        renderer.xformRotate(90, (1, 0, 0))
+        renderer.torus(.06, .12, 12, 24)
+        renderer.xformPop()
+        
+        # wheel 3
+        renderer.xformPush()
+        renderer.xformXlate((.25, -.3, 0))
+        renderer.xformRotate(90, (1, 0, 0))
+        renderer.torus(.06, .12, 12, 24)
+        renderer.xformPop()
+        
+        # wheel 4
+        renderer.xformPush()
+        renderer.xformXlate((-.25, -.3, 0))
+        renderer.xformRotate(90, (1, 0, 0))
+        renderer.torus(.06, .12, 12, 24)
+        renderer.xformPop()        
+        
+        # sonar
+        #renderer.xformPush()
+        #renderer.color((0, 0, .7))
+        #for i in range(self.get('sonar', 'count')):
+        #   y1, x1, z1 = -self.get('sonar', 'x', i), \
+        #                -self.get('sonar', 'y', i), \
+        #                self.get('sonar', 'z', i)
+        #   #y2, x2, z2 = -self.get('sonar', 'ox', i), \
+        #   #             -self.get('sonar', 'oy', i), \
+        #   #             self.get('sonar', 'oz', i)
+        #   # Those above values are off!
+        #   # FIXME: what are the actual positions of sensor x,y?
+        #   x2, y2, z2 = 0, 0, z1
+        #   arc    = self.get('sonar', 'arc', i) # in radians
+        #   renderer.ray((x1, y1, z1), (x2, y2, z2), arc)
+        #   
+        #renderer.xformPop()        
+        # end of robot
+        renderer.xformPop()
+        
     def disconnect(self):
         # override so no complaining
         pass

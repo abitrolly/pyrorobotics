@@ -10,7 +10,7 @@ class FakeCamera(Camera):
    """
    def __init__(self, pattern = None,
                 start = 0, stop = 19, char = "?",
-                interval = 1.0, visionSystem = None, verbose = 0):
+                interval = 1.0, visionSystem = None, verbose = 1):
       """
       pattern is a filename with indicators on where to put digits for the
       sequence.  Absolute or relative filenames can be used.
@@ -44,10 +44,10 @@ class FakeCamera(Camera):
                  self.pattern[self.match.end():]
       if system.file_exists(currname):
          self.path = ''
-      elif system.file_exists( os.getenv('PYRO') + currname):
+      elif system.file_exists( os.getenv('PYRO') + "/" + currname):
          self.path = os.getenv('PYRO') + "/"
       else:
-         raise "file not found:" + currname
+         raise ValueError, "file not found: '%s'" % currname
       if self.verbose:
          print "info: readings file '%s'..." % (self.path + currname)
       self.cameraDevice = Fake(self.path + currname)

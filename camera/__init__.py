@@ -214,42 +214,36 @@ class Camera(PyroImage, Service):
                            ['Update', lambda self=self: self.updateOnce()],
                            ]),
                  ('Filter', [['List filters', self.listCallbackList],
-                             ['Toggle filter mode', self.toggleFilterMode],
+                             ['Toggle filter', self.toggleFilterMode],
                              None,
                              ['Clear last filter', self.popCallbackList],
                              ['Clear all filters', lambda self=self: self.clearCallbackList( )],
-                             ]),
-                 ('Add', [['meanBlur', lambda self=self: self.addFilter( "meanBlur") ],
-                          ['gaussianBlur', lambda self=self: self.addFilter( "gaussianBlur") ],
-                          ['medianBlur', lambda self=self: self.addFilter( "medianBlur") ],
-                          ['sobel (detect edges)', lambda self=self: self.addFilter( "sobel") ],
-                          ['scale', lambda self=self: self.addFilter("scale", 1.5)],
-                          ['gray scale', lambda self=self: self.addFilter("grayScale")],
-                          ['backup', lambda self=self: self.addFilter("backup")],
-                          ['restore', lambda self=self: self.addFilter("restore")],
-                          ['motion', lambda self=self: self.addFilter("motion")],
-                          None,
-                          ['blobify red', lambda self=self: self.addFilter("blobify", 0, 255, 255, 0, 1, 1)],
-                          ['blobify green', lambda self=self: self.addFilter("blobify", 1, 255, 255, 0, 1, 1)],
-                          ['blobify blue', lambda self=self: self.addFilter("blobify", 2, 255, 255, 0, 1, 1)],
-                          None,
-                          ['clear red', lambda self=self: self.addFilter("setPlane", 0)],
-                          ['clear green', lambda self=self: self.addFilter("setPlane", 1)],
-                          ['clear blue', lambda self=self: self.addFilter("setPlane", 2)],
-                          None,
-                          ['superColor red', lambda self=self: self.addFilter("superColor", 1, -1, -1, 0)],
-                          ['superColor green', lambda self=self: self.addFilter("superColor", -1, 1, -1, 1)],
-                          ['superColor blue', lambda self=self: self.addFilter("superColor", -1, -1, 1, 2)],
-                          None,
-                          ['threshold red', lambda self=self: self.addFilter("threshold", 0)],
-                          ['threshold green', lambda self=self: self.addFilter("threshold", 1)],
-                          ['threshold blue', lambda self=self: self.addFilter("threshold", 2)],
-                          None,
-                          ['inverse red', lambda self=self: self.addFilter("inverse", 0)],
-                          ['inverse green', lambda self=self: self.addFilter("inverse", 1)],
-                          ['inverse blue', lambda self=self: self.addFilter("inverse", 2)],
-                          
-                          ]),
+                             None, 
+                             ['Blur', [['meanBlur', lambda self=self: self.addFilter( "meanBlur") ],
+                                       ['gaussianBlur', lambda self=self: self.addFilter( "gaussianBlur") ],
+                                       ['medianBlur', lambda self=self: self.addFilter( "medianBlur") ],
+                                       ]],
+                             ['Blobify', [['Red', lambda self=self: self.addFilter("blobify", 0, 255, 255, 0, 1, 1)],
+                                          ['Green', lambda self=self: self.addFilter("blobify", 1, 255, 255, 0, 1, 1)],
+                                          ['Blue', lambda self=self: self.addFilter("blobify", 2, 255, 255, 0, 1, 1)]]],
+                             ['Clear', [['Red', lambda self=self: self.addFilter("setPlane", 0)],
+                                        ['Green', lambda self=self: self.addFilter("setPlane", 1)],
+                                        ['Blue', lambda self=self: self.addFilter("setPlane", 2)]]],
+                             ['Supercolor', [['Red', lambda self=self: self.addFilter("superColor", 1, -1, -1, 0)],
+                                             ['Green', lambda self=self: self.addFilter("superColor", -1, 1, -1, 1)],
+                                             ['Blue', lambda self=self: self.addFilter("superColor", -1, -1, 1, 2)]]],
+                             ['Threshold', [['Red', lambda self=self: self.addFilter("threshold", 0)],
+                                            ['Green', lambda self=self: self.addFilter("threshold", 1)],
+                                            ['Blue', lambda self=self: self.addFilter("threshold", 2)]]],
+                             ['Inverse', [['Red', lambda self=self: self.addFilter("inverse", 0)],
+                                          ['Green', lambda self=self: self.addFilter("inverse", 1)],
+                                          ['Blue', lambda self=self: self.addFilter("inverse", 2)]]],
+                             ['Copy', [['Backup', lambda self=self: self.addFilter("backup")],
+                                       ['Restore', lambda self=self: self.addFilter("restore")]]],
+                             ['Detect Edges', [['Sobel', lambda self=self: self.addFilter( "sobel") ]]],
+                             ['Detect Motion', lambda self=self: self.addFilter("motion")],
+                             ['Gray Scale', lambda self=self: self.addFilter("grayScale")],
+                             ['Rotate', lambda self=self: self.addFilter("rotate")]]),
                  ]
          # create menu
          self.mBar = Tkinter.Frame(self.window, relief=Tkinter.RAISED, borderwidth=2)
@@ -300,10 +294,15 @@ class Camera(PyroImage, Service):
       menu.pack(side=Tkinter.LEFT,padx="2m")
       menu.filemenu = Tkinter.Menu(menu)
       for cmd in commands:
-         if cmd:
-            menu.filemenu.add_command(label=cmd[0],command=cmd[1])
-         else:
+         if cmd == None:
             menu.filemenu.add_separator()
+         elif type(cmd[1]) == type([1,]):
+            newmenu = Tkinter.Menu(menu)
+            for command in cmd[1]:
+               newmenu.add_command(label = command[0], command=command[1])
+            menu.filemenu.add_cascade(label=cmd[0], menu=newmenu)
+         else:
+            menu.filemenu.add_command(label=cmd[0],command=cmd[1])
       menu['menu'] = menu.filemenu
       return menu
 
