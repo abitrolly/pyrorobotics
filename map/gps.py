@@ -7,7 +7,7 @@ class GPS(TkMap):
    """
    def __init__(self, cols, rows, value = 0.5,
                 width = 400, height = 400,
-                widthMM = 50000, heightMM = 50000,
+                widthMM = 10000, heightMM = 10000,
                 title = "Global Perceptual Space"):
       """ Pass in grid cols, grid cells, and total width/height in MM"""
       self.step = 0
@@ -32,8 +32,10 @@ class GPS(TkMap):
        #        self.grid[][] = grid[row][col]
        # for now, just plot robot:
        print "robot:", (x, y)
-       xpos = int((self.originMM[0] + x) / self.colScaleMM)
-       ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+       xpos = int(x / self.colScaleMM)
+       # In GPS, the origin is at the bottom left corner.
+       # This matches the way world files are specified.
+       ypos = self.rows - int(y / self.rowScaleMM)
        print "grid:", (xpos, ypos)
        if self.inRange(ypos, xpos) and self.grid[ypos][xpos] != 1.0:
            self.grid[ypos][xpos] = 1.0
@@ -46,6 +48,6 @@ class GPS(TkMap):
 
 
 if __name__ == '__main__':
-    gps = GPS(100, 100)
+    gps = GPS(50, 50)
     gps.application = 1
     gps.mainloop()
