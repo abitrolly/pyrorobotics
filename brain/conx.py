@@ -1520,7 +1520,10 @@ class Network:
             connect = self.connections[c]
             if connect.fromLayer.active and connect.toLayer.active:
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
-                connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
+                #connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
+        for layer in self.layers:
+            if layer.active:
+                layer.bed = layer.bed + layer.delta
     def ACTPRIME(self, act):
         """
         Used in compute_error.
