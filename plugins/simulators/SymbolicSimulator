@@ -43,7 +43,7 @@ class Handler(SocketServer.BaseRequestHandler):
                 continue
             retval = self.gui.process(request)
             try:
-                self.request.send("%s\n" % retval)
+                self.request.send(retval)
             except: # broken pipe, etc
                 self.gui.done = 1
         self.request.close()
@@ -53,7 +53,10 @@ class Thread(threading.Thread):
         threading.Thread.__init__(self)
         self.gui = gui
         self.server = Server(('', port),  Handler, gui)
-        self.server.socket.settimeout(1) # checks to see if need to quit
+        try:
+            self.server.socket.settimeout(1) # checks to see if need to quit
+        except:
+            print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
 
     def run(self):
         while not self.gui.quit:
@@ -67,6 +70,6 @@ if __name__ == "__main__":
     if worldFile[-3:] != '.py':
         worldFile += '.py'
     gui = INIT(worldFile)
-    thread = Thread(gui, 6000)
+    thread = Thread(gui, 60000)
     thread.start()
     gui.mainloop()

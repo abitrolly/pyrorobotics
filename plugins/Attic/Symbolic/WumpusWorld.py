@@ -1,10 +1,10 @@
-import Tkinter, os, random
+import Tkinter, os, random, pickle
 import Image, ImageTk, ImageDraw, ImageFont 
 
 class GUI(Tkinter.Toplevel):
     """
     A simple world from Russell and Norvig's AIMA. This works
-    in tandom with SymbolicServer.
+    with SymbolicSimulator.
     """
     def __init__(self, root, width, height):
         Tkinter.Toplevel.__init__(self, root)
@@ -18,7 +18,7 @@ class GUI(Tkinter.Toplevel):
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        # sensors: Stench, Breeze, Glitter, Bump, Scream
+        # sensors: stench, breeze, glitter, bump, scream
         self.goldFilename = os.environ["PYRO"] + "/images/gold.gif" 
         self.wumpusFilename = os.environ["PYRO"] + "/images/wumpus.gif" 
         self.pitFilename = os.environ["PYRO"] + "/images/pit.gif"
@@ -43,7 +43,7 @@ class GUI(Tkinter.Toplevel):
         self.redraw()
 
     def initWorld(self):
-        self.direction = "Right"
+        self.direction = "right"
         self.location = (0, 0)
         self.dead = 0
         self.score = 0
@@ -115,20 +115,20 @@ class GUI(Tkinter.Toplevel):
         return a[0] + b[0], a[1] + b[1]
     
     def process(self, request):
-        # moves: 'Forward', 'Left', 'Right', 'Grab', 'Shoot'
-        dirs = {'Up':0, 'Right':1, 'Down':2, 'Left':3}
-        pos  = {0:'Up', 1:'Right', 2:'Down', 3:'Left'}
+        # moves: 'forward', 'left', 'right', 'grab', 'shoot'
+        dirs = {'up':0, 'right':1, 'down':2, 'left':3}
+        pos  = {0:'up', 1:'right', 2:'down', 3:'left'}
         retval = "error"
-        if request == 'Location':
-            retval = "(%d,%d)" % (self.location[0] + 1, self.location[1] + 1)
-        elif request == 'Direction':
+        if request == 'location':
+            retval = (self.location[0] + 1, self.location[1] + 1)
+        elif request == 'direction':
             retval = self.direction
-        elif request == 'Arrow':
-            retval = "%d" % self.arrow
+        elif request == 'arrow':
+            retval = self.arrow
         elif request == 'score':
-            retval = "%d" % self.score
+            retval = self.score
         elif request == 'alive':
-            retval = "%d" % (not self.dead)
+            retval = (not self.dead)
         elif request == 'reset':
             self.initWorld()
             retval = "ok"
@@ -140,62 +140,80 @@ class GUI(Tkinter.Toplevel):
             self.done = 1
             self.quit = 1
         elif request == 'percept':
-            retval = "(%s, %s, %s, %s, %s)" % ({1:"Stench", 0:"None"}[self.stench],
-                                               {1:"Breeze", 0:"None"}[self.breeze],
-                                               {1:"Glitter", 0:"None"}[self.gold],
-                                               {1:"Bump", 0:"None"}[self.bump],
-                                               {1:"Scream", 0:"None"}[self.scream])
+            retval = ({1:"stench", 0:None}[self.stench],
+                      {1:"breeze", 0:None}[self.breeze],
+                      {1:"glitter", 0:None}[self.gold],
+                      {1:"bump", 0:None}[self.bump],
+                      {1:"scream", 0:None}[self.scream])
         elif self.dead:
             retval = "you died a miserable death!"
-        elif request == 'Left': # ------------------------below here, you are alive!
+        elif request == 'left': # ------------------------below here, you are alive!
             self.bump = 0
             self.scream = 0
             self.score -= 1
             self.direction = pos[(dirs[self.direction] - 1) % 4]
             retval = self.checkMovement()
-        elif request == 'Shoot':
+        elif request == 'shoot':
             # shoot arrow
             self.scream = 0
             if self.arrow:
                 self.arrow = 0
                 self.score -= 10
-                if self.direction == 'Up':
+                if self.direction == 'up':
                     self.inLine( self.location, (0, 1) )
-                elif self.direction == 'Right':
+                elif self.direction == 'right':
                     self.inLine( self.location, (1, 0) )
-                elif self.direction == 'Left':
+                elif self.direction == 'left':
                     self.inLine( self.location, (-1, 0) )
-                elif self.direction == 'Down':
+                elif self.direction == 'down':
                     self.inLine( self.location, (0, -1) )
                 retval = 'ok'
-        elif request == 'Grab':
+        elif request == 'grab':
             if 'G' in self.world[self.location[0]][self.location[1]]:
                 self.score += 1000
                 self.world[self.location[0]][self.location[1]] = self.world[self.location[0]][self.location[1]].replace('G','')
-                retval = "you win"
-        elif request == 'Right':
+                retval = "you win!"
+        elif request == 'right':
             self.bump = 0
             self.scream = 0
             self.score -= 1
             self.direction = pos[(dirs[self.direction] + 1) % 4]
             retval = self.checkMovement()
-        elif request == 'Forward':
+        elif request == 'forward':
             self.bump = 0
             self.scream = 0
             self.score -= 1
-            if self.direction == 'Up':
+            if self.direction == 'up':
                 self.add( self.location, (0, 1) )
-            elif self.direction == 'Right':
+            elif self.direction == 'right':
                 self.add( self.location, (1, 0) )
-            elif self.direction == 'Left':
+            elif self.direction == 'left':
                 self.add( self.location, (-1, 0) )
-            elif self.direction == 'Down':
+            elif self.direction == 'down':
                 self.add( self.location, (0, -1) )
             retval = self.checkMovement()
         else:   # unknown command; returns "error"
             pass
         self.redraw()
-        return retval
+        return pickle.dumps(retval)
+
+    def drawDir(self, x, y, dir):
+        if dir == "left":
+            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
+        elif dir == "right":
+            self.canvas.create_line(x + 100, y + 50, x + 50, y + 50, width = 2, fill = "red")
+            self.canvas.create_line(x + 100, y + 50, x + 75, y + 50, width = 2, fill = "red")
+            self.canvas.create_line(x + 100, y + 50, x + 75, y + 75, width = 2, fill = "red")
+        elif dir == "up":
+            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
+        elif dir == "down":
+            self.canvas.create_line(x, y + 50, x + 50, y + 50, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 25, width = 2, fill = "red")
+            self.canvas.create_line(x, y + 50, x + 25, y + 75, width = 2, fill = "red")
 
     def redraw(self):
         self.canvas.delete('all')
@@ -205,6 +223,7 @@ class GUI(Tkinter.Toplevel):
                 posy = 300 - y * 100
                 if self.location[0] == x and self.location[1] == y:
                     self.canvas.create_image(posx, posy, image = self.agentImageTk, anchor=Tkinter.NW)
+                    self.drawDir(posx, posy, self.direction)
                 if 'P' in self.world[x][y]:
                     self.canvas.create_image(posx, posy, image = self.pitImageTk, anchor=Tkinter.NW)
                 if 'W' in self.world[x][y]:

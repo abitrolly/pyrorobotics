@@ -29,23 +29,23 @@ class GUI(Tkinter.Toplevel):
 
     def process(self, request):
         retval = "error"
-        if request == 'Right':
+        if request == 'right':
             if self.location == 'A':
                 self.location = 'B'
             retval = "ok"
-        elif request == 'Left':
+        elif request == 'left':
             if self.location == 'B':
                 self.location = 'A'
             retval = "ok"
-        elif request == 'Suck':
+        elif request == 'suck':
             self.world[self.location] = "Clean"
             retval = "ok"
-        elif request == 'Dump':
+        elif request == 'dump':
             self.world[self.location] = "Dirty"
             retval = "ok"
-        elif request == 'Location':
+        elif request == 'location':
             retval = self.location
-        elif request == 'Status':
+        elif request == 'status':
             retval = self.world[self.location]
         elif request == 'end' or request == 'exit':
             retval = "ok"
