@@ -79,7 +79,7 @@ class PyroImage:
       x = 0
       while (x < self.width * self.height):
          for i in range(self.depth):
-            c = int(self.data[x * self.depth + i] * 255.0)
+            c = int(self.data[x * self.depth + i])
             r = struct.pack('h', c)[0]
             fp.writelines(r)
          x += 1
@@ -119,7 +119,7 @@ class PyroImage:
 						newval = tuple(map(lambda x,y: x+y, val1, val2))
 						newImage.setVal(x,y,newval)
 				val = newImage.getVal(x,y)
-				newval = tuple(map(lambda x: x/(xpixels*ypixels), val))
+				newval = tuple(map(lambda x, xp=xpixels, yp=ypixels: x/(xp*yp), val))
 				newImage.setVal(x,y,newval)
 		return newImage
 
