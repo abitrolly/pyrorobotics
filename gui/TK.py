@@ -77,7 +77,7 @@ class TKgui(gui):
       self.goButtons = {}
       self.menuButtons = {}
       for entry in menu:
-         self.mBar.tk_menuBar(self.makeMenu(entry[0],entry[1]))
+         self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
 
       self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
       self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)
@@ -294,16 +294,6 @@ class TKgui(gui):
       else:
          os.system("emacs " + self.engine.camerafile + "&")
          
-   def makeMenu(self,name,commands):
-      menu = Tkinter.Menubutton(self.mBar,text=name,underline=0)
-      self.menuButtons[name] = menu
-      menu.pack(side=Tkinter.LEFT,padx="2m")
-      menu.filemenu = Tkinter.Menu(menu)
-      for cmd in commands:
-         menu.filemenu.add_command(label=cmd[0],command=cmd[1])
-      menu['menu'] = menu.filemenu
-      return menu
-
    def run(self, command = []):
       self.done = 0
       while len(command) > 0:
@@ -466,7 +456,19 @@ class TKgui(gui):
          pass
    def flush(self):
       pass
-   
+
+   def makeMenu(self, bar, name, commands):
+      """ Assumes self.menuButtons exists """
+      menu = Tkinter.Menubutton(bar,text=name,underline=0)
+      self.menuButtons[name] = menu
+      menu.pack(side=Tkinter.LEFT,padx="2m")
+      menu.filemenu = Tkinter.Menu(menu)
+      for cmd in commands:
+         menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+      menu['menu'] = menu.filemenu
+      return menu
+
+
 if __name__ == '__main__':
    gui = TKgui(Engine())
    gui.inform("Ready...")

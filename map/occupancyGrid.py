@@ -18,6 +18,7 @@ class occupancyGrid(Tkinter.Tk):
    """
    def __init__(self, grid):
       Tkinter.Tk.__init__(self)
+      self.menuButtons = {}
       self.title("Occupancy Grid")
       self.threshhold = 0.8
       self.grid = grid
@@ -35,6 +36,16 @@ class occupancyGrid(Tkinter.Tk):
       self.bigButNotInfinity = 5000
       self.value= [[self.infinity for col in range(self.cols)]
                    for row in range(self.rows)]
+      menu = [('File',[['Load map...',self.loadMap],
+                       ['Save map...',self.saveMap],
+                       ['Exit',self.destroy] 
+                       ]),
+              ]
+      self.mBar = Tkinter.Frame(self,relief=Tkinter.RAISED,borderwidth=2)
+      self.mBar.pack(fill=Tkinter.X)
+      self.menuButtons = {}
+      for entry in menu:
+         self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0],entry[1]))
       self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
       self.bind("<Configure>", self.changeSize)
       self.canvas.bind("<B1-Motion>", self.increaseCell)
@@ -51,6 +62,26 @@ class occupancyGrid(Tkinter.Tk):
       self.canvas.pack()
       self.protocol('WM_DELETE_WINDOW', self.close)
       self.update_idletasks()
+
+   def loadMap(self):
+      pass
+
+   def saveMap(self):
+      pass
+
+   def cleanup(self):
+      self.destroy()
+
+   def makeMenu(self, bar, name, commands):
+      """ Assumes self.menuButtons exists """
+      menu = Tkinter.Menubutton(bar,text=name,underline=0)
+      self.menuButtons[name] = menu
+      menu.pack(side=Tkinter.LEFT,padx="2m")
+      menu.filemenu = Tkinter.Menu(menu)
+      for cmd in commands:
+         menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+      menu['menu'] = menu.filemenu
+      return menu
 
    def increaseCell(self, event):
       cellCol = int(round(event.x/self.colScale))
@@ -72,7 +103,7 @@ class occupancyGrid(Tkinter.Tk):
 
    def changeSize(self, event):
       self.width = self.winfo_width() - 2
-      self.height = self.winfo_height() - 2
+      self.height = self.winfo_height() - 30 # with menu
       self.canvas.configure(width = self.width, height = self.height)
       self.colScale = int(round(self.width / self.cols))
       self.rowScale = int(round(self.height / self.rows))

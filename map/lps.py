@@ -8,7 +8,9 @@ class LPS(Tkinter.Tk):
    def __init__(self, cols, rows, value = 0.5,
                 width = 200, height = 200,
                 widthMM = 7500, heightMM = 7500):
+      """ Pass in grid cols, grid cells, and total width/height in MM"""
       Tkinter.Tk.__init__(self)
+      self.debug = 0
       self.title("Local Perceptual Space")
       self.width = width
       self.height = height
@@ -42,6 +44,11 @@ class LPS(Tkinter.Tk):
       self.width = self.winfo_width() - 2
       self.height = self.winfo_height() - 2
       self.canvas.configure(width = self.width, height = self.height)
+      # reset these, in case the MM's changed:
+      self.originMM = self.widthMM / 2.0, self.heightMM / 2.0
+      self.colScaleMM = self.widthMM / self.cols
+      self.rowScaleMM = self.heightMM / self.rows
+      # ----------------------------------
       self.colScale = self.width / self.cols
       self.rowScale = self.height / self.rows
       self.redraw()
@@ -55,18 +62,24 @@ class LPS(Tkinter.Tk):
       self.withdraw()
       self.update_idletasks()
 
+   def inRange(self, r, c):
+      return r >= 0 and r < self.rows and c >= 0 and c < self.cols
+
    def setGridLocation(self, x, y, value, label = None):
       xpos = int((self.originMM[0] + x) / self.colScaleMM)
       ypos = int((self.originMM[1] - y) / self.rowScaleMM)
-      self.grid[ypos][xpos] = value
-      if label != None:
-         self.label[ypos][xpos] = "%d" % label
+      if self.inRange(ypos, xpos):
+         self.grid[ypos][xpos] = value
+         if label != None:
+            self.label[ypos][xpos] = "%d" % label
 
    def computeOccupancy(self, origx, origy, hitx, hity, arc, senseObstacle, label = None):
       """
       Initially only compute occupancies on the line from the robot to
       the sensor hit.  
       """
+      if self.debug: print "occupancyGrid:", (origx, origy, hitx, hity)
+      # set the origin of sensor empty:
       self.setGridLocation(origx, origy, 0.0)
       rise = hity - origy
       if abs(rise) < 0.1:
@@ -126,14 +139,20 @@ class LPS(Tkinter.Tk):
       originalUnits = robot.get(item, 'units')
       robot.set(item, 'units', 'METERS')
       arc = robot.get(item, 'arc', 0)
+      # FIX: fill in radius of robot:
+      radius = robot.get('robot', 'radius')
+      # -----------------------------------
       for i in range(robot.get(item, 'count')):
+         # in MM:
          offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
+         # in METERS, because we set it so above:
          dist = robot.get(item, 'value', i) 
          if dist < robot.get(item, 'maxvalue'):
             senseObstacle = 1
          else:
             senseObstacle = 0
-         theta = robot.get(item, 'th', i)
+         theta = robot.get(item, 'th', i) # in radians
+         # convert to MMs:
          hitx = cos(theta) * dist * 1000 + offx
          hity = sin(theta) * dist * 1000 + offy
          self.computeOccupancy(offx, offy, hitx, hity, arc, senseObstacle, i)

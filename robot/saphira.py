@@ -27,6 +27,7 @@ class SaphiraRobot(Robot):
                           'back' : (11, 12),
                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
         self.senses['robot']['simulator'] = lambda self, x = simulator: x
+        self.senses['robot']['radius'] = lambda self: 250.0 # in MM
         self.senses['self'] = self.senses['robot']
 	self.update() # Saphira_UpdatePosition(self.dev)
         self.inform("Done loading robot.")

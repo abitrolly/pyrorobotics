@@ -80,6 +80,7 @@ class KheperaRobot(Robot):
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
         self.senses['robot']['z'] = self.getZ
+        self.senses['robot']['radius'] = lambda self: 55.0 # in MM
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda self: 'khepera'
@@ -232,42 +233,42 @@ class KheperaRobot(Robot):
     def light_ox(self, dev, pos):
         # in mm
         if pos == 0:
-            retval = -30.0
-        elif pos == 1:
-            retval = -25.0
-        elif pos == 2:
-            retval = -10.0
-        elif pos == 3:
-            retval = 10.0 
-        elif pos == 4:
-            retval = 25.0
-        elif pos == 5:
-            retval = 30.0
-        elif pos == 6:
             retval = 10.0
+        elif pos == 1:
+            retval = 20.0
+        elif pos == 2:
+            retval = 30.0
+        elif pos == 3:
+            retval = 30.0 
+        elif pos == 4:
+            retval = 20.0
+        elif pos == 5:
+            retval = 10.0
+        elif pos == 6:
+            retval = -30.0
         elif pos == 7:
-            retval = -10.0
-        return self.mmToUnits(retval, 'METERS')
+            retval = -30.0
+        return retval
 
     def light_oy(self, dev, pos):
         # in mm
         if pos == 0:
-            retval = -10.0
+            retval = 30.0
         elif pos == 1:
-            retval = -20.0
+            retval = 20.0
         elif pos == 2:
-            retval = -30.0
+            retval = 10.0
         elif pos == 3:
-            retval = -30.0 
+            retval = -10.0 
         elif pos == 4:
             retval = -20.0
         elif pos == 5:
-            retval = -10.0
+            retval = -30.0
         elif pos == 6:
-            retval = 30.0
+            retval = -10.0
         elif pos == 7:
-            retval = 30.0
-        return self.mmToUnits(retval, 'METERS')
+            retval = 10.0
+        return retval
 
     def light_thd(self, dev, pos):
         if pos == 0:
@@ -314,7 +315,7 @@ class KheperaRobot(Robot):
             except:
                 tries += 1
         if done == 0:
-            print "khepera serial read/write error..."
+            #print "khepera serial read/write error..."
             return
         if data:
             lines = string.split(retval, "\r\n")
@@ -435,7 +436,7 @@ class KheperaRobot(Robot):
         if units == 'MM':
             return mm
         elif units == 'CM':
-            return mm / 10.0
+            return mm / 100.0
         elif units == 'METERS':
             return mm / 1000.0
         elif units == 'ROBOTS':
@@ -459,9 +460,9 @@ class KheperaRobot(Robot):
         elif units == "RAW":
             return raw 
         elif units == "CM":
-            return mm / 10.0 # cm
+            return mm / 100.0 # cm
         elif units == "METERS":
-            return mm / 100.0 # meters
+            return mm / 1000.0 # meters
         elif units == "SCALED":
             return mm / maxvalue
         else:
