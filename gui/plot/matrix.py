@@ -13,7 +13,7 @@ class Matrix: # Plot
 
       """
       self.type = type
-      self.win = Tk()
+      self.win = Toplevel()
       self.maxvalue=maxvalue
       self.width=width
       self.height = height

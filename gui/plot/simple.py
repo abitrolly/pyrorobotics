@@ -7,7 +7,7 @@ import os
 
 class SimplePlot: 
     def __init__(self, robot, what):
-        self.win = Tk()
+        self.win = Toplevel()
         self.what = what
         self.robot = robot
         self.win.wm_title("pyro@%s: %s Sensors" % (os.getenv('HOSTNAME'),what))

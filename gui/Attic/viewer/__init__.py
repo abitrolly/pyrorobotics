@@ -22,7 +22,7 @@ class KheperaViewer:
       whole viewer is calculated with respect to this measure.
       """
       self.imageSize = imageSize
-      self.win = Tk()
+      self.win = Toplevel()
       if not self.imageSize:
          self.radius = radius
       else:

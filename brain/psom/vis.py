@@ -53,7 +53,7 @@ class VisPsom(psom):
         
       psom.__init__(self, *args, **keys)
 
-      self.win = Tk()
+      self.win = Toplevel()
       self.win.wm_title(title)
 
       cellwidth = (self.vis_padding + self.vis_radius) * 2

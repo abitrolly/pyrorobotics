@@ -895,7 +895,7 @@ if __name__ == '__main__':
                   # photo image
                   self.image = ImageTk.PhotoImage(im)
                   Tkinter.Label.__init__(self, master, image=self.image, bd=0)
-         root = Tkinter.Tk()
+         root = Tkinter.Toplevel()
          filename = getenv('PYRO') + "/vision/snaps/som-1.ppm"
          root.title(filename)
          im = Image.open(filename)

@@ -17,10 +17,14 @@ import sys
 class TKgui(gui): 
    def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1): 
       gui.__init__(self, 'TK gui', {}, engine)
+      # This needs to be done here:
+      self.app = Tkinter.Tk()
+      self.app.withdraw()
+      # And other main windows should use Tkinter.Toplevel()
       self.width = width
       self.height = height
       self.genlist = 0
-      self.win = Tkinter.Tk()
+      self.win = Tkinter.Toplevel()
       self.frame = Tkinter.Frame(self.win)
       self.frame.pack(side = 'top')
       self.windowBrain = 0
@@ -30,7 +34,7 @@ class TKgui(gui):
       self.lasttime = 0
       self.update_interval = 0.10
       self.update_interval_detail = 1.0
-
+   
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['Edit Brain', self.editBrain],
@@ -124,7 +128,7 @@ class TKgui(gui):
       try:
          self.windowBrain.state()
       except:
-         self.windowBrain = Tkinter.Tk()
+         self.windowBrain = Tkinter.Toplevel()
          self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
          self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
          self.canvasBrain.pack()

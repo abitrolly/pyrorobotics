@@ -22,6 +22,10 @@ class GLgui(gui):
    def __init__(self, engine, width = 400, height = 400, db = 1, depth = 1,
                 mode = 1): # mode = 1 opengl, 0 = tk
       gui.__init__(self, 'GL gui', {}, engine)
+      # This needs to be done here:
+      self.app = Tkinter.Tk()
+      self.app.withdraw()
+      # And other main windows should use Tkinter.Toplevel()
       self.graphicsMode = mode
       self.width = width
       self.height = height
@@ -133,7 +137,7 @@ class GLgui(gui):
       try:
          self.windowBrain.state()
       except:
-         self.windowBrain = Tkinter.Tk()
+         self.windowBrain = Tkinter.Toplevel()
          self.windowBrain.wm_title("pyro@%s: Brain View" % os.getenv('HOSTNAME'))
          self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
          self.canvasBrain.pack()

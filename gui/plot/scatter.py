@@ -20,7 +20,7 @@ class Scatter: # Plot
                       'black', 'azure', 'beige', 'brown', 'coral', \
                       'gold', 'ivory', 'moccasin', 'navy', 'salmon', \
                       'tan', 'ivory']
-        self.win = Tk()
+        self.win = Toplevel()
         if title == None:
             self.win.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
         else:

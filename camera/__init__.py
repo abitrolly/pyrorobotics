@@ -103,7 +103,6 @@ class Camera(PyroImage):
       self.tiltTo(0)
       self.zoomTo(0)
 
-
    # pan, tilt, and zoom to frame an image in the camera
    # (does not need to be over-written in camera subclassing)
    # ----------------------------------------
@@ -191,14 +190,15 @@ class Camera(PyroImage):
       raise "MethodNotDefined", "getImage()"
 
    def makeWindow(self):
-      import Tkinter
-      self.window = Tkinter.Tk()
+      self.window = Tkinter.Toplevel()
       while self.window.tk.dooneevent(2): pass
       self.window.wm_title("pyro@%s: Camera View" \
                            % os.getenv('HOSTNAME') )
       self.im = self.getImage()
       self.image = ImageTk.PhotoImage(self.im)
       self.label = Tkinter.Label(self.window, image=self.image, bd=0)
+      #self.label = Tkinter.Label(self.window, bd=0)
+      #self.label.configure(image=self.image)
       self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
 
    def updateWindow(self):

@@ -35,7 +35,7 @@ class IRVisVector(VisVector):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
 
-      self.win = Tk()
+      self.win = Toplevel()
       self.win.title(title)
       Lframe = Frame(self.win)
       Rframe = Frame(self.win)
@@ -57,7 +57,7 @@ class GenericVisVector(VisVector):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
 
-      self.win = Tk()
+      self.win = Toplevel()
       self.win.title(title)
       Lframe = Frame(self.win)
       Rframe = Frame(self.win)
@@ -79,7 +79,7 @@ class GrayscaleVisVector(VisVector):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
       width, height = opts
-      self.win = Tk()
+      self.win = Toplevel()
       self.win.title(title)
       self.canvas = Canvas(self.win, width=width, height=height)
       self.canvas.pack()
@@ -175,7 +175,7 @@ class BarGraphVisVector(VisVector):
             self.max = [max(self.vector)] * self.length
          else:
             self.max = [maxval] * self.length
-      self.win = Tk()
+      self.win = Toplevel()
       self.win.title(title)
       for i in range(len(self.vector)):
          c = Canvas(self.win, height= 20, width = 100)

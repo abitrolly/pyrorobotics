@@ -40,7 +40,7 @@ class GeneralPlot:
       width - The displayed width of the graph (in pixels).  Defaults to 400.
       height - The displaed height of the graph (in pixels).  Defaults to 120.
       """
-      self.win = Tk()
+      self.win = Toplevel()
       self.robot = robot
       self.brain = brain
       self.name = name

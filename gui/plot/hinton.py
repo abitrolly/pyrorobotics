@@ -16,7 +16,7 @@ class Hinton: # Plot
       maxvalue: The maximum magnitude of the plots [1.0]
       data: The vector to initialize the plot with [None]
       """
-      self.win = Tk()
+      self.win = Toplevel()
       self.maxvalue=maxvalue
       self.width=width
       if data:
