@@ -29,7 +29,7 @@ class TKgui(gui):
       self.windowBrain = 0
       self.lastRun = 0
       self.lasttime = 0
-      self.update_interval = 0.10
+      self.update_interval = 100
       self.update_interval_detail = 1.0
    
       #store the gui structure in something nice insted of python code
@@ -127,6 +127,9 @@ class TKgui(gui):
       self.redirectToWindow()
       self.inform("Pyro Version " + version() + ": Ready...")
 
+
+
+
    def makeCommandArea(self):
       # ---------------------------------
       self.commandFrame = Tkinter.Frame(self.frame)
@@ -198,13 +201,13 @@ class TKgui(gui):
          pass
          
    def fastUpdate(self):
-      self.update_interval = 0.10
+      self.update_interval = 100
 
    def mediumUpdate(self):
-      self.update_interval = 0.33
+      self.update_interval = 333
 
    def slowUpdate(self):
-      self.update_interval = 1.0
+      self.update_interval = 1000
 
    def update(self): # FIX: I don't think this does anything
       pass
@@ -291,7 +294,103 @@ class TKgui(gui):
       if os.getenv("EDITOR"):
          os.system(os.getenv("EDITOR") + " " + self.engine.robotfile + "&")
       else:
-         os.system("emacs " + self.engine.robotfile + "&")         
+         os.system("emacs " + self.engine.robotfile + "&")
+   def generalUpdate(self):
+      #
+      # This contains the former contents of the while not self.done: loop in
+      # .run()
+      #
+      needToUpdateState = 1
+      try: needToUpdateState = self.engine.brain.needToStop
+      except: pass
+      if needToUpdateState:
+         try:
+            self.engine.robot.update()
+         except: pass
+      self.redrawWindowBrain()
+      self.redrawViews()
+      if self.textArea['Brain:']["text"] != self.engine.brainfile:
+         self.textArea['Brain:'].config(text = self.engine.brainfile)
+      if self.textArea['Simulator:']["text"] != self.engine.worldfile:
+         self.textArea['Simulator:'].config(text = self.engine.worldfile)
+      if self.textArea['Robot:']["text"] != self.engine.robotfile:
+         self.textArea['Robot:'].config(text = self.engine.robotfile)
+      # enable?
+      if self.textArea["Brain:"]["text"]:
+         if self.textArea["Brain:"]["state"] == 'disabled':
+            self.textArea["Brain:"]["state"] = 'normal'
+      else:
+         if self.textArea["Brain:"]["state"] != 'disabled':
+            self.textArea["Brain:"]["state"] = 'disabled'
+      if self.textArea["Simulator:"]["text"]:
+         if self.textArea["Simulator:"]["state"] == 'disabled':
+            self.textArea["Simulator:"]["state"] = 'normal'
+      else:
+         if self.textArea["Simulator:"]["state"] != 'disabled':
+            self.textArea["Simulator:"]["state"] = 'disabled'
+      if self.textArea["Robot:"]["text"]:
+         if self.textArea["Robot:"]["state"] == 'disabled':
+            self.textArea["Robot:"]["state"] = 'normal'
+      else:
+         if self.textArea["Robot:"]["state"] != 'disabled':
+            self.textArea["Robot:"]["state"] = 'disabled'
+      # Buttons?
+      if self.textArea["Robot:"]["text"]:
+         if self.menuButtons['Robot']["state"] == 'disabled':
+            self.menuButtons['Robot']["state"] = 'normal'
+         if self.menuButtons['Load']["state"] == 'disabled':
+            self.menuButtons['Load']["state"] = 'normal'
+         if self.buttonArea["Brain:"]["state"] == 'disabled':
+            self.buttonArea["Brain:"]["state"] = 'normal'
+         if self.goButtons['Reload']["state"] == 'disabled':
+            self.goButtons['Reload']["state"] = 'normal'
+      else:
+         if self.menuButtons['Robot']["state"] != 'disabled':
+            self.menuButtons['Robot']["state"] = 'disabled'
+         if self.menuButtons['Load']["state"] != 'disabled':
+            self.menuButtons['Load']["state"] = 'disabled'
+         if self.buttonArea["Brain:"]["state"] != 'disabled':
+            self.buttonArea["Brain:"]["state"] = 'disabled'
+         if self.goButtons['Reload']["state"] != 'disabled':
+            self.goButtons['Reload']["state"] = 'disabled'
+      if self.textArea["Brain:"]["text"]:
+         if self.goButtons['Run']["state"] == 'disabled':
+            self.goButtons['Run']["state"] = 'normal'
+         if self.goButtons['Step']["state"] == 'disabled':
+            self.goButtons['Step']["state"] = 'normal'
+         if self.goButtons['Stop']["state"] == 'disabled':
+            self.goButtons['Stop']["state"] = 'normal'
+         if self.goButtons['Reload']["state"] == 'disabled':
+            self.goButtons['Reload']["state"] = 'normal'
+         if self.goButtons['View']["state"] == 'disabled':
+            self.goButtons['View']["state"] = 'normal'
+      else:
+         if self.goButtons['Run']["state"] != 'disabled':
+            self.goButtons['Run']["state"] = 'disabled'
+         if self.goButtons['Step']["state"] != 'disabled':
+            self.goButtons['Step']["state"] = 'disabled'
+         if self.goButtons['Stop']["state"] != 'disabled':
+            self.goButtons['Stop']["state"] = 'disabled'
+         if self.goButtons['Reload']["state"] != 'disabled':
+            self.goButtons['Reload']["state"] = 'disabled'
+         if self.goButtons['View']["state"] != 'disabled':
+            self.goButtons['View']["state"] = 'disabled'
+      # -----------------------
+      if self.engine.robot != 0:
+         if self.engine.robot.get('self', 'stall'):
+            bump = "[BUMP!]"
+         else:
+            bump = ''
+         self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                                       % (self.engine.robot.get('robot', 'x'),
+                                          self.engine.robot.get('robot', 'y'),
+                                          self.engine.robot.get('robot', 'th'),
+                                          bump))
+         for service in self.engine.robot.getServices():
+            if self.engine.robot.getService(service).visible:
+               self.engine.robot.getService(service).updateWindow()
+      self.win.after(self.update_interval,self.generalUpdate)
+      
    def run(self, command = []):
       self.done = 0
       while len(command) > 0:
@@ -300,98 +399,12 @@ class TKgui(gui):
          if retval:
             self.processCommand(retval)
          command = command[1:]
-      while not self.done:
-         needToUpdateState = 1
-         try: needToUpdateState = self.engine.brain.needToStop
-         except: pass
-         if needToUpdateState:
-            try:
-               self.engine.robot.update()
-            except: pass
-         self.redrawWindowBrain()
-         self.redrawViews()
-         if self.textArea['Brain:']["text"] != self.engine.brainfile:
-            self.textArea['Brain:'].config(text = self.engine.brainfile)
-         if self.textArea['Simulator:']["text"] != self.engine.worldfile:
-            self.textArea['Simulator:'].config(text = self.engine.worldfile)
-         if self.textArea['Robot:']["text"] != self.engine.robotfile:
-            self.textArea['Robot:'].config(text = self.engine.robotfile)
-         # enable?
-         if self.textArea["Brain:"]["text"]:
-            if self.textArea["Brain:"]["state"] == 'disabled':
-               self.textArea["Brain:"]["state"] = 'normal'
-         else:
-            if self.textArea["Brain:"]["state"] != 'disabled':
-               self.textArea["Brain:"]["state"] = 'disabled'
-         if self.textArea["Simulator:"]["text"]:
-            if self.textArea["Simulator:"]["state"] == 'disabled':
-               self.textArea["Simulator:"]["state"] = 'normal'
-         else:
-            if self.textArea["Simulator:"]["state"] != 'disabled':
-               self.textArea["Simulator:"]["state"] = 'disabled'
-         if self.textArea["Robot:"]["text"]:
-            if self.textArea["Robot:"]["state"] == 'disabled':
-               self.textArea["Robot:"]["state"] = 'normal'
-         else:
-            if self.textArea["Robot:"]["state"] != 'disabled':
-               self.textArea["Robot:"]["state"] = 'disabled'
-         # Buttons?
-         if self.textArea["Robot:"]["text"]:
-            if self.menuButtons['Robot']["state"] == 'disabled':
-               self.menuButtons['Robot']["state"] = 'normal'
-            if self.menuButtons['Load']["state"] == 'disabled':
-               self.menuButtons['Load']["state"] = 'normal'
-            if self.buttonArea["Brain:"]["state"] == 'disabled':
-               self.buttonArea["Brain:"]["state"] = 'normal'
-            if self.goButtons['Reload']["state"] == 'disabled':
-               self.goButtons['Reload']["state"] = 'normal'
-         else:
-            if self.menuButtons['Robot']["state"] != 'disabled':
-               self.menuButtons['Robot']["state"] = 'disabled'
-            if self.menuButtons['Load']["state"] != 'disabled':
-               self.menuButtons['Load']["state"] = 'disabled'
-            if self.buttonArea["Brain:"]["state"] != 'disabled':
-               self.buttonArea["Brain:"]["state"] = 'disabled'
-            if self.goButtons['Reload']["state"] != 'disabled':
-               self.goButtons['Reload']["state"] = 'disabled'
-         if self.textArea["Brain:"]["text"]:
-            if self.goButtons['Run']["state"] == 'disabled':
-               self.goButtons['Run']["state"] = 'normal'
-            if self.goButtons['Step']["state"] == 'disabled':
-               self.goButtons['Step']["state"] = 'normal'
-            if self.goButtons['Stop']["state"] == 'disabled':
-               self.goButtons['Stop']["state"] = 'normal'
-            if self.goButtons['Reload']["state"] == 'disabled':
-               self.goButtons['Reload']["state"] = 'normal'
-            if self.goButtons['View']["state"] == 'disabled':
-               self.goButtons['View']["state"] = 'normal'
-         else:
-            if self.goButtons['Run']["state"] != 'disabled':
-               self.goButtons['Run']["state"] = 'disabled'
-            if self.goButtons['Step']["state"] != 'disabled':
-               self.goButtons['Step']["state"] = 'disabled'
-            if self.goButtons['Stop']["state"] != 'disabled':
-               self.goButtons['Stop']["state"] = 'disabled'
-            if self.goButtons['Reload']["state"] != 'disabled':
-               self.goButtons['Reload']["state"] = 'disabled'
-            if self.goButtons['View']["state"] != 'disabled':
-               self.goButtons['View']["state"] = 'disabled'
-         # -----------------------
-         if self.engine.robot != 0:
-            if self.engine.robot.get('self', 'stall'):
-               bump = "[BUMP!]"
-            else:
-               bump = ''
-            self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
-                                          % (self.engine.robot.get('robot', 'x'),
-                                             self.engine.robot.get('robot', 'y'),
-                                             self.engine.robot.get('robot', 'th'),
-                                             bump))
-            for service in self.engine.robot.getServices():
-               if self.engine.robot.getService(service).visible:
-                  self.engine.robot.getService(service).updateWindow()
-         while self.win.tk.dooneevent(2): pass
-         sleep(self.update_interval)
+         
+      #
+      # get the general update going -jp
+      #
+      self.win.after(self.update_interval,self.generalUpdate)
+      self.win.mainloop()
 
    def fileloaddialog(self, filetype, skel, startdir = ''):
       from string import replace
