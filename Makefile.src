@@ -29,7 +29,7 @@ all:: $(SUBDIRS) $(OBJS)
 $(SUBDIRS):
 	(cd $@; $(MAKE))
 
-clean:
+clean::
 	- $(RM) *.o *.bak core *~
 ifeq ($(SUBDIRS),)
 else
