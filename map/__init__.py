@@ -29,6 +29,14 @@ class Map:
             if label != None:
                 self.label[ypos][xpos] = "%d" % label
 
+    def addGridLocation(self, x, y, value, label = None):
+        xpos = int((self.originMM[0] + x) / self.colScaleMM)
+        ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+        if self.inRange(ypos, xpos):
+            self.grid[ypos][xpos] += value
+            if label != None:
+                self.label[ypos][xpos] = "%d" % label
+
     def inRange(self, r, c):
         return r >= 0 and r < self.rows and c >= 0 and c < self.cols
 
