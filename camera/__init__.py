@@ -405,7 +405,6 @@ class Camera(PyroImage, Service):
       self.update()
 
    def setVisionCallBack(self, callback):
-      print "setting vision callback to", callback
       self.vision.process = callback
 
 if __name__ == '__main__':
