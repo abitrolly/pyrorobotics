@@ -82,7 +82,7 @@ public:
   PyObject *getMMap();
 
   PyObject *colorHistogram();
-  PyObject *trainColor();
+  PyObject *trainColor(int x1, int y1, int x2, int y2, int bins);
   PyObject *grayScale();
   PyObject *sobel(int val);
   PyObject *setPlane(int d, int value);

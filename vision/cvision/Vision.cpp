@@ -274,7 +274,46 @@ PyObject *Vision::colorHistogram() {
   return Py_BuildValue("");
 }
 
-PyObject *Vision::trainColor() {
+PyObject *Vision::trainColor(int x1, int y1, int x2, int y2, int bins) {
+  // DON'T ASSUME THAT bin count won't change. Reallocate these.
+  // OR make a maximum size, and just leave them here.
+  /*
+  int **binCnt = new int[depth][bins];
+  int **binAvg = new int[depth][bins];
+  int *maxAvg = new int[depth];
+  int b, d;
+  for (d = 0; d < depth; d++) {
+    maxAvg[d] = 0;
+    for (b = 0; b < bins; b++) {
+      binCnt[d][b] = 0;
+      binAvg[d][b] = 0;
+    }
+  }
+  for (int h = x1; h <= x2; h++) {
+    for (int w = y1; w <= y2; w++) {
+      for (int d = 0; d < depth; d++) {
+	binAvg[d][ Image[(h * width + w) * depth + d] / 255 * bins ] += Image[(h * width + w) * depth + d];
+	binCnt[d][ Image[(h * width + w) * depth + d] / 255 * bins ]++;
+      }
+    }
+  }
+  for (d = 0; d < depth; d++) {
+    for (b = 0; b < bins; b++) {
+      binAvg[d][b] /= binCnt[d][b];
+      if (binAvg[d][b] > maxAvg[d]) {
+	maxAvg[d] = binAvg[d][b];
+      }
+    }
+  }
+  Py_Object *retval = Py_BuildValue("iii", 
+				    maxAvg[rgb[0]], 
+				    maxAvg[rgb[1]], 
+				    maxAvg[rgb[2]]);
+  delete [] binCnt;
+  delete [] binAvg;
+  delete [] maxAvg;
+  return retval;
+  */
   return Py_BuildValue("");
 }
 
@@ -682,11 +721,16 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
 
   int maxIndex[5]={0};
   int **blobdata;
-  blobdata = new int*[width];
-  for (i = 0; i < width; i++) {
-    blobdata[i] = new int[height];
-    for (j = 0; j < height; j++)
-      blobdata[i][j] = 0;
+  static int initialized = 0;
+  if (!initialized) {
+    // ASSUMES height and width don't change!
+    blobdata = new int*[width];
+    for (i = 0; i < width; i++) {
+      blobdata[i] = new int[height];
+      for (j = 0; j < height; j++)
+	blobdata[i][j] = 0;
+    }
+    initialized = 1;
   }
   
   unsigned char *ImagePtr;
