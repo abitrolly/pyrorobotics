@@ -15,8 +15,18 @@
 /*****************************************************************************/
 
 #ifndef ROBOT_H
+#define ROBOT_H
 
-#define ROBOT_H 
+
+#define TIME_DELAY 20000   /* number of usecs to delay on each time step */
+#define SPEED_FACTOR 15.0   /* affects general speed of the robot's
+														 * speed; 15.0 recommended; smaller is faster */
+#define ROTATION_FACTOR 100.0  /* affects speed of rotation;
+																* 100.0 recommended; smaller is faster */
+#define MAX_ACCEL 256    /* max acceleration of the robot
+													* in ((pulses)/256)/10ms; 256 works ok... */
+
+
 #define NormRad(x) {while(x > M_PI) x-=2*M_PI; while(x < -M_PI) x+=2*M_PI;}
 
 #define BUMP                     1
@@ -34,8 +44,6 @@
 #define POSITION_MODE 1
 #define PWM_MODE 2
 
-#define SPEED_FACTOR 15.0
-#define MAX_ACCEL 256
 
 
 struct Motor

@@ -314,7 +314,7 @@ void SolveEffectors(struct Context *context) {
   noise2 = 0.9 + (double)Rnd(200)/1000.0;
   noise3 = 0.95 + (double)Rnd(100)/1000.0;
   delta_direction = (double)(robot->Motor[0].Value - robot->Motor[1].Value);
-  delta_direction /= (100.0*SPEED_FACTOR);
+  delta_direction /= (ROTATION_FACTOR*SPEED_FACTOR);
   delta_direction *= noise3;
   robot->Alpha += delta_direction;
   NormRad(robot->Alpha);
@@ -394,7 +394,7 @@ boolean PipedRobotRun(struct Context *context,int serial_in,int serial_out) {
 
 
 
-boolean MessageRobotRun(struct Context *context) {
+boolean MessageRobotRun(struct Context *context, boolean graphics) {
   struct Robot   *robot,saved_robot;
 	boolean ans;
 
@@ -407,16 +407,16 @@ boolean MessageRobotRun(struct Context *context) {
 	saved_robot.Motor[0].Pos = robot->Motor[0].Pos;
 
   InitSensors(context);
-  DrawRobotIRSensors(robot);
+  if(graphics) DrawRobotIRSensors(robot);
 
   SolveEffectors(context);
-  DrawRobotEffectors(robot);
+  if(graphics) DrawRobotEffectors(robot);
   if (TestCollision(context,&saved_robot)) {
     DisplayComment(context,"(Bump)");
     robot->State |= BUMP;
   }
   else robot->State &= ~BUMP;
-  DrawLittleRobot(&saved_robot,robot);
+  if(graphics) DrawLittleRobot(&saved_robot,robot);
 	ans = StepRobot(robot);
 
 	return ans;

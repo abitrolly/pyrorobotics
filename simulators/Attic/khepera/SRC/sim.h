@@ -68,7 +68,8 @@
 #define SENSORS_BUTTON           24
 #define MOTORS_BUTTON            25
 
-#define SCAN_WORLD							26
+#define RUN_ROBOT_NO_GUI         26
+
 
 #define FILE_NAME_TEXT "enter a file name:                                             "
 #define COMMAND_TEXT   "enter the command:                                             "
@@ -134,6 +135,6 @@ extern void              DrawRobotToggleButtons(struct Robot *r);
 extern void              DrawButton(struct Button *b);
 extern boolean           PipedRobotRun(struct Context *c,int i,int o);
 extern void					 MessageRobotDeal(struct Context *c, char *q, char *a);
-extern boolean					 MessageRobotRun(struct Context *c);
+extern boolean					 MessageRobotRun(struct Context *c, boolean graphics);
 
 #endif

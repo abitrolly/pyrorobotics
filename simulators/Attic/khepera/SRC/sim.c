@@ -59,7 +59,8 @@ void OpenProgram()
   strcpy(context->TextInput,"");
   context->Info           = INFO_ABOUT;
 
-  but= context->Buttons = CreateButton(NEW_WORLD,"new",WINDOW_W/4,4);
+  but= context->Buttons=CreateButton(NEW_WORLD,"new",WINDOW_W/4,4);
+  but= but->Next=CreateButton(NEW_WORLD,"new",WINDOW_W/4,4);
   but= but->Next=CreateButton(REDRAW_WORLD,"redraw",WINDOW_W/4+30,4);
   but= but->Next=CreateButton(LOAD_WORLD,"load",WINDOW_W/4,23);
   but= but->Next=CreateButton(SAVE_WORLD,"save",WINDOW_W/4+37,23);
@@ -77,7 +78,8 @@ void OpenProgram()
   but= but->Next=CreateButton(MOTORS_BUTTON,">",280,PLATE1_H+72);
 	
   but= but->Next=CreateButton(RUN_ROBOT,"run",5,PLATE1_H+168);
-	but= but->Next=CreateButton(STEP_ROBOT,"step",35,PLATE1_H+168);
+  but= but->Next=CreateButton(RUN_ROBOT_NO_GUI,"run (no gui)",35,PLATE1_H+168);
+	but= but->Next=CreateButton(STEP_ROBOT,"step",128,PLATE1_H+168);
 
   but= but->Next=CreateButton(TEST,"test",WINDOW_W/2-38,PLATE1_H+168);
   but= but->Next=CreateButton(RESET_ROBOT,"reset",WINDOW_W/2,PLATE1_H+168);
@@ -103,60 +105,29 @@ void CloseProgram()
   CloseGraphics();
 }
 
-boolean ExistOption(char *opt,int argc,char *argv[])
+int GetOption(char *opt,int argc,char *argv[])
 {
   int     i;
-  boolean ans = FALSE;
+  int ans = 0;
 
   for(i=1;i<argc;i++) if (argv[i][0]=='-')
-   if (strcmp(&(argv[i][1]),opt)==0) ans = TRUE;
+   if (strcmp(&(argv[i][1]),opt)==0) ans = i;
   return(ans);
 }
 
-void ReadConfigFile()
-{
-  char    text[TEXT_BUF_SIZE];
-  boolean ok;
-  FILE    *file;
-
-  file = fopen(".simrc","r");
-
-  if (file)
-  {
-    while(fscanf(file,"%s\n",text)!=EOF)
-    {
-      if (strcmp(text,"MONODISPLAY:")==0)
-      {
-        fscanf(file,"%s\n",text);
-        if (strcmp(text,"TRUE")==0) context->MonoDisplay = TRUE;
-        else context->MonoDisplay = FALSE;  
-      }
-      if (strcmp(text,"KHEPERA_AVAILABLE:")==0)
-      {
-        fscanf(file,"%s\n",text);
-        if (strcmp(text,"TRUE")==0) context->KheperaAvailable = TRUE;
-        else context->KheperaAvailable = FALSE;
-      }
-      if (strcmp(text,"SERIAL_PORT:")==0)
-      {
-        fscanf(file,"%s\n",text);
-        InitKheperaSerial(text);
-      }
-    }
-    fclose(file);
-  }
-  else
-  {
-    perror("unable to find .simrc in current directory");
-    exit(0);
-  }
+struct Button *FindButton(struct Button *current, u_char value) {
+	if(current->Value == value) return current;
+	else
+		if(current->Next) return FindButton(current->Next, value);
+		else return NULL;
 }
+
 
 int main(int argc,char *argv[]) {
   char              text[TEXT_BUF_SIZE],name[TEXT_BUF_SIZE],
                     file_name[TEXT_BUF_SIZE];
 	char *rmsg;
-  boolean           quit=FALSE,ok,queryflag=FALSE;
+  boolean           quit=FALSE,ok,queryflag=FALSE,graphics;
   struct World      *world;
   struct Robot      *robot,saved_robot;
   XPoint            *point;
@@ -165,10 +136,15 @@ int main(int argc,char *argv[]) {
   double            val0;
   long int          i,j;
   int               angle;
+	u_char            initButtonValue = -1;
   FILE              *ffile;
-  int               sim_serial_in,sim_serial_out,f;
 	char *shm_in, *shm_out;
 	int shmid_in, shmid_out;
+
+	if(GetOption("r",argc,argv))
+		initButtonValue = RUN_ROBOT;
+	if(GetOption("f",argc,argv))
+		initButtonValue = RUN_ROBOT_NO_GUI;
 
 	if((shmid_in = shmget(SHM_KEY_IN, SHM_BUF_SIZE, IPC_CREAT | SHM_PERM)) < 0) {
 		perror("shmget");
@@ -202,9 +178,14 @@ int main(int argc,char *argv[]) {
   robot = context->Robot;
   UserInit(robot);
 
-  while(quit == FALSE)
-  {
-    button=PressButton(context);
+	button = FindButton(context->Buttons,initButtonValue);
+	if(button != NULL) {
+		button->State=PLATE_DOWN;
+		DrawButton(button);
+	} else button=PressButton(context);
+
+  while(TRUE) {
+		graphics = TRUE;
     switch(button->Value)
     {
       case QUIT:
@@ -379,7 +360,7 @@ int main(int argc,char *argv[]) {
 					 MessageRobotDeal(context, shm_in, shm_out);
 					 DisplayComment(context, shm_out);
 			 }
-			 MessageRobotRun(context);
+			 MessageRobotRun(context, graphics);
 			 if(queryflag && (shm_in[0] == '\0')) {
 					 queryflag = FALSE;
 					 shm_out[0] = '\0';
@@ -387,21 +368,22 @@ int main(int argc,char *argv[]) {
 			 RunRobotStop(robot);
 			 break;
 
+			case RUN_ROBOT_NO_GUI:
+			 graphics = FALSE;
       case RUN_ROBOT:
-       //DisplayComment(context,"running Khepera");
        CancelCursor();
        DisplayComment(context,"running simulated Khepera");
 			 while (UnpressButton(context,button)==FALSE) {
 				 if(!queryflag && (shm_in[0] != '\0')) {
 					 queryflag = TRUE;
 					 MessageRobotDeal(context, shm_in, shm_out);
-					 //DisplayComment(context, shm_out);
 				 }
-				 MessageRobotRun(context);
+				 MessageRobotRun(context, graphics);
 				 if(queryflag && (shm_in[0] == '\0')) {
 					 queryflag = FALSE;
 					 shm_out[0] = '\0';
 				 }
+				 usleep(TIME_DELAY);
 			 }
 			 RunRobotStop(robot);
 			 DisplayComment(context,"simulated Khepera stopped");
@@ -476,6 +458,8 @@ int main(int argc,char *argv[]) {
     }
     button->State = PLATE_UP;
     DrawButton(button);
+		if(quit) break;
+    button=PressButton(context);
   }
   CloseProgram();
 }
