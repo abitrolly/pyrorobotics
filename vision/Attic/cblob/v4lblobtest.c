@@ -4,7 +4,8 @@
 
 #define WIDTH 768
 #define HEIGHT  480
-#define PGMHEADER "P5\n768\n480\n1\n"
+#define PBMHEADER "P5\n768\n480\n1\n"
+#define PGMHEADER_F "P5\n%d\n%d\n%d\n"
 #define PPMHEADER "P6\n768\n480\n255\n"
 
 //#define USE_V4L
@@ -33,9 +34,9 @@ int main(int argc, char** argv){
 #endif
 
   out = fopen("bmp.pbm", "w");
-  fprintf(out, PGMHEADER);
+  fprintf(out, PBMHEADER);
   printf("Wrote header\n");
-  fwrite(bmp->data, 1, bmp->width * bmp->height, out);
+  fwrite(bmp->data, 2, bmp->width * bmp->height, out);
   printf("Wrote data\n");
   fclose(out);
 
@@ -43,17 +44,16 @@ int main(int argc, char** argv){
   Blobdata_init(thedata, bmp);
   printf("Blobdata_init\n");
 
-  out = fopen("blob.pbm", "w");
-  fprintf(out, PGMHEADER);
+  out = fopen("blob.pgm", "w");
+  fprintf(out, PGMHEADER_F, thedata->blobmap->width,
+	  thedata->blobmap->height, thedata->nblobs);
   printf("Wrote header\n");
-  printf("Writing, %d bytes\n", thedata->blobmap->width * thedata->blobmap->height);
-  i = fwrite(thedata->blobmap->data, 1, thedata->blobmap->width * thedata->blobmap->height, out);
+  printf("Writing, %d bytes\n", 2*thedata->blobmap->width * thedata->blobmap->height);
+  i = fwrite(thedata->blobmap->data, 2, thedata->blobmap->width * thedata->blobmap->height, out);
   printf("Wrote data, %d bytes written.\n", i);
   fclose(out);
  
   
-  //do stuff
-
   Blobdata_del(thedata);
   free(thedata);
   Bitmap_del(bmp);

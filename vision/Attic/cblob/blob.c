@@ -60,16 +60,16 @@ void Bitmap_init(struct bitmap* map, int w, int h){
   int i;
   map->width = w;
   map->height = h;
-  map->data = (unsigned char *) malloc(sizeof(unsigned char) * w*h);
+  map->data = (uint16_t *) malloc(sizeof(uint16_t) * w*h);
 }
 
-void Bitmap_set(struct bitmap* map, int x, int y, unsigned char in){
+void Bitmap_set(struct bitmap* map, int x, int y, uint16_t in){
   if (x >= 0 && x < map->width && y >= 0 && y < map->height){
     map->data[y*map->width + x] = in;
   }
 }
 
-unsigned char Bitmap_get(struct bitmap* map, int x, int y){
+uint16_t Bitmap_get(struct bitmap* map, int x, int y){
   if (x >= 0 && x < map->width && y >= 0 && y < map->height){
     return map->data[y*map->width + x];
   }
@@ -229,9 +229,9 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
   Bitmap_init(bmp, width, height);
   if (image->bpp == 24){
     for (i = 0; i < image->size; i += 3) {
-      red  = ((unsigned char *)image->data)[i + 2];
-      green= ((unsigned char *)image->data)[i + 1];
-      blue = ((unsigned char *)image->data)[i + 0];
+      red  = ((uint16_t *)image->data)[i + 2];
+      green= ((uint16_t *)image->data)[i + 1];
+      blue = ((uint16_t *)image->data)[i + 0];
       rmRGBtoHSV(red/255.0,
 		 green/255.0,
 		 blue/255.0,
