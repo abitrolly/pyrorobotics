@@ -1961,6 +1961,7 @@ class SRN(Network):
         self.autoSequence = 1 # auto detect length of sequence from input size
         self.prediction = []
         self.initContext = 1
+        self.contextCopying = 1
         self.contextLayers = {} # records layer reference and associated hidden layer
        
     # set and get methods for attributes
@@ -2051,7 +2052,8 @@ class SRN(Network):
         Extends backprop() from Network to automatically deal with context layers.
         """
         retval = Network.backprop(self)
-        self.copyHiddenToContext() # must go after error computation
+        if self.contextCopying:
+            self.copyHiddenToContext() # must go after error computation
         return retval
     def step(self, **args):
         """
