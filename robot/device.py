@@ -150,9 +150,7 @@ class Device:
             step = 1
             if item.step:
                 step = item.step
-            for p in range(item.start, item.stop, step):
-                retval.append( self.getSensorValue(p) )
-            return retval
+            return [self.getSensorValue(p) for p in xrange(item.start, item.stop, step)]
         else:
             raise AttributeError, "invalid device[%s]" % item
 

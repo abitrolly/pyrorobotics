@@ -2,75 +2,73 @@
 
 from pyro.robot import *
 from math import pi, cos, sin
+import threading, time
 from os import getuid
-from pyro.robot.driver.player import *
-import time
 from pyro.robot.device import Device, DeviceError, SensorValue
 from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+import playerc
+
+# todo:
+# check get_pose
+# dev.__dict__[name] 
 
 class PlayerDevice(Device):
-    def __init__(self, dev, type, groups = {}):
+    def __init__(self, client, type, groups = {}):
         Device.__init__(self, type)
         self.groups = groups
-        self.dev = dev
+        self.client = client
+        self.handle = None
         self.name = type
         self.printFormat["data"] = "<device data>"
         self.devData["data"] = None
+        self.devData["noise"] = 0.0
         self.notSetables.extend( ["data"] )
         # Required:
         self.startDevice()
-        if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
-            self.devData["pose"] = self.getPose()
+        if "get_geom" in self.client.__dict__:
+            self.client.get_geom() # reads it into handle.pose or poses
 
     def preGet(self, kw):
         if kw == "pose":
-            if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
-                self.devData["pose"] = self.getPose()
+            self.devData["pose"] = self.handle.pose
+        elif kw == "poses":
+            self.devData["poses"] = self.handle.poses[:len(self)-1]
         elif kw == "data":
             self.devData["data"] = self.getDeviceData()
 
-
     def postSet(self, keyword):
         if keyword == "pose":
-            if ("set_%s_pose" % self.name) in self.dev.__class__.__dict__:
+            if "set_cmd_pose" in self.client.__class__.__dict__:
                 self.setPose( *self.devData[keyword] )
 
     def startDevice(self):
-        try:
-            self.dev.start(self.name)
-            # self.devData["index"] get index here for this device (ie, dev.laser[index])
-            time.sleep(1) # required!
-            Device.startDevice(self)
-        except:
-            print "Pyro error: player device did not start: '%s'" % self.name
-        return self
-
+        exec("self.handle = playerc.playerc_%s(self.client, 0)" % self.name)
+        if self.handle.subscribe(playerc.PLAYERC_ALL_MODE) != 0:
+            raise playerc.playerc_error_str()
     def getDeviceData(self, pos = 0):
-        return self.dev.__dict__[self.name][pos]
-
+        return self.handle.scan[0]
     def getPose(self):
-        function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
-        if function != None:
-            x, y, th = function(self.dev)
-            return (x / 1000.0, y / 1000.0, th % 360)
-        else:
-            raise DeviceError, "Function 'getPose' is not available for device '%s'" % self.name
-
-
+        """ Move the device. x, y are in meters """
+        x, y, th = self.handle.px, self.handle.py, self.handle.pa
+        return x, y, th / PIOVER180
     def setPose(self, xM, yM, thDeg):
         """ Move the device. x, y are in meters """
-        function = self.dev.__class__.__dict__[ "set_%s_pose" % self.name]
+        function = self.client.__class__.__dict__["set_cmd_pose"]
         if function != None:
-            return function( self.dev, xM * 1000.0, yM * 1000.0, thDeg % 360)
+            return function( self.client, xM * 1000.0, yM * 1000.0, thDeg % 360)
         else:
             raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.name
 
+class PlayerSimulationDevice(PlayerDevice):
+    def moveObjectTo(self, name, x, y, deg):
+        th = deg * PIOVER180
+        self.handle.set_pose2d(name, x, y, th)
+
 class PlayerSonarDevice(PlayerDevice):
-    def __init__(self, dev, name):
-        PlayerDevice.__init__(self, dev, name)
-        self.sonarGeometry = self.dev.get_sonar_geometry()
-        self.devData["count"] = len(self.sonarGeometry)
-        if self.devData["count"] == 16:
+    def __init__(self, client, name):
+        PlayerDevice.__init__(self, client, name)
+        while len(self) == 0: pass
+        if len(self) == 16:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),
@@ -87,12 +85,12 @@ class PlayerSonarDevice(PlayerDevice):
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         else:
-            self.groups= {'all': range(len(self.sonarGeometry))}
+            self.groups= {'all': range(len(self))}
         self.devData['units']    = "ROBOTS"
         # What are the raw units?
         # Anything that you pass to rawToUnits should be in these units
-        self.devData["rawunits"] = "MM"
-        self.devData['maxvalueraw'] = 5000 # mm
+        self.devData["rawunits"] = "METERS"
+        self.devData['maxvalueraw'] = 8.0 # meters
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
         # ----------------------------------------------------------
@@ -110,18 +108,18 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
 	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.sonar[0][pos], self.devData["noise"])
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
 
     def __len__(self):
-        return len(self.dev.sonar[0])
+        return self.handle.scan_count
     def getSensorValue(self, pos):
-        return SensorValue(self, self.dev.sonar[0][pos], pos,
-                           (self.sonarGeometry[pos][0],
-                            self.sonarGeometry[pos][1],
+        return SensorValue(self, self.handle.scan[pos], pos,
+                           (self.handle.poses[pos][0],
+                            self.handle.poses[pos][1],
                             0.03,
-                            self.sonarGeometry[pos][2]),
+                            self.handle.poses[pos][2]/PIOVER180),
                            self.devData["noise"])
 
     def postSet(self, keyword):
@@ -130,23 +128,23 @@ class PlayerSonarDevice(PlayerDevice):
 
     def hitX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180 # + 90
-        dist = self.rawToUnits(self.dev.sonar[0][pos])
+        dist = self.rawToUnits(self.client.sonar[0][pos])
         x = self.rawToUnits(self.sonarGeometry[pos][0])
         return cos(thr) * dist
 
     def hitY(self, pos):
         thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180 # - 90
-        dist = self.rawToUnits(self.dev.sonar[0][pos])
+        dist = self.rawToUnits(self.client.sonar[0][pos])
         y = self.rawToUnits(self.sonarGeometry[pos][1])
         return sin(thr) * dist
     def hitZ(self, pos):
         return .03
 
 class PlayerLaserDevice(PlayerDevice):
-    def __init__(self, dev, name):
-        PlayerDevice.__init__(self, dev, name)
-        self.laserGeometry = self.dev.get_laser_geometry()
-        count = int((self.dev.laser[0][0][1] - self.dev.laser[0][0][0]) / self.dev.laser[0][0][2] + 1)
+    def __init__(self, client, name):
+        PlayerDevice.__init__(self, client, name)
+        while len(self) == 0: pass # wait for data to be loaded
+        count = len(self)
         part = int(count/8)
         start = 0
         posA = part
@@ -173,10 +171,10 @@ class PlayerLaserDevice(PlayerDevice):
                        'back': [],
                        'back-all': []}
         self.devData['units']    = "ROBOTS"
-        self.devData["noise"]    = 0.0
+        self.devData["noise"]    = 0.01
         # -------------------------------------------
-        self.devData["rawunits"] = "MM"
-        self.devData['maxvalueraw'] = 8000
+        self.devData["rawunits"] = "METERS"
+        self.devData['maxvalueraw'] = 8.0 # rawunits
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
@@ -184,63 +182,63 @@ class PlayerLaserDevice(PlayerDevice):
         # MM to units:
         self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
         # -------------------------------------------
-        self.devData['index'] = 0 # self.dev.laser.keys()[0] FIX
+        self.devData['index'] = 0 # self.client.laser.keys()[0] FIX
         self.devData["count"] = count
         self.subDataFunc['ox']    = lambda pos: 0
         self.subDataFunc['oy']    = lambda pos: 0
         self.subDataFunc['oz']    = lambda pos: 0
         # FIX: the index here should come from the "index"
-        self.subDataFunc['th']    = lambda pos: self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos) # in degrees
-        self.subDataFunc['arc']   = lambda pos: self.dev.laser[0][0][2] # in degrees
+        self.subDataFunc['th']    = lambda pos: self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos) # in degrees
+        self.subDataFunc['arc']   = lambda pos: self.client.laser[0][0][2] # in degrees
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
 	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.laser[0][1][pos], self.devData["noise"]) 
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.client.laser[0][1][pos], self.devData["noise"]) 
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
 
     def __len__(self):
-        return len(self.dev.laser[0][1])
+        return self.handle.scan_count
     def getSensorValue(self, pos):
-        return SensorValue(self, self.dev.laser[0][1][pos], pos,
-                           (self.laserGeometry[0][0],
-                            self.laserGeometry[0][1],
-                            0.03, # meters Z
-                            self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)),
+        return SensorValue(self, self.handle.scan[pos][0], pos,
+                           (self.handle.pose[0],
+                            self.handle.pose[1],
+                            0.03,
+                            pos - 90),
                            self.devData["noise"])
+
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
 
     def hitX(self, pos):
-        th = self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)
+        th = self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos)
         thr = th * PIOVER180
-        dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
+        dist = self.client.laser[0][1][pos] / 1000.0 # METERS
         return cos(thr) * dist
     def hitY(self, pos):
-        th = self.dev.laser[0][0][0] + (self.dev.laser[0][0][2] * pos)
+        th = self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos)
         thr = th * PIOVER180
-        dist = self.dev.laser[0][1][pos] / 1000.0 # METERS
+        dist = self.client.laser[0][1][pos] / 1000.0 # METERS
         return sin(thr) * dist
     def hitZ(self, pos):
         return 0.03 # meters
 
 class PlayerCommDevice(PlayerDevice):
-
-    def __init__(self, dev, name):
-        PlayerDevice.__init__(self, dev, name)
+    def __init__(self, client, name):
+        PlayerDevice.__init__(self, client, name)
         self.messages = []
     
     def sendMessage(self, message):
-        if self.dev.comms == {}:
+        if self.client.comms == {}:
             print "Need to startDevice('comm') in robot: message not sent"
             return
-        self.dev.send_message(message)
+        self.client.send_message(message)
 
     def getMessages(self):
-        if not 'comms' in dir(self.dev) or self.dev.comms == {}:
+        if not 'comms' in dir(self.client) or self.client.comms == {}:
             raise DeviceError, "Need to startDevice('comm') in robot"
-        #if self.dev.comms[0] != '':
+        #if self.client.comms[0] != '':
         #    self.update() # this is update in robot
         tmp = self.messages
         # reset queue:
@@ -248,15 +246,15 @@ class PlayerCommDevice(PlayerDevice):
         return tmp
 
     def updateDevice(self):
-        for i in self.dev.comms:
-            msg = self.dev.get_comms()
+        for i in self.client.comms:
+            msg = self.client.get_comms()
             if msg:
                 self.messages.append( msg )
 
 class PlayerPTZDevice(PlayerDevice):
 
-    def __init__(self, dev, name):
-        PlayerDevice.__init__(self, dev, name)
+    def __init__(self, client, name):
+        PlayerDevice.__init__(self, client, name)
         self.origPose = (0, 0, 120)
         self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
                                 """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
@@ -267,7 +265,7 @@ class PlayerPTZDevice(PlayerDevice):
 
     def preGet(self, keyword):
         if keyword == "pose": # make sure it is the current pose
-            self.devData["pose"] = self.dev.get_ptz()
+            self.devData["pose"] = self.client.get_ptz()
 
     def postSet(self, keyword):
         if keyword == "pose":
@@ -289,45 +287,45 @@ class PlayerPTZDevice(PlayerDevice):
             pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
         else:
             raise AttributeError, "setPose takes pan, tilt, and zoom"
-        return self.dev.set_ptz(pan, tilt, zoom)
+        return self.client.set_ptz(pan, tilt, zoom)
 
     def getPose(self):
-        return self.dev.get_ptz()
+        return self.client.get_ptz()
 
     def pan(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(numDegrees, ptz[1], ptz[2])
+        return self.client.set_ptz(numDegrees, ptz[1], ptz[2])
 
     def panRel(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0] + numDegrees, ptz[1], ptz[2])
+        return self.client.set_ptz(ptz[0] + numDegrees, ptz[1], ptz[2])
 
     def tilt(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0], numDegrees, ptz[2])
+        return self.client.set_ptz(ptz[0], numDegrees, ptz[2])
 
     def tiltRel(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0], ptz[1] + numDegrees, ptz[2])
+        return self.client.set_ptz(ptz[0], ptz[1] + numDegrees, ptz[2])
 
     def panTilt(self, panDeg, tiltDeg):
         ptz = self.getPose()
-        return self.dev.set_ptz(panDeg, tiltDeg, ptz[2])
+        return self.client.set_ptz(panDeg, tiltDeg, ptz[2])
 
     def panTiltRel(self, panDeg, tiltDeg):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
+        return self.client.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
 
     def center(self):
         return self.setPose( *self.origPose )
 
     def zoom(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0], ptz[1], numDegrees)
+        return self.client.set_ptz(ptz[0], ptz[1], numDegrees)
 
     def zoomRel(self, numDegrees):
         ptz = self.getPose()
-        return self.dev.set_ptz(ptz[0], ptz[1], ptz[2] + numDegrees)
+        return self.client.set_ptz(ptz[0], ptz[1], ptz[2] + numDegrees)
 
     def getPan(self):
         ptz = self.getPose()
@@ -380,11 +378,11 @@ class PlayerPTZDevice(PlayerDevice):
 class PlayerGripperDevice(PlayerDevice):
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
-    def __init__(self, dev, name):
-        PlayerDevice.__init__(self, dev, name)
+    def __init__(self, client, name):
+        PlayerDevice.__init__(self, client, name)
         if "data" in self.devData:
             del self.devData["data"]
-        if self.dev.is_paddles_closed():
+        if self.client.is_paddles_closed():
             self.devData["command"] = "close"
         else:
             self.devData["command"] = "open"
@@ -401,118 +399,146 @@ class PlayerGripperDevice(PlayerDevice):
     def postSet(self, keyword):
         if keyword == "command":
             if self.devData["command"] == "open":
-                self.devData["command"] = self.dev.gripper_open() 
+                self.devData["command"] = self.client.gripper_open() 
             elif self.devData["command"] == "close":
-                self.devData["command"] = self.dev.gripper_close() 
+                self.devData["command"] = self.client.gripper_close() 
             elif self.devData["command"] == "stop":
-                self.devData["command"] = self.dev.gripper_stop()
+                self.devData["command"] = self.client.gripper_stop()
             elif self.devData["command"] == "up":
-                self.devData["command"] = self.dev.gripper_up()
+                self.devData["command"] = self.client.gripper_up()
             elif self.devData["command"] == "down":
-                self.devData["command"] = self.dev.gripper_down()
+                self.devData["command"] = self.client.gripper_down()
             elif self.devData["command"] == "store":
-                self.devData["command"] = self.dev.gripper_store() 
+                self.devData["command"] = self.client.gripper_store() 
             elif self.devData["command"] == "deploy":
-                self.devData["command"] = self.dev.gripper_deploy()
+                self.devData["command"] = self.client.gripper_deploy()
             elif self.devData["command"] == "halt":
-                self.devData["command"] = self.dev.gripper_halt()
+                self.devData["command"] = self.client.gripper_halt()
             else:
                 raise AttributeError, "invalid command to gripper: '%s'" % self.devData["command"]
 
     def preGet(self, keyword):
         if keyword == "state":
-            self.devData[keyword] = self.dev.is_paddles_closed() # help!
+            self.devData[keyword] = self.client.is_paddles_closed() # help!
         elif keyword == "breakBeamState":
             self.devData[keyword] = self.getBreakBeamState()
         elif keyword == "isClosed":
-            self.devData[keyword] = self.dev.is_paddles_closed() #ok
+            self.devData[keyword] = self.client.is_paddles_closed() #ok
         elif keyword == "isMoving":
-            self.devData[keyword] = self.dev.is_paddles_moving() #ok
+            self.devData[keyword] = self.client.is_paddles_moving() #ok
         elif keyword == "isLiftMoving":
-            self.devData[keyword] = self.dev.is_lift_moving() # ok
+            self.devData[keyword] = self.client.is_lift_moving() # ok
         elif keyword == "isLiftMaxed":
-            self.devData[keyword] = self.dev.is_lift_up() # ok
+            self.devData[keyword] = self.client.is_lift_up() # ok
 
     def open(self):
-        return self.dev.gripper_open() 
+        return self.client.gripper_open() 
 
     def close(self):
-        return self.dev.gripper_close() 
+        return self.client.gripper_close() 
 
     def stopMoving(self):
-        return self.dev.gripper_stop()
+        return self.client.gripper_stop()
 
     def liftUp(self):
-        return self.dev.gripper_up()
+        return self.client.gripper_up()
 
     def liftDown(self):
-        return self.dev.gripper_down()
+        return self.client.gripper_down()
 
     def liftStop(self):
-        return self.dev.gripper_stop()
+        return self.client.gripper_stop()
 
     def store(self):
-        return self.dev.gripper_store() 
+        return self.client.gripper_store() 
 
     def deploy(self):
-        return self.dev.gripper_deploy()
+        return self.client.gripper_deploy()
 
     def halt(self):
-        return self.dev.gripper_halt()
+        return self.client.gripper_halt()
 
     def getState(self):
-        return self.dev.is_paddles_closed() # help!
+        return self.client.is_paddles_closed() # help!
 
     def getBreakBeamState(self):
         sum = 0
-        if self.dev.is_ibeam_obstructed() == 8:
+        if self.client.is_ibeam_obstructed() == 8:
             sum += 2
-        if self.dev.is_obeam_obstructed() == 4:
+        if self.client.is_obeam_obstructed() == 4:
             sum += 1
         return sum
 
     def isClosed(self): # FIX: add this to aria
-        return self.dev.is_paddles_closed() #ok
+        return self.client.is_paddles_closed() #ok
 
     def isMoving(self):
-        return self.dev.is_paddles_moving() #ok
+        return self.client.is_paddles_moving() #ok
 
     def isLiftMoving(self):
-        return self.dev.is_lift_moving() # ok
+        return self.client.is_lift_moving() # ok
 
     def isLiftMaxed(self):
-        return self.dev.is_lift_up() # ok
+        return self.client.is_lift_up() # ok
+
+class PlayerUpdater(threading.Thread):
+    """
+    """
+    def __init__(self, runable):
+        """
+        Constructor, setting initial variables
+        """
+        self.runable = runable
+        self._stopevent = threading.Event()
+        self._sleepperiod = 0.001 # FIX: this data is coming in too fast!
+        threading.Thread.__init__(self, name="PlayerUpdater")
+        
+    def run(self):
+        """
+        overload of threading.thread.run()
+        main control loop
+        """
+        while not self._stopevent.isSet():
+            id = self.runable.client.read()
+            self._stopevent.wait(self._sleepperiod)
+
+    def join(self,timeout=None):
+        """
+        Stop the thread
+        """
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
 
 class PlayerRobot(Robot):
     def __init__(self, name = "Player", port = 6665, hostname = 'localhost'):
         Robot.__init__(self) # robot constructor
-        self.devData["simulated"] = 1
+        self.devData["simulated"] = 1 # FIX: how can you tell?
         self.hostname = hostname
         self.port = port
         self.name = name
-        self.connect() # set self.dev to player robot
-        # for some basic devices:
+        self.connect() # set self.client to player robot
+        self.thread = PlayerUpdater(self)
+        self.thread.start()
         # Make sure laser is before sonar, so if you have
         # sonar, it will be the default 'range' device
-        devList = self.dev.get_device_list()
-        # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
-        devNameList = map(lambda triplet: triplet[0], devList)
+        while self.client.get_devlist() != 0:
+            print "waiting for player device..."
+        devNameList = [playerc.playerc_lookup_name(device.code) for device in self.client.devinfos]
         self.devData["builtinDevices"] = devNameList
+        self.devData["builtinDevices"].append( "simulation" )
         if "blobfinder" in self.devData["builtinDevices"]:
             self.devData["builtinDevices"].append( "camera" )
-        for device in ["position", "laser", "ir", "sonar", "bumper"]:
+        for device in ["position", "laser", "ir", "sonar", "bumper", "simulation"]:
             #is it supported? if so start it up:
             if device in devNameList:
                 deviceName = self.startDevice(device)
+                self.devDataFunc[device] = self.get("/devices/%s0/object" % device)
                 if device == "laser":
                     self.devDataFunc["range"] = self.get("/devices/laser0/object")
-                    self.devDataFunc["laser"] = self.get("/devices/laser0/object")
                 elif device == "ir":
                     self.devDataFunc["range"] = self.get("/devices/ir0/object")
-                    self.devDataFunc["ir"] = self.get("/devices/ir0/object")
                 elif device == "sonar":
                     self.devDataFunc["range"] = self.get("/devices/sonar0/object")
-                    self.devDataFunc["sonar"] = self.get("/devices/sonar0/object")
                 elif device == "position":
                     self.devData["supportedFeatures"].append( "odometry" )
                     self.devData["supportedFeatures"].append( "continuous-movement" )
@@ -537,71 +563,68 @@ class PlayerRobot(Robot):
         self.localize(0.0, 0.0, 0.0)
         self.update()
 
+    def destroy(self):
+        self.thread.join()
+
     def startDeviceBuiltin(self, item):
-        if item == "ptz":
-            return {"ptz": PlayerPTZDevice(self.dev, "ptz")}
-        elif item == "comms":
-            return {"comms": PlayerCommDevice(self.dev, "comms")}
-        elif item == "gripper":
-            return {"gripper": PlayerGripperDevice(self.dev, "gripper")}
-        elif item == "laser":
-            return {"laser": PlayerLaserDevice(self.dev, "laser")}
+##         if item == "ptz":
+##             return {"ptz": PlayerPTZDevice(self.client, "ptz")}
+##         elif item == "gripper":
+##             return {"gripper": PlayerGripperDevice(self.client, "gripper")}
+        if item == "laser":
+            return {"laser": PlayerLaserDevice(self.client, "laser")}
         elif item == "sonar":
-            return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
-        elif item in self.devData["builtinDevices"]:
-            return {item: PlayerDevice(self.dev, item)}
-        elif item == "camera":
-            if self.devData["simulated"]:
-                return self.startDevice("BlobCamera", visible=0)
-            else:
-                return self.startDevice("V4LCamera")
-        else:
-            raise AttributeError, "player robot does not support device '%s'" % item
+            return {"sonar": PlayerSonarDevice(self.client, "sonar")}
+        elif item == "simulation":
+            return {"simulation": PlayerSimulationDevice(self.client, "simulation")}
+##         elif item == "camera":
+##             if self.devData["simulated"]:
+##                 return self.startDevice("BlobCamera", visible=0)
+##             else:
+##                 return self.startDevice("V4LCamera")
+##        elif item in self.devData["builtinDevices"]:
+        return {item: PlayerDevice(self.client, item)}
+##        else:
+##            raise AttributeError, "player robot does not support device '%s'" % item
     
     def translate(self, translate_velocity):
-        self.dev.set_speed(translate_velocity * 900.0, None, None)
-
+        self.position.handle.set_cmd_vel(translate_velocity, 0, 0, 1)
     def rotate(self, rotate_velocity):
-        self.dev.set_speed(None, None, rotate_velocity * 65.0)
-
+        self.position.handle.set_cmd_vel(0, 0, rotate_velocity, 1)
     def move(self, translate_velocity, rotate_velocity):
-        self.dev.set_speed(translate_velocity * 900.0,
-                           0,
-                           rotate_velocity * 65.0)
-
+        self.position.handle.set_cmd_vel(translate_velocity, 0, rotate_velocity, 1)
+        
     # FIX: either sonar values are changing between calls to X, Y
     # or sin/cos values are not taking into account offset from center
         
     def localX(self, pos):
         thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
-        dist = self.rawToUnits(self.dev.sonar[0][pos], 'sonar')
+        dist = self.rawToUnits(self.client.sonar[0][pos], 'sonar')
         x = self.rawToUnits(self.sonarGeometry[pos][0], 'sonar')
         return cos(thr) * dist
 
     def localY(self, pos):
         thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180
-        dist = self.rawToUnits(self.dev.sonar[0][pos], 'sonar')
+        dist = self.rawToUnits(self.client.sonar[0][pos], 'sonar')
         y = self.rawToUnits(self.sonarGeometry[pos][1], 'sonar') 
         return sin(thr) * dist
 
     def update(self):
         self._update()
         if self.hasA("position"):
-            pos, speeds, stall = self.dev.get_position()
-            # (xpos, ypos, th), (xspeed, yspeed, rotatespeed), stall
-            self.devData["x"] = pos[0] / 1000.0
-            self.devData["y"] = pos[1] / 1000.0
-            self.devData["th"] = pos[2] # degrees
-            self.devData["thr"] = pos[2] * PIOVER180
-            self.devData["stall"] = stall
-        
+            self.devData["x"] = self.devDataFunc["position"].handle.px
+            self.devData["y"] = self.devDataFunc["position"].handle.py
+            self.devData["thr"] = self.devDataFunc["position"].handle.pa # radians
+            self.devData["th"] = self.devData["thr"] / PIOVER180
+            self.devData["stall"] = self.devDataFunc["position"].handle.stall
+            
     def localize(self, x = 0, y = 0, th = 0):
         """
         Set robot's internal pose to x (meters), y (meters),
         th (radians)
         """
         if self.hasA("position"):
-            self.dev.set_odometry(x * 1000, y * 1000, th)
+            #self.client.set_odometry(x * 1000, y * 1000, th)
             self.x = x
             self.y = y
             self.th = th
@@ -609,14 +632,13 @@ class PlayerRobot(Robot):
 
     def connect(self):
         print "hostname=", self.hostname, "port=", self.port
-        self.dev = player(hostname=self.hostname, port=self.port)
-        #time.sleep(1)
-        #self.localize(0.0, 0.0, 0.0)
+        self.client = playerc.playerc_client(None, self.hostname, self.port)
+        self.client.connect()
 
     def removeDevice(self, item):
         Robot.removeDevice(self, item)
         try:
-            self.dev.stop(item)
+            self.client.stop(item)
         except:
             pass
 

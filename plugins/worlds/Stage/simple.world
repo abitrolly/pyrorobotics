@@ -9,7 +9,7 @@ include "pioneer.inc"
 include "map.inc"
 
 # set the size of a pixel in meters
-resolution 0.02
+resolution 0.04
 
 # configure the GUI window
 window
@@ -23,9 +23,11 @@ window
 map
 (
   bitmap "bitmaps/cave.png"
-  size [15 15]
+  size [16 16]
   boundary 1
-  name "map"
+  name "cave"
+
+  obstacle_return 0
 )
 
 # create a robot
@@ -33,5 +35,14 @@ pioneer2dx
 (
   name "robot"
   pose [2 1 0]
+  laser()
+)
+
+# create a robot
+pioneer2dx
+(
+  laser_return 0
+  name "robotb"
+  pose [3 1 0]
   laser()
 )

@@ -420,6 +420,11 @@ class gui:
                                                   self.lastDir.get("%s-world" % simulatorName,
                                                                    "%s/plugins/worlds/%s/" %
                                                                    (pyropath, simDirName)))
+               elif simulatorName == "StageSimulator":
+                  worldfile = self.fileloaddialog("worlds","*.cfg",
+                                                  self.lastDir.get("%s-world" % simulatorName,
+                                                                   "%s/plugins/worlds/%s/" %
+                                                                   (pyropath, simDirName)))
                else:
                   worldfile = self.fileloaddialog("worlds","*.world",
                                                   self.lastDir.get("%s-world" % simulatorName,

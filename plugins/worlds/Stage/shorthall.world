@@ -19,7 +19,6 @@ model
         pose [1.000 2.000 0.000]
 )
 
-
 pioneer2dx
 (
   color "red"
