@@ -6,6 +6,7 @@ from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
 from math import pi, cos, sin
 from os import getuid
+import time
 
 PIOVER180 = pi / 180.0
 DEG90RADS = 0.5 * pi
@@ -210,23 +211,32 @@ class AriaSensor:
         self.data = {}
         self.subdataFunc = {}
         self.data['type'] = 'range'
+
+    def _set(self, path, value):
+        if path[0] in self.data:
+            self.data[path[0]] = value
+        else:
+            raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
     def _get(self, path):
         if len(path) == 0:
             # return all of the things a sensor can show
-            return self.data.keys() + self.groups.keys()
+            tmp = self.data.copy()
+            tmp.update( dict([(key + "/", self.groups[key]) for key in self.groups]))
+            return serviceDirectoryFormat(tmp, 0)
         elif len(path) == 1 and path[0] in self.data:
             # return a value
             return self.data[path[0]]
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
-            return self.subdataFunc.keys()
-        else:
+            return serviceDirectoryFormat(self.subdataFunc, 0)
+        else: # let's get some specific data
             keys = path[0]
             elements = path[1]
             if elements == "*":
-                elements = self.subdataFunc.keys()
-            if issubclass(type(keys), (type((1,)), type([1,]))):
+                elements = self.subdataFunc.keys() #serviceDirectoryFormat(self.subdataFunc, 1)
+            # if keys is a collection:
+            if isinstance(keys, (type((1,)), type([1,]))):
                 keyList, keys = keys, []
                 for k in keyList:
                     if k in self.groups.keys():
@@ -234,6 +244,7 @@ class AriaSensor:
                     else:
                         keys.append( k )
             elif keys in self.groups.keys():
+                # single keyword, so just replace keys with the numeric values
                 keys = self.groups[keys]
             # 4 cases:
             # 1 key 1 element
@@ -241,10 +252,10 @@ class AriaSensor:
                 return self.subdataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
-                dict = {}
+                mydict = {}
                 for e in elements:
-                    dict[e] = self.subdataFunc[e](keys)
-                return dict
+                    mydict[e] = self.subdataFunc[e](keys)
+                return mydict
             # many keys 1 element
             elif type(elements) == type("value"):
                 retval = []
@@ -255,10 +266,10 @@ class AriaSensor:
             else:
                 retval = []
                 for i in keys:
-                    dict = {}
+                    mydict = {}
                     for e in elements:
-                        dict[e] = self.subdataFunc[e](i)
-                    retval.append( dict )
+                        mydict[e] = self.subdataFunc[e](i)
+                    retval.append( mydict )
                 return retval
 
 class AriaSonar(AriaSensor):
@@ -297,6 +308,14 @@ class AriaSonar(AriaSensor):
 	self.subdataFunc['z']     = lambda pos: 0.03 # meters
         self.subdataFunc['value'] = self.getSonarRangeDev
         self.subdataFunc['pos']   = lambda pos: pos
+        self.subdataFunc['group']   = lambda pos: self.getGroupNames(pos)
+
+    def getGroupNames(self, pos):
+        retval = []
+        for key in self.groups:
+            if pos in self.groups[key]:
+                retval.append( key )
+        return retval
 
     def getSonarRangeDev(self, pos):
         return self.rawToUnits(self.device.getSonarRange(pos) / 1000.0)
@@ -360,7 +379,7 @@ class AriaBumper(AriaSensor):
     def __init__(self,  params, device):
         AriaSensor.__init__(self, params, device)
         self.data['maxvalue'] = 1.0 # FIX
-        self.data['units']    = "BOOLEAN"
+        self.data['units']    = "RAW"
         self.data["count"] = self.params.numFrontBumpers() + self.params.numRearBumpers()
         if self.data["count"] == 5:
             self.groups = {'all': range(16),
@@ -423,11 +442,12 @@ class AriaRobot(Robot):
         self.data['x'] = 0.0
         self.data['y'] = 0.0
         self.data['z'] = 0.0
-        self.data['radius'] = self.params.getRobotRadius() # in MM
+        self.data['datestamp'] = time.time()
+        self.data['radius'] = self.params.getRobotRadius() / 1000.0 # in MM, convert to meters
         self.data['th'] = 0.0 # in degrees
         self.data['thr'] = 0.0 # in radians
 	self.data['type'] = self.dev.getRobotType()
-        self.data['units'] = 'METERS'
+        self.data['units'] = 'METERS' # x,y,z units
         self.data['name'] = self.dev.getRobotName()
         console.log(console.INFO,'aria sense drivers loaded')
         self.dev.runAsync(1)
@@ -441,22 +461,6 @@ class AriaRobot(Robot):
             self.dataFunc["bumper"] = AriaBumper(self.params, self.dev)
 	self.update() 
         self.inform("Done loading Aria robot.")
-
-    def _get(self, pathList):
-        if len(pathList) == 0:
-            return self.data.keys() + self.dataFunc.keys()
-        key = pathList[0]
-        args = pathList[1:]
-        if key in self.data:
-            return self.data[key]
-        elif key in self.dataFunc:
-            return self.dataFunc[key]._get(args)
-        if key == '*':
-            tmp = self.data.copy()
-            tmp.update( self.dataFunc )
-            return tmp #map(lambda obj: obj._get(args), self.dataFunc)
-        else:
-            raise AttributeError, "robot has no such item '%s'" % key
 
     def translate(self, translate_velocity):
         self.dev.lock()
@@ -483,6 +487,7 @@ class AriaRobot(Robot):
         self.data["th"] = (self.dev.getTh() + 360) % 360
         self.data["thr"] = self.data["th"] * PIOVER180
         self.data["stall"] = self.dev.getStallValue()
+        self.data['datestamp'] = time.time()
         self.dev.unlock()
     
     def enableMotors(self):
