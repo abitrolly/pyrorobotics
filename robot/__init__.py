@@ -145,8 +145,10 @@ class Robot:
     #    return self.get(path)
 
     def __repr__(self):
-        retval = 'Robot properties:\n---------------------------------\n'
-        for item in self.get("robot/"):
+        retval = '---------------------------------\nRobot properties:\n---------------------------------\n'
+        items = self.get("robot/")
+        items.sort()
+        for item in items:
             if item[-1] == "/": # more things below this
                 retval += "%12s\n" % item
             else:
@@ -163,15 +165,19 @@ class Robot:
         console.log(console.INFO, msg)
 
     def getAll(self, path = '', depth = 0):
-        retval = ''
+        retval = '=======================================================\n'
         pathList = self.get(path, showstars = 1)
         if isinstance(pathList, (type((1,)), type([1,]))):
             pathList.sort()
         for item in pathList:
             # HACK! Is the word range in the item? Alias!
-            if item in ["range/", "light/", "ir/", "sonar/", "laser/"]:
-            #if item.find("range") >= 0:
-                retval += ("   " * depth) + ("%s = <alias to %s/>\n" % (item, self.get("robot/%sname" % item)))
+            try:
+                self.get("robot/%sname" % item)
+                isDevice = 1
+            except:
+                isDevice = 0
+            if isDevice:
+                retval += ("   " * depth) + ("%s = <alias to /devices/%s/>\n" % (item, self.get("robot/%sname" % item)))
                 continue
             if item[0] == "*": # a group (link), do not recur
                 things = ellipses(self.get("%s/%s/pos" % (path, item[1:]), showstars = 1))
@@ -397,7 +403,7 @@ class Robot:
                 console.log(console.INFO,"Loading device '%s'..." % deviceName)
                 self.device[deviceName] = item[dev]
                 item[dev].devData["name"] = deviceName
-                #self.devData[dev] = "<alias to %s>" % dev #item[dev]
+                self.devDataFunc[dev] = item[dev]
                 retval.append(deviceName)
                 retval.append( None )
             return retval
