@@ -106,13 +106,13 @@ class AriaRobot(Robot):
         self.inform("Done loading Aria robot.")
 
     def getSonarX(self, pos):
-        x = self.dev.getSonarReading(pos).getSx() 
-        y = self.dev.getSonarReading(pos).getSy()
+        x = self.dev.getSonarReading(pos).getLocalX() 
+        y = self.dev.getSonarReading(pos).getLocalY()
         return (COSDEG90RADS * x - SINDEG90RADS * y)
 
     def getSonarY(self, pos):
-        x = self.dev.getSonarReading(pos).getSx() 
-        y = self.dev.getSonarReading(pos).getSy() 
+        x = self.dev.getSonarReading(pos).getLocalX() 
+        y = self.dev.getSonarReading(pos).getLocalY() 
         return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
     def setGripper(self, dev, option):
