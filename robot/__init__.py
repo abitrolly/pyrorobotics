@@ -1,0 +1,248 @@
+#
+# This file contains the class that represents a computer controlled
+# physical agent (robot). A robot is a bunch of drivers that offer
+# sences and ? (outputs)
+#
+# - stephen -
+#
+
+# .get()             - interface to robot, sensors
+# .act()             - interface to motion, actions
+
+
+import pyro.gui.console as console
+from pyro.gui.drawable import *
+from pyro.geometry.Vector import *
+import time
+
+class Robot (Drawable):
+    """
+    this be the one.
+    """
+    
+    def __init__(self, name = None, type = None):
+        """
+        if you extend Robot please call this function!
+        """
+        Drawable.__init__(self, name)
+        console.log(console.INFO,'Creating Robot');
+        #self.data = name
+        self.name = name
+        self.type = type
+        
+        self.drivers = [] # something that implements the driver interface
+        self.senses  = {} # (name,type,driver,AffineVector(),reading)
+        self.controls = {} # (name,type,driver,control value)
+
+    def disconnect(self):
+        console.log(console.WARNING, "need to override DISCONNECT in robot")
+
+    def localize(self):
+        console.log(console.WARNING, "need to override LOCALIZE in robot")
+
+    def load_drivers(self): # call this after init!
+        self.loadDrivers()
+        self.loadSenses()
+        self.loadControllers()
+        self.SanityCheck()
+
+    def inform(self, msg):
+        # queue it up
+        console.log(console.INFO, msg)
+        
+    def loadDrivers(self):
+        """
+        This is an 'abstract' function ment for child classes to overide.
+        It should load the drivers that a particular robot uses.
+        """
+        console.log(console.ERROR,"Someone needs to implement loadDrivers in their robot extension class!");
+    
+    def loadSenses(self):
+        """
+        this is a helper function for __init__that loads the senses from
+        the drivers.
+        """
+        for driver in self.drivers:
+            sd = driver.getSenses()
+            for key in sd.keys():
+                console.log(console.INFO,'Adding sensor "'+key+'" from driver '+driver.__class__.__name__)
+                self.senses[key] = sd[key]
+
+    def loadControllers(self):
+        """
+        this is a helper function for __init__that loads the senses from
+        the drivers.
+        """
+        for driver in self.drivers:
+            cd = driver.getControls()
+            for key in cd.keys():
+                console.log(console.INFO,'Adding control "'+key+'" from driver '+driver.__class__.__name__)
+                self.controls[key] = cd[key]
+                
+    def get(self, device = 'robot', data = None, pos = None):
+	"""
+	this is designed to be the main interface to the robot
+	and its parts. There is one assumed piece, self.dev that
+	is the actual pointer to the robot device
+	"""
+	if (data == None):
+		return self.senses[device]
+	elif (pos == None):
+		return self.senses[device][data](self.dev)
+	elif (pos == 'function'):
+		return self.senses[device][data]
+	else:
+		return self.senses[device][data](self.dev, pos)
+
+    def step(self, dir):
+        if dir == 'L':
+            self.rotate(.3)
+        elif dir == 'R':
+            self.rotate(-.3)
+        elif dir == 'B':
+            self.translate(-.3)
+        elif dir == 'F':
+            self.translate(0.3)
+
+    def accelerate(self, translate, rotate):
+        self.act('accelerate', translate, rotate)
+        
+    def move(self, translate, rotate):
+        self.act('move', translate, rotate)
+
+    def stop(self):
+        self.act('move', 0, 0)
+
+    def translate(self, val):
+        self.act('translate', val)
+
+    def rotate(self, val):
+        self.act('rotate', val)
+
+    def getMin(self, sensor = 'all', type = 'range', srange = 'all'):
+        if sensor != 'all':
+            type = self.senses[sensor]['type'](self.dev)
+        mindist = 10000
+        minangle = 0
+        if sensor == 'all':
+            for sensor in self.senses.keys():
+                if self.senses[sensor]['type'](self.dev) == type:
+                    if srange == 'all':
+                        srange = range(self.senses[sensor]['count'](self.dev))
+                    for i in srange:
+                        dist = self.senses[sensor]['value'](self.dev, i)
+                        if dist < mindist:
+                            mindist = dist
+                            minangle = self.senses[sensor]['th'](self.dev, i)
+        else: # specific sensor
+            if self.senses[sensor]['type'](self.dev) == type:
+                if srange == 'all':
+                    srange = range(self.senses[sensor]['count'](self.dev))
+                for i in srange:
+                    dist = self.senses[sensor]['value'](self.dev, i)
+                    if dist < mindist:
+                        mindist = dist
+                        minangle = self.senses[sensor]['th'](self.dev, i)
+            else:
+                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
+        return Vector(mindist, minangle)
+    
+    def getMax(self, sensor = 'all', type = 'range', srange = 'all'):
+        if sensor != 'all':
+            type = self.senses[sensor]['type'](self.dev)
+        maxdist = -10000
+        maxangle = 0
+        if sensor == 'all':
+            for sensor in self.senses.keys():
+                if self.senses[sensor]['type'](self.dev) == type:
+                    if srange == 'all':
+                        srange = range(self.senses[sensor]['count'](self.dev))
+                    for i in srange:
+                        dist = self.senses[sensor]['value'](self.dev, i)
+                        if dist > maxdist:
+                            maxdist = dist
+                            maxangle = self.senses[sensor]['th'](self.dev, i)
+        else: # specific sensor
+            if self.senses[sensor]['type'](self.dev) == type:
+                if srange == 'all':
+                    srange = range(self.senses[sensor]['count'](self.dev))
+                for i in srange:
+                    dist = self.senses[sensor]['value'](self.dev, i)
+                    if dist > maxdist:
+                        maxdist = dist
+                        maxangle = self.senses[sensor]['th'](self.dev, i)
+            else:
+                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
+        return Vector(maxdist, maxangle)
+
+    def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
+        if sensor != 'all':
+            type = self.senses[sensor]['type'](self.dev)
+        if area == 'front':
+            area = 0 # angle of highest weighting
+        maxdist = -10000
+        maxangle = 0
+        if sensor == 'all':
+            for sensor in self.senses.keys():
+                if self.senses[sensor]['type'](self.dev) == type:
+                    # compute which are in srange
+                    for i in srange:
+                        dist = self.senses[sensor]['value'](self.dev, i)
+                        if dist > maxdist:
+                            maxdist = dist
+                            maxangle = self.senses[sensor]['th'](self.dev, i)
+        else: # specific sensor
+            if self.senses[sensor]['type'](self.dev) == type:
+                # compute which are in srange
+                for i in srange:
+                    dist = self.senses[sensor]['value'](self.dev, i)
+                    if dist > maxdist:
+                        maxdist = dist
+                        maxangle = self.senses[sensor]['th'](self.dev, i)
+            else:
+                raise "Sensor '" + sensor + "' is not of type '" + type + "'"
+        return Vector(maxdist, maxangle)
+
+    def getObstacle(self, angle):
+        # angle
+        pass
+
+    def act(self, action = None, value1 = None, value2 = None, val3 = None):
+	"""
+	this is designed to be the main interface to having the robot
+	move. this is currently hotwired for forward/turn only
+	"""
+	if (action == None):
+		return self.controls 
+	elif (value1 == None):
+		return self.controls[action]
+	elif (value2 == None):
+		self.controls[action](self.dev, value1)
+	elif (val3 == None):
+		self.controls[action](self.dev, value1, value2)
+	else:
+		self.controls[action](self.dev, value1, value2, val3)
+        self.needToRedraw = 1
+        self.update() # updates the robot's state reflector
+        #self.gui.win.tkRedraw()
+
+    def update(self):
+        """
+        This is a common control that isn't an act, so we pull it out
+        here.
+        """
+        self.controls['update'](self.dev)
+
+    def SanityCheck(self):
+	if (not self.senses.has_key('robot')):
+	        console.log(console.FATAL,'sense has NO robot')
+	if (not self.controls.has_key('move')):
+	        console.log(console.FATAL,'control has NO move')
+	if (not self.controls.has_key('translate')):
+	        console.log(console.FATAL,'control has NO translate')
+	if (not self.controls.has_key('rotate')):
+	        console.log(console.FATAL,'control has NO rotate')
+	if (not self.controls.has_key('update')):
+	        console.log(console.FATAL,'control has NO update')
+        console.log(console.INFO,'robot sanity check completed')
+
