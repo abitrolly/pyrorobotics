@@ -252,7 +252,16 @@ if __name__ == '__main__':
     alpha = 0.02
     ravqBuffer = 5
     govBuffer = 5
+
     # The "16" weights the input determining the multiple labels
+    
+    # The choice of epsilon and delta may change the required
+    # weights. For binary nodes, changing the value will make the vector
+    # distance one from every vector with the opposite value in that
+    # node. This change is enough if the delta value is less than
+    # one. Use of a high weight value is more to reflect that that
+    # node is important in determining the function of the network.
+    
     govMask = [1] * (inSize - 1) + [16] + [inSize/4] * 4
     governor = BalancingGovernor(ravqBuffer, govEpsilon, delta, alpha, govMask, govBuffer)
 
