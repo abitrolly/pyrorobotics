@@ -67,7 +67,10 @@ class SerialConnection:
                                       IXON|IXOFF)
 	mode[self.OFLAG] = mode[self.OFLAG] & ~(OPOST)
 	mode[self.CFLAG] = mode[self.CFLAG] & ~(CSIZE | PARENB)
-	mode[self.CFLAG] = mode[self.CFLAG] | (CS8 | CSTOPB)
+        # CS8 = 8 Bits, CSTOPB = 1 stop bit, CRTSCTS = no hardware flow control
+        # PARENB = no parity; BAUD/N/8/1 
+	mode[self.CFLAG] = mode[self.CFLAG] | (CS8)
+	mode[self.CFLAG] = mode[self.CFLAG] & ~(PARENB | CSTOPB | CRTSCTS)
 	mode[self.LFLAG] = mode[self.LFLAG] & ~(ECHO | ICANON | IEXTEN | ISIG)
 	mode[self.CC][VMIN] = 1
 	mode[self.CC][VTIME] = 0
