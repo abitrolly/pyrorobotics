@@ -90,7 +90,9 @@ class Trace:
 
     def drawSymbol(self, loc, angle, label = None):
         pointList = []
-        if label:
+        if type(label) == type("") and len(label) >= 2 and label[0] == '"':
+            label = label[1:-1]
+        elif label:
             label = self.getSymbol(label)
         else:
             label = self.getSymbol(1)
@@ -179,7 +181,7 @@ class Trace:
 if __name__ == "__main__":
     import sys, getopt, signal
     if len(sys.argv) < 2:
-        opts, args = ('-h', '')
+        opts, args = [('-h','',)], []
     else:
         opts, args = getopt.getopt(sys.argv[3:], "c:s:i:l:r:o:hvw", ["color=", "symbols=", "interval=", "length=", "resolution=", "outfile=", "help", "view", "window"])
     resolution = 0.01
@@ -214,6 +216,8 @@ if __name__ == "__main__":
             defaults["window"] = "1"
         elif opt in ("-v", "--view"):
             defaults["view"] = "1"
+        else:
+            raise ValueError, "invalid option: '%s'" % opt
     tracer = Trace(sys.argv[1], sys.argv[2], resolution) # world, data
     prevsighandler = signal.signal(signal.SIGINT, tracer.hideWindow)
     for item in defaults:
