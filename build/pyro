@@ -29,10 +29,11 @@ except ImportError:
 
 robotfile = 0
 brainfile = 0
-window = 'GL'
+window = 'TK'
 brainargs = []
 simulator = 0
 configfile = 0
+camerafile = 0
 
 def basichelp():
     print "You may need to define the PYRO environment variable. Try:"
@@ -52,13 +53,14 @@ except:
 
 def process_options():
     import getopt, sys, string
-    global robotfile, brainfile, window, simulator, brainargs, configfile
+    global robotfile, brainfile, window, simulator, \
+           brainargs, configfile, camerafile
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:o:c:", \
+                                   "r:b:hg:s:o:i:c:", \
                                    ["robot", "brain", "help", \
-                                    "load", "gui", "sim", "brain-args",\
-                                    "config"])
+                                    "gui", "sim", "brain-args",\
+                                    "init", "camera"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -78,8 +80,10 @@ def process_options():
             brainfile = a
 	elif o in ("-o", "--brain-args"):
             brainargs = a.split(":")
-	elif o in ("-c", "--config"):
+	elif o in ("-i", "--init"):
             configfile = a
+	elif o in ("-c", "--camera"):
+            camerafile = a
 
 if pyro.startup_check():
     import pyro.system
@@ -100,27 +104,30 @@ if pyro.startup_check():
         brainfile = c.get('brain', 'file')
     else:
         c.put('brain', 'file', brainfile)
+    if not camerafile:
+        camerafile = c.get('camera', 'file')
+    else:
+        c.put('camera', 'file', camerafile)
     if not brainargs:
         brainargs = c.get('brain', 'args')
     else:
         c.put('brain', 'args', brainargs)
     share.config = c
-    eng = Engine(robotfile, brainfile, simulator, brainargs, c)
+    eng = Engine(robotfile, brainfile, simulator, brainargs, c, camerafile)
     if window == 'GL':
-        from pyro.gui.GL import *
+        from pyro.gui.GL import GLgui
         gui = GLgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TK':
-        from pyro.gui.GL import *
-        gui = GLgui(eng, mode = 0)
+        from pyro.gui.TK import TKgui
+        gui = TKgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TTY':
         gui = pyro.gui.gui("tty gui", {}, eng)
     elif window == 'CURSES':
         from pyro.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)
-
-    gui.init()
+    gui.engine.postinit()
     gui.run()
     gui.cleanup()
 else:
