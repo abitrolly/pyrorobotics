@@ -54,6 +54,12 @@ class Reinforce(Brain):
                          title = 'Predicted Inputs')
       self.targ = Hinton(self.getRobot().get('range', 'count'),
                          title = 'Actual Inputs')
+
+   def destroy(self):
+      self.plot.destroy()
+      self.pred.destroy()
+      self.targ.destroy()
+      del self.net
        
    def scale(self, val):
       '''scale val to fall between 0 and 1'''

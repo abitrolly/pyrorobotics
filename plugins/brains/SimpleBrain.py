@@ -1,11 +1,12 @@
 # A bare brain
 
 from pyro.brain import Brain
+from time import sleep
 
 class SimpleBrain(Brain):
 
    def setup(self, **args):
-      print args.get('my_arg')
+      print "Loading arg: '%s'" % args.get('my_arg')
       # initialize your vars here!
       
    # Only method you have to define is the step method:

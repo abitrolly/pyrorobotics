@@ -42,6 +42,12 @@ class NNBrain(Brain):
                              title = 'Input Layer')
       self.outHinton = Hinton(2, title = 'Output Layer')
 
+   def destroy(self):
+      self.hidScat.destroy()
+      self.hidHinton.destroy()
+      self.inHinton.destroy()
+      self.outHinton.destroy()
+
    def scale(self, val):
       return (val / self.maxvalue)
    
@@ -75,7 +81,7 @@ class NNBrain(Brain):
       print self.counter
          
       # First, set inputs and targets:
-      ins = map(self.scale, self.getRobot().get('range', 'all'))
+      ins = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       self.net.setInputs([ ins ])
       # Compute targets:
       if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:

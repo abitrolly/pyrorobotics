@@ -43,6 +43,12 @@ class predict(Brain):
       self.plot2.setTitle('hidden 0 x hidden 1')
       self.plot3 = Scatter()
       self.plot3.setTitle('targetT x targetR')
+
+   def destroy(self):
+      self.plot1.destroy()
+      self.plot2.destroy()
+      self.plot3.destroy()
+      del self.net
       
    def scale(self, val):
       return (val / self.maxvalue)           
@@ -71,10 +77,10 @@ class predict(Brain):
       
       # set up inputs and learn
       if self.counter == 0:
-         self.new = map(self.scale, self.getRobot().get('range', 'all'))
+         self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       else:
          old = self.new + [self.trans, self.rotate] #trans and rotate
-         self.new = map(self.scale, self.getRobot().get('range', 'all'))
+         self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))
          self.net.setInputs([old, self.new])
          self.net.sweep()
       
