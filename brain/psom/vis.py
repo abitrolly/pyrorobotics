@@ -44,6 +44,11 @@ class VisPsom(psom):
          del keys['title']
       else:
          title = "VisPsom"
+      if 'opts' in keys.keys():
+         self.opts = keys['opts']
+         del keys['opts']
+      else:
+         self.opts = None
 
         
       psom.__init__(self, *args, **keys)
@@ -104,7 +109,10 @@ class VisPsom(psom):
          vec = self.get_model_vector(point(x, y))
          if x == self.last_x and y == self.last_y:
             visclass = getVisVectorByName(self.vectortype)
-            visclass(vec, title="(%d, %d)" % (x, y))
+            if self.opts: # override defaults
+               visclass(vec, title="(%d, %d)" % (x, y), opts = self.opts)
+            else:
+               visclass(vec, title="(%d, %d)" % (x, y))
          else:
             # show difference
             vec2 = self.get_model_vector(point(self.last_x, self.last_y))
@@ -113,8 +121,12 @@ class VisPsom(psom):
                diffvec.append( vec[v] - vec2[v] )
             myvector = vector( diffvec )
             visclass = getVisVectorByName(self.vectortype)
-            visclass(myvector, title="(%d, %d) diff (%d, %d)"
-                     % (x, y, self.last_x, self.last_y))
+            if self.opts:
+               visclass(myvector, title="(%d, %d) diff (%d, %d)"
+                        % (x, y, self.last_x, self.last_y), opts = self.opts)
+            else:
+               visclass(myvector, title="(%d, %d) diff (%d, %d)"
+                        % (x, y, self.last_x, self.last_y))
 
    def canvas_clicked_down(self, event):
       celllist = self.canvas.find_overlapping(event.x, event.y,

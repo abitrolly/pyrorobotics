@@ -9,6 +9,7 @@ from Tkinter import *
 import struct
 from PIL import ImageTk
 import pyro.gui.plot.hinton
+import pyro.gui.plot.matrix
 
 class VisVector:
    """
@@ -16,7 +17,7 @@ class VisVector:
    Each subclass should be made specifically for a type of vector.
    """
 
-   def __init__(self, vector, title=""):
+   def __init__(self, vector, title="", opts = (0, 0)):
       raise "This is an abstract function."
 
    def close(self):
@@ -29,7 +30,7 @@ class IRVisVector(VisVector):
    floats.
    """
 
-   def __init__(self, vector, title=""):
+   def __init__(self, vector, title="", opts = (0, 0)):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
 
@@ -51,7 +52,7 @@ class GenericVisVector(VisVector):
    """
    Display a generic vector of floats.
    """
-   def __init__(self, vector, title=""):
+   def __init__(self, vector, title="", opts = (0, 0)):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
 
@@ -73,10 +74,10 @@ class GrayscaleVisVector(VisVector):
    """
    Display a vector of floats representing a grayscale image
    """
-   def __init__(self, vector, height, width, title=""):
+   def __init__(self, vector, title="", opts = (0, 0)):
       self.vector = vector.get_elts()
       self.length = len(self.vector)
-
+      width, height = opts
       self.win = Tk()
       self.win.title(title)
       self.canvas = Canvas(self.win, width=width, height=height)
@@ -100,7 +101,8 @@ class HintonVisVector(VisVector, pyro.gui.plot.hinton.Hinton):
    """
    Use the Hinton plot to display the vector
    """
-   def __init__(self, vector, maxval=None, title=""):
+   def __init__(self, vector, title="", opts = (None,)):
+      maxval = opts[0]
       if not maxval:
          maxval = max(vector)
       pyro.gui.plot.hinton.Hinton.__init__(self, data=vector.get_elts(),
@@ -108,11 +110,26 @@ class HintonVisVector(VisVector, pyro.gui.plot.hinton.Hinton):
       b = Button(self.win, text="Close", command=self.close)
       b.pack()
 
+class MatrixVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
+   """
+   Use the Matrix plot to display the vector
+   """
+   def __init__(self, vector, title="", opts = (None,)):
+      maxval = opts[0]
+      if not maxval:
+         maxval = max(vector)
+      cols, rows = opts
+      pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
+                                           rows = rows, cols = cols,
+                                           maxvalue=255, title=title)
+      b = Button(self.win, text="Close", command=self.close)
+      b.pack()
+
 class BarGraphVisVector(VisVector):
    """
    Display a vector as a series of horizonal bars
    """
-   def __init__(self, vector, minval=None, maxval=None, title=""):
+   def __init__(self, vector, title="", opts = (None, None)):
       """
       Min and max can either be scalar minima and maxima for the
       entire vector, or it can be a list of the same length as the vector,
@@ -120,7 +137,7 @@ class BarGraphVisVector(VisVector):
       """
       self.vector = vector.get_elts()
       self.length = len(self.vector)
-
+      minval, maxval = opts
       #if the min and max are given as scalar values,
       #convert them to vectors of the length of the
       #vector
@@ -171,6 +188,8 @@ def getVisVectorByName(type):
       return BarGraphVisVector
    elif type =="Hinton":
       return HintonVisVector
+   elif type =="Matrix":
+      return MatrixVisVector
    else:
       raise "VisVector type not supported"
 
