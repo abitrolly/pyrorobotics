@@ -1,4 +1,4 @@
-import Numeric, math
+import Numeric, math, random
 
 version = '1.3'
 
@@ -109,8 +109,32 @@ def dec2bin(val, maxbits = 8):
         bit = int(val / (2 ** i)) 
         val = (val % (2 ** i)) 
         retval.append(bit) 
-    return retval 
-    
+    return retval
+
+def makeNoisyList(ls, percentNoise=0.1, minVal=0.0, maxVal=1.0):
+    """
+    Returns a noisy version of the given list, and assumes a range
+    of values between 0.0 and 1.0.
+    """
+    retval = []
+    for i in range(len(ls)):
+        if random.random() < 0.5:
+            retval.append(max(ls[i] - (random.random() * percentNoise), minVal))
+        else:
+            retval.append(min(ls[i] + (random.random() * percentNoise), maxVal))
+    return retval
+
+def makeNoisySequence(sequence, repeat, percentNoise=0.1):
+    """
+    Returns a noisy version of the given sequence, with each item
+    repeated the number of times designated by the repeat variable.
+    """
+    retval = []
+    for i in range(len(sequence)):
+        for j in range(repeat):
+            retval.append(makeNoisyList(sequence[i], percentNoise))
+    return retval
+
 class RAVQ:
     """
     Implements RAVQ algorithm as described in Linaker and Niklasson.
@@ -152,8 +176,13 @@ class RAVQ:
         calling input will return any information necessary from the
         ravq.
         """
+        if self.verbosity > 1:
+            print "Step:", self.time
+            print vec
         array = Numeric.array(vec, 'd')
         if self.time < self.size:
+            if self.verbosity > 1:
+                print "filling buffer"
             self.buffer.append(array)
             if self.time == 0:
                 if not self.__dict__.has_key('mask'):
@@ -307,6 +336,8 @@ class RAVQ:
         (2000).---
         """
         self.setMovingAverage()
+        if self.verbosity > 1:
+            print "Moving average:", self.movingAverage
         self.setMovingAverageDistance()
         self.setModelVectorsDistance()
         if self.addModels:
@@ -671,8 +702,11 @@ class ExperimentalRAVQ(ARAVQ):
                                                     [self.currentInput]
         
 if __name__ == '__main__':
-            
+
+    print "Creating a RAVQ using all possible lists of 8 bits"
+    print "------------------------------------------------------------"
     bitlist = makeBitList()
+    #parameters are buffer size, epsilon, and delta
     ravq = RAVQ(4, 2.1, 1.1)
     ravq.setHistory(1)
     cnt = 0
@@ -680,9 +714,10 @@ if __name__ == '__main__':
         ravq.addLabel(str(cnt), bits)
         ravq.input(bits)
         cnt += 1
-
     print ravq
 
+    print "Creating an adaptive RAVQ using all possible lists of 8 bits"
+    print "------------------------------------------------------------"
     ravq = ARAVQ(4, 2.1, 1.1, .2)
     ravq.setHistory(1)
     ravq.setHistorySize(2)
@@ -696,7 +731,25 @@ if __name__ == '__main__':
             ravq.getHistory(index) # test history features
             index = (index + 1) % ravq.getHistoryLength() 
         cnt += 1
-    print len(ravq.models)
+    print ravq
+
+    print "Creating a RAVQ using a sequence of real-valued lists"
+    print "------------------------------------------------------------"
+    seq = makeNoisySequence([[0.0, 0.5, 1.0],
+                             [0.5, 0.5, 0.5],
+                             [1.0, 0.1, 0.1],
+                             [0.9, 0.9, 0.9],
+                             [0.3, 0.3, 0.8]], 5, 0.05)
+    ravq = RAVQ(4, 2.1, 0.5)
+    ravq.setVerbosity(2)
+    ravq.setHistory(1)
+    ravq.setHistorySize(2)
+    for i in range(len(seq)):
+        ravq.input(seq[i])
+    print ravq
+    
+    print "Test the masking capability and distance measures"
+    print "------------------------------------------------------------"
     print ravq.mask
     # test masking functionality in euclidean distance calc's
     print euclideanDistance(Numeric.array([1,2]),
@@ -706,3 +759,4 @@ if __name__ == '__main__':
     for x in range(8):
         print stringArray(ravq.getHistory(x),0)
         
+
