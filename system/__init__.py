@@ -81,28 +81,16 @@ def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
         raise ImportError, "your program needs an INIT() function"
     if brain is 0:
         if engine is 0:
-            try:
-                retval = userspace.INIT()
-            except:
-                raise ImportError, "your INIT() should not require any args; is this the right file?"
+            retval = userspace.INIT()
             return retval
         else:
             if args:
-                try:
-                    retval = userspace.INIT(engine, args)
-                except:
-                    raise ImportError, "your INIT() should take an engine and args; is this the right file?"
+                retval = userspace.INIT(engine, args)
                 return retval
             else:
-                try:
-                    retval = userspace.INIT(engine)
-                except:
-                    raise ImportError, "your INIT() should take an engine; is this the right file?"
+                retval = userspace.INIT(engine)
                 return retval
     else:
-        try:
-            retval = userspace.INIT(engine, brain)
-        except:
-            raise ImportError, "your INIT() should take an engine and a brain; is this the right file?"
+        retval = userspace.INIT(engine, brain)
         return retval
 
