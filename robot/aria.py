@@ -11,6 +11,26 @@ DEG90RADS = 0.5 * pi
 COSDEG90RADS = cos(DEG90RADS) / 1000.0
 SINDEG90RADS = sin(DEG90RADS) / 1000.0
 
+BIT0 = 0x1
+BIT1 = 0x2 
+BIT2 = 0x4 
+BIT3 = 0x8 
+BIT4 = 0x10
+BIT5 = 0x20
+BIT6 = 0x40 
+BIT7 = 0x80 
+BIT8 = 0x100 
+BIT9 = 0x200 
+BIT10 = 0x400 
+BIT11 = 0x800 
+BIT12 = 0x1000 
+BIT13 = 0x2000 
+BIT14 = 0x4000 
+BIT15 = 0x8000 
+
+BITPOS = (BIT0, BIT1, BIT2,  BIT3,  BIT4,  BIT5,  BIT6,  BIT7,
+          BIT8, BIT9, BIT10, BIT11, BIT12, BIT13, BIT14, BIT15 )
+
 class AriaRobot(Robot):
     def __init__(self, name = "Aria"):
         Robot.__init__(self, name, "aria") # robot constructor
@@ -75,12 +95,12 @@ class AriaRobot(Robot):
             # bumper sensors
             self.senses['bumper'] = {}
             self.senses['bumper']['type'] = lambda dev: 'tactile'
-            self.senses['bumper']['count'] = lambda : self.params.numFrontBumpers() + self.params.numRearBumpers()
+            self.senses['bumper']['count'] = lambda dev: self.params.numFrontBumpers() + self.params.numRearBumpers()
             self.senses['bumper']['x'] = lambda dev, pos: 0
             self.senses['bumper']['y'] = lambda dev, pos: 0
             self.senses['bumper']['z'] = lambda dev, pos: 0
             self.senses['bumper']['th'] = lambda dev, pos: 0 
-            self.senses['bumper']['value'] = lambda dev, pos: 0
+            self.senses['bumper']['value'] = lambda dev, pos: self.getBumpersPosDev(dev, pos)
 
         self.controls['gripper'] = ArGripper(self.dev)
         self.controls['ptz'] = ArSonyPTZ(self.dev)
@@ -401,6 +421,20 @@ class AriaRobot(Robot):
     def disconnect(self):
         print "Disconnecting..."
         self.dev.disconnect()
+
+    def getBumpersPosDev(self, dev, pos):
+        return self.getBumpersDev(dev)[pos]
+
+    def getBumpersDev(self, dev):
+        # bumpers: front first, numbers 1 - 5
+        retval = []
+        if self.params.haveFrontBumpers():
+            for i in range(1, 6):
+                retval.append( dev.getStallValue() >> 8 & BITPOS[i] )
+        if self.params.haveRearBumpers():
+            for i in range(1, 6):
+                retval.append( dev.getStallValue() & BITPOS[i] )
+        return retval
 
     def getSonarRangeDev(self, dev, pos):
         return self.rawToUnits(dev, self.dev.getSonarRange(pos) / 1000.0, 'sonar')
