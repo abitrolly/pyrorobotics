@@ -65,6 +65,9 @@ class SimpleRobot(Robot):
         # override so no complaining
         pass
 
+    def getPose(self):
+        return 0, 0, 0
+
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
 # Takes no params, and returns a Robot object:

@@ -35,6 +35,8 @@ class TKgui(gui):
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['Editor',self.editor],
+                       ['Connect robot', self.connectRobot],
+                       ['Disconnect robot', self.disconnectRobot],
                        ['Save Map...', self.saveMap],
                        ['Exit',self.cleanup] 
                        ]),
@@ -491,6 +493,18 @@ class TKgui(gui):
          d.DialogCleanup()
       chdir(cwd)
       return retval
+
+   def disconnectRobot(self):
+      if self.engine.robot != 0:
+         self.engine.robot.disconnect()
+      else:
+         raise ValueError, "select robot first"         
+
+   def connectRobot(self):
+      if self.engine.robot != 0:
+         self.engine.robot.connect()
+      else:
+         raise ValueError, "select robot first"
 
 if __name__ == '__main__':
    gui = TKgui(Engine())

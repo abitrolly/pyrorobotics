@@ -15,7 +15,7 @@
 
 if [ $# -eq 0 ]
 then
-    world="office.wld"
+    world="office.world"
 else
     world="$1"
 fi
