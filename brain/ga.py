@@ -176,7 +176,7 @@ class GA:
             self.mutationRate = args['mutationRate']
         if args.has_key('crossoverRate'):
             self.crossoverRate = args['crossoverRate']
-        self.maxEpoch = 0
+        self.maxGeneration = 0
         self.generation = 0
 
     def isDoneFunction(self):
@@ -238,19 +238,19 @@ class GA:
         self.pop.crossover(self.crossoverRate)
         self.pop.mutate(self.mutationRate)
 
-    def evolve(self):
+    def evolve(self, display = 1):
         self.generation = 0
-        while (self.generation < self.maxEpoch or self.maxEpoch == 0):
+        while (self.generation < self.maxGeneration or self.maxGeneration == 0):
             self.generation += 1
             self.sweep()
             print "-" * 30
-            print "Epoch #", self.generation, ":"
+            print "Generation #", self.generation, ":"
             print "Best : (position # 0 )"
-            self.display_one(0)
+            if display: self.display_one(0)
             print "Median: (position #", len(self.pop.data)/2, ")"
-            self.display_one(len(self.pop.data)/2)
+            if display: self.display_one(len(self.pop.data)/2)
             print "Worst: (position #", len(self.pop.data) - 1, ")"
-            self.display_one(len(self.pop.data) - 1)
+            if display: self.display_one(len(self.pop.data) - 1)
             if self.isDoneFunction():
                 print "Completed!"
                 return
