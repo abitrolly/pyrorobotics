@@ -51,7 +51,7 @@ char *Socket::readUntil(char stop) {
   char ch[5];
   int pos = 0;
   numbytes = recv(sock, &ch, 1, 0);
-  while (ch[0] != stop && numbytes == 1 && pos < MAXBUFSIZE) {
+  while (ch[0] != stop && numbytes == 1 && pos < 50) { // no text is > 50
     retval[pos++] = ch[0];
     numbytes = recv(sock, &ch, 1, 0);
   }

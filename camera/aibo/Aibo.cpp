@@ -14,6 +14,7 @@ PyObject *Aibo::updateMMap(int decompress) {
   char *header, *type, *creator, *fmt, *image_buffer;
   long format, compression, newWidth, newHeight, timeStamp, frameNum, unknown1;
   long chanWidth, chanHeight, layer, chanID, unknown2, size;
+  lock.ReadLock();
   // get an image from socket
   // Got type=TekkotsuImage
   // Got format=0
@@ -68,6 +69,7 @@ PyObject *Aibo::updateMMap(int decompress) {
     width = newWidth;
     height = newHeight;
     printf("New Aibo image size: %d x %d; %ld\n", width, height, size);
+    lock.ReadUnlock();
     return PyInt_FromLong(0);
   }
   if (decompress) {
@@ -76,12 +78,15 @@ PyObject *Aibo::updateMMap(int decompress) {
       jpeg_decompress((unsigned char *)image, (width * height * depth), 
 		      (unsigned char *)image_buffer, (int) size);
       //printf("done!\n");
+      lock.ReadUnlock();
       return PyInt_FromLong(size);
     } else {
       printf("Aibo camera bad JPEG size: %ld\n", size);
+      lock.ReadUnlock();
       return PyInt_FromLong(0);
     }
   }
+  lock.ReadUnlock();
   return PyInt_FromLong(0);
 }
 
