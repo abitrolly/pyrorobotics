@@ -1,10 +1,17 @@
+"""
+Ioana Butoi and Doug Blank
+Aibo client commands for talking to the Tekkotsu servers
+from Python
+"""
+
 from socket import *
-import struct, sys
+import struct, time, sys
 
 class Listener:
-    def __init__(self, port = -1, host =""):
+    def __init__(self, port = -1, host ="", protocol = "TCP"):
         self.port = port
         self.host = host
+        self.protocol = protocol
         if host == "":
             self.isServer = 1
         else:
@@ -32,8 +39,10 @@ class Listener:
         if (self.attempts == 0):
             print "[",self.port,"] connecting ...";
         try:
-            #self.s = socket(AF_INET, SOCK_DGRAM) # udp socket
-            self.s = socket(AF_INET, SOCK_STREAM) # udp socket
+            if self.protocol == "UDP":
+                self.s = socket(AF_INET, SOCK_DGRAM) # udp socket
+            elif self.protocol == "TCP":
+                self.s = socket(AF_INET, SOCK_STREAM) # udp socket
             self.s.connect((self.host,self.port)) # connect to server
             print "[",self.port,"] connected"
         except IOError, e:
@@ -70,26 +79,27 @@ def readMenu(listener, cnt):
             print "error:", (x, y)
         item = listener.readUntil() # item name
         explain = listener.readUntil() # explain
-        if item[0] == "#": # on
+        if item[0] == "#":   # on
             retval[item[1:]] = [x, y, "on", explain]
-        else:
+        elif item[0] == "-": # off
+            retval[item[1:]] = [x, y, "off", explain]
+        else:                # off
             retval[item] = [x, y, "off", explain]
     return retval
 
-#Main menu:
-# 0 Mode Switch - Contains the "major" applications - mutually exclusive selection
+# Main menu:
+# 0 Mode Switch - Contains the "major" apps, mutually exclusive selection
 # 1 Background Behaviors - Background daemons and monitors
 # 2 TekkotsuMon: Servers for GUIs
-# 3 Status Reports: Displays information about the runtime environment on the console
+# 3 Status Reports: Displays info about the runtime environment on the console
 # 4 File Access: Access/load files on the memory stick
 # 5 Walk Edit: Edit the walk parameters
 # 6 Posture Editor: Allows you to load, save, and numerically edit the posture
 # 7 Vision Pipeline: Start/Stop stages of the vision pipeline
 # 8 Shutdown?: Confirms decision to reboot or shut down
-# 9 Help: Recurses through the menu system and outputs the name and description of each item
+# 9 Help: Recurses through the menu, prints name and description of each item
 
-# 2 TekkotsuMon menu:
- 
+# Option 2 from Main Menu, TekkotsuMon menu:
 # 0 RawCamServer: Forwards images from camera, port 10012
 # 1 SegCamServer: Forwards segmented images from camera, port 10012
 # 2 Head Remote Control: Listens to head control commands, port 10052
@@ -97,12 +107,15 @@ def readMenu(listener, cnt):
 # 4 View WMVars: Brings up the WatchableMemory GUI on port 10061
 # 5 Watchable Memory Monitor: Bidirectional control communication, port 10061
 # 6 Aibo 3D: Listens to aibo3d control commands coming in from port 10051
-# 7 World State Serializer: Sends sensor information to port 10031 and current pid values to port 10032
+# 7 World State Serializer: Sends sensor information to port 10031
+#                           and current pid values to port 10032
 # 8 EStop Remote Control
 
-# What does port 10053 do?
-
-robotIP = "165.106.240.98"
+try:
+    robotIP = sys.argv[1]
+except:
+    robotIP = "165.106.240.98"
+#---------------------------------------------------
 menu_control     = Listener(10020,robotIP) # menu controls
 menu_control.s.send("!reset\n") # reset menu
 menu_control.s.send("TekkotsuMon\n") # go to monitor menu
@@ -121,7 +134,7 @@ while menuRead != 'TekkotsuMon':
 # Turn on raw image server if off:
 if menuData["TekkotsuMon"]["RawCamServer"][2] == "off":
     print "Turning on 'RawCamServer'..."
-    menu_control.s.send( "0\n")
+    menu_control.s.send( "RawCamServer\n")
 # Turn on head remote control if off:
 if menuData["TekkotsuMon"]["Head Remote Control"][2] == "off":
     print "Turning on 'Head Remote Control'..."
@@ -129,10 +142,20 @@ if menuData["TekkotsuMon"]["Head Remote Control"][2] == "off":
 # Turn on walk remote control:
 if menuData["TekkotsuMon"]["Walk Remote Control"][2] == "off":
     print "Turning on 'Walk Remote Control'..."
-    menu_control.s.send( "2\n")
+    menu_control.s.send( "3\n")
+# TODO: those commands probably left a lot to read on the port
+# but, so what for now? We aren't currently going back to the
+# menus.
 
-rawimage_data    = Listener(10011, robotIP) # raw_image
-# now, just process image data:
+print "Aibo servers starting..."
+time.sleep(2)
+#estopControl_port=10053
+#wsjoints_port=10031
+#wspids_port=10032
+#walkControl     = Listener(10050, robotIP, "UDP") # walk command
+#headControl     = Listener(10052, robotIP, "UDP") # head movement
+rawimage_data   = Listener(10011, robotIP) # raw_image
+# now, just process image data. This should be in a thread:
 while 1:
     ## Got type=TekkotsuImage
     ## Got format=0
@@ -183,6 +206,8 @@ while 1:
     print "Reading image %d bytes..." % size
     image = [0 for x in range(size)]
     for x in range(size):
-        # JPEG image WHY CAN'T GET THIS ALL AT ONCE?
-        # Maybe because it isn't ready to be read
-        image[x] = rawimage_data.s.recvfrom(1)  
+        # Can't seem to read it all at once, cause it
+        # isn't ready? Need to read exactly size bytes.
+        image[x] = rawimage_data.s.recvfrom(1)
+    # The image is in JPEG format. Need to uncompress into RGB
+    # and get into a shared memory segment for Pyro vision
