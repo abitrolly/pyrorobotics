@@ -3,20 +3,10 @@
 
   <model:ObserverCam>
     <id>userCam0</id>
-    <xyz>-0.389 -0.898 1.046</xyz>
-    <rpy>0 37 31</rpy>
+    <xyz>-0.195 -1.665 1.691</xyz>
+    <rpy>-0 38 53</rpy>
     <imageSize>640 480</imageSize>
-    <updateRate>10</updateRate>
-
-    <nearClip>0.2</nearClip>
-    <farClip>100</farClip>
-
-    <displayRays>false</displayRays>
-    <displayAxes>false</displayAxes>
-    <displayCoM>false</displayCoM>
-    <displayTextures>true</displayTextures>
   </model:ObserverCam>
-
 
   <model:LightSource>
     <id>light0</id>
@@ -31,37 +21,48 @@
 
   <model:Pioneer2AT>
     <id>robot1</id>
-    <xyz>0.012 -0.005 -0.000</xyz>
-    <model:SickLMS200>
-      <id>laser1</id>
-      <xyz>0.100 0.000 0.30</xyz>
+    <xyz>-0.000 0.000 0.001</xyz>
+
+    <model:SonyVID30>
+      <id>camera1</id>
+      <xyz>0 0 0.30</xyz>
       <rpy>0 0 0</rpy>
-      <scanRate>75</scanRate>
-      <model:MonoCam>
-        <id>camera1</id>
-        <xyz>0 0 0.20</xyz>
 
-        <nearClip>0.5</nearClip>
-        <farClip>3</farClip>
+      <model:StereoHead>
+        <id>stereo1</id>
+        <parentBody>head</parentBody>
+        <xyz>0 0 0.15</xyz>
+        <rpy>0 0 0</rpy>
+        <hfov>60</hfov>
+        <baseline>0.15</baseline>
+        <enableImageLeft>true</enableImageLeft>
+        <enableImageRight>true</enableImageRight>
+        <enableDisparityLeft>true</enableDisparityLeft>
+        <enableDisparityRight>true</enableDisparityRight>
+      </model:StereoHead>
 
-      </model:MonoCam>
-    </model:SickLMS200>
+    </model:SonyVID30>
   </model:Pioneer2AT>
 
   <model:SimpleSolid>
-    <xyz>2.000 0.000 -0.000</xyz>
+    <xyz>2.500 0.000 -0.000</xyz>
     <shape>box</shape>
-    <size>1.10 1.10 .40</size>
+    <size>1 2 1</size>
     <color>0.0 1.0 0</color>     
-    <retro>1.0</retro>
-    <fiducial>1</fiducial>
   </model:SimpleSolid>
 
   <model:SimpleSolid>
-    <xyz>1.000 -1.000 -0.000</xyz>
+    <xyz>1.000 -0.500 0.000</xyz>
     <shape>cylinder</shape>
-    <size>0.50 0.40</size>
-    <color>0.0 0.0 0.5</color>     
+    <size>0.5 0.50</size>
+    <color>0.0 0.0 1</color>     
+  </model:SimpleSolid>
+
+  <model:SimpleSolid>
+    <xyz>1.500 0.500 -0.000</xyz>
+    <shape>sphere</shape>
+    <size>0.30</size>
+    <color>1.0 0.5 0</color>     
   </model:SimpleSolid>
 
 </gz:world>

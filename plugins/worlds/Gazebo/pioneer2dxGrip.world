@@ -1,43 +1,18 @@
 <?xml version="1.0"?>
-
-<gz:world 
-  xmlns:gz='http://playerstage.sourceforge.net/gazebo/xmlschema/#gz'
-  xmlns:model='http://playerstage.sourceforge.net/gazebo/xmlschema/#model'
-  xmlns:window='http://playerstage.sourceforge.net/gazebo/xmlschema/#window'
-  xmlns:params='http://playerstage.sourceforge.net/gazebo/xmlschema/#params'>
-
-  <params:GlobalParams>
-    <gravity>0.0 0.0 -9.8</gravity>
-  </params:GlobalParams>
+<gz:world xmlns:gz="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz" xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model" xmlns:window="http://playerstage.sourceforge.net/gazebo/xmlschema/#window" xmlns:params="http://playerstage.sourceforge.net/gazebo/xmlschema/#params">
 
   <model:ObserverCam>
     <id>usercam1</id>
-    <xyz>-0.779 -0.835 0.528</xyz>
-    <rpy>0 13 45</rpy>
-    <updatePeriod>0.1</updatePeriod>
+    <xyz>-0.588 -1.430 1.756</xyz>
+    <rpy>0 41 46</rpy>
+    <imageSize>640 480</imageSize>
     <displayRays>true</displayRays>
-    <window>
-      <title>Gazebo1</title>
-      <size>640 480</size>
-      <pos>0 0</pos>
-    </window>
   </model:ObserverCam>
 
   <model:LightSource>
     <id>light1</id>
-    <xyz>0 0 10</xyz>
+    <xyz>-1.000 -1.000 10.000</xyz>
   </model:LightSource>
-
-  <model:MapExtruder>
-    <id>map1</id>
-    <xyz>1 1 0</xyz>
-    <imageFile>example2.png</imageFile>
-    <threshold>200</threshold>
-    <scale>0.05</scale>
-    <height>2.0</height>
-    <width>0.1</width>
-    <color>"0.0 1.0 0.0"</color>
-  </model:MapExtruder>
 
   <model:GroundPlane>
     <id>ground1</id>
@@ -46,20 +21,14 @@
 
   <model:Pioneer2DX>
     <id>robot1</id>
-    <xyz>-0.35 0 0.25</xyz>
-    <rpy>0 0 0</rpy>
+    <xyz>-0.350 0.000 0.234</xyz>
+    <rpy>-0 0 0</rpy>
 
     <model:SickLMS200>
       <id>laser1</id>
-      <xyz>0.0 0 0.101</xyz> <!-- Need to be a little bit over the pioneer2 to avoid weird behavior with sonars -->
-      <rayCount>91</rayCount>
-      <rangeCount>361</rangeCount>
+      <xyz>0.0 0 0</xyz>
     </model:SickLMS200>
     
-    <model:Pioneer2Sonars>
-      <id>sonars1</id>
-    </model:Pioneer2Sonars>
-
     <model:Pioneer2Gripper>
       <id>gripper1</id>
       <xyz>0.14003 0 -0.0975</xyz> 
@@ -69,18 +38,18 @@
 
   
   <model:SimpleSolid>
-      <xyz>0.0 0.0 0.035</xyz>
+      <xyz>-0.000 -0.000 -0.000</xyz>
       <shape>box</shape>
       <size>0.07 0.07 0.07</size>
       <color>1 1 0</color>
       <mass>0.1</mass>
-      <rpy>0 0 45 </rpy>
+      <rpy>0 -0 45</rpy>
       <canBeGrip>yes</canBeGrip>
   </model:SimpleSolid>
   
   <!-- Cannot be gripped. Note: ODE physic will do undesirable gripping behavior if gripped anyway -->
   <model:SimpleSolid> 
-      <xyz>2.0 0.0 0.035</xyz>
+      <xyz>2.000 -0.000 -0.000</xyz>
       <shape>box</shape>
       <size>0.07 0.07 0.07</size>
       <color>1 0 0</color>

@@ -1,17 +1,23 @@
 <?xml version="1.0"?>
 <gz:world xmlns:gz="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz" xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model" xmlns:window="http://playerstage.sourceforge.net/gazebo/xmlschema/#window" xmlns:param="http://playerstage.sourceforge.net/gazebo/xmlschema/#param">
 
+<param:Global>
+  <pause>false</pause>
+</param:Global>
+
   <model:ObserverCam>
     <id>userCam0</id>
-    <xyz>-0.389 -0.898 1.046</xyz>
-    <rpy>0 37 31</rpy>
+    <xyz>-1.181 -2.030 1.175</xyz>
+    <rpy>-0 14 43</rpy>
     <imageSize>640 480</imageSize>
     <updateRate>10</updateRate>
 
     <nearClip>0.2</nearClip>
     <farClip>100</farClip>
 
-    <displayRays>false</displayRays>
+    <shadeModel>smooth</shadeModel>
+    <polygonMode>fill</polygonMode>
+    <displayRays>true</displayRays>
     <displayAxes>false</displayAxes>
     <displayCoM>false</displayCoM>
     <displayTextures>true</displayTextures>
@@ -29,29 +35,16 @@
     <textureFile>grid.ppm</textureFile>
   </model:GroundPlane>
 
-  <model:Pioneer2AT>
+  <model:Shrimp>
     <id>robot1</id>
-    <xyz>0.012 -0.005 -0.000</xyz>
-    <model:SickLMS200>
-      <id>laser1</id>
-      <xyz>0.100 0.000 0.30</xyz>
-      <rpy>0 0 0</rpy>
-      <scanRate>75</scanRate>
-      <model:MonoCam>
-        <id>camera1</id>
-        <xyz>0 0 0.20</xyz>
-
-        <nearClip>0.5</nearClip>
-        <farClip>3</farClip>
-
-      </model:MonoCam>
-    </model:SickLMS200>
-  </model:Pioneer2AT>
+    <xyz>-0.026 0.000 0.199</xyz>
+  </model:Shrimp>
 
   <model:SimpleSolid>
-    <xyz>2.000 0.000 -0.000</xyz>
+    <xyz>2.000 -0.000 -0.001</xyz>
     <shape>box</shape>
-    <size>1.10 1.10 .40</size>
+    <mass>100</mass>
+    <size>1.10 1.10 .05</size>
     <color>0.0 1.0 0</color>     
     <retro>1.0</retro>
     <fiducial>1</fiducial>

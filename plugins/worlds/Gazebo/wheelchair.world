@@ -20,13 +20,13 @@
   <model:GroundPlane>
     <id>ground1</id>
     <color>1 1 1</color>
-    <textureFile>grass.jpg</textureFile>
+    <textureFile>grid.ppm</textureFile>
   </model:GroundPlane>
 
-  <model:ClodBuster>
+  <model:WheelChair>
     <id>robot1</id>
-    <xyz>0 0 0.20</xyz>
+    <xyz>0 0 1.20</xyz>
     <rpy>0 0 45</rpy>
-  </model:ClodBuster>
+  </model:WheelChair>
 
 </gz:world>
