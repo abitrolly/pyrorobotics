@@ -83,9 +83,7 @@ class AriaRobot(Robot):
             self.senses['bumper']['value'] = lambda dev, pos: 0
 
         self.controls['gripper'] = ArGripper(self.dev)
-        # gripper sensors
-	self.senses['gripper'] = {}
-        self.senses['gripper']['type'] = lambda dev: 'special'
+        self.controls['ptz'] = ArSonyPTZ(self.dev)
 
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
@@ -106,13 +104,17 @@ class AriaRobot(Robot):
         self.inform("Done loading Aria robot.")
 
     def getSonarX(self, pos):
+        self.dev.lock()
         x = self.dev.getSonarReading(pos).getLocalX() 
         y = self.dev.getSonarReading(pos).getLocalY()
+        self.dev.unlock()
         return (COSDEG90RADS * x - SINDEG90RADS * y)
 
     def getSonarY(self, pos):
+        self.dev.lock()
         x = self.dev.getSonarReading(pos).getLocalX() 
         y = self.dev.getSonarReading(pos).getLocalY() 
+        self.dev.unlock()
         return -(SINDEG90RADS * x - COSDEG90RADS * y)
 
 #    def setGripper(self, dev, option):
@@ -121,117 +123,119 @@ class AriaRobot(Robot):
     ## Methods for gripper from Aria
 
     def gripOpen(self):
-        ArGripper(self.dev).gripOpen()
+        self.dev.lock()
+        self.controls['gripper'].gripOpen()
+        self.dev.unlock()
 
     def gripClose(self):
-        ArGripper(self.dev).gripClose()
+        self.controls['gripper'].gripClose() #ArGripper(self.dev).gripClose()
 
     def gripStop(self):
-        ArGripper(self.dev).gripStop()
+        self.controls['gripper'].gripStop()
 
     def liftUp(self):
-        ArGripper(self.dev).liftUp()
+        self.controls['gripper'].liftUp()
 
     def liftDown(self):
-        ArGripper(self.dev).liftDown()
+        self.controls['gripper'].liftDown()
 
     def liftStop(self):
-        ArGripper(self.dev).liftStop()
+        self.controls['gripper'].liftStop()
 
     def gripperStore(self):
-        ArGripper(self.dev).gripperStore()
+        self.controls['gripper'].gripperStore()
 
     def gripperDeploy(self):
-        ArGripper(self.dev).gripperDeploy()
+        self.controls['gripper'].gripperDeploy()
 
     def gripperHalt(self):
-        ArGripper(self.dev).gripperHalt()
+        self.controls['gripper'].gripperHalt()
 
     def getGripState(self):
-        return ArGripper(self.dev).getGripState()
+        return self.controls['gripper'].getGripState()
 
     def getBreakBeamState(self):
-        return ArGripper(self.dev).getBreakBeamState()
+        return self.controls['gripper'].getBreakBeamState()
 
     def isGripMoving(self):
-        return ArGripper(self.dev).isGripMoving()
+        return self.controls['gripper'].isGripMoving()
 
     def isLiftMoving(self):
-        return ArGripper(self.dev).isLiftMoving()
+        return self.controls['gripper'].isLiftMoving()
 
     def isLiftMaxed(self):
-        return ArGripper(self.dev).isLiftMaxed()
+        return self.controls['gripper'].isLiftMaxed()
 
     ## Methods for moving camera
 
     def pan(self, numDegrees):
-        ArSonyPTZ(self.dev).pan(numDegrees)
+        self.controls['ptz'].pan(numDegrees)
 
     def panRel(self, numDegrees):
-        ArSonyPTZ(self.dev).panRel(numDegrees)
+        self.controls['ptz'].panRel(numDegrees)
 
     def tilt(self, numDegrees):
-        ArSonyPTZ(self.dev).tilt(numDegrees)
+        self.controls['ptz'].tilt(numDegrees)
 
     def tiltRel(self, numDegrees):
-        ArSonyPTZ(self.dev).tiltRel(numDegrees)        
+        self.controls['ptz'].tiltRel(numDegrees)        
 
     def panTilt(self, panDeg, tiltDeg):
-        ArSonyPTZ(self.dev).panTilt(panDeg, tiltDeg)
+        self.controls['ptz'].panTilt(panDeg, tiltDeg)
 
     def panTiltRel(self, panDeg, tiltDeg):
-        ArSonyPTZ(self.dev).panTiltRel(panDeg, tiltDeg)        
+        self.controls['ptz'].panTiltRel(panDeg, tiltDeg)        
 
     def centerCamera(self):
-        ArSonyPTZ(self.dev).panTilt(0,0)
+        self.controls['ptz'].panTilt(0,0)
 
     def zoom(self, numDegrees):
-        ArSonyPTZ(self.dev).zoom(numDegrees)
+        self.controls['ptz'].zoom(numDegrees)
 
     def zoomRel(self, numDegrees):
-        ArSonyPTZ(self.dev).zoomRel(numDegrees)
+        self.controls['ptz'].zoomRel(numDegrees)
 
     def getPan(self):
-        return ArSonyPTZ(self.dev).getPan()
+        return self.controls['ptz'].getPan()
         
     def getTilt(self):
-        return ArSonyPTZ(self.dev).getTilt()
+        return self.controls['ptz'].getTilt()
         
     def getZoom(self):
-        return ArSonyPTZ(self.dev).getZoom()
+        return self.controls['ptz'].getZoom()
 
     def getRealPan(self):
-        return ArSonyPTZ(self.dev).getRealPan()
+        return self.controls['ptz'].getRealPan()
         
     def getRealTilt(self):
-        return ArSonyPTZ(self.dev).getRealTilt()
+        return self.controls['ptz'].getRealTilt()
         
     def getRealZoom(self):
-        return ArSonyPTZ(self.dev).getRealZoom()
+        return self.controls['ptz'].getRealZoom()
 
     def canGetRealPanTilt(self):
-        return ArSonyPTZ(self.dev).canGetRealPanTilt()
+        return self.controls['ptz'].canGetRealPanTilt()
     
     def canGetRealZoom(self):
-        return ArSonyPTZ(self.dev).canGetRealZoom()
+        return self.controls['ptz'].canGetRealZoom()
 
     def getMaxPosPan(self):
-        return ArSonyPTZ(self.dev).getMaxPosPan()
+        return self.controls['ptz'].getMaxPosPan()
 
     def getMaxNegPan(self):
-        return ArSonyPTZ(self.dev).getMaxNegPan()
+        return self.controls['ptz'].getMaxNegPan()
 
     def getMaxPosTilt(self):
-        return ArSonyPTZ(self.dev).getMaxPosTilt()
+        return self.controls['ptz'].getMaxPosTilt()
 
     def getMaxNegTilt(self):
-        return ArSonyPTZ(self.dev).getMaxNegTilt()
+        return self.controls['ptz'].getMaxNegTilt()
 
     def getMaxZoom(self):
-        return ArSonyPTZ(self.dev).getMaxZoom()
+        return self.controls['ptz'].getMaxZoom()
 
     def getMinZoom(self):
-        return ArSonyPTZ(self.dev).getMinZoom()
+        return self.controls['ptz'].getMinZoom()
 
 
     def translateDev(self, dev, translate_velocity):
@@ -241,18 +245,26 @@ class AriaRobot(Robot):
         dev.setRotVel((int)(rotate_velocity * 75.0))
 
     def moveDev(self, dev, translate_velocity, rotate_velocity):
+        dev.lock()
         dev.setVel((int)(translate_velocity * 1100.0))
         dev.setRotVel((int)(rotate_velocity * 75.0))
+        dev.unlock()
 
     def translate(self, translate_velocity):
+        self.dev.lock()
         self.dev.setVel((int)(translate_velocity * 1100.0))
+        self.dev.unlock()
 
     def rotate(self, rotate_velocity):
+        self.dev.lock()
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
+        self.dev.unlock()
 
     def move(self, translate_velocity, rotate_velocity):
+        self.dev.lock()
         self.dev.setVel((int)(translate_velocity * 1100.0))
         self.dev.setRotVel((int)(rotate_velocity * 75.0))
+        self.dev.unlock()
 
     def getX(self, dev):
         return self.x
@@ -270,10 +282,12 @@ class AriaRobot(Robot):
         return self.thr
 
     def update(self):
+        self.dev.lock()
         self.x = self.dev.getX() / 1000.0
         self.y = self.dev.getY() / 1000.0
         self.th = self.dev.getTh()
         self.thr = self.th * PIOVER180
+        self.dev.unlock()
     
     def _draw(self, options, renderer): # overloaded from robot
         #self.setLocation(self.senses['robot']['x'], \
