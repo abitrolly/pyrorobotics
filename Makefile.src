@@ -1,16 +1,17 @@
 # author: Douglas Blank
 
 # What version of Python do you want to build Pyro for?
+# Leave empty if your python binary is just "python"
 PYTHON_VERSION=2.1
 
-# Where is this version of Python?
-PYTHON_INCLUDE=-I/usr/include/python$(PYTHON_VERSION)
+# Where is this version of Python's include files?
+PYTHON_INCLUDE=-I/usr/include/python2.1
 
 # Where is Saphira? Leave empty if you don't want to build
 # Saphira-related items.
 SAPHIRA=/usr/local/saphira/ver62
 
-# Where are X11 files (such as include directory)?
+# Where are X11 files (such as X11 include directory)?
 X11_DIR = /usr/X11
 
 # -----------------------------------------------------
