@@ -29,7 +29,7 @@ class Vehicle(Brain):
 # The function INIT that takes a robot and returns a brain:
 
 def INIT(engine):
-   if engine.robot..get('/robot/type') != 'khepera':
+   if engine.robot.get('/robot/type') != 'khepera':
       raise "Robot should be a Khepera"
    return Vehicle('Braitenberg', engine)
       

@@ -39,7 +39,7 @@ class MyState(State):
 
 def INIT(engine):
     ptzID = engine.startDevice("ptz"); 
-    ptz = engine.robot..get("devices/%s/object" % ptzID); 
+    ptz = engine.robot.get("devices/%s/object" % ptzID); 
     brain = BBB({'pan' : ptz.panRel,
                  'tilt': ptz.tiltRel,
                  'update' : engine.robot.update },
