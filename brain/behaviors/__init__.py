@@ -98,11 +98,11 @@ class Behavior:
    """
    The core object. This gets subclassed for each beh instance
    """
-   def __init__(self, status = 0, name = ''):
+   def __init__(self, status = 0, effects = {}, name = ''):
       self.status = status
       self.type = self.__class__.__name__
       self.name = name or self.type
-      self.effects = {}
+      self.effects = effects
    def init(self):
       pass # this will get over written, normally
    def onActivate(self):
@@ -114,6 +114,8 @@ class Behavior:
    def Effects(self, controller, amount = 1.0):
       self.effects[controller] = amount
    def IF(self, fvalue, controller, amount = 1.0, name = ''):
+      if name == '':
+         name = "Rule%d" % (len(self.rules) + 1)
       self.rules.append([fvalue, controller, amount, name])
    def getRobot(self):
       return self.behaviorEngine.robot
