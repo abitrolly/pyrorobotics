@@ -364,6 +364,8 @@ class PlayerGripperDevice(PlayerDevice):
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
     def __init__(self, dev, name):
         PlayerDevice.__init__(self, dev, name)
+        if "data" in self.devData:
+            del self.devData["data"]
         if self.dev.is_paddles_closed():
             self.devData["command"] = "close"
         else:
