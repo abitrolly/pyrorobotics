@@ -1,7 +1,7 @@
 # A Base Camera class
 
 from pyro.vision import PyroImage
-from pyro.robot.service import Service
+from pyro.robot.device import Device
 
 import Tkinter
 import PIL.PpmImagePlugin
@@ -59,7 +59,7 @@ class CBuffer:
    def __str__(self):
       return str(self[:])   
 
-class Camera(PyroImage, Service):
+class Camera(PyroImage, Device):
    """
    A base class for Camera
    """
@@ -69,7 +69,7 @@ class Camera(PyroImage, Service):
       constructor with one that initalizes the dimensions itself
       """
       PyroImage.__init__(self, width, height, depth, 0)
-      Service.__init__(self, 'camera')
+      Device.__init__(self, 'camera')
       self.app = 0
       self.title = title
       self.filterMode = 1
@@ -402,22 +402,22 @@ class Camera(PyroImage, Service):
          self.canvas.pack()
          while self.window.tk.dooneevent(2): pass
 
-   def startService(self):
+   def startDevice(self):
       self.devData["state"] = "started"
       return self
 
-   def stopService(self):
+   def stopDevice(self):
       self.devData["state"] = "stopped"
       self.setVisible(0)
       return "Ok"
 
-   def getServiceData(self):
+   def getDeviceData(self):
       return self.data
 
-   def getServiceState(self):
+   def getDeviceState(self):
       return self.devData["state"]
 
-   def updateService(self):
+   def updateDevice(self):
       self.update()
 
    def delFilter(self, pos):
