@@ -10,19 +10,6 @@
     <gravity>0.0 0.0 -9.8</gravity>
   </params:GlobalParams>
 
-  <model:ObserverCam>
-    <id>usercam1</id>
-    <xyz>-0.685 -2.5 1.1</xyz>
-    <rpy>0.0 10.0 56.0</rpy>
-    <updatePeriod>0.1</updatePeriod>
-    <displayRays>false</displayRays>
-    <window>
-      <title>Gazebo1</title>
-      <size>640 480</size>
-      <xyz>0 0</xyz>
-    </window>
-  </model:ObserverCam>
-
   <model:LightSource>
     <id>light1</id>
     <xyz>0 0 10</xyz>
@@ -53,6 +40,19 @@
       <id>sonars1</id>
     </model:Pioneer2Sonars>
     
+  <model:ObserverCam>
+    <id>usercam1</id>
+    <xyz>-0.685 -2.5 1.1</xyz>
+    <rpy>0.0 10.0 56.0</rpy>
+    <updatePeriod>0.1</updatePeriod>
+    <displayRays>true</displayRays>
+    <window>
+      <title>Gazebo1</title>
+      <size>640 480</size>
+      <xyz>0 0</xyz>
+    </window>
+  </model:ObserverCam>
+
     <model:SickLMS200>
       <id>laser1</id>
       <xyz>0.0 0 0.101</xyz> 

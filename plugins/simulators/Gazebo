@@ -32,7 +32,7 @@ sleep 1
 # Now, start the player layer
 player -g default $config &
 ppid=$!
-# Wait for gazebo to get finish
+# Wait for gazebo to finish
 wait $gpid
 # Kill player
 kill $ppid

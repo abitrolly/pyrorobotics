@@ -929,6 +929,9 @@ class player:
 	change the speed and the position. If a new value is None, the current
 	sensor value will be used.
 	"""
+        if self.debug:
+            print "set_speed", (xspeed, yspeed, yawspeed, xpos, ypos, yawpos)
+            print "position[%d]" % index, self.position[index]
 	try:
 	    # set proper position and speed
 	    if xspeed is None: xspeed = self.position[index][1][0]
@@ -943,11 +946,10 @@ class player:
 # Player 1.5
 	    payload = pack_position_command(xpos, ypos, yawpos,
 	    				    xspeed, yspeed, yawspeed)
-	    self.__nsend(header+payload)
-	    # NO RESPONSE
 	    if self.debug: print '<set the speed and position to (%d,%d,%d) and (%d,%d,%d)>' \
 			    % (xspeed, yspeed, yawspeed, xpos, ypos, yawpos)
-
+	    self.__nsend(header+payload)
+	    # NO RESPONSE
 	except:
 	    raise 'cannot set a speed and a position'
 

@@ -303,7 +303,7 @@ class PlayerBase(Robot):
         dev.set_speed(translate_velocity * 900.0,
                       0,
                       rotate_velocity * 65.0)
-        time.sleep(self.pause)
+        #time.sleep(self.pause)
 
     # FIX: either sonar values are changing between calls to X, Y
     # or sin/cos values are not taking into account offset from center
