@@ -64,9 +64,11 @@ class PlayerSimulationDevice(PlayerDevice):
         th = deg * PIOVER180
         self.handle.set_pose2d(name, x, y, th)
     def getPose(self, name):
-        x, y,th = playerc.doublep(), playerc.doublep(), playerc.doublep()
-        self.handle.get_pose2d(name, x, y, th)
-        return x.value(), y.value(), th.value() / PIOVER180
+        result, x, y, thr = self.handle.get_pose2d(name)
+        if result == 0: # no errors
+            return x, y, (thr / PIOVER180)
+        else:
+            raise "simulation.getPose() failed"
 
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client, name):
