@@ -9,21 +9,22 @@ int str_to_int(char *input, int *target);
 
 main(int argc, char *argv[]) {
   int ncols, nrows;
-  char filename[255];
-  if (argc <= 1) {
-    printf("Call with filename\n");
+  char filename[255], device[255];
+  if (argc <= 2) {
+    printf("Call with device filename\n");
     exit(1);
   }
-  strcpy(filename, argv[1]);
-  if(argc==4) {
-    str_to_int(argv[2], &ncols);
-    str_to_int(argv[3], &nrows);
+  strcpy(device, argv[1]);
+  strcpy(filename, argv[2]);
+  if(argc==5) {
+    str_to_int(argv[3], &ncols);
+    str_to_int(argv[4], &nrows);
   } else {
     ncols = ICOLS;
     nrows = IROWS;
   }
   printf("%d, %d\n", ncols, nrows);
-  BT848 *cam = new BT848( "/dev/bt848fg0", ncols, nrows );
+  BT848 *cam = new BT848( device, ncols, nrows );
   cam->Update();
   cam->Update();
   cam->Update();
