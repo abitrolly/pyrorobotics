@@ -28,6 +28,9 @@ class TCPRobot(Robot):
 		self.devData["Direction"] = self.move("Direction")
 		self._update()
 
+	def getItem(self, item):
+		return self.move(item)
+
 	def move(self, message, other = None):
 		if other != None: return # rotate,translate command ignored
 		if (self.socket.sendto(message, self.addr)):
