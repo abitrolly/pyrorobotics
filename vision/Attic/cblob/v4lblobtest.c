@@ -2,6 +2,12 @@
 #include "blob.h"
 #include <stdio.h>
 
+#define WIDTH 768
+#define HEIGHT  480
+#define PGMHEADER "P5\n768\n480\n1\n"
+#define PPMHEADER "P6\n768\n480\n255\n"
+
+//#define USE_V4L
 
 int main(int argc, char** argv){
   struct image_cap* camera;
@@ -9,21 +15,51 @@ int main(int argc, char** argv){
   struct blobdata* thedata;
   FILE* out;
   int i, j;
-  
-  camera = Cgrab_image("/dev/video0", 240, 180, 1, 1);
-  
-  bmp = bitmap_from_cap(camera, 240, 180);
 
+#ifdef USE_V4L
+  camera = Cgrab_image("/dev/video0", WIDTH, HEIGHT, 1, 0);
+  printf("Opened device\n");
+  printf("bpp: %d\n", camera->bpp);
+  Crefresh_image(camera, WIDTH, HEIGHT);
+  out = fopen("cap.ppm", "w");
+  fprintf(out, PPMHEADER);
+  fwrite(camera->data, 1, camera->size, out);
+  
+  bmp = bitmap_from_cap(camera, WIDTH, HEIGHT);
+  printf("Got bitmap_from_cap\n");
+#else
+  bmp = bitmap_from_ppm("cap.ppm");
+  printf("Got bitmap_from_ppm('cap.ppm')\n");
+#endif
+
+  out = fopen("bmp.pbm", "w");
+  fprintf(out, PGMHEADER);
+  printf("Wrote header\n");
+  fwrite(bmp->data, 1, bmp->width * bmp->height, out);
+  printf("Wrote data\n");
+  fclose(out);
+
+  thedata = (struct blobdata*)malloc(sizeof(struct blobdata));
   Blobdata_init(thedata, bmp);
+  printf("Blobdata_init\n");
 
   out = fopen("blob.pbm", "w");
-  fprintf("P5\n240\n180\n1\n", out);
-  fwrite(thedata->blobmap->data, 1, 240*180, out);
+  fprintf(out, PGMHEADER);
+  printf("Wrote header\n");
+  printf("Writing, %d bytes\n", thedata->blobmap->width * thedata->blobmap->height);
+  i = fwrite(thedata->blobmap->data, 1, thedata->blobmap->width * thedata->blobmap->height, out);
+  printf("Wrote data, %d bytes written.\n", i);
   fclose(out);
+ 
   
   //do stuff
 
   Blobdata_del(thedata);
+  free(thedata);
   Bitmap_del(bmp);
+  free(bmp);
+#ifdef USE_V4L
   Cfree_image(camera);
+#endif
+  return 0;
 }

@@ -1,6 +1,8 @@
 #include <string.h>
 #include "blob.h"
 #include "hsbrgb.h"
+#include <stdio.h>
+#include <errno.h>
 
 /* ------------- Blob operations ------------ */
 
@@ -62,14 +64,14 @@ void Bitmap_init(struct bitmap* map, int w, int h){
 }
 
 void Bitmap_set(struct bitmap* map, int x, int y, unsigned char in){
-  if (x > 0 && x < map->width && y > 0 && y < map->height){
-    map->data[x*map->width + y] = in;
+  if (x >= 0 && x < map->width && y >= 0 && y < map->height){
+    map->data[y*map->width + x] = in;
   }
 }
 
 unsigned char Bitmap_get(struct bitmap* map, int x, int y){
-  if (x >= 0 && x < map->width && y > 0 && y < map->height){
-    return map->data[x*map->width + y];
+  if (x >= 0 && x < map->width && y >= 0 && y < map->height){
+    return map->data[y*map->width + x];
   }
 }
 
@@ -80,16 +82,18 @@ void Bitmap_del(struct bitmap* map){
 /* -------------- Blobdata operations ---------------*/
 
 void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
-  int count = 1;
+  int count = 0;
   int w, h, n, m, minBlobNum, maxBlobNum, i;
   struct blob* tempBlob;
+  data->blobmap = (struct bitmap*)malloc(sizeof(struct bitmap));
   Bitmap_init(data->blobmap, theBitmap->width, theBitmap->height);
   data->equivList = (int *) malloc(sizeof(int) * BLOBLIST_SIZE);
   for (i = 0; i < BLOBLIST_SIZE; i++){
     data->equivList[i] = i;
   }
-  data->bloblist = (struct blob**) malloc(BLOBLIST_SIZE);
-  memset(data->bloblist, 0, BLOBLIST_SIZE);
+  data->bloblist = (struct blob**) malloc(sizeof(struct blob*) * BLOBLIST_SIZE);
+  memset(data->bloblist, 0,
+	 sizeof(struct blob*)*BLOBLIST_SIZE);
 
   for (w = 0; w < theBitmap->width; w++){
     for (h = 0; h < theBitmap->height; h++){
@@ -185,7 +189,7 @@ void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
     }
   }
 
-  for (n = 1; i < count; n++){
+  for (n = 1; n < count; n++){
     m = n-1;
     while(data->bloblist[m] == NULL){
       data->bloblist[m] = data->bloblist[m+1];
@@ -200,7 +204,7 @@ void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
 void Blobdata_del(struct blobdata* data){
   int i;
   for (i = 0; i < BLOBLIST_SIZE; i++){
-    if (data->bloblist[i]){
+    if (data->bloblist[i] != NULL){
       free(data->bloblist[i]);
     }
   }
@@ -225,9 +229,9 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
   Bitmap_init(bmp, width, height);
   if (image->bpp == 24){
     for (i = 0; i < image->size; i += 3) {
-      red  = ((int *)image->data)[i + 2];
-      green= ((int *)image->data)[i + 1];
-      blue = ((int *)image->data)[i + 0];
+      red  = ((unsigned char *)image->data)[i + 2];
+      green= ((unsigned char *)image->data)[i + 1];
+      blue = ((unsigned char *)image->data)[i + 0];
       rmRGBtoHSV(red/255.0,
 		 green/255.0,
 		 blue/255.0,
@@ -246,8 +250,100 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height){
 	bmp->data[i] = 0;
     }
   }
+  return bmp;
 }
 
+struct bitmap* bitmap_from_ppm(char* filename){
+  int rows, cols, maxval;
+  FILE* theFile;
+  unsigned char* rgb;
+  unsigned int*  RGB;
+  struct bitmap* bmp;
+  int i, red, green, blue;
+  float h, s, v;
+  
+
+  theFile = fopen(filename, "r");
+  if (!theFile){
+    perror("bitmap_from_ppm: Error openeing file for read");
+  }
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  fscanf(theFile, "%*2c\n%d %d\n%d", &cols, &rows, &maxval);
+  Bitmap_init(bmp, cols, rows);
+  if (maxval <= 255){
+    rgb = (unsigned char*)malloc(rows*cols*3);
+    fread(rgb, 1, rows*cols*3, theFile);
+    for (i = 0; i < rows*cols*3; i += 3) {
+      red  = rgb[i];
+      green= rgb[i + 1];
+      blue = rgb[i + 2];
+      rmRGBtoHSV(red/(float)maxval,
+		 green/(float)maxval,
+		 blue/(float)maxval,
+		 &h, &s, &v);
+      if (v > BITMAP_CUTOFF)
+	bmp->data[i/3] = 1;
+      else
+	bmp->data[i/3] = 0;
+    }
+    free(rgb);
+  }
+  else{
+    RGB = (unsigned int*)malloc(2*rows*cols*3);
+    fread(RGB, 2, rows*cols*3, theFile);
+    for (i = 0; i < rows*cols*3; i += 3) {
+      red  = RGB[i];
+      green= RGB[i + 1];
+      blue = RGB[i + 2];
+      rmRGBtoHSV(red/(float)maxval,
+		 green/(float)maxval,
+		 blue/(float)maxval,
+		 &h, &s, &v);
+      if (v > BITMAP_CUTOFF)
+	bmp->data[i/3] = 1;
+      else
+	bmp->data[i/3] = 0;
+    }
+    free(RGB);
+  }
+  fclose(theFile);
+  
+  return bmp;
+}
+  
+struct bitmap* bitmap_from_pgm(char* filename){
+  unsigned int rows, cols, maxval;
+  FILE* theFile;
+  unsigned char* gray;
+  struct bitmap* bmp;
+  int i;
+
+  
+
+  theFile = fopen(filename, "r");
+  if (!theFile){
+    perror("bitmap_from_pgm: Error openeing file for read");
+  }
+
+
+  fscanf(theFile, "%*s%d%d%d", &rows, &cols, &maxval);
+  gray = (unsigned char*)malloc(rows*cols);
+  bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
+  Bitmap_init(bmp, cols, rows);
+  fread(gray, 1, rows*cols, theFile);
+  fclose(theFile);
+  for (i = 0; i < rows*cols; i++) {
+    if (gray[i] > BITMAP_CUTOFF)
+      bmp->data[i] = 1;
+    else
+      bmp->data[i] = 0;
+  }
+  free(gray);
+  return bmp;
+}
+
+
+  
 /* ------- Blob output ---------
    Given an array of blobdatas, an array of ints, and an int representing the
    length of the previous two arrays (which much be equal), return a struct that looks
