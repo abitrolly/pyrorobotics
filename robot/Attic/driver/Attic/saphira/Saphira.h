@@ -30,7 +30,7 @@ public:
   double getThr(void);
 
   int Disconnect( void );
-  int Connect(int sim_robot = 1);
+  int Connect(int sim_robot);
   int Move(double translate_velocity, double rotate_velocity);
   int Rotate(double rotate_velocity);
   int Translate(double translate_velocity);

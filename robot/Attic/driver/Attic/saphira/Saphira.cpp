@@ -57,7 +57,7 @@ char * Saphira :: getType(void) {
   return sfRobotSubclass;
 }
 
-int Saphira :: Connect(int sim_robot = 1) {
+int Saphira :: Connect(int sim_robot) {
   SaphiraInit(); 
   sfStartup(1);
   char *saphira_compipe = getenv("SAPHIRA_COMPIPE");
