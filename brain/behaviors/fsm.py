@@ -9,6 +9,7 @@ class FSMBrain (Brain):
    def __init__(self, engine = 0):
       Brain.__init__(self, 'FSMBrain', engine)
       self.states = {}
+      self.stack = []
       self.robot = self.engine.robot
 
    def activate(self, name):
@@ -124,3 +125,16 @@ class State:
 
    def set(self, path, value):
       return self.robot.set(path, value)
+
+   def push(self, statename):
+      if statename not in self.brain.states:
+         raise AttributeError, "push: not a valid state name '%s'" % statename
+      self.brain.stack.append( statename )
+
+   def pop(self):
+      if len(self.brain.states) > 0:
+         returnState = self.brain.stack.pop()
+         self.goto(returnState)
+      else:
+         raise AttributeError, "pop without a push in state '%s'" % self.name
+
