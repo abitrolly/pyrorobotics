@@ -1,7 +1,6 @@
 # A Base Camera class
 
 from pyro.vision import *
-from pyro.camera.vision.vision import Vision
 from pyro.robot.service import Service
 
 import Tkinter

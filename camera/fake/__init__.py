@@ -7,7 +7,6 @@ class FakeCamera(Camera):
    """
    A fake camera.  This will emulate a camera, but instead of
    accessing the hardware, it will load a series of images from file.
-   ONLY ONE OF THESE CAN EXIST AT A TIME!
    """
    def __init__(self, pattern = None,
                 start = 0, limit = 19, char = "?",
