@@ -1,4 +1,5 @@
 from pyro.brain.ga import *
+from math import pi
 import pyro.system.share as share
 
 class GPGene(Gene):
@@ -214,7 +215,7 @@ if __name__ == '__main__':
     
         def fitnessFunction(self, pos, pr = 0):
             val = self.pop.data[pos].eval_tree(values) 
-            score  = abs(val - 3.1415)
+            score  = abs(val - pi)
             if pr:
                 print val
             return -score
@@ -229,7 +230,7 @@ if __name__ == '__main__':
                        '*'   : 2,
                        '/'   : 2 }
     share.terminals = ['s0', 's1']
-    values = {'s0' : 0.1, 's1' : 0.2}
+    values = {'s0' : 1, 's1' : 2}
     gp = PI_GP(1000, bias = .6)
     gp.evolve()
     print " -----------------------------------------------------------------"

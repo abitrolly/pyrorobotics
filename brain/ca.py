@@ -59,20 +59,28 @@ class Rules(Matrix):
         self.data = [0]
         self.data[0] = [0] * self.size
     def watch(self, lat):
-        width = lat.size
+        self.width = lat.size 
         length = data.height - 1
         from Tkinter import Tk, Canvas, BOTH
         self.win = Tk()
         self.win.wm_title("Python Cellular Automata Experimenter Toolbox")
-        self.canvas = Canvas(self.win,width=width,height=length)
+        self.canvas = Canvas(self.win,width=(self.width * 2),height=(length * 2))
         #self.canvas.bind("<Configure>", self.changeSize)
         self.canvas.pack(fill=BOTH)
-        self.win.mainloop()
-        #for c in range( length):
-        #    self.apply(lat, c)
+        for c in range( length):
+            self.apply(lat, c)
         #    if lat.data[c] == lat.data[c + 1]:
         #        return c
         #return length
+        self.redraw(lat, length)
+        self.win.mainloop()
+    def redraw(self, lat, length):
+        print "Redrawing...",
+        for h in range(length):
+            for w in range(self.width):
+                if lat.data[h][w]:
+                    self.canvas.create_rectangle(w*2, h*2, w*2+2, h*2+2)
+        print "Done!"
     def apply(self, lat, c):
         for i in range(lat.size):
             lat.data[c+1][i] = self.data[0][lat.bits2rule(c,
@@ -148,7 +156,14 @@ if __name__ == '__main__':
     print rules.applyAll(data)
     data.display()
     
-    data.randomize(.7)
+    data.randomize(.4)
+    #for c in range( data.height - 1):
+    print "GKL Rule applied to a 70% Lattice:"
+    print rules.applyAll(data)
+    data.display()
+    rules.watch(data)
+
+    data.randomize(.6)
     #for c in range( data.height - 1):
     print "GKL Rule applied to a 70% Lattice:"
     print rules.applyAll(data)
