@@ -472,7 +472,7 @@ class FileDialog(ModalDialog):
                    stringlines = string.join(lines, '')
                    fp.close()
                 else:
-                   stringlines = "No help yet available for this file"
+                   stringlines = "Click the 'OK' button to load."
                 self.helpText.config(state='normal')
                 self.helpText.delete(1.0, 'end')
                 self.helpText.insert('end', stringlines )
