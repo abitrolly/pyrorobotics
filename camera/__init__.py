@@ -84,9 +84,11 @@ class Camera(PyroImage, Device):
       self.lastWindowUpdate = 0
       self.updateWindowInterval = 1.0 # update window once a second
       self.update() # call it once to initialize
-      self.printFormat["image"] = "<image>"
-      self.printFormat["grayscale"] = "<image>"
-      self.devData["image"] = self.data
+      self.printFormat["image"] = "<PIL image>"
+      self.printFormat["data"] = "<image data>"
+      self.printFormat["grayscale"] = "<grayscale data>"
+      self.devData["image"] = []
+      self.devData["data"] = self.data
       self.devData["grayscale"] = []
       self.devData["height"] = self.height
       self.devData["width"] = self.width
@@ -99,8 +101,10 @@ class Camera(PyroImage, Device):
       #print "preGet", keyword
       if keyword == "grayscale":
          self.devData["grayscale"] = self.getGrayScale()
+      elif keyword == "data":
+         self.devData["data"] = self.data
       elif keyword == "image":
-         self.devData["image"] = self.data
+         self.devData["image"] = self.getImage()
       else:
          self.devData["filters"] = self.callbackTextList
 
