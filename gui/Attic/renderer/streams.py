@@ -1,5 +1,5 @@
 import string
-from OpenGL.GL import *
+#from OpenGL.GL import *
 from pickle import *
 from cPickle import *
 from pyro.gui.renderer import *
