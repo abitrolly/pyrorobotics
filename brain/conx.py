@@ -6,9 +6,9 @@
     (c) 2001-2004, Developmental Robotics Research Group
     ----------------------------------------------------
 """
-import RandomArray, Numeric, math, random, time, sys, signal, operator
+import Numeric, math, random, time, sys, signal, operator
 
-version = "6.13"
+version = "6.14"
 
 # better to use Numeric.add.reduce() when you know that "a" is a Numeric list
 def sum(a):
@@ -20,11 +20,21 @@ def sum(a):
         mysum += n
     return mysum
 
+def ndim(n, *args): 
+     if not args: 
+        return [random.random() for i in xrange(n)]
+     A = [] 
+     for i in range(n):
+         A.append( ndim(*args) ) 
+     return A 
+
 def randomArray(size, max):
     """
     Returns an array initialized to random values between -max and max.
     """
-    temp = RandomArray.random(size) * 2 * max
+    if type(size) == type(1):
+        size = (size,)
+    temp = Numeric.array( ndim(*size) ) * 2.0 * max
     return temp - max
 
 # better to use array.tolist() when you know that it has a tolist()
@@ -715,7 +725,6 @@ class Network:
         Resets seed values.
         """
         random.seed(self.seed1)
-        RandomArray.seed(int(self.seed1), int(self.seed2))
         self.initialize()
     def initialize(self):
         """
@@ -809,7 +818,6 @@ class Network:
             self.seed2 = 515
             print "Warning: random seed too small"
         random.seed(self.seed1)
-        RandomArray.seed(int(self.seed1), int(self.seed2))
     def getConnection(self, lfrom, lto):
         """
         Returns the connection instance connecting the specified (string) layer names.
@@ -907,7 +915,7 @@ class Network:
         """
         for l in arg:
             if not type(l) == list and \
-               not type(l) == type( RandomArray.random(1) ) and \
+               not type(l) == type(Numeric.array([0.0])) and \
                not type(l) == tuple:
                 return 0
             for i in l:
