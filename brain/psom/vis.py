@@ -21,7 +21,8 @@ class VisPsom(psom):
    """
 
    def __init__(self, *args, **keys):
-
+      self.last_x = 0
+      self.last_y = 0
       #get Vis-specific keyword arguements out
       if 'vis_radius' in keys.keys():
          self.vis_radius = keys['vis_radius']
@@ -60,7 +61,8 @@ class VisPsom(psom):
                            width=self.xdim * (2*self.vis_radius+2*self.vis_padding) + offset,
                            height=self.ydim * (2*self.vis_radius+2*self.vis_padding),
                            bg='white')
-      self.canvas.bind("<Button-1>", self.canvas_clicked)
+      self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
+      self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.canvas.pack(side=LEFT)
       f = Frame(self.win)
       f.pack(side=RIGHT)
@@ -86,15 +88,33 @@ class VisPsom(psom):
 
 #      self.win.mainloop()
 
-   def canvas_clicked(self, event):
+   def canvas_clicked_up(self, event):
       celllist = self.canvas.find_closest(event.x, event.y)
       cell = celllist[0]
       box = self.canvas.bbox(cell)
       if (box[0] < event.x < box[2]) and (box[1] < event.y < box[3]):
          x, y = self.cellhash[cell]
          vec = self.get_model_vector(point(x, y))
-         visclass = getVisVectorByName(self.vectortype)
-         visclass(vec, title="(%d, %d)" % (x, y))
+         if x == self.last_x and y == self.last_y:
+            visclass = getVisVectorByName(self.vectortype)
+            visclass(vec, title="(%d, %d)" % (x, y))
+         else:
+            # show difference
+            vec2 = self.get_model_vector(point(self.last_x, self.last_y))
+            diffvec = []
+            for v in range(len(vec2)):
+               diffvec.append( vec[v] - vec2[v] )
+            myvector = vector( diffvec )
+            visclass = getVisVectorByName(self.vectortype)
+            visclass(myvector, title="(%d, %d) diff (%d, %d)"
+                     % (x, y, self.last_x, self.last_y))
+
+   def canvas_clicked_down(self, event):
+      celllist = self.canvas.find_closest(event.x, event.y)
+      cell = celllist[0]
+      box = self.canvas.bbox(cell)
+      if (box[0] < event.x < box[2]) and (box[1] < event.y < box[3]):
+         self.last_x, self.last_y = self.cellhash[cell]
 
    def showcount(self):
       self.canvas.delete('count')

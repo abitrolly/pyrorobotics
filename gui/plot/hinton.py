@@ -82,7 +82,10 @@ class Hinton: # Plot
                                          fill = color)
          except:
             pass
-      self.canvas.delete(last)
+      try:
+         self.canvas.delete(last)
+      except:
+         pass
 
 if __name__ == '__main__':
    hinton1 = Hinton(6)
