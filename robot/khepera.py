@@ -64,6 +64,9 @@ class KheperaRobot(Robot):
 	self.senses['ir']['y'] = self.getIRYCoord
 	self.senses['ir']['z'] = lambda self, pos: 0.25
 	self.senses['ir']['value'] = self.getIRRange
+        self.senses['range'] = {}
+        self.senses['range']['all'] = self.getIRRangeAll
+        self.senses['range']['count'] = lambda self: 8
 	self.senses['ir']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
@@ -290,6 +293,12 @@ class KheperaRobot(Robot):
 
     def getIRRange(self, dev, pos):
         return ((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0 # mm
+
+    def getIRRangeAll(self, dev):
+        vector = [0] * self.get('ir', 'count')
+        for i in range(self.get('ir', 'count')):
+            vector[i] = ((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0
+        return vector
 
     def getIRFlag(self, dev, pos):
         return 0

@@ -33,6 +33,10 @@ class SaphiraSenseDriver(driver.Driver):
 	self.senses['sonar']['y'] = Saphira_getSonarYCoord
 	self.senses['sonar']['z'] = lambda self, pos: 0.25
 	self.senses['sonar']['value'] = Saphira_getSonarRange
+        self.senses['range'] = {}
+        self.senses['range']['all'] = self.getSonarAll
+        self.senses['range']['count'] = \
+		lambda self, x = Saphira_getSonarCount(machine.dev) : x
 	self.senses['sonar']['flag'] = Saphira_getSonarFlag
 
 	# location of origin of sensors:
@@ -46,6 +50,13 @@ class SaphiraSenseDriver(driver.Driver):
 	self.senses['sonar']['type'] = lambda self: 'range'
         
         console.log(console.INFO,'saphira sense drivers loaded')
+
+    def getSonarAll(self, dev):
+        vector = [0] * Saphira_getSonarCount(dev)
+        for i in range(Saphira_getSonarCount(dev)):
+            vector[i] = Saphira_getSonarRange(dev, i)
+        return vector
+
 
 class SaphiraControlDriver(driver.Driver):
     def __init__(self, machine):
