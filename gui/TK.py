@@ -34,6 +34,7 @@ class TKgui(Tkinter.Toplevel, gui):
    def __init__(self, engine):
       Tkinter.Toplevel.__init__(self, share.gui)
       gui.__init__(self, 'TK gui', {}, engine)
+      self.name = "<tkgui>" # for checking sys.stdout.name
       self.genlist = 0
       self.frame = Tkinter.Frame(self)
       self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
