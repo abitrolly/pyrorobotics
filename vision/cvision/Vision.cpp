@@ -65,6 +65,13 @@ PyObject *Vision::setImage(int newImage) {
 // if d is RED, GREEN, or BLUE then set just that d; if
 // d == ALL, then set all colors to val.
 
+PyObject *Vision::set(int w, int h, int r, int g, int b) {
+  set(w, h, rgb[0], r);
+  set(w, h, rgb[1], g);
+  set(w, h, rgb[2], b);
+  return Py_BuildValue("i", 0);
+}
+
 PyObject *Vision::set(int w, int h, int d, int value) {
   if (w < 0 || w >= width ||
       h < 0 || h >= height ||
@@ -1123,6 +1130,13 @@ PyObject *Vision::applyFilter(PyObject *filter) {
 	return NULL;
       }
       retval = setPlane(i1, i2);
+    } else if (strcmp((char *)command, "set") == 0) {
+      i1 = 0; i2 = 0, i3 = 255, i4 = 255, i5 = 255;
+      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
+	return NULL;
+      }
+      retval = set(i1, i2, i3, i4, i5);
     } else if (strcmp((char *)command, "drawRect") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = ALL;
       if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {

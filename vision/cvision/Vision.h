@@ -65,6 +65,7 @@ public:
   PyObject *match(int r, int g, int b, int tolerance,
 		  int outChannel);
   PyObject *get(int w, int h);
+  PyObject *set(int w, int h, int r, int g, int b);
   PyObject *set(int w, int h, int d, int val);
   PyObject *drawRect(int x1, int y1, int x2, int y2, 
 		int fill, int channel);
