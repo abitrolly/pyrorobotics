@@ -1,5 +1,8 @@
+include ../../../../Makefile.cfg
+include ../../../../Makefile.src
+
 CC=cc
-CFLAGS=-O
+CFLAGS=-O $(PYTHON_INCLUDE)
 LDFLAGS=-s
 LDLIBS=-lm
 LD=$(CC)
@@ -20,7 +23,7 @@ UMATOBJS=umat.o map.o median.o header.o
 OTHERFILES=header.ps
 
 
-all: test_devrobs vcal mapinit vsom qerror randinit lininit visual sammon planes vfind umat
+all:: test_devrobs vcal mapinit vsom qerror randinit lininit visual sammon planes vfind umat
 
 test_devrobs:	test_devrobs.o $(OBJS) vsom
 	$(LD) $(LDFLAGS) -o $@ test_devrobs.o $(OBJS) $(LDLIBS)
@@ -104,5 +107,5 @@ vcal.o mapinit.o vsom.o qerror.o visual.o sammon.o:\
 
 
 
-clean:
+clean::
 	rm -f *~ *.o $(TARGETS) test*.cod

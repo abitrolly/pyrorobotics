@@ -12,7 +12,7 @@
 #define SOM_DEVROBS_H
 
 #include "lvq_pak.h"
-
+#include "Python.h"
 
 
 #define CYCLIC    0   // for train_fromdataset()

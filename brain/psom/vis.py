@@ -3,7 +3,7 @@ from pyro.brain.psom.visvector import *
 from Tkinter import *
 import sys
 
-ACT_MAX = 5
+ACT_MAX   = 5
 GRAY_STEP = 20
 
 class VisPsom(psom):
@@ -58,36 +58,6 @@ class VisPsom(psom):
       self.win = Toplevel()
       self.win.wm_title(title)
 
-      ### menu bar with File and Show options ###
-      """
-      mBar = Frame(self.win, relief=RAISED, borderwidth=2)
-      mBar.pack(fill=X)
-      
-      # File menu button
-      FileBtn = Menubutton(mBar, text='File', underline=0)
-      FileBtn.pack(side=LEFT, padx='2m')
-      FileBtn.menu = Menu(FileBtn)
-      FileBtn.menu.add_radiobutton(label='Exit', command=sys.exit)
-      FileBtn['menu'] = FileBtn.menu
-
-      # Show menu button
-      ShowBtn = Menubutton(mBar, text='Show', underline=0)
-      ShowBtn.pack(side=LEFT, padx='2m')
-      ShowBtn.menu = Menu(ShowBtn)
-      ShowBtn.menu.add_radiobutton(label='Train Count',
-                                   command=self.show_train_count)
-      ShowBtn.menu.add_radiobutton(label='Map Count',
-                                   command=self.show_map_count)
-      ShowBtn.menu.add_radiobutton(label='Labels',
-                                   command=self.show_labels)
-      ShowBtn['menu'] = ShowBtn.menu
-      
-      #ShowBtn.menu.invoke(ShowBtn.menu.index('Train Count'))
-      mBar.tk_menuBar(FileBtn, ShowBtn)
-      """
-      ### end menu ###
-
-      
       cellwidth = (self.vis_padding + self.vis_radius) * 2
       #offset to set off the rows for a hexagonal topology
       if self.topol == 'hexa':
@@ -95,21 +65,23 @@ class VisPsom(psom):
       else: #topol = 'rect'
          offset = 0
       self.canvas = Canvas(self.win,
-                           width=self.xdim * (2*self.vis_radius+2*self.vis_padding) + offset,
-                           height=self.ydim * (2*self.vis_radius+2*self.vis_padding),
+                           width=self.xdim*(2*self.vis_radius+2*self.vis_padding) + offset,
+                           height=self.ydim*(2*self.vis_radius+2*self.vis_padding),
                            bg='white')
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
       self.canvas.bind("<Button-1>", self.canvas_clicked_down)
       self.canvas.pack(side=TOP)
-      
-      #Toggle Button stuff
-      #f = Frame(self.win)
-      #self.showCount = "Train"
-      #self.toggleCount = Button(f, text="Show Map Count",
-      #                          command=self.countSwitch)
-      #self.toggleCount.pack()
-      #f.pack(side=BOTTOM)
 
+      """
+      # Toggle Button stuff (DEPRECATED)
+      f = Frame(self.win)
+      self.showCount = "Train"
+      self.toggleCount = Button(f, text="Show Map Count",
+                                command=self.countSwitch)
+      self.toggleCount.pack()
+      f.pack(side=BOTTOM)
+      """
+      
       self.lastMapped = (0,0)
       self.cells = []
       self.cellhash = {}
@@ -167,12 +139,12 @@ class VisPsom(psom):
             # display settings for train count
             traintext = self.canvas.create_text(center[0], center[1],
                                                 text = "",
-                                                fill = 'blue',
+                                                fill = 'red',
                                                 tags = 'traincount')
             # display settings for map count
             maptext = self.canvas.create_text(center[0], center[1],
                                               text = "",
-                                              fill = 'red',
+                                              fill = 'blue',
                                               tags = 'mapcount')
             # display settings for label
             labeltext = self.canvas.create_text(center[0], center[1],
@@ -180,10 +152,14 @@ class VisPsom(psom):
                                                 fill = 'purple',
                                                 tags = 'label')
             # dictionary associated with each cell
-            self.cells[y].append({"cell" : cell,"traincount" : 0,"mapcount": 0,
-                                  "traintext" : traintext, "maptext": maptext,
-                                  "labeltext" : labeltext, "label" : \
-                                  self.get_model_vector(point(x, y)).get_label()})
+            pt = point(x, y)
+            self.cells[y].append({"cell": cell,
+                                  "traincount": self.get_counter(pt, 'train'),
+                                  "mapcount": self.get_counter(pt, 'map'),
+                                  "traintext": traintext,
+                                  "maptext": maptext,
+                                  "labeltext": labeltext,
+                                  "label": self.get_model_vector(pt).get_label()})
             self.cellhash[cell] = (x, y)
 
       self.canvas.tag_lower('cell', 'traincount')
@@ -204,10 +180,13 @@ class VisPsom(psom):
 
       ShowBtn = Menu(menuBar)
       menuBar.add_cascade(label='Show', menu=ShowBtn)
-      ShowBtn.add_radiobutton(label='Train Count', command=self.show_train_count)
-      ShowBtn.add_radiobutton(label='Map Count', command=self.show_map_count)
-      ShowBtn.add_radiobutton(label='Labels', command=self.show_labels)
-      ShowBtn.invoke(ShowBtn.index('Train Count'))
+      ShowBtn.add_radiobutton(label='Train Count',
+                              command=self.show_train_count)
+      ShowBtn.add_radiobutton(label='Map Count',
+                              command=self.show_map_count)
+      ShowBtn.add_radiobutton(label='Labels',
+                              command=self.show_labels)
+      ShowBtn.invoke(ShowBtn.index('Train Count')) # show train count by default
       # end menu bar
       
    def canvas_clicked_up(self, event):
@@ -218,16 +197,26 @@ class VisPsom(psom):
          if item in self.cellhash.keys():
             cell = item
             break
-                                          
+      
+      label = "No Label"
       if cell:
          x, y = self.cellhash[cell]
          vec = self.get_model_vector(point(x, y))
+         
+         # build string of items in label ls
+         label_ls = self.cells[y][x]['label']
+         if len(label_ls) != 0:
+            label = ""
+            for item in label_ls:
+               label += item
+               
          if x == self.last_x and y == self.last_y:
             visclass = getVisVectorByName(self.vectortype)
             if self.opts: # override defaults
-               visclass(vec, title="(%d,%d)" % (x, y), opts = self.opts)
+               visclass(vec, title="(%d,%d):%s" % (x, y, label),
+                        opts = self.opts)
             else:
-               visclass(vec, title="(%d,%d)" % (x, y))
+               visclass(vec, title="(%d,%d):%s" % (x, y, label))
          else:
             # show difference
             vec2 = self.get_model_vector(point(self.last_x, self.last_y))
@@ -237,10 +226,10 @@ class VisPsom(psom):
             myvector = vector( diffvec )
             visclass = getVisVectorByName(self.vectortype)
             if self.opts:
-               visclass(myvector, title="(%d,%d) diff (%d, %d)"
+               visclass(myvector, title="(%d,%d) diff (%d,%d)"
                         % (x, y, self.last_x, self.last_y), opts = self.opts)
             else:
-               visclass(myvector, title="(%d,%d) diff (%d, %d)"
+               visclass(myvector, title="(%d,%d) diff (%d,%d)"
                         % (x, y, self.last_x, self.last_y))
 
    def canvas_clicked_down(self, event):
@@ -256,6 +245,7 @@ class VisPsom(psom):
          self.last_x, self.last_y = self.cellhash[cell]
 
    """
+   # callback associated with toggle button (DEPRECATED)
    def countSwitch(self):
       if self.showCount == "Map":
          self.canvas.tag_raise('traincount', 'cell')
@@ -269,14 +259,15 @@ class VisPsom(psom):
          self.showCount = "Map"
    """
          
-   def inccount(self, x, y, which):
+   def _setcount(self, x, y, new_counter, which):
       """
-      Update the hit count of a cell, and change the label.
+      Update the hit counter of a cell, and change the corresponding
+      counter label.
       """
-      self.cells[y][x][which+"count"] += 1
+      self.cells[y][x][which+"count"] = new_counter
       self.canvas.itemconfigure(self.cells[y][x][which+"text"],
-                                text = str(self.cells[y][x][which+"count"]))
-
+                                text=str(new_counter))
+                                
    def _setcell(self, x, y, level):
       try:
          self.canvas.itemconfigure(self.cells[y][x]["cell"],
@@ -299,13 +290,14 @@ class VisPsom(psom):
       Given x, y coordinates, this function labels the corresponding cell
       using information stored in the dictionary associated with the cell.
       """
-      ls = self.cells[y][x]['label']
+      label_ls = self.cells[y][x]['label']
       label = ""
-      if len(ls) != 0:
-         for item in ls:
+      if len(label_ls) != 0:
+         for item in label_ls:
             label += item
       self.canvas.itemconfigure(self.cells[y][x]['labeltext'],
-                                text = label, font=(('MS', 'Sans', 'Serif'), '8'))
+                                text = label,
+                                font=(('MS', 'Sans', 'Serif'), '8'))
 
    def clearfill(self):
       """
@@ -319,25 +311,35 @@ class VisPsom(psom):
       self.canvas.delete('count')
    
    def map(self, vector):
-      retval = psom.map(self,vector)
-      pt = retval.point.x, retval.point.y
+      model = psom.map(self, vector)
+      pt    = model.point.x, model.point.y
+
+      # change the color of the last mapped cell to gray
       self._setcell(self.lastMapped[0], self.lastMapped[1], 100)
+
+      # color the current winning cell green
       self.canvas.itemconfigure(self.cells[pt[1]][pt[0]]["cell"],
                                 fill = 'green')
       self.lastMapped = pt
-      self.inccount(pt[0], pt[1], 'map')
+      self._setcount(pt[0], pt[1],
+                     self.get_counter(model.point, 'map'),
+                     'map')
       self._labelcell(pt[0], pt[1])
       self.update()
-      return retval
+      return model
 
    def train(self, vector):
-      retval = psom.train(self,vector)
-      pt = retval.point.x, retval.point.y
-      self.history[pt] = ACT_MAX
-      self.inccount(pt[0], pt[1], 'train')
-      self._updatefill()
+      model = psom.train(self,vector)
+      pt   = model.point.x, model.point.y
+      
+      self.history[pt] = ACT_MAX # max color activation (black)
+      self._updatefill() # update color activations of nodes
+      
+      self._setcount(pt[0], pt[1],
+                     self.get_counter(model.point, 'train'),
+                     'train')
       self.update()
-      return retval
+      return model
 
    def add_label(self, x, y, label=[]):
       """
@@ -385,60 +387,63 @@ if __name__ == "__main__":
    def pause():
       print "Press [Enter] to continue...",
       raw_input();
-   mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
-   #mysom = VisPsom(file='ex.cod')
+   #mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
+   mysom = VisPsom(file='ex.cod')
    mydataset = dataset(file='ex.dat')
    mysom.init_training(0.02,4.0,5002)
-   print "Begin training from dataset..."
+   print "---> Begin training from dataset..."
+   mysom.timing_start()
    mysom.train_from_dataset(mydataset)
-   print "Training complete"
+   mysom.timing_stop()
+   ttime = mysom.get_training_time()
+   print "---> 5000 Training steps complete: %s seconds" % ttime
    pause()
-   print "Training..."
+   print "---> Training..."
    mysom.train(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Training..."
+   print "---> Training..."
    mysom.train(vector([14.0, 10.0, .3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([10.0, 30.0, -.3, .8, 375.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
    pause()
-   print "Mapping..."
+   print "---> Mapping..."
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
 
-   print "Adding 1 to the label at 0,0..."
+   print "---> Adding 1 to the label at 0,0..."
    pause()
    mysom.add_label(0, 0, [1])
 
-   print "Adding 'zc' to the label at 5,5..."
+   print "---> Adding 'zc' to the label at 5,5..."
    pause()
    mysom.add_label(5, 5, ['zc'])
 
-   print "Clearing label '' at 0,1..."
+   print "---> Clearing label '' at 0,1..."
    pause()
    mysom.clear_label(0, 1)
 
-   print "Clearing label 'B' at 1,0..."
+   print "---> Clearing label 'B' at 1,0..."
    pause()
    mysom.clear_label(1, 0)
 
-   print "Displaying dataset"
+   print "---> Displaying dataset"
    pause()
    mysom.display()
 
-   print "Close window when finished!"
+   print "---> DONE. Please close window."
    mysom.win.mainloop()

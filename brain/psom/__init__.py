@@ -45,14 +45,14 @@ class PointError(AttributeError):
     """
 
 # Hacks added to replace the ptrset, ptrvalue, ptrcreate functions from pointer.i
-# which has been deprecated with SWIG 1.3.  cpointer.i is the new SWIG pointer library
-# now.  Need to find a better way to determine C.
+# which has been deprecated with SWIG 1.3.  cpointer.i is the new SWIG pointer 
+# library now.  Need to find a better way to determine C types.
 # The reason Doug checks the last 3 or 5 elements in myarr for type is because
-# SWIG encodes pointers to primitive C types such as int *, double ***, and char ** in a
-# representation that contains the actual value of the pointer and a type tag.
-# For example, the SWIG representation of the above pointers may look like the following:
-#_10081012_p_int, _1008e124_ppp_double, f8ac_pp_char.  These representations are of
-# type str in python.
+# SWIG encodes pointers to primitive C types such as int *, double ***, and char **
+# in a representation that contains the actual value of the pointer and a type tag.
+# For example, the SWIG representation of the above pointers may look like the
+# following: _10081012_p_int, _1008e124_ppp_double, f8ac_pp_char.  These
+# representations are of type str in python.
 
 def _ptrset(myarr, item, i):
     """
@@ -124,7 +124,7 @@ def list_to_arr(mylist,type):
     i = 0
     for item in mylist:
         csom.ptrset(myarr,item,i)
-        i = i+1
+        i += 1
     return myarr
 
 def arr_to_list(myarr,nitems):
@@ -197,14 +197,14 @@ class psom:
         else:
             radius_mode = csom.LINEAR
         if(file!='unset'):
-            if exists(file): # som created from .cod file, so no need to specify xdim or ydim
+            if exists(file): # som created from .cod file, so no need to specify dims
                 codes = csom.open_entries(file)
                 self.params = csom.construct_teach_params(codes, alpha_mode, radius_mode)
             else:
                 raise FileNotFound, "File '%s' was not found" % file
         else:
             if(xdim=='unset' or ydim=='unset'):
-                raise PsomError, "please specify x and y dimensions for the map"
+                raise PsomError, "x and y dimensions for the map must be specified"
             if(topol=='rect'):
                 topol=csom.TOPOL_RECT
             else:
@@ -215,7 +215,7 @@ class psom:
                 neigh=csom.NEIGH_GAUSSIAN
             if(data=='unset'): # dataset unspecified; random init of model vectors
                 if(dim=='unset'):
-                    raise PsomError, "vector dimension must be specified for random init"
+                    raise PsomError, "Vector dimension must be specified for random init"
                 data = dataset(dim=dim) # create a dataset with user specified vector dimension
                 import random
                 gen = random.Random()
@@ -246,6 +246,25 @@ class psom:
         self.log_padding = 4
         self.log_format = "%C: [%i] maps to %p at time %d-%t\n"
 
+        # two dictionary of training and map counters
+        # key: string representation of a point object i.e. pt.__str__()
+        # value: list containing 3 counters associated with that point
+        #        list[0]: train or map counter
+        #        list[1]: consecutive train or map counter
+        #        list[2]: max consecutive train or map counter
+        self.train_counter_dict = {}
+        self.map_counter_dict   = {}
+        
+        for i in range(self.xdim):
+            for j in range(self.ydim):
+                key = point(i,j).__str__() # str rep of point (i,j) is key into dict
+                # train counter, consecutive train counter, max consecutive train counter
+                self.train_counter_dict[key] = [0,0,0]
+                
+                # map counter, consecutive map counter, max consecutive map counter
+                self.map_counter_dict[key] = [0,0,0] 
+                
+
     def init_training(self,alpha_0,radius_0,runlen,errorwindow=1):
         """
         psom: init_training()
@@ -272,15 +291,15 @@ class psom:
         
         PARAMS
         alpha_0    : initial learning rate.  Range: 0 <= alpha_0 <= 1.0
-        radius_0   : initial radius of learning effect.  Range: 0 <= radius_0 <= xdim or ydim
-        (whichever is bigger)
+        radius_0   : initial radius of learning effect.
+                     Range: 0 <= radius_0 <= xdim or ydim (whichever is bigger)
         runlen     : number of training patterns.  Range: runlen >= 1
         errorwindow: number of previous training samples to consider when calculating SOM
         error.  Range: errorwindow >= 1 (1 by default).  See get_error().
         
         USAGE
-        1. To initialize a som with a learning rate of 0.02, radius of learning effect of 3,
-        and number of training patterns of 1000:
+        1. To initialize a som with a learning rate of 0.02, radius of learning effect
+        of 3, and number of training patterns of 1000:
         >>> mysom.init_training(0.02,3,1000)
         
         2. Once the som is initialized, train it using one of the following:
@@ -289,38 +308,38 @@ class psom:
         >>> mysom.train(vector1)
         See train() and train_from_dataset().
         
-        3. map() acts a lot like train() but will not actually adjust any map model vectors
-        (equivalent to training with zero alpha).  See map().
+        3. map() acts a lot like train() but will not actually adjust any map model
+        vectors (equivalent to training with zero alpha).  See map().
         
         4. To time a training session, see timing_start().
         
-        Note: error checking that was previously done in init_training_session() in som_devrobs.c
-        has been moved here.
+        Note: error checking that was previously done in init_training_session() in
+        som_devrobs.c has been moved here.
         """
         # check alpha (learning rate)
         if(alpha_0 < 0.0 or alpha_0 > 1.0):
             raise PsomError, \
-                  "invalid learning rate: %s. alpha must be between 0 and 1.0 (inclusive)" \
+                  "Invalid learning rate: %s. Alpha must be between 0 and 1.0 (inclusive)" \
                   % alpha_0
         # check radius of learning effect
         if(radius_0 < 1.0):
             raise PsomError, \
-                  "invalid radius: %s. radius of learning effect must be at least 1" \
+                  "Invalid radius: %s. Radius of learning effect must be at least 1" \
                   % radius_0
         # make sure radius of learning effect is not greater than map dimension
         if(radius_0 > self.xdim and radius_0 > self.ydim):
             raise PsomError, \
-                  "invalid radius: %s. SOM dimension is only %sx%s" \
+                  "Invalid radius: %s. SOM dimension is only %sx%s" \
                   % (radius_0, self.xdim, self.ydim)
         # runlen must be greater than or equal to 1
         if(runlen < 1):
             raise PsomError, \
-                  "invalid run length: %s. run length must be at least 1" % runlen
+                  "Invalid run length: %s. Run length must be at least 1" % runlen
         
         # error window must be greater than or equal to 1
         if(errorwindow < 1):
             raise PsomError, \
-                  "invalid size of error window: %s.  window size must be at least 1" \
+                  "Invalid size of error window: %s.  Window size must be at least 1" \
                   % errorwindow
         
         csom.init_training_session(self.params,alpha_0,radius_0,runlen,errorwindow)
@@ -409,12 +428,12 @@ class psom:
         if(mode != 'unset'):
             if(mode != 'map' and mode != 'train' and mode != 'both'):
                 raise PsomError, \
-                      "unrecognized logging mode: %s" % mode
+                      "Unrecognized logging mode: %s" % mode
             self.log_mode = mode
         if(type != 'unset'):
             if(type != 'file' and type != 'dir'):
                 raise PsomError, \
-                      "unrecognized logging type: %s" % type
+                      "Unrecognized logging type: %s" % type
             self.log_type = type
         if(dir != 'unset'):
             if(dir[-1] != "/"):
@@ -464,8 +483,8 @@ class psom:
         """
         psom: logging_clear()
         ---------------------
-        remove log files
-            """
+        Remove log files
+        """
         from os import system	
         if(self.log_type == 'dir'):
             fname = self.log_dir + self.log_fprefix + "[0-9]*.log"
@@ -519,13 +538,13 @@ class psom:
     def map(self,vector):
         """
         psom: map()
-        -----
-        Given a psom vector, this function maps the vector to the SOM.  The model vector
-        of the winning node is returned.  Model vectors of neighboring nodes remain
-        unchanged, i.e no learning occurs.
+        -----------
+        Given a psom vector, this function maps the vector to the SOM.  The model
+        vector of the winning node is returned.  Model vectors of neighboring nodes
+        remain unchanged, i.e no learning occurs.
         
         PARAMS
-        vector: vector to be mapped
+        vector: vector object to be mapped
         
         USAGE
         >>> mylist = [0,1,0,2]
@@ -538,6 +557,41 @@ class psom:
                   % (vector.dim, self.dim)
         coords = csom.map_one(self.params,vector.entry)
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
+
+        # Now that we have the winning coordinates, increment the map counters.
+        # The (regular) map counter and the consecutive map counter
+        # are always incremented.  The maximum consecutive map counter
+        # stores the highest consecutive counter associated with a point.
+        mcounter            = self.get_counter(pt, 'map')
+        consec_mcounter     = self.get_consec_counter(pt, 'map')
+        max_consec_mcounter = self.get_max_consec_counter(pt, 'map')
+
+        print "Incrementing mcounter %s->%s for point: %s" \
+              % (mcounter, mcounter+1, pt.__str__())
+        mcounter += 1
+        print "Incrementing consec_mcounter %s->%s for point: %s" \
+              % (consec_mcounter, consec_mcounter+1, pt.__str__())
+        consec_mcounter += 1
+        if(consec_mcounter > max_consec_mcounter):
+            print "Setting max_consec_mcounter %s->%s for point: %s" \
+                  % (max_consec_mcounter, consec_mcounter, pt.__str__())
+            max_consec_mcounter = consec_mcounter
+
+        # If this is not the first mapping, and the last mapped node
+        # is not the same as the current winning node, reset the
+        # consecutive counter for the last node.
+        # Note: self.last is == 'unset' if the SOM has never been trained
+        #       or mapped.
+        if self.last != 'unset' and not pt.isEqual(self.last.point):
+            print "Reseting consec_mcounter %s->%s for last point: %s" \
+                  % (consec_mcounter, 0, self.last.point.__str__())
+            self.set_consec_counter(self.last.point, 0, 'map')
+            
+        self.set_counter_list(pt, [mcounter, consec_mcounter,
+                                   max_consec_mcounter], 'map')
+        print ">>> MCounters for point %s set to %s, %s, %s" \
+              % (pt.__str__(), mcounter, consec_mcounter, max_consec_mcounter)
+
         self.last = vector
         self.last.point = pt
         model = self.get_model_vector(pt)
@@ -549,9 +603,9 @@ class psom:
         """
         psom: train()
         -------------
-        Given a psom vector, this function maps the vector to the SOM.  The model vector
-        of the winning node is returned.  Model vectors of neighboring nodes are
-        changed so that their values are closer to that of the winnning node.
+        Given a psom vector, this function maps the vector to the SOM.  The model
+        vector of the winning node is returned.  Model vectors of neighboring nodes
+        are changed so that their values are closer to that of the winnning node.
         
         PARAMS
         vector: vector to be mapped
@@ -567,6 +621,41 @@ class psom:
                   % (vector.dim, self.dim)
         coords = csom.train_one(self.params,vector.entry)
         pt = point(csom.ptrvalue(coords,0),csom.ptrvalue(coords,1))
+
+        # Now that we have the winning coordinates, increment the train counters.
+        # The (regular) train counter and the consecutive train counter
+        # are always incremented.  The maximum consecutive train counter
+        # stores the highest consecutive counter associated with a point.
+        tcounter            = self.get_counter(pt, 'train')
+        consec_tcounter     = self.get_consec_counter(pt, 'train')
+        max_consec_tcounter = self.get_max_consec_counter(pt, 'train')
+
+        print "Incrementing tcounter %s->%s for point: %s" \
+              % (tcounter, tcounter+1, pt.__str__())
+        tcounter += 1
+        print "Incrementing consec_tcounter %s->%s for point: %s" \
+              % (consec_tcounter, consec_tcounter+1, pt.__str__())
+        consec_tcounter += 1
+        if(consec_tcounter > max_consec_tcounter):
+            print "Setting max_consec_tcounter %s->%s for point: %s" \
+                  % (max_consec_tcounter, consec_tcounter, pt.__str__())
+            max_consec_tcounter = consec_tcounter
+
+        # If this is not the first mapping, and the last mapped node
+        # is not the same as the current winning node, reset the
+        # consecutive counter for the last node.
+        # Note: self.last is == 'unset' if the SOM has never been trained
+        #       or mapped.
+        if self.last != 'unset' and not pt.isEqual(self.last.point):
+            print "Reseting consec_tcounter %s->%s for last point: %s" \
+                  % (consec_tcounter, 0, self.last.point.__str__())
+            self.set_consec_counter(self.last.point, 0, 'train')
+            
+        self.set_counter_list(pt, [tcounter, consec_tcounter,
+                                   max_consec_tcounter], 'train')
+        print ">>> TCounters for point %s set to %s, %s, %s" \
+              % (pt.__str__(), tcounter, consec_tcounter, max_consec_tcounter)
+        
         self.last = vector
         self.last.point = pt
         model = self.get_model_vector(pt)
@@ -620,7 +709,7 @@ class psom:
         #self.last = vector(entry=entry,dim=self.dim)
 
         self.last = vector(entry=entry,dim=self.dim,
-                           label=csom.get_label_data_entry(entry, \
+                           label=csom.get_label_data_entry(entry,
                            csom.data_entry_num_labs_get(entry)))
 
         coords = csom.map_one(self.params,self.last.entry)
@@ -631,8 +720,8 @@ class psom:
         """
         psom: map_from_dataset()
         ------------------------
-        Maps vectors from a dataset in order to the SOM.  The dimension of the vectors in the
-        dataset must match the dimension of the SOM model vectors.
+        Maps vectors from a dataset in order to the SOM.  The dimension of the vectors
+        in the dataset must match the dimension of the SOM model vectors.
         
         PARAMS
         dataset: dataset of vectors to be mapped
@@ -647,10 +736,10 @@ class psom:
                   "Mismatched dimensions of training vector (size %s) and model vector (size %s)" \
                   % (dataset.dim, self.dim)
         entry = csom.map_fromdataset(self.params,dataset.data)
+        
         #self.last = vector(entry=entry,dim=self.dim)
-
         self.last = vector(entry=entry,dim=self.dim,
-                           label=csom.get_label_data_entry(entry, \
+                           label=csom.get_label_data_entry(entry,
                            csom.data_entry_num_labs_get(entry)))
         
         coords = csom.map_one(self.params,self.last.entry)
@@ -686,13 +775,14 @@ class psom:
         
         After calling map(), train(), or train_from_dataset(), calling this function
         returns a list corresponding to the appropriate activation levels.  This can
-        be done based on simple 'bubble' or 'gaussian' neighborhoods, or (as suggested by Doug)
-        by assigning activation weight according to error in mapping to each corresponding
-        model vector ('error').
+        be done based on simple 'bubble' or 'gaussian' neighborhoods, or (as suggested
+        by Doug) by assigning activation weight according to error in mapping to each
+        corresponding model vector ('error').
             
         If the 'error' mode is used, the radius is taken as a tolerance parameter,
-        and should vary between 0.0 to 1.0.  0.0 will look a lot more like bubble activation,
-        while 1.0 will have pretty much every node activated to at least some degree.
+        and should vary between 0.0 to 1.0.  0.0 will look a lot more like bubble
+        activation, while 1.0 will have pretty much every node activated to at least
+        some degree.
         
         In summary,
         mode: bubble     radius range: >= 1.0
@@ -714,13 +804,14 @@ class psom:
         """
         if(self.last == 'unset'):
             raise PsomError, \
-                  "cannot get activation levels. som has not yet been mapped to"
+                  "Cannot get activation levels. SOM has not yet been mapped to."
         if(mode == 'gaussian' or mode == 'bubble'):
             if(mode == 'gaussian'):
                 mode = csom.NEIGH_GAUSSIAN
             else:
                 mode = csom.NEIGH_BUBBLE
-            float_levels = csom.get_activation_levels(self.params, self.last.point.asIntPtr(),
+            float_levels = csom.get_activation_levels(self.params,
+                                                      self.last.point.asIntPtr(),
                                                       radius, mode)
         elif(mode == 'error'):
             float_levels = csom.get_levels_by_error(self.params,
@@ -737,8 +828,8 @@ class psom:
         This function allows x,y addressing of a list representation of a matrix.  
         
         PARAMS
-        mylist: list representation of a matrix (e.g. activation levels of som nodes returned
-        by get_activations())
+        mylist: list representation of a matrix (e.g. activation levels of som nodes
+        returned by get_activations())
         x     : x coordinate of matrix element
         y     : y coordinate of matrix element
         
@@ -807,7 +898,284 @@ class psom:
                 print "%.2f" % (levels[index]),
             print ""
 
+    # dictionary of counters
+    # accessor methods
+    def get_counter_dict(self, mode):
+        """
+        psom: get_counter_dict()
+        ------------------------
+        Given a mode ('train' or 'map'), this function returns the corresponding 
+        dictionary of key-value pairs.
+        key: string representation of a point object i.e. pt.__str__()
+        value: list of 3 counters associated with that point
+               list[0]: train (or map) counter
+               list[1]: consecutive train (or map) counter
+               list[2]: max consecutive train (or map) counter
 
+        PARAMS
+        mode: 'train' or 'map'
+               
+        USAGE:
+        1. To get dictionary of training counters:
+        >>> mysom.get_counter_dict('train')
+        2. To get dictionary of mapping counter:
+        >>> mysom.get_counter_dict('map')
+        """
+        if mode == 'train':
+            return self.train_counter_dict
+        elif mode == 'map':
+            return self.map_counter_dict
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+    
+    def get_counter_list(self, pt, mode):
+        """
+        psom: get_list()
+        ----------------
+        Given a point and a mode, this function returns the
+        corresponding list of counters associated with that point.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+        
+        USAGE:
+        1. To get list of training counters associated with point (0,2)
+        >>> mysom.get_counter_list(point(0,2), 'train')
+        2. To get list of mapping counters associated with point (5,5)
+        >>> mysom.get_counter_list(point(5,5), 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if mode == 'train':
+            return self.train_counter_dict[pt.__str__()]
+        elif mode == 'map':
+            return self.map_counter_dict[pt.__str__()]
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+
+    def get_counter(self, pt, mode):
+        """
+        psom: get_counter()
+        -------------------
+        Given a point and a mode, this function returns
+        the corresponding (regular) counter associated with that point.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE:
+        1.  To get training (regular) counter associated with point (0,2)
+        >>> mysom.get_counter(point(0,2), 'train')
+        2.  To get mapping (regular) counter associated with point (5,5)
+        >>> mysom.get_counter(point(5,5), 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if mode == 'train':
+            return self.train_counter_dict[pt.__str__()][0]
+        elif mode == 'map':
+            return self.map_counter_dict[pt.__str__()][0]
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+
+    def get_consec_counter(self, pt, mode):
+        """
+        psom: get_consec_counter()
+        --------------------------
+        Given a point and a mode ('train' or 'map'), this function returns
+        the corresponding consecutive counter associated with that point.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE:
+        1.  To get consecutive training counter associated with point (0,2)
+        >>> mysom.get_consec_counter(point(0,2), 'train')
+        2.  To get consecutive mapping counter associated with point (5,5)
+        >>> mysom.get_consec_counter(point(5,5), 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if mode == 'train':
+            return self.train_counter_dict[pt.__str__()][1]
+        elif mode == 'map':
+            return self.map_counter_dict[pt.__str__()][1]
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+        
+    def get_max_consec_counter(self, pt, mode):
+        """
+        psom: get_consec_counter()
+        --------------------------
+        Given a point and a mode ('train' or 'map'), this function returns
+        the corresponding maximum consecutive counter associated with that point.
+        
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+        
+        USAGE:
+        1.  To get maximum consecutive training counter associated with point (0,2)
+        >>> mysom.get_max_consec_counter(point(0,2), 'train')
+        2.  To get maximum consecutive mapping counter associated with point (5,5)
+        >>> mysom.get_max_consec_counter(point(5,5), 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if mode == 'train':
+            return self.train_counter_dict[pt.__str__()][2]
+        elif mode == 'map':
+            return self.map_counter_dict[pt.__str__()][2]
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+    
+    # modifier methods
+    def set_counter_list(self, pt, ls, mode):
+        """
+        psom: set_counter_list()
+        ------------------------
+        Associates a counter list [regular counter, consecutive counter, max
+        consecutive counter] with a point.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE
+        To set the (regular) counter to 3, consecutive counter to 2, and max
+        consecutive counter to 2 at point (5,5) when in 'map' mode:
+        >>> mysom.set_counter_list(point(5,5), [3,2,2], 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if not (isinstance(ls, list) and len(ls) == 3):
+            raise TypeError, "Expecting 3-element list, given %s instead" % type(ls)
+        if mode == 'train':
+            self.train_counter_dict[pt.__str__()] = ls
+        elif mode == 'map':
+            self.map_counter_dict[pt.__str__()] = ls
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+             
+    def set_counter(self, pt, counter, mode):
+        """
+        psom: set_counter()
+        -------------------
+        Sets the regular counter of point given a mode.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE
+        To set the (regular) counter to 3 at point (5,5) in 'map' mode:
+        >>> mysom.set_counter(point(5,5), 3, 'mode')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if not isinstance(counter, int):
+            raise TypeError, "Expecting integer, given %s instead" % type(counter)
+        if mode == 'train':
+            self.train_counter_dict[pt.__str__()][0] = counter
+        elif mode == 'map':
+            self.map_counter_dict[pt.__str__()][0] = counter
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+
+    def set_consec_counter(self, pt, consec_counter, mode):
+        """
+        psom: set_consec_counter()
+        --------------------------
+        Sets the consecutive counter of a point given a mode.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE
+        1.  To reset the consecutive counter associated with point (5,5) while
+        mapping:
+        >>> mysom.set_consec_counter(point(5,5), 0, 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if not isinstance(consec_counter, int):
+            raise TypeError, "Expecting integer, given %s instead" % type(consec_counter)
+        if mode == 'train':
+            self.train_counter_dict[pt.__str__()][1] = consec_counter
+        elif mode == 'map':
+            self.map_counter_dict[pt.__str__()][1] = consec_counter
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+        
+    def set_max_consec_counter(self, pt, max_consec_counter, mode):
+        """
+        psom: set_max_consec_counter()
+        ------------------------------
+        Sets the maximum consecutive counter of a point given a mode.
+
+        PARAMS
+        pt  : point object
+        mode: 'train' or 'map'
+
+        USAGE
+        1.  To reset the max consecutive counter associated with point (5,5)
+        while mapping:
+        >>> mysom.set_consec_counter(point(5,5), 0, 'map')
+        """
+        if not isinstance(pt, point):
+            raise TypeError, "Expecting a point object, given %s intead" % type(pt)
+        if not isinstance(max_consec_counter, int):
+            raise TypeError, "Expecting integer, given %s instead" % type(max_consec_counter)
+        if mode == 'train':
+            self.train_counter_dict[pt.__str__()][2] = max_consec_counter
+        elif mode == 'map':
+            self.map_counter_dict[pt.__str__()][2] = max_consec_counter
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+    
+    def get_highest_counter(self, counter_type='unset', mode='unset'):
+        """
+        Given a mode ('train' or 'map') and a counter type ('regular' -- default,
+        'consec', 'max_consec'), this function looks for the specified counter with
+        the highest value, and returns a reference to the corresponding point object
+        and the counter in a two-element list. Return format: [pt, counter value]
+
+        USAGE:
+        1. To get point and highest (regular) train counter:
+        >>> mysom.get_highest_counter(mode='train')
+        2. To get point and highest consecutive train counter:
+        >>> mysom.get_highest_counter('consec', 'map')
+        3. To get point and highest max consecutive map counter:
+        >>> mysom.get_highest_counter('max_consec', 'train')
+        """
+        if mode == 'train':
+            dict = self.train_counter_dict
+        elif mode == 'map':
+            dict = self.map_counter_dict
+        else:
+            raise PsomError, "Unknown mode: %s" % mode
+        
+        if counter_type == 'consec': ct_type = 1
+        elif counter_type == 'max_consec': ct_type = 2
+        else: ct_type = 0
+            
+        max_val = 0
+        max_ls = []
+        for i in range(self.xdim):
+            for j in range(self.ydim):
+                pt = point(i,j)
+                curr_val = dict[pt.__str__()][ct_type]                
+                if curr_val >= max_val:
+                    if curr_val > max_val:
+                        max_val = curr_val
+                        max_ls = []
+                    max_ls.append([pt, curr_val])
+        return max_ls
+    
 #################################################################################
 # class: vector                                                                 #
 #################################################################################
@@ -952,11 +1320,8 @@ class vector:
         Returns the mask of the vector.  Mask is returned as a python list.
         """
         return self.mask
-        #mask = csom.data_entry_mask_get(self.entry)
-        #print mask
-        #return arr_to_list(mask, self.dim)
-    
-    #def set_label(self,label='NULL'):
+
+    # DEPRECATED
     """
     def set_label(self,label=[]):
         vector: set_label()
@@ -1284,6 +1649,11 @@ class point:
         mylist.append(self.y)
         return mylist
 
+    def isEqual(self, pt):
+        if self.x == pt.x and self.y == pt.y:
+            return 1
+        return 0
+    
     def asIntPtr(self):
         """
         point: asIntPtr()
@@ -1422,11 +1792,13 @@ if(__name__ == '__main__'):
     vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21], weight=3, mask=[1,0,0,1,0],
                        label=['X', 13, 'ab', 'C4']))
     vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
-
+    vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
+    vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
+    
     mydataset = dataset(vecs[0])
 
     print "Adding vectors to dataset, displaying mask and labels"
-    for i in range(1,4):
+    for i in range(1,5):
         vecs[i].display()
         print "\n"
         mydataset.addvec(vecs[i])
@@ -1475,4 +1847,25 @@ if(__name__ == '__main__'):
     mysom.save_to_file("test4.cod")
     print "output written to \"test4.cod\""
     print "log written to \"psomtest.log\""
+    print "\n"
+    
+    print "*** Train Counter ***"
+    nested_ls = mysom.get_highest_counter(mode='train')
+    for item in nested_ls:
+        print "point: %s" % item[0].__str__(),
+        print "counter: %s" % item[1]
+    print "\n"
 
+    print "*** Consec Train Counter ***"
+    nested_ls =  mysom.get_highest_counter('consec', 'train')
+    for item in nested_ls:
+        print "point: %s" % item[0].__str__(), 
+        print "consec_counter: %s" % item[1]
+    print "\n"
+
+    print "*** Max Consec Train Counter ***"
+    nested_ls = mysom.get_highest_counter('max_consec', 'train')
+    for item in nested_ls:
+        print "point: %s" % item[0].__str__(), 
+        print "max_consec_counter: %s" % item[1]
+    print "\n"

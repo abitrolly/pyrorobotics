@@ -137,6 +137,7 @@ class SOMVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
       if not maxval:
          maxval = max(vector)
       cols, rows = opts
+      print "Title %s" % title
       pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
                                            rows = rows, cols = cols,
                                            maxvalue=255, title=title,

@@ -23,7 +23,7 @@ include ../../../Makefile.src
 CC=gcc
 SWIG=swig
 LD=ld
-CC_FLAGS=-c -g
+CC_FLAGS=-c -g -I $(PYTHON_INCLUDE)
 SWIG_FLAGS=-python
 LD_FLAGS=-shared
 
