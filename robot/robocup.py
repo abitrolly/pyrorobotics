@@ -57,15 +57,28 @@ def parse(str):
 			elif symbol.isdigit():
 				currentlist.append( int(symbol) )
 			else:
-				currentlist.append( float(symbol) )
+				try:
+					# doesn't get "drop_ball" above
+					currentlist.append( float(symbol) )
+				except:
+					currentlist.append( symbol )
 	if len(stack) != 0:
 		raise AttributeError, "missing ending paren"
 	return currentlist[0]
 
 class RobocupRobot(Robot):
 	BUF = 1024
-	def __init__(self, name = "Pyro1", host = "localhost", port = 6000):
+	def __init__(self, name = "TeamPyro", host = "localhost",
+		     port = 6000, teamMode = 0):
 		Robot.__init__(self)
+		self.lastTranslate = 0
+		self.lastRotate = 0
+		self.updateNumber = 0L
+		self.historyNumber = 0L
+		self.teamMode = teamMode
+		self.lastHistory = 0
+		self.historySize = 100
+		self.history = [0] * self.historySize
 		self.devData["simulated"] = 1
 		self.devData["name"] = name
 		self.devData["host"] = host
@@ -75,7 +88,9 @@ class RobocupRobot(Robot):
 		self.socket.sendto("(init %s)" % self.devData["name"], self.address)
 		self.devData["builtinDevices"] = ["truth"]
 		self.startDevice("truth")
-		self.sendMsg("(move 26 26)")
+		self.set("/devices/truth0/pose", (-25, 0))
+		if self.teamMode:
+			self.makeTeam()
 		
 	def startDeviceBuiltin(self, item):
 		if item == "truth":
@@ -95,23 +110,60 @@ class RobocupRobot(Robot):
 		self.socket.close()
 
 	def update(self):
+		self.lastHistory = self.historyNumber % self.historySize
+		msg = self.getMsg()
+		if len(msg):
+			self.history[self.lastHistory] = msg
+			self.historyNumber += 1
 		self._update()
+		self.keepGoing()
+		self.updateNumber += 1
+
+	def keepGoing(self):
+		# only one per cycle!
+		if self.lastTranslate and self.updateNumber % 2:
+			self.translate(self.lastTranslate)
+		elif self.lastRotate:
+			self.rotate(self.lastRotate)
 			
 	def translate(self, translate_velocity):
 		# robocup takes values between -100 and 100
+		self.lastTranslate = translate_velocity
 		val = translate_velocity * 100.0
 		self.sendMsg("(dash %f)" % val)
 
 	def rotate(self, rotate_velocity):
 		# robocup takes degrees -180 180
-		val = rotate_velocity * 180.0
+		# but that is a lot of turning!
+		# let's scale it back a bit
+		# also, directions are backwards
+		self.lastRotate = rotate_velocity
+		val = -rotate_velocity * 20.0
 		self.sendMsg("(turn %f)" % val)
 
 	def move(self, translate_velocity, rotate_velocity):
 		# only one per cycle!
-		if translate_velocity != 0.0:
-			val = translate_velocity * 100.0
-			self.sendMsg("(dash %f)" % val)
-		if rotate_velocity != 0.0:
-			val = rotate_velocity * 180.0
-			self.sendMsg("(turn %f)" % val)
+		self.translate(translate_velocity)
+		self.rotate(rotate_velocity)
+
+	def makeTeam(self):
+		self.teamMode = 1
+		self.team = [0] * 11
+		# main robot:
+		self.team[0] = self.socket
+		# goalie
+		# TODO: make this be a (goalie)
+		self.team[1] = socket(AF_INET, SOCK_DGRAM)
+		self.team[1].sendto("(init %s)" % self.devData["name"],
+				    self.address)
+		self.team[1].sendto("(move 25 25)", self.address)
+		# create the other team mates:
+		for x in range(2, 11):
+			self.team[x] = socket(AF_INET, SOCK_DGRAM)
+			self.team[x].sendto("(init %s)" % self.devData["name"],
+					    self.address)
+			# put in random place
+			self.team[x].sendto("(move 25 25)", self.address)
+
+	def teamMsg(self, number, msg):
+		self.team[number].sendto(msg, self.address)
