@@ -17,6 +17,7 @@ def usage():
     print "  -b BRAIN           name of brain.py file to load"
     print "  -o BRAIN_ARGUMENTS (separated by ':', no spaces)"
     print "  -s SIMULATOR       name of simulator to run"
+    print "  -c CONFIGFILE      name of config file to load"
     print ""
 
 def help():
@@ -81,3 +82,4 @@ def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
                 return userspace.INIT(robot)
     else:
         return userspace.INIT(robot, brain)
+
