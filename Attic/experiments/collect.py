@@ -29,7 +29,7 @@ class Collect(Brain):
         self.wasStalled = 0
         self.direction = 1
         self.blockedFront = 0
-        self.truth.setPose(2, 1.25, 270)
+        self.truth.setPose(0.850, 0.800, 65.400)
 
     def avoidObstacles(self):
         """
