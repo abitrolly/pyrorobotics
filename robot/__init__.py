@@ -217,23 +217,23 @@ class Robot (Drawable):
     def getSensorGroup(self, func = 'avg', name = 'front', sensor = 'sonar'): 
         if not (name in self.sensorGroups.keys()): 
             return None
-        if func = 'avg':
+        if func == 'avg':
             sum = 0.0 
             for x in self.sensorGroups[name]: 
                 sum += self.get(sensor, 'value', x) 
             return sum / len(self.sensorGroups[name])
-        elif func = 'sum':
+        elif func == 'sum':
             sum = 0.0 
             for x in self.sensorGroups[name]: 
                 sum += self.get(sensor, 'value', x)
             return sum
-        elif func = 'min':
+        elif func == 'min':
             min = 100000
             for x in self.sensorGroups[name]:
                 if self.get(sensor, 'value', x) < min:
                     min = self.get(sensor, 'value', x)
             return (x, min)
-        elif func = 'max':
+        elif func == 'max':
             max = -100000
             for x in self.sensorGroups[name]:
                 if self.get(sensor, 'value', x) > max:
