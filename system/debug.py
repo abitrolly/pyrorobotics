@@ -75,11 +75,12 @@ class PyroDebugger(code.InteractiveConsole):
                 readline.read_history_file(histfile)
             except IOError:
                 pass
-            atexit.register(self.save_history, histfile)
+            #atexit.register(self.save_history, histfile)
 
     def save_history(self, histfile = None):
-        if histfile:
-            histfile=os.path.expanduser("~/.pyrohist"),
+        if histfile == None:
+            histfile=os.path.expanduser("~/.pyrohist")
+        print histfile
         readline.write_history_file(histfile)
 
     def raw_input(self, prompt):
