@@ -93,18 +93,42 @@ class GLgui(gui):
 
    def viewRobot(self):
       self.windowRobot = Tk()
+      self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
+      canvasRobot.pack()
 
    def viewBrain(self):
       self.windowBrain = Tk()
+      self.canvasBrain = Canvas(self.windowBrain,width=400,height=400)
+      self.canvasBrain.pack()
+
+   def redrawPie(self, pie, percentSoFar, piececnt, controller, percent):
+      row = (pie - 1) * 100
+      colors = ['blue', 'red', 'green', 'yellow']
+      self.canvasBrain.create_arc(0,row,400,row + 100 ,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[piececnt - 1])
 
    def redrawWindowBrain(self):
       if self.windowBrain != 0:
-         if self.lastRun != self.engine.brain.lastRun:
+         if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
             self.lastRun = self.engine.brain.lastRun
-            print "---------------------------------------------"
+            self.canvasBrain.delete('pie')
+            total = {}
             for desire in self.engine.brain.desires:
-               print "Desire:", desire[4], desire[3], "IF", desire[0], "THEN", desire[1], desire[2]
-               # truth amount, controller, amount, behname, statename
+               (truthAmount, controller, amount, behname, statename) = desire
+               if total.has_key(controller):
+                  total[controller] += amount
+               else:
+                  total[controller] = amount
+            piecnt = 0
+            for control in total.keys():
+               piecnt += 1
+               percentSoFar = 0
+               piececnt = 0
+               for desire in self.engine.brain.desires:
+                  (truthAmount, controller, amount, behname, statename) = desire
+                  if control == controller:
+                     piececnt += 1
+                     self.redrawPie(piecnt, percentSoFar, piececnt, controller, amount/total[controller])
+                     percentSoFar += amount/total[controller]
 
    def redrawWindowRobot(self):
       if self.windowRobot != 0:
