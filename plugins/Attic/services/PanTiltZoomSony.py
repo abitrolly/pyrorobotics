@@ -1,5 +1,7 @@
 """ This device signals the robot to load its PTZ """
 
+from pyro.robot.aria import AriaPTZService
+
 def INIT(robot):
     ptz = AriaPTZService(robot.dev, "sony")
     # init has to be done separate, because the constructor
