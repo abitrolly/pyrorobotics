@@ -66,7 +66,7 @@ class BehaviorBasedBrain (Brain):
          totalEffects[c] = 0.0
       for e in self.effectsTotal.keys(): # state:beh:controller
          s, b, c = e.split(':')
-         totalEffects[c] = max(self.effectsTotal[e], totalEffects[c])
+         totalEffects[c] = max(float(self.effectsTotal[e]), totalEffects[c])
       # sum up totalTruth
       for d in self.desires: 
          # compute total truth for each controller
@@ -137,7 +137,7 @@ class Behavior:
    def IF(self, fvalue, controller, amount = 1.0, name = ''):
       if name == '':
          name = "Rule%d" % (len(self.rules) + 1)
-      self.rules.append([fvalue, controller, amount, name])
+      self.rules.append([float(fvalue), controller, float(amount), name])
    def getRobot(self):
       return self.behaviorEngine.robot
 
