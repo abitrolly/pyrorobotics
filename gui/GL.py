@@ -256,11 +256,16 @@ class GLgui(gui):
       if self.graphicsMode == 1: # GL
          self.done = 0
          while not self.done:
+            needToUpdateState = 1
+            try: needToUpdateState = self.engine.brain.needToStop
+            except: pass
+            if needToUpdateState:
+               try: self.engine.robot.update()
+               except: pass
             try:
                self.win.tkRedraw()
                while self.win.tk.dooneevent(2): pass
-            except:
-               self.done = 1
+            except: self.done = 1
             sleep(self.update_interval)
       else:
          self.win.mainloop()
