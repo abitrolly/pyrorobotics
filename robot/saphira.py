@@ -30,7 +30,11 @@ class SaphiraRobot(Robot):
                                             (11, 'sonar')], 
                              'back-left' : [(12, 'sonar'), (13, 'sonar'), 
                                              (14, 'sonar')], 
-                             'back' : [(11, 'sonar'), (12, 'sonar')]}
+                             'back' : [(11, 'sonar'), (12, 'sonar')],
+                             'back-all' : [( 9, 'sonar'), (10, 'sonar'),
+                                           (11, 'sonar'), (12, 'sonar'),
+                                           (13, 'sonar'), (14, 'sonar')]
+                             }
         self.senses['robot']['simulator'] = lambda self, x = simulator: x
 	self.update() # Saphira_UpdatePosition(self.dev)
         self.inform("Done loading lobot.")

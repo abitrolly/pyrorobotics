@@ -29,6 +29,7 @@ class KheperaRobot(Robot):
                              'right' : [(5, 'ir')], 
                              'back-left' : [(7, 'ir')], 
                              'back-right' : [(6, 'ir')], 
+                             'back-all' : [(6, 'ir'), (7, 'ir')], 
                              'back' : [(6, 'ir'), (7, 'ir')]} 
         self.senseData = {}
         self.lastTranslate = 0
