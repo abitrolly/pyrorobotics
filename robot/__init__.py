@@ -46,6 +46,9 @@ class Robot (Drawable):
         self.drivers = [] # something that implements the driver interface
         self.senses  = {} # (name,type,driver,AffineVector(),reading)
         self.controls = {} # (name,type,driver,control value)
+        self.device = []
+        self.service = []
+        self.map = []
         # user init:
         self.setup(**kwargs)
 
