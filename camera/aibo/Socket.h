@@ -8,7 +8,7 @@
 
 class Socket {
  public:
-  Socket(char *hostname, int port);
+  Socket(char *hostname, int port, int tcp);
   char *read(int cnt);
   char *readUntil(char stop);
   int write(char *message);

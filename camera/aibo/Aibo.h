@@ -7,7 +7,7 @@
 
 class AiboCam : public Device {
  public:
-  AiboCam(char *hostname, int port);
+  AiboCam(char *hostname, int port, int tcp);
   PyObject *updateMMap(int decompress);
   Socket *sock;
   RWLock lock;

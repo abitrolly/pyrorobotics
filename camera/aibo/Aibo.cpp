@@ -90,9 +90,9 @@ PyObject *AiboCam::updateMMap(int decompress) {
   return PyInt_FromLong(0);
 }
 
-AiboCam::AiboCam(char *hostname, int port) {
+AiboCam::AiboCam(char *hostname, int port, int tcp) {
   // get image details
-  sock = new Socket(hostname, port);
+  sock = new Socket(hostname, port, tcp);
   depth = 3;
   // set width, height 0 to trigger automatically:
   width = 0;

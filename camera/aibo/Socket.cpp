@@ -5,7 +5,7 @@
 #include <stdio.h>
 #define MAXBUFSIZE 10000
 
-Socket::Socket(char *hostname, int port) {
+Socket::Socket(char *hostname, int port, int tcp) {
   host = hostname;
   host_id = gethostbyname(host);
   // open socket
@@ -13,12 +13,23 @@ Socket::Socket(char *hostname, int port) {
   server_addr.sin_port = htons(port);    /* short, network byte order */
   server_addr.sin_addr = *((struct in_addr *)host_id->h_addr);
   bzero(&(server_addr.sin_zero), 8);     /* zero the rest of the struct */
-  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-    printf("Error: socket could not be opened\n");
-  } else {
-    if (connect(sock, (struct sockaddr *)&server_addr,
-		sizeof(struct sockaddr)) == -1) {
-      printf("Error: socket could not connect\n");    
+  if (tcp) { // TCP
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+      printf("Error: tcp socket could not be opened\n");
+    } else {
+      if (connect(sock, (struct sockaddr *)&server_addr,
+		  sizeof(struct sockaddr)) == -1) {
+	printf("Error: tcp socket could not connect\n");    
+      }
+    }
+  } else { // UDP
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+      printf("Error: udp socket could not be opened\n");
+    } else {
+      if (connect(sock, (struct sockaddr *)&server_addr,
+		  sizeof(struct sockaddr)) == -1) {
+	printf("Error: udp socket could not connect\n");    
+      }
     }
   }
 }

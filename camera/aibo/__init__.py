@@ -33,7 +33,7 @@ class CameraThread(threading.Thread):
         main control loop
         """
         while not self._stopevent.isSet():
-            self.runable.cameraDevice.updateMMap(0) # read and throw away
+            self.runable.cameraDevice.updateMMap(0) # 0 = read and throw away; 1 = process
             self._stopevent.wait(self._sleepperiod)
 
     def join(self,timeout=None):
@@ -46,14 +46,14 @@ class CameraThread(threading.Thread):
 class AiboCamera(Camera):
    """
    """
-   def __init__(self, robot, visionSystem = None):
+   def __init__(self, robot, visionSystem = None, tcp = 1):
       """
       """
       self.robot = robot
       self.robot.setRemoteControl("Raw Cam Server", "on")
       self.thread = None
       time.sleep(1)
-      self.cameraDevice = AiboCam( self.robot.host, self.robot.PORT["Raw Cam Server"])
+      self.cameraDevice = AiboCam( self.robot.host, self.robot.PORT["Raw Cam Server"], tcp)
       # connect vision system: --------------------------
       self.vision = visionSystem
       self.vision.registerCameraDevice(self.cameraDevice)
