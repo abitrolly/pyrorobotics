@@ -299,6 +299,20 @@ void Blobdata_del(struct blobdata* data){
   free(data->blobmap);
 }
 
+void swap_colors(struct image_cap* image, int color1, int color2, int color3) {
+  // used to swap color positions
+  // swap_colors(im, 2, 1, 0) will swap 1st and 3rd colors
+  int i;
+  int c1, c2, c3;
+  for (i = 0; i < image->size; i += 3) {
+    c1 = ((uint8_t *)image->data)[i + 0];
+    c2 = ((uint8_t *)image->data)[i + 1];
+    c3 = ((uint8_t *)image->data)[i + 2];
+    ((uint8_t *)image->data)[i + color1] = c1;
+    ((uint8_t *)image->data)[i + color2] = c2;
+    ((uint8_t *)image->data)[i + color3] = c3;
+  }
+}
 
 /* --------------- transducers -----------------
    These functions take image data of some form and return a bitmap
@@ -316,17 +330,19 @@ struct bitmap* bitmap_from_cap(struct image_cap* image, int width, int height,
   Bitmap_init(bmp, width, height);
   if (image->bpp == 24){
     for (i = 0; i < image->size; i += 3) {
-      red  = ((uint16_t *)image->data)[i + 2];
-      green= ((uint16_t *)image->data)[i + 1];
-      blue = ((uint16_t *)image->data)[i + 0];
-
-      bmp->data[i/3] = ((*filter)(red/255.0, green/255.0, blue/255.0) > threshold);
+      // FIX: check on ordering of rgb
+      red  = ((uint8_t *)image->data)[i + 2]/255.0;
+      green= ((uint8_t *)image->data)[i + 1]/255.0;
+      blue = ((uint8_t *)image->data)[i + 0]/255.0;
+      bmp->data[i/3] = ((*filter)(red, green, blue) > threshold);
     }
   } else if (image->bpp == 8){
     for (i = 0; i < image->size; i++){
       temp = ((uint8_t*)image->data)[i]/255.0;
       bmp->data[i] = ((*filter)(temp, temp, temp) > threshold);
     }
+  } else {
+    perror("bitmap_from_cap: bpp not supported.");
   }
   return bmp;
 }
@@ -346,7 +362,7 @@ struct bitmap* bitmap_from_ppm(char* filename,
 
   theFile = fopen(filename, "r");
   if (!theFile){
-    perror("bitmap_from_ppm: Error openeing file for read.");
+    perror("bitmap_from_ppm: Error opening file for read.");
   }
   bmp = (struct bitmap*)malloc(sizeof(struct bitmap));
   fscanf(theFile, "%*2c\n%d %d\n%d", &cols, &rows, &maxval);
@@ -361,7 +377,7 @@ struct bitmap* bitmap_from_ppm(char* filename,
     rgb = (uint8_t*)malloc(rows*cols*3);
     fread(rgb, 1, rows*cols*3, theFile);
     for (i = 0; i < rows*cols*3; i += 3) {
-      red  = rgb[i]/(double)maxval;
+      red  = rgb[i + 0]/(double)maxval;
       green= rgb[i + 1]/(double)maxval;
       blue = rgb[i + 2]/(double)maxval;
       bmp->data[i/3] = ((*filter)(red, green, blue) > threshold);
@@ -488,18 +504,32 @@ void invert_bitmap(struct bitmap* thebitmap) {
   }
 }  
 
+void or_bitmap(struct bitmap* bmp1, struct bitmap* bmp2) {
+  int i;
+  for (i = 0; i < bmp1->width * bmp1->height; i++){
+    bmp1->data[i] = bmp1->data[i] > .5 || bmp2->data[i] > .5;
+  }
+}  
+
+void and_bitmap(struct bitmap* bmp1, struct bitmap* bmp2) {
+  int i;
+  for (i = 0; i < bmp1->width * bmp1->height; i++){
+    bmp1->data[i] = bmp1->data[i] > .5 && bmp2->data[i] > .5;
+  }
+}  
+
 //---------- Filter functions ------------------
 
 double filter_red (double r, double g, double b){
-    return r;
+  return r;
 }
 
 double filter_green (double r, double g, double b){
-    return g;
+  return g;
 }
 
 double filter_blue (double r, double g, double b){
-    return b;
+  return b;
 }
 
 double filter_hue (double r, double g, double b){

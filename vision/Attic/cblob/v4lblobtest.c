@@ -8,7 +8,7 @@
 #define PGMHEADER_F "P5\n%d\n%d\n%d\n"
 #define PPMHEADER "P6\n768\n480\n255\n"
 
-//#define USE_V4L
+#define USE_V4L
 
 int main(int argc, char** argv){
   struct image_cap* camera;
@@ -18,15 +18,18 @@ int main(int argc, char** argv){
   int i, j;
 
 #ifdef USE_V4L
-  camera = Cgrab_image("/dev/video0", WIDTH, HEIGHT, 1, 0);
+  camera = Cgrab_image("/dev/video0", WIDTH, HEIGHT, 1, 1);
   printf("Opened device\n");
   printf("bpp: %d\n", camera->bpp);
   Crefresh_image(camera, WIDTH, HEIGHT);
   out = fopen("cap.ppm", "w");
   fprintf(out, PPMHEADER);
+  // swap colors to write out fast:
+  swap_colors(camera, 2, 1, 0);
   fwrite(camera->data, 1, camera->size, out);
-  
-  bmp = bitmap_from_cap(camera, WIDTH, HEIGHT);
+  // swap back:
+  swap_colors(camera, 2, 1, 0);
+  bmp = bitmap_from_cap(camera, WIDTH, HEIGHT, filter_red, 0.3);
   printf("Got bitmap_from_cap\n");
 #else
   bmp = bitmap_from_ppm("cap.ppm", filter_red, 0.3);
@@ -36,9 +39,7 @@ int main(int argc, char** argv){
   Bitmap_write_to_pgm(bmp, "bmp.pgm", 1);
   printf("Wrote bmp\n");
 
-
-  thedata = (struct blobdata*)malloc(sizeof(struct blobdata));
-  Blobdata_init(thedata, bmp);
+  thedata = Blobdata_init(bmp);
   printf("Blobdata_init\n");
 
   if (!Bitmap_write_to_pgm(thedata->blobmap, "blob.pgm", thedata->nblobs)){

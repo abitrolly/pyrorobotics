@@ -114,6 +114,9 @@ struct bitmap* bitmap_from_32bitPackedRGBArray(uint32_t* array, int width, int h
 
 struct bitmap* get_inverted_bitmap(struct bitmap* thebitmap);
 void invert_bitmap(struct bitmap* thebitmap);
+void swap_colors(struct image_cap* image, int color1, int color2, int color3);
+void or_bitmap(struct bitmap* bmp1, struct bitmap* bmp2);
+void and_bitmap(struct bitmap* bmp1, struct bitmap* bmp2);
 
 /*--------- filter functions -----------
     Must conform to the prototype double func(double r, double g, double b).

@@ -29,7 +29,7 @@ blob.o: blob.c blob.h hsbrgb.h
 	$(CC) $(CFLAGS) $(INC) -c blob.c -o blob.o
 
 clean::
-	$(RM) blob$(SO) *module.c _*$(SO) *.o *.pyc 
+	$(RM) blob$(SO) *module.c _*$(SO) *.o *.pyc bmp.p?m blob.p?m python.pgm cap.ppm
 
 v4lblobtest: blob.o hsbrgb.o v4lblobtest.c
 	gcc -g -I../../camera/v4l/ -o v4lblobtest v4lblobtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
