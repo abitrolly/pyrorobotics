@@ -45,6 +45,12 @@ class CBitmap:
         """
         blob.Bitmap_write_to_pgm(self.bitmap, filename, levels);
     
+
+def bitmap_from_V4LGrabber(v4lgrab, filter, threshold):
+    bmp = blob.bitmap_from_8bitBGRArray(v4lgrab.cbuf, v4lgrab.width, v4lgrab.height, filter, threshold)
+    return bmp
+
+
     
 if __name__ == '__main__':
     #Examples of how to use blob stuff.
