@@ -257,7 +257,6 @@ class FileDialog(ModalDialog):
 		self.dirLabel = Label(self.dirFrame)
 		self.dirLabel["text"] = "Directory:"
 		self.dirLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
-
 		# editable filter
 
 		self.filterFrame = Frame(self.top)
@@ -267,6 +266,12 @@ class FileDialog(ModalDialog):
 		self.filterLabel = Label(self.filterFrame)
 		self.filterLabel["text"] = "Filter:"
 		self.filterLabel.pack({'expand':'no', 'side':'left', 'fill':'none'})
+                self.goHomeButton = Button(self.filterFrame)
+		self.goHomeButton["text"]	  = "Home"
+		self.goHomeButton["command"]   = self.HomePressed
+		self.goHomeButton["width"] = 8
+		self.goHomeButton.pack({'expand':'yes', 'pady':'2', 'side':'right'})
+                
 		self.filterEntry = Entry(self.filterFrame)
 		self.filterEntry.bind('<Return>', self.FilterReturnKey)
 		self.filterEntry["width"]  = "40"
@@ -399,7 +404,7 @@ class FileDialog(ModalDialog):
 		self.dirLb.delete(0, self.dirLb.size())
 		for i in range(len(files)):
                    if os.path.isdir(os.path.join(cwd, files[i])):
-                      if files[i] != 'CVS':
+                      if files[i] != 'CVS' and (files[i][0] != '.' or files[i] == '..'):
                          self.dirLb.insert('end', files[i])
 		self.dirLabel['text'] = "Directory:" + self.cwd_print()
 
@@ -480,6 +485,20 @@ class LoadFileDialog(FileDialog):
 	def __init__(self, master, title, filter):
 		FileDialog.__init__(self, master, title, filter)
 		self.top.title(title)
+
+        def HomePressed(self):
+           if self.goHomeButton['text'] == 'Home':
+              from os import getenv
+              self.lastCwd = self.cwd
+              self.cwd = getenv('HOME')
+              self.goHomeButton['text'] = 'Pyro'
+              self.UpdateListBoxes()
+           else:
+              tmp = self.cwd 
+              self.cwd = self.lastCwd
+              self.lastCwd = tmp
+              self.goHomeButton['text'] = 'Home'
+              self.UpdateListBoxes()
 
 	def OkPressed(self):
 		fileName = self.GetFileName()
