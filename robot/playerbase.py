@@ -138,9 +138,8 @@ class PlayerBase(Robot):
         self.dev.send_message(message)
 
     def getMessages(self):
-        if self.dev.comms == {}:
-            print "Need to startService 'comms' interface in robot"
-            return
+        if not 'comms' in dir(self.dev) or self.dev.comms == {}:
+            raise "Need to startService 'comms' interface in robot"
         if self.dev.comms[0] != '':
             self.update()
         tmp = self.messages
@@ -153,6 +152,12 @@ class PlayerBase(Robot):
 
     def stopService(self, item):
         self.dev.stop(item)
+
+    def hasService(self, item):
+        return item in dir(self.dev)
+
+    def getServiceData(self, item):
+        return self.dev.__dict__[item][0]
     
 if __name__ == '__main__':
     myrobot = PlayerBase()
