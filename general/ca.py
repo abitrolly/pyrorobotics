@@ -173,6 +173,8 @@ class Lattice(Matrix):
             cnt += 1
         return sum
 
+gkl = '11111010111111111111101000000000111110101111111111111010000000001111101000000000111110100000000011111010000000001111101000000000'
+
 if __name__ == '__main__':
     import sys
 
@@ -223,7 +225,7 @@ if __name__ == '__main__':
     print "A 50%% Rule applied to a 5%% Lattice, Lattice Width = %d:" % data.size
     data.display()
     pause()
-    gkl = '11111010111111111111101000000000111110101111111111111010000000001111101000000000111110100000000011111010000000001111101000000000'
+
     rules.init(gkl)
     print "GKL Rule set:"
     rules.display()
