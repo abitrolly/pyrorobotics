@@ -30,7 +30,7 @@ class Avoid (Behavior):
         # Normally :
         # FIX: did have close function; now what?
         close = select(min, "value", self.robot.get('/robot/range/front-all/value,th'))
-        close_dist, close_angl = close.value, close.th
+        close_dist, close_angl = close["value"], close["th"]
         close_angl /= (math.pi)
         #print "Closest distance =", close_dist, "angle =", close_angl
         max_sensitive = self.robot.get('/robot/range/maxvalue') * 0.8

@@ -19,6 +19,9 @@ def serviceDirectoryFormat(serviceDict, retdict = 1):
     for keyword in serviceDict:
         #print keyword, type(serviceDict[keyword])
         if type(serviceDict[keyword]) == types.InstanceType:
+            # HACK: to make it so range is an alias link
+            if keyword == "range":
+                keyword = "*" + keyword
             if retdict:
                 retval[keyword + "/"] = None
             else:
@@ -30,16 +33,69 @@ def serviceDirectoryFormat(serviceDict, retdict = 1):
                 retval.append( keyword )
     return retval
 
+class WindowError(AttributeError):
+    """ Service Window Error """
 
-class Device:
-    def __init__(self):
-        self.data = {}
-        self.subdataFunc = {}
+class ServiceError(AttributeError):
+    """ Used to signal service problem """
+
+class Service:
+    """ A basic service class """
+
+    def __init__(self, serviceType = 'unspecified', visible = 0):
+        self.devData = {}
+        self.devDataFunc = {}
         self.groups = {}
+        self.dev = 0
+        self.devData["active"] = 1
+        self.devData["visible"] = visible
+        self.devData["type"] = serviceType
+        self.devData["state"] = "stopped"
+        if visible:
+            self.makeWindow()
+        self.setup()
+
+    def setup(self):
+        pass
+
+    def getVisible(self):
+        return self.devData["visible"]
+    def setVisible(self, value):
+        self.devData["visible"] = value
+        return "Ok"
+
+    def getActive(self):
+        return self.devData["active"]
+    def setActive(self, value):
+        self.devData["active"] = value
+        return "Ok"
+
+    def startService(self):
+        self.devData["state"] = "started"
+        return self
+
+    def stopService(self):
+        self.devData["state"] = "stopped"
+        return "Ok"
+
+    def makeWindow(self):
+        raise WindowError, "No Service Window Defined"
+
+    def updateWindow(self):
+        raise WindowError, "No Service Window Defined"
+
+    def getServiceData(self):
+        return {}
+
+    def getServiceState(self):
+        return self.devData["state"]
+
+    def updateService(self):
+        pass
 
     def _set(self, path, value):
-        if path[0] in self.data:
-            self.data[path[0]] = value
+        if path[0] in self.devData:
+            self.devData[path[0]] = value
         else:
             raise AttributeError, "invalid item to set: '%s'" % path[0]
                 
@@ -47,20 +103,20 @@ class Device:
         #print "path=", path
         if len(path) == 0:
             # return all of the things a sensor can show
-            tmp = self.data.copy()
+            tmp = self.devData.copy()
             tmp.update( dict([("*" + key + "/", self.groups[key]) for key in self.groups]))
             return serviceDirectoryFormat(tmp, 0)
-        elif len(path) == 1 and path[0] in self.data:
+        elif len(path) == 1 and path[0] in self.devData:
             # return a value
-            return self.data[path[0]]
+            return self.devData[path[0]]
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
-            return serviceDirectoryFormat(self.subdataFunc, 0)
+            return serviceDirectoryFormat(self.devDataFunc, 0)
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]
             if elements == "*":
-                elements = self.subdataFunc.keys() #serviceDirectoryFormat(self.subdataFunc, 1)
+                elements = self.devDataFunc.keys() 
             # if keys is a collection:
             if isinstance(keys, (type((1,)), type([1,]))):
                 keyList, keys = keys, []
@@ -75,18 +131,18 @@ class Device:
             # 4 cases:
             # 1 key 1 element
             if type(keys) == type(1) and type(elements) == type(""):
-                return self.subdataFunc[elements](keys)
+                return self.devDataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
                 mydict = {}
                 for e in elements:
-                    mydict[e] = self.subdataFunc[e](keys)
+                    mydict[e] = self.devDataFunc[e](keys)
                 return mydict
             # many keys 1 element
             elif type(elements) == type(""):
                 retval = []
                 for i in keys:
-                    retval.append( self.subdataFunc[elements](i))
+                    retval.append( self.devDataFunc[elements](i))
                 return retval
             # many keys many elements
             else:
@@ -94,52 +150,7 @@ class Device:
                 for i in keys:
                     mydict = {}
                     for e in elements:
-                        mydict[e] = self.subdataFunc[e](i)
+                        mydict[e] = self.devDataFunc[e](i)
                     retval.append( mydict )
                 return retval
 
-class WindowError(AttributeError):
-    """ Service Window Error """
-
-class ServiceError(AttributeError):
-    """ Used to signal service problem """
-
-class Service(Device):
-    """ A basic service class """
-
-    def __init__(self, serviceType = 'basic', visible = 0):
-        Device.__init__(self)
-        self.active = 1
-        self.visible = visible
-        self.dev = 0
-        self.type = serviceType
-        self.state = "stopped"
-        if visible:
-            self.makeWindow()
-        self.setup()
-
-    def setup(self):
-        pass
-
-    def startService(self):
-        self.state = "started"
-        return self
-
-    def stopService(self):
-        self.state = "stopped"
-        return "Ok"
-
-    def makeWindow(self):
-        raise WindowError, "No Service Window Defined"
-
-    def updateWindow(self):
-        raise WindowError, "No Service Window Defined"
-
-    def getServiceData(self):
-        return {}
-
-    def getServiceState(self):
-        return self.state
-
-    def updateService(self):
-        pass

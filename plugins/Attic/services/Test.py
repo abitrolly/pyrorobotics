@@ -5,7 +5,7 @@ from pyro.robot.service import Service
 class Test(Service):
 
     def setup(self):
-        self.data['specialvalue'] = 42
+        self.devData['specialvalue'] = 42
 
     def makeWindow(self):
         self.visible = 1

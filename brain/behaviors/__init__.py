@@ -184,4 +184,4 @@ class Behavior:
       return self.engine
    def getBrain(self):
       return self.brain
-
+   robot = property(getRobot, doc="get the associated robot")

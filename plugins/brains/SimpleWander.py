@@ -1,7 +1,6 @@
 # A bare brain
 
 from pyro.brain import Brain
-from random import random
 
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
@@ -9,11 +8,11 @@ class SimpleBrain(Brain):
    def step(self):
       TOLERANCE = 1.0
 
-      left = min(self.get('/robot/range/left/value'))
-      right = min(self.get('/robot/range/right/value'))
-      front = min(self.get('/robot/range/front/value'))
+      left = min(self.get('robot/range/left/value'))
+      right = min(self.get('robot/range/right/value'))
+      front = min(self.get('robot/range/front/value'))
 
-      print "left", left, "front", front, "right", right
+      #print "left", left, "front", front, "right", right
 
       if (left < TOLERANCE and right < TOLERANCE):
          self.robot.move(0, .2)
@@ -21,11 +20,8 @@ class SimpleBrain(Brain):
          self.robot.move(0, .2)
       elif (left < TOLERANCE):
          self.robot.move(0, -.2)
-      elif (front < TOLERANCE):
-         if random() < .5:
-            self.robot.move(0, .2)
-         else:
-            self.robot.move(0, -.2)
+      elif (front < TOLERANCE): 
+         self.robot.move(0, .2) # arbitrarily turn one way
       else:
          self.robot.move(.2, 0)
 

@@ -90,13 +90,13 @@ class Camera(PyroImage, Service):
       myList = map(makeArgList, filterList)
       self.vision.setFilterList(myList)
       # if paused, update the screen
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
 
    def popFilterList(self):
       self.vision.popFilterList()
       # if paused, update the screen
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
 
    def getFilterList(self):
@@ -167,12 +167,12 @@ class Camera(PyroImage, Service):
       self._update()
 
    def updateOnce(self):
-      oldActive = self.active
-      self.active = 1
+      oldActive = self.getActive()
+      self.setActive(1)
       self.update()
       self.processAll()
       self.updateWindow()
-      self.active = oldActive
+      self.setActive(oldActive)
 
    def getImage(self):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
@@ -251,7 +251,7 @@ class Camera(PyroImage, Service):
          for entry in menu:
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
          
-      self.visible = 1
+      self.setVisible(1)
       self.window.aspect(self.width, self.height,
                          self.width, self.height)
       self.window.minsize(200, 0)
@@ -290,13 +290,10 @@ class Camera(PyroImage, Service):
             self.callbackTextList.append( inspect.getsource( func ))
          except:
             self.callbackTextList.append( "[User Defined Function]" )
-      if not self.active:
+      if not self.getActive():
          # if paused, apply it once, and update
          self.processAll()
       return len(self.callbackList) - 1
-
-   def setActive(self, val):
-      self.active = val
 
    def makeMenu(self, bar, name, commands):
       """ Assumes self.menuButtons exists """
@@ -322,11 +319,11 @@ class Camera(PyroImage, Service):
       map(display, self.callbackTextList)
 
    def togglePlay(self, event):
-      self.active = not self.active
+      self.setActive(not self.getActive())
 
    def toggleFilterMode(self):
       self.filterMode = not self.filterMode
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
 
    def getCanvasWidth(self):
@@ -365,11 +362,11 @@ class Camera(PyroImage, Service):
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 2)
 
    def hideWindow(self):
-      self.visible = 0
+      self.setVisible(0)
       self.window.withdraw()
       
    def updateWindow(self):
-      if self.visible:
+      if self.getVisible():
          now = time.time()
          if now - self.lastWindowUpdate < self.updateWindowInterval:
             return
@@ -393,19 +390,19 @@ class Camera(PyroImage, Service):
          while self.window.tk.dooneevent(2): pass
 
    def startService(self):
-      self.state = "started"
+      self.devData["state"] = "started"
       return self
 
    def stopService(self):
-      self.state = "stopped"
-      self.visible = 0
+      self.devData["state"] = "stopped"
+      self.setVisible(0)
       return "Ok"
 
    def getServiceData(self):
       return self.data
 
    def getServiceState(self):
-      return self.state
+      return self.devData["state"]
 
    def updateService(self):
       self.update()
@@ -413,7 +410,7 @@ class Camera(PyroImage, Service):
    def delFilter(self, pos):
       self.callbackList.remove(pos)
       self.callbackTextList.remove(pos)
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
       return "Ok"
 
@@ -421,7 +418,7 @@ class Camera(PyroImage, Service):
       if len(self.callbackList) > 0:
          self.callbackList.pop()
          self.callbackTextList.pop()
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
       return "Ok"
 
@@ -430,7 +427,7 @@ class Camera(PyroImage, Service):
       # as self (ie, the visionSystem object)
       self.callbackList = []
       self.callbackTextList = []
-      if not self.active:
+      if not self.getActive():
          self.updateOnce()
       return "Ok"
 

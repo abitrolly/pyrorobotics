@@ -140,10 +140,10 @@ class TKgui(Tkinter.Toplevel, gui):
    def makeWindows(self):
       objs = self.engine.robot.getServices()
       for serv in objs:
-         try:
-            self.engine.robot.getService(serv).makeWindow()
-         except:
-            print "service '%s' has no associated window" % serv
+         #try:
+         self.engine.robot.getService(serv).makeWindow()
+         #except:
+         #   print "service '%s' has no associated window" % serv
 
    def makeCommandArea(self):
       # ---------------------------------
@@ -337,7 +337,7 @@ class TKgui(Tkinter.Toplevel, gui):
                                           self.engine.robot.get('robot', 'th'),
                                           bump))
          for service in self.engine.robot.getServices():
-            if self.engine.robot.getService(service).visible:
+            if self.engine.robot.getService(service).getVisible():
                self.engine.robot.getService(service).updateWindow()
       # Don't need to do the rest of this but once a second
       if now - self.lastButtonUpdate < 1:
