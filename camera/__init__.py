@@ -63,7 +63,7 @@ class Camera(PyroImage, Device):
    """
    A base class for Camera
    """
-   def __init__(self, width, height, depth = 3, title = "Camera View"):
+   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None):
       """
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
@@ -204,11 +204,14 @@ class Camera(PyroImage, Device):
       return menu
 
    def makeWindow(self):
-      if self.app != 0:
+      try:
+         self.window.state()
+         ok = 1
+      except:
+         ok = 0
+      if ok:
          self.window.deiconify()
       else:
-         self.app = Tkinter.Tk()
-         self.app.withdraw()
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
          w, h = self.width, self.height
