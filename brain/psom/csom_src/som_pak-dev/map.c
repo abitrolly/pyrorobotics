@@ -1095,7 +1095,7 @@ void datamatrix(char *data_file,Map map,Mat mat,char *outputfile,int xswap,
 
   lask = -1;
   row = 1;
-  getline(in,s,maxline);
+  mygetline(in,s,maxline);
   do
     {
       ++lask;
@@ -1103,7 +1103,7 @@ void datamatrix(char *data_file,Map map,Mat mat,char *outputfile,int xswap,
       do
 	{
 	  ++row;
-	  getline(in,s,maxline);
+	  mygetline(in,s,maxline);
 	  /* if the row in the input file starts 
 	     with # or with newline, skip it     */
 	  if (strcmp(s,"")==NULL || s[0]=='#')

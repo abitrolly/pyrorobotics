@@ -15,7 +15,7 @@
 %}
 
 
-%include pointer.i
+%include cpointer.i
 
 
 #define CYCLIC    0   // for train_fromdataset()

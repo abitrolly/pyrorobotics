@@ -1,16 +1,33 @@
 # Pyro configure.py script
 
 import sys
+from posixpath import exists
 
-def ask(question, default):
-   print "-----------------------"
-   print question
-   print '[' + default + ']: ',
-   retval = raw_input()
+def file_exists(file_name):
+    if len(file_name) == 0:
+        return 0
+    else:
+        return exists(file_name)
+
+def ask(question, default, filecheck = 1):
+   done = 0
+   while not done:
+      print "-----------------------"
+      print question
+      print '[' + default + ']: ',
+      retval = raw_input()
+      if retval == "":
+         retval = default
+      if retval == 'none':
+         done = 1
+      elif not filecheck:
+         done = 1
+      elif file_exists(retval):
+         done = 1
+      else:
+         print "WARNING: doesn't exist: '%s'" % retval
    if retval == 'none':
       return ''
-   elif retval == '':
-      return default
    else:
       return retval
 
@@ -47,7 +64,7 @@ What version of Python do you want to build Pyro for?
 If you need to type 'python2.2' to run Python, then
 enter "2.2".
 """
-python_script_name = ask("1. Python version number?", "")
+python_script_name = ask("1. Python version number?", "", 0)
 
 python_include_files = ask("2. Where are Python's include files?",
                            "/usr/local/include/python" + python_script_name)

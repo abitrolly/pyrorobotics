@@ -276,10 +276,10 @@ static char *check_for_compression(char *name)
 }    
 
 
-/* getline - get a line from file. Returns a char * to the line (a
+/* mygetline - get a line from file. Returns a char * to the line (a
    static buffer), NULL on error. */
     
-char *getline(struct file_info *fi)
+char *mygetline(struct file_info *fi)
 {
   static char *stre = NULL;
   static long strl = 0;
@@ -298,7 +298,7 @@ char *getline(struct file_info *fi)
       stre = (char *) malloc(sizeof(char) * strl);
       if (stre == NULL)
 	{
-	  perror("getline");
+	  perror("mygetline");
 	  fi->error = ERR_NOMEM;
 	  return NULL;
 	}
@@ -319,14 +319,14 @@ char *getline(struct file_info *fi)
 	  tstr = stre = realloc(stre, sizeof(char) * strl);
 	  if (stre == NULL)
 	    {
-	      perror("getline");
+	      perror("mygetline");
 	      fi->error = ERR_NOMEM;
 	      return NULL;
 	    }
 
 	  if (strl > ABS_STR_LNG) 
 	    {
-	      fprintf(stderr, "getline: Too long lines in file %s (max %d)\n",
+	      fprintf(stderr, "mygetline: Too long lines in file %s (max %d)\n",
 		      fi->name, ABS_STR_LNG);
 	      fi->error = ERR_LINETOOLONG;
 	      return NULL;
@@ -361,8 +361,8 @@ char *getline(struct file_info *fi)
 	      /* read error */
 	      tstr = NULL;
 	      fi->error = ERR_FILEERR;
-	      fprintf(stderr, "getline: read error on line %d of file %s\n", fi->lineno, fi->name);
-	      perror("getline");
+	      fprintf(stderr, "mygetline: read error on line %d of file %s\n", fi->lineno, fi->name);
+	      perror("mygetline");
 	    }
 	  break;
 	}

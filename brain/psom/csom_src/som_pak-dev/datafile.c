@@ -122,7 +122,7 @@ int read_headers(struct entries *entries)
 
   do 
     {
-      iline = getline(fi);
+      iline = mygetline(fi);
       row++;
       if (iline == NULL) {
 	fprintf(stderr, "Can't read file %s", fi->name);
@@ -157,7 +157,7 @@ int skip_headers(struct file_info *fi)
   /* Currently all header information is on the first non-comment line, so 
      we just skip it. */
 
-  while ((iline = getline(fi)) != NULL)
+  while ((iline = mygetline(fi)) != NULL)
     if (iline[0] != '#')
       break;
 
@@ -608,7 +608,7 @@ struct data_entry *load_entry(struct entries *entr, struct data_entry *entry)
   while (!line)
     {
       /* get line from file */
-      line = getline(fi);
+      line = mygetline(fi);
 
       /* The caller should check the entr->fi->error for errors or end
 	 of file */
