@@ -1,8 +1,9 @@
 import Gnuplot
 
 class TreePlot:
-    def __init__(self, filename):
-        self.gp = Gnuplot.Gnuplot()
+    def __init__(self, filename, title = None, datatitle = None,
+                 debug = 0):
+        self.gp = Gnuplot.Gnuplot(debug = debug)
         fp = open(filename, "r")
         line = fp.readline()
         while line:
@@ -16,7 +17,8 @@ class TreePlot:
         fp.close()
         self.file = Gnuplot.File(filename)
         self.gp('set data style lines')
-        self.file.set_option(title = None)
+        self.gp.title(title)
+        self.file.set_option(title = datatitle)
 
     def plot(self):
         self.gp.plot(self.file)
@@ -28,7 +30,10 @@ class TreePlot:
         self.gp.hardcopy(output)
 
 if __name__ == '__main__':
-    tree = TreePlot("data.tree")
+    tree = TreePlot("data.tree", title = "Sample Tree Data")
     tree.plot()
+    raw_input()
+    tree.file.set_option(title = "Data Title")
+    tree.replot()
     tree.hardcopy("/tmp/output.ps")
     raw_input()
