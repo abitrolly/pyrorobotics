@@ -1,5 +1,8 @@
 
 PYRO=/usr/local/pyro
+
+include $(PYRO)/Makefile.cfg
+
 PYTHON_INCLUDE=-I/usr/include/python2.2
 
 OBJS = _myvision.so
