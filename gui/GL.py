@@ -36,8 +36,8 @@ class GLgui(gui):
                         ['free',self.freeRobot]]),
               ('brain',[['load',self.loadBrain],
                         ['free',self.freeBrain]]),
-              ('view', [['robot', self.viewRobot],
-                        ['brain', self.viewBrain]]),
+              ('view', [['brain', self.viewBrain]]),
+              # ['robot', self.viewRobot]
               ('help',[['about',system.usage]])
               ]
 
@@ -74,13 +74,11 @@ class GLgui(gui):
          for b in button2:
             Button(toolbar,text=b[0],width=6,command=b[1]).pack(side=LEFT,padx=2,pady=2)
       
-      self.win = Opengl(master = self.frame, width = width,
+      self.win = Opengl(master = self.frame, width = width, \
                         height = height, double = db, depth = depth)
 
       self.win.pack(side = 'top', expand = 1, fill = 'both')
-      #self.win.set_centerpoint(0, 0, 0)
-      #self.frame.title("pyro@%s - %s" % (os.getenv('HOSTNAME'), version()))
-      #self.wm_title("pyro@%s - %s" % (os.getenv('HOSTNAME'), version()))
+      #self.?.wm_title("pyro@%s - %s" % (os.getenv('HOSTNAME'), version()))
       self.win.redraw = self.redraw
 
       self.mode = IntVar(self.win)
@@ -93,14 +91,14 @@ class GLgui(gui):
 
    def viewRobot(self):
       self.windowRobot = Tk()
-      self.windowRobot.wm_title("Brain View")
+      self.windowRobot.wm_title("Pyro: Robot View")
       self.canvasRobot=Canvas(self.windowRobot,width=400,height=400)
       canvasRobot.pack()
 
    def viewBrain(self):
       self.windowBrain = Tk()
-      self.windowBrain.wm_title("Brain View")
-      self.canvasBrain = Canvas(self.windowBrain,width=400,height=400)
+      self.windowBrain.wm_title("Pyro: Brain View")
+      self.canvasBrain = Canvas(self.windowBrain,width=400,height=300)
       self.canvasBrain.pack()
 
    def redrawPie(self, pie, percentSoFar, piececnt, controller, percent, name):
@@ -109,13 +107,14 @@ class GLgui(gui):
       yoffset = 20
       width = 100
       row = (pie - 1) * (width * 1.5)
-      colors = ['blue', 'red', 'green', 'yellow']
+      colors = ['blue', 'red', 'green', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
       self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller + ":")
-      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[piececnt - 1])
-      self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[piececnt - 1], text = name)
+      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
+      self.canvasBrain.create_text(xoffset + 250,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
 
    def redrawWindowBrain(self):
-      # FIX: behavior specific. How to put in Behavior-based code?
+      # FIX: behavior specific. How to put this in behavior code so
+      # that each brain would know how to draw itself?
       if self.windowBrain != 0:
          if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
             self.lastRun = self.engine.brain.lastRun

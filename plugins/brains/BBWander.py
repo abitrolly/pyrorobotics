@@ -11,7 +11,7 @@ import time
 class Avoid (Behavior):
     def init(self): # called when created
         self.Effects('translate', .3) 
-        self.Effects('rotate', 1)
+        self.Effects('rotate', .3)
         self.lasttime = time.mktime(time.localtime())
         self.count = 0
 
@@ -30,6 +30,10 @@ class Avoid (Behavior):
         else:
             self.count += 1
             
+        # Normally :
+        self.IF(1, 'translate', .2) 
+        self.IF(1, 'rotate', 0)
+
         close_dist = self.getRobot().getMin().distance 
         close_angl = self.getRobot().getMin().angle / math.pi
         print "Closest distance is:", close_dist
@@ -39,14 +43,13 @@ class Avoid (Behavior):
                     -self.direction(close_angl) * 1)
         else: # saphira, others:
             self.IF(float(Fuzzy(.2, 1.0) << close_dist), 'translate', 0)
-            print "FUZZY:", float(Fuzzy(.2, 1.0) << close_dist)
-            #self.IF(Fuzzy(1.0, 2.0) << close_dist, 'rotate', \
-            #        -self.direction(close_angl) * 1)
+            self.IF(Fuzzy(1.0, 2.0) << close_dist, 'rotate', \
+                    -self.direction(close_angl) * 1)
             
 
 class state1 (State):
     def init(self):
-        self.add(StraightBehavior(1))
+        #self.add(StraightBehavior(1))
         self.add(Avoid(1))
         print "initialized state", self.name
 

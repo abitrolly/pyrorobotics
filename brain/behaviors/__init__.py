@@ -175,11 +175,6 @@ class State:
       for bkey in self.behaviors.keys():
          b = self.behaviors[bkey]
          if b.status:
-            for c in b.effects.keys():
-               if c in self.behaviorEngine.effectsTotal.keys():
-                  self.behaviorEngine.effectsTotal[c] += b.effects[c]
-               else:
-                  self.behaviorEngine.effectsTotal[c] = b.effects[c]
             b.rules = [] # clear rules
             b.update() # fires IF rules
             total = {}
@@ -190,10 +185,12 @@ class State:
                   total[r[1]] = float(r[0])
             for r in b.rules:
                # truth, controller, amount, beh name, state name
-               if total[r[1]] != 0:
-                  self.behaviorEngine.desires.append([float(r[0])/float(total[r[1]]), \
-                                                      r[1], \
-                                                      b.effects[r[1]],
+               c = r[1]
+               if total[c] != 0:
+                  self.behaviorEngine.effectsTotal[c] = b.effects[c]
+                  self.behaviorEngine.desires.append([float(r[0])/float(total[c]), \
+                                                      c, \
+                                                      b.effects[c],
                                                       b.name, \
                                                       b.state.name,
                                                       r[2]])
