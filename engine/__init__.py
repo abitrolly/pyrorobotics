@@ -77,8 +77,7 @@ class Engine(drawable.Drawable):
          #reload(file)
          #reload(self.brainfile)
 
-   def loadSimulator(self,file, worldfile):
-      self.worldfile = worldfile
+   def loadSimulator(self, file, worldfile):
       console.log(console.INFO,'Loading ' + file)
       import os, string
       options = string.split(file)
