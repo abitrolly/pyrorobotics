@@ -1,24 +1,37 @@
-# File: chase.world 
-# Two robots which can be used to chase one another. 
- 
-# the resolution of Stage's raytrace model in meters 
-resolution 0.02 
- 
-gui 
+
+# Desc: 1 pioneer robot with laser	
+# CVS: $Id$
+
+# defines Pioneer-like robots
+include "pioneer.inc"
+
+# defines 'map' object used for floorplans
+include "map.inc"
+
+# set the size of a pixel in meters
+resolution 0.02
+
+# configure the GUI window
+window
 ( 
-  size [600.000 600.000 ] 
-  origin [4.5 4.5 0] 
-  scale 0.021 # the size of each bitmap pixel in meters 
-) 
- 
-bitmap 
-( 
-  file "cave.pnm.gz"
-  resolution 0.02 
-) 
- 
-include "usc_pioneer.inc"
- 
-usc_pioneer ( color "green" name "GreenRobot" 
-          port 6665 pose [ 1 1 45 ] truth()) 
- 
+  size [ 662.000 654.000 ] 
+  center [0.221 -0.005] 
+  scale 0.025 
+)
+
+# load an environment bitmap
+map
+(
+  bitmap "bitmaps/cave.png"
+  size [15 15]
+  boundary 1
+  name "map"
+)
+
+# create a robot
+pioneer2dx
+(
+  name "robot"
+  pose [2 1 0]
+  laser()
+)
