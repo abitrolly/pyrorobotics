@@ -12,8 +12,7 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 
-LIBDIRS= -L/usr/X11R6/lib
-LIBS= -lstdc++ -lX11 -lXt -lXm -ldl -lpthread  -lXp -lXext
+LIBS= -lstdc++ -ldl -lpthread
 
 _vision.so: vision.o Vision.o ../../camera/device/Device.o
 	$(CC) $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
