@@ -65,7 +65,7 @@ class PyroDebugger(code.InteractiveConsole):
         print
 
     def displayHelp(self):
-        print "Commands:", colorize("up, down, top, bottom, help, quit, a frame number, edit,")
+        print "Commands:", colorize("up, down, top, bot, help, quit, a frame number, edit,")
         print colorize("          or any Python expression. <CONTROL+D> to continue.")
 
     def init_history(self, histfile):

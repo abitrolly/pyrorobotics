@@ -3,7 +3,7 @@
     Backprop. Part of the Pyro Robotics Project.
     Provided under the GNU General Public License.
     ----------------------------------------------------
-    (c) 2001-2004, Developmental Robotics Research Group
+    (c) 2001-2005, Developmental Robotics Research Group
     ----------------------------------------------------
 
     This file implements the major classes and functions for
@@ -13,7 +13,7 @@
 
 import Numeric, math, random, time, sys, operator
 
-version = "7.0"
+version = "7.1"
 
 def loadNetworkFromFile(filename):
     """
@@ -1464,10 +1464,24 @@ class Network:
         for layer in propagateLayers:
             if layer.log and layer.active:
                 layer.writeLog()
-    def propagate(self):
+    def propagate(self, **args):
         """
-        Propagates activation through the network.
+        Propagates activation through the network. Optionally, takes input layer names
+        as keywords, and their associated activations. If input layer(s) are given, then
+        propagate() will return the output layer's activation. If there is more than
+        one output layer, then a dictionary is returned.
+
+        Examples:
+
+        >>> net.propagate()
+        >>> net.propagate(input = [0, .5, 0], context = [.5, .5, .5])
+        {"output": [0.345]}
+        
         """
+        for layerName in args:
+            if self[layerName].type != "Input":
+                raise AttributeError, "attempt to set activations on a non-input layer"
+            self[layerName].copyActivations(args[layerName])
         self.verifyInputs() # better have inputs set
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # initialize netinput:
@@ -1488,6 +1502,15 @@ class Network:
             if layer.log and layer.active:
                 layer.writeLog()
         self.count += 1 # counts number of times propagate() is called
+        if len(args) != 0:
+            dict = {}
+            for layer in self.layers:
+                if layer.type == "Output":
+                    dict[layer.name] = layer.activation.tolist()
+            if len(dict) == 1:
+                return dict[dict.keys()[0]]
+            else:
+                return dict
     def activationFunction(self, x):
         """
         Determine the activation of a node based on that nodes net input.

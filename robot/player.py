@@ -13,7 +13,7 @@ import playerc
 # dev.__dict__[name] 
 
 class PlayerDevice(Device):
-    def __init__(self, client, type, groups = {}):
+    def __init__(self, client, type, groups = {}, mode=playerc.PLAYERC_ALL_MODE):
         Device.__init__(self, type)
         self.groups = groups
         self.client = client
@@ -25,7 +25,7 @@ class PlayerDevice(Device):
         self.devData["noise"] = 0.0
         self.notSetables.extend( ["data"] )
         # Required:
-        self.startDevice()
+        self.startDevice(mode)
         if "get_geom" in self.client.__dict__:
             self.client.get_geom() # reads it into handle.pose or poses
 
@@ -42,10 +42,10 @@ class PlayerDevice(Device):
             if "set_cmd_pose" in self.client.__class__.__dict__:
                 self.setPose( *self.devData[keyword] )
 
-    def startDevice(self):
+    def startDevice(self, mode):
         exec("self.handle = playerc.playerc_%s(self.client, %d)" %
              (self.type, self.index))
-        if self.handle.subscribe(playerc.PLAYERC_ALL_MODE) != 0:
+        if self.handle.subscribe(mode) != 0:
             raise playerc.playerc_error_str()
         # robot.blobfinder.blobs[0].x, y, top, left, range, right, color,
         #   area, bottom,
@@ -81,6 +81,11 @@ class PlayerSimulationDevice(PlayerDevice):
             return x, y, (thr / PIOVER180)
         else:
             raise "simulation.getPose() failed"
+
+class PlayerCameraDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "camera",
+                              mode=playerc.PLAYERC_READ_MODE)
 
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client):
@@ -604,6 +609,8 @@ class PlayerRobot(Robot):
             return {"laser": PlayerLaserDevice(self.client)}
         elif item == "sonar":
             return {"sonar": PlayerSonarDevice(self.client)}
+        elif item == "camera":
+            return {"camera": PlayerCameraDevice(self.client)}
         elif item == "simulation":
             obj = None
             try:
@@ -654,7 +661,7 @@ class PlayerRobot(Robot):
         # FIX: arbitrary time! How can we know server is up and running?
         time.sleep(1)
         self.client = playerc.playerc_client(None, self.hostname, self.port)
-        retval = self.client.connect()
+        retval = self.client.connect() 
         while retval == -1:
             self.client = playerc.playerc_client(None, self.hostname, self.port)
             retval = self.client.connect()
