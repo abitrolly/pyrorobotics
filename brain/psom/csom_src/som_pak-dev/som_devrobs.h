@@ -44,6 +44,17 @@
  *                                  int neigh, int xdim, int ydim);
  */
 
+//Structure to hold the teach_params alongside counters for mapping
+//and training
+struct params_counters {
+  struct teach_params *params;
+  unsigned int **tcounter;
+  unsigned int **consec_tcounter;
+  unsigned int **max_consec_tcounter;
+  unsigned int **mcounter;
+  unsigned int **consec_mcounter;
+  unsigned int **max_consec_mcounter;
+};
 
 
 int write_entries(struct entries *codes, char *out_code_file);
