@@ -195,7 +195,6 @@ PyObject *Vision::match(int r, int g, int b, int tolerance,
 
 // match() - match pixels by range
 // outChannel can be RED, GREEN, BLUE, or ALL
-// mode is either AND, OR, XOR, or ACCUM
 
 PyObject *Vision::matchRange(int lr, int lg, int lb, 
 			     int hr, int hg, int hb,
@@ -228,6 +227,77 @@ PyObject *Vision::matchRange(int lr, int lg, int lb,
 	    Image[(h * width + w) * depth + d ] = 0;
 	  }
 	  Image[(h * width + w) * depth + rgb[outChannel] ] = 255;
+	}
+      } else { // no match
+	// leave alone for now
+      }
+    }
+  }
+  return Py_BuildValue("i", matches);
+}
+
+// [ (r1, g1, b1, r2, g2, b2, out), ...]
+
+PyObject *Vision::matchList(PyObject *myList) {
+  int matches = 0, matchOne = 0, lastOut = 0;
+  int lr = 0, lg = 0, lb = 0, hr = 255, hg = 255, hb = 255, outChannel = 0;
+  int ranges[100][7];
+  for (int matchCount = 0; matchCount < PyList_Size(myList); matchCount++) {
+    PyObject *tuple = PyList_GetItem(myList, matchCount);
+    lr = -1, lg = -1, lb = -1, hr = 255, hg = 255, hb = 255, outChannel = 0;
+    if (!PyArg_ParseTuple(tuple, "|iiiiiii", &lr, &lg, &lb, &hr, &hg, &hb, &outChannel)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchList");
+      return NULL;
+    }
+    ranges[matchCount][0] = lr;
+    ranges[matchCount][1] = lg;
+    ranges[matchCount][2] = lb;
+    ranges[matchCount][3] = hr;
+    ranges[matchCount][4] = hg;
+    ranges[matchCount][5] = hb;
+    ranges[matchCount][6] = outChannel;
+  }
+  for(int h=0;h<height;h++) {
+    for(int w=0;w<width;w++) {
+      matchOne = 0;
+      for (int matchCount = 0; matchCount < PyList_Size(myList); matchCount++) {
+	lr = ranges[matchCount][0];
+	lg = ranges[matchCount][1];
+	lb = ranges[matchCount][2];
+	hr = ranges[matchCount][3];
+	hg = ranges[matchCount][4];
+	hb = ranges[matchCount][5];
+	outChannel = ranges[matchCount][6];
+	if (
+	    (lr == -1 || 
+	     (Image[(h * width + w) * depth + rgb[RED]] >= lr && 
+	      Image[(h * width + w) * depth + rgb[RED]] <= hr))
+	    &&
+	    (lg == -1 || 
+	     (Image[(h * width + w) * depth + rgb[GREEN]] >= lg && 
+	      Image[(h * width + w) * depth + rgb[GREEN]] <= hg))
+	    &&
+	    (lb == -1 ||
+	     (Image[(h * width + w) * depth + rgb[BLUE]] >=  lb && 
+	      Image[(h * width + w) * depth + rgb[BLUE]] <= hb))
+	    ) {
+	  /* maybe add a normalizer here so the outputs are 
+	     between 100-255ish for more varied usage? */
+	  matchOne++;
+	  lastOut = outChannel; // last out channel to match
+	}
+      }
+      if (matchOne) { // if at least one matched
+	matches++;
+	if (lastOut == ALL) {
+	  for (int d = 0; d < depth; d++) {
+	    Image[(h * width + w) * depth + d ] = 255;
+	  }
+	} else {
+	  for (int d = 0; d < depth; d++) {
+	    Image[(h * width + w) * depth + d ] = 0;
+	  }
+	  Image[(h * width + w) * depth + rgb[lastOut] ] = 255;
 	}
       } else { // no match
 	// leave alone for now
@@ -1177,6 +1247,11 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
   PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
   PyList_Append(menu, Py_BuildValue("sssi", "Detect", "Motion", "motion", 30));
+
+  PyList_Append(menu, Py_BuildValue("sssiiiii", "Match", "By Tolerance", "match", 0, 0, 0, 30, 0));
+  PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Match", "By Range", "matchRange", 0, 0, 0, 255, 255, 255, 0));
+  PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Match", "By List of Ranges", "matchList", Py_BuildValue("[(iiiiiii)]", 0, 0, 0, 255, 255, 255, 0)));
+  
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Gray scale", "grayScale"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Swap planes", "swapPlanes", rgb[0], rgb[2]));
@@ -1189,150 +1264,158 @@ PyObject *Vision::applyFilter(PyObject *filter) {
   int i1, i2, i3, i4, i5, i6, i7;
   float f1, f2, f3, f4, f5, f6, f7;
   PyObject *command, *list, *retval;
-    if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
-      PyErr_SetString(PyExc_TypeError, "Invalid filter list name to applyFilters");
+  if (!PyArg_ParseTuple(filter, "s|O", &command, &list)) {
+    PyErr_SetString(PyExc_TypeError, "Invalid filter list name to applyFilters");
+    return NULL;
+  }
+  // process filters here:
+  if (strcmp((char *)command, "superColor") == 0) {
+    f1 = 1.0, f2 = -1.0, f3 = -1.0, i1 = 0, i2 = 128;
+    if (!PyArg_ParseTuple(list, "|fffii", &f1, &f2, &f3, &i1, &i2)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
       return NULL;
     }
-    // process filters here:
-    if (strcmp((char *)command, "superColor") == 0) {
-      f1 = 1.0, f2 = -1.0, f3 = -1.0, i1 = 0, i2 = 128;
-      if (!PyArg_ParseTuple(list, "|fffii", &f1, &f2, &f3, &i1, &i2)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: superColor");
-	return NULL;
-      }
-      retval = superColor(f1, f2, f3, i1, i2);
-    } else if (strcmp((char *)command, "scale") == 0) {
-      f1 = 1.0, f2 = 1.0, f3 = 1.0;
-      if (!PyArg_ParseTuple(list, "|fff", &f1, &f2, &f3)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: scale");
-	return NULL;
-      }
-      retval = scale(f1, f2, f3);
-    } else if (strcmp((char *)command, "rotate") == 0) {
-      retval = rotate();
-    } else if (strcmp((char *)command, "meanBlur") == 0) {
-      i1 = 3;
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: meanBlur");
-	return NULL;
-      }
-      retval = meanBlur(i1);
-    } else if (strcmp((char *)command, "medianBlur") == 0) {
-      i1 = 3;
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: medianBlur");
-	return NULL;
-      }
-      retval = medianBlur(i1);
-    } else if (strcmp((char *)command, "gaussianBlur") == 0) {
-      retval = gaussianBlur();
-    } else if (strcmp((char *)command, "sobel") == 0) {
-      i1 = 1;
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: sobel");
-	return NULL;
-      }
-      retval = sobel(i1);
-    } else if (strcmp((char *)command, "setPlane") == 0) {
-      i1 = 0; i2 = 0;
-      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
-	return NULL;
-      }
-      retval = setPlane(i1, i2);
-    } else if (strcmp((char *)command, "set") == 0) {
-      i1 = 0; i2 = 0, i3 = 255, i4 = 255, i5 = 255;
-      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: set");
-	return NULL;
-      }
-      retval = set(i1, i2, i3, i4, i5);
-    } else if (strcmp((char *)command, "drawRect") == 0) {
-      // x, y, x, y, fill, outChannel
-      i1 = 10; i2 = 10; i3 = 30; i4 = 30; i5 = 0; i6 = ALL;
-      if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
-	return NULL;
-      }
-      retval = drawRect(i1, i2, i3, i4, i5, i6);
-    } else if (strcmp((char *)command, "drawCross") == 0) {
-      // x, y, size, outChannel
-      i1 = 20; i2 = 20; i3 = 10; i4 = ALL;
-      if (!PyArg_ParseTuple(list, "|iiii", &i1, &i2, &i3, &i4)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawCross");
-	return NULL;
-      }
-      retval = drawCross(i1, i2, i3, i4);
-    } else if (strcmp((char *)command, "swapPlanes") == 0) {
-      // plane1, plane2 (red, blue)
-      i1 = rgb[0]; i2 = rgb[2];
-      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: swapPlanes");
-	return NULL;
-      }
-      retval = swapPlanes(rgb[i1], rgb[i2]);
-    } else if (strcmp((char *)command, "match") == 0) {
-      i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
-      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match");
-	return NULL;
-      }
-      retval = match(i1, i2, i3, i4, i5);
-    } else if (strcmp((char *)command, "matchRange") == 0) {
-      i1 = 0; i2 = 0; i3 = 0; i4 = 255; i5 = 255; i6 = 255, i7 = 0;
-      if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4,&i5,&i6,&i7)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchRange");
-	return NULL;
-      }
-      retval = matchRange(i1, i2, i3, i4, i5, i6, i7);
-    } else if (strcmp((char *)command, "grayScale") == 0) {
-      retval = grayScale();
-    } else if (strcmp((char *)command, "backup") == 0) {
-      retval = backup();
-    } else if (strcmp((char *)command, "restore") == 0) {
-      retval = restore();
-    } else if (strcmp((char *)command, "motion") == 0) {
-      i1 = 30; 
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: motion");
-	return NULL;
-      }
-      retval = motion(i1);
-    } else if (strcmp((char *)command, "threshold") == 0) {
-      i1 = 0; i2 = 200;
-      if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: threshold");
-	return NULL;
-      }
-      retval = threshold(i1, i2);
-    } else if (strcmp((char *)command, "inverse") == 0) {
-      i1 = 0;
-      if (!PyArg_ParseTuple(list, "|i", &i1)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: inverse");
-	return NULL;
-      }
-      retval = inverse(i1);
-    } else if (strcmp((char *)command, "blobify") == 0) {
-      i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1, i7 = 1;
-      // inChannel, low, high, sortmethod 0 = mass, 1 = area, return blobs, 
-      // drawBox, super_color
-      if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4, &i5, &i6, &i7)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: blobify");
-	return NULL;
-      }
-      retval = blobify(i1, i2, i3, i4, i5, i6, i7);
-    } else if (strcmp((char *)command, "histogram") == 0) {
-      i1 = 0; i2 = 0; i3 = width - 1; i4 = height - 1; i5 = 8;
-      // x1, y1, x2, y2, bins
-      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
-	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: histogram");
-	return NULL;
-      }
-      retval = histogram(i1, i2, i3, i4, i5);
-    } else {
-      PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilter");
+    retval = superColor(f1, f2, f3, i1, i2);
+  } else if (strcmp((char *)command, "scale") == 0) {
+    f1 = 1.0, f2 = 1.0, f3 = 1.0;
+    if (!PyArg_ParseTuple(list, "|fff", &f1, &f2, &f3)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: scale");
       return NULL;
     }
-    return retval;
+    retval = scale(f1, f2, f3);
+  } else if (strcmp((char *)command, "rotate") == 0) {
+    retval = rotate();
+  } else if (strcmp((char *)command, "meanBlur") == 0) {
+    i1 = 3;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: meanBlur");
+      return NULL;
+    }
+    retval = meanBlur(i1);
+  } else if (strcmp((char *)command, "medianBlur") == 0) {
+    i1 = 3;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: medianBlur");
+      return NULL;
+    }
+    retval = medianBlur(i1);
+  } else if (strcmp((char *)command, "gaussianBlur") == 0) {
+    retval = gaussianBlur();
+  } else if (strcmp((char *)command, "sobel") == 0) {
+    i1 = 1;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: sobel");
+      return NULL;
+    }
+    retval = sobel(i1);
+  } else if (strcmp((char *)command, "setPlane") == 0) {
+    i1 = 0; i2 = 0;
+    if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: setPlane");
+      return NULL;
+    }
+    retval = setPlane(i1, i2);
+  } else if (strcmp((char *)command, "set") == 0) {
+    i1 = 0; i2 = 0, i3 = 255, i4 = 255, i5 = 255;
+    if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: set");
+      return NULL;
+    }
+    retval = set(i1, i2, i3, i4, i5);
+  } else if (strcmp((char *)command, "drawRect") == 0) {
+    // x, y, x, y, fill, outChannel
+    i1 = 10; i2 = 10; i3 = 30; i4 = 30; i5 = 0; i6 = ALL;
+    if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
+      return NULL;
+    }
+    retval = drawRect(i1, i2, i3, i4, i5, i6);
+  } else if (strcmp((char *)command, "drawCross") == 0) {
+    // x, y, size, outChannel
+    i1 = 20; i2 = 20; i3 = 10; i4 = ALL;
+    if (!PyArg_ParseTuple(list, "|iiii", &i1, &i2, &i3, &i4)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawCross");
+      return NULL;
+    }
+    retval = drawCross(i1, i2, i3, i4);
+  } else if (strcmp((char *)command, "swapPlanes") == 0) {
+    // plane1, plane2 (red, blue)
+    i1 = rgb[0]; i2 = rgb[2];
+    if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: swapPlanes");
+      return NULL;
+    }
+    retval = swapPlanes(rgb[i1], rgb[i2]);
+  } else if (strcmp((char *)command, "match") == 0) {
+    i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
+    if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: match");
+      return NULL;
+    }
+    retval = match(i1, i2, i3, i4, i5);
+  } else if (strcmp((char *)command, "matchRange") == 0) {
+    // r1, g1, b1, r2, g2, b2, outChannel
+    i1 = 0; i2 = 0; i3 = 0; i4 = 255; i5 = 255; i6 = 255, i7 = 0;
+    if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4,&i5,&i6,&i7)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchRange");
+      return NULL;
+    }
+    retval = matchRange(i1, i2, i3, i4, i5, i6, i7);
+  } else if (strcmp((char *)command, "matchList") == 0) {
+    PyObject *pyobj = NULL;
+    if (!PyArg_ParseTuple(list, "O", &pyobj)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: matchList");
+      return NULL;
+    }
+    retval = matchList(pyobj);
+  } else if (strcmp((char *)command, "grayScale") == 0) {
+    retval = grayScale();
+  } else if (strcmp((char *)command, "backup") == 0) {
+    retval = backup();
+  } else if (strcmp((char *)command, "restore") == 0) {
+    retval = restore();
+  } else if (strcmp((char *)command, "motion") == 0) {
+    i1 = 30; 
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: motion");
+      return NULL;
+    }
+    retval = motion(i1);
+  } else if (strcmp((char *)command, "threshold") == 0) {
+    i1 = 0; i2 = 200;
+    if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: threshold");
+      return NULL;
+    }
+    retval = threshold(i1, i2);
+  } else if (strcmp((char *)command, "inverse") == 0) {
+    i1 = 0;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: inverse");
+      return NULL;
+    }
+    retval = inverse(i1);
+  } else if (strcmp((char *)command, "blobify") == 0) {
+    i1 = 0; i2 = 200; i3 = 255; i4 = 0; i5 = 1; i6 = 1, i7 = 1;
+    // inChannel, low, high, sortmethod 0 = mass, 1 = area, return blobs, 
+    // drawBox, super_color
+    if (!PyArg_ParseTuple(list, "|iiiiiii", &i1, &i2, &i3, &i4, &i5, &i6, &i7)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: blobify");
+      return NULL;
+    }
+    retval = blobify(i1, i2, i3, i4, i5, i6, i7);
+  } else if (strcmp((char *)command, "histogram") == 0) {
+    i1 = 0; i2 = 0; i3 = width - 1; i4 = height - 1; i5 = 8;
+    // x1, y1, x2, y2, bins
+    if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: histogram");
+      return NULL;
+    }
+    retval = histogram(i1, i2, i3, i4, i5);
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilter");
+    return NULL;
+  }
+  return retval;
 }
 

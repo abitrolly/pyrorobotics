@@ -64,6 +64,7 @@ public:
 		       int outChannel);
   PyObject *match(int r, int g, int b, int tolerance,
 		  int outChannel);
+  PyObject *matchList(PyObject *myList);
   PyObject *get(int w, int h);
   PyObject *set(int w, int h, int r, int g, int b);
   PyObject *set(int w, int h, int d, int val);
