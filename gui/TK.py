@@ -1,6 +1,4 @@
 import Tkinter, time, sys
-import PIL.PpmImagePlugin
-import Image, ImageTk
 from pyro.gui import *
 import pyro.gui.widgets.TKwidgets as TKwidgets
 from pyro.system.version import *
