@@ -19,9 +19,9 @@ class SimpleBrain(Brain):
       #right = min(self.getRobot().get('ir', 'value', 4), 
       #            self.getRobot().get('ir', 'value', 5))
 
-      left = self.getRobot().getSensorGroup('min', 'left')
-      right = self.getRobot().getSensorGroup('min', 'right')
-      front = self.getRobot().getSensorGroup('min', 'front')
+      left = self.getRobot().getSensorGroup('min', 'left')[1]
+      right = self.getRobot().getSensorGroup('min', 'right')[1]
+      front = self.getRobot().getSensorGroup('min', 'front')[1]
       #left = self.getRobot().getMin('ir', 'range', (0, 1)).distance
       #front = self.getRobot().getMin('ir', 'range', (2, 3)).distance
       #right = self.getRobot().getMin('ir', 'range', (4, 5)).distance
