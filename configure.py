@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Pyro configure.py script
 
 import sys

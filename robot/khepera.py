@@ -22,8 +22,8 @@ class IRSensor(Device):
         self.devData['units']    = "ROBOTS" # current report units
         self.devData["radius"] = 55 / 1000.0 # meters
         # natural units:
-        self.devData["rawunits"] = "MM"
-        self.devData['maxvalueraw'] = 60 # in rawunits
+        self.devData["rawunits"] = "CM"
+        self.devData['maxvalueraw'] = 6.0 # in rawunits
         # ----------------------------------------------
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
         self.devData["count"] = 8
@@ -120,51 +120,30 @@ class IRSensor(Device):
         elif pos == 7:
             return 180.0
 
-    def getIRMaxRange(self):
-        return 
-
     def getIRRange(self, pos):
         try:
-            data = self.dev.senseData['ir'][pos]
+            data = self.devData["maxvalueraw"] - \
+                   (self.dev.senseData['ir'][pos] / 1023.0 * 6.0)
         except:
             print "not enough sensor data"
             return 0.0
+        data = max(min(data, self.devData["maxvalueraw"]), 0)
         return self.rawToUnits(data)
 
     def getIRXCoord(self, dev, pos):
         # convert to x,y relative to robot
-        try:
-            data = self.dev.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
+        data = self.getIRRange(pos)
+        dist = self.rawToUnits(data)
         angle = (-self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
         return dist * math.cos(angle)
         
-
     def getIRYCoord(self, dev, pos):
         # convert to x,y relative to robot
-        try:
-            data = self.dev.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        dist = self.rawToUnits(dev, data, 'ir', 'METERS')
-        angle = (-self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
+        data = self.getIRRange(pos)
+        dist = self.rawToUnits(data)
+        angle = (-self.light_thd(pos) - 90.0) / 180.0 * math.pi
         return dist * math.sin(angle)
     
-    def getIRMaxRange(self, dev):
-        return self.rawToUnits(dev, 60.0, 'ir')
-
-    def getIRRange(self, pos):
-        try:
-            data = self.dev.senseData['ir'][pos]
-        except:
-            print "not enough sensor data"
-            return 0.0
-        return self.rawToUnits(data)
-
     def getIRFlag(self, pos):
         return 0
 
@@ -174,12 +153,12 @@ class LightSensor(IRSensor):
         # now, just overwrite those differences
         self.devData['units'] = "RAW"
         self.devData["maxvalueraw"] = 511.0
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+        self.devData['maxvalue'] = self.devData["maxvalueraw"]
 	self.subDataFunc['value'] = self.getLightRange
 	self.subDataFunc['flag'] = self.getIRFlag
 
     def postSet(self, kw):
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+        self.devData['maxvalue'] = self.devData["maxvalueraw"]
 
     def getLightRange(self, pos):
         try:
@@ -187,7 +166,7 @@ class LightSensor(IRSensor):
         except:
             print "not enough sensor data"
             return 0.0
-        return self.rawToUnits(data)
+        return data
 
 class SerialSimulator:
     def __init__(self):

@@ -3,19 +3,21 @@ Braitenberg Vehicle1 for the Khepera
 D.S. Blank
 """
 
-from pyro.brain import Brain
+from pyro.brain import Brain, avg
 
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
+   def setup(self):
+      self.set('/devices/light0/units', "RAW")
+      self.maxvalue = self.get('/devices/light0/maxvalue')
    def step(self):
-      maxvalue = 550.0
-      sensor = maxvalue -  self.robot.get('light', 'value', 2) # light
-      forward = sensor / maxvalue
-      self.robot.move(forward,  0.0) # to the left
+      sensorValue = avg(self.get('/devices/light0/2,3/value')) # front lights
+      forward = (self.maxvalue - sensorValue) / self.maxvalue
+      self.robot.motors(forward,  forward) # to the left
 
 def INIT(engine):
-   if engine.robot.type != 'khepera':
+   if engine.robot.get("robot/type") != 'Khepera':
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
    return Vehicle('Braitenberg', engine)

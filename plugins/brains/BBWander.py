@@ -30,13 +30,13 @@ class Avoid (Behavior):
         close_dist, angle = close["value"], close["thr"]
         max_sensitive = self.robot.get('/robot/range/maxvalue') * 0.8
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'translate', 0.0, "TooClose")
-        self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'translate', 0.6, "Ok")
+        self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'translate', 0.3, "Ok")
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'rotate', self.direction(angle), "TooClose")
         self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'rotate', 0.0, "Ok")
 
 class TurnAround(State):
     def update(self):
-        if min(self.get("/robot/range/front-all/value")) < 1:
+        if min(self.get("/robot/range/front-all/value")) < 1.0:
             self.robot.move(0, .2)
         else:
             self.goto("state1")

@@ -2,7 +2,7 @@
 # Please edit Makefile.cfg, or run "make config; make"
 
 # Need a guess to get started:
-PYTHON_BIN=python2.2
+PYTHON_BIN=python
 
 include Makefile.cfg
 
