@@ -908,6 +908,34 @@ PyObject *Vision::applyFilterList() {
   return applyFilters(filterList);
 }
 
+/*
+PyObject *suppliesFilters() {
+  // ("text name", menu?, funcName, (**defaultArgs)),
+  (("super color", 0, "superColor" , (1, -1, -1, 0)),
+   ("clear plane", 0, "setPlane", (0, 0),
+    ("draw rectangle", 0, "drawRect", (0, 0, 0, 0, 0, ALL)),
+    ("match", 0, "match", (0, 0, 0, 30, 0, ACCUM)),
+    ("threshold", 0, "threshold", (0, 200)),
+    ("inverse", 0, "inverse", (0,)),
+    ("blur edges", 1, "meanBlur", (3)),
+    ("detect edges", 1, "sobel", (1) ),
+    ("gray scale", 1, "grayScale", ()),
+    ("blobify", 1, "blobify", (0)),                          
+    ("clear red", 1, "setPlane", (0),
+    ("clear green", 1, "setPlane", (1),
+    ("clear blue", 1, "setPlane", (2),                          
+    ("superColor red", 1, "superColor", (1, -1, -1, 0),
+    ("superColor green", 1, "superColor", (-1, 1, -1, 1),
+    ("superColor blue", 1, "superColor", (-1, -1, 1, 2),
+    ("threshold red", 1, "threshold", (0),
+    ("threshold green", 1, "threshold", (1),
+    ("threshold blue", 1, "threshold", (2),
+    ("inverse red", 1, "inverse", (0),                          
+    ("inverse green", 1, "inverse", (1),
+    ("inverse blue", 1, "inverse", (2)
+}
+*/
+
 PyObject *Vision::applyFilters(PyObject *newList) {
   int i1, i2, i3, i4, i5, i6;
   float f1, f2, f3, f4, f5, f6;
