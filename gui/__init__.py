@@ -371,9 +371,9 @@ class gui:
          #      self.menuButtons["Built-in Devices"].add_command(label=device,command=lambda:self.startDevice(device))
 
    def freeRobot(self):
-      self.engine.pleaseStop()
-      self.engine.freeRobot()
+      self.freeBrain()
       self.engine.robotfile = ''
+      self.engine.freeRobot()
 
    def INThandler(self, signum, frame):
       print "STOP ----------------------------------------------------"

@@ -186,6 +186,7 @@ class Engine:
       self.freeBrain()
       if self.robot != 0:
          self.robot.disconnect()
+         self.robot = 0
 
    def shutdown(self):
       self.freeRobot()

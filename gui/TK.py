@@ -70,13 +70,16 @@ class TKgui(Tkinter.Toplevel, gui):
                        ['Devices...',self.loadDevice],
                        #['Built-in Devices', None],
                        ]),
-              ('Robot',[['Connect robot', self.connectRobot],
+              ('Robot',[['Unload robot', self.freeRobot],
+                        ['Unload brain', self.freeBrain],
+                        None,
+                        ['Connect robot', self.connectRobot],
                         ['Disconnect robot', self.disconnectRobot],
                         None,
                         ['Enable motors', self.enableMotors],
                         ['Disable motors', self.disableMotors],
-                        ['Joystick...', self.joystick],
                         None,
+                        ['Joystick...', self.joystick],
                         ['Forward',self.stepForward],
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
@@ -163,9 +166,12 @@ class TKgui(Tkinter.Toplevel, gui):
          print self.engine.robot.getAll()
 
    def makeWindows(self):
-      objs = self.engine.robot.getDevices()
-      for serv in objs:
-         self.engine.robot.getDevice(serv).makeWindow()
+      if self.engine and self.engine.robot:
+         objs = self.engine.robot.getDevices()
+         for serv in objs:
+            self.engine.robot.getDevice(serv).makeWindow()
+      else:
+         print "Error: you need to load a robot first"
 
    def makeCommandArea(self):
       # ---------------------------------

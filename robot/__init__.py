@@ -172,7 +172,7 @@ class Robot:
         return retval
 
     def disconnect(self):
-        console.log(console.WARNING, "need to override DISCONNECT in robot")
+        pass
 
     def localize(self, x = 0, y = 0, th = 0):
         console.log(console.WARNING, "need to override LOCALIZE in robot")
