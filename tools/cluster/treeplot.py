@@ -24,7 +24,11 @@ class TreePlot:
     def replot(self):
         self.gp.replot()
 
+    def hardcopy(self, output):
+        self.gp.hardcopy(output)
+
 if __name__ == '__main__':
     tree = TreePlot("data.tree")
     tree.plot()
+    tree.hardcopy("/tmp/output.ps")
     raw_input()
