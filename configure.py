@@ -9,6 +9,14 @@ def file_exists(file_name):
     else:
         return exists(file_name)
 
+def ask_yn(title, list_of_options):
+    print title
+    retval = ''
+    for directory, desc in list_of_options:
+        if ask("Option:    Do you want to build " + desc + "? (y/n)", "n", 0) == "y":
+            retval += " " + directory
+    return retval
+
 def ask(question, default, filecheck = 1):
    done = 0
    print "-------------------------------------------------------------------"
@@ -56,6 +64,10 @@ SAPHIRA=%s
 
 # Where are X11 files (such as X11 include directory)?
 X11_DIR = %s
+
+# What subdirs to include in the make process?
+CONFIGDIRS = %s
+
 """
 
 print """
@@ -78,9 +90,26 @@ saphira =ask("4. Where is Saphira? (Type 'none' if you don't have it)",
 x11_include_dir = ask("5. Where is the X11 include directory?",
                       "/usr/X11")
 
+included_packages = ask_yn("\n6. Options:", [
+    #('camera/bt848',"BT848 camera"),
+    #('geometry', "Test Geometry C code"),
+    #('gui/3DArray', "Test 3D Array Code"),
+    #('robot/driver/grid', "Test C Grid"),
+    #('robot/driver/video', "Test Video"),
+    ('camera/v4l', "Video for Linux (v4l)"),
+    ('brain/psom brain/psom/csom_src/som_pak-dev',
+     "Self-organizing Map (SOM)"),
+    ('tools/cluster', "Cluster Analysis Tool"),
+    ('simulators/khepera', "Khepera Simulator"),
+    ])
+
+#camera/bt848 geometry gui/3DArray robot/driver/grid \
+#	robot/driver/video camera/v4l brain/psom tools/cluster \
+#	brain/psom/csom_src/som_pak-dev simulators/khepera
+
 fp = open("Makefile.cfg", "w")
 fp.write(text % (python_script_name, python_bin_path, python_include_files,
-                 saphira, x11_include_dir))
+                 saphira, x11_include_dir, included_packages))
 fp.close()
 
 print """

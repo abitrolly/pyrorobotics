@@ -3,11 +3,9 @@
 
 include Makefile.cfg
 
-SUBDIRS = camera/bt848 geometry gui/3DArray robot/driver/grid \
-	robot/driver/video camera/v4l brain/psom tools/cluster \
-	brain/psom/csom_src/som_pak-dev simulators/khepera
-
 # Failing subdir: robot/driver/testc
+
+SUBDIRS = $(CONFIGDIRS)
 
 ifeq ($(SAPHIRA),)
 else
@@ -53,3 +51,4 @@ clean::
 	- $(RM) bin/pyro
 
 cleanall:: clean
+
