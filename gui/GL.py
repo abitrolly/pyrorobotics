@@ -285,32 +285,33 @@ class GLgui(gui):
       self.win.after(500, self.win.do_AutoSpin)
 
    def redraw(self, win = 0):
-      glClearColor(0.5, 0.5, 0.5, 0)
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-      f = GenericStream()
-      r = StreamRenderer(f)
-      self.draw({}, r)
-      f.close()
-      s = StreamTranslator(f, GLRenderer())
-      s.process()
-      f.close()
-      if self.genlist == 0:
-         self.win.update()
-         self.win.autospin = 1
-         self.win.xspin = 0
-         self.win.yspin = 0
-         self.win.after(500, self.win.do_AutoSpin)
-         self.genlist = 1
-      # This probably doesn't need to update this often:
-      self.redrawWindowBrain()
-      self.redrawWindowRobot()
-      for p in self.engine.plot:
-         try:
-            p.redraw(()) # pass in options
-         except TclError:
-            #Window's closed; remove the plot from the redraw list
-            print "Removing"
-            self.engine.plot.remove(p)
+      if self.graphicsMode == 1: # GL
+         glClearColor(0.5, 0.5, 0.5, 0)
+         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+         f = GenericStream()
+         r = StreamRenderer(f)
+         self.draw({}, r)
+         f.close()
+         s = StreamTranslator(f, GLRenderer())
+         s.process()
+         f.close()
+         if self.genlist == 0:
+            self.win.update()
+            self.win.autospin = 1
+            self.win.xspin = 0
+            self.win.yspin = 0
+            self.win.after(500, self.win.do_AutoSpin)
+            self.genlist = 1
+         # This probably doesn't need to update this often:
+         self.redrawWindowBrain()
+         self.redrawWindowRobot()
+         for p in self.engine.plot:
+            try:
+               p.redraw(()) # pass in options
+            except TclError:
+               #Window's closed; remove the plot from the redraw list
+               print "Removing"
+               self.engine.plot.remove(p)
 
 if __name__ == '__main__':
    gui = GLgui()
