@@ -296,6 +296,11 @@ class RAVQ:
         return s
 
     # labels!
+    def getVector(self, label):
+        """
+        Should return the model vector associated with the label.
+        """
+        return self.labels[label]
     def getLabel(self, vector):
         """
         Returns the label associated with vector.
