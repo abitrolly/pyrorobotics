@@ -12,8 +12,7 @@ class SimpleRobot(Robot):
         #print "Acting: action =", action, "v1 =", value1, "v2 =", value2
         pass
     
-    def __init__(self):
-        Robot.__init__(self, "SimpleRobot", "simplerobot")
+    def setup(self):
         # -------------------------------------------
         # These vars are assumed (currently) to exist
         # so that the engine can stop the robot:
