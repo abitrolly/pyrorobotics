@@ -1058,7 +1058,7 @@ class Network:
         else: # mapInput set manually
             for vals in self.inputMap:
                 (v1, offset) = vals
-                retval[v1] = self.inputs[pos]
+                retval[v1] = self.inputs[pos][offset:offset+self[v1].size]
         if self.verbosity > 1: print "Loading target", pos, "..."
         if len(self.targets) == 0:
             pass # ok, no targets
