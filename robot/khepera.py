@@ -173,7 +173,7 @@ class SerialSimulator:
         self.p = ksim.initControl()
         self.last_msg = ''
         
-    def writeline(self, msg):
+    def writeline(self, msg, newline = "\n"):
         self.last_msg = ksim.sendMessage(self.p, msg)
         sleep(.01)  # for some reason it seems as if python doesn't block
 		    # properly on the preceeding assignment unless this is here
@@ -182,27 +182,40 @@ class SerialSimulator:
         return self.last_msg #+ ',0,0,0,0,0,0,0,0'
     
 class KheperaRobot(Robot):
-    def __init__(self, port = None, simulator = 0, rate = None):
-        # 0 makes it real
+    def __init__(self,
+                 port = None,
+                 simulator = 0,
+                 rate = None,
+                 subtype = "Khepera"):
+        # simulator = 0 makes it real
         Robot.__init__(self) # robot constructor
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"
-            print "Khepera opening simulation..."
+            print "K-Team opening simulation..."
         else:
-            if port == None:
-                try:
-                    port = config.get('khepera', 'port')
-                except:
-                    pass
-            if port == None:
-                port = "/dev/ttyS1"
-            print "Khepera opening port", port, "..."
-            if rate == None:
-                rate = termios.B38400
+            if subtype == "Khepera":
+                if port == None:
+                    try:
+                        port = config.get('khepera', 'port')
+                    except:
+                        pass
+                if port == None:
+                    port = "/dev/ttyS1"
+                if rate == None:
+                    rate = termios.B38400
+            else:
+                if port == None:
+                    try:
+                        port = config.get('hemisson', 'port')
+                    except:
+                        pass
+                if port == None:
+                    port = "/dev/ttyUB0"
+                if rate == None:
+                    rate = termios.B115200
+            print "K-Team opening port", port, "..."
             self.sc = SerialConnection(port, rate)
-            #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
-            #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.stallTolerance = 0.25
         self.stallHistoryPos = 0
         self.stallHistorySize = 5
@@ -215,19 +228,28 @@ class KheperaRobot(Robot):
         self.translateFactor = 30
         self.rotateFactor = 12
         self.senseData = {}
-        self.senseData['position'] = []
-        self.senseData['ir'] = []
-        self.senseData['light'] = []
-        self.senseData['stall'] = []
-        
-        self.devData["builtinDevices"] = ['ir', 'light', 'gripper']
+        self.senseData['position'] = [0] * 3
+        self.senseData['ir'] = [0] * 6
+        self.senseData['light'] = [0] * 6
+        self.senseData['stall'] = [0] * 6
+        self.devData["subtype"] = subtype
+        if subtype == "Hemisson":
+            self.devData["builtinDevices"] = ['ir', 'light', 'audio']
+            self.newline = "\r"
+        elif subtype == "Khepera":
+            self.devData["builtinDevices"] = ['ir', 'light', 'gripper']
+            self.newline = "\n"
+        else:
+            raise TypeError, "invalid K-Team subtype: '%s'" % subtype
         self.startDevice("ir")
         self.devDataFunc["range"] = self.get("/devices/ir0/object")
         self.devDataFunc["ir"] = self.get("/devices/ir0/object")
         self.startDevice("light")
         self.devDataFunc["light"] = self.get("/devices/light0/object")
-
-        self.sendMsg('H', 'position')
+        if subtype == "Khepera":
+            self.sendMsg('H', 'position')
+        else:
+            self.senseData["position"] = 0, 0
         self.x = 0.0
         self.y = 0.0
         self.thr = 0.0
@@ -236,12 +258,14 @@ class KheperaRobot(Robot):
             self.w0 = self.senseData['position'][0]
             self.w1 = self.senseData['position'][1]
         except:
-            raise "KheperaConnectionError"
-        self.devData["type"] = "Khepera"
-        self.devData["subtype"] = "khepera1"
+            raise "KTeamConnectionError"
+        self.devData["type"] = "K-Team"
         self.devData["port"] = port
         self.devData["simulated"] = simulator
-        self.devData['radius'] = 55.0 # in MM
+        if subtype == "Khepera":
+            self.devData['radius'] = 55.0 # in MM
+        else:
+            self.devData['radius'] = 120.0 # in MM
         # ----- Updatable things:
         self.devData['stall'] = self.isStall()
         self.devData['x'] = self.getX()
@@ -249,9 +273,8 @@ class KheperaRobot(Robot):
         self.devData['z'] = self.getZ()
         self.devData['th'] = self.getTh() # in degrees
         self.devData['thr'] = self.getThr() # in radians
-
 	self.update() 
-        self.inform("Done loading khepera robot.")
+        self.inform("Done loading K-Team robot.")
 
     def startDeviceBuiltin(self, item):
         if item == "ir":
@@ -261,10 +284,14 @@ class KheperaRobot(Robot):
         elif item == "gripper":
             return {"gripper": Gripper(self)}
         else:
-            raise AttributeError, "khepera robot does not support device '%s'" % item
+            raise AttributeError, "K-Team robot does not support device '%s'" % item
 
     def disconnect(self):
         self.stop()
+
+    def send(self, message):
+        self.sc.writeline(message, self.newline)
+        return self.sc.readline().split(',')
 
     def sendMsg(self, msg, data = '', type = 'i'):
         # Fix: this needs to be two processes: one write Queue
@@ -274,7 +301,7 @@ class KheperaRobot(Robot):
         done = 0
         while tries < 5 and not done:
             try:
-                self.sc.writeline(msg)
+                self.sc.writeline(msg, self.newline)
                 retval = self.sc.readline() # 1 = block till we get something
                 #print retval
                 if retval[0].upper() == msg[0]:
@@ -299,16 +326,21 @@ class KheperaRobot(Robot):
                         self.senseData[data] = array.array(type, map(int, irs))
                     except:
                         self.senseData[data] = array.array(type, [0] * 20)
-                        print "khepera packet error: type=", data, "vals=", irs
+                        print "K-Team packet error: type=", data, "vals=", irs
             return self.senseData[data]
         
     def update(self):
         self._update()
-        self.sendMsg('N', 'ir')     # proximity
-        self.sendMsg('O', 'light')  # ambient light
-        self.sendMsg('H', 'position')
-        self.sendMsg('E', 'speed')
-        self.sendMsg('K', 'stall')  # motor status, used by isStall
+        if self.devData["subtype"] == "Khepera":
+            self.sendMsg('N', 'ir')     # proximity
+            self.sendMsg('O', 'light')  # ambient light
+            self.sendMsg('H', 'position')
+            self.sendMsg('E', 'speed')
+            self.sendMsg('K', 'stall')  # motor status, used by isStall
+        elif self.devData["subtype"] == "Hemisson":
+            #self.sendMsg('N', 'ir')     # proximity
+            #self.sendMsg('O', 'light')  # ambient light
+            pass
         gripperID = self.hasADeviceOfType('gripper')
         if gripperID:
             gripper = self.device[gripperID]
@@ -456,7 +488,7 @@ class Gripper(Device):
         self.startDevice()
 
     def send(self, message):
-        self.robot.sc.writeline(message)
+        self.robot.sc.writeline(message, self.robot.newline)
         return self.robot.sc.readline().split(',')
 
     # preGet methods
