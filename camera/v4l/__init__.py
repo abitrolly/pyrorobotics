@@ -67,7 +67,7 @@ class V4LGrabber(Camera):
       This deconstructor method makes sure that the mmap is freed before the
       Camera is deleted.
       """
-      if self.handle and self.cbuf:
+      if dir(self).count('handle') == 1 and self.handle and self.cbuf:
          #if __init__ was not successful in acquiring the video device,
          #a call to free_image will be unsuccessful.
          free_image(self.handle, self.cbuf)
