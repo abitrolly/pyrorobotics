@@ -113,17 +113,40 @@ class PyroImage:
       """
       self.data[(x + y * self.width) * self.depth + offset] = val
 
+   def setVal(self, x, y, val):
+      """
+      Method to set the entire RGB value of a pixel.
+      val should be an n-tuple (or length n list), where n is the depth of the
+      image.  For RGB, it should be of the form (r, g, b)
+      """
+      if len(val) != self.depth:
+         print "Error in setVal: val is not the same length as depth"
+         return
+      
+      for offset in range(self.depth):
+         self.data[(x + y * self.width) * self.depth + offset] = val[offset]
+
    def incr(self, x, y, offset = 0):
       """
       Method to increment a pixel value. offset is r, g, b (0, 1, 2)
       """
       self.data[(x + y * self.width) * self.depth + offset] += 1
 
+
    def get(self, x, y, offset = 0):
       """
       Get a pixel value. offset is r, g, b = 0, 1, 2.
       """
       return self.data[(x + y * self.width) * self.depth + offset]
+
+   def getVal(self, x, y):
+      """
+      Get the entire color value of the pixel in quetion, returned as a tuple.
+      If this is an RGB image, it will be of the form (r, g, b).
+      """
+      start = (x + y * self.width) * self.depth
+      end = start + self.depth
+      return (tuple(self.data[start:end]))
 
    def reset(self, vector):
       """
@@ -227,6 +250,36 @@ class Bitmap(PyroImage):
          print ''
       print ''
 
+   def avgColor(self, img):
+      """
+      Return an n-tuple of the average color of the image where the bitmap is true,
+      where n is the depth of img.  That is, using the bitmap as a mask, find the average color of img.
+      img and self should have the same dimensions.
+      """
+
+      if not (self.width == img.width and self.height == img.height):
+         print "Error in avgColor: Bitmap and Image do not have the same dimensions"
+         return
+      
+      avg = []
+      n = 0
+      for i in range(img.depth):
+         avg.append(0) #an n-array of zeros
+         
+      for x in range(self.width):
+         for y in range(self.height):
+            if (self.get(x, y)): #if the bitmap is on at this point
+               for i in range(img.depth):
+                  avg[i] += img.get(x, y, i)
+                  n += 1
+
+      if n == 0:
+         return tuple(avg)
+      else:
+         for i in range(img.depth):
+            avg[i] /= n
+         return tuple(avg)
+               
    def blobify(self):
       """
       Algorithm for 1 pass blobification. Returns a bitmap.
@@ -420,3 +473,23 @@ if __name__ == '__main__':
       print "skipping..."
       
    print "All done!"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
