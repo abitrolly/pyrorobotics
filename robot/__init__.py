@@ -282,12 +282,17 @@ class Robot (Drawable):
         #self.update() # updates the robot's state reflector
         #self.gui.win.tkRedraw()
 
+    def _update(self):
+        for service in self.getServices():
+            if self.getService(service).active:
+                self.getService(service).update()
+
     def update(self):
         """
         This is a common control that isn't an act, so we pull it out
         here.
         """
-        self.controls['update'](self.dev)
+        self.controls['update'](self.dev) # this should call _update
 
     def SanityCheck(self):
 	if (not self.senses.has_key('robot')):
@@ -302,39 +307,50 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'control has NO update')
         console.log(console.INFO,'robot sanity check completed')
 
-    def loadServiceFromFile(self, dict):
-        for service in dict.keys():
-            console.log(console.INFO,"Loading service '%s'..." % service)
-            if self.service.has_key(service):
-                raise "DuplicateService", service
-            self.service[service] = dict[service]
-            self.senses[service] = self.service[service]
-            self.service[service].start()
+    def startServices(self, dict):
+        """ Load services from a dictionary of items:objects """
+        if type(dict) == type({}):
+            for service in dict.keys():
+                console.log(console.INFO,"Loading service '%s'..." % service)
+                if self.service.has_key(service):
+                    print "Service is already running: '%s'" % service
+                    continue
+                dict[service].startService()
+                # fix: did it start? if not do not do the following:
+                self.service[service] = dict[service]
+                self.senses[service] = self.service[service]
+            return "Ok"
+        else: # list of services
+            for service in dict:
+                self.startService(service)
 
-    def loadService(self, item):
+    def startService(self, item):
+        """ Load a service by either name or filename """
         import pyro.system as system
         import os
         if self.supportsService(item):
             if self.service.has_key(item):
-                raise "DuplicateService", item
+                print "Service is already running: '%s'" % item
+                return
+            console.log(console.INFO,"Loading service '%s'..." % item)
+            self.supports[item].startService()
+            # fix: did it start? if not do not do the following:
             self.service[item] = self.supports[item]
             self.senses[item] = self.service[item]
-            self.service[item].start()
         else:
             file = item
-            console.log(console.INFO,'Loading '+file)
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                self.loadServiceFromFile( system.loadINIT(file, self) )
+                self.startServices( system.loadINIT(file, self) )
             elif system.file_exists(os.getenv('PYRO') + \
                                     '/plugins/services/' + file): 
-                self.loadServiceFromFile( system.loadINIT(os.getenv('PYRO') + \
-                                                          '/plugins/services/'+ \
-                                                          file, self))
+                self.startServices( system.loadINIT(os.getenv('PYRO') + \
+                                                   '/plugins/services/'+ \
+                                                   file, self))
             else:
-                raise 'Service file not found: ' + file
-            console.log(console.INFO,'Loaded ' + file)
+                raise 'Service not found: ' + file
+        return "Ok"
 
     def supportsService(self, item):
         return self.supports.has_key(item)
@@ -345,8 +361,17 @@ class Robot (Drawable):
         else:
             raise "UnknownService", item
 
-    def allServices(self):
+    def getServiceData(self, item, *args):
+        if self.service.has_key(item):
+            return self.service[item].getServiceData(*args)
+        else:
+            raise "UnknownService", item
+
+    def getServices(self):
         return self.service.keys()
+
+    def getSupportedServices(self):
+        return self.supports.keys()
 
     def hasService(self, item):
         return self.service.has_key(item)
