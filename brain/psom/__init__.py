@@ -13,7 +13,7 @@
 
 from os import getenv
 import time
-
+from posixpath import exists
 import csom
 csom.set_globals()  # neither worry about nor change this
                     # doug, trust me, this sets global parameters that
@@ -58,8 +58,11 @@ class psom:
 			radius_mode = csom.LINEAR
 		
 		if(file!='unset'):
-			codes = csom.open_entries(file)
-			self.params = csom.construct_teach_params(codes, alpha_mode, radius_mode)
+			if exists(file):
+				codes = csom.open_entries(file)
+				self.params = csom.construct_teach_params(codes, alpha_mode, radius_mode)
+			else:
+				raise 'FileNotFound', "File '%s' was not found" % file
 		else:
 			if(xdim=='unset' or ydim=='unset'):
 				raise "please specify x and y dimensions for the map"
@@ -399,8 +402,11 @@ class dataset:
 
 		self.p = csom.get_eptr()
 		if(file!='unset'):
-			self.data = csom.open_entries(file)
-			self.dim = csom.entries_dimension_get(self.data)
+			if exists(file):
+				self.data = csom.open_entries(file)
+				self.dim = csom.entries_dimension_get(self.data)
+			else:
+				raise 'FileNotFound', "File '%s' was not found" % file
 		else:
 			if(init_vector!='NULL'):
 				dim = init_vector.dim	
