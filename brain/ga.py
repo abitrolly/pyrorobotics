@@ -23,17 +23,23 @@ def display(v):
 def displayln(v):
     print v
 
-def makeRandomGene(size):
+def makeRandomGene(size, real = 1, bias = .5):
     # Possible Change: Initialization is made beween -1, and 1
     gene = []
     for i in range(size):
-        gene.append( random.random() * 2.0 - 1.0)
+        if real:
+            gene.append( random.random() * 2.0 - 1.0)
+        else:
+            gene.append( random.random() < bias)
     return gene
 
-def makeRandomPop(cnt, size):
+def makeRandomPop(cnt, size, real = 1, bias = .5):
     pop = []
     for i in range(cnt):
-        pop.append( makeRandomGene(size) )
+        if bias == -1:
+            pop.append( makeRandomGene(size, real, float(i) / cnt) )
+        else:
+            pop.append( makeRandomGene(size, real, bias) )
     return pop
 
 def sum(a):
@@ -62,6 +68,7 @@ class GA:
         self.crossoverRate = 0.3
         self.maxEpoch = 0
         self.batch = batch
+        self.integer = 0
 
     def setSeed(self, value):
         self.seed1 = value
@@ -153,10 +160,13 @@ class GA:
         for i in range(number):
             rand = self.pick(RANDOM)
             pos = int(random.random() * self.geneLength)
-            if (random.random() < .5):
-                self.pop[rand][pos] -= random.random()
+            if self.integer:
+                self.pop[rand][pos] = not self.pop[rand][pos]
             else:
-                self.pop[rand][pos] += random.random()
+                if (random.random() < .5):
+                    self.pop[rand][pos] -= random.random()
+                else:
+                    self.pop[rand][pos] += random.random()
     
     def evolve(self):
         e = 0

@@ -2,17 +2,27 @@
 # D.S. Blank
 
 from random import random
+from math import log
+
+def poisson(lmbda):
+    """
+    Function to generate Poisson distributed random variable between 0 and
+    infinity with mean equal to lambda
+    """
+    p = 0
+    r = 0
+    while 1:
+        p = p - log(random());
+        if (p < lmbda):
+            r += 1
+        else:
+            break
+    return r
 
 class Matrix:
-
     def randomize(self, bias = .5):
         for i in range(self.size):
             self.data[0][i] = random() < bias
-            
-    def randomize(self, bias = .5):
-        for i in range(self.size):
-            self.data[0][i] = random() < bias
-
     def display(self, rows = -1):
         if rows == -1:
             for i in range(self.height):
@@ -21,8 +31,6 @@ class Matrix:
                     return
         else:
             self.displayRow(rows)
-            
-
     def displayRow(self, row = 0):
         s = ''
         cnt = 0.0
@@ -35,11 +43,14 @@ class Matrix:
             if self.data[row][i]:
                 cnt += 1
         print s, "%.2f" % (cnt / self.size)
-
-
+    def density(self, row):
+        cnt = 0.0
+        for i in range(self.size):
+            if self.data[row][i]:
+                cnt += 1
+        return (cnt / self.size)
 
 class Rules(Matrix):
-    
     def __init__(self, window = 3, values = 2):
         self.window = window
         self.values = values
@@ -47,14 +58,19 @@ class Rules(Matrix):
         self.height = 1
         self.data = [0]
         self.data[0] = [0] * self.size
-
     def apply(self, lat, c):
         for i in range(lat.size):
-            lat.data[c+1][i] = self.data[0][lat.bits2rule(c, i - self.window, i + self.window)]
-            if c + 1 < self.height and self.data[c] == self.data[c + 1]:
-                return
-
-
+            lat.data[c+1][i] = self.data[0][lat.bits2rule(c,
+                                                          i - self.window,
+                                                          i + self.window)]
+    def applyAll(self, lat, length = -1):
+        if length == -1:
+            length = data.height - 1
+        for c in range( length):
+            self.apply(lat, c)
+            if lat.data[c] == lat.data[c + 1]:
+                return c
+        return length
     def init(self, str):
         if (len(str) != self.size):
             raise "ImproperLength", str
@@ -68,14 +84,12 @@ class Rules(Matrix):
             raise "UnknownRepresentation", str
 
 class Lattice(Matrix):
-
     def __init__(self, size = 149, height = 150):
         self.size = size
         self.height = height
         self.data = [0] * self.height
         for h in range(self.height):
             self.data[h] = [0] * self.size
-
     def bit(self, row, pos):
         if pos < 0:
             return self.data[row][self.size + pos]
@@ -83,7 +97,6 @@ class Lattice(Matrix):
             return self.data[row][pos % self.size]
         else:
             return self.data[row][pos]
-
     def bits2rule(self, row, start, stop):
         sum = 0
         cnt = 0
@@ -111,8 +124,8 @@ if __name__ == '__main__':
     rules.display()
     
     data.randomize(.05)
-    for c in range( data.height - 1):
-        rules.apply(data, c)
+    #for c in range( data.height - 1):
+    rules.applyAll(data)
     print "A 50% Rule applied to a 10% Lattice:"
     data.display()
         
@@ -121,14 +134,14 @@ if __name__ == '__main__':
     rules.display()
     
     data.randomize(.3)
-    for c in range( data.height - 1):
-        rules.apply(data, c)
+    #for c in range( data.height - 1):
     print "GKL Rule applied to a 30% Lattice:"
+    print rules.applyAll(data)
     data.display()
     
     data.randomize(.7)
-    for c in range( data.height - 1):
-        rules.apply(data, c)
+    #for c in range( data.height - 1):
     print "GKL Rule applied to a 70% Lattice:"
+    print rules.applyAll(data)
     data.display()
     
