@@ -27,22 +27,15 @@ class TCPRobot(Robot):
 		self.updateables = self.getItem("updateables")
 		self.devData["id"]   = self.getItem("connectionNum:%d" % self.devData["port"])
 
-	def __mygetattr__(self, attr):
+	def __getattr__(self, attr):
 		""" Overides default get attribute to return devData if exists """
-		# had to repeat this here; copied from pyro/probot.py
-		if attr in self.__dict__["devData"]:
-			return self.__dict__["devData"][attr]
-		elif attr in self.__dict__["devDataFunc"]:
-			return self.__dict__["devDataFunc"][attr] # ._get("") will get list
-		elif attr in self.__dict__:
-			return self.__dict__[attr]
-		else:
-			try:
-				#print attr, self.__dict__["getItem"]
-				#return self.getItem(attr)
-				return "ok"
-			except AttributeError:
-				raise AttributeError, ("'<type %s>' object has no attribute '%s'" % (self.__class__.__name__, attr))
+		try:
+			return Robot.__getattr__(self, attr)
+		except:
+			if attr[:2] == "__":
+				raise AttributeError
+			else:
+				return self.getItem(attr)
 
 	def localize(self, x = 0, y = 0, th = 0):
 		pass

@@ -107,14 +107,17 @@ class GUI(Tkinter.Toplevel):
         elif request.count("jump"):
             request = request.replace(")", "")
             jump, pos = request.split("(")
-            x1,y1,x2,y2 = map(int, pos.split(","))
-            piece = self.world[x1-1][y1-1]
-            self.world[x1-1][y1-1] = ''
-            self.world[x2-1][y2-1] = piece
-            if x1 == x2:
-                self.world[x1-1][(y2+y1)/2 - 1] = ''
-            else:
-                self.world[(x1+x2)/2 - 1][y1-1] = ''
+            places = map(int, pos.split(","))
+            while len(places) >= 4:
+                x1, y1, x2, y2 = places[:4]
+                piece = self.world[x1-1][y1-1]
+                self.world[x1-1][y1-1] = ''
+                self.world[x2-1][y2-1] = piece
+                if x1 == x2:
+                    self.world[x1-1][(y2+y1)/2 - 1] = ''
+                else:
+                    self.world[(x1+x2)/2 - 1][y1-1] = ''
+                places = places[2:]
             retval = "ok"
             self.redraw()
         elif request == "done":

@@ -18,14 +18,14 @@ ALLOW_SELF_EVAL = 1 # self-evaluating terminals (reals, ints, floats, etc)
 ########## Functions for evaluator. Designed so that you can make your
 ########## own, too.
 
-def div_func(*operands):
-    """ For protected division. """
+def div_func(*operands): 
+    """ For protected division. type="regular" so no environment is passed."""
     if operands[1] == 0:
         return sys.maxint # not all python's have "infinity"
     else:
         return operands[0] / float(operands[1])
 def ifpos_func(operands, env):
-    """ Special form (lazy evaluation) for if-positive. """
+    """ Special form (lazy evaluation) for if-positive. Needs env. """
     test_val, if_val, else_val = operands
     test_result = test_val.eval(env)
     if (test_result):
@@ -33,7 +33,7 @@ def ifpos_func(operands, env):
     else:
         return else_val.eval(env)
 def and_func(operands, env):
-    """ Special form (lazy evaluation) for short-circuiting 'and' """
+    """ Special form (lazy evaluation) for short-circuiting 'and'. Needs env. """
     if len(operands) == 0:
         return 1
     else:
@@ -43,7 +43,7 @@ def and_func(operands, env):
         else:
             return and_func(operands[1:], env)
 def or_func(operands, env):
-    """ Special form (lazy evaluation) for short-circuiting 'or' """
+    """ Special form (lazy evaluation) for short-circuiting 'or'. Needs env. """
     if len(operands) == 0:
         return 0
     else:
@@ -57,7 +57,12 @@ def or_func(operands, env):
 
 class Operator:
     """ Class to hold operator information. """
-    def __init__(self, func, operands, type = "regular"):
+    def __init__(self, func, operands = 2, type = "regular"):
+        """ Constructor for Operator class. Takes a function. Optional args are:
+        - operands (number of operands); used for generating random function calls
+        - type ("regular" or "lazy"); determines if args are evaluated before being
+          passed to func.
+        """
         self.func = func
         self.operands = operands
         self.type = type
@@ -219,8 +224,9 @@ class GPGene(Gene):
     def display(self):
         print self.genotype
     def eval(self, additionalEnv = {}):
+        """ Takes a dictionary """
         share.env.update(additionalEnv)
-        return self.genotype.eval(share.env)
+        return self.genotype.eval(share.env) # takes an Environment
     def mutate(self, mutationRate):
         """
         Changes points based on mutationRate.
@@ -312,14 +318,15 @@ def parse(exp, objType = GPTree):
     return wrapObj(current_symbol)
 
 # A standard environment dictionary:
-env = {'+'  : Operator(operator.add, 2, "regular"),
-       '-'  : Operator(operator.sub, 2, "regular"),
-       '*'  : Operator(operator.mul, 2, "regular"),
-       '/'  : Operator(div_func,     2, "regular"),
-       'ifpos' : Operator(ifpos_func,3, "lazy"),
-       'and'   : Operator(and_func,  2, "lazy"),
-       'or'    : Operator(or_func,   2, "lazy"),
-       #'rnd'   : Operator(lambda: random.random(), 0, "regular"),
+env = {'+'  : Operator(operator.add), # defaults to operands=2
+       '-'  : Operator(operator.sub),
+       '*'  : Operator(operator.mul),
+       '/'  : Operator(div_func),
+       'ifpos' : Operator(ifpos_func, operands=3, type="lazy"), # explicitly list operands
+       'and'   : Operator(and_func,  type="lazy"),
+       'or'    : Operator(or_func,   type="lazy"),
+       # explicitly list operands:
+       #'rnd'   : Operator(lambda: random.random(), operands=0, type="regular"),
        #1: 1, 2:2, 3:3, 4:4,
        }
 
@@ -328,6 +335,11 @@ share.env = Environment(env)
 
 if __name__ == '__main__':
     share.env.update( {'i1':0, 'i2':0} )
+    outputs = [ 0, 1, 1, 0 ] # outputs for XOR
+    inputs = [ {'i1' : 0, 'i2' : 0},
+               {'i1' : 0, 'i2' : 1},
+               {'i1' : 1, 'i2' : 0},
+               {'i1' : 1, 'i2' : 1} ]
     class GP(GA):
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, bias =.6, 
@@ -336,11 +348,6 @@ if __name__ == '__main__':
                         verbose = 1)
     
         def fitnessFunction(self, pos):
-            outputs = [ 0, 1, 1, 0 ] # outputs for XOR
-            inputs = [ {'i1' : 0, 'i2' : 0},
-                       {'i1' : 0, 'i2' : 1},
-                       {'i1' : 1, 'i2' : 0},
-                       {'i1' : 1, 'i2' : 1} ]
             diff = 0
             for i in range(len(inputs)):
                 set, goal = inputs[i], outputs[i]
@@ -358,6 +365,8 @@ if __name__ == '__main__':
     gp = GP(50)
     gp.evolve()
     print " -----------------------------------------------------------------"
+    for ins in inputs:
+        print ins, gp.pop.bestMember.eval(ins)
     raw_input("Press enter to continue...")
     class PI_GP(GA):
         def __init__(self, cnt, **args):
