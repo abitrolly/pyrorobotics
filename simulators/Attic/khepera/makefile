@@ -18,7 +18,7 @@ CFLAGS = -I/usr/include \
          -O3
 
 INCDIRS=-I/usr/openwin/include
-LIBDIRS=-L/usr/X11R6/lib 
+LIBDIRS=-L/usr/X11R6/lib -L/usr/lib/
 LIBS=-lX11 -lXm -lXt -lm -lnsl
 #LIBDIRS=-L/usr/dt/lib -R/usr/dt/lib
 #LIBS=-lX11 -lXm -lXt -lm -lsocket -lnsl
