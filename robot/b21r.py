@@ -221,8 +221,8 @@ class B21RRobot(Robot):
 
     def update(self):
 	self.dev.UpdateReadings()
-	self.x = self.dev.getX()
-	self.y = self.dev.getY()
+	self.x = self.dev.getX() / 1000.0
+	self.y = self.dev.getY() / 1000.0
 	self.th = self.dev.getTh()
 	self.thr = self.dev.getThr()
 	self.senseData["laser"] = self.dev.getLaser()
@@ -237,12 +237,10 @@ class B21RRobot(Robot):
         return (stalls / self.stallHistorySize) > 0.5
 
     def getX(self, dev = 0):
-        #return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
-        return self.x / 1000.0
+        return self.mmToUnits(self.x, self.senses['robot']['units'](dev))
     
     def getY(self, dev = 0):
-        #return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
-        return self.y / 1000.0
+	return self.mmToUnits(self.y, self.senses['robot']['units'](dev))
     
     def getZ(self, dev = 0):
         return 0
@@ -274,6 +272,8 @@ class B21RRobot(Robot):
             return mm / 1000.0
         elif units == 'ROBOTS':
             return mm / 6000.0
+	else:
+	    raise TypeError, "unknown type: '%s'" % units
         
     def rawToUnits(self, dev, raw, name, units = None):
         if units == None:
@@ -285,7 +285,7 @@ class B21RRobot(Robot):
 	    maxvalue = 15.0
             meters = raw
         else:
-            raise 'InvalidType', "Type is invalid"
+            raise TypeError, "Type is invalid"
         if units == "ROBOTS":
             return meters / 0.6 # b21r is about 6000mm diameter
         elif units == "METERS":
@@ -299,7 +299,7 @@ class B21RRobot(Robot):
         elif units == "SCALED":
             return meters / maxvalue
         else:
-            raise 'InvalidType', "Units are set to invalid type"
+            raise TypeError, "Units are set to invalid type"
 
     def getSonarRangeAll(self, dev):
         vector = [0] * self.get('sonar', 'count')
@@ -308,7 +308,7 @@ class B21RRobot(Robot):
         return vector
 
     def getLaserRangeAll(self, dev):
-        vector = [0] * self.get('laser', 'count')
+	vector = [0] * self.get('laser', 'count')
         for i in range(self.get('laser', 'count')):
             vector[i] = self.getLaserRange(dev, i)
         return vector
@@ -347,8 +347,8 @@ class B21RRobot(Robot):
         self.adjustSpeed()
     
     def localize(self, x = 0.0, y = 0.0, th = 0.0):
-        self.x = x * 1000
-        self.y = y * 1000
+        self.x = x * 1000.0
+        self.y = y * 1000.0
         self.th = th
         self.thr = self.th * PIOVER180
     
