@@ -2,7 +2,17 @@ import Image, ImageChops, ImageDraw, ImageFont
 import sys, os, colorsys, math
 import random
 import Tkinter, ImageTk
+import string
 #from pyro.vision import *
+
+class ColorSet:
+    def __init__(self):
+        self.colors = [ 0, 90, 215, 190, 138, 172, 24, 116, 233]
+        self.colorCount = 0
+    def next(self):
+        retval = self.colors[self.colorCount]
+        self.colorCount = (self.colorCount + 1) % len(self.colors)
+        return retval
 
 class Trace:
     """
@@ -19,50 +29,57 @@ class Trace:
             path = os.environ['PYRO']
         else:
             raise "UnknownEnvVar", "PYRO"
-        self.fontFilename = path + "/tools/pilfonts/courR12.pil"
-        self.symbols = 0        # activates/deactivates symbol mode
+        self.fontFilename = path + "/tools/pilfonts/courR08.pil"
+        self.symbols = 1        # activates/deactivates symbol mode
         self.color = 1          # activates/deactivates color
         self.lineWidth = 30     # the length of lines in non-symbol mode
         # the resolution given for the bitmap in the world file
         self.resolution = 0.01
         self.interval = 1       # frequency datapoints should be displayed
-        self.symbolList = ['o','A','B','C','D','E','F','G','H','I','J','K','L','M',
-                           'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-                           '!','@','/','\\','#','$','%','&','-','+',
-                           '=','<', '>', '?', '{' ,'}','(', ')']
         self.robotPathData = self.readDataFile()
         im = Image.open(self.worldImageFilename)
         if not self.color:
             self.image = ImageChops.invert(im)
         self.image = im.convert("RGB")
-        self.convertXPositionData(self.image, self.robotPathData[0])
+        self.convertXPositionData(self.image, self.robotPathData)
         self.drawObj = ImageDraw.Draw(self.image)
+        self.textDict = {}
+        self.colorSet = ColorSet()
 
     def readDataFile(self):
         dataFile = open(self.pathDataFilename, "r")
         dataList = []
-        maxIndex = 1
-        for lines in dataFile:
-            # FIX: adding [0] to next line because it expects modelvector
-            dataList += [[float(x) for x in lines.split()] + [0]]
+        for line in dataFile:
+            elements = line.split()
+            if len(elements) < 3:
+                raise ValueError, "line contains less than 3 elements:" + line
+            elif len(elements) == 3:
+                dataList += [[float(x) for x in elements] + [" "]]
+            else:
+                dataList += [[float(x) for x in elements[:3]] + [string.join(elements[3:])]]
             dataList[-1][0] = dataList[-1][0]/self.resolution
             dataList[-1][1] = dataList[-1][1]/self.resolution
             dataList[-1][2] = (dataList[-1][2] + 90.0) * math.pi/180.0
-            if dataList[-1][3] > maxIndex:
-                maxIndex = dataList[-1][3] + 1
-        return (dataList, maxIndex)
+        return dataList
 
-    def drawSymbol(self, loc, angle, index, maxIndex):
+    def getColor(self, label):
+        if label in self.textDict:
+            return self.textDict[label]
+        else:
+            self.textDict[label] = self.colorSet.next()
+            return self.textDict[label]
+
+    def drawSymbol(self, loc, angle, label):
         pointList = []
+        colorNum = self.getColor(label)
         if self.symbols:
-            self.drawObj.text(loc, self.symbolList[index % maxIndex],
-                         font = ImageFont.load(self.fontFilename),
-                         fill = self.indexToColor(index, maxIndex))
+            self.drawObj.text(loc, label, font = ImageFont.load(self.fontFilename),
+                              fill = self.indexToColor(colorNum) )
         else:
             self.drawObj.line([(loc[0], loc[1]),
                           (loc[0] + self.lineWidth * math.sin(angle),
                            loc[1] + self.lineWidth * math.cos(angle))],
-                         fill = self.indexToColor(index, maxIndex))
+                         fill = self.indexToColor(colorNum))
             self.drawObj.ellipse( (loc[0] - 2, loc[1] - 2, loc[0] + 2, loc[1] + 2),
                              fill = (0, 0, 0))
 
@@ -94,9 +111,10 @@ class Trace:
     def getImage(self):
         return self.image
 
-    def indexToColor(self, index, maxIndex):
+    def indexToColor(self, index):
+        maxIndex = 256
         if self.color:
-            retColor = colorsys.hsv_to_rgb(float(index)/(maxIndex+1), 1.0, 1.0)
+            retColor = colorsys.hsv_to_rgb(float(index)/maxIndex, 1.0, 1.0)
         else:
             retColor = (0,0,0)
         return (int(retColor[0]*255), int(retColor[1]*255), int(retColor[2]*255))
@@ -114,11 +132,11 @@ class Trace:
 
     def output(self, outFile = "default.ppm"):
         iteration = 0
-        for x, y, angle, model in self.robotPathData[0]:
+        for x, y, angle, label in self.robotPathData:
             if iteration % self.interval == 0:
-                self.drawSymbol((x,y), angle, int(model), self.robotPathData[1])
+                self.drawSymbol((x,y), angle, label)
             iteration += 1
-        self.image.save(outFile)    
+        self.image.save(outFile)
 
     def run(self):
         for data in self.robotPathData[0]:

@@ -25,7 +25,7 @@ class ffBrain(Brain):
       #self.mode = "viewState"
       self.mode = "run"
       self.getRobot().noise = 0
-
+      self.theta = float(self.getEngine().args)
       # start and goal poses
       self.startPose = [4.44, 2.24, 87]
       #self.goalPose = [3.5, 3.129, 146]
@@ -39,7 +39,7 @@ class ffBrain(Brain):
       # The FF Network:
       #self.n = VisRobotNetwork()
       self.n = Network()
-      self.n.addThreeLayers(105,30,2)
+      self.n.addThreeLayers(140,15,2)
       self.n.initialize()
       self.n.loadWeightsFromFile("ff.wts")
       # The SOMs:
@@ -66,7 +66,9 @@ class ffBrain(Brain):
       self.getRobot().update()
       self.camera.update()
       self.done = 0
-      self.out = open("flow.dat", "w")
+      self.cameraOut = open("cameraState-%d.dat" % int(self.getEngine().args), "w")
+      self.sonarOut = open("sonarState-%d.dat" % int(self.getEngine().args), "w")
+      self.bothOut = open("bothState-%d.dat" % int(self.getEngine().args), "w")
       print "Initialized"
 
    def destroy(self):
@@ -89,7 +91,7 @@ class ffBrain(Brain):
       if self.done: return
       for x in myrange(0.5, 5, .5):
          for y in myrange(0.5, 5, .5):
-            self.truth.setPose(x, y, 180)
+            self.truth.setPose(x, y, self.theta)
             self.getRobot().update()
             self.camera.update()
             # 1. set current from camera, sonar data
@@ -102,6 +104,12 @@ class ffBrain(Brain):
                          makeVector(modelSonar.point.y, 15) + \
                          makeVector(modelCamera.point.x, 20) + \
                          makeVector(modelCamera.point.y, 15)
+            sonarStateNum = modelSonar.point.y * 20 + modelSonar.point.x
+            cameraStateNum = modelCamera.point.y * 20 + modelCamera.point.x
+            self.sonarOut.write("%f %f %f %d\n" % (x, y, self.theta, sonarStateNum))
+            self.cameraOut.write("%f %f %f %d\n" % (x, y, self.theta, cameraStateNum))
+            self.bothOut.write("%f %f %f %d/%d\n" % (x, y, self.theta, sonarStateNum, cameraStateNum))
+            continue
             # 2. load inputs into network
             self.n["input"].copyActivations( currVector + self.goalVector )
             # 3. propagate
@@ -123,7 +131,8 @@ class ffBrain(Brain):
             stopPose = self.truth.getPose()
             self.out.write("%f %f %f\n" % (startPose[0], startPose[1], stopPose[2]))
       self.done = 1
-      self.out.close()
+      self.cameraOut.close()
+      self.sonarOut.close()
 
 def INIT(engine):
    return ffBrain("FFBrain", engine)
