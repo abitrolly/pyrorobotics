@@ -32,6 +32,7 @@ class occupancyGrid(Tkinter.Tk):
       self.width = self.cols * self.colScale
       self.height = self.rows * self.rowScale
       self.infinity = 1e5000
+      self.bigButNotInfinity = self.rows * self.cols 
       self.value= [[self.infinity for col in range(self.cols)]
                    for row in range(self.rows)]
       self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height)
@@ -133,10 +134,10 @@ class occupancyGrid(Tkinter.Tk):
                                          fill=self.color(matrix[i][j], maxval),
                                          tag = "cell")
             if path and path[i][j] == 1:
-               self.canvas.create_oval(j * self.colScale,
-                                       i * self.rowScale,
-                                       (j + .25) * self.colScale,
+               self.canvas.create_oval((j + .25) * self.colScale,
                                        (i + .25) * self.rowScale,
+                                       (j + .75) * self.colScale,
+                                       (i + .75) * self.rowScale,
                                        width = 0,
                                        fill = "blue",
                                        tag = "cell")
@@ -157,6 +158,12 @@ class occupancyGrid(Tkinter.Tk):
          print
       print "-------------------------------------------------"
 
+   def tooTight(self, row, col, i, j):
+      """ Check to see if you aren't cutting a corner next to an obstacle."""
+      if self.value[row + i][col] == 1e5000 or \
+         self.value[row][col + j] == 1e5000:
+         return 1
+
    def planPath(self, start, goal, iterations):
       """
       Path planning algorithm is based on one given by Thrun in the
@@ -169,7 +176,7 @@ class occupancyGrid(Tkinter.Tk):
          that the cell is occupied and set its value for search to
          infinity.
       2. When iterating over all cells to update the search values, add
-         in the distance from the current cell to its neighbor.  Cels
+         in the distance from the current cell to its neighbor.  Cells
          which are horizontal or vertical from the current cell are
          considered to be a distance of 1, while cells which are diagonal
          from the current cell are considered to be a distance of 1.41.
@@ -189,10 +196,12 @@ class occupancyGrid(Tkinter.Tk):
                         if self.grid[row][col] > self.threshhold:
                            self.value[row][col] = self.infinity
                         else:
-                           if abs(i) == 1 and abs(j) == 1:
+                           if self.tooTight(row, col, i, j):
+                              d = self.bigButNotInfinity
+                           elif abs(i) == 1 and abs(j) == 1:
                               d = 1.41
                            else:
-                              d = 1
+                              d = 1.00
                            adj = self.value[row+i][col+j] + self.grid[row+i][col+j] + d
                            self.value[row][col] = min(self.value[row][col], adj)
       return self.getPath(startRow, startCol)
@@ -204,13 +213,14 @@ class occupancyGrid(Tkinter.Tk):
       steps = 0
       while not (self.value[row][col] == 0.0):
          path[row][col] = 1
-         min = self.infinity
+         min = self.bigButNotInfinity
          nextRow = -1
          nextCol = -1
-         for i in [-1,0,1]:
-            for j in [-1,0,1]:
-               if not (i == 0 and j == 0) and self.inRange(row+i, col+j):
-                  if self.value[row+i][col+j] < min:
+         for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+               if self.inRange(row+i, col+j):
+                  if self.value[row+i][col+j] < min and \
+                         not self.tooTight(row, col, i, j):
                      min = self.value[row+i][col+j]
                      nextRow = row+i
                      nextCol = col+j
