@@ -285,7 +285,7 @@ class Robot (Drawable):
     def _update(self):
         for service in self.getServices():
             if self.getService(service).active:
-                self.getService(service).update()
+                self.getService(service).updateService()
 
     def update(self):
         """
