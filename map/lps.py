@@ -86,7 +86,6 @@ class LPS(Tkinter.Tk):
             dist *= 1000
             xhit = cos(theta) * dist + offx
             yhit = sin(theta) * dist + offy
-            print i, xhit, yhit
             # transform point to GUI coordinates
             originMM = self.widthMM / 2.0, self.heightMM / 2.0
             xpos = int((originMM[0] + xhit) / self.colScaleMM)
