@@ -7,8 +7,9 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.6"
+version = "6.7"
 
+# better to use Numeric.add.reduce()
 def sum(a):
     """
     Sums elements in a sequence.
@@ -25,6 +26,7 @@ def randomArray(size, max):
     temp = RandomArray.random(size) * 2 * max
     return temp - max
 
+# better to use array.tolist()
 def toArray(thing):
     """
     Converts any sequence thing (such as a NumericArray) to a Python List.
@@ -158,8 +160,7 @@ class Layer:
             raise LayerError, ('Layer size changed to zero.', newsize)
         minSize = min(self.size, newsize)
         bias = randomArray(newsize, self.maxRandom)
-        for i in range(minSize):
-            bias[i] = self.bias[i]
+        Numeric.put(bias, Numeric.arange(minSize), self.bias)
         self.bias = bias
         self.size = newsize
         self.displayWidth = newsize
@@ -178,7 +179,7 @@ class Layer:
         """
         Returns Total Sum Squared Error.
         """
-        return sum(map(lambda (n): n ** 2, self.error))
+        return Numeric.add.reduce(self.error ** 2)
     def RMSError(self):
         """
         Returns Root Mean Squared Error.
@@ -189,11 +190,7 @@ class Layer:
         """
         Returns the number of nodes within tolerance of the target.
         """
-        mysum = 0
-        for i in range( self.size ):
-            if abs(self.target[i] - self.activation[i]) < tolerance:
-                mysum += 1
-        return mysum
+        return Numeric.add.reduce(Numeric.fabs(self.target - self.activation) < tolerance)
     def getWinner(self, type = 'activation'):
         """
         Returns the winner of the type specified {'activation' or
@@ -203,22 +200,18 @@ class Layer:
         maxpos = -1
         ttlvalue = 0
         if type == 'activation':
-            for i in range(self.size):
-                ttlvalue += self.activation[i]
-                if self.activation[i] > maxvalue:
-                    maxvalue = self.activation[i]
-                    maxpos = i
+            ttlvalue = Numeric.add.reduce(self.activation)
+            maxpos = Numeric.argmax(self.activation)
+            maxvalue = self.activation[maxpos]
         elif type == 'target':
             # note that backprop() resets self.targetSet flag
             if self.targetSet == 0:
                 raise LayerError, \
                       ('getWinner() called with \'target\' but target has not been set.', \
                        self.targetSet)
-            for i in range(self.size):
-                ttlvalue += self.target[i]
-                if self.target[i] > maxvalue:
-                    maxvalue = self.target[i]
-                    maxpos = i
+            ttlvalue = Numeric.add.reduce(self.target)
+            maxpos = Numeric.argmax(self.target)
+            maxvalue = self.target[maxpos]
         else:
             raise LayerError, ('getWinner() called with unknown layer attribute.', \
                                type)
@@ -297,11 +290,16 @@ class Layer:
             print "    ", ; displayArray('bed', self.bed)
 
     # activation methods
+    def getActivationsList(self):
+        """
+        Returns node activations in list form.
+        """
+        return self.activation.tolist()
     def getActivations(self):
         """
-        Returns node activations in array form.
+        Returns activations in array form.
         """
-        return toArray(self.activation)
+        return self.activation
     def setActivations(self, value):
         """
         Sets all activations to the value of the argument.
@@ -312,70 +310,64 @@ class Layer:
                    self.activationSet)
         if value < 0 or value > 1:
             print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
-        for i in range(self.size):
-            self.activation[i] = value
+        Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
-    def copyActivations(self, arr, symmetric = 0):
+    def copyActivations(self, arr):
         """
         Copies activations from the argument array into
-        self.activations.
+        self.activation.
         """
-        if not len(arr) == self.size:
+        array = Numeric.array(arr)
+        if not len(array) == self.size:
             raise LayerError, \
                   ('Mismatched activation size and layer size in call to copyActivations()', \
-                   (len(arr), self.size))
+                   (len(array), self.size))
         if not self.activationSet == 0:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
-                   self.activationSet)
-        if symmetric:
-            for i in range(self.size):
-                self.activation[i] = arr[i] - 0.5
-        else:
-            for i in range(self.size):
-                if arr[i] < 0 or arr[i] > 1:
-                    print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, arr[i]) 
-                self.activation[i] = arr[i]
+                   self.activationSet) 
+        if Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1):
+            print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, array) 
+        self.activation = array
         self.activationSet = 1
 
     # target methods
-    def getTarget(self):
+    def getTargetsList(self):
         """
-        Returns self.target.
+        Returns targets in list form.
         """
-        return toArray(self.target)
+        return self.target.tolist()
+    def getTargets(self):
+        """
+        Return targets in array form.
+        """
+        return self.target
     def setTargets(self, value):
         """
         Sets all targets the the value of the argument.
         """
-        if value > 1 or value < 0:
-            raise LayerError, ('Targets for this layer are out of range.', (self.name, value))
         if not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
-        for i in range(self.size):
-            self.target[i] = value
+        if value > 1 or value < 0:
+            raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
+        Numeric.put(self.target, Numeric.arange(len(self.target)), value)
         self.targetSet = 1
-    def copyTargets(self, arr, symmetric = 0):
+    def copyTargets(self, arr):
         """
         Copies the targets of the argument array into the self.target attribute.
         """
-
-        if not len(arr) == self.size:
+        array = Numeric.array(arr)
+        if not len(array) == self.size:
             raise LayerError, \
                   ('Mismatched target size and layer size in call to copyTargets()', \
-                   (len(arr), self.size))
+                   (len(array), self.size))
         if not self.targetSet == 0:
             print 'Warning! Targets have already been set and no intervening backprop() was called.', \
                   (self.name, self.targetSet)
-        if symmetric:
-            for i in range(self.size):
-                self.target[i] = arr[i] - 0.5
-        else:
-            for i in range(self.size):
-                if arr[i] < 0 or arr[i] > 1:
-                    raise LayerError, ('Targets for this layer are out of range.', (self.name, arr[i]))
-                self.target[i] = arr[i]
+        if Numeric.add.reduce(array < 0) or Numeric.add.reduce(array > 1):
+            raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
+        self.target = array
         self.targetSet = 1
 
     # flag methods
@@ -593,7 +585,6 @@ class Network:
         self.verbosity = verbosity
         self.stopPercent = 1.0
         self.sigmoid_prime_offset = 0.1
-        self.symmetric = 0
         self.tolerance = 0.4
         self.interactive = 0
         self.epsilon = 0.1
@@ -762,11 +753,6 @@ class Network:
         should accompany sweep() or step().
         """
         self.interactive = value
-    def setSymmetric(self, value):
-        """
-        Sets symmetric to value.
-        """
-        self.symmetric = value
     def setTolerance(self, value):
         """
         Sets tolerance to value. This specifies how close acceptable
@@ -977,16 +963,10 @@ class Network:
         length = min(len(vector1), len(vector2))
         if self.verbosity > 1:
             print "Copying Vector: ", vector2[start:start+length]
-        if self.symmetric:
-            p = 0
-            for i in range(start, start + length):
-                vector1[p] = vector2[i] - 0.5
-                p += 1
-        else:
-            p = 0
-            for i in range(start, start + length):
-                vector1[p] = vector2[i]
-                p += 1
+        p = 0
+        for i in range(start, start + length):
+            vector1[p] = vector2[i]
+            p += 1
     def copyActivations(self, layer, vec, start = 0):
         """
         Copies activations in vec to the specified layer, replacing
@@ -995,7 +975,7 @@ class Network:
         vector = self.replacePatterns(vec)
         if self.verbosity > 1:
             print "Copying Activations: ", vector[start:start+layer.size]
-        layer.copyActivations(vector[start:start+layer.size], self.symmetric)
+        layer.copyActivations(vector[start:start+layer.size])
     def copyTargets(self, layer, vec, start = 0):
         """
         Copies targets in vec to specified layer, replacing patterns
@@ -1004,7 +984,7 @@ class Network:
         vector = self.replacePatterns(vec)
         if self.verbosity > 1:
             print "Copying Target: ", vector[start:start+layer.size]
-        layer.copyTargets(vector[start:start+layer.size], self.symmetric)
+        layer.copyTargets(vector[start:start+layer.size])
     def loadInput(self, pos, start = 0):
         """
         Loads input at pos. Used with self.setInputs().
@@ -1156,7 +1136,7 @@ class Network:
         return self.getLayer(layerName).getCorrect(self.tolerance)
     def RMSError(self):
         """
-        Returns Root Mean Squared Error for all layers in the network.
+        Returns Root Mean Squared Error for all output layers in the network.
         """
         tss = 0.0
         size = 0
@@ -1320,15 +1300,15 @@ class Network:
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                for i in range(layer.size):
-                    layer.netinput[i] = layer.bias[i]
+                layer.netinput = layer.bias[:]
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
                     if connection.toLayer.name == layer.name:
-                        self.prop_process(connection)
-                    for i in range(layer.size):
-                        layer.activation[i] = self.activationFunction(layer.netinput[i])
+                        connection.toLayer.netinput = connection.toLayer.netinput + \
+                                                      Numeric.matrixmultiply(connection.fromLayer.activation,\
+                                                                             connection.weight) # propagate!
+                layer.activation = self.activationFunction(layer.netinput)
         for layer in propagateLayers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1341,57 +1321,27 @@ class Network:
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                for i in range(layer.size):
-                    layer.netinput[i] = layer.bias[i]
+                layer.netinput = layer.bias[:]
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
                 for connection in self.connections:
                     if connection.toLayer.name == layer.name:
-                        self.prop_process(connection) # propagate!
+                        connection.toLayer.netinput = connection.toLayer.netinput + \
+                                                      Numeric.matrixmultiply(connection.fromLayer.activation,\
+                                                                             connection.weight) # propagate!
                 if layer.type != 'Input':
-                    for i in range(layer.size):
-                        layer.activation[i] = self.activationFunction(layer.netinput[i])
+                    layer.activation = self.activationFunction(layer.netinput)
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
         self.count += 1 # counts number of times propagate() is called
-    def prop_process(self, connect):
-        """
-        Calculates net input for each node.
-        """
-        if self.verbosity > 5:
-            print "Prop_process from " + connect.fromLayer.name + " to " + \
-                  connect.toLayer.name
-        for j in range(connect.toLayer.size):
-            if self.verbosity > 6: print "netinput@", connect.toLayer.name, \
-               "starts at", connect.toLayer.netinput[j]
-            for i in range(connect.fromLayer.size):
-                if self.verbosity > 6: print "netinput@", \
-                   connect.toLayer.name, "[", j, "] = ", \
-                   connect.fromLayer.activation[i], "*", connect.weight[i][j]
-                connect.toLayer.netinput[j] += (connect.fromLayer.activation[i] * connect.weight[i][j])
-                if self.verbosity > 6: print "netinput@", \
-                   connect.toLayer.name, "[", j, "] = ", \
-                   connect.toLayer.netinput[j]
     def activationFunction(self, x):
         """
         Determines the activation.
         """
-        if (x > 15.0):
-            retval = 1.0
-        elif (x < -15.0):
-            retval = 0.0
-        else:
-            try:
-                retval = (1.0 / (1.0 + math.exp(-x)))
-            except OverflowError:
-                retval = 0.0
-        if self.symmetric:
-            return retval - 0.5
-        else:
-            return retval
-
+        return (1.0 / (1.0 + Numeric.exp(-x)))
+        
     # backpropagation
     def backprop(self):
         """
@@ -1409,18 +1359,15 @@ class Network:
         """
         for connection in self.connections:
             if not connection.frozen:
-                for j in range(connection.toLayer.size):
-                    if connection.fromLayer.active:
-                        for i in range(connection.fromLayer.size):
-                            connection.dweight[i][j] = connection.getEpsilon() * connection.wed[i][j] + \
-                                                    self.momentum * connection.dweight[i][j]
-                            connection.weight[i][j] += connection.dweight[i][j]
-                            connection.wed[i][j] = 0.0
-                        toLayer = connection.toLayer
-                        toLayer.dbias[j] = toLayer.bepsilon * toLayer.bed[j] + \
-                                           self.momentum * toLayer.dbias[j]
-                        toLayer.bias[j] += toLayer.dbias[j]
-                        toLayer.bed[j] = 0.0
+                if connection.fromLayer.active:
+                    connection.dweight = connection.epsilon * connection.wed + self.momentum * connection.dweight
+                    connection.weight = connection.weight + connection.dweight
+                    connection.wed = connection.wed * 0.0
+                    toLayer = connection.toLayer
+                    toLayer.dbias = toLayer.bepsilon * toLayer.bed + \
+                                    self.momentum * toLayer.dbias
+                    toLayer.bias = toLayer.bias + toLayer.dbias
+                    toLayer.bed = toLayer.bed * 0.0
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
@@ -1433,12 +1380,10 @@ class Network:
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
-                    for t in range(layer.size) :
-                        layer.error[t] = self.diff(layer.target[t] - layer.activation[t])
-                        if (math.fabs(layer.error[t]) < self.tolerance):
-                            correct += 1
-                        totalCount += 1
-                        retval += (layer.error[t] ** 2)
+                    layer.error = layer.target - layer.activation
+                    totalCount += layer.size
+                    retval += Numeric.add.reduce(layer.error ** 2)
+                    correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
                 elif (layer.type == 'Hidden'):
                     for i in range(layer.size):
                         layer.error[i] = 0.0
@@ -1453,12 +1398,9 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.toLayer.active:
-                for j in range(connect.toLayer.size):
-                    connect.toLayer.delta[j] = \
-                      connect.toLayer.error[j] * self.ACTPRIME(connect.toLayer.activation[j])
-                    for i in range(connect.fromLayer.size):
-                        connect.fromLayer.error[i] += (connect.toLayer.delta[j] * \
-                                                       connect.weight[i][j])
+                connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
+                connect.fromLayer.error = connect.fromLayer.error + \
+                                          Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
         return (error, correct, total)
     def compute_wed(self):
         """
@@ -1467,19 +1409,13 @@ class Network:
         """
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            for j in range(connect.toLayer.size):
-                for i in range(connect.fromLayer.size):
-                    connect.wed[i][j] += (connect.toLayer.delta[j] * \
-                                          connect.fromLayer.activation[i])
-                connect.toLayer.bed[j] += connect.toLayer.delta[j]
+            connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
+            connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
     def ACTPRIME(self, act):
         """
         Used in compute_error.
         """
-        if self.symmetric:
-            return ((0.25 - act * act) + self.sigmoid_prime_offset)
-        else:
-            return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
+        return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
     def diff(self, value):
         """
         Returns value to within 0.001. Then returns 0.0.
@@ -2128,7 +2064,7 @@ if __name__ == '__main__':
         return ans == 'y'
 
     n = Network()
-    #n.setSeed(114366.64)
+    n.setSeed(114366.64)
     n.addThreeLayers(2, 2, 1)
     n.setInputs([[0.0, 0.0],
                  [0.0, 1.0],
@@ -2154,11 +2090,11 @@ if __name__ == '__main__':
         net.loadInput(0)
         net.resetFlags()
         print "one is: ",
-        print net["input"].activation
+        print net["input"].getActivations()
         net.loadInput(1)
         net.resetFlags()
         print "two is: ",
-        print net["input"].activation
+        print net["input"].getActivations()
         net.addPattern("1", 1)
         net.addPattern("0", 0)
         print "Setting patterns to 0 and 1..."
@@ -2169,10 +2105,10 @@ if __name__ == '__main__':
         net.loadInput(0)
         net.resetFlags()
         print "0 1 0 is: ",
-        print net["input"].activation
+        print net["input"].getActivations()
         net.loadInput(1)
         print "1 1 1 is: ",
-        print net["input"].activation
+        print net["input"].getActivations()
         print "Reverse look up of .2, .3, .2 is ", net.getWord([.2, .3, .2])
         print "Reverse look up of .8, .7, .5 is ", net.getWord([.8, .7, .5])
         print "Reverse look up of .8, .9, 1 is ", net.getWord([.8, .9, 1])
@@ -2238,7 +2174,7 @@ if __name__ == '__main__':
         print 'Input Activations:', n.getLayer('input').getActivations()
         print "Setting target to .5"
         n.getLayer("output").copyTargets([.5])
-        print 'Output Targets:', n.getLayer('output').getTarget()
+        print 'Output Targets:', n.getLayer('output').getTargets()
         n.compute_error()
         print 'Output TSS Error:', n.TSSError("output")
         print 'Output Correct:', n.getCorrect('output')
@@ -2262,26 +2198,26 @@ if __name__ == '__main__':
         n.train()
         if ask("Do you want to test prop_from() method?"):
             n.prop_from([n.getLayer('input')])
-            print "Output activations: ", n.getLayer('output').activation
-            print "Hidden activations: ", n.getLayer('hidden').activation
+            print "Output activations: ", n.getLayer('output').getActivations()
+            print "Hidden activations: ", n.getLayer('hidden').getActivations()
             print "Now propagating directly from hidden layer..."
             n.prop_from([n.getLayer('hidden')])
-            print "Output activations (should not have changed): ",  n.getLayer('output').activation
-            print "Hidden activations (should not have changed): ", n.getLayer('hidden').activation
+            print "Output activations (should not have changed): ",  n.getLayer('output').getActivations()
+            print "Hidden activations (should not have changed): ", n.getLayer('hidden').getActivations()
             print "Now setting hidden activations..."
-            n.getLayer('hidden').activation = [0.0, 0.0]
-            print "Output activations: ", n.getLayer('output').activation
-            print "Hidden activations: ", n.getLayer('hidden').activation
+            n.getLayer('hidden').setActivations([0.0, 0.0])
+            print "Output activations: ", n.getLayer('output').getActivations()
+            print "Hidden activations: ", n.getLayer('hidden').getActivations()
             print "Now propagating directly from hidden layer..."
             n.prop_from([n.getLayer('hidden')])
-            print "Output activations: ",  n.getLayer('output').activation
-            print "Hidden activations: ", n.getLayer('hidden').activation
+            print "Output activations: ",  n.getLayer('output').getActivations()
+            print "Hidden activations: ", n.getLayer('hidden').getActivations()
 
             
     if ask("Do you want to test an AND network?"):
         print "Creating and running and network..."
         n = Network()
-        #n.setSeed(114366.64)
+        n.setSeed(114366.64)
         n.add(Layer('input',2)) 
         n.add(Layer('output',1)) 
         n.connect('input','output') 
@@ -2298,7 +2234,7 @@ if __name__ == '__main__':
         print "1,2,3 and 1,3,2 because after a 1 either a 2 or 3 may"
         print "follow."
         n = SRN()
-        #n.setSeed(114366.64)
+        n.setSeed(114366.64)
         n.addSRNLayers(3,2,3)
         n.predict('input','output')
         seq1 = [1,0,0, 0,1,0, 0,0,1]
@@ -2315,12 +2251,14 @@ if __name__ == '__main__':
         n.setResetLimit(0)
         #n.setInteractive(1)
         #n.verbosity = 3
+        temp = time.time()
         n.train()
-
+        timer = time.time() - temp
+        print "Time...", timer
     if ask("Do you want to auto-associate on 3 bit binary patterns?"):
         print "Auto-associate .........................................."
         n = Network()
-        #n.setSeed(114366.64)
+        n.setSeed(114366.64)
         n.addThreeLayers(3,2,3)
         n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
         n.associate('input','output')
@@ -2338,7 +2276,7 @@ if __name__ == '__main__':
         print "Raam ...................................................."
         # create network:
         raam = SRN()
-        #raam.setSeed(114366.64)
+        raam.setSeed(114366.64)
         raam.setPatterns({"john"  : [0, 0, 0, 1],
                           "likes" : [0, 0, 1, 0],
                           "mary"  : [0, 1, 0, 0],
@@ -2367,7 +2305,10 @@ if __name__ == '__main__':
         raam.setResetEpoch(5000)
         raam.setResetLimit(0)
         # train:
+        temp = time.time()
         raam.train()
+        timer = time.time() - temp
+        print "Time...", timer
         raam.setLearning(0)
         raam.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
@@ -2403,7 +2344,7 @@ if __name__ == '__main__':
     if ask("Do you want to train a network to both predict and auto-associate?"):
         print "SRN and auto-associate ..................................."
         n = SRN()
-        #n.setSeed(114366.64)
+        n.setSeed(114366.64)
         n.addSRNLayers(3,3,3)
         n.add(Layer('assocInput',3))
         n.connect('hidden', 'assocInput')
@@ -2420,7 +2361,10 @@ if __name__ == '__main__':
         n.setResetEpoch(2000)
         n.setResetLimit(0)
         n.setOrderedInputs(1)
+        temp = time.time()
         n.train()
+        timer = time.time() - temp
+        print "Time...", timer
         n.setLearning(0)
         n.setInteractive(1)
         if ask("Do you want to see (and save) the previous network?"):
