@@ -302,5 +302,8 @@ class Robot (Drawable):
 	        console.log(console.FATAL,'control has NO update')
         console.log(console.INFO,'robot sanity check completed')
 
-    def start(self, item):
-        console.log(console.ERROR, "need to override START in robot")
+    def startService(self, item):
+        console.log(console.ERROR, "need to override startService in robot")
+
+    def stopService(self, item):
+        console.log(console.ERROR, "need to override stopService in robot")
