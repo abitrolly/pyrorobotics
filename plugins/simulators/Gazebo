@@ -17,4 +17,4 @@ else
     fi
 fi
 gazebo $world &
-player -g default /usr/local/share/player/config/gazebo.cfg &
+player -g default $world.cfg &

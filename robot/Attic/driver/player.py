@@ -909,7 +909,9 @@ class player:
 	    if yspeed is None: yspeed = self.position[index][1][1]
 	    if yawspeed is None: yawspeed = self.position[index][1][2]
 	    # send command
-	    header = pack_header(command, 'position', index, size=24)
+# Player 1.5
+	    header = pack_header(command, 'position', index, size=26) #24
+# Player 1.5
 	    payload = pack_position_command(xpos, ypos, yawpos,
 	    				    xspeed, yspeed, yawspeed)
 	    self.__nsend(header+payload)
@@ -936,7 +938,9 @@ class player:
 	    if ypos is None: ypos = self.position[index][0][1]
 	    if yawpos is None: yawpos = self.position[index][0][2]
 	    # send command
-	    header = pack_header(command, 'position', index, size=24)
+# Player 1.5
+	    header = pack_header(command, 'position', index, size=26) # 24
+# Player 1.5
 	    payload = pack_position_command(xpos, ypos, yawpos,
 	    				    xspeed, yspeed, yawspeed)
 	    self.__nsend(header+payload)

@@ -34,11 +34,11 @@ class predict(Brain):
       # left and right and front:
       left = self.getRobot().get('range', 'value', 'front-left', 'minval')
       right = self.getRobot().get('range', 'value', 'front-right', 'minval')
-      if left < .5 or right < .5:
+      if left < 1.5 or right < 1.5:
          target_trans = 0.5
-      elif left < 0.8:
+      elif left < 1.8:
          target_trans = 0.75
-      elif right < 0.8:
+      elif right < 1.8:
          target_trans = 0.75
       return [target_trans, target_rotate]
 

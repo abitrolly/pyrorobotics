@@ -3,7 +3,6 @@ ppmessage.py defines constants and utility functions for data packet
 """
 import struct
 
-
 #------------------------------------------------------------------------------
 # Constants
 #------------------------------------------------------------------------------
@@ -310,7 +309,7 @@ def pack_position_command(xpos, ypos, yawpos, xspeed, yspeed, yawspeed,
     encode position and speed command into a binary string.
     """
 # Player 1.5                   
-    return struct.pack('!iiiiiiii',	# format string
+    return struct.pack('!iiiiiiBB',	# format string
     		       xpos,		# X position
     		       ypos,		# Y position
     		       yawpos,		# heading
@@ -318,7 +317,8 @@ def pack_position_command(xpos, ypos, yawpos, xspeed, yspeed, yawspeed,
 		       yspeed,		# Y speed
 		       yawspeed,	# turnrate
                        state,           # motor state off/locked
-                       commandtype)     # 0 = velocity, 1 = position
+                       commandtype,     # 0 = velocity, 1 = position
+                       )
 # Player 1.5                   
 
 
@@ -446,16 +446,6 @@ def unpack_sonar_geom(payload):
     """
     decode sonar get-geometry message.
     """
-
-    print "data:", len(payload)
-    for i in range(1024):
-        try:
-            struct.unpack('!BH%dh' % i, payload)
-            print i, "worked!"
-            break
-        except:
-            pass
-
 ## Player 1.5
     try:
         data = struct.unpack('!BH192h', payload)
@@ -486,6 +476,15 @@ def unpack_laser_data(payload):
     """
     decode laser device data.
     """
+    print "unpack laser data: len =", len(payload)
+    for i in range(1024):
+        try:
+            data = struct.unpack('!hhHH401H401B', payload)
+        except:
+            continue
+        print "decode laser device: %d worked!" % i
+        break
+            
     try:
         data = struct.unpack('!hhHH401H401B', payload)
     except:
