@@ -28,14 +28,14 @@ def ndim(n, *args):
          A.append( ndim(*args) ) 
      return A 
 
-def randomArray(size, max):
+def randomArray(size, bound):
     """
     Returns an array initialized to random values between -max and max.
     """
     if type(size) == type(1):
         size = (size,)
-    temp = Numeric.array( ndim(*size) ) * 2.0 * max
-    return temp - max
+    temp = Numeric.array( ndim(*size) ) * (2.0 * bound)
+    return temp - bound
 
 # better to use array.tolist() when you know that it has a tolist()
 def toArray(thing):
