@@ -174,7 +174,18 @@ class PyroImage:
       for v in range(len(vector)):
          self.data[v] = vector[v]
 
-   def filter(self, r, g, b, threshold):
+   def brightness(self, cutoff):
+      grayImage = self.getGrayScale()
+      bitmap = Bitmap(grayImage.width, grayImage.height)
+      for i in range( bitmap.width):
+         for j in range( bitmap.height):
+            if grayImage.get(i, j) > cutoff:
+               bitmap.set(i, j, 1)
+            else:
+               bitmap.set(i, j, 0)
+      return bitmap
+
+   def filter(self, r, g, b, threshold=0):
       bitmap = Bitmap(self.width, self.height)
       for i in range( bitmap.width):
          for j in range( bitmap.height):
@@ -529,6 +540,19 @@ class Blobdata:
 if __name__ == '__main__':
    from os import getenv
    import sys
+
+   from pyro.camera.fake import FakeCamera
+   camera = FakeCamera()
+   camera.update()
+   camera.update()
+   for x in range(10):
+      camera.update()
+      camera.motionMap.display()
+      print "avg color of motion:", camera.motion.avgColor(camera)
+   print "Done!"
+
+   exit
+   
    bitmap = Bitmap(20, 15)
    bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
                  1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
