@@ -61,6 +61,7 @@ class AriaRobot(Robot):
         self.senses['robot']['x'] = self.getX
         self.senses['robot']['y'] = self.getY
         self.senses['robot']['z'] = self.getZ
+        self.senses['robot']['radius'] = lambda self: 250.0 # in MM
         self.senses['robot']['th'] = self.getTh # in degrees
         self.senses['robot']['thr'] = self.getThr # in radians
 	self.senses['robot']['type'] = lambda dev: dev.getRobotType()
