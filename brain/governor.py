@@ -329,11 +329,10 @@ class GovernorSRN(Governor, SRN):
         SRN.setSequenceType(self, value) 
         
     def setLearning(self, value):
-        if self.governing:
-            self.trainingNetwork.learning = value
-            self.ravq.setAddModels(value)
-        else:
-            self.learning = value
+        self.governing = value
+        self.trainingNetwork.learning = value
+        self.ravq.setAddModels(value)
+        self.learning = value
 
 if __name__ == '__main__':
     import os, gzip, sys
