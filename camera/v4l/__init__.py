@@ -22,7 +22,8 @@ class V4LGrabber(Camera):
    to instanciate another causes problems with device busy on the video device.
    I'm not sure why.
    """
-   def __init__(self, width, height, depth = 3, device = '/dev/video0'):
+   def __init__(self, width, height, depth = 3,
+                device = '/dev/video0', channel = 1):
       """
       Currently, if depth is any number other than 1 or 3, an exception
       will be raised.  I plan on implementing various color depths soon.
@@ -30,32 +31,28 @@ class V4LGrabber(Camera):
       Device should be the name of the capture device in the /dev directory.
       This is highly machine- and configuration-dependent, so make sure you
       know what works on your system
+      
+      Channel -  0: television; 1: composite; 2: S-Video
       """
       if depth == 1:
          self.color = 0
       elif depth == 3:
          self.color = 1
       else:
-         raise "Color depth settings other than one or three not yet supported"
-
+         raise ValueError, "unsupported color depth: %d" % self.depth
       if width < 48:
-         raise ValueError, "Width must be greater than 48."
+         raise ValueError, "width must be greater than 48"
       if height < 48:
-         raise ValueError, "Height must be greater than 48."
-
-      self.width = width
-      self.height = height
-      
+         raise ValueError, "height must be greater than 48"
       self.device = device
-      #handle is the file handle for device
-      #it needs to get passed back to refresh
-      #and free
       self.handle=None
       self.cbuf=None
-      print device, width, height, self.color
-      self.size, self.depth, self.handle, self.cbuf = \
-                 grab_image(device, width, height, self.color)
-      self.depth /= 8
+      try:
+         self.size, self.depth, self.handle, self.cbuf = \
+                    grab_image(device, width, height, self.color, channel)
+      except:
+         print "v4l: grab_image failed!"
+      Camera.__init__(self, width, height, depth)
       self.data = CBuffer(self.cbuf)
 
    def _update(self):
@@ -63,7 +60,10 @@ class V4LGrabber(Camera):
       Since data is mmaped to the capture card, all we have to do is call
       refresh.
       """
-      refresh_image(self.handle, self.width, self.height, self.depth*8)
+      try:
+         refresh_image(self.handle, self.width, self.height, self.depth*8)
+      except:
+         print "v4l: refresh_image failed"
 
    def __del__(self):
       """
@@ -104,7 +104,6 @@ class V4LGrabber(Camera):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                  (self.width, self.height),
                                                  self.cbuf, 'raw', "BGR")
-   
 class CBuffer:
    """
    A private buffer class to transmute the CBuffer we get in V4LGrabber.data
@@ -123,6 +122,18 @@ class CBuffer:
                             self.data[key.start:stop])
       else:
          return struct.unpack("B", self.data[key])[0]
+
+   def __setitem__(self, key, value):
+      if isinstance(key, types.SliceType):
+         if key.stop > len(self):
+            stop = len(self)
+         else:
+            stop = key.stop
+         return struct.unpack("B" * (stop - key.start),
+                            self.data[key.start:stop])
+      else:
+         # FIX: can't do this from Python, need C function
+         self.data[key] = struct.pack("B", value)
 
    def __len__(self):
       return len(self.data)
