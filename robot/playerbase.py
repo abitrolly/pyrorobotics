@@ -130,13 +130,13 @@ class PlayerBase(Robot):
 
     def sendMessage(self, message):
         if self.dev.comms == {}:
-            print "Need to start 'comms' interface in robot"
+            print "Need to startService 'comms' interface in robot"
             return
         self.dev.send_message(message)
 
     def getMessages(self):
         if self.dev.comms == {}:
-            print "Need to start 'comms' interface in robot"
+            print "Need to startService 'comms' interface in robot"
             return
         if self.dev.comms[0] != '':
             self.update()
@@ -145,8 +145,11 @@ class PlayerBase(Robot):
         self.messages = []
         return tmp
 
-    def start(self, item):
+    def startService(self, item):
         self.dev.start(item)
+
+    def stopService(self, item):
+        self.dev.stop(item)
     
 if __name__ == '__main__':
     myrobot = PlayerBase()

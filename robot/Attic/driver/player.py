@@ -276,6 +276,7 @@ class player:
 	sent = 0
 	while sent < len(data):
 	    sent += self.__socket.send(data[sent:])
+        #print "sent:", sent
 
 
     def __nrecv(self, size):
@@ -1466,6 +1467,7 @@ class player:
 	    # send request
 	    header = pack_header(request, 'comms', size=1024)
 	    payload = pack_comms_command(message)
+            #print "header+payload=", header+payload
 	    self.__nsend(header+payload)
 	    # NO RESPONSE
 	    if self.debug: print '<sent the message>'

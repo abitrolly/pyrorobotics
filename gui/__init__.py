@@ -56,7 +56,7 @@ class gui(Drawable):
       retval = retval.replace("\r", "")
       retval = retval.strip()
       if retval == "run":
-         print "Running in thread..."
+         self.inform("Running in thread...")
          self.engine.pleaseRun() # pass in callback, or not
          # self.engine.pleaseRun(self.redraw) # pass in callback
       elif retval == "runtillquit":
@@ -79,9 +79,9 @@ class gui(Drawable):
       elif retval == "update":
          if self.engine.robot != 0:
             self.engine.robot.update()
-            print "Done!"
+            self.inform("Done!")
          else:
-            print "Define a robot first!"
+            self.inform("Define a robot first!")
       elif retval == "about":
          about()
       elif retval == "reload":
@@ -97,7 +97,7 @@ class gui(Drawable):
          self.loadSim(self.engine.worldfile)
       elif retval == "stop":
          self.engine.pleaseStop()
-         print "Stopped!"
+         self.inform("Stopped!")
       elif retval == "quit" or retval == "exit" or retval == "bye":
          self.done = 1
          return 1
@@ -111,28 +111,28 @@ class gui(Drawable):
             else:
                editor = "emacs"
             os.system("%s %s" % (editor, self.engine.brainfile))
-            print "Reloading..."
+            self.inform("Reloading...")
             self.engine.reset()
          else:
-            print "Need to load a brain first"
+            self.inform("Need to load a brain first!")
       else:
          # elif len(retval) > 0 and retval[0] == "!":
-         exp1 = "print " + string.strip(retval)
+         exp1 = "self.inform(" + string.strip(retval) + ")"
          exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
          engine = self.engine
          gui = self
-         print "> " + string.strip(retval) + " =>",
+         self.inform(">>> " + string.strip(retval))
          try:
             exec exp1
          except:
             try:
                exec exp2
-               print ''
+               #print ''
             except:
                import sys
-               print sys.exc_value
+               self.inform(sys.exc_value)
          #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0
 
@@ -260,7 +260,11 @@ class gui(Drawable):
 
    def inform(self, message):
       try:
-         self.status.set(message[0:50])
+         #self.status.set(message[0:50])
+         self.status.config(state='normal')
+         self.status.insert('end', "%s\n" % (message))
+         self.status.config(state='disabled')
+         self.status.see('end')
       except AttributeError: # gui not created yet
          print message
 

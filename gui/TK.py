@@ -111,8 +111,18 @@ class TKgui(gui):
       self.commandEntry.pack({'expand':'yes', 'side':'right', 'fill':'x'})
 
       # create a status bar
-      self.status = TKwidgets.StatusBar(self.frame)
-      self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
+      #self.status = TKwidgets.StatusBar(self.frame)
+      #self.status.pack(side=Tkinter.BOTTOM, fill=Tkinter.X)
+
+      self.textframe = Tkinter.Frame(self.frame)
+      self.status = Tkinter.Text(self.textframe, height= 8,
+                                 width = 60, state='disabled', wrap='word')
+      self.scrollbar = Tkinter.Scrollbar(self.textframe, command=self.status.yview)
+      self.status.configure(yscrollcommand=self.scrollbar.set)
+      
+      self.scrollbar.pack(side="right", fill="y")
+      self.status.pack(side=Tkinter.LEFT, fill=Tkinter.X)
+      self.textframe.pack(side = "bottom", fill = "x")
 
       # Display:
       self.displayArea = [0, 1, 2]
