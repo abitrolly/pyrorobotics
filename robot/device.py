@@ -155,6 +155,11 @@ class Device:
         return self.devData[".visible"]
     def setVisible(self, value):
         self.devData[".visible"] = value
+        if self.window:
+            if value:
+                self.window.wm_deiconify()
+            else:
+                self.window.withdraw()
         return "Ok"
     def getActive(self):
         return self.devData[".active"]

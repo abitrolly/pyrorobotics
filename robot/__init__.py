@@ -463,14 +463,17 @@ class Robot:
                 return ("%s%d" % (devname, i))
         raise AttributeError, "too many devices of type '%s'" % devname
 
-    def startDevice(self, item):
-        dev = self.startDevices(item)
+    def startDevice(self, item, **args):
+        dev = self.startDevices(item, **args)
         if len(dev) < 1:
             raise AttributeError, ("unknown device: '%s'" % item)
         else:
+            for keyword in args:
+                if keyword == "visible":
+                    self.device[dev[0]].setVisible(args[keyword])
             return dev[0]
         
-    def startDevices(self, item):
+    def startDevices(self, item, **args):
         """ Load devices: dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
@@ -492,23 +495,23 @@ class Robot:
             if type(deviceList) == type("device0"): # loaded it here, from the robot
                 return [ deviceList ]
             else:
-                return self.startDevices( deviceList ) # dict of objs
+                return self.startDevices( deviceList, **args ) # dict of objs
         elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
             for i in item:
-                retval.append( self.startDevice(i) )
+                retval.append( self.startDevice(i, **args) )
             return retval
         else: # from a file
             file = item
             if file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
-                return self.startDevices( system.loadINIT(file, self) )
+                return self.startDevices( system.loadINIT(file, self), **args )
             elif system.file_exists(os.getenv('PYRO') + \
                                     '/plugins/devices/' + file): 
                 return self.startDevices( system.loadINIT(os.getenv('PYRO') + \
                                                    '/plugins/devices/'+ \
-                                                   file, self))
+                                                   file, self), **args)
             else:
                 print 'Device file not found: ' + file
                 return []

@@ -535,7 +535,7 @@ class PlayerRobot(Robot):
             return {item: PlayerDevice(self.dev, item)}
         elif item == "camera":
             if self.devData["simulated"]:
-                return self.startDevice("BlobCamera")
+                return self.startDevice("BlobCamera", visible=0)
             else:
                 return self.startDevice("V4LCamera")
         else:

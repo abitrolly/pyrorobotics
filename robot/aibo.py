@@ -233,7 +233,7 @@ class AiboRobot(Robot):
         time.sleep(1) # let all of the servers get going...
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
         self.startDevice("ptz")
-        #self.startDevice("camera")
+        self.startDevice("camera", visible=0)
 
         # Commands available on main_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,
