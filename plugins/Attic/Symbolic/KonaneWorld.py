@@ -25,7 +25,7 @@ class GUI(Tkinter.Toplevel):
         button = Tkinter.Button(self.mBar, text="Done!", command=self.playDone)
         button.pack(side="left")
         button = Tkinter.Button(self.mBar, text="Reset!", command=self.initWorld)
-        button.pack(side="left")
+        button.pack(side="right")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.click)

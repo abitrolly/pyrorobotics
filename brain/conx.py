@@ -106,6 +106,7 @@ class Layer:
         Constructor for Layer class. A name and the number of nodes
         for the instance are passed as arguments.
         """
+        self.warningIssued = 0
         if size <= 0:
             raise LayerError, ('Layer was initialized with size zero.' , size)
         self.name = name
@@ -387,8 +388,10 @@ class Layer:
         Sets all targets the the value of the argument. This value must be in the range [0,1].
         """
         if self.verify and not self.targetSet == 0:
-            print 'Warning! Targets have already been set and no intervening backprop() was called.', \
-                  (self.name, self.targetSet)
+            if not self.warningIssued:
+                print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+                      (self.name, self.targetSet)
+            self.warningIssued = 1
         if value > self.maxActivation or value < self.minActivation:
             raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
@@ -403,8 +406,10 @@ class Layer:
                   ('Mismatched target size and layer size in call to copyTargets()', \
                    (len(array), self.size))
         if self.verify and not self.targetSet == 0:
-            print 'Warning! Targets have already been set and no intervening backprop() was called.', \
-                  (self.name, self.targetSet)
+            if not self.warningIssued:
+                print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+                      (self.name, self.targetSet)
+            self.warningIssued = 1
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
             raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
         self.target = array
@@ -1145,8 +1150,11 @@ class Network:
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
-                raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
-                                   (layer.name, layer.type))
+                if not self.learnDuringSequence and self.sequenceLength > 0: # FIX: be more specific here
+                    pass
+                else:
+                    raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
+                                       (layer.name, layer.type))
             else:
                 layer.resetActivationFlag()
     def verifyTargets(self):
@@ -2166,7 +2174,7 @@ class SRN(Network):
                 if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
                     # don't update error or count
                     # accumulate history without learning in context layer
-                    pass
+                    pass 
                 else:
                     (error, correct, total) = self.backprop() # compute_error()
                     tssError += error

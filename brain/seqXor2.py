@@ -36,8 +36,8 @@ def sequentialXorSweeps(n, runLength, maxtimes = 1000):
         n.setOutputs( outs )
         (tssError, totalCorrect, totalCount) = n.sweep()
         totalError += tssError
-        #if step % n.reportRate == 0:
-        print " Step: #%6d, Error = %.4f Correct = %d" % (step, tssError, totalCorrect)
+        if step % n.reportRate == 0:
+            print " Step: #%6d, Error = %.4f Correct = %d" % (step, tssError, totalCorrect)
         step = step + 1
     print "Total error  : %.4f" % totalError
     
@@ -48,13 +48,12 @@ if __name__ == '__main__':
     print "the second output is predictable."
     n = SRN()
     n.addSRNLayers(1,5,1)
-    n.setOrderedInput(1)
+    n.setOrderedInputs(1)
     n.setEpsilon(0.2)
     n.setMomentum(0.1)
     n.setBatch(0)
     n.setTolerance(.25)
-    n.setQuickProp(0)
-    n.setReportRate(100)
+    n.setReportRate(1)
     sequentialXorSweeps(n, 100)
     print "Training complete.  Test error again....................."
     n.setLearning(0)

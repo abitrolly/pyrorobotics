@@ -21,7 +21,7 @@ def sequentialXor(n, limit):
             print "***** Step %dA *****" % step
         n.getLayer('input').copyActivations([current])
         next = randomBit()
-        n.getLayer('output').copyTarget([next])
+        n.getLayer('output').copyTargets([next])
         (error, correct, total) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err1 = error
@@ -29,7 +29,7 @@ def sequentialXor(n, limit):
             print "***** Step %dB *****" % step
         n.getLayer('input').copyActivations([next])
         result = xor(current,next)
-        n.getLayer('output').copyTarget([result])
+        n.getLayer('output').copyTargets([result])
         (error, correct, count) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err2 = error
@@ -37,7 +37,7 @@ def sequentialXor(n, limit):
             print "***** Step %dC *****" % step
         n.getLayer('input').copyActivations([result])
         current = randomBit()
-        n.getLayer('output').copyTarget([current])
+        n.getLayer('output').copyTargets([current])
         (error, correct, count) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err3 = error
@@ -48,7 +48,7 @@ def sequentialXor(n, limit):
             print "Epoch: #%6d Average errors = %.3f %.3f %.3f" \
                   % (step, totalErr1/step, totalErr2/step, totalErr3/step)
         step = step + 1
-    print "Epoch: #%6d Average errors = %.3f %.3f %.3f" \
+    print "Epoch: #%6d Total Average errors = %.3f %.3f %.3f" \
           % (step, totalErr1/step, totalErr2/step, totalErr3/step)
     
     
@@ -58,14 +58,14 @@ if __name__ == '__main__':
     print "random 1 or 0, followed by their XOR value.  Therefore only"
     print "the second output is predictable so that error should be lower."
     n = SRN()
-    n.addSRNLayers(1,3,1)
+    n.addSRNLayers(1,5,1)
     n.setEpsilon(0.25)
     n.setMomentum(0.1)
     n.setBatch(0)
-    n.setQuickProp(0)
     n.setAutoSequence(0)
-    n.setReportRate(1000)
-    sequentialXor(n, 10000)
+    n.setReportRate(100)
+    n.setLayerVerification(0) # turn off automatic error checking
+    sequentialXor(n, 100000)
     print "Training complete.  Test error again....................."
     n.setLearning(0)
     sequentialXor(n,1000)
