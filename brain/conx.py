@@ -20,6 +20,7 @@
 #    Added a method addSRNLayers
 #    Updated preprop to check if sequenceLength>1 before initializing context
 #    Updated postprop to always copy hidden to context
+#    Updated preprop to init context on first pattern if no sequence
 
 # ------------------------------------------------
 # An Artificial Neural Network System Implementing
@@ -30,7 +31,7 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "5.6"
+version = "5.7"
 
 def randomArray(size, max):
     """
@@ -869,9 +870,14 @@ class SRN(Network):
         self.connect('hidden', 'output')
     def preprop(self, patnum, step):
         Network.preprop(self, patnum, step)
-        if self.sequenceLength > 1 and step == 0:
-            self.getLayer('context').activation = \
-                Numeric.ones(self.getLayer('context').size, 'f') * .5
+        if self.sequenceLength > 1:
+            if step == 0:
+                self.getLayer('context').activation = \
+                    Numeric.ones(self.getLayer('context').size, 'f') * .5
+        else: # if seq length is one, you better be doing ordered
+            if patnum == 0:
+                self.getLayer('context').activation = \
+                    Numeric.ones(self.getLayer('context').size, 'f') * .5
     def postprop(self, patnum, step):
         Network.postprop(self, patnum, step)
         self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
