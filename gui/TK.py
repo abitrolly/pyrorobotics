@@ -7,6 +7,7 @@ from pyro.system.version import *
 from pyro.engine import *
 import pyro.system as system
 import pyro.system.share as share
+from posixpath import exists
 
 # A TK gui
 
@@ -24,8 +25,8 @@ def ask(root, dict):
    box = AskDialog(root, dict)
 
 class TKgui(Tkinter.Toplevel, gui): 
-   def __init__(self, engine, parent = None):
-      Tkinter.Toplevel.__init__(self, parent)
+   def __init__(self, engine):
+      Tkinter.Toplevel.__init__(self, share.gui)
       gui.__init__(self, 'TK gui', {}, engine)
       self.genlist = 0
       self.frame = Tkinter.Frame(self)
@@ -39,7 +40,9 @@ class TKgui(Tkinter.Toplevel, gui):
       self.lastButtonUpdate = 0
       #store the gui structure in something nice insted of python code
 
-      menu = [('File',[['Editor',self.editor],
+      menu = [('File',[['New brain...', self.newBrain],
+                       None,
+                       ['Editor',self.editor],
                        ['Exit',self.cleanup] 
                        ]),
               ('Window', [['Open all device windows', self.makeWindows],
@@ -298,6 +301,17 @@ class TKgui(Tkinter.Toplevel, gui):
          os.system(os.getenv("EDITOR") + " &")
       else:
          os.system("emacs &")
+   def newBrain(self):
+      import os
+      for i in range(1, 100):
+         myfile = "MyBrain-%d.py" % i
+         if not exists(myfile):
+            break
+      os.system( "cp " + os.getenv("PYRO") + ("/build/brainTemplate.py %s" % myfile))
+      if os.getenv("EDITOR"):
+         os.system(os.getenv("EDITOR") + " %s &" % myfile)
+      else:
+         os.system("emacs %s &"  % myfile)
    def editBrain(self):
       import os
       if os.getenv("EDITOR"):
@@ -489,15 +503,6 @@ class TKgui(Tkinter.Toplevel, gui):
       except AttributeError: # gui not created yet
          print message
 
-   def make2DLPSWindow(self):
-      pass
-
-   def make3DLPSWindow(self):
-      pass
-
-   def makeGPSWindow(self):
-      pass
-
    def write(self, item):
       try:
          self.status.config(state='normal')
@@ -591,12 +596,5 @@ class TKgui(Tkinter.Toplevel, gui):
 if __name__ == '__main__':
    root = Tkinter.Tk()
    engine = Engine()
-   #engine.view = []
-   gui = TKgui(root, engine)
+   gui = TKgui(engine)
    gui.inform("Ready...")
-   #gui.run()
-   print dir(gui)
-   dialog = TKwidgets.AlertDialog(gui, "Warning!")
-   #ask(gui, {"Port": "6665", "Host": "localhost"})
-   
-   gui.cleanup()

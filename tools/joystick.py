@@ -107,7 +107,7 @@ class Joystick(Tkinter.Toplevel):
       return (trans, rot)
 
 if __name__ == '__main__':
-   import pyro.system.share as share
-   share.gui = Tkinter.Tk()
-   joystick = Joystick(share.gui)
-   share.gui.mainloop()
+   app = Tk()
+   app.withdraw()
+   joystick = Joystick(parent = app)
+   app.mainloop()

@@ -42,9 +42,6 @@ class gui:
             self.history.append(command)
       self.history_pointer = len(self.history)
 
-   def init(self):
-      pass
-      
    def run(self, command = []):
       """
       Child classes should do the beef of what they do right here.
@@ -277,18 +274,6 @@ class gui:
          self.freeBrain()
          self.engine.loadBrain(f)
 
-   def loadMap(self):
-      f = self.fileloaddialog("maps","*.py", self.lastDir.get("map", ''))
-      if f != '':
-         self.lastDir["map"] = string.join(f.split('/')[:-1],'/')
-         self.engine.loadMap(f)
-
-   def loadView(self):
-      f = self.fileloaddialog("views","*.py", self.lastDir.get("view", ''))
-      if f != '':
-         self.lastDir["view"] = string.join(f.split('/')[:-1],'/')
-         self.engine.loadView(f)
-
    def loadDevice(self):
       f = self.fileloaddialog("devices","*.py",self.lastDir.get("devices",''))
       if f != '':
@@ -351,9 +336,5 @@ class gui:
       retval = retval.replace("\r", "")
       return retval
 
-   def saveMap(self):
-      f = self.filesavedialog("maps","*.py")
-      if f != '':
-         #save the map there
-         pass
-
+   def newBrain(self):
+      pass
