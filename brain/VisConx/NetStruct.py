@@ -1,5 +1,4 @@
 import Queue
-import pyro.brain.conx
 
 class Vertex:
     def __init__(self,layerObj):
@@ -105,7 +104,7 @@ if __name__ == "__main__":
     #print myNetStruct.levelList
     #print myNetStruct.layerDict
     #print myNetStruct.edgeList
-
+    from pyro.brain.conx import SRN
     x = SRN()
     x.addThreeLayers(3,3,3)
     SRNStruct = NetStruct(x)
