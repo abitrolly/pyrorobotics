@@ -13,7 +13,10 @@ from pyro.gui.renderer.gl import *
 from pyro.gui.renderer.streams import *
 
 from time import time
+
+import sys
 from pyro.gui.widgets.TKwidgets import *
+
 
 # A GL gui
 
@@ -270,8 +273,10 @@ class GLgui(gui):
       for p in self.engine.plot:
          try:
             p.redraw(()) # pass in options
-         except:
-            pass # window closed, remove p?
+         except TclError:
+            #Window's closed; remove the plot from the redraw list
+            print "Removing"
+            self.engine.plot.remove(p)
 
 if __name__ == '__main__':
    gui = GLgui()
