@@ -52,6 +52,7 @@ class NNBrain(Brain):
       return (val / self.maxvalue)
    
    def step(self):
+      print self.counter
       if self.counter < 500:
          mode = 'learn'
       elif self.counter == 500:
@@ -82,10 +83,11 @@ class NNBrain(Brain):
          
       # First, set inputs and targets:
       ins = map(self.scale, self.getRobot().get('range', 'value', 'all'))
-      self.net.setInputs([ ins ])
       # Compute targets:
+      target_rotate = 0.5
       if self.getRobot().get('range', 'value', 'front', 'min')[1] < 1:
          target_trans = 0.0
+         target_rotate = 0.0
       elif self.getRobot().get('range', 'value', 'back', 'min')[1] < 1:
          target_trans = 1.0
       else:
@@ -94,13 +96,13 @@ class NNBrain(Brain):
          target_rotate = 0.0
       elif self.getRobot().get('range', 'value', 'right', 'min')[1] < 1:
          target_rotate = 1.0
-      else:
-         target_rotate = 0.5
-      self.net.setOutputs([[target_trans, target_rotate]])
-      # next, cycle through inputs/outputs:
+      target = [target_trans, target_rotate]
       #print "Learning: trans =", target_trans, "rotate =", target_rotate
-      self.net.sweep()
+
+      # set inputs and targets with step
+      self.net.step( input = ins, output = target)
       # get PCA, components #1 and #2, then plot:
+
       if mode == 'plot':
          system("echo " + a2s(self.net.getLayer('hidden').activation) + " | tools/cluster/cluster -pehidden.e -c1,2 > out")
          plot = open("out").readline().split(' ')

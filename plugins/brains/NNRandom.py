@@ -26,7 +26,6 @@ class Reinforce(Brain):
       self.net.connect('context', 'hidden')
       self.net.connect('hidden', 'motorOutput')
       self.net.connect('hidden', 'sensorOutput')
-      self.net.clearContext(.5)
 
       self.net.setBatch(0)
       self.net.initialize()
@@ -74,24 +73,25 @@ class Reinforce(Brain):
       .set targets according to new sensor and motor values
       .backpropagate
       ''' 
-
+      print self.counter
+      
       if self.doneLearning:
          self.net.setLearning(0)
       else:
          self.net.setLearning(1)
 
-      # input latest sensor and motor values to network
+      # gather inputs (latest sensors and motor values)
       self.curr_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
       input = (self.curr_sensors) 
       input.append(self.curr_motors[0])
       input.append(self.curr_motors[1])
+      
+      # set inputs
+      if self.counter == 0:
+         self.net.clearContext(.5)
       self.net.getLayer('input').copyActivations(input)
 
-      # copy hidden layer activations to context layer
-      self.net.getLayer('context').copyActivations(self.net.getLayer('hidden').activation)
-
       # propagate...to see what output would be
-      self.net.init_slopes()
       self.net.propagate()
 
       # move according to resulting motor outputs
@@ -106,7 +106,7 @@ class Reinforce(Brain):
       sleep(.1)
       self.getRobot().update()
       next_sensors = map(self.scale, self.getRobot().get('range', 'value', 'all'))
-      self.net.getLayer('sensorOutput').copyTarget(next_sensors)
+      self.net.getLayer('sensorOutput').copyTargets(next_sensors)
 
       #    next set motorOutput targets
       #       determine fuzzy values
@@ -137,24 +137,24 @@ class Reinforce(Brain):
       
       self.lastbest = best()
       
-      #       compute and set motorOutput targets
+      # compute and set motorOutput targets
       tt = self.PorM(next_motors[0], random()*self.weight)
       tr = self.PorM(next_motors[1], random()*self.weight)
       self.target_trans = max(min(tt, 1), 0)
       self.target_rotate = max(min(tr, 1), 0)
       # there is no backprop() between this an the last call of copyTarget()
-      self.net.getLayer('motorOutput').copyTarget([self.target_trans,
+      self.net.getLayer('motorOutput').copyTargets([self.target_trans,
                                                    self.target_rotate])
       
       # propagate backwards
+      error = self.net.backprop() # will copy activations to context
       if not self.doneLearning:
-         error = self.net.backprop()
          self.net.change_weights()
       
       # update plots
       self.plot.addPoint(next_motors[0], next_motors[1], 1)
       self.plot.addPoint(self.net.getLayer('hidden').activation[0],
-                self.net.getLayer('hidden').activation[1], 0)
+                         self.net.getLayer('hidden').activation[1], 0)
       if not self.doneLearning:
          self.plot.addPoint(self.net.getLayer('motorOutput').target[0],
                             self.net.getLayer('motorOutput').target[1], 2)
