@@ -45,7 +45,7 @@ class TKgui(Tkinter.Toplevel, gui):
       menu = [('File',[['Editor',self.editor],
                        ['Exit',self.cleanup] 
                        ]),
-              ('Window', [['Open all service windows', self.makeWindows],
+              ('Window', [['Open all device windows', self.makeWindows],
                           None,
                           ['Fast Update 10/sec',self.fastUpdate],
                           ['Medium Update 3/sec',self.mediumUpdate],
@@ -59,7 +59,7 @@ class TKgui(Tkinter.Toplevel, gui):
                        ['Robot...',self.loadRobot],
                        ['Brain...',self.loadBrain],
                        None,
-                       ['Device...',self.loadService],
+                       ['Device...',self.loadDevice],
                        ]),
               ('Robot',[['Connect robot', self.connectRobot],
                         ['Disconnect robot', self.disconnectRobot],
@@ -140,12 +140,9 @@ class TKgui(Tkinter.Toplevel, gui):
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def makeWindows(self):
-      objs = self.engine.robot.getServices()
+      objs = self.engine.robot.getDevices()
       for serv in objs:
-         #try:
-         self.engine.robot.getService(serv).makeWindow()
-         #except:
-         #   print "service '%s' has no associated window" % serv
+         self.engine.robot.getDevice(serv).makeWindow()
 
    def makeCommandArea(self):
       # ---------------------------------
@@ -338,9 +335,9 @@ class TKgui(Tkinter.Toplevel, gui):
                                           self.engine.robot.get('robot', 'y'),
                                           self.engine.robot.get('robot', 'th'),
                                           bump))
-         for service in self.engine.robot.getServices():
-            if self.engine.robot.getService(service).getVisible():
-               self.engine.robot.getService(service).updateWindow()
+         for device in self.engine.robot.getDevices():
+            if self.engine.robot.getDevice(device).getVisible():
+               self.engine.robot.getDevice(device).updateWindow()
       # Don't need to do the rest of this but once a second
       if now - self.lastButtonUpdate < 1:
          self.after(self.update_interval,self.generalUpdate)

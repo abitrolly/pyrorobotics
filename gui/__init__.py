@@ -299,13 +299,13 @@ class gui(Drawable):
          self.engine.loadView(f)
          self.redraw()
 
-   def loadService(self):
-      f = self.fileloaddialog("services","*.py",self.lastDir.get("service",''))
+   def loadDevice(self):
+      f = self.fileloaddialog("devices","*.py",self.lastDir.get("devices",''))
       self.redraw()
       if f != '':
-         self.lastDir["service"] = string.join(f.split('/')[:-1],'/')
+         self.lastDir["devices"] = string.join(f.split('/')[:-1],'/')
          if self.engine != 0 and self.engine.robot != 0:
-            self.engine.robot.startService(f)
+            self.engine.robot.startDevice(f)
             self.redraw()
 
    def freeBrain(self):
