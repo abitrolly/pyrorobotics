@@ -327,7 +327,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.redrawViews()
       # -----------------------
       if self.engine.robot != 0:
-         if self.engine.robot.get('self', 'stall'):
+         if self.engine.robot.get('/robot/stall'):
             bump = "[BUMP!]"
          else:
             bump = ''

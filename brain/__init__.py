@@ -5,8 +5,31 @@ import threading
 import time
 import pyro.gui.console
 
-class Brain(threading.Thread): 
+def select(func, keyword, dicts):
+    """
+    This function is used with the get() method when returning
+    more than one item, but you want to select, say, the minimum
+    of just a single value. For example:
 
+    >>> v = self.get("/robot/range/all/value,pos") # returns a list of dictionaries
+    >>> select(min, "value", v)      # selects pair of value/pos for which value is
+                                     # the smallest
+    ARGS:
+
+       func - any function that can be applied to a list of values
+       keyword - and word from the far right-hand of the get path
+       dicts - any list of dictionaries, like that returned from get()
+
+    RETURNS: a dictionary
+    
+    """
+    value = func([d[keyword] for d in dicts])
+    return [d for d in dicts if d[keyword] == value][0]
+
+class Brain(threading.Thread):
+    """
+    This is the main thread for running a robot controler (ie, a brain).
+    """
     def __init__(self, name = 'brain', engine = 0, **kwargs):
         threading.Thread.__init__(self)
         self.debug = 0
@@ -29,6 +52,9 @@ class Brain(threading.Thread):
         self.setup(**kwargs)
         # start the thread:
         self.start()
+
+    def get(self, *args):
+        return self.robot.get(*args)
 
     def __repr__(self):
         return "Brain name = '%s'" % self.name
