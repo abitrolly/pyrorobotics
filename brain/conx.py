@@ -1,13 +1,13 @@
-# ------------------------------------------------
+# ----------------------------------------------------
 # An Artificial Neural Network System Implementing
 # Backprop
-# ------------------------------------------------
-# (c) 2001-2003, D.S. Blank, Bryn Mawr College
-# ------------------------------------------------
+# ----------------------------------------------------
+# (c) 2001-2003, Developmental Robotics Research Group
+# ----------------------------------------------------
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.3"
+version = "6.4"
 
 def sum(a):
     mysum = 0
@@ -310,6 +310,8 @@ class Network:
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
+        self.patterns = {}
+        self.patterned = 0
     def __getitem__(self, name):
         return self.layerByName[name]
     def arrayify(self):
@@ -451,7 +453,26 @@ class Network:
             return 0.0
         else:
             return value
-    def copyVector(self, vector1, vector2, start):
+    def replacePatterns(self, vector):
+        if not self.patterned: return vector
+        if type(vector) == type("string"):
+            return self.replacePatterns(self.patterns[vector])
+        elif type(vector) != type([1,]):
+            return vector
+        # should be a vector if we made it here
+        vec = []
+        for v in vector:
+            if type(v) == type("string"):
+                retval = self.replacePatterns(self.patterns[v])
+                if type(retval) == type([1,]):
+                    vec.extend( retval )
+                else:
+                    vec.append( retval )
+            else:
+                vec.append( v )
+        return vec
+    def copyVector(self, vector1, vec2, start):
+        vector2 = self.replacePatterns(vec2)
         length = min(len(vector1), len(vector2))
         if self.verbosity > 1:
             print "Copying Vector: ", vector2[start:start+length]
@@ -467,7 +488,7 @@ class Network:
                 p += 1
     def loadInput(self, pos, start = 0):
         if pos >= len(self.input):
-            return
+            raise "LoadPatternBeyondRange", pos
         if self.verbosity > 0: print "Loading input", pos, "..."
         if self.inputMapCount == 0:
             self.copyVector(self.layer[0].activation, self.input[pos], start)
@@ -542,7 +563,7 @@ class Network:
                 position = (pattern + 1) % len(self.input)
                 outLayer.copyTarget(self.input[position])
             else:
-                start = ((step + 1) * inLayer.size) % len(self.input[pattern])
+                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.input[pattern]))
                 self.copyVector(outLayer.target, self.input[pattern], start)
     def postprop(self, pattern, sequence):
         pass
@@ -553,7 +574,7 @@ class Network:
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         for i in self.loadOrder:
             if self.autoSequence:
-                self.sequenceLength = len(self.input[i]) / self.layer[0].size
+                self.sequenceLength = len(self.replacePatterns(self.input[i])) / self.layer[0].size
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", i + 1
             for s in range(self.sequenceLength):
@@ -746,9 +767,17 @@ class Network:
         for i in size:
             if self.layer[i].active:
                 self.layer[i].display()
-                weights = range(self.connectionCount)
-                weights.reverse()
+                if self.patterned:
+                    if self.layer[i].type == 'Output':
+                        targetWord = self.getWord( self.layer[i].target )
+                        if targetWord != '':
+                            print "Target = '%s'" % targetWord
+                    actWord = self.getWord( self.layer[i].activation )
+                    if actWord != '':
+                        print "Word   = '%s'" % actWord
                 if self.verbosity > 0:
+                    weights = range(self.connectionCount)
+                    weights.reverse()
                     for j in weights:
                         if self.connection[j].toLayer.name == self.layer[i].name:
                             self.connection[j].display()
@@ -908,8 +937,9 @@ class Network:
     def saveInputsToFile(self, filename):
         fp = open(filename, 'w')
         for i in range(len(self.input)):
-            for j in range(len(self.input[i])):
-                fp.write("%f " % self.input[i][j])
+            vec = self.replacePatterns(self.input[i])
+            for j in range(len(vec)):
+                fp.write("%f " % vec[j])
             fp.write("\n")
     def loadOutputsFromFile(self, filename):
         fp = open(filename, 'r')
@@ -923,8 +953,9 @@ class Network:
         fp = open(filename, 'w')
         for i in range(len(self.input)):
             try:
-                for j in range(len(self.input[i])):
-                    fp.write("%f " % self.input[i][j])
+                vec = self.replacePatterns(self.input[i])
+                for j in range(len(vec)):
+                    fp.write("%f " % vec[j])
             except:
                 pass
             try:
@@ -962,7 +993,30 @@ class Network:
                 self.connection[c].changeSize( newsize, self.connection[c].fromLayer.size)
         # Then, change the actual layer size:
         self.layerByName[layername].changeSize(newsize)
-
+    def setPatterns(self, patterns):
+        # pass in a dictionary
+        self.patterns = patterns
+        self.patterned = 1
+    def getPattern(self, word):
+        if self.patterns.has_key(word):
+            return self.patterns[word]
+        else:
+            raise "UnknownPattern", word
+    def getWord(self, pattern):
+        for w in self.patterns:
+            if self.compare( self.patterns[w], pattern ):
+                return w
+        return ""
+    def setPattern(self, word, vector):
+        self.patterns[word] = vector
+    def compare(self, v1, v2):
+        try:
+            for i in range(len(v1)):
+                if abs( v1[i] - v2[i]) > self.tolerance:
+                    return 0
+            return 1
+        except:
+            return 0
 class SRN(Network):
     def addSRNLayers(self, numInput, numHidden, numOutput):
         self.add(Layer('input', numInput))
@@ -973,19 +1027,27 @@ class SRN(Network):
         self.connect('context', 'hidden')
         self.connect('hidden', 'output')
     def preprop(self, patnum, step):
-        Network.preprop(self, patnum, step)
         if self.sequenceLength > 1:
             if step == 0 and self.initContext:
                 self.clearContext()
         else: # if seq length is one, you better be doing ordered
             if patnum == 0 and self.initContext:
                 self.clearContext()
+        Network.preprop(self, patnum, step)
     def postprop(self, patnum, step):
-        Network.postprop(self, patnum, step)
         self.getLayer('context').copyActivations(self.getLayer('hidden').activation)
+        Network.postprop(self, patnum, step)
     def clearContext(self):
         c = self.getLayer('context')
         c.activation = Numeric.ones(c.size, 'f') * .5
+try:
+    import psyco
+    psyco.bind(Layer)
+    psyco.bind(Connection)
+    psyco.bind(Network)
+    print "Psyco is installed: running pyro.brain.conx at psyco speed..."
+except:
+    pass
 
 if __name__ == '__main__':
     # Con-x: Sample Networks
@@ -998,13 +1060,6 @@ if __name__ == '__main__':
         if ans == 'q':
             sys.exit()
         return ans == 'y'
-    try:
-        import psyco
-        psyco.bind(Layer)
-        psyco.bind(Connection)
-        psyco.bind(Network)
-    except:
-        print "WARNING: psyco not installed! Running at regular speed."
 
     n = Network()
     n.addThreeLayers(2, 2, 1)
@@ -1017,6 +1072,34 @@ if __name__ == '__main__':
                   [1.0],
                   [0.0]])
     n.setReportRate(100)
+
+    if ask("Do you want to test the pattern replacement utility?"):
+        net = Network()
+        net.addThreeLayers(3, 2, 3)
+        print "Setting patterns to one 0,0,0; two 1,1,1..."
+        net.setPatterns( {"one": [0, 0, 0], "two": [1, 1, 1]} )
+        print net.getPattern("one")
+        print net.getPattern("two")
+        net.setInputs([ "one", "two" ])
+        net.loadInput(0)
+        print "one is: ",
+        print net["input"].activation
+        net.loadInput(1)
+        print "two is: ",
+        print net["input"].activation
+        net.setPattern("1", 1)
+        net.setPattern("0", 0)
+        print "Setting patterns to 0 and 1..."
+        net.setInputs([ [ "0", "1", "0" ], ["1", "1", "1"]])
+        net.loadInput(0)
+        print "0 1 0 is: ",
+        print net["input"].activation
+        net.loadInput(1)
+        print "1 1 1 is: ",
+        print net["input"].activation
+        print "Reverse look up of .2, .3, .2 is ", net.getWord([.2, .3, .2])
+        print "Reverse look up of .8, .7, .5 is ", net.getWord([.8, .7, .5])
+        print "Reverse look up of .8, .9, 1 is ", net.getWord([.8, .9, 1])
 
     if ask("Do you want to see some test values?"):
         print 'Input Activations:', n.getLayer('input').getActivations()
