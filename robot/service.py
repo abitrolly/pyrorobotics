@@ -44,8 +44,7 @@ class Service:
 
     def __init__(self, serviceType = 'unspecified', visible = 0):
         self.devData = {}
-        self.devDataFunc = {}
-        self.subData = {}
+        self.devDataFunc = {} # not currently working
         self.subDataFunc = {}
         self.groups = {}
         self.dev = 0
@@ -134,6 +133,9 @@ class Service:
     def postSet(self):
         pass
 
+    def preGet(self, keyword):
+        pass
+
     def _set(self, path, value):
         if path[0] in self.devData:
             self.devData[path[0]] = value
@@ -143,6 +145,7 @@ class Service:
                 
     def _get(self, path, showstars = 0):
         #print "path=", path
+        self.preGet(path)
         if len(path) == 0:
             # return all of the things a sensor can show
             tmp = self.devData.copy()
@@ -156,18 +159,18 @@ class Service:
             # return a value
             return self.devData[path[0]]
         elif len(path) == 1 and path[0] in self.devDataFunc:
-            # return a value
+            # return a value/ function with no argument
             return self.devDataFunc[path[0]]()
         # otherwise, dealing with numbers or group
         if len(path) == 1: # no specific data request
-            tmp = self.subData.copy()
-            tmp.update( self.subDataFunc )
-            return serviceDirectoryFormat(tmp, 0)
+            #tmp = self.subData.copy()
+            #tmp.update( self.subDataFunc )
+            return serviceDirectoryFormat(self.subDataFunc, 0)
         else: # let's get some specific data
             keys = path[0]
             elements = path[1]
             if elements == "*":
-                elements = self.subDataFunc.keys() + self.subData.keys()
+                elements = self.subDataFunc.keys() #+ self.subData.keys()
             # if keys is a collection:
             if isinstance(keys, (type((1,)), type([1,]))):
                 keyList, keys = keys, []
