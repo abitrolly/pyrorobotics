@@ -29,6 +29,9 @@ class LPS(Tkinter.Tk):
       self.protocol('WM_DELETE_WINDOW', self.close)
       self.update_idletasks()
 
+   def destroy(self):
+      self.withdraw()
+
    def reset(self, value = 0.5):
       self.grid = [[value for col in range(self.cols)]
                    for row in range(self.rows)]

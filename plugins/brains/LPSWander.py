@@ -7,8 +7,8 @@ from pyro.map.lps import LPS
 
 class SimpleBrain(Brain):
    def setup(self):
-      self.lps = LPS( 20, 20)
       # create the Local Perceptiual Space window
+      self.lps = LPS( 10, 10)
 
    def destroy(self):
       self.lps.destroy()

@@ -630,7 +630,7 @@ class psom:
         
         After calling map(), train(), or train_from_dataset(), calling this function
         returns a list corresponding to the appropriate activation levels.  This can
-        be done based on simple 'buble' or 'gaussian' neighborhoods, or (as suggested by Doug)
+        be done based on simple 'bubble' or 'gaussian' neighborhoods, or (as suggested by Doug)
         by assigning activation weight according to error in mapping to each corresponding
         model vector ('error').
             
