@@ -20,7 +20,6 @@ class Avoid (Behavior):
             return -1.0 - dir
 
     def update(self):
-        print self.getEngine().config.get("experiment", "size")
         if self.count == 50:
             currtime = time.mktime(time.localtime())
             print "=======  50 Loops. Average time per loop =", (currtime - self.lasttime)/50.0, "seconds."
