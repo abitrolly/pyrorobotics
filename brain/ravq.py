@@ -95,6 +95,7 @@ class RAVQ:
         self.modelVectorsDistance = -1
         self.winner = 'No Winner'
         self.winnerIndex = -1
+        self.oldWinnerIndex = -1
         self.verbosity = 0
         self.labels = {}
         self.recordHistory = 0
@@ -102,6 +103,7 @@ class RAVQ:
         self.tolerance = delta
         self.counters = []
         self.addModels = 1
+        self.newWinner = 0
 
     # update the RAVQ
     def input(self, vec):
@@ -115,6 +117,8 @@ class RAVQ:
         self.time += 1
 
     # attribute methods
+    def getNewWinner(self):
+        return self.newWinner
     def setVerbosity(self, value):
         self.verbosity = value
     def setHistory(self, value):
@@ -175,7 +179,12 @@ class RAVQ:
         if min == []:
             self.winner = 'No Winner'
         else:
+            self.oldWinnerIndex= self.winnerIndex
             self.winnerIndex = Numeric.argmin(min)
+            if self.oldWinnerIndex == self.winnerIndex:
+                self.newWinner = 0
+            else:
+                self.newWinner = 1
             self.winner = self.models[self.winnerIndex]
             self.counters[self.winnerIndex] += 1
     def updateHistory(self):
@@ -220,6 +229,8 @@ class RAVQ:
         self.log = open(filename, 'w')
     def closeLog(self):
         self.log.close()
+        del self.log
+        del self.logName
 
     # used so pickle will work
     def __getstate__(self):
@@ -229,7 +240,10 @@ class RAVQ:
         return odict
     def __setstate__(self,dict):
         if dict.has_key('logName'):
-            self.log = open(dict['logName'], 'a') 
+            try:
+                self.log = open(dict['logName'], 'a')
+            except:
+                pass #temporary
         self.__dict__.update(dict)
 
     # logging methods
@@ -316,6 +330,22 @@ class RAVQ:
             return 0
         else:
             return 1
+
+##     def labelSize(self, mode = 'binary'):
+##         if mode == 'binary':
+##             return logBaseTwo(len(self.models))
+##         elif mode == 'orthogonal':
+##             return len(self.models)
+##         else:
+##             print "Unsupported mode!"
+
+    def labelSize(self):
+        max = 0
+        for l in self.labels:
+            if len(l) > max:
+                max = len(l)
+        return max
+            
 
     def autoLabel(self, mode = 'binary'):
         """

@@ -1687,6 +1687,7 @@ class Network:
         Loads inputs from file. We lose patterning.
         """
         self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim)
+        self.loadOrder = range(len(self.inputs))
     def saveInputsToFile(self, filename):
         """
         Saves inputs to file.
@@ -1750,6 +1751,7 @@ class Network:
             self.inputs.append(self.patternVector(data[0:icnt]))
             self.targets.append(self.patternVector(data[icnt:]))
             line = fp.readline()
+        self.loadOrder = range(len(self.inputs))
 
     # patterning
     def replacePatterns(self, vector):
