@@ -52,9 +52,11 @@ class Gene:
         self.genotype = []
         self.fitness = 0.0
         self.mode = 'float'
+        self.crossoverPoints = 1
         self.bias = 0.5
         self.min = -1 # inclusive
         self.max = 1 # inclusive
+        self.maxStep = 1
         self.args = args
         if args.has_key('verbose'):
             self.verbose = args['verbose']
@@ -62,6 +64,10 @@ class Gene:
             self.min = args['min']
         if args.has_key('max'):
             self.max = args['max']
+        if args.has_key('maxStep'):
+            self.maxStep = args['maxStep']
+        if args.has_key('crossoverPoints'):
+            self.crossoverPoints = args['crossoverPoints']
         if args.has_key('mode'):
             self.mode = args['mode']
         if args.has_key('bias'):
@@ -104,17 +110,17 @@ class Gene:
                 elif self.mode == 'integer': 
                     r = random.random()
                     if (r < .33):
-                        self.genotype[i] += math.floor(random.random() * (self.max - self.min + 1)) + self.min
+                        self.genotype[i] += round(random.random() * self.maxStep)
                     elif (r < .67):
-                        self.genotype[i] -= math.floor(random.random() * (self.max - self.min + 1)) + self.min
+                        self.genotype[i] -= round(random.random() * self.maxStep)
                     else:
-                        self.genotype[i] = math.floor(random.random() * (self.max - self.min + 1)) + self.min
+                        self.genotype[i] = round(random.random() * (self.max - self.min + 1)) + self.min
                 elif self.mode == 'float': 
                     r = random.random()
                     if (r < .33):
-                        self.genotype[i] += (random.random() * (self.max - self.min)) + self.min
+                        self.genotype[i] += (random.random() * self.maxStep)
                     elif (r < .67):
-                        self.genotype[i] -= (random.random() * (self.max - self.min)) + self.min
+                        self.genotype[i] -= (random.random() * self.maxStep)
                     else:
                         self.genotype[i] = (random.random() * (self.max - self.min)) + self.min
                 else:
@@ -129,15 +135,29 @@ class Gene:
         parent1 = self
         geneLength = len(parent1.genotype)
         if flip(crossoverRate):
-            crosspt = (int)((random.random() * (geneLength - 2)) + 1)
-            if self.verbose > 2:
-                print "crossing over at point", crosspt
-            child1 = parent1.genotype[:crosspt]
-            child1.extend(parent2.genotype[crosspt:])
-            child2 = parent2.genotype[:crosspt]
-            child2.extend(parent1.genotype[crosspt:])
-            new_child1 = Gene(**self.args)
-            new_child2 = Gene(**self.args)
+            p1 = parent1.genotype[:]
+            p2 = parent2.genotype[:]
+            child1 = [0] * geneLength
+            child2 = [0] * geneLength
+            # go through and pick the crossoverpoints:
+            if self.crossoverPoints > 0:
+                crossPoints = [0] * geneLength
+                crossovers = 0
+                while crossovers < self.crossoverPoints:
+                    crossPoints[(int)(random.random() * geneLength)] = 1
+                    crossovers += 1
+            else: # uniform crossover when crossoverPoints = 0
+                crossPoints = [1] * geneLength
+            # now, each time there is one, swap parents
+            for i in range(geneLength):
+                if crossPoints[i]:
+                    if self.verbose > 2:
+                        print "crossing over at point", i
+                        p1, p2 = p2, p1
+                child1[i] = p1[i]
+                child2[i] = p2[i]
+            new_child1 = self.__class__(**self.args)
+            new_child2 = self.__class__(**self.args)
             new_child1.genotype = child1
             new_child2.genotype = child2
             return new_child1, new_child2
@@ -419,13 +439,18 @@ if __name__ == '__main__':
         def fitnessFunction(self, i):
             return max(sum(self.pop.individuals[i].genotype), 0)
         def isDone(self):
+            print "Best:",
+            self.pop.bestMember.display()
+            print
             return self.pop.bestMember.fitness > 30
 
     print "Do you want to evolve a list of integers to maximize their sum? ",
     if sys.stdin.readline().lower()[0] == 'y':
         print
         ga = MaxSumGA(Population(20, Gene, size=10, mode='integer',
-                                 verbose=1, elitePercent = .1),
+                                 verbose=1, elitePercent = .1,
+                                 max = 3, maxStep = 2, min = 0,
+                                 crossoverPoints = 1),
                       mutationRate=0.1, crossoverRate=0.5, verbose=1,
                       maxGeneration=50)
         ga.evolve()
@@ -483,7 +508,8 @@ if __name__ == '__main__':
             self.network = n
             GA.__init__(self,
                         Population(cnt, Gene, size=len(g), verbose=1,
-                                   min=-1, max=1, elitePercent = .1),
+                                   min=-1, max=1, maxStep = 1,
+                                   elitePercent = .1),
                         mutationRate=0.5, crossoverRate=0.25,
                         maxGeneration=400, verbose=1)
         def fitnessFunction(self, genePos):

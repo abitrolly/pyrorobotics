@@ -34,17 +34,10 @@ class GAQueens(GA):
         return fitness( self.pop.individuals[genePos].genotype)
                 
     def isDone(self):
-        self.pop[0].display()
-        fit = fitness( self.pop.individuals[0].genotype)
+        self.pop.bestMember.display()
+        fit = fitness( self.pop.bestMember.genotype)
         print "Best Fitness:", fit
-        return fit == len(self.pop.individuals[0].genotype)
-
-    def mutate(self, **args):
-        pos = int(random.random() * len(self.genotype))
-        if self.verbose == 2:
-            print "at position", pos
-        self.genotype[pos] =  math.floor(random.random() * \
-                                   (self.max - self.min + 1)) + self.min
+        return fit == len(self.pop.bestMember.genotype)
 
 class MyGene(Gene):
     def display(self):
@@ -57,7 +50,11 @@ class MyGene(Gene):
             print ""
 
 if __name__ == '__main__':    
-    ga = GAQueens(Population(300, MyGene, size = 16, mode = 'integer', max = 16, verbose = 1))
+    ga = GAQueens(Population(300, MyGene, size = 16, mode = 'integer',
+                             max = 16,min = 0, maxStep = 1,
+                             verbose = 1, elitePercent = .01,
+                             crossoverPoints = 0),
+                  verbose = 1, mutateRate = .3, crossoverRate = .75)
     ga.evolve()
 
 # after 83 generations:
