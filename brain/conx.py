@@ -7,7 +7,7 @@
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "5.8"
+version = "5.9"
 
 def randomArray(size, max):
     """
@@ -293,6 +293,10 @@ class Network:
         self.symmetric = value
     def setTolerance(self, value):
         self.tolerance = value
+    def setActive(self, layerName, value):
+        self.getLayer(layerName).setActive(value)
+    def getActive(self, layerName):
+        return self.getLayer(layerName).getActive()
     def setLearning(self, value):
         self.learning = value
     def setInitContext(self, value):
@@ -341,7 +345,7 @@ class Network:
     def ce_init(self):
         retval = 0.0; correct = 0; totalCount = 0
         for x in range(self.layerCount):
-            if (self.layer[x].type == 'Output'):
+            if (self.layer[x].type == 'Output' and self.layer[x].active):
                 for t in range(self.layer[x].size):
                     self.layer[x].error[t] = self.diff(self.layer[x].target[t] - self.layer[x].activation[t])
                     if (math.fabs(self.layer[x].error[t]) < self.tolerance):
@@ -357,19 +361,20 @@ class Network:
             self.ce_process(self.connection[x])
         return (error, correct, total)
     def ce_process(self, connect):
-        for i in range(connect.toLayer.size):
-            # could put this in ce_init, do just once per layer,
-            # doesn't hurt though
-            connect.toLayer.delta[i] = connect.toLayer.error[i] * \
-                                       self.ACTPRIME(connect.toLayer.activation[i])
-            # FIX? do I need to update to->bias_slope[i] here?
-            for j in range(connect.fromLayer.size):
-                connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
-                                               connect.weight[i][j])
-                connect.slope[i][j] += (connect.toLayer.delta[i] * \
-                                        connect.fromLayer.activation[j])
-                connect.toLayer.bias_slope[i] += (connect.toLayer.delta[i] * \
-                                                  connect.fromLayer.activation[j])
+        if connect.toLayer.active:
+            for i in range(connect.toLayer.size):
+                # could put this in ce_init, do just once per layer,
+                # doesn't hurt though
+                connect.toLayer.delta[i] = connect.toLayer.error[i] * \
+                                           self.ACTPRIME(connect.toLayer.activation[i])
+                # FIX? do I need to update to->bias_slope[i] here?
+                for j in range(connect.fromLayer.size):
+                    connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
+                                                   connect.weight[i][j])
+                    connect.slope[i][j] += (connect.toLayer.delta[i] * \
+                                            connect.fromLayer.activation[j])
+                    connect.toLayer.bias_slope[i] += (connect.toLayer.delta[i] * \
+                                                      connect.fromLayer.activation[j])
     def ACTPRIME(self, act):
         if self.symmetric:
             return ((0.25 - act * act) + self.sigmoid_prime_offset)
@@ -383,10 +388,12 @@ class Network:
                                      connect.fromLayer.activation[j])
     def compute_wed(self):
         for x in range(self.connectionCount):
-            self.cw_process( self.connection[x] )
+            if self.connection[x].fromLayer.active and self.connection[x].toLayer.active:
+                self.cw_process( self.connection[x] )
         for x in range(self.layerCount):
-            for i in range(self.layer[x].size):
-                self.layer[x].bed[i] += self.layer[x].delta[i]
+            if self.layer[x].active:
+                for i in range(self.layer[x].size):
+                    self.layer[x].bed[i] += self.layer[x].delta[i]
     def diff(self, value):
         if math.fabs(value) < 0.1:
             return 0.0
@@ -431,12 +438,13 @@ class Network:
                                 self.output[pos], offset)
     def init_slopes(self):
         for x in range(self.connectionCount):
-            for i in range(self.connection[x].toLayer.size):
-                self.connection[x].toLayer.bias_prevslope[i] = self.connection[x].toLayer.bias_slope[i]
-                self.connection[x].toLayer.bias_slope[i] = self.qp_decay * self.connection[x].toLayer.bias[i]
-                for j in range(self.connection[x].fromLayer.size):
-                    self.connection[x].prevslope[i][j] = self.connection[x].slope[i][j]
-                    self.connection[x].slope[i][j] = self.qp_decay * self.connection[x].weight[i][j]
+            if self.connection[x].fromLayer.active and self.connection[x].toLayer.active:
+                for i in range(self.connection[x].toLayer.size):
+                    self.connection[x].toLayer.bias_prevslope[i] = self.connection[x].toLayer.bias_slope[i]
+                    self.connection[x].toLayer.bias_slope[i] = self.qp_decay * self.connection[x].toLayer.bias[i]
+                    for j in range(self.connection[x].fromLayer.size):
+                        self.connection[x].prevslope[i][j] = self.connection[x].slope[i][j]
+                        self.connection[x].slope[i][j] = self.qp_decay * self.connection[x].weight[i][j]
     def train(self):
         tssErr = 1.0; e = 1; totalCorrect = 0; totalCount = 1;
         #totalPatterns = len(self.output) * len(self.input[0]) /
@@ -555,7 +563,8 @@ class Network:
     def reset_error(self):
         for x in range(self.layerCount):
             for i in range(self.layer[x].size):
-                self.layer[x].error[i] = 0.0
+                if self.layer[x].active:
+                    self.layer[x].error[i] = 0.0
     def setOutputs(self, outputs):
         self.output = outputs
     def activationFunction(self, x):
@@ -639,7 +648,9 @@ class Network:
     def change_weights(self):
         qp_shrink_factor = self.qp_mu / (1.0 + self.qp_mu);
         for l in range(self.connectionCount):
-            if not self.connection[l].frozen:
+            if not self.connection[l].frozen and \
+               self.connection[l].toLayer.active and \
+               self.connection[l].fromLayer.active:
                 for i in range(self.connection[l].toLayer.size):
                     for j in range(self.connection[l].fromLayer.size):
                         nextstep = 0.0
@@ -676,9 +687,10 @@ class Network:
                     self.connection[l].wed[i][j] = 0.0
         for l in range(self.layerCount):
             for i in range(self.layer[l].size):
-                self.layer[l].dbias[i] = self.layer[l].bepsilon * self.layer[l].bed[i] + self.momentum * self.layer[l].dbias[i]
-                self.layer[l].bias[i] += self.layer[l].dbias[i]
-                self.layer[l].bed[i] = 0.0
+                if self.layer[l].active:
+                    self.layer[l].dbias[i] = self.layer[l].bepsilon * self.layer[l].bed[i] + self.momentum * self.layer[l].dbias[i]
+                    self.layer[l].bias[i] += self.layer[l].dbias[i]
+                    self.layer[l].bed[i] = 0.0
     def getLayer(self, name):
         return self.layerByName[name]
     def getWeights(self, fromName, toName):
@@ -710,13 +722,14 @@ class Network:
         size = range(self.layerCount)
         size.reverse()
         for i in size:
-            self.layer[i].display()
-            weights = range(self.connectionCount)
-            weights.reverse()
-            if seeWeights:
-                for j in weights:
-                    if self.connection[j].toLayer.name == self.layer[i].name:
-                        self.connection[j].display()
+            if self.layer[i].active:
+                self.layer[i].display()
+                weights = range(self.connectionCount)
+                weights.reverse()
+                if seeWeights:
+                    for j in weights:
+                        if self.connection[j].toLayer.name == self.layer[i].name:
+                            self.connection[j].display()
     def addThreeLayers(self, inc, hidc, outc):
         self.add( Layer('input', inc) )
         self.add( Layer('hidden', hidc) )
