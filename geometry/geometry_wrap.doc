@@ -1,8 +1,0 @@
-geometrymodule.c
-
-[ Python Module : geometry ]
-
-
-cgTest()
-        [ returns void  ]
-
