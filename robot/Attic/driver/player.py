@@ -983,7 +983,7 @@ class player:
 	    self.__nsend(header+payload)
 	    # NO RESPONSE
 	except:
-	    raise 'cannot set a speed and a position'
+	    raise 'robot/driver/player cannot set speed and/or position!'
 
 
     def get_position_geometry(self):

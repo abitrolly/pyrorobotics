@@ -13,7 +13,7 @@ class GUI(Tkinter.Toplevel):
         self.width = width
         self.height = height
         self.visible = 1
-        self.title("SymbolicSimulator: WumpusWorld")
+        self.title("SymbolicSimulator: KonaneWorld")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
@@ -22,8 +22,9 @@ class GUI(Tkinter.Toplevel):
         self.tag = "data-%d" % self.count
         self.updateables = []
         self.notSetables = ["world"]
-        self.movements = ["remove", "move"]
+        self.movements = ["remove", "jump"]
         self.ports = [60000, 60001]
+        self.whosMove = int(round(random.random()))
         self.redraw()
 
     def initWorld(self):
@@ -37,14 +38,20 @@ class GUI(Tkinter.Toplevel):
 
     def process(self, request):
         retval = "error"
-        if 'remove' in request:
+        if request.count("remove"):
             request = request.replace(")", "")
             remove, pos = request.split("(")
             x,y = map(int, pos.split(","))
             self.world[x-1][y-1] = ''
             retval = "ok"
             self.redraw()
-        elif 'connectionNum' in request:
+        elif request == "done":
+            self.whosMove = int(not self.whosMove)
+            self.redraw()
+            return "ok"
+        elif request == "whosMove":
+            retval = self.whosMove
+        elif request.count('connectionNum'):
             connectionNum, port = request.split(":")
             retval = self.ports.index( int(port) )
         elif request == 'world':
@@ -78,7 +85,12 @@ class GUI(Tkinter.Toplevel):
             for y in range(8):
                 posx = x * (self.width / 8) + self.width/8/2
                 posy = self.height - (self.height/8/2) - y * (self.height / 8)
-                self.canvas.create_text(posx, posy, text = self.world[x][y], fill = "red", tag = self.tag, font = ("times", 31))
+                if ((self.whosMove == 0 and self.world[x][y] == "O") or
+                    (self.whosMove == 1 and self.world[x][y] == "X")):
+                    color = "red"
+                else:
+                    color = "gray"
+                self.canvas.create_text(posx, posy, text = self.world[x][y], fill = color, tag = self.tag, font = ("times", 31))
         # ------------------------------------------------------------------------        
         self.canvas.create_line(  2,   2,   2, self.height, width = 2, fill = "black", tag = self.tag)
         self.canvas.create_line(  2,   2, self.width,   2, width = 2, fill = "black", tag = self.tag)
