@@ -737,7 +737,7 @@ class Network:
         """
         # for all connection from to this layer, change matrix:
         if self.sharedWeights:
-            print "Warning: shared weights broken!"
+            raise AttributeError, "shared weights broken"
         for connection in self.connections:
             if connection.fromLayer.name == layername:
                 connection.changeSize(  newsize, connection.toLayer.size )
@@ -758,7 +758,7 @@ class Network:
         Layer.initialize(). self.count is set to zero.
         """
         if self.sharedWeights:
-            print "Warning: shared weights broken!"
+            raise AttributeError, "shared weights broken"
         self.count = 0
         for connection in self.connections:
             connection.initialize()
@@ -2069,40 +2069,44 @@ class Network:
                     return 1
             except:
                 return 0
-    def shareWeights(self, network):
+    def shareWeights(self, network, listOfLayerNamePairs = None):
         """
-        Share weights with another network of the same topology (layers and
-        connections must be created in the same order). Connection is broken
-        after a call to net.randomize() or a change of size of one of the
-        layers.
-
-        Example: net.shareWeights(otherNet)
-
-        See also: net.shareSomeWeights()
-        
-        """
-        self.sharedWeights = 1
-        network.sharedWeights = 1
-        for c in range(len(self.connections)):
-            self.connections[c].weight = network.connections[c].weight
-        for l in range(len(self.layers)):
-            self.layers[l].bias   = network.layers[l].bias
-    def shareSomeWeights(self, network, listOfLayerNamePairs):
-        """
-        Share some weights with another network of the same topology. Connection
+        Share weights with another network. Connection
         is broken after a randomize or change of size. Layers must have the same
-        names in both networks.
+        names and sizes for shared connections in both networks.
 
-        Example: net.shareSomeWeights(otherNet, [["hidden", "output"]])
+        Example: net.shareWeights(otherNet, [["hidden", "output"]])
 
         This example will take the weights between the hidden and output layers
         of otherNet and share them with net. Also, the bias values of
         otherNet["output"] will be shared with net["output"].
 
-        See also: net.shareWeights()
-        
+        If no list is given, will share all weights.
         """
+        if listOfLayerNamePairs == None:
+            listOfLayerNamePairs = []
+            for c in self.connections:
+                listOfLayerNamePairs.append( [c.fromLayer.name, c.toLayer.name] )
+        if self.verbosity > 1:
+            print "sharing weights:", self.name, listOfLayerNamePairs
+        # first, check to see if this will work:
+        count = 0
+        for (fromLayerName, toLayerName) in listOfLayerNamePairs:
+            for c1 in range(len(self.connections)):
+                if self.connections[c1].fromLayer.name == fromLayerName and \
+                       self.connections[c1].toLayer.name == toLayerName:
+                    for c2 in range(len(network.connections)):
+                        if network.connections[c2].fromLayer.name == fromLayerName and \
+                               network.connections[c2].toLayer.name == toLayerName:
+                            if (self.connections[c1].fromLayer.size != network.connections[c2].fromLayer.size) or \
+                               (self.connections[c1].toLayer.size != network.connections[c2].toLayer.size):
+                                raise AttributeError, "shareSomeWeights: layer sizes did not match"
+                            count += 1
+        if count != len(listOfLayerNamePairs):
+            raise AttributeError, "shareSomeWeights: layer names did not match"
+        # ok, now let's share!
         self.sharedWeights = 1
+        network.sharedWeights = 1
         for (fromLayerName, toLayerName) in listOfLayerNamePairs:
             for c1 in range(len(self.connections)):
                 if self.connections[c1].fromLayer.name == fromLayerName and \
@@ -2111,11 +2115,12 @@ class Network:
                         if network.connections[c2].fromLayer.name == fromLayerName and \
                                network.connections[c2].toLayer.name == toLayerName:
                             self.connections[c1].weight = network.connections[c2].weight
-        for l1 in range(len(self.layers)):
-            if self.layers[l1].name == toLayerName:
-                for l2 in range(len(network.layers)):
-                    if network.layers[l2].name == toLayerName:
-                        self.layers[l1].bias = network.layers[l2].bias
+        for (fromLayerName, toLayerName) in listOfLayerNamePairs:
+            for l1 in range(len(self.layers)):
+                if self.layers[l1].name == toLayerName:
+                    for l2 in range(len(network.layers)):
+                        if network.layers[l2].name == toLayerName:
+                            self.layers[l1].bias = network.layers[l2].bias
 
 class SRN(Network):
     """
