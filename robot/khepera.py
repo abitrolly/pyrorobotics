@@ -298,7 +298,7 @@ class KheperaRobot(Robot):
     def getIRRangeAll(self, dev):
         vector = [0] * self.get('ir', 'count')
         for i in range(self.get('ir', 'count')):
-            vector[i] = ((1023.0 - self.senseData['ir'][pos]) / 1023.0) * 60.0
+            vector[i] = ((1023.0 - self.senseData['ir'][i]) / 1023.0) * 60.0
         return vector
 
     def getIRFlag(self, dev, pos):
