@@ -78,6 +78,17 @@ class Device:
             self.makeWindow()
         self.setup()
 
+    def __getattr__(self, attr):
+        """ Overides default get attribute to return devData if exists """
+        if attr in self.devData:
+            return self.devData[attr]
+        elif attr in self.__dict__:
+            return self.__dict__[attr]
+        elif "groups" in self.__dict__ and attr in self.__dict__["groups"]:
+            return self.__dict__["groups"][attr]
+        else:
+            raise AttributeError, ("'<type %s>' object has no attribute '%s'" % (self.__class__.__name__, attr))
+
     def setTitle(self, title):
         pass
 

@@ -16,8 +16,7 @@ class KonanePlayer(Brain):
     Missing: it doesn't handle multiple jumps, and doesn't find them.
     """
     def setup(self):
-        self.playerID = self.robot.getItem("connectionNum:%d" % self.robot.devData["port"])
-        if self.playerID == 0:
+        if self.robot.id == 0:
             self.myPiece = "O"
         else:
             self.myPiece = "X"
@@ -30,7 +29,7 @@ class KonanePlayer(Brain):
         print "SymbolicPlayer1 and SymbolicPlayer2."
 
     def step(self):
-        if self.robot.getItem("whosMove") != self.playerID:
+        if self.robot.whosMove != self.robot.id:
             time.sleep(1)
             return
         board = self.robot.getItem("board")
@@ -53,6 +52,7 @@ class KonanePlayer(Brain):
                 pass # multi-jump handler; left to reader
         else:
             print "You win!"
+            self.pleaseStop() # request to stop running brain
 
     def otherPiece(self, piece):
         """ What is the opponent's shape? """

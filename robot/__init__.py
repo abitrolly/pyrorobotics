@@ -160,6 +160,18 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
+    def __getattr__(self, attr):
+        """ Overides default get attribute to return devData if exists """
+        # avoid calling self. as that will call this recursively!
+        if attr in self.__dict__["devData"]:
+            return self.__dict__["devData"][attr]
+        elif attr in self.__dict__["devDataFunc"]:
+            return self.__dict__["devDataFunc"][attr] # ._get("") will get list
+        elif attr in self.__dict__:
+            return self.__dict__[attr]
+        else:
+            raise AttributeError, ("'<type %s>' object has no attribute '%s'" % (self.__class__.__name__, attr))
+
     def disconnect(self):
         pass
 
