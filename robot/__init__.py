@@ -11,7 +11,7 @@
 
 import pyro.gui.console as console
 from pyro.geometry import Polar, distance
-import math
+import math, string, types
 
 # Units of measure for sense, map, and motors:
 # -------------------------------------------
@@ -22,6 +22,34 @@ import math
 # SCALED - scaled [-1,1]
 # RAW    - right from the sensor
 
+def serviceDirectoryFormat(serviceDict, retdict = 1):
+    """
+    Takes a service directory dictionary and makes it presentable for viewing.
+
+    Also takes a flag to indicate if it should return a dictionary (for * listings)
+    or a list (for regular directory content listing).
+    
+    The function does two things:
+      1. adds a trailing slash to those entries that point to more things
+      2. replaces the objects that they point to with None, when returning a dictionary
+    """
+    if retdict:
+        retval = {}
+    else:
+        retval = []
+    for keyword in serviceDict:
+        if type(serviceDict[keyword]) == types.InstanceType:
+            if retdict:
+                retval[keyword + "/"] = None
+            else:
+                retval.append( keyword + "/")
+        else:
+            if retdict:
+                retval[keyword] = serviceDict[keyword]
+            else:
+                retval.append( keyword )
+    return retval
+
 def expand(part):
     """
     Takes a part of a path and parses it for simple syntax. Expands:
@@ -30,13 +58,21 @@ def expand(part):
     ,  AND
     """
     retvals = []
-    if part.find(",") >= 0:
-        subparts = part.split(",")
+    if type(part) == type(1):
+        return [part]
+    elif isinstance(part, (type((1,)), type([1,]))):
+        return part
     else:
-        subparts = [part,]
+        if type(part) != type(""):
+            raise AttributeError, "path part should be an int, list, tuple, or string keyword"
+    # else, it had better be a string
+    if part.find(",") >= 0:
+        subparts = map(string.strip, part.split(","))
+    else:
+        subparts = [string.strip(part),]
     for s in subparts:
         if s.count(":") == 1:
-            rangeVals = s.split(":")
+            rangeVals = map(string.strip, s.split(":"))
             if rangeVals[0].isdigit() and rangeVals[0].isdigit():
                 retvals.extend(range(int(rangeVals[0]), int(rangeVals[1])))
             else:
@@ -45,7 +81,8 @@ def expand(part):
                 else:
                     retvals.append( s )
         elif s.count("-") == 1:
-            rangeVals = s.split("-")
+            rangeVals = map(string.strip, s.split("-"))
+            print "rangeVals", rangeVals
             if rangeVals[0].isdigit() and rangeVals[0].isdigit():
                 retvals.extend(range(int(rangeVals[0]), int(rangeVals[1]) + 1))
             else:
@@ -80,8 +117,9 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
-    def __getattr__(self, path):
-        return self.get(path)
+    #def __getattr__(self, path):
+    #    #if path[:2] != "__":
+    #    return self.get(path)
 
     def __repr__(self):
         return "Robot name = '%s', type = '%s'" % (self.get("/robot/name"),
@@ -96,20 +134,34 @@ class Robot:
     def inform(self, msg):
         console.log(console.INFO, msg)
         
-    def set(self, path, value):
-	"""
-        A method to set the above get.
-	"""
-        pass # tell the object to set a value
-
     def _get(self, pathList):
-        pass
+        if len(pathList) == 0:
+            tmp = self.data.copy()
+            tmp.update( self.dataFunc )
+            return serviceDirectoryFormat(tmp, 0)
+        key = pathList[0]
+        args = pathList[1:]
+        if key in self.data:
+            return self.data[key]
+        elif key in self.dataFunc:
+            return self.dataFunc[key]._get(args)
+        if key == '*':
+            if args != []:
+                raise AttributeError, "wildcard feature not implemented in directory middle"
+            tmp = self.data.copy()
+            tmp.update( self.dataFunc )
+            return serviceDirectoryFormat(tmp, 1) 
+        else:
+            raise AttributeError, "robot has no such directory item '%s'" % key
 
     def get(self, device = "", *args):
 	"""
 	this is designed to be the main interface to the robot
 	and its parts. There is one assumed piece, self.dev that
 	is the actual pointer to the robot device
+
+        Device names should not contain slashes, commas, dashes, or colons, nor have
+        spaces as part of their names (actually spaces inside their names is fine).
 	"""
         path = device.split("/")
         # remove extra slashes
@@ -121,13 +173,37 @@ class Robot:
         for part in path:
             finalPath.append(expand( part ) )
         if len(finalPath) == 0:
-            return self.service.keys()
+            return serviceDirectoryFormat(self.service, 0)
         elif finalPath[0] in self.service:
+            # pass the command down to robot
             return self.service[finalPath[0]]._get(finalPath[1:])
         elif finalPath[0] == '*':
-            return self.service
+            return serviceDirectoryFormat(self.service, 1)
         else:
-            raise AttributeError, "'%s' is not a service of robot" % finalPath[0]
+            raise AttributeError, "'%s' is not a service directory of robot" % finalPath[0]
+
+    def _set(self, pathList, value):
+        key = pathList[0]
+        args = pathList[1:]
+        if key in self.data:
+            self.data[key] = value
+        elif key in self.dataFunc:
+            return self.dataFunc[key]._set(args, value)
+        else:
+            raise AttributeError, "robot has no setable directory item '%s'" % key
+        
+    def set(self, device, value):
+	"""
+	"""
+        path = device.split("/")
+        # remove extra slashes
+        while path.count("") > 0:
+            path.remove("")
+        if path[0] in self.service:
+            # pass the command down to robot
+            return self.service[path[0]]._set(path[1:], value)
+        else:
+            raise AttributeError, "'%s' is not a service directory of robot" % path[0]
 
     def step(self, dir):
         if dir == 'L':
