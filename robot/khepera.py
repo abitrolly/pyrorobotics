@@ -67,11 +67,8 @@ class KheperaRobot(Robot):
 	self.senses['ir']['y'] = self.getIRYCoord
 	self.senses['ir']['z'] = lambda self, pos: 0.25
 	self.senses['ir']['value'] = self.getIRRange
-        self.senses['range'] = {}
-        self.senses['range']['all'] = self.getIRRangeAll
-        self.senses['range']['count'] = lambda self: 8
-        self.senses['range']['type'] = lambda self: 'abstract'
-        self.senses['range']['maxvalue'] = lambda self: self.mmToSenseUnits(60.0)
+        self.senses['ir']['all'] = self.getIRRangeAll
+        self.senses['ir']['maxvalue'] = lambda self: self.mmToSenseUnits(60.0)
 	self.senses['ir']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
@@ -82,7 +79,9 @@ class KheperaRobot(Robot):
         # in radians:
         self.senses['ir']['arc'] = lambda self, pos, \
                                       x = (5 * math.pi / 180) : x
-        
+        # Make a copy, for default:
+        self.senses['range'] = self.senses['ir']
+
         # location of sensors' hits:
         self.senses['light']['x'] = self.getIRXCoord
 	self.senses['light']['y'] = self.getIRYCoord
@@ -294,15 +293,15 @@ class KheperaRobot(Robot):
             return 180.0
 
     def mmToSenseUnits(self, val):
-        if self.senseUnits == ROBOTS:
+        if self.senseUnits == "ROBOTS":
             return val / 55.0 # khepera is 55mm diameter
-        elif self.senseUnits == MM:
+        elif self.senseUnits == "MM":
             return val
-        elif self.senseUnits == CM:
+        elif self.senseUnits == "CM":
             return (val) / 10.0 # cm
-        elif self.senseUnits == METERS:
+        elif self.senseUnits == "METERS":
             return (val) / 100.0 # meters
-        elif self.senseUnits == SCALED:
+        elif self.senseUnits == "SCALED":
             print "WARNING: khepera senseUnits is SCALED?"
             # FIX: should we have maxvalue? Force [0,1]?
             return val / 55.0

@@ -6,7 +6,6 @@
 import pyro.robot.driver as driver
 import pyro.gui.console as console
 from pyro.robot.driver.saphira.lowlevel import *
-import pyro.robot
 import math
 
 class SaphiraSenseDriver(driver.Driver):
@@ -35,12 +34,8 @@ class SaphiraSenseDriver(driver.Driver):
 	self.senses['sonar']['y'] = Saphira_getSonarYCoord
 	self.senses['sonar']['z'] = lambda self, pos: 0.25
 	self.senses['sonar']['value'] = self.getSonarRange
-        self.senses['range'] = {}
-        self.senses['range']['all'] = self.getSonarAll
-        self.senses['range']['type'] = lambda self: 'abstract'
-        self.senses['range']['count'] = \
-		lambda self, x = Saphira_getSonarCount(machine.dev) : x
-        self.senses['range']['maxvalue'] = lambda self: self.mToSenseUnits(2.99)
+        self.senses['sonar']['all'] = self.getSonarAll
+        self.senses['sonar']['maxvalue'] = lambda self: self.mToSenseUnits(2.99)
 	self.senses['sonar']['flag'] = Saphira_getSonarFlag
 
 	# location of origin of sensors:
@@ -52,22 +47,24 @@ class SaphiraSenseDriver(driver.Driver):
         self.senses['sonar']['arc'] = lambda self, pos, \
                                       x = (5 * math.pi / 180) : x
 	self.senses['sonar']['type'] = lambda self: 'range'
-        
+
+        # Make a copy, for default values
+        self.senses['range'] = self.senses['sonar']
         console.log(console.INFO,'saphira sense drivers loaded')
 
     def getSonarRange(self, dev, pos):
         return self.mToSenseUnits( Saphira_getSonarRange(dev, pos))
 
     def mToSenseUnits(self, val):
-        if self.robot.senseUnits == pyro.robot.ROBOTS:
+        if self.robot.senseUnits == "ROBOTS":
             return val / 0.5 # Pioneer is about .5 meters diameter
-        elif self.robot.senseUnits == pyro.robot.MM:
+        elif self.robot.senseUnits == "MM":
             return val / 1000.0
-        elif self.robot.senseUnits == pyro.robot.CM:
+        elif self.robot.senseUnits == "CM":
             return (val) / 100.0 # cm
-        elif self.robot.senseUnits == pyro.robot.METERS:
+        elif self.robot.senseUnits == "METERS":
             return (val) 
-        elif self.robot.senseUnits == pyro.robot.SCALED:
+        elif self.robot.senseUnits == "SCALED":
             print "WARNING: Pioneer senseUnits is SCALED?"
             # FIX: should we have maxvalue? Force [0,1]?
             return val / 0.5
