@@ -17,6 +17,7 @@ class BehaviorBasedBrain (Brain):
       self.controls = controllers
       self.history = [{}, {}, {}]
       self.desires = []
+      self.effectsTotal = {}
 
    def set_controls(self, controllers):
       self.controls = controllers
@@ -39,6 +40,7 @@ class BehaviorBasedBrain (Brain):
       self.states = {}
       #self.status = -1
       self.desires = []
+      self.effectsTotal = {}
    def init(self): # init and get ready to run
       for s in self.states.keys():
          self.states[s].setcontrols(self.controls)
@@ -50,22 +52,18 @@ class BehaviorBasedBrain (Brain):
       self.history[2] = self.history[1]
       self.history[1] = self.history[0]
       self.history[0] = {}
+      self.effectsTotal = {}
       for s in self.states.keys():
          if self.states[s].status == 1:
             self.states[s].run()
-      total = {}
-      for d in self.desires:
-         if d[1] in total.keys():
-            total[d[1]] += d[2]
-         else:
-            total[d[1]] = d[2]
       control = {}
       for d in self.desires:
-         if total[d[1]] != 0:
+         total = self.effectsTotal[d[1]]
+         if total != 0:
             if d[1] in control.keys():
-               control[d[1]] += float(d[2])/float(total[d[1]]) * d[0] * d[5]
+               control[d[1]] += float(d[2])/float(total) * float(d[0]) * float(d[5])
             else:
-               control[d[1]] = float(d[2])/float(total[d[1]]) * d[0] * d[5]
+               control[d[1]] = float(d[2])/float(total) * float(d[0]) * float(d[5])
       for c in self.controls.keys():
          if c in control.keys():
             # set that controller to act with a value
@@ -177,20 +175,25 @@ class State:
       for bkey in self.behaviors.keys():
          b = self.behaviors[bkey]
          if b.status:
+            for c in b.effects.keys():
+               if c in self.behaviorEngine.effectsTotal.keys():
+                  self.behaviorEngine.effectsTotal[c] += b.effects[c]
+               else:
+                  self.behaviorEngine.effectsTotal[c] = b.effects[c]
             b.rules = [] # clear rules
             b.update() # fires IF rules
             total = {}
             for r in b.rules:
                if r[1] in total.keys():
-                  total[r[1]] += r[0]
+                  total[r[1]] += float(r[0])
                else:
-                  total[r[1]] = r[0]
+                  total[r[1]] = float(r[0])
             for r in b.rules:
                # truth, controller, amount, beh name, state name
                if total[r[1]] != 0:
                   self.behaviorEngine.desires.append([float(r[0])/float(total[r[1]]), \
                                                       r[1], \
-                                                      b.effects[r[1]], \
+                                                      b.effects[r[1]],
                                                       b.name, \
                                                       b.state.name,
                                                       r[2]])
