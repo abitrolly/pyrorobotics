@@ -19,8 +19,7 @@ class ffBrain(Brain):
 
       # start and goal poses
       self.startPose = [4.44, 2.24, 87]
-      #self.goalPose = [3.5, 3.129, 146]
-      self.goalPose = [4.403, 2.296, -4]
+      self.goalPose = [1.018, 3.75, -117] #1.018, 3.75, -118
 
       # Setup the robot/start services:
       self.getRobot().startService(["BlobCamera", "truth"])
@@ -29,12 +28,12 @@ class ffBrain(Brain):
       # The FF Network:
       #self.n = VisRobotNetwork()
       self.n = Network()
-      self.n.addThreeLayers(140,15,2)
+      self.n.addThreeLayers(105,15,2)
       self.n.initialize()
       self.n.loadWeightsFromFile("ff.wts")
       # The SOMs:
-      self.somSonar  = vis.VisPsom(file = "sonar-20passes-20x15.cod")
-      self.somCamera = vis.VisPsom(file = "camera-20passes-20x15.cod")
+      self.somSonar  = vis.VisPsom(file = "sonar-200passes-20x15.cod")
+      self.somCamera = vis.VisPsom(file = "camera-200passes-20x15.cod")
       # Set goal
       self.truth.setPose(self.goalPose[0], self.goalPose[1], self.goalPose[2])
       sleep(1)
@@ -48,9 +47,7 @@ class ffBrain(Brain):
       cameraData = self.scaleList(image.data, 255.0)
       modelSonar  = self.somSonar.map(psom.vector( sonarData ))
       modelCamera = self.somCamera.map(psom.vector(cameraData ))
-      self.goalVector = makeVector(modelSonar.point.x, 20) + \
-                        makeVector(modelSonar.point.y, 15) + \
-                        makeVector(modelCamera.point.x, 20) + \
+      self.goalVector = makeVector(modelCamera.point.x, 20) + \
                         makeVector(modelCamera.point.y, 15)
       self.goalList = [modelSonar.point.x, modelSonar.point.y, modelCamera.point.x, modelCamera.point.y]
       print "Goal:", self.goalList
@@ -60,12 +57,14 @@ class ffBrain(Brain):
       sleep(1)
       self.getRobot().update()
       self.camera.update()
+      self.out = open("path.dat", "w")
       print "Initialized"
 
    def destroy(self):
       self.somCamera.destroy()
       self.somSonar.destroy()
       self.n.destroy()
+      self.out.close()
 
    def scaleSonar(self,ls):
       myl = []
@@ -89,9 +88,6 @@ class ffBrain(Brain):
                    makeVector(modelSonar.point.y, 15) + \
                    makeVector(modelCamera.point.x, 20) + \
                    makeVector(modelCamera.point.y, 15)
-      if self.mode == "run" and currVector == self.goalVector:
-         print "we have reached our goal!"
-         self.pleaseStop()
 
       # 2. load inputs into network
       self.n["input"].copyActivations( currVector + self.goalVector )
@@ -110,6 +106,7 @@ class ffBrain(Brain):
 
       if self.mode == "run":
          self.getRobot().move(unscaledTrans, unscaledRotate)
+         self.out.write("%f %f %f\n" %  self.truth.getPose())
 
 
 def INIT(engine):
