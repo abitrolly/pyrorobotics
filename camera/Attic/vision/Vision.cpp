@@ -159,14 +159,19 @@ PyObject *Vision::saveImage(char *filename) {
   return Py_BuildValue("");
 } 
 
-void Vision::drawRectange(int x1, int y1, int x2, int y2, 
-			  int fill) {
-  for(int h=0; h<height; h++ ) {
-    for(int w=0; w<width; w++) {
-      for(int d=0; d<depth; d++) {
-	image[(h * width + w) * depth + d] = 255;
+void Vision::drawRect(int x1, int y1, int x2, int y2, 
+		      int fill, int channel) {
+  for(int w=x1; w<=x2; w++) {
+      for(int h=y1; h<=y2; h++ ) {
+	if (fill == 1 || (h == x1 || h == x2 ||
+			  w == y1 || w == y2))
+	  if (channel == -1)
+	    for(int d=0; d<depth; d++) {
+	      image[(h * width + w) * depth + d] = 255;
+	    }
+	  else
+	    image[(h * width + w) * depth + rgb[channel]] = 255;
       }
-    }
   }
 }
 
@@ -826,6 +831,13 @@ PyObject *Vision::applyFilters(PyObject *newList) {
 	return NULL;
       }
       clear(i1, i2);
+    } else if (strcmp((char *)command, "drawRect") == 0) {
+      i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = -1;
+      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
+	return NULL;
+      }
+      drawRect(i1, i2, i3, i4, i5, i6);
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;
