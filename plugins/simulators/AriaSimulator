@@ -2,6 +2,11 @@
 
 pyropid=$1
 shift
+if [ "$1" = "-g" ]
+then
+    echo "no graphics mode not an option with this simulator"
+    shift
+fi
 
 # Option               Default        Description
 # ==================   =============  ========================================

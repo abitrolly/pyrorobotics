@@ -2,7 +2,6 @@
 
 pyropid=$1
 shift
-
 if [ "$1" = "-g" ]
 then
     if [ "$2" = "" ]

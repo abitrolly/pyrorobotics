@@ -66,7 +66,10 @@ class Thread(threading.Thread):
 if __name__ == "__main__":
     # argv can be -g for no graphics, too
     pid = int(sys.argv[1])  # pid of Pyro. If it stops, so should sim
-    worldFile = sys.argv[2] # "world" file
+    if sys.argv[2] == '-g':
+        worldFile = sys.argv[3] # "world" file
+    else:
+        worldFile = sys.argv[2] # "world" file        
     if worldFile[-3:] != '.py':
         worldFile += '.py'
     gui = INIT(worldFile)
