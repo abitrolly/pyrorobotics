@@ -326,7 +326,7 @@ class KheperaRobot(Robot):
         """
         Called after each little update in position.
         Based on code from Adam R. Bockrath
-        http://www.dcs.qmul.ac.uk/~adamb/FIRA171.pdf
+        http://www.dcs.qmul.ac.uk/~adamb/
         """
         # get wheel positions:
         w0 = self.senseData['position'][0]
@@ -335,9 +335,9 @@ class KheperaRobot(Robot):
             # no difference to compute
             return
         # get diff:
-        delta_w0 = (w0 - self.w0) * 0.08 # mm 
-        delta_w1 = (w1 - self.w1) * 0.08 # mm
-        # get diff / diameter of wheel base, in mm:
+        delta_w0 = (w0 - self.w0) # in ticks
+        delta_w1 = (w1 - self.w1) # in ticks
+        # get diff / diameter of wheel base, in ticks:
         delta_thr   = (delta_w1 - delta_w0) / 644.5
         # average diff (dist):
         delta_dist = (delta_w0 + delta_w1) / 2.0
@@ -358,8 +358,8 @@ class KheperaRobot(Robot):
         # save old values:
         self.w0 = w0
         self.w1 = w1
-        self.x += delta_x
-        self.y += delta_y
+        self.x += (delta_x * .08) # convert ticks to mm
+        self.y += (delta_y * .08) # convert ticks to mm
         self.th = self.thr * (180.0 / math.pi)
 
     def isStall(self, dev = 0):
