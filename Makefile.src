@@ -1,4 +1,4 @@
-# author: Douglas Blank
+# Pyro - Python Robotics Config Script
 
 # What version of Python do you want to build Pyro for?
 # Leave empty if your python binary is just "python"
@@ -18,7 +18,7 @@ X11_DIR = /usr/X11
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYRO_VERSION = 0.8.3
+PYRO_VERSION = 0.8.4
 PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean cleanall all
@@ -37,7 +37,7 @@ else
 	done
 endif
 
-cleanall: 
+cleanall:: 
 	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
 ifeq ($(SUBDIRS),)
 else
