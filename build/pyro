@@ -33,7 +33,7 @@ except ImportError:
 robotfile = 0
 brainfile = 0
 window = 'TK'
-brainargs = []
+pyroargs = []
 simulator = 0
 configfile = 0
 camerafile = 0
@@ -59,12 +59,12 @@ except:
 def process_options():
     import getopt, sys, string
     global robotfile, brainfile, window, simulator, \
-           brainargs, configfile, camerafile, evalcommand, worldfile
+           pyroargs, configfile, camerafile, evalcommand, worldfile
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:o:i:c:e:w:", \
+                                   "r:b:hg:s:a:i:c:e:w:", \
                                    ["robot", "brain", "help", \
-                                    "gui", "sim", "brain-args",\
+                                    "gui", "sim", "args",\
                                     "init", "camera", "eval", "world"])
     except getopt.GetoptError:
         # print help information and exit:
@@ -83,8 +83,8 @@ def process_options():
             simulator = a
         elif o in ("-b", "--brain"):
             brainfile = a
-	elif o in ("-o", "--brain-args"):
-            brainargs = a.split(":")
+	elif o in ("-a", "--args"):
+            pyroargs = a
 	elif o in ("-i", "--init"):
             configfile = a
 	elif o in ("-c", "--camera"):
@@ -121,14 +121,14 @@ if pyro.startup_check():
         worldfile = c.get('world', 'file')
     else:
         c.put('world', 'file', worldfile)
-    if not brainargs:
-        brainargs = c.get('brain', 'args')
+    if not pyroargs:
+        pyroargs = c.get('pyro', 'args')
     else:
-        c.put('brain', 'args', brainargs)
+        c.put('pyro', 'args', pyroargs)
     c.put('pyro', 'gui', window)
     share.config = c
     eng = Engine(robotfile, brainfile, simulator,
-                 brainargs, c, camerafile, worldfile)
+                 pyroargs, c, camerafile, worldfile)
     if window == 'GL':
         from pyro.gui.GL import GLgui
         gui = GLgui(eng)
