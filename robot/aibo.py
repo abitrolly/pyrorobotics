@@ -217,6 +217,12 @@ class AiboRobot(Robot):
                                          self.host) 
         self.main_control.s.send("!reset\n") # reset menu
         # --------------------------------------------------
+        # Throttle the sending of data from the Aibo; we can't handle much faster than
+        # 10 bits of data a second. Make this lower if you can (these are ms pauses):
+        self.setAiboConfig("vision.rawcam_interval", 50)
+        self.setAiboConfig("vision.rle_interval", 50)
+        self.setAiboConfig("vision.worldState_interval", 50)
+        # --------------------------------------------------
         self.setRemoteControl("Walk Remote Control", "on")
         self.setRemoteControl("EStop Remote Control", "on")
         self.setRemoteControl("World State Serializer", "on")
@@ -239,11 +245,9 @@ class AiboRobot(Robot):
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
-        self.setConfig("vision.rawcam_interval", "0")
-        self.setConfig("vision.rle_interval", "0")
-        self.setConfig("vision.worldState_interval", "0")
+        # start up some devices:
         self.startDevice("ptz")
-        self.startDevice("camera", visible=0)
+        self.startDevice("camera", visible=1)
 
         # Commands available on main_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,
@@ -263,12 +267,12 @@ class AiboRobot(Robot):
         # '!set section.key=value' - will be sent to Config::setValue(section,key,value)
         #  any text not beginning with ! - sent to takeInput() of the current control
 
-    def setConfig(self, item, state):
+    def setAiboConfig(self, item, state):
         self.main_control.s.send("!set %s=%s\n" % (item, state))
 
     def setRemoteControl(self, item, state):
         # "Walk Remote Control"
-        # could also use "!root "TekkotsuMon" %(item)"
+        # could also use "!root "TekkotsuMon" %(item)", but that toggles
         if state == "off":
             item = "#" + item
         self.main_control.s.send("!select \"%s\"\n" % item)
