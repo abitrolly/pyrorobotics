@@ -99,7 +99,7 @@ class predict(Brain):
       # set up inputs and learn
       if self.counter == 0:
          self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))
-         self.net.clearContext() # do once
+         #self.net.clearContext() # do once
       else:
          old = self.new + [self.trans, self.rotate] #trans and rotate
          self.new = map(self.scale, self.getRobot().get('range', 'value', 'all'))

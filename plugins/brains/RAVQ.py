@@ -1,4 +1,4 @@
-# A bare brain 
+# Uses RAVQ to segment input data.
  
 from pyro.brain import Brain 
 from random import random 
@@ -11,8 +11,9 @@ class SimpleBrain(Brain):
    def setup(self): 
       self.blockedFront = 0 
       self.direction = 1 
-      self.ravq = pyro.brain.ravq.ARAVQ(20, .7, 4, .1) 
-      self.ravq.setHistory(0) 
+      self.ravq = pyro.brain.ravq.ARAVQ(20, .7, 3, .1) 
+      self.ravq.setHistory(0)
+      self.ravq.setLog('ravq.log')
       self.counter = 0 
       self.getRobot().startService('truth') 
              
@@ -61,24 +62,18 @@ class SimpleBrain(Brain):
  
    def recordRAVQ(self): 
       all = self.getRobot().get('range', 'value', 'all') 
-      self.ravq.input(all) 
+      self.ravq.input(all)
+      self.ravq.logHistory(0, str(self.getRobot().dev.get_truth_pose()))
  
    def step(self): 
       print self.counter 
       target = self.avoidObstacles() 
       self.getRobot().move(target[0], target[1]) 
       self.recordRAVQ()          
-      if self.counter % 20 == 0: 
-         self.ravq.addLabel(str(self.getRobot().dev.get_truth_pose()), \
-                            self.ravq.movingAverage[:]) 
-         filename = "ravq_" + str(self.counter) + ".pck" 
-         self.ravq.saveRAVQToFile(filename) 
-         filename = "ravq_" + str(self.counter) + ".dat" 
-         fp = open(filename, 'w') 
-         fp.write(str(self.ravq)) 
-         fp.close() 
-      if self.counter == 2000: 
-         self.pleaseStop() 
+      if self.counter == 1000:
+         self.ravq.logRAVQ()
+         self.pleaseStop()
+         self.ravq.log.close()
       self.counter += 1 
  
 def INIT(engine): 

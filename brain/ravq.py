@@ -29,7 +29,7 @@ def SetDistance(X, V):
         sum += min[Numeric.argmin(min)]
     return sum / len(X)
 
-def stringArray(a, width = 0):
+def stringArray(a, newline = 1, width = 0):
     """
     String form of an array (any sequence of floats, really) to the screen.
     """
@@ -42,7 +42,8 @@ def stringArray(a, width = 0):
         if width > 0 and (cnt + 1) % width == 0:
             s += '\n'
         cnt += 1
-    s += '\n'
+    if newline:
+        s += '\n'
     return s
     
 class RAVQ:
@@ -160,7 +161,7 @@ class RAVQ:
         s += self.modelString()
         s += self.labelString()
         s += "Distance map:\n"
-        s += stringArray(self.distanceMap(), len(self.models))
+        s += stringArray(self.distanceMap(), 1, len(self.models))
         s += self.historyString()
         return s
 
@@ -169,6 +170,22 @@ class RAVQ:
         fp = open(filename, 'w')
         pickle.dump(self, fp)
         fp.close()
+
+    def setLog(self, filename):
+        self.log = open(filename, 'w')
+    def logHistory(self, labels = 1, tag = 'None'):
+        """
+        Writes time winner label tag to file in four column format.
+        """
+        line = str(self.time) + " " + stringArray(self.winner, 0)
+        if labels:
+            line += " " + self.getLabel(self.winner)
+        if not tag == 'None':
+            line += " " + tag + " "
+        line += "\n"
+        self.log.write(line)
+    def logRAVQ(self):
+        self.log.write(str(self))
 
     # helpful string methods
     def modelString(self):
