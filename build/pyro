@@ -29,6 +29,7 @@ except ImportError:
 robotfile = 0
 brainfile = 0
 window = 'GL'
+brainargs = []
 simulator = 0
 
 def basichelp():
@@ -49,12 +50,12 @@ except:
 
 def process_options():
     import getopt, sys, string
-    global robotfile, brainfile, window, simulator
+    global robotfile, brainfile, window, simulator, brainargs
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hl:g:s:", \
+                                   "r:b:hl:g:s:o:", \
                                    ["robot", "brain", "help", \
-                                    "load", "gui", "sim"])
+                                    "load", "gui", "sim", "brain-args"])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -74,11 +75,13 @@ def process_options():
             simulator = a
         elif o in ("-b", "--brain"):
             brainfile = a
+	elif o in ("-o", "--brain-args"):
+            brainargs = a.split(":")
 
 if pyro.startup_check():
     import pyro.system
     process_options()
-    eng = Engine(robotfile, brainfile, simulator)
+    eng = Engine(robotfile, brainfile, simulator, brainargs)
     if window == 'GL':
         from pyro.gui.GL import *
         gui = GLgui(eng)
