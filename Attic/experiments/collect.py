@@ -15,16 +15,20 @@ class Collect(Brain):
     """
 
     def setup(self):
-        self.getRobot().startService("BlobCamera")
+        self.getRobot().startService(["BlobCamera", "truth"])
         self.camera = self.getRobot().getService("BlobCamera")
+        self.truth = self.getRobot().getService("truth")
         self.sonar = open("sonar.dat","w")
         self.vision = open("camera.dat","w")
         self.motors = open("motors.dat", "w")
+        self.pose = open("poses.dat", "w")
+        self.camera.write("900\n")
+        self.sonar.write("16\n")
         self.currStep = 1
         self.wasStalled = 0
         self.direction = 1
         self.blockedFront = 0
-        self.stopNow = 0
+        self.truth.setPose(2, 1.25, 270)
 
     def avoidObstacles(self):
         """
@@ -101,26 +105,26 @@ class Collect(Brain):
         return ls
 
     def step(self):
-        image = self.camera.getShrunkenImage(xscale = 0.125, mode="sample")
-        saveListToFile(self.scaleSonar(self.getRobot().get("range",
-                                                           "value",
-                                                           "all")),
-                       self.sonar)
-        saveListToFile(self.scaleList(image.data, 255.0),
-                       self.vision)
-        motVals = self.avoidObstacles()
-        saveListToFile( self.scaleMotor( motVals ), self.motors)
-        self.getRobot().move(motVals[0],motVals[1])
-        sleep(.7)
-        self.getRobot().stop()
-        print "Step #", self.currStep
-        if self.stopNow :
-            self.vision.close()
-            self.sonar.close()
-            self.move(0,0)
-        self.currStep +=1
+        if self.currStep <= 5000 :
+            pose = self.truth.getPose()
+            image = self.camera.getShrunkenImage(xscale = 0.125, mode="sample")
+            saveListToFile(pose, self.pose)
+            saveListToFile(self.scaleSonar(self.getRobot().get("range",
+                                                               "value",
+                                                               "all")),
+                           self.sonar)
+            saveListToFile(self.scaleList(image.data, 255.0), self.vision)
+            motVals = self.avoidObstacles()
+            saveListToFile( self.scaleMotor( motVals ), self.motors)
+            self.getRobot().move(motVals[0],motVals[1])
+            sleep(.7)
+            self.getRobot().stop()
+            print "Step #", self.currStep
+            self.motors.flush()
+            self.currStep += 1
+        else:
+            self.quit()
 
 def INIT(engine):
     return Collect("Collect",engine)
-        
         
