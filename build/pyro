@@ -15,12 +15,14 @@ else:
 sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
 sys.path.append("/usr/local/Aria/python") # add Aria
 if not os.environ.has_key('PYRO'):
-    os.environ['PYRO'] = pyropath 
+    os.environ['PYRO'] = pyropath
+    os.putenv('PYRO', pyropath )
 if os.environ.has_key('LD_LIBRARY_PATH'):
-    os.environ['LD_LIBRARY_PATH'] += (':' + pyropath + '/lib')
+    newlibpath = os.environ['LD_LIBRARY_PATH'] + (':' + pyropath + '/lib')
 else:
-    os.environ['LD_LIBRARY_PATH'] = (pyropath + '/lib')
-os.putenv('LD_LIBRARY_PATH', pyropath + '/lib')
+    newlibpath = (pyropath + '/lib')
+os.environ['LD_LIBRARY_PATH'] = newlibpath
+os.putenv('LD_LIBRARY_PATH', newlibpath)
 
 try:
     from pyro.system import share
