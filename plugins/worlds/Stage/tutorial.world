@@ -73,7 +73,7 @@ sparko
 (
 	color "red"
 	name "Pioneer"
-	port 6666
+	port 6665
 	pose [2.0 1.25 270]
 	truth()
 )

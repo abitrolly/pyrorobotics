@@ -141,7 +141,7 @@ sparko
 (
 	color "red"
 	name "Sparko"
-	port 6666
+	port 6665
 	pose [0.850 0.800 65.400]
 	truth()
 )

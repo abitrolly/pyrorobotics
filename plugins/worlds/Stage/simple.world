@@ -20,5 +20,5 @@ bitmap
 include "usc_pioneer.inc"
  
 usc_pioneer ( color "green" name "GreenRobot" 
-          port 6666 pose [ 1 1 45 ] truth()) 
+          port 6665 pose [ 1 1 45 ] truth()) 
  
