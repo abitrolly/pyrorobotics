@@ -225,6 +225,8 @@ class B21RRobot(Robot):
 	self.senseData["sonar"] = self.dev.getSonarHigh()
 	self.senseData["lowsonar"] = self.dev.getSonarLow()
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
+	self._update()
+
     def isStall(self, dev = 0):
         stalls = float(reduce(lambda x, y: x + y, self.stallHistory))
         # if greater than % of last history is stall, then stall
