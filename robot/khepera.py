@@ -1,5 +1,6 @@
 # Defines KheperaRobot, a subclass of robot
 
+from pyro.system.share import config
 from pyro.robot import *
 from pyro.system.SerialConnection import *
 import pyro.robot.driver as driver
@@ -32,7 +33,11 @@ class KheperaRobot(Robot):
         if simulator == 1:
             self.sc = SerialSimulator()
         else:
-            self.sc = SerialConnection("/dev/ttyS1", termios.B38400)
+            try:
+                port = config.get('khepera', 'port')
+            except:
+                port = "/dev/ttyS1"
+            self.sc = SerialConnection(port, termios.B38400)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.dev = self # pointer to self
@@ -256,17 +261,17 @@ class KheperaRobot(Robot):
 
     def light_thd(self, dev, pos):
         if pos == 0:
-            return -90.0
+            return 90.0
         elif pos == 1:
-            return -45.0
+            return 45.0
         elif pos == 2:
             return 0.0
         elif pos == 3:
             return 0.0 
         elif pos == 4:
-            return 45.0
+            return -45.0
         elif pos == 5:
-            return 90.0
+            return -90.0
         elif pos == 6:
             return 180.0
         elif pos == 7:
