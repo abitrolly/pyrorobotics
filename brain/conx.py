@@ -1,13 +1,13 @@
 # ------------------------------------------------
 # An Artificial Neural Network System Implementing
-# Backprop, and Quickprop
+# Backprop
 # ------------------------------------------------
 # (c) 2001-2002, D.S. Blank, Bryn Mawr College
 # ------------------------------------------------
 
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "5.9"
+version = "6.0"
 
 def sum(a):
     mysum = 0
@@ -42,7 +42,7 @@ def displayArray(name, a, width = 0):
         if width > 0 and (cnt + 1) % width == 0:
             print ''
         cnt += 1
-    #print ""
+    print ""
 
 def writeArray(fp, a):
     for i in a:
@@ -71,8 +71,6 @@ class Layer:
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
-        self.bias_slope = Numeric.zeros(self.size, 'f')
-        self.bias_prevslope = Numeric.zeros(self.size, 'f')
         self.dbias = Numeric.zeros(self.size, 'f')
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
@@ -126,8 +124,6 @@ class Layer:
             displayArray('Error', self.error, self.displayWidth)
         if (self.verbosity > 4 and self.type != 'Input'):
             print "    ", ; displayArray('bias', self.bias)
-            print "    ", ; displayArray('bias_slope', self.bias_slope)
-            print "    ", ; displayArray('bias_prevslope', self.bias_prevslope)
             print "    ", ; displayArray('dbias', self.dbias)
             print "    ", ; displayArray('delta', self.delta)
             print "    ", ; displayArray('netinput', self.netinput)
@@ -186,11 +182,28 @@ class Connection:
                                            self.fromLayer.size), 'f')
         self.wed = Numeric.zeros((self.toLayer.size, \
                                   self.fromLayer.size), 'f')
-        self.slope = Numeric.zeros((self.toLayer.size, \
-                                    self.fromLayer.size), 'f')
-        self.prevslope = Numeric.zeros((self.toLayer.size, \
-                                        self.fromLayer.size), 'f')
     def display(self):
+        if self.toLayer.verbosity > 0:
+            print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
+            for i in range(self.toLayer.size):
+                print self.toLayer.name, "[", i, "]",
+            print ''
+            for i in range(self.fromLayer.size):
+                print self.fromLayer.name, "[", i, "]", ": ",
+                for j in range(self.toLayer.size):
+                    print self.wed[j][i],
+                print ''
+            print ''
+            print "dweight: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
+            for i in range(self.toLayer.size):
+                print self.toLayer.name, "[", i, "]",
+            print ''
+            for i in range(self.fromLayer.size):
+                print self.fromLayer.name, "[", i, "]", ": ",
+                for j in range(self.toLayer.size):
+                    print self.dweight[j][i],
+                print ''
+            print ''
         print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
         print "             ",
         for i in range(self.toLayer.size):
@@ -204,7 +217,6 @@ class Connection:
         print ''
     def setEpsilon(self, value):
         self.epsilon = value
-        self.bepsilon = value
     def setSplitEpsilon(self, value):
         self.split_epsilon = value
     def getEpsilon(self):
@@ -255,11 +267,7 @@ class Network:
         self.verbosity = verbosity
         self.stopPercent = 1.0
         self.sigmoid_prime_offset = 0.1
-        self.qp_decay = -0.0001
-        self.qp_mode_threshold = 0.0
         self.symmetric = 0
-        self.qp_mu = 1.75
-        self.qp_mode = 0
         self.tolerance = 0.4
         self.interactive = 0
         self.epsilon = 0.1
@@ -324,6 +332,9 @@ class Network:
     def setSeed(self, value):
         self.seed1 = value
         self.seed2 = value / 23.45
+        if int(self.seed2) <= 0:
+            self.seed2 = 515
+            print "Warning: random seed too small"
         random.seed(self.seed1)
         RandomArray.seed(int(self.seed1), int(self.seed2))
     def setInputs(self, inputs):
@@ -346,62 +357,55 @@ class Network:
             self.loadOrder[pos] = i
     def setEpsilon(self, value):
         self.epsilon = value
+        for l in range(self.layerCount):
+            self.layer[l].bepsilon = value
         for c in range(self.connectionCount):
             self.connection[c].setEpsilon(value)
     def ce_init(self):
         retval = 0.0; correct = 0; totalCount = 0
         for x in range(self.layerCount):
-            if (self.layer[x].type == 'Output' and self.layer[x].active):
-                for t in range(self.layer[x].size):
-                    self.layer[x].error[t] = self.diff(self.layer[x].target[t] - self.layer[x].activation[t])
-                    if (math.fabs(self.layer[x].error[t]) < self.tolerance):
-                        correct += 1
-                    totalCount += 1
-                    retval += (self.layer[x].error[t] ** 2)
+            if (self.layer[x].active):
+                if (self.layer[x].type == 'Output'):
+                    for t in range(self.layer[x].size) :
+                        self.layer[x].error[t] = self.diff(self.layer[x].target[t] - self.layer[x].activation[t])
+                        if (math.fabs(self.layer[x].error[t]) < self.tolerance):
+                            correct += 1
+                        totalCount += 1
+                        retval += (self.layer[x].error[t] ** 2)
+                elif (self.layer[x].type == 'Hidden'):
+                    for i in range(self.layer[x].size):
+                        self.layer[x].error[i] = 0.0
         return (retval, correct, totalCount)
     def compute_error(self):
         error, correct, total = self.ce_init()
         # go backwards through each proj
-        for x in range(self.connectionCount - 1, -1, -1):
+        for c in range(self.connectionCount - 1, -1, -1):
             # but don't redo output errors!
-            self.ce_process(self.connection[x])
+            connect = self.connection[c]
+            if connect.toLayer.active:
+                for i in range(connect.toLayer.size):
+                    connect.toLayer.delta[i] = \
+                      connect.toLayer.error[i] * self.ACTPRIME(connect.toLayer.activation[i])
+                    for j in range(connect.fromLayer.size):
+                        connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
+                                                       connect.weight[i][j])
         return (error, correct, total)
-    def ce_process(self, connect):
-        if connect.toLayer.active:
-            for i in range(connect.toLayer.size):
-                # could put this in ce_init, do just once per layer,
-                # doesn't hurt though
-                connect.toLayer.delta[i] = connect.toLayer.error[i] * \
-                                           self.ACTPRIME(connect.toLayer.activation[i])
-                # FIX? do I need to update to->bias_slope[i] here?
-                for j in range(connect.fromLayer.size):
-                    connect.fromLayer.error[j] += (connect.toLayer.delta[i] * \
-                                                   connect.weight[i][j])
-                    connect.slope[i][j] += (connect.toLayer.delta[i] * \
-                                            connect.fromLayer.activation[j])
-                    connect.toLayer.bias_slope[i] += (connect.toLayer.delta[i] * \
-                                                      connect.fromLayer.activation[j])
-    def ACTPRIME(self, act):
-        if self.symmetric:
-            return ((0.25 - act * act) + self.sigmoid_prime_offset)
-        else:
-            return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
-    def cw_process(self, connect):
-        for i in range(connect.toLayer.size):
-            for j in range(connect.fromLayer.size):
-                connect.wed[i][j] = connect.wed[i][j] + \
-                                    (connect.toLayer.delta[i] * \
-                                     connect.fromLayer.activation[j])
     def compute_wed(self):
-        for x in range(self.connectionCount):
-            if self.connection[x].fromLayer.active and self.connection[x].toLayer.active:
-                self.cw_process( self.connection[x] )
-        for x in range(self.layerCount):
-            if self.layer[x].active:
-                for i in range(self.layer[x].size):
-                    self.layer[x].bed[i] += self.layer[x].delta[i]
+        for c in range(self.connectionCount - 1, -1, -1):
+            connect = self.connection[c]
+            for i in range(connect.toLayer.size):
+                for j in range(connect.fromLayer.size):
+                    connect.wed[i][j] += (connect.toLayer.delta[i] * \
+                                          connect.fromLayer.activation[j])
+                connect.toLayer.bed[i] += connect.toLayer.delta[i]
+    def ACTPRIME(self, act):
+        #if self.symmetric:
+        #    return ((0.25 - act * act) + self.sigmoid_prime_offset)
+        #else:
+        #    return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
+        return act * (1.0 - act)
     def diff(self, value):
-        if math.fabs(value) < 0.1:
+        if math.fabs(value) < 0.001:
             return 0.0
         else:
             return value
@@ -442,16 +446,6 @@ class Network:
                 (v1, offset) = vals
                 self.copyVector(self.getLayer(v1).target,
                                 self.output[pos], offset)
-    def init_slopes(self):
-        for x in range(self.connectionCount):
-            if self.connection[x].toLayer.active:
-                for i in range(self.connection[x].toLayer.size):
-                    self.connection[x].toLayer.bias_prevslope[i] = self.connection[x].toLayer.bias_slope[i]
-                    self.connection[x].toLayer.bias_slope[i] = self.qp_decay * self.connection[x].toLayer.bias[i]
-                    if self.connection[x].fromLayer.active:
-                        for j in range(self.connection[x].fromLayer.size):
-                            self.connection[x].prevslope[i][j] = self.connection[x].slope[i][j]
-                            self.connection[x].slope[i][j] = self.qp_decay * self.connection[x].weight[i][j]
     def train(self):
         tssErr = 1.0; e = 1; totalCorrect = 0; totalCount = 1;
         #totalPatterns = len(self.output) * len(self.input[0]) /
@@ -507,7 +501,6 @@ class Network:
         if self.verbosity > 0: print "Cycle..."
         if not self.orderedInput:
             self.randomizeOrder()
-        self.init_slopes() # here, doing batch?
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
         for i in self.loadOrder:
             if self.autoSequence:
@@ -553,8 +546,6 @@ class Network:
                 self.change_weights() # batch
         return (tssError, totalCorrect, totalCount)
     def step(self):
-        if self.learning:
-            self.init_slopes() 
         self.propagate()
         (error, correct, total) = self.backprop() # compute_error()
         if self.verbosity > 0 or self.interactive:
@@ -569,10 +560,6 @@ class Network:
         if self.learning:
             self.change_weights()
         return (error, correct, total)        
-    def reset_error(self):
-        for x in range(self.layerCount):
-            for i in range(self.layer[x].size):
-                self.layer[x].error[i] = 0.0
     def setOutputs(self, outputs):
         self.output = outputs
     def activationFunction(self, x):
@@ -618,15 +605,15 @@ class Network:
     def mapOutput(self, vector1, offset = 0):
         self.outputMap.append((vector1, offset))
         self.outputMapCount += 1
-    def propagate(self, propfrom = 0):
+    def propagate(self):
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # Initialize netinput:
-        for n in range(propfrom, self.layerCount):
+        for n in range(self.layerCount):
             if (self.layer[n].type != 'Input' and self.layer[n].active):
                 for i in range(self.layer[n].size):
                     self.layer[n].netinput[i] = self.layer[n].bias[i]
         # For each connection, in order:
-        for n in range(propfrom, self.layerCount):
+        for n in range(self.layerCount):
             if self.layer[n].active:
                 for c in range(self.connectionCount):
                     if (self.connection[c].toLayer.name == self.layer[n].name):
@@ -634,7 +621,7 @@ class Network:
                 if (self.layer[n].type != 'Input'):
                     for i in range(self.layer[n].size):
                         self.layer[n].activation[i] = self.activationFunction(self.layer[n].netinput[i])
-        for n in range(propfrom, self.layerCount):
+        for n in range(self.layerCount):
             if self.layer[n].log and self.layer[n].active:
                 self.layer[n].writeLog()
     def prop_process(self, connect):
@@ -648,56 +635,28 @@ class Network:
                 connect.toLayer.netinput[i] += (connect.fromLayer.activation[j] * connect.weight[i][j])
                 if self.verbosity > 6: print "netinput@", connect.toLayer.name, "[", i, "] = ", connect.toLayer.netinput[i]
     def backprop(self):
-        self.reset_error()
         retval = self.compute_error()
         if self.learning:
             self.compute_wed()
         return retval
     def change_weights(self):
-        qp_shrink_factor = self.qp_mu / (1.0 + self.qp_mu);
-        for l in range(self.connectionCount):
-            if not self.connection[l].frozen:
-                for i in range(self.connection[l].toLayer.size):
-                    if self.connection[l].fromLayer.active:
-                        for j in range(self.connection[l].fromLayer.size):
-                            nextstep = 0.0
-                            if self.qp_mode and self.connection[l].dweight[i][j] > self.qp_mode_threshold:
-                                if (self.connection[l].slope[i][j] > 0.0):
-                                    nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                                if (self.connection[l].slope[i][j] > (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                                    nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
-                                else:
-                                    try:
-                                        nextstep += ((self.connection[l].slope[i][j] / \
-                                                      (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                                     * self.connection[l].dweight[i][j])
-                                    except: # Divide by Zero
-                                        nextstep = 0.0
-                                self.connection[l].dweight[i][j] = nextstep
-                            elif (self.qp_mode and self.connection[l].dweight[i][j] < -self.qp_mode_threshold):
-                                if (self.connection[l].slope[i][j] < 0.0):
-                                    nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                                if (self.connection[l].slope[i][j] < (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                                    nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
-                                else:
-                                    try:
-                                        nextstep += ((self.connection[l].slope[i][j] / \
-                                                      (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                                     * self.connection[l].dweight[i][j])
-                                    except:
-                                        nextstep = 0.0
-                                self.connection[l].dweight[i][j] = nextstep
-                            else:
-                                self.connection[l].dweight[i][j] = self.connection[l].getEpsilon() * self.connection[l].wed[i][j] + \
-                                                                   self.momentum * self.connection[l].dweight[i][j]
-                            self.connection[l].weight[i][j] += self.connection[l].dweight[i][j]
-                        self.connection[l].wed[i][j] = 0.0
-        for l in range(self.layerCount):
-            if self.layer[l].active:
-                for i in range(self.layer[l].size):
-                    self.layer[l].dbias[i] = self.layer[l].bepsilon * self.layer[l].bed[i] + self.momentum * self.layer[l].dbias[i]
-                    self.layer[l].bias[i] += self.layer[l].dbias[i]
-                    self.layer[l].bed[i] = 0.0
+        for c in range(self.connectionCount):
+            connect = self.connection[c]
+            if not connect.frozen:
+                for i in range(connect.toLayer.size):
+                    if connect.fromLayer.active:
+                        for j in range(connect.fromLayer.size):
+                            connect.dweight[i][j] = connect.getEpsilon() * connect.wed[i][j] + \
+                                                    self.momentum * connect.dweight[i][j]
+                            connect.weight[i][j] += connect.dweight[i][j]
+                            connect.wed[i][j] = 0.0
+                        toLayer = connect.toLayer
+                        toLayer.dbias[i] = toLayer.bepsilon * toLayer.bed[i] + self.momentum * toLayer.dbias[i]
+                        toLayer.bias[i] += toLayer.dbias[i]
+                        toLayer.bed[i] = 0.0
+        if self.verbosity > 0:
+            print "WEIGHTS CHANGED"
+            self.display()
     def getLayer(self, name):
         return self.layerByName[name]
     def getWeights(self, fromName, toName):
@@ -724,7 +683,7 @@ class Network:
         for i in range(self.layerCount):
             output += self.layer[i].toString()
         return output
-    def display(self, seeWeights = 0):
+    def display(self):
         print "Display network '" + self.name + "':"
         size = range(self.layerCount)
         size.reverse()
@@ -733,7 +692,7 @@ class Network:
                 self.layer[i].display()
                 weights = range(self.connectionCount)
                 weights.reverse()
-                if seeWeights:
+                if self.verbosity > 0:
                     for j in weights:
                         if self.connection[j].toLayer.name == self.layer[i].name:
                             self.connection[j].display()
@@ -851,42 +810,20 @@ class Network:
         fp.writelines("\tnet.setLearning(0)\n")
         fp.writelines("\tnet.setInteractive(1)\n")
         fp.writelines("\tnet.sweep()\n")
-    def setQuickProp(self, value):
-        if value:
-            self.setSymmetric(1)
-            self.setQp_mode(1)
-            self.setEpsilon(4.0)
-            self.setQp_mu(2.25)
-            self.setSplit_epsilon(1)
-            # FIX
-            # self.setMaxrand(1.0)
-        else:
-            self.setSymmetric(0)
-            self.setQp_mode(0)
-            self.setEpsilon(0.5)
-            self.setSplit_epsilon(0)
-            # FIX
-            # self.setMaxrand(0.4)
     def setConnectionCount(self, value):
         self.connectionCount = value
     def setPrediction(self, value):
         self.prediction = value
     def setVerbosity(self, value):
         self.verbosity = value
+        for l in range(self.layerCount):
+            self.layer[l].verbosity = value
     def setStopPercent(self, value):
         self.stopPercent = value
     def setLayerCount(self, value):
         self.layerCount = value
-    def setQp_decay(self, value):
-        self.qp_decay = value
-    def setQp_mode_threshold(self, value):
-        self.qp_mode_threshold = value
     def setSigmoid_prime_offset(self, value):
         self.sigmoid_prime_offset = value
-    def setQp_mode(self, value):
-        self.qp_mode = value
-    def setQp_mu(self, value):
-        self.qp_mu = value
     def setSplit_epsilon(self, value):
         self.split_epsilon = value
     def setReportRate(self, value):
@@ -1023,7 +960,6 @@ if __name__ == '__main__':
         print "XOR Backprop batch mode: .............................."
         n.setBatch(1)
         n.reset()
-        n.setQuickProp(0)
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.train()
@@ -1032,16 +968,8 @@ if __name__ == '__main__':
         print "XOR Backprop non-batch mode: .........................."
         n.setBatch(0)
         n.initialize()
-        n.setQuickProp(0)
         n.setEpsilon(0.5)
         n.setMomentum(.975)
-        n.train()
-
-    if ask("Do you want to run an XOR QUICKPROP network?"):
-        print "XOR Quickprop: ........................................"
-        n.reset()
-        n.setBatch(1)
-        n.setQuickProp(1)
         n.train()
 
     if ask("Do you want to train an SRN to predict the seqences 1,2,3 and 1,3,2?"):
@@ -1057,7 +985,6 @@ if __name__ == '__main__':
         n.setInputs([seq1, seq2])
         n.setLearnDuringSequence(1)
         n.setReportRate(75)
-        n.setQuickProp(0)
         n.setEpsilon(0.1)
         n.setMomentum(0)
         n.setBatch(1)
@@ -1074,7 +1001,6 @@ if __name__ == '__main__':
         n.setInputs([[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]])
         n.associate('input','output')
         n.setReportRate(25)
-        n.setQuickProp(0)
         n.setEpsilon(0.1)
         n.setMomentum(0.9)
         n.setBatch(1)
@@ -1095,7 +1021,6 @@ if __name__ == '__main__':
         n.setInputs([[1,0,0, 0,1,0, 0,0,1, 0,0,1, 0,1,0, 1,0,0]])
         n.setLearnDuringSequence(1)
         n.setReportRate(25)
-        n.setQuickProp(0)
         n.setEpsilon(0.1)
         n.setMomentum(0.3)
         n.setBatch(1)
@@ -1119,3 +1044,5 @@ if __name__ == '__main__':
         filename = sys.stdin.readline().strip()
         n.saveWeightsToFile(filename)
         #n.loadWeightsFromFile(filename)
+
+
