@@ -30,8 +30,7 @@
 
 from pyro.brain.fuzzy import *
 from pyro.brain.behaviors import *
-from pyro.brain.behaviors.core import *   # import distance function
-
+from pyro.geometry import *   # import distance function
 import math
 from random import random
 

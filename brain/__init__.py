@@ -1,9 +1,11 @@
 # a basic brain class
 
-import thread
-import threading
-import time
+import threading, time, operator
 import pyro.gui.console
+
+def avg(list):
+    sum = reduce(operator.add, list)
+    return sum / float(len(list))
 
 def select(func, keyword, dicts):
     """
@@ -12,8 +14,8 @@ def select(func, keyword, dicts):
     of just a single value. For example:
 
     >>> v = self.get("/robot/range/all/value,pos") # returns a list of dictionaries
-    >>> select(min, "value", v)      # selects pair of value/pos for which value is
-                                     # the smallest
+    >>> m = select(min, "value", v)      # selects pair of value/pos for which value is
+                                         # the smallest
     ARGS:
 
        func - any function that can be applied to a list of values
