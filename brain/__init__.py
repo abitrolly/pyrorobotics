@@ -64,6 +64,7 @@ class Brain(threading.Thread): #, Drawable):
             
             #print "step()"
             self.step()
+            time.sleep(.1)
             self.lastRun = time.time() # seconds
             #print "release()"
             self.condition.release()
@@ -126,4 +127,3 @@ class Brain(threading.Thread): #, Drawable):
 		
     def step(self):
         print "need to override pyro.brain.Brain.step()."
-        time.sleep(1)
