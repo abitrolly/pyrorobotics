@@ -10,15 +10,15 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D__x86__ -D__linux__ \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE) $(INCLUDE)
-
-LIBDIRS= /root/pyro-install/player/client_libs/c/playercclient.o
+#PLAYER_SRC= /root/pyro-install/player
+PLAYER_SRC=/home/dblank/playerstage/player
 LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerpacket -lplayerc -ljpeg -lplayercclient -L/usr/lib/python2.3/config/ -lpython2.3
 
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
 _playercam.so: playercam.o PlayerCam.o
-	$(CC) $(CPPFLAGS) -shared playercam.o PlayerCam.o ../device/Device.o /root/pyro-install/player/client_libs/libplayerpacket/jpeg.o $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -shared playercam.o PlayerCam.o ../device/Device.o $(PLAYER_SRC)/client_libs/libplayerpacket/jpeg.o -o $@ $(LIBS)
 
 PlayerCam.o: PlayerCam.cpp PlayerCam.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c PlayerCam.cpp
