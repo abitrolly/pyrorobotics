@@ -1,6 +1,7 @@
 
 import Tkinter
 import types
+import pyro.system.share as share
 
 class Inspector(Tkinter.Tk):
 
@@ -89,24 +90,37 @@ class Inspector(Tkinter.Tk):
         # help:
         scrollBar = Tkinter.Scrollbar(filesFrame, {'orient':'vertical'})
         scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
-        self.helptext = Tkinter.Text(filesFrame, {'yscroll':scrollBar.set, "width": 40})
+        self.helptext = Tkinter.Text(filesFrame, {'yscroll':scrollBar.set, "width": 70})
         self.helptext.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
-                             'fill' :'both'})        
+                            'fill' :'both'})        
+
+        self.methods.bind('<Button-1>', self.methodItem)
+        self.variables.bind('<Button-1>', self.variableItem)
 
         if root == None:
             root = dir()
         for thing_s in root:
             self.dirLb.insert('end', thing_s)
-        #    self.loadItems(thing_s)
 
+    def showHelp(self, thing_s):
+        self.helptext.delete(1.0, 'end')
+        exec "thing = %s" % thing_s
+        if thing.__doc__:
+            self.helptext.insert('end', thing.__doc__)
+        else:
+            self.helptext.insert('end', "")
 
     def loadItems(self, thing_s):
         self.methods.delete(0, self.methods.size())
         self.variables.delete(0, self.variables.size())
         self.helptext.delete(1.0, 'end')
         exec "thing = %s" % thing_s
-        self.helptext.insert('end', thing.__doc__)
+        if thing.__doc__:
+            self.helptext.insert('end', thing.__doc__)
+        else:
+            self.helptext.insert('end', "")
         for subthing_s in dir(thing):
+            if subthing_s[0] == '_': continue
             exec "subthing = %s.%s" % (thing_s, subthing_s)
             if type(subthing) == types.MethodType:
                 self.methods.insert('end', subthing_s)
@@ -115,7 +129,16 @@ class Inspector(Tkinter.Tk):
 
     def selectItem(self, event):
         lb = event.widget
-        self.loadItems(lb.get(lb.nearest(event.y)))
+        self.currentObject = lb.get(lb.nearest(event.y))
+        self.loadItems(self.currentObject)
+
+    def methodItem(self, event):
+        lb = event.widget
+        self.showHelp(self.currentObject + "." + lb.get(lb.nearest(event.y)))
+
+    def variableItem(self, event):
+        lb = event.widget
+        self.showHelp(self.currentObject + "." + lb.get(lb.nearest(event.y)))
 
 if __name__ == '__main__':
     class Testing:

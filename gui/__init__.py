@@ -117,11 +117,12 @@ class gui(Drawable):
             self.inform("Need to load a brain first!")
       elif retval == "inspect":
          import pyro.gui.inspector as Inspector
-         brain = self.engine.brain
-         robot = self.engine.robot
-         engine = self.engine
-         gui = self
-         inspector = Inspector.Inspector(('self.engine.brain', 'self.engine.robot', 'self.engine', 'self'))
+         import pyro.system.share as share
+         share.brain = self.engine.brain
+         share.robot = self.engine.robot
+         share.engine = self.engine
+         share.gui = self
+         inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
       else:
          # elif len(retval) > 0 and retval[0] == "!":
          exp1 = "_retval = " + string.strip(retval)

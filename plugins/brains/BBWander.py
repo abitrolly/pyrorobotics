@@ -9,11 +9,14 @@ from random import random
 import time
 
 class Avoid (Behavior):
+    """Avoid Class"""
     def init(self): # called when created
+        """init method"""
         self.lasttime = time.mktime(time.localtime())
         self.count = 0
 
     def direction(self, dir, dist):
+        """ computes direction given an angle"""
         if dir < 0.0:
             return 1.0 - dir
         else:
@@ -38,6 +41,7 @@ class Avoid (Behavior):
         self.IF(Fuzzy(0.0, max_sensitive) >> close_dist, 'rotate', 0.0, "Ok")
 
 class state1 (State):
+    """ sample state """
     def init(self):
         #self.add(StraightBehavior(1))
         self.add(Avoid(1, {'translate': .3, 'rotate': .3}))
