@@ -138,7 +138,7 @@ class PlayerBase(Robot):
         self.port = port
         self.inform("Loading Player robot interface...")
         self.name = name
-        self.connect()
+        self.connect() # set self.dev to player robot
         # default values
         self.x = 0.0
         self.y = 0.0

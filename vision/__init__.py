@@ -146,6 +146,7 @@ class PyroImage:
       data = [0] * self.width * self.height
       for h in range(self.height):
          for w in range(self.width):
+            # FIX: offsets might not be RGB = 012
             r = self.data[(w + h * self.width) * self.depth + 0]
             g = self.data[(w + h * self.width) * self.depth + 1]
             b = self.data[(w + h * self.width) * self.depth + 2]
@@ -180,6 +181,7 @@ class PyroImage:
          line = ''
          for h in range(self.height):
             for w in range(self.width):
+               # FIX: offsets might not be RGB = 012
                r = self.data[(w + h * self.width) * self.depth + 0]
                g = self.data[(w + h * self.width) * self.depth + 1]
                b = self.data[(w + h * self.width) * self.depth + 2]               
@@ -193,6 +195,7 @@ class PyroImage:
          line = ''
          for h in range(self.height):
             for w in range(self.width):
+               # FIX: offsets might not be RGB = 012
                r = self.data[(w + h * self.width) * self.depth + 0]
                if int(r/255.0 * 9):
                   line += "%d" % int(r * 9)
@@ -203,7 +206,7 @@ class PyroImage:
 
    def set(self, x, y, val, offset = 0):
       """
-      Method to set a pixel to a value. offset is r, g, b (0, 1, 2)
+      Method to set a pixel to a value. offset may be r, g, b (0, 1, 2)
       """
       self.data[(x + y * self.width) * self.depth + offset] = val
 
@@ -250,7 +253,9 @@ class PyroImage:
       """
       start = (x + y * self.width) * self.depth
       end = start + self.depth
-      return (tuple(self.data[start:end]))
+      # FIX: need to get RGB in right order
+      rgb = self.data[start:end]
+      return tuple( (rgb[self.rgb[0]], rgb[self.rgb[1]], rgb[self.rgb[2]] ))
 
    def reset(self, vector):
       """
