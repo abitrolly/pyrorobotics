@@ -29,7 +29,5 @@ fake.o: Fake.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Fake.cc -o $@
 
 clean::
-	$(RM) *~ 
+	$(RM) *~ *.so *.o fake.py Fake.cc
 
-cleanall::
-	$(RM) *.so *.o

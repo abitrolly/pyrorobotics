@@ -27,7 +27,5 @@ vision.o: Vision.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) $^ -o $@
 
 clean::
-	$(RM) *~ 
+	$(RM) *~ *.so *.o *.cc *.so *.pyc vision.py
 
-cleanall::
-	$(RM) *.so *.o *.cc *.so *.pyc

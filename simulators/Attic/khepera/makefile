@@ -55,9 +55,7 @@ user.o: user.c user.h user_info.h include.h
 	$(cc) USER/user.c -o OBJ/user.o
 header.h: types.h graphics.h sim.h robot.h world.h
 	touch SRC/header.h
-
 clean:
 	rm -f sim OBJ/*.o ; \
 	(cd ./CNTRL && make clean)
 
-cleanall:: clean

@@ -17,7 +17,5 @@ Vision.o:: Vision.cpp Vision.h
 	$(CC) $(CPPFLAGS) -o $@ -c $<
 
 clean::
-	$(RM) *~ 
+	$(RM) *~ *.so *.o
 
-cleanall::
-	$(RM) *.so *.o

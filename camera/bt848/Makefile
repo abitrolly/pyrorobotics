@@ -27,7 +27,5 @@ bt848.o: BT848.cc ../device/Device.o
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) BT848.cc -o $@
 
 clean::
-	$(RM) *~ BT848.cc bt848.py bt848.cc bt848grab 
+	$(RM) *~ BT848.cc bt848.py bt848.cc bt848grab *.so *.o
 
-cleanall::
-	$(RM) *.so *.o

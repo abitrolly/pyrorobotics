@@ -105,7 +105,5 @@ som_devrobs.o:	som_devrobs.h som_rout.h lvq_pak.h datafile.h fileio.h labels.h
 vcal.o mapinit.o vsom.o qerror.o visual.o sammon.o:\
 	lvq_pak.h datafile.h fileio.h labels.h som_rout.h 
 
-
-
 clean::
-	rm -f *~ *.o $(TARGETS) test*.cod
+	$(RM) -f *~ *.o $(TARGETS) test*.cod

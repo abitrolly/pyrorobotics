@@ -28,7 +28,5 @@ v4l.o: V4L.cc ../device/Device.o
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) V4L.cc -o $@
 
 clean::
-	$(RM) *~ 
+	$(RM) *~ *.so *.o v4l.py V4L.cc 
 
-cleanall::
-	$(RM) *.so *.o

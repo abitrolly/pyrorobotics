@@ -49,6 +49,6 @@ obj/%.o : src/%.cpp
 FORCE:
 
 clean ::
-	rm -f obj/* || true
-	rm -f *.so *.o *.cc *.rpo *.pyc lowlevel.py
+	$(RM) -f obj/* || true
+	$(RM) -f *.so *.o *.cc *.rpo *.pyc lowlevel.py
 

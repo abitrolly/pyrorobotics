@@ -8,7 +8,7 @@
 PYRO_VERSION = 3.3.0
 PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
 
-.PHONY: $(SUBDIRS) clean cleanall all
+.PHONY: $(SUBDIRS) clean all
 
 all:: $(SUBDIRS) $(OBJS)
 
@@ -16,7 +16,9 @@ $(SUBDIRS):
 	(cd ./$@ && $(MAKE))
 
 clean::
-	- $(RM) *.o *.bak core *~
+	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
+	- $(RM) `find . | grep \.pyc$$`
+	- $(RM) `find . | grep ~$$`
 ifeq ($(SUBDIRS),)
 else
 	@for i in $(SUBDIRS); do\
@@ -24,14 +26,3 @@ else
 	done
 endif
 
-cleanall:: 
-	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
-	- $(RM) `find . | grep \.pyc$$`
-	- $(RM) `find . | grep ~$$`
-
-ifeq ($(SUBDIRS),)
-else
-	@for i in $(SUBDIRS); do\
-		(cd ./$$i; $(MAKE) cleanall); \
-	done
-endif

@@ -45,10 +45,8 @@ $(OBJLIB)/%.o: $(OBJLIB)/%.c $(OBJLIB)/%.h
 	(cd $(OBJLIB) && make $(@F)) 
 
 clean::
-	rm -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core csom.py
-
-cleanall::
-	(make clean && cd $(OBJLIB) && make clean)
+	$(RM) -f $(OBJS) *.o *.html *.doc $(INTERFACE:.i=_wrap.c) core test*.cod $(OBJLIB)/core csom.py
+	(cd $(OBJLIB) && make clean)
 
 
 # notes on some make details:

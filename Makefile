@@ -14,7 +14,7 @@ everything: system/version.py all bin/pyro plugins/simulators/KheperaSimulator c
 
 include Makefile.src
 
-.PHONY: all tar pyro-$(PYRO_VERSION).tgz cleanall compile
+.PHONY: all tar pyro-$(PYRO_VERSION).tgz clean compile
 
 tar: pyro-$(PYRO_VERSION).tgz
 
@@ -28,7 +28,7 @@ compile:
 pyro-$(PYRO_VERSION).tgz: Makefile
 	mkdir tars || true
 	mv *.tgz tars/ || true
-	make cleanall; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude wikiparser.php --exclude stylesheet.css --exclude knoppix --exclude pyro/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
+	make clean; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude wikiparser.php --exclude stylesheet.css --exclude knoppix --exclude pyro/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
 
 Makefile.cfg:
 	$(PYTHON_BIN) configure.py
@@ -50,6 +50,5 @@ plugins/simulators/KheperaSimulator: build/Khepera Makefile Makefile.cfg Makefil
 clean:: 
 	- $(RM) plugins/simulators/KheperaSimulator
 	- $(RM) bin/pyro
-
-cleanall:: clean
+	- $(RM) system/version.py
 

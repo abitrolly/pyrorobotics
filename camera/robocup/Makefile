@@ -30,7 +30,5 @@ robocup.o: Robocup.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Robocup.cc -o $@
 
 clean::
-	$(RM) *~ 
+	$(RM) *~ *.so *.o Robocup.cc robocup.py
 
-cleanall::
-	$(RM) *.so *.o Robocup.cc robocup.py

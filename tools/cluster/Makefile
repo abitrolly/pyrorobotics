@@ -117,7 +117,7 @@ testm:		testm.c
 	./testm
 
 clean:
-	rm -f $(PROG) $(ALIAS) $(OBJS) testm
+	$(RM) -f $(PROG) $(ALIAS) $(OBJS) testm *.o cluster
 
 saber:		$(SRCS)
 	#load -C $(CFLAGS) $(SRCS) $(LIBS)
@@ -162,5 +162,3 @@ IFLAGS = -bap -nce -di8 -nfc1 -i4 -lp
 .h.h.indent:
 	indent $< $@ $(IFLAGS) 
 
-cleanall::
-	$(RM) *.o cluster

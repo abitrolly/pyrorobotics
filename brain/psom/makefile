@@ -18,6 +18,4 @@ $(LIB)/$(TARGET):
 
 clean::
 	$(RM) $(TARGET) 
-
-cleanall::
-	(make clean && cd $(LIB) && make cleanall)
+	(cd $(LIB) && make clean)
