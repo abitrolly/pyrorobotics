@@ -1,5 +1,6 @@
 from pyro.camera import Camera, CBuffer
 from pyro.camera.blob.blob import Blob
+import time
 
 class BlobCamera(Camera):
    """
@@ -11,8 +12,8 @@ class BlobCamera(Camera):
       self.robot = robot
       self.robot.startService('blob')
       self.blobData = self.robot.getServiceData('blob')
-      if len(self.blobdata[0]) == 2: 
-         self.width, self.height = self.blobdata[0]
+      if len(self.blobData[0]) == 2: 
+         self.width, self.height = self.blobData[0]
       else:
          raise "didn't load blob camera"
       self.depth = depth
@@ -53,7 +54,8 @@ class BlobCamera(Camera):
    def _update(self):
       currentTime = time.time()
       if currentTime - self.lastUpdate > self.interval:
-         self.cameraDevice.updateMMap(None)
+         blobdata = self.robot.getServiceData('blob')[1]
+         self.cameraDevice.updateMMap(blobdata)
          if self.vision != None:
             self.vision.processAll()
          self.lastUpdate = currentTime
