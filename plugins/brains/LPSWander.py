@@ -13,19 +13,19 @@ class SimpleBrain(Brain):
       units = self.getRobot().get('range', 'units')
       self.getRobot().set('range', 'units', 'MM')
       sizeMM = self.getRobot().get('range', 'maxvalue') * 3 + \
-               self.getRobot().get('self', 'radius')
+               self.getRobot().get('robot', 'radius')
       self.getRobot().set('range', 'units', units)
       self.lps = LPS( 20, 20,
                       widthMM = sizeMM,
                       heightMM = sizeMM)
       self.gps = GPS(100, 100, widthMM = sizeMM * 5, heightMM = sizeMM * 5)
       self.stick = Joystick()
-
+   
    def destroy(self):
       self.lps.destroy()
       self.gps.destroy()
       self.stick.destroy()
-
+   
    def step(self):
       robot = self.getRobot()
       self.lps.reset() # reset counts
@@ -33,7 +33,7 @@ class SimpleBrain(Brain):
       self.lps.redraw()
       self.gps.updateFromLPS(self.lps, robot)
       self.getRobot().move( self.stick.translate, self.stick.rotate)
-
+   
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
 # Takes one param (the robot), and returns a Brain object:

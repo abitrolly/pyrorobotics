@@ -13,12 +13,12 @@ class GPS(TkMap):
      cols: number of columns in map
      rows: number of rows in map
      value:
-     colsMM: actual distance represented by a column (in MMs)
-     rowsMM: actual distance represented by a row (in MMs)
+     widthMM: actual distance represented by a column (in MMs)
+     heightMM: actual distance represented by a row (in MMs)
      title: window title
    """
    def __init__(self, cols=400, rows=400, value = 0.5,
-                colsMM = 10000, rowsMM = 10000,
+                widthMM = 10000, heightMM = 10000,
                 title = "Global Perceptual Space"):
       """ Pass in grid cols, grid cells, and total cols/rows in MM"""
       self.step = 0
@@ -40,7 +40,7 @@ class GPS(TkMap):
       # create the map
       TkMap.__init__(self, cols, rows, value,
                      cols, rows,
-                     colsMM, rowsMM, title)
+                     widthMM, heightMM, title)
 
 
    """
