@@ -834,7 +834,7 @@ class Network:
             if not type(l) == list:
                 return 0
             for i in l:
-                if type(i) == list:
+                if not type(i) == float and not type(i) == int:
                     return 0
         return 1
     def setInputs(self, inputs):
@@ -856,8 +856,8 @@ class Network:
         """
         Sets the targets.
         """
-        if not self.verifyArguments(targets):
-            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', outputs)
+        if not self.verifyArguments(targets) and not self.patterned:
+            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', targets)
         self.targets = targets
     def associate(self, inName, outName):
         """
@@ -2097,6 +2097,7 @@ if __name__ == '__main__':
         print "Reverse look up of .8, .9, 1 is ", net.getWord([.8, .9, 1])
         if ask("Do you want to test saving and loading of patterned inputs and targets?"):
             print net.patterns
+            print net.patterned
             net.setInputs(['one','two'])
             net.setTargets([['1'],['0']])
             print "Filename to save inputs: ",
@@ -2775,6 +2776,17 @@ if __name__ == '__main__':
             n.setInputs([[[0.0]]])
         except Exception, err:
             print err
+        try:
+            n.setTargets([['two']])
+        except Exception, err:
+            print err
+        n.patterned = 1
+        try:
+            n.setTargets([['two']])
+        except Exception, err:
+            print err
+        else:
+            print "No exception caught."
         try:
             n = Network()
             n.add(Layer('1',2))
