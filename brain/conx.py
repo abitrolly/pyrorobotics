@@ -1565,11 +1565,17 @@ class Network:
                 self.layers[i].display()
                 if self.patterned and self.layers[i].type != 'Hidden':
                     targetWord = self.getWord( self.layers[i].target )
-                    if targetWord != '':
-                        print "Target = '%s'" % targetWord
+                    if self.layers[i].kind == 'Output':
+                        if targetWord == None:
+                            print "Target = %s" % "No match"
+                        else:
+                            print "Target = '%s'" % targetWord
                     actWord = self.getWord( self.layers[i].activation )
-                    if actWord != '' or targetWord != '':
-                        print "Word   = '%s'" % actWord
+                    if (self.layers[i].kind == 'Input' or self.layers[i].kind == 'Output'):
+                        if actWord == None:
+                            print "Word   = %s" % "No match"
+                        else:
+                            print "Word   = '%s'" % actWord
                 if self.verbosity > 0:
                     weights = range(len(self.connections))
                     weights.reverse()
@@ -2158,10 +2164,17 @@ class SRN(Network):
             if step < sequenceLength - 1: # not the last one
                 if not self.learnDuringSequence:
                     self.learning = 0
-            retvals = Network.step(self, **dict)
+            retvals = self.networkStep(**dict)
             self.learning = learning # in case we turned it off
             totalRetvals = map(lambda x,y: x+y, totalRetvals, retvals)
         return totalRetvals
+    def networkStep(self, **args):
+        """
+        This exists so that other extensions can interface at the point
+        where the call is made to Network.step(). See governor.py for
+        an example.
+        """
+        return Network.step(self, **args)
 
 if __name__ == '__main__':
     # Con-x: Sample Networks

@@ -97,6 +97,9 @@ class GovernorSRN(Governor, SRN):
                      verbosity = verbosity)
         self.trainingNetwork = SRN(name = "Governed Training SRN",
                                    verbosity = verbosity)
+        # so that we can use step:
+        self.trainingNetwork.initContext = 0
+        self.initContext = 0 
         # ravq
         self.governing = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
@@ -111,23 +114,27 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.addThreeLayers(i, h, o)
         self.shareWeights(self.trainingNetwork)
 
-    def step(self, **args):
+    def networkStep(self, **args):
         if self.governing:
             # map the ravq input context and target
             actContext = list(self["context"].activation)
-            self.map(args["input"] + actContext + args["output"])
+            vector = args["input"] + actContext + args["output"]
+            self.map(vector)
             # get the next
             inLen = self["input"].size
             conLen = self["context"].size
             outLen = self["output"].size
             array = self.nextItem()
+            if array == None:
+                array = vector
             input = array[0:inLen]
             context = array[inLen:inLen+conLen]
             output  = array[inLen+conLen:]
             # load them and train training Network
-            self.trainingNetwork.copyActivations(context)
-            self.trainingNetwork.step(input=input, output=output)
-        SRN.step(self, **args)
+            self.trainingNetwork.step(input=input,
+                                      output=output,
+                                      context=context)
+        return Network.step(self, **args)
         
 
 if __name__ == '__main__':
