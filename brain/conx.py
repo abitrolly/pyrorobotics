@@ -438,13 +438,14 @@ class Network:
                                 self.output[pos], offset)
     def init_slopes(self):
         for x in range(self.connectionCount):
-            if self.connection[x].fromLayer.active and self.connection[x].toLayer.active:
+            if self.connection[x].toLayer.active:
                 for i in range(self.connection[x].toLayer.size):
                     self.connection[x].toLayer.bias_prevslope[i] = self.connection[x].toLayer.bias_slope[i]
                     self.connection[x].toLayer.bias_slope[i] = self.qp_decay * self.connection[x].toLayer.bias[i]
-                    for j in range(self.connection[x].fromLayer.size):
-                        self.connection[x].prevslope[i][j] = self.connection[x].slope[i][j]
-                        self.connection[x].slope[i][j] = self.qp_decay * self.connection[x].weight[i][j]
+                    if self.connection[x].fromLayer.active:
+                        for j in range(self.connection[x].fromLayer.size):
+                            self.connection[x].prevslope[i][j] = self.connection[x].slope[i][j]
+                            self.connection[x].slope[i][j] = self.qp_decay * self.connection[x].weight[i][j]
     def train(self):
         tssErr = 1.0; e = 1; totalCorrect = 0; totalCount = 1;
         #totalPatterns = len(self.output) * len(self.input[0]) /
@@ -563,8 +564,7 @@ class Network:
     def reset_error(self):
         for x in range(self.layerCount):
             for i in range(self.layer[x].size):
-                if self.layer[x].active:
-                    self.layer[x].error[i] = 0.0
+                self.layer[x].error[i] = 0.0
     def setOutputs(self, outputs):
         self.output = outputs
     def activationFunction(self, x):
@@ -648,46 +648,45 @@ class Network:
     def change_weights(self):
         qp_shrink_factor = self.qp_mu / (1.0 + self.qp_mu);
         for l in range(self.connectionCount):
-            if not self.connection[l].frozen and \
-               self.connection[l].toLayer.active and \
-               self.connection[l].fromLayer.active:
+            if not self.connection[l].frozen:
                 for i in range(self.connection[l].toLayer.size):
-                    for j in range(self.connection[l].fromLayer.size):
-                        nextstep = 0.0
-                        if self.qp_mode and self.connection[l].dweight[i][j] > self.qp_mode_threshold:
-                            if (self.connection[l].slope[i][j] > 0.0):
-                                nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                            if (self.connection[l].slope[i][j] > (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                                nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+                    if self.connection[l].fromLayer.active:
+                        for j in range(self.connection[l].fromLayer.size):
+                            nextstep = 0.0
+                            if self.qp_mode and self.connection[l].dweight[i][j] > self.qp_mode_threshold:
+                                if (self.connection[l].slope[i][j] > 0.0):
+                                    nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
+                                if (self.connection[l].slope[i][j] > (qp_shrink_factor * self.connection[l].prevslope[i][j])):
+                                    nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+                                else:
+                                    try:
+                                        nextstep += ((self.connection[l].slope[i][j] / \
+                                                      (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
+                                                     * self.connection[l].dweight[i][j])
+                                    except: # Divide by Zero
+                                        nextstep = 0.0
+                                self.connection[l].dweight[i][j] = nextstep
+                            elif (self.qp_mode and self.connection[l].dweight[i][j] < -self.qp_mode_threshold):
+                                if (self.connection[l].slope[i][j] < 0.0):
+                                    nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
+                                if (self.connection[l].slope[i][j] < (qp_shrink_factor * self.connection[l].prevslope[i][j])):
+                                    nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
+                                else:
+                                    try:
+                                        nextstep += ((self.connection[l].slope[i][j] / \
+                                                      (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
+                                                     * self.connection[l].dweight[i][j])
+                                    except:
+                                        nextstep = 0.0
+                                self.connection[l].dweight[i][j] = nextstep
                             else:
-                                try:
-                                    nextstep += ((self.connection[l].slope[i][j] / \
-                                                  (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                                 * self.connection[l].dweight[i][j])
-                                except: # Divide by Zero
-                                    nextstep = 0.0
-                            self.connection[l].dweight[i][j] = nextstep
-                        elif (self.qp_mode and self.connection[l].dweight[i][j] < -self.qp_mode_threshold):
-                            if (self.connection[l].slope[i][j] < 0.0):
-                                nextstep += (self.connection[l].getEpsilon() * self.connection[l].slope[i][j])
-                            if (self.connection[l].slope[i][j] < (qp_shrink_factor * self.connection[l].prevslope[i][j])):
-                                nextstep += (self.qp_mu * self.connection[l].dweight[i][j])
-                            else:
-                                try:
-                                    nextstep += ((self.connection[l].slope[i][j] / \
-                                                  (self.connection[l].prevslope[i][j] - self.connection[l].slope[i][j])) \
-                                                 * self.connection[l].dweight[i][j])
-                                except:
-                                    nextstep = 0.0
-                            self.connection[l].dweight[i][j] = nextstep
-                        else:
-                            self.connection[l].dweight[i][j] = self.connection[l].getEpsilon() * self.connection[l].wed[i][j] + \
-                                                               self.momentum * self.connection[l].dweight[i][j]
-                        self.connection[l].weight[i][j] += self.connection[l].dweight[i][j]
-                    self.connection[l].wed[i][j] = 0.0
+                                self.connection[l].dweight[i][j] = self.connection[l].getEpsilon() * self.connection[l].wed[i][j] + \
+                                                                   self.momentum * self.connection[l].dweight[i][j]
+                            self.connection[l].weight[i][j] += self.connection[l].dweight[i][j]
+                        self.connection[l].wed[i][j] = 0.0
         for l in range(self.layerCount):
-            for i in range(self.layer[l].size):
-                if self.layer[l].active:
+            if self.layer[l].active:
+                for i in range(self.layer[l].size):
                     self.layer[l].dbias[i] = self.layer[l].bepsilon * self.layer[l].bed[i] + self.momentum * self.layer[l].dbias[i]
                     self.layer[l].bias[i] += self.layer[l].dbias[i]
                     self.layer[l].bed[i] = 0.0
