@@ -107,9 +107,11 @@ x11_include_dir = ask("4. Where is the X11 include directory?",
                       locate = "/usr/X11")
 
 included_packages = ask_yn("\n5. Options:", [
-    ('camera/v4l', "Video for Linux (v4l)"),
-#    ('camera/bt848', "BT848 Video (old Pioneers)"),
-    ('vision/cvision camera/fake camera/blob', "Image Processing"),
+    ('vision/cvision', "Image Processing"),
+    ('camera/v4l', "Video for Linux (requires Image Processing)"),
+    ('camera/fake', "Simulated vision from files (requires Image Processing)"),
+    ('camera/blob', "Stage simulated vision (requires Image Processing)"),
+    ('camera/aibo', "Aibo vision (requires Image Processing)"),
     ('camera/robocup', "Robocup simulated vision (requires Image Processing)"),
     ('brain/psom brain/psom/csom_src/som_pak-dev',
      "Self-organizing Map (SOM)"),
