@@ -56,6 +56,7 @@ PyObject *Fake::updateMMap(char filename[]) {
   width = w;
   height = h;
   fclose(theFile);
+  // apply any filters in list:
   return applyFilterList();
 }
 

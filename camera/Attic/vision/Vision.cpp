@@ -762,6 +762,11 @@ PyObject *Vision::blobify(int inChannel, int low, int high,
   return tuple; 
 }  
 
+PyObject *Vision::getFilterList() {
+  Py_INCREF(filterList);
+  return filterList;
+}
+
 PyObject *Vision::setFilterList(PyObject *newList) {
   if (!PyList_Check(newList)) {
     PyErr_SetString(PyExc_TypeError, "Invalid list to setFilters");
@@ -771,6 +776,19 @@ PyObject *Vision::setFilterList(PyObject *newList) {
   filterList = newList;
   Py_INCREF(filterList);
   return Py_BuildValue("");
+}
+
+PyObject *Vision::popFilterList() {
+  int size = PyList_Size(filterList);
+  if (size > 0) {
+    PyObject *retval = PyList_GetItem(filterList, size - 1); 
+    Py_INCREF(retval);
+    PyList_SetSlice(filterList, size - 1, size, Py_BuildValue("[]"));
+    return retval;
+  } else {
+    PyErr_SetString(PyExc_TypeError, "can't remove items from an empty list in popFilterList");
+    return NULL;
+  }
 }
 
 PyObject *Vision::addFilter(PyObject *newFilter) {
@@ -792,6 +810,7 @@ PyObject *Vision::applyFilters(PyObject *newList) {
   float f1, f2, f3, f4, f5, f6;
   PyObject *command;
   PyObject *filter, *list;
+
   if (!PyList_Check(newList)) {
     PyErr_SetString(PyExc_TypeError, "Invalid list to applyFilters");
     return NULL;
@@ -833,16 +852,31 @@ PyObject *Vision::applyFilters(PyObject *newList) {
       clear(i1, i2);
     } else if (strcmp((char *)command, "drawRect") == 0) {
       i1 = 0; i2 = 0; i3 = 0; i4 = 0; i5 = 0; i6 = -1;
-      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
+      if (!PyArg_ParseTuple(list, "|iiiiii", &i1, &i2, &i3, &i4, &i5, &i6)) {
 	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: drawRect");
 	return NULL;
       }
       drawRect(i1, i2, i3, i4, i5, i6);
+    } else if (strcmp((char *)command, "filterByColor") == 0) {
+      i1 = 0; i2 = 0; i3 = 0; i4 = 30; i5 = 0;
+      if (!PyArg_ParseTuple(list, "|iiiii", &i1, &i2, &i3, &i4, &i5)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: filterByColor");
+	return NULL;
+      }
+      filterByColor(i1, i2, i3, i4, i5);
+    } else if (strcmp((char *)command, "grayScale") == 0) {
+      i1 = 255;
+      if (!PyArg_ParseTuple(list, "|i", &i1)) {
+	PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: grayScale");
+	return NULL;
+      }
+      grayScale(i1);
     } else {
       PyErr_SetString(PyExc_TypeError, "Invalid command to applyFilters");
       return NULL;
     }
   }
+
   return Py_BuildValue("");
 }
 

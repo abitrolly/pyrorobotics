@@ -88,9 +88,11 @@ public:
   PyObject *addFilter(PyObject *newFilter);
   PyObject *applyFilterList();
   PyObject *setFilterList(PyObject *filterList);
-  PyObject *filterList;
+  PyObject *getFilterList();
+  PyObject *popFilterList();
 
  protected:
+  PyObject *filterList;
   int width;
   int height;
   int depth;

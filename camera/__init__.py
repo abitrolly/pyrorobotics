@@ -109,16 +109,16 @@ class Camera(PyroImage, Service):
    def clear(self, channel, value = 0):
       self.cobj.clear( channel, value)
 
-   def delFilter(self, pos):
-      self.cobj.filterList.pop(pos)
+   def popFilterList(self):
+      self.cobj.popFilterList()
 
    def getFilterList(self):
-      return self.cobj.filterList
+      return self.cobj.getFilterList()
 
    def saveImage(self, filename="image.ppm"):
       self.cobj.saveImage(filename)      
 
-   def colorFilterOneTol(self, red, green, blue, tol=30, channel=1):
+   def filterByColor(self, red, green, blue, tol=30, channel=0):
       self.cobj.filterByColor(red, green, blue, tol, channel)
       
    def colorFilterThreeTol(self, red, green, blue, t1=30,t2=30,t3=30, channel=1):
@@ -130,6 +130,12 @@ class Camera(PyroImage, Service):
                         hgreen, lblue,hblue, channel=1):
       self.cobj.filterByColor(lred, lgreen, lblue, hred, hgreen, hblue,
                               channel)
+
+   def loadFilters(self):
+      pass
+
+   def saveFilters(self):
+      pass
 
    def maxBlobs(self, channel, low_threshold, high_threshold, sortMethod, number, drawBox=1):
 
@@ -198,11 +204,11 @@ class Camera(PyroImage, Service):
    def gaussianBlur(self):
       self.cobj.gaussianBlur()
 
-   def edgeDetection(self):
+   def sobel(self):
       self.cobj.sobel(1)
 
-   def toGreyScale(self):
-      self.cobj.greyScale(3)
+   def grayScale(self, val = 255):
+      self.cobj.grayScale(val)
 
    def trainColor(self):
       self.histogram = self.cobj.Hist()
@@ -262,6 +268,11 @@ class Camera(PyroImage, Service):
                   self.movedPixelCount += 1
          print "moved:", self.movedPixelCount
 
+   def updateOnce(self):
+      self.active = 1
+      self.update()
+      self.active = 0
+
    def getImage(self):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                  (self.width, self.height),
@@ -275,10 +286,80 @@ class Camera(PyroImage, Service):
          self.window = Tkinter.Toplevel()
          self.window.wm_title(self.title)
          self.canvas = Tkinter.Canvas(self.window)
-         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
+         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'bottom'})
+         self.canvas.bind("<1>", self.processClick)
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
+         menu = [('File',[['Load Filters...',self.loadFilters],
+                          ['Save Filters...', self.saveFilters],
+                          None,
+                          ['Close',self.hideWindow] 
+                          ]),
+                 ('View', [['Pause', lambda: self.setActive(0)],
+                           ['Play', lambda: self.setActive(1)],
+                           ['Update', lambda: self.updateOnce()],
+                           ]),
+                 ('Filter', [['blur edges', lambda: self.selectFilter( "meanBlur") ],
+                             ['detect edges', lambda: self.selectFilter( "sobel") ],
+                             None,
+                             ['clear red', lambda: self.selectFilter("clear", 0)],
+                             ['clear green', lambda: self.selectFilter("clear", 1)],
+                             ['clear blue', lambda: self.selectFilter("clear", 2)],
+                             None,
+                             ['superColor red', lambda: self.selectFilter("superColor", 1, -1, -1, 0)],
+                             ['superColor green', lambda: self.selectFilter("superColor", -1, 1, -1, 1)],
+                             ['superColor blue', lambda: self.selectFilter("superColor", -1, -1, 1, 2)],
+                             None,
+                             ['gray scale', lambda: self.selectFilter("grayScale")],
+                             None,
+                             ['List filters', self.listFilterList],
+                             ['Clear last', self.popFilterList],
+                             ['Clear all', lambda: self.setFilterList( [] )]
+                             ]),
+                 ]
+         # create menu
+         self.mBar = Tkinter.Frame(self.window, relief=Tkinter.RAISED, borderwidth=2)
+         self.mBar.pack(fill=Tkinter.X, side = "top")
+         self.goButtons = {}
+         self.menuButtons = {}
+         for entry in menu:
+            self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
+         
       self.visible = 1
       while self.window.tk.dooneevent(2): pass
+
+   def selectFilter(self, command, *args):
+      self.addFilter(command, *args)
+      if not self.active:
+         # if paused, apply it once
+         Camera.__dict__[command](self, *args)
+
+   def setActive(self, val):
+      self.active = val
+
+   def makeMenu(self, bar, name, commands):
+      """ Assumes self.menuButtons exists """
+      menu = Tkinter.Menubutton(bar,text=name,underline=0)
+      self.menuButtons[name] = menu
+      menu.pack(side=Tkinter.LEFT,padx="2m")
+      menu.filemenu = Tkinter.Menu(menu)
+      for cmd in commands:
+         if cmd:
+            menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+         else:
+            menu.filemenu.add_separator()
+      menu['menu'] = menu.filemenu
+      return menu
+
+   def listFilterList(self):
+      print "Filters:", self.cobj.getFilterList()
+
+   def processClick(self, event):
+      x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
+      x, y = x * self.width, y * self.height
+      print x, y, 
+      rgb = self.cobj.get(x, y)
+      print rgb
+      self.selectFilter("filterByColor", int(rgb[0]), int(rgb[1]), int(rgb[2])) 
 
    def hideWindow(self):
       self.visible = 0
@@ -289,8 +370,8 @@ class Camera(PyroImage, Service):
       self.im = self.getImage()
       try:
          self.im = self.im.resize( (self.window.winfo_width() - 2, 
-                                    self.window.winfo_height() - 2),
-                                   Image.BILINEAR )
+                                    self.window.winfo_height() - 2) )
+                                   #Image.BILINEAR ) # too slow
       except:
          print "error: could not resize window"
       self.image = ImageTk.PhotoImage(self.im)
