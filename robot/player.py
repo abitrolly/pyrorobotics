@@ -151,17 +151,6 @@ class PlayerRobot(PlayerBase):
         self.senses['sonar']['arc'] = lambda dev, pos, \
                                       x = (7.5 * PIOVER180) : x
         
-        #if self.params.haveFrontBumpers() or self.params.haveRearBumpers():
-        #    # bumper sensors
-        #    self.senses['bumper'] = {}
-        #    self.senses['bumper']['type'] = lambda dev: 'tactile'
-        #    self.senses['bumper']['count'] = lambda dev: self.params.numFrontBumpers() + self.params.numRearBumpers()
-        #    self.senses['bumper']['x'] = lambda dev, pos: 0
-        #    self.senses['bumper']['y'] = lambda dev, pos: 0
-        #    self.senses['bumper']['z'] = lambda dev, pos: 0
-        #    self.senses['bumper']['th'] = lambda dev, pos: 0 
-        #    self.senses['bumper']['value'] = lambda dev, pos: self.getBumpersPosDev(dev, pos)
-
         # Make a copy, for default:
         self.senses['range'] = self.senses['sonar']
         self.senses['self'] = self.senses['robot']
