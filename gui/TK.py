@@ -55,7 +55,7 @@ class TKgui(Tkinter.Toplevel, gui):
                           ['Send Messages to Window', self.redirectToWindow],
                           ['Send Messages to Terminal', self.redirectToTerminal],
                           ]),
-              ('Load',[['Simulator...', self.loadSim],
+              ('Load',[['Server...', self.loadSim],
                        ['Robot...',self.loadRobot],
                        ['Brain...',self.loadBrain],
                        None,
@@ -108,7 +108,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # create a command text area:
       self.makeCommandArea()
       # Display:
-      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld, 0), # 0 = False
+      self.loadables = [ ('button', 'Server:', self.loadSim, self.editWorld, 0), # 0 = False
                          ('button', 'Robot:', self.loadRobot, self.editRobot, self.showAll),
                          ('button', 'Brain:', self.loadBrain, self.editBrain, self.openBrainWindow),
                         ]
@@ -118,7 +118,7 @@ class TKgui(Tkinter.Toplevel, gui):
          self.makeRow(item)
 
       self.buttonArea["Robot:"]["state"] = 'normal'
-      self.buttonArea["Simulator:"]["state"] = 'normal'
+      self.buttonArea["Server:"]["state"] = 'normal'
       ## ----------------------------------
       toolbar = Tkinter.Frame(self.frame)
       for b in button1:
@@ -359,8 +359,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.lastButtonUpdate = now
       if self.textArea['Brain:']["text"] != self.engine.brainfile:
          self.textArea['Brain:'].config(text = self.engine.brainfile)
-      if self.textArea['Simulator:']["text"] != self.engine.worldfile:
-         self.textArea['Simulator:'].config(text = self.engine.worldfile)
+      if self.textArea['Server:']["text"] != self.engine.worldfile:
+         self.textArea['Server:'].config(text = self.engine.worldfile)
       if self.textArea['Robot:']["text"] != self.engine.robotfile:
          self.textArea['Robot:'].config(text = self.engine.robotfile)
       # enable?
@@ -374,12 +374,12 @@ class TKgui(Tkinter.Toplevel, gui):
             self.textArea["Brain:"]["state"] = 'disabled'
          if self.buttonArea['View Brain:']["state"] != 'disabled':
             self.buttonArea['View Brain:']["state"] = 'disabled'
-      if self.textArea["Simulator:"]["text"]:
-         if self.textArea["Simulator:"]["state"] == 'disabled':
-            self.textArea["Simulator:"]["state"] = 'normal'
+      if self.textArea["Server:"]["text"]:
+         if self.textArea["Server:"]["state"] == 'disabled':
+            self.textArea["Server:"]["state"] = 'normal'
       else:
-         if self.textArea["Simulator:"]["state"] != 'disabled':
-            self.textArea["Simulator:"]["state"] = 'disabled'
+         if self.textArea["Server:"]["state"] != 'disabled':
+            self.textArea["Server:"]["state"] = 'disabled'
       if self.textArea["Robot:"]["text"]:
          if self.textArea["Robot:"]["state"] == 'disabled':
             self.textArea["Robot:"]["state"] = 'normal'

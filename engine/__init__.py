@@ -1,7 +1,6 @@
 # Engine class; main controller
 
-import time
-import sys
+import time, sys, os
 import pyro.gui.console as console
 import pyro.system as system
 
@@ -79,26 +78,48 @@ class Engine:
          #reload(self.brainfile)
 
    def loadSimulator(self, file, worldfile):
-      import os, string
+      import string
       options = string.split(file)
       guiflag = ''
       simulatorName = file.split('/')[-1]
-      if system.file_exists(worldfile):
-         pass # leave it alone
-      elif system.file_exists( os.getenv('PYRO') + \
-                               '/plugins/worlds/%s/%s' % (simulatorName, worldfile)):
-         worldfile = os.getenv('PYRO') + \
-                     '/plugins/worlds/%s/%s' % (simulatorName, worldfile)
-      if self.config.get("pyro", "gui") .lower() == 'tty':
-         guiflag = '-g'
-      if system.file_exists(options[0]):
-         os.system(file + " " + guiflag + " " + worldfile + " &")
-      elif system.file_exists(os.getenv('PYRO') + \
-                              '/plugins/simulators/' + options[0]):
-         os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + \
-                   " " + guiflag + " " + worldfile + " &")
+      pyroPID = os.getpid()
+      if simulatorName[-6:] == "Server":
+         configDirName = simulatorName[:-6]
+         if system.file_exists(worldfile):
+            pass # leave it alone
+         elif system.file_exists( os.getenv('PYRO') + \
+                                  '/plugins/configs/%s/%s' % (configDirName, worldfile)):
+            worldfile = os.getenv('PYRO') + \
+                        '/plugins/configs/%s/%s' % (configDirName, worldfile)
+         if self.config.get("pyro", "gui") .lower() == 'tty':
+            guiflag = '-g'
+         if system.file_exists(options[0]):
+            os.system(file + (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
+         elif system.file_exists(os.getenv('PYRO') + \
+                                 '/plugins/simulators/' + options[0]):
+            os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + \
+                      (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
+         else:
+            raise 'Server file not found: ' + file
       else:
-         raise 'Simulator file not found: ' + file
+         # Ends with "Simulator"
+         simDirName = simulatorName[:-9]
+         if system.file_exists(worldfile):
+            pass # leave it alone
+         elif system.file_exists( os.getenv('PYRO') + \
+                                  '/plugins/worlds/%s/%s' % (simDirName, worldfile)):
+            worldfile = os.getenv('PYRO') + \
+                        '/plugins/worlds/%s/%s' % (simDirName, worldfile)
+         if self.config.get("pyro", "gui") .lower() == 'tty':
+            guiflag = '-g'
+         if system.file_exists(options[0]):
+            os.system(file + (" %d " % pyroPID)+ guiflag + " " + worldfile + " &")
+         elif system.file_exists(os.getenv('PYRO') + \
+                                 '/plugins/simulators/' + options[0]):
+            os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + \
+                      (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
+         else:
+            raise 'Simulator file not found: ' + file
       print "Loading.",
       sys.stdout.flush()
       time.sleep(1)
@@ -106,7 +127,6 @@ class Engine:
       sys.stdout.flush()
 
    def loadRobot(self,file):
-      import os
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
@@ -129,7 +149,6 @@ class Engine:
    def loadBrain(self,file):
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
-      import os
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
