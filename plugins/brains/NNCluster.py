@@ -50,7 +50,6 @@ class NNBrain(Brain):
    def step(self):
       if self.counter < 500:
          mode = 'learn'
-         pass # learn!
       elif self.counter == 500:
          # stop learning, open file
          mode = 'open file'
@@ -61,12 +60,14 @@ class NNBrain(Brain):
       elif self.counter < 1000:
          mode = 'collect'
          # collect hid data when propagate
-         pass 
       elif self.counter == 1000:
          mode = 'close file'
          # close file, compute eigenvalues
          self.net.getLayer('hidden').closeLog()
-         unlink("hidden.e")
+         try:
+            unlink("hidden.e")
+         except:
+            pass
          system("tools/cluster/cluster -pehidden.e -c1,2 hidden.dat > /dev/null")
       else:
          mode = 'plot'
