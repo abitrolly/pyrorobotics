@@ -8,7 +8,17 @@
 """
 import Numeric, math, random, time, sys, signal, operator
 
-version = "6.14"
+version = "6.15"
+
+def loadNetworkFromFile(filename):
+    """
+    Loads network from a file using pickle. See Network.saveNetworkToFile()
+    """
+    import pickle
+    f = open(filename)
+    network = pickle.load(f)
+    f.close()
+    return network
 
 # better to use Numeric.add.reduce() when you know that "a" is a Numeric list
 def sum(a):
@@ -1716,24 +1726,34 @@ class Network:
             fp.close()            
         else:
             raise ValueError, ('Unknown mode in loadWeightFromFile()', mode)
-    def saveNetworkToFile(self, filename):
+    def saveNetworkToFile(self, filename, makeWrapper = 1):
         """
         Saves network to file using pickle.
         """
+        # dump network via pickle:
         import pickle
         basename = filename.split('.')[0]
         filename += ".pickle"
         fp = open(filename, 'w')
-        pickle.dump( self, fp)
+        pickle.dump(self, fp)
         fp.close()
-        fp = open(basename + ".py", "w")
-        fp.write("from pyro.brain.conx import *\n")
-        fp.write("import pickle\n")
-        fp.write("fp = open('%s', 'r')\n" % filename)
-        fp.write("network = pickle.load(fp)")
-        fp.close()
-        print "To load file:\npython -i %s " % (basename + ".py")
-        print ">>> network.train()"
+        # make wrapper python file:
+        if makeWrapper:
+            fp = open(basename + ".py", "w")
+            fp.write("from pyro.brain.conx import *\n")
+            fp.write("import pickle\n")
+            fp.write("fp = open('%s', 'r')\n" % filename)
+            fp.write("network = pickle.load(fp)")
+            fp.close()
+        # give some help:
+        print "To load network:"
+        print "   % python -i %s " % (basename + ".py")
+        print "   >>> network.train() # for example"
+        print "--- OR ---"
+        print "   % python"
+        print "   >>> from pyro.brain.conx import *"
+        print "   >>> network = loadNetworkFromFile(%s)" % filename
+        print "   >>> network.train() # for example"
     def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
                             delim = ' '):
         """
