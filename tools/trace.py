@@ -100,6 +100,7 @@ class Trace:
         else:
             retColor = (0,0,0)
         return (int(retColor[0]*255), int(retColor[1]*255), int(retColor[2]*255))
+
     def convertXPositionData(self, image, data):
         imWidth = image.size[1]
         for ls in data:
@@ -124,7 +125,9 @@ class Trace:
             self.addLine(data)
 
 if __name__ == "__main__":
-    testTrace = Trace("/home/dblank/pyro/experiments/tutorial.gif","flow.dat")
+    import sys
+    testTrace = Trace(sys.argv[1],sys.argv[2])
+    #testTrace = Trace("/home/dblank/pyro/experiments/colorful.gif","ffgoalposes.dat")
     testTrace.output()
     testTrace.makeWindow()
     testTrace.run()
