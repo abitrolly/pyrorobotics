@@ -1,38 +1,24 @@
-
-# Desc: 1 robot with player, laser, sonar and gps
-# CVS: $Id$
-
-# the resolution of Stage's raytrace model in meters
-#
-resolution 0.02
-
-# GUI settings
-#
-gui
-(
-  size [ 502.000 506.000 ]
-  origin [5.018 4.950 0]
-  scale 0.021 # the size of each bitmap pixel in meters
-)
-
-# load a bitmapped environment from a file
-#
-bitmap
-(
-  file "cave.pnm.gz" 
-  resolution 0.02
-)
-
-include "pioneer.inc"
-
-# create a robot, setting its start position and Player port, 
-# and equipping it with a laser range scanner
-#
-position
-(
- port 6665 
- pose [1.0 1.0 20]
-
- laser()
+# File: chase.world 
+# Two robots which can be used to chase one another. 
+ 
+# the resolution of Stage's raytrace model in meters 
+resolution 0.02 
+ 
+gui 
+( 
+  size [600.000 600.000 ] 
+  origin [4.5 4.5 0] 
+  scale 0.021 # the size of each bitmap pixel in meters 
 ) 
-
+ 
+bitmap 
+( 
+  file "cave.pnm.gz"
+  resolution 0.02 
+) 
+ 
+include "usc_pioneer.inc"
+ 
+usc_pioneer ( color "green" name "GreenRobot" 
+          port 6666 pose [ 1 1 45 ] truth()) 
+ 
