@@ -1,4 +1,4 @@
-from fake import Fake # cameraDevice
+from pyro.camera.fake.fake import Fake # cameraDevice
 from pyro.camera import Camera, CBuffer # base class
 import pyro.system as system
 import re, time, os

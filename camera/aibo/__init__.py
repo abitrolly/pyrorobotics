@@ -1,5 +1,6 @@
 from pyro.camera import Camera, CBuffer
 from pyro.camera.aibo.aibo import AiboCam
+from math import pi, sin, cos
 import threading
 import time
 
