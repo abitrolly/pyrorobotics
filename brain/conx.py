@@ -1005,7 +1005,12 @@ if __name__ == '__main__':
 
     if ask("Do you want to see some test values?"):
         print 'Input Activations:', n.getLayer('input').getActivations()
+        print "Setting output target to .5"
+        n.getLayer("output").copyTarget([.5])
         print 'Output Targets:', n.getLayer('output').getTarget()
+        n.compute_error()
+        print 'Output TSS Error:', n.getTSSError("output")
+        print 'Output Correct:', n.getCorrect('output')
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
         print "XOR Backprop batch mode: .............................."
