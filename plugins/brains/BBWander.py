@@ -34,16 +34,16 @@ class Avoid (Behavior):
         self.IF(1, 'translate', .2) 
         self.IF(1, 'rotate', 0)
 
-        close_dist = self.getRobot().getMin().distance 
-        close_angl = self.getRobot().getMin().angle / math.pi
+        close_dist = self.getRobot().getMin('all', 'range', range(7)).distance 
+        close_angl = self.getRobot().getMin('all', 'range', range(7)).angle / math.pi
         print "Closest distance is:", close_dist
         if self.getRobot().type == 'khepera':
             self.IF(Fuzzy(40.0, 60.0) << close_dist, 'translate', 0)
             self.IF(Fuzzy(40.0, 60.0) << close_dist, 'rotate', \
                     -self.direction(close_angl) * 1)
         else: # saphira, others:
-            self.IF(float(Fuzzy(.2, 1.0) << close_dist), 'translate', 0)
-            self.IF(Fuzzy(1.0, 2.0) << close_dist, 'rotate', \
+            self.IF(float(Fuzzy(.2, 2.0) << close_dist), 'translate', 0)
+            self.IF(Fuzzy(0.0, 0.5) << close_dist, 'rotate', \
                     -self.direction(close_angl) * 1)
             
 
