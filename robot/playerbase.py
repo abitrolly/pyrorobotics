@@ -18,6 +18,12 @@ class PlayerBase(Robot):
         self.inform("Loading Player robot interface...")
         self.name = name
         self.connect()
+        # default values
+        self.x = 0.0
+        self.y = 0.0
+        self.th = 0.0
+        self.thr = 0.0
+        self.stall = 0
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)

@@ -59,6 +59,12 @@ class gui(Drawable):
          print "Running in thread..."
          self.engine.pleaseRun() # pass in callback, or not
          # self.engine.pleaseRun(self.redraw) # pass in callback
+      elif retval == "runtillquit":
+         self.done = 0
+         self.engine.pleaseRun()
+         while not self.done:
+            pass
+         return 1
       elif retval == "info":
          print "-------------------------------------------------------------"
          print "Brain file:\t%s" % self.engine.brainfile
