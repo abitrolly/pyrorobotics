@@ -66,10 +66,10 @@ class Hinton: # Plot
          #of bounds
          if vector[v] > self.maxvalue:
             vector[v] = self.maxvalue
-            color = 'green'
+            color = 'gray50'
          elif vector[v] < -self.maxvalue:
             vector[v] = -self.maxvalue
-            color = 'blue'
+            color = 'pink'
          x = blocksize * v + b
          size = abs(vector[v]/float(self.maxvalue)) * blocksize * .8 / 2.0 
          try:
