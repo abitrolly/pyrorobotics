@@ -82,7 +82,7 @@ class Camera(PyroImage, Service):
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
       """
-      #PyroImage.__init__(self, width, height, depth, 0)
+      PyroImage.__init__(self, width, height, depth, 0)
       Service.__init__(self, 'camera')
       self.app = 0
       self.title = title
