@@ -533,12 +533,11 @@ class PlayerRobot(Robot):
             return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
         elif item in self.devData["builtinDevices"]:
             return {item: PlayerDevice(self.dev, item)}
-        #elif item == "camera":
-        #    if self.devData["simulated"]:
-        #        devId = self.startDevice("BlobCamera") # starts and loads
-        #    else:
-        #        devId = self.startDevice("V4LCamera") # starts and loads
-        #    return {} # return nothing?
+        elif item == "camera":
+            if self.devData["simulated"]:
+                return self.startDevice("BlobCamera")
+            else:
+                return self.startDevice("V4LCamera")
         else:
             raise AttributeError, "player robot does not support device '%s'" % item
     
