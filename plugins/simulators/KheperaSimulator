@@ -1,5 +1,5 @@
 #!/bin/sh
-SIM_DIR=/home/pyro/simulators/khepera
+SIM_DIR=/home/dblank/pyro/simulators/khepera
 SIM=sim
 
 pyropid=$1
@@ -7,6 +7,11 @@ shift
 
 cd $SIM_DIR
 ./$SIM -r -w $1 &
+spid=$!
 if ps | grep sim; then
 echo 'Khepera Simulator Started'
 fi
+# wait till pyro stops
+while ps --noheaders $pyropid; do sleep 1; done > /dev/null
+# then kill kepera sim
+kill $spid
