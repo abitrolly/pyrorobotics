@@ -1,7 +1,7 @@
 # Engine class; main controller
 
 import time
-
+import sys
 import pyro.gui.console as console
 import pyro.system as system
 import pyro.gui.drawable as drawable
@@ -65,12 +65,16 @@ class Engine(drawable.Drawable):
          raise 'Simulator file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
       print "Loading.",
+      sys.stdout.flush()
       time.sleep(1)
       print ".",
+      sys.stdout.flush()
       time.sleep(1)
       print ".",
+      sys.stdout.flush()
       time.sleep(1)
       print "."
+      sys.stdout.flush()
 
    def loadPlot(self,file):
       import os
@@ -137,22 +141,14 @@ class Engine(drawable.Drawable):
       #self.append(self.brain)
 
    def freeBrain(self):
-      #print "freeBrain!"
       if self.brain != 0:
-         #print "freeBrain running!"
          self.brain.pleaseQuit()
-         #time.sleep(1)
-         #self.brain = 0
-         #del self[self.index(self.brain)]
+
       
    def freeRobot(self):
       self.freeBrain()
-      #print "freeRobot!"
       if self.robot != 0:
-         #print "freeRobot running!"
          self.robot.disconnect()
-         #self.robot = 0
-         #del self[self.index(self.robot)]
 
    def shutdown(self):
       self.freeRobot()
