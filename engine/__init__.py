@@ -35,7 +35,7 @@ class Engine(drawable.Drawable):
          self.loadSimulator(self.simfile, self.worldfile)
       if self.robotfile:
          self.loadRobot(self.robotfile)
-         if services:
+         if services != ['']:
             self.robot.startServices(services)
       elif self.brainfile:
          self.loadBrain(self.brainfile)
