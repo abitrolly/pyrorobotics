@@ -1,6 +1,6 @@
 # A Base Camera class
 
-from pyro.vision import *
+#from pyro.vision import *
 from pyro.robot.service import Service
 
 import Tkinter
@@ -73,7 +73,7 @@ class CBuffer:
    def __str__(self):
       return str(self[:])   
 
-class Camera(PyroImage, Service):
+class Camera(Service):
    """
    A base class for Camera
    """
@@ -82,7 +82,7 @@ class Camera(PyroImage, Service):
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
       """
-      PyroImage.__init__(self, width, height, depth, 0)
+      #PyroImage.__init__(self, width, height, depth, 0)
       Service.__init__(self, 'camera')
       self.app = 0
       self.title = title
@@ -122,8 +122,18 @@ class Camera(PyroImage, Service):
    def saveFilters(self):
       pass
 
-   def saveImage(self):
-      self.vision.saveImage("pyro-vision.ppm");
+   def getData(self):
+      data = [0 for y in range(self.height * self.width * self.depth)]
+      for x in range(self.width):
+         for y in range(self.height):
+            rgb = camera.getVal(x, y)
+            data[0] = rgb[0]
+            data[1] = rgb[0]
+            data[2] = rgb[0]
+      return data
+
+   def saveImage(self, filename = "pyro-vision.ppm"):
+      self.vision.saveImage(filename);
 
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
@@ -172,9 +182,7 @@ class Camera(PyroImage, Service):
                         self.previous[(x + y * self.width) * self.depth + 1] +
                         self.previous[(x + y * self.width) * self.depth + 2])
                        / 3.0 -
-                       (self.get(x, y, 0) +
-                        self.get(x, y, 1) +
-                        self.get(x, y, 2)) / 3.0) > threshold):
+                       (self.vision.get(x, y) / 3.0)) > threshold):
                   self.motion.set(x, y, 1)
                   self.movedPixelCount += 1
          print "moved:", self.movedPixelCount
@@ -329,6 +337,9 @@ class Camera(PyroImage, Service):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       self.lastX, self.lastY = int(x * self.width), int(y * self.height)
 
+   def getVal(self, x, y):
+      return self.vision.get(int(x), int(y))
+
    def processLeftClickUp(self, event):
       x, y = event.x/float(self.window.winfo_width()), event.y/float(self.window.winfo_height())
       x, y = int(x * self.width), int(y * self.height)
@@ -416,23 +427,7 @@ class Camera(PyroImage, Service):
             self.filterReturnValue.append( filterFunc(self) )
 
 if __name__ == '__main__':
-   class FakeVisionSystem:
-      def __init__(self):
-         pass
-      def setFilterList(self, myList):
-         pass
-      def getFilterList(self):
-         pass
-      def applyFilterList(self):
-         pass
-      def saveImage(self, filename):
-         pass
-      def popFilterList(self):
-         pass
-      def get(self, x, y):
-         return (0, 0, 0)
-      
    cam = Camera(100, 80)
-   cam.vision = FakeVisionSystem()
+   cam.visionSystem = FakeVisionSystem()
    cam.makeWindow()
    cam.window.mainloop()
