@@ -33,12 +33,12 @@ brainargs = []
 simulator = 0
 
 def basichelp():
-    print "You need to define PYRO. Try:"
-    print "   export PYRO=/usr/local/pyro"
-    print "or export PYRO=~/pyro"
+    print "You may need to define the PYRO environment variable. Try:"
+    print "         export PYRO=/usr/local/pyro"
+    print "or maybe export PYRO=~/pyro"
     print ""
     print "Also, make sure PYRO is in PYTHONPATH. Try:"
-    print "   export PYTHONPATH=$PYTHONPATH:$PYRO"
+    print "         export PYTHONPATH=$PYTHONPATH:$PYRO/bin"
 
 try:
     import pyro

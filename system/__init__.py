@@ -1,34 +1,43 @@
 import string
 import sys 
 
+def about():
+    print "-------------------------------------------------------------"
+    print "Pyro - Python Robotics"
+    print "See: http://wiki.cs.brynmawr.edu/?Pyro"
+    print "(c) 2002, D. S. Blank"
+    print "-------------------------------------------------------------"
+
 def usage():
-    print "Pyro - Robotics in Python"
-    print "-------------------------"
-    print "  -h this help"
-    print "  -r load a robot file"
-    print "  -b load a brain file"
-    print "  -o pass arguments to a brain (separated by ':')"
-    print "  -s load a simulator"
+    print "-------------------------------------------------------------"
+    print "Pyro - Python Robotics"
+    print "-------------------------------------------------------------"
+    print "  -h                 show this help"
+    print "  -r ROBOT           name of robot.py file to load"
+    print "  -b BRAIN           name of brain.py file to load"
+    print "  -o BRAIN_ARGUMENTS (separated by ':', no spaces)"
+    print "  -s SIMULATOR       name of simulator to run"
     print ""
 
 def help():
-    print "--------------------------------------------------"
+    print "-------------------------------------------------------------"
     print "Pyro commands:"
-    print "--------------------------------------------------"
-    print "<command>              execute <command> in Python"
-    print "<exp>                  print <exp> in Python"
-    print "% <command>            execute <command> in shell"
-    print "edit                   edit the brain file"
-    print "help                   this help message"
-    print "load brain             load a brain file"
-    print "load robot             load a robot file"
-    print "quit | exit | bye      exit from Pyro"
-    print "reload                 reload the brain"
-    print "run                    start brain running"
-    print "stop                   stop brain and robot"
-    print "--------------------------------------------------"
-    print "  GUI Command line editing:"
-    print "--------------------------------------------------"
+    print "-------------------------------------------------------------"
+    print "  <command>                   execute <command> in Python"
+    print "  <exp>                       print <exp> in Python"
+    print "  % <command>                 execute <command> in shell"
+    print "  edit                        edit the brain file"
+    print "  help                        this help message"
+    print "  info                        show brain and robot info"
+    print "  load brain                  load a brain file"
+    print "  load robot                  load a robot file"
+    print "  quit | exit | bye           exit from Pyro"
+    print "  reload                      reload the brain"
+    print "  run                         start brain running"
+    print "  stop                        stop brain and robot"
+    print "-------------------------------------------------------------"
+    print "GUI Window Command line editing commands:"
+    print "-------------------------------------------------------------"
     print "  Control+p or UpArrow        previous line"
     print "  Control+n or DownArrow      next line"
     print "  Control+a or Home           beginning of line"
@@ -45,6 +54,7 @@ def file_exists(file_name):
         return exists(file_name)
     
 def loadINIT(filename, robot=0, redo=0, brain=0, args=None):
+    print "Loading INIT '%s'..." % filename
     path = filename.split("/")
     modulefile = path.pop() # module name
     module = modulefile.split(".")[0]
