@@ -20,3 +20,7 @@ else
     fi
 fi
 stage -p $(( 16000 + $UID )) $world &
+spid=$!
+while ps --noheaders $pyropid; do sleep 1; done > /dev/null
+# then kill sim
+kill $spid

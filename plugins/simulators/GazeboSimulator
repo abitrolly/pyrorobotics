@@ -37,8 +37,6 @@ player -g default $config &
 ppid=$!
 # wait for pyro or gazebo to quit
 while ps --noheaders $pyropid && ps --noheaders $gpid; do sleep 1; done > /dev/null
-# Wait for gazebo to finish
-# wait $gpid
 # Kill gazebo
 kill $gpid
 # Kill player
