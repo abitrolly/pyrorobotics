@@ -4,12 +4,14 @@ Governor code for self regulating networks.
 
 """
 
+
+
 import pyro.brain.ravq
 import random
 
 class Governor:
 
-    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, bufferSize = 50, mask = []):
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, mask = [], bufferSize = 50):
         # ravq
         self.ravq = pyro.brain.ravq.RAVQ(size, epsilon, delta)
         self.ravq.setHistory(0)
@@ -51,7 +53,7 @@ class Governor:
 
 class AdaptiveGovernor(Governor):
 
-    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, bufferSize = 50, mask = []):
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, mask = [], bufferSize = 50):
         # ravq
         self.ravq = pyro.brain.ravq.ARAVQ(size, epsilon, delta, alpha)
         self.ravq.setHistory(0)
@@ -66,7 +68,7 @@ class AdaptiveGovernor(Governor):
 
 class BalancingGovernor(Governor):
 
-    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, depth = 5, mask = []):
+    def __init__(self, size = 5, epsilon = 0.2, delta = 0.6, alpha = 0.02, mask = [], depth = 5):
         # ravq
         self.ravq = pyro.brain.ravq.ARAVQ(size, epsilon, delta, alpha)
         self.ravq.setHistory(1)
@@ -204,3 +206,66 @@ class RandomGovernor:
 
     def load(self, filename):
         pass
+
+if __name__ == '__main__':
+
+    import os
+    import gzip
+    from pyro.brain.conx import *
+
+    # read in experimental training data
+    locationfile = gzip.open('location.dat.gz', 'r')
+    sensorfile = gzip.open('sensors.dat.gz', 'r')
+
+    sensors = sensorfile.readlines()
+    locations = locationfile.readlines()
+
+    locationfile.close()
+    sensorfile.close()
+
+    # create network
+    net = Network()
+    inSize = len(map(lambda x: float(x), sensors[0].rstrip().split()))
+    #print inSize    
+
+    net.addThreeLayers(inSize, inSize/2, 4)
+    # the output will code the robots current region
+
+    # defaults - but here explicit
+    net.setBatch(0)
+    net.setInteractive(0)
+    net.setVerbosity(0)
+      
+    # learning parameters
+    net.setEpsilon(0.2)
+    net.setMomentum(0.9)
+    net.setTolerance(0.05)
+    net.setLearning(1)
+      
+    # initialize network
+    net.initialize()
+      
+    # create governor
+
+    govEpsilon = 0.2
+    delta = 0.8
+    alpha = 0.02
+    ravqBuffer = 5
+    govBuffer = 5
+    govMask = [1] * (inSize - 1) + [inSize/4] * 4 + [16]
+    governor = BalancingGovernor(ravqBuffer, govEpsilon, delta, alpha, govMask, govBuffer)
+
+    #print govMask
+    #print len(govMask)
+
+    for i in range(5000):
+        sensorlist = map(lambda x: float(x), sensors[i].rstrip().split())
+        locationlist = map(lambda x: float(x), locations[i].rstrip().split())
+        array = governor.process(sensorlist + locationlist)
+        error, correct, total = net.step(input = array[:inSize], output = array[inSize:])
+        if i % 100 == 0:
+            print "Step: ", i
+            print error, correct, total
+        
+
+    print governor.query()
