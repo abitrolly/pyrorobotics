@@ -214,31 +214,47 @@ class Robot (Drawable):
                 raise "Sensor '" + sensor + "' is not of type '" + type + "'"
         return Vector(maxdist, maxangle)
 
-    def getSensorGroup(self, func = 'avg', name = 'front', sensor = 'sonar'): 
+    def getSensorGroup(self, func = 'avg', name = 'front'): 
         if not (name in self.sensorGroups.keys()): 
             return None
         if func == 'avg':
             sum = 0.0 
-            for x in self.sensorGroups[name]: 
-                sum += self.get(sensor, 'value', x) 
+            for sensor in self.sensorGroups[name]:
+                pos, type = sensor
+                sum += self.get(type, 'value', pos)
+            if sum == 0.0:
+                return None
             return sum / len(self.sensorGroups[name])
         elif func == 'sum':
             sum = 0.0 
-            for x in self.sensorGroups[name]: 
-                sum += self.get(sensor, 'value', x)
+            for sensor in self.sensorGroups[name]: 
+                pos, type = sensor
+                sum += self.get(type, 'value', pos)
+            if sum == 0.0:
+                return None
             return sum
         elif func == 'min':
             min = 100000
-            for x in self.sensorGroups[name]:
-                if self.get(sensor, 'value', x) < min:
-                    min = self.get(sensor, 'value', x)
-            return (x, min)
+            minpos = -1
+            for sensor in self.sensorGroups[name]:
+                pos, type = sensor
+                if self.get(type, 'value', pos) < min:
+                    min = self.get(type, 'value', pos)
+                    minpos = pos
+            if minpos == -1:
+                return None
+            return (minpos, min)
         elif func == 'max':
             max = -100000
-            for x in self.sensorGroups[name]:
-                if self.get(sensor, 'value', x) > max:
-                    max = self.get(sensor, 'value', x)
-            return (x, max)
+            maxpos = -1
+            for sensor in self.sensorGroups[name]:
+                pos, type = sensor
+                if self.get(type, 'value', pos) > max:
+                    max = self.get(type, 'value', pos)
+                    maxpos = pos
+            if maxpos == -1:
+                return None
+            return (maxpos, max)
 
     def getMaxByArea(self, sensor = 'all', type = 'range', area = 'front'):
         if sensor != 'all':
