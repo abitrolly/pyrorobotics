@@ -25,7 +25,7 @@ class Matrix: # Plot
          self.win.wm_title(title)
       self.canvas = Canvas(self.win,width=width,height=height)
       self.canvas.bind("<Configure>", self.changeSize)
-      self.canvas.pack(fill=BOTH)
+      self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
       self.even = 0
       if data:
          self.update(data)
