@@ -322,6 +322,7 @@ class KheperaRobot(Robot):
                 tries += 1
         if done == 0:
             #print "khepera serial read/write error..."
+            self.senseData[data] = array.array(type, [0] * 20)
             return
         if data:
             lines = string.split(retval, "\r\n")
@@ -334,6 +335,7 @@ class KheperaRobot(Robot):
                     try:
                         self.senseData[data] = array.array(type, map(int, irs))
                     except:
+                        self.senseData[data] = array.array(type, [0] * 20)
                         print "khepera packet error: type=", data, "vals=", irs
             return self.senseData[data]
         
@@ -352,14 +354,17 @@ class KheperaRobot(Robot):
         """
         # ----------- start compute stall
         self.stallHistory[self.stallHistoryPos] = 0
-        if self.currSpeed[0] != 0:
-            err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
-            if err < .25:
-                self.stallHistory[self.stallHistoryPos] = 1
-        if self.currSpeed[1] != 0:
-            err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
-            if err < .25:
-                self.stallHistory[self.stallHistoryPos] = 1
+        try:
+            if self.currSpeed[0] != 0:
+                err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
+                if err < .25:
+                    self.stallHistory[self.stallHistoryPos] = 1
+            if self.currSpeed[1] != 0:
+                err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
+                if err < .25:
+                    self.stallHistory[self.stallHistoryPos] = 1
+        except:
+            pass
         # ----------- end compute stall
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
         self.deadReckon()

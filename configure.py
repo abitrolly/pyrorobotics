@@ -14,7 +14,7 @@ def ask_yn(title, list_of_options):
     retval = ''
     for directory, desc in list_of_options:
         if ask("Option:    Do you want to build " + desc + "? (y/n)", "n", 0) == "y":
-            retval += " " + directory
+            retval = retval + " " + directory
     return retval
 
 def ask(question, default, filecheck = 1):
