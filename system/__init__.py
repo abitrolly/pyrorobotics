@@ -64,25 +64,45 @@ def file_exists(file_name):
         raise AttributeError, "filename nust be a string"
     
 def loadINIT(filename, engine=0, redo=0, brain=0, args=None):
-    print "Loading INIT '%s'..." % filename
     path = filename.split("/")
     modulefile = path.pop() # module name
     module = modulefile.split(".")[0]
     search = string.join(path, "/")
     oldpath = sys.path[:] # copy
-    sys.path.append(search)
+    sys.path.insert(0, search)
+    print "Attempting to import '%s'..." % module 
     exec("import " + module + " as userspace")
     reload(userspace)
-    print 'Loaded ' + module + "!"
+    print "Loaded '%s'!" % userspace.__file__
     sys.path = oldpath
+    try:
+        userspace.INIT
+    except AttributeError:
+        raise ImportError, "your program needs an INIT() function"
     if brain is 0:
         if engine is 0:
-            return userspace.INIT()
+            try:
+                retval = userspace.INIT()
+            except:
+                raise ImportError, "your INIT() should not require any args; is this the right file?"
+            return retval
         else:
             if args:
-                return userspace.INIT(engine, args)
+                try:
+                    retval = userspace.INIT(engine, args)
+                except:
+                    raise ImportError, "your INIT() should take an engine and args; is this the right file?"
+                return retval
             else:
-                return userspace.INIT(engine)
+                try:
+                    retval = userspace.INIT(engine)
+                except:
+                    raise ImportError, "your INIT() should take an engine; is this the right file?"
+                return retval
     else:
-        return userspace.INIT(engine, brain)
+        try:
+            retval = userspace.INIT(engine, brain)
+        except:
+            raise ImportError, "your INIT() should take an engine and a brain; is this the right file?"
+        return retval
 
