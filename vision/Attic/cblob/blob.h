@@ -2,6 +2,7 @@
 #define __BLOB_H__
 
 #include "v4lcap.h"
+#include <stdint.h>
 
 #define BLOBLIST_SIZE 10000
 #define BITMAP_CUTOFF 0.5
@@ -19,7 +20,7 @@ struct point{
 struct bitmap{
   int width;
   int height;
-  unsigned char* data;
+  uint16_t* data;
 };
 
 struct blob{
@@ -51,8 +52,8 @@ void Blob_addpixel_xy(struct blob* theBlob, int x, int y);
 void Blob_joinblob(struct blob* theBlob, struct blob* other);
 
 void Bitmap_init(struct bitmap* map, int w, int h);
-void Bitmap_set(struct bitmap* map, int x, int y, unsigned char in);
-unsigned char Bitmap_get(struct bitmap* map, int x, int y);
+void Bitmap_set(struct bitmap* map, int x, int y, uint16_t in);
+uint16_t Bitmap_get(struct bitmap* map, int x, int y);
 void Bitmap_del(struct bitmap* map);
   
 void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap);
