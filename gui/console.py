@@ -17,7 +17,7 @@ DEBUG   = 4
 verbosityMessage = ["fatal","error","warning","info","debug"]
 
 verbosityLevel = 4
-USE_COLOR = 1
+USE_COLOR = 0
 
 def colorize(txt, col):
     """Return colorized text"""

@@ -154,6 +154,9 @@ class TKgui(gui):
          tempframe.pack(side = "top", anchor = "n", fill = "x")
       self.buttonArea["Robot:"]["state"] = 'normal'
       self.buttonArea["Simulator:"]["state"] = 'normal'
+      # --- save old sys.stout
+      self.sysstdout = sys.stdout
+      sys.stdout = self # has a write() method
       self.inform("Pyro Version " + version() + ": Ready...")
 
    def openBrainWindow(self):
@@ -421,6 +424,12 @@ class TKgui(gui):
 
    def makeGPSWindow(self):
       pass
+
+   def write(self, item):
+      self.status.config(state='normal')
+      self.status.insert('end', "%s" % (item))
+      self.status.config(state='disabled')
+      self.status.see('end')
    
 if __name__ == '__main__':
    gui = TKgui(Engine())

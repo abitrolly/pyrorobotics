@@ -172,6 +172,10 @@ class gui(Drawable):
    def cleanup(self):
       print "Cleaning up..."
       self.done = 1
+      try:
+         sys.stdout = self.sysstdout
+      except:
+         pass
       if self.engine != 0:
          self.engine.shutdown()
       print "Exiting!"
