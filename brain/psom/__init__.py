@@ -14,7 +14,8 @@
 
 import csom
 csom.set_globals()  # neither worry about nor change this
-
+                    # doug, trust me, this sets global parameters that
+                    # are invariant from som to som
 
 
 class psom:
@@ -32,7 +33,7 @@ class psom:
 	"""
 	def __init__(self, xdim='unset', ydim='unset', topol='hexa', 
 									neigh='gaussian', alpha_mode='linear', radius_mode='linear',
-									rmin=0.0, rmax=1.0, data='unset', file='unset'):
+									rmin=0.0, rmax=1.0, dim='unset', data='unset', file='unset'):
 		"""
 		to read a som from a .cod file (the same file format as used in som_pak):
 		>>> mysom = psom(file=filename)
@@ -40,7 +41,9 @@ class psom:
 		a pre-existing data set:
 		>>> mysom = psom(xdim,ydim,data=mydataset)
 		to randomly initialize (this doesn't actually work yet)
-		>>> mysom = psom(xdim,ydim) ...
+		>>> mysom = psom(xdim,ydim,dim=d) 
+		or
+		>>> mysom = psom(xdim,ydim,dim=d,rmin=range_min,rmax=range_max)
 		"""
 
 		if(alpha_mode=='inverse_t'):
@@ -66,11 +69,19 @@ class psom:
 				neigh=csom.NEIGH_BUBBLE
 			else:
 				neigh=csom.NEIGH_GAUSSIAN
-			if(data!='unset'):
-				codes = csom.randinit_codes(data.data,topol,neigh,xdim,ydim)
-				self.params = csom.construct_teach_params(codes,alpha_mode,radius_mode)
-			else:
-				raise "random initialization mode not yet implemented.  sorry"
+			if(data=='unset'):
+				if(dim=='unset'):
+					raise "vector dimension 'dim' must be specified for random init"
+				data = dataset(dim=dim)
+				import random
+				gen = random.Random()
+				for count in range(10 * xdim * ydim):
+					mylist = []
+					for i in range(dim):
+						mylist.append(gen.random() * (rmax - rmin) + rmin)
+					data.addvec(vector(mylist))
+			codes = csom.randinit_codes(data.data,topol,neigh,xdim,ydim)
+			self.params = csom.construct_teach_params(codes,alpha_mode,radius_mode)
 
 		self.xdim = csom.entries_xdim_get(codes)
 		self.ydim = csom.entries_ydim_get(codes)
@@ -452,7 +463,7 @@ if(__name__ == '__main__'):
 	print "test 1 successfully completed"
 
 	print ""
-
+	
 	print "test 2: dataset from file, som randinit from data, train from dataset"
 	print "---------------------------------------------------------------------"
 	mysom = psom(12,8,data=mydataset)
@@ -474,7 +485,30 @@ if(__name__ == '__main__'):
 
 	print ""
 
-	print "test 3: data/training dynamic, view SRN levels"
+	print "test 3: dataset from file, som pure randinit, train from dataset"
+	print "----------------------------------------------------------------"
+	mysom = psom(12,8,dim=5,rmin=0.0,rmax=10.0)
+	mysom.save_to_file("test3a.cod")
+	print "initial som written to file \"test3a.cod\""
+	mysom.init_training(0.02,4.0,5000)
+	mysom.timing_start()
+	mysom.train_from_dataset(mydataset)
+	mysom.timing_stop()
+	ttime = mysom.get_training_time()
+	mysom.save_to_file("test3b.cod")
+	print "training session completed in", ttime, "seconds"
+	print "last vector produces the following gaussian SRN activations:"
+	myact = mysom.get_activations('gaussian',2.0)
+	myact.display()
+	print "last vector produces the following error-based SRN activations:"
+	myact = mysom.get_activations('error')
+	myact.display()
+	print "output written to file \"test3b.cod\""
+	print "test 3 successfully completed"
+
+	print ""
+
+	print "test 4: data/training dynamic, view SRN levels"
 	print "----------------------------------------------"
 	mysom = psom(file='ex.cod')
 	mysom.init_training(0.02,2.0,5000)
@@ -511,5 +545,5 @@ if(__name__ == '__main__'):
 	myact = mysom.get_activations('error')
 	myact.display()
 
-	mysom.save_to_file("test3.cod")
-	print "output written to \"test3.cod\""
+	mysom.save_to_file("test4.cod")
+	print "output written to \"test4.cod\""
