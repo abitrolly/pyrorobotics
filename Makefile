@@ -42,7 +42,7 @@ bin/pyro: Makefile.src build/pyro Makefile.cfg
 	cat build/pyro >> bin/pyro
 	chmod a+x bin/pyro
 
-plugins/simulators/Khepera: build/Khepera
+plugins/simulators/Khepera: build/Khepera Makefile
 	echo -e "#!/bin/sh" > plugins/simulators/Khepera
 	echo -e "SIM_DIR=$(PWD)/simulators/khepera" >> plugins/simulators/Khepera
 	cat build/Khepera >> plugins/simulators/Khepera
