@@ -31,7 +31,7 @@ except ImportError:
     raise "$PYTHONPATH needs to include dir ABOVE where $PYRO is installed"
 
 robotfile = 0
-services = 0
+devices = 0
 brainfile = 0
 window = 'TK'
 pyroargs = []
@@ -59,14 +59,14 @@ except:
 def process_options():
     import getopt, sys, string
     global robotfile, brainfile, window, simulator, \
-           pyroargs, configfile, evalcommand, worldfile, services
+           pyroargs, configfile, evalcommand, worldfile, devices
     try:
         opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:a:i:e:w:v:", \
+                                   "r:b:hg:s:a:i:e:w:d:", \
                                    ["robot=", "brain=", "help", \
                                     "gui=", "sim=", "args=",\
                                     "init=", "eval=", "world=",
-                                    "services="])
+                                    "devices="])
     except getopt.GetoptError:
         # print help information and exit:
         pyro.system.usage()
@@ -90,8 +90,8 @@ def process_options():
             configfile = a
 	elif o in ("-w", "--world"):
             worldfile = a
-	elif o in ("-v", "--services"):
-            services = a
+	elif o in ("-d", "--devices"):
+            devices = a
 	elif o in ("-e", "--eval"):
             evalcommand = a
 
@@ -106,10 +106,10 @@ if pyro.startup_check():
         robotfile = c.get('robot', 'file')
     else:
         c.put('robot', 'file', robotfile)
-    if not services:
-        services = c.get('robot', 'services')
+    if not devices:
+        devices = c.get('robot', 'devices')
     else:
-        c.put('robot', 'services', services)
+        c.put('robot', 'devices', devices)
     if not simulator:
         simulator = c.get('simulator', 'file')
     else:
@@ -128,29 +128,26 @@ if pyro.startup_check():
         c.put('pyro', 'args', pyroargs)
     c.put('pyro', 'gui', window)
     share.config = c
-    if services == None:
-        services = ""
-    ## need to make root here
-    #if window == "TK":
-    #    import Tkinter
-    #    import pyro.system.share as share
-    #    if not share.gui:
-    #        print "Making gui..."
-    #        share.gui = Tkinter.Tk()
-    #        share.gui.withdraw()
+    if devices == None:
+        devices = ""
+    ## need to make root here, before we load brain
+    ## in case brain has gui things
+    if window == "TK":
+        import Tkinter
+        # save it, in case we need it:
+        import pyro.system.share as share
+        if not share.gui:
+            share.gui = Tkinter.Tk()
+            share.gui.withdraw()
     eng = Engine(robotfile, brainfile, simulator,
-                 pyroargs, c, worldfile, services.split(",") )
+                 pyroargs, c, worldfile, devices.split(",") )
     if window == 'GL':
         from pyro.gui.GL import GLgui
         gui = GLgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TK':
-	import Tkinter
         from pyro.gui.TK import TKgui
-	root = Tkinter.Tk()
-	root.withdraw()
-        gui = TKgui(eng, root)
-        gui.redraw = gui.redraw
+        gui = TKgui(eng)
     elif window == 'TTY':
         gui = pyro.gui.gui("tty gui", {}, eng)
     elif window == 'CURSES':

@@ -6,8 +6,8 @@ def about():
     print "-------------------------------------------------------------"
     print "Pyro - Python Robotics"
     print "Version:", version()
-    print "See: http://wiki.cs.brynmawr.edu/?Pyro"
-    print "(c) 2003, D.S. Blank"
+    print "See: http://PyroRobotics.org"
+    print "(c) 2004, D.S. Blank"
     print "-------------------------------------------------------------"
 
 def usage():
@@ -19,7 +19,7 @@ def usage():
     print "  -s SIMULATOR       name of simulator to run"
     print "  -i CONFIGFILE      name of config file to load"
     print "  -w WORLDFILE       name of simulator world to load"
-    print "  -v SERVICE[,...]   names of services (files or names)"
+    print "  -d DEVICE[,...]    names of devices (files or names)"
     print "  -e \"string\"        eval string of commands"
     print "                     that are ; separated"    
     print ""
