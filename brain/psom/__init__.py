@@ -246,6 +246,10 @@ class vector:
 	def get_elts(self):
 		points = csom.data_entry_points_get(self.entry)
 		return arr_to_list(points,self.dim)
+	def __getitem__(self, key):
+		return self.get(key)
+	def __len__(self):
+		return len(self.get_elts())
 	def get(self, index):
 		mylist = self.get_elts()
 		return mylist[index]
