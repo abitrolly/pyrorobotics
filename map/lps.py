@@ -79,14 +79,16 @@ class LPS(Tkinter.Tk):
       robot.set(item, 'units', 'METERS')
       for i in range(robot.get(item, 'count')):
          offx, offy = robot.get(item, 'ox', i), robot.get(item, 'oy', i)
-         print offx, offy
          dist = robot.get(item, 'value', i) 
          theta = robot.get(item, 'th', i)
          if dist < robot.get(item, 'maxvalue'):
+            # calculate point in LPS coordinates
             dist *= 1000
-            originMM = self.widthMM / 2.0, self.heightMM / 2.0
             xhit = cos(theta) * dist + offx
-            yhit = sin(theta) * dist - offy
+            yhit = sin(theta) * dist + offy
+            print i, xhit, yhit
+            # transform point to GUI coordinates
+            originMM = self.widthMM / 2.0, self.heightMM / 2.0
             xpos = int((originMM[0] + xhit) / self.colScaleMM)
             ypos = int((originMM[1] - yhit) / self.rowScaleMM)
             self.label[ypos][xpos] = "%d" % i
