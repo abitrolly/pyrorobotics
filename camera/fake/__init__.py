@@ -1,8 +1,7 @@
 from pyro.system import share
-import grabImage
-share.grabImage = grabImage
+from fake import Fake
 from pyro.camera import Camera, CBuffer
-import re, time
+import re, time, os
 import PIL
 
 class FakeCamera(Camera):
@@ -11,7 +10,7 @@ class FakeCamera(Camera):
    accessing the hardware, it will load a series of images from file.
    ONLY ONE OF THESE CAN EXIST AT A TIME!
    """
-   def __init__(self, pattern = "vision/snaps/som-?.ppm",
+   def __init__(self, pattern = None,
                 start = 0, limit = 19, char = "?",
                 interval = 1.0):
       """
@@ -28,6 +27,8 @@ class FakeCamera(Camera):
       As an example, to load som-0.ppm through som-19.ppm, we could call
       FakeCamera('vision/snaps/som-?.ppm', 0, 19)
       """
+      if pattern == None:
+         pattern = os.environ['PYRO'] + "/vision/snaps/som-?.ppm"
       self.pattern = pattern
       self.limit = limit
       self.interval = interval
@@ -42,17 +43,20 @@ class FakeCamera(Camera):
       currname = self.pattern[:self.match.start()] + \
                  self.fstring % self.current + \
                  self.pattern[self.match.end():]
-      self.width, self.height, self.depth, self.cbuf = share.grabImage.grab_image(currname)
+      self.cobj = Fake(currname)
+      self.width = self.cobj.getWidth()
+      self.height = self.cobj.getHeight()
+      self.depth = self.cobj.getDepth()
+      self.cbuf = self.cobj.getMMap()
       if self.depth == 8:
          self.color = 0
       else:
          self.color = 1
-         
-      Camera.__init__(self, self.width, self.height, self.depth,
-                      "Fake Camera View")
       self.data = CBuffer(self.cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
+      Camera.__init__(self, self.width, self.height, self.depth,
+                      "Fake Camera View")
       
    def _update(self):
       if self.lockCamera == 0 and self.limit > 0:
@@ -62,14 +66,9 @@ class FakeCamera(Camera):
                currname = self.pattern[:self.match.start()] + \
                           self.fstring % self.current + \
                           self.pattern[self.match.end():]
-               share.grabImage.refresh_image(currname)
+               self.cobj.updateMMap(currname)
                self.current += 1
                self.lastUpdate = currentTime
          else:
             self.current = self.start 
-
-   def __del__(self):
-      share.grabImage.free_image()
-
-
 
