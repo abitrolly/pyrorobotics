@@ -189,14 +189,16 @@ class KheperaRobot(Robot):
             port = "simulated"
             print "Khepera opening simulation..."
         else:
-            try:
-                port = config.get('khepera', 'port')
-            except:
-                pass
+            if port == None:
+                try:
+                    port = config.get('khepera', 'port')
+                except:
+                    pass
             if port == None:
                 port = "/dev/ttyS1"
             print "Khepera opening port", port, "..."
-            self.sc = SerialConnection(port, termios.B38400)
+            #self.sc = SerialConnection(port, termios.B38400)
+            self.sc = SerialConnection(port, termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B57600)
         self.stallTolerance = 0.25

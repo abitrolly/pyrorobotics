@@ -3,4 +3,4 @@
 from pyro.robot.khepera import *
 
 def INIT():
-    return KheperaRobot() # 1 makes it simulated
+    return KheperaRobot(port = "/dev/ttyUB0") # 1 makes it simulated
