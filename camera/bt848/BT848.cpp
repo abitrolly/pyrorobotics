@@ -10,74 +10,42 @@
 
 #include "BT848.h"
 
-BT848::BT848 ( const char* dname, int w, int h ) : Camera(dname, w, h)
-{
-  bpp = 3;
-  size = w * h * 4;
-  VIDEO_DEV = devicename;
-  ptr = buf = new unsigned char [size + 30/*header*/];
+BT848::BT848 ( const char* dname, int wi, int hi, int de):
+  Device(wi, hi, de) {
+  size = wi * hi * 4; // size of raw buffer
+  int msize = wi * hi * de; // size of image buffer
+  VIDEO_DEV = new char[strlen(dname)+1];
+  strcpy(VIDEO_DEV, dname);
   buffer = new unsigned char [size];
+  image = new unsigned char [msize];
   init();
 }
 
-void BT848::Cleanup ()
-{
+BT848::~BT848() {
  close (fd);
- delete [] buf;
+ delete [] buffer;
+ delete [] image;
 }
 
-void BT848::GetData ( )
-{
+void BT848::setRGB(int r, int g, int b) {
+  int rgb_order[MAXDEPTH] = {r, g, b};
+  for (int d = 0; d < depth; d++)
+    // set offsets for RGB
+    rgb[d] = rgb_order[d];
+}
+
+PyObject *BT848::updateMMap( ) {
   unsigned char *mmptr;
- 
-  mmptr = grab_one(&cols, &rows);
- 
-  ptr = buf;
-  
-  // Put PPM header on buffer
-  sprintf ( (char *) buf, "P6\n%d %d\n255\n", cols, rows ); 
-  
-  int pos = strlen((char *) buf);
-  rawbuf = buf + pos;
-
-  for (int j=0; j<rows; j++) {
-    for (int k=0; k<cols; k++) {
-      buf[pos + 2] = *mmptr++;            /* blue */
-      buf[pos + 1] = *mmptr++;            /* green */
-      buf[pos + 0] = *mmptr++;            /* red */
-      *mmptr++;                     /* NULL byte */
-      pos += 3;
-     }
-  }            
-  buf_length = pos + rows*cols*3;
-}
-
-unsigned char* BT848::grab_one(int *width, int *height) 
-{
-  /* set input port */
-
-#ifdef USE_SVIDEO_INPUT
-  icontrol = METEOR_INPUT_DEV0;        /* PXC200 S-video connector */
-#else
-  icontrol = METEOR_INPUT_DEV1;        /* PXC200 BNC composite video connector */
-#endif
-  if (ioctl (fd, METEORSINPUT, &icontrol) < 0) {
-    printf ("METEORSINPUT ioctl failed: %d\n", errno);
-    exit (1);
-  }                          
-  /* read the image data */
-  if ((icontrol = read (fd, &buffer[0], size)) != size) {
-    perror ("read");
-    close (fd);
-    exit (1);
+  if (read(fd, buffer, size) != size) {
+    perror("read");
+    close(fd);
+    exit(1);
   }
-
   /* get error counts */
-  if (ioctl (fd, METEORGCOUNT, &cnt)) {
+  if (ioctl(fd, METEORGCOUNT, &cnt)) {
       perror("ioctl GetCount failed");
       exit (1);
   }
-
   if (0) {
     printf ("Captured:\n  frames: %ld\n  even fields: %ld\n  odd fields: %ld\n",
 	    cnt.frames_captured,
@@ -86,7 +54,18 @@ unsigned char* BT848::grab_one(int *width, int *height)
     printf ("Fifo errors: %ld\n", cnt.fifo_errors);
     printf ("DMA errors:  %ld\n", cnt.dma_errors);   
   }
-  return buffer;
+  mmptr = buffer;
+  int pos = 0;
+  for (int j=0; j<height; j++) {
+    for (int k=0; k<width; k++) {
+      image[pos + 2] = *mmptr++;            /* blue */
+      image[pos + 1] = *mmptr++;            /* green */
+      image[pos + 0] = *mmptr++;            /* red */
+      *mmptr++;                     /* NULL byte */
+      pos += 3;
+     }
+  }        
+  return PyInt_FromLong(0L);
 }
 
 void BT848::init(void) {
@@ -94,7 +73,6 @@ void BT848::init(void) {
   struct meteor_geomet geo;
   char rgb[3], header[16], *p;
   int j, k;
-
   /* open the device */
   if ((fd = open(VIDEO_DEV, O_RDWR)) <= 0) {
     perror (VIDEO_DEV);
@@ -112,8 +90,8 @@ void BT848::init(void) {
   }
 
   /* set capture geometry */
-  geo.rows = rows;              /* # of lines in output image */
-  geo.columns = cols;           /* # of pixels in a row in output image */
+  geo.rows = height;              /* # of lines in output image */
+  geo.columns = width;           /* # of pixels in a row in output image */
   geo.frames = 1;               /* # of frames in a buffer */
   geo.oformat = METEOR_GEO_RGB24 ; /* RGB 24 in 4 bytes: NULL,R,G,B */
   if (ioctl (fd, METEORSETGEO, &geo) < 0) {
@@ -126,6 +104,16 @@ void BT848::init(void) {
     perror ("METEORSFMT ioctl\n");
     exit (1);
   }
+  /* set input port */
+#ifdef USE_SVIDEO_INPUT
+  icontrol = METEOR_INPUT_DEV0;        /* PXC200 S-video connector */
+#else
+  icontrol = METEOR_INPUT_DEV1;        /* PXC200 BNC composite video connector */
+#endif
+  if (ioctl (fd, METEORSINPUT, &icontrol) < 0) {
+    printf ("METEORSINPUT ioctl failed: %d\n", errno);
+    exit (1);
+  }                          
 }
 
 
