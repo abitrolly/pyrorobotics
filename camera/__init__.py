@@ -25,7 +25,7 @@ class Camera(PyroImage):
       """
       This method should be overloaded to interface with the camera.
       """
-      #raise "The Camera._update  method should be overloaded!"
+      pass
 
    def update(self, detectMotion = 0, threshold = 25):
       """
