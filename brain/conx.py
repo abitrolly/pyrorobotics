@@ -627,6 +627,7 @@ class Network:
         self.useCrossValidationToStop = 0
         self.saveResults = 0 # will save error, correct, total in sweep()
         self.results = []
+        self._cv = False # set true when in cross validation
 
     # general methods
     def path(self, startLayer, endLayer):
@@ -1351,6 +1352,7 @@ class Network:
         oldLearning = self.learning
         self.learning = 0
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        self._cv = True # in cross validation
         for set in self.crossValidationCorpus:
             (error, correct, total) = self.step( **set )
             if self.crossValidationReportLayers != []:
@@ -1359,6 +1361,7 @@ class Network:
             totalCorrect += correct
             totalCount += total
         self.learning = oldLearning
+        self._cv = False
         return (tssError, totalCorrect, totalCount)
     def saveNetworkForCrossValidation(self, filename, mode = 'a'):
         fp = open(filename, mode)

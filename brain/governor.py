@@ -269,7 +269,7 @@ class GovernorSRN(Governor, SRN):
         return retval
 
     def networkStep(self, **args):
-        if self.governing:
+        if self.governing and not self._cv:
             # map the ravq input context and target
             actContext = list(self["context"].activation)
             vector = list(args["input"]) + actContext + list(args["output"])

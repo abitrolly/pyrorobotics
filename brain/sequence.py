@@ -19,11 +19,22 @@ net.setOutputs( [[0.0] + [0.0] * pause + [0.0],
                  [0.5] + [0.0] * pause + [0.5],
                  [1.0] + [0.0] * pause + [1.0]] )
 net.setSequenceType("pattern")
+
+net.crossValidationCorpus = (
+    {"input" : [0.0] + [0.0] * pause + [0.0],
+     "output" : [0.0] + [0.0] * pause + [0.0] },
+    {"input" : [0.5] + [0.0] * pause + [0.0],
+     "output" : [0.5] + [0.0] * pause + [0.5] },
+    {"input" : [1.0] + [0.0] * pause + [0.0],
+     "output" : [1.0] + [0.0] * pause + [1.0] },
+    )
+net.setUseCrossValidationToStop(1)
 net.setTolerance(.2)
 net.setResetEpoch(12000)
 net.setResetLimit(1)
 net.setEpsilon(0.25) # .25
 net.setMomentum(0.0)
+net.setReportRate(25)
 net.decay = 1
 if mode == "gov":
     net.governing = 1
@@ -33,6 +44,9 @@ elif mode == "srn":
 elif mode == "both":
     net.governing = 1
     net.learning = 1
+
+#net.setInteractive(1)
+#net.trainingNetwork.setInteractive(1)
     
 net.train()
 net.setLearning(0)
