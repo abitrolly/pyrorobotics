@@ -147,3 +147,13 @@ class Brain(threading.Thread): #, Drawable):
         User init method
         """
         pass
+
+    def makeWindow(self):
+        import Tkinter
+        self.window = Tkinter.Toplevel()
+        self.window.wm_title("Brain View")
+        self.canvas = Tkinter.Canvas(self.window,width=550,height=300)
+        self.canvas.pack()
+
+    def redraw(self):
+        self.canvas.create_text(100,130, tags='pie',fill='black', text = "This Brain needs a redraw method!")

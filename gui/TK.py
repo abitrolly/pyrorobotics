@@ -62,6 +62,10 @@ class TKgui(gui):
                         ['Medium Update 3/sec',self.mediumUpdate],
                         ['Slow Update 1/sec',self.slowUpdate]
                         ]),
+              ('Maps', [['2D Local Perceptual Space',self.make2DLPSWindow],
+                        ['3D Local Perceptual Space',self.make3DLPSWindow],
+                        ['Global Perceptual Space',self.makeGPSWindow]
+                        ]),
               ('Help',[['Help',system.help],
                        ['Usage',system.usage],
                        ['Info',self.info],
@@ -154,12 +158,10 @@ class TKgui(gui):
 
    def openBrainWindow(self):
       try:
-         self.windowBrain.state()
+         self.brain.window.state()
       except:
-         self.windowBrain = Tkinter.Toplevel()
-         self.windowBrain.wm_title("Brain View")
-         self.canvasBrain = Tkinter.Canvas(self.windowBrain,width=550,height=300)
-         self.canvasBrain.pack()
+         if self.engine and self.engine.brain:
+            self.engine.brain.makeWindow()
 
    def redrawPlots(self):
       for p in self.engine.plot:
@@ -170,41 +172,12 @@ class TKgui(gui):
             print "Removing plot"
             self.engine.plot.remove(p)
 
-
    def redrawWindowBrain(self):
-      # FIX: behavior specific. How to put this in behavior code so
-      # that each brain would know how to draw itself?
       try:
-         self.windowBrain.state()
-      except:
-         return
-      if self.engine and self.engine.brain and self.lastRun != self.engine.brain.lastRun:
+         self.engine.brain.redraw()
          self.lastRun = self.engine.brain.lastRun
-         self.canvasBrain.delete('pie')
-         piecnt = 0
-         for control in self.engine.brain.controls:
-            piecnt += 1
-            percentSoFar = 0
-            piececnt = 0
-            for d in self.engine.brain.pie:
-               if control == d[0]:
-                  piececnt += 1
-                  portion = d[2]
-                  try:
-                     self.redrawPie(piecnt, percentSoFar, \
-                                    piececnt, \
-                                    "%s effects: %.2f" % (d[0], self.engine.brain.history[0][d[0]]),
-                                    portion, \
-                                    "(%.2f) %s IF %.2f THEN %.2f = %.2f" % (d[1], d[5], d[2],
-                                                                            d[3], d[4]))
-                  except:
-                     pass
-                  percentSoFar += portion
-      else:
-         try:
-            self.canvasBrain.create_text(200,130, tags='pie',fill='black', text = "Ready...")
-         except:
-            pass
+      except:
+         pass
          
    def fastUpdate(self):
       self.update_interval = 0.10
@@ -256,18 +229,6 @@ class TKgui(gui):
       #self.commandEntry.insert(0, filter)
       #self.commandButton.flash()
       #self.UpdateListBoxes()
-
-   def redrawPie(self, pie, percentSoFar, piececnt, controller,
-                 percent, name):
-      # FIX: behavior specific. How to put in Behavior-based code?
-      xoffset = 5
-      yoffset = 20
-      width = 100
-      row = (pie - 1) * (width * 1.5)
-      colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
-      self.canvasBrain.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
-      self.canvasBrain.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-      self.canvasBrain.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
 
    def info(self):
       print "-------------------------------------------------------------"
@@ -451,6 +412,15 @@ class TKgui(gui):
          self.status.see('end')
       except AttributeError: # gui not created yet
          print message
+
+   def make2DLPSWindow(self):
+      pass
+
+   def make3DLPSWindow(self):
+      pass
+
+   def makeGPSWindow(self):
+      pass
    
 if __name__ == '__main__':
    gui = TKgui(Engine())
