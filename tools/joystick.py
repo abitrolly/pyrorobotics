@@ -52,9 +52,6 @@ class Joystick(Tkinter.Toplevel):
       if self.debug:
          print self.translate, self.rotate
 
-   def destroy(self):
-      self.destroy()
-
    def canvas_clicked_up(self, event):
       self.canvas.delete("lines")
       self.move(0.0, 0.0)
