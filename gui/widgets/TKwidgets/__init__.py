@@ -81,8 +81,12 @@ class ModalDialog(Dialog):
 		self.top.deiconify()
 		self.top.waitvar(self.myWaitVar)
                 #print "waitvar =", self.top.getvar(self.myWaitVar), type(self.top.getvar(self.myWaitVar))
-		#return string.atoi(self.top.getvar(self.myWaitVar))
-                return self.top.getvar(self.myWaitVar)
+                result = self.top.getvar(self.myWaitVar)
+                print "result =", result, type(result)
+                if type(result) == type(1):
+                   return self.top.getvar(self.myWaitVar)
+                else:
+                   return string.atoi(self.top.getvar(self.myWaitVar))
 ####
 #	Class AlertDialog
 #

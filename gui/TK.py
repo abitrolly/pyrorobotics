@@ -108,7 +108,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # create a command text area:
       self.makeCommandArea()
       # Display:
-      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld, False),
+      self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld, 0), # 0 = False
                          ('button', 'Robot:', self.loadRobot, self.editRobot, self.showAll),
                          ('button', 'Brain:', self.loadBrain, self.editBrain, self.openBrainWindow),
                         ]
@@ -126,7 +126,7 @@ class TKgui(Tkinter.Toplevel, gui):
          self.goButtons[b[0]].pack(side=Tkinter.LEFT,padx=2,pady=2,fill=Tkinter.X, expand = "yes", anchor="n")
       toolbar.pack(side=Tkinter.TOP, anchor="n", fill='x', expand = "no")
       ## ----------------------------------
-      self.makeRow(('status', 'Pose:', '', '', False))
+      self.makeRow(('status', 'Pose:', '', '', 0)) # 0 = False
       ## ----------------------------------
       self.textframe = Tkinter.Frame(self.frame)
       self.textframe.pack(side="top", expand = "yes", fill="both")
