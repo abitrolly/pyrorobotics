@@ -76,22 +76,6 @@ class V4LGrabber(Camera):
          #a call to free_image will be unsuccessful.
          free_image(self.handle, self.cbuf)
 
-   def center(self):
-      """Not supported by this camera"""
-      pass
-
-   def pan(self):
-      """Not supported by this camera"""
-      raise "Pan not supported"
-
-   def tilt(self):
-      """Not supported by this camera"""
-      raise "Tilt not supported"
-
-   def zoom(self):
-      """Not supported by this camera"""
-      raise "Zoom not supported"
-
    def saveAsTGA(self, path = "~/V4LGrab.tga"):
       """
       Save a copy of the image to disk, in TGA format (Gimp and display
