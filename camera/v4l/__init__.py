@@ -9,7 +9,7 @@ class V4LCamera(Camera):
    """
    def __init__(self, width, height, depth = 3,
                 device = '/dev/video0', channel = 1, title = None,
-                visionSystem = None):
+                visionSystem = None, visible = 1):
       """
       Device should be the name of the capture device in the /dev directory.
       This is highly machine- and configuration-dependent, so make sure you
@@ -40,7 +40,8 @@ class V4LCamera(Camera):
 	 title = self.device
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
-      Camera.__init__(self, width, height, depth, title = title)
+      Camera.__init__(self, width, height, depth, title = title,
+                      visible = visible)
       self.devData["subtype"] = "video4linux"
       self.devData["source"] = device
       self.data = CBuffer(self.cbuf)

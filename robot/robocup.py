@@ -2,8 +2,15 @@ from socket import *
 from pyro.robot import Robot
 from pyro.robot.device import Device
 
-#class IRSensor(Device):
-#	def __init__(self, dev, type = "ir"):
+class TruthDevice(Device):
+	def __init__(self, dev, type = "truth"):
+		Device.__init__(self, type)
+		self.dev = dev
+		self.devData["pose"] = (0, 0)
+	def postSet(self, item):
+		if item == "pose":
+			self.dev.sendMsg("(move %f %f)" % (self.devData["pose"][0], self.devData["pose"][1] ))
+			
 
 def lex(str):
 	retval = []
@@ -23,6 +30,8 @@ def lex(str):
 			if currentword:
 				retval.append(currentword)
 			currentword = ""
+		elif ord(ch) == 0:
+			pass
 		else:
 			currentword += ch
 	if currentword:
@@ -55,7 +64,7 @@ def parse(str):
 
 class RobocupRobot(Robot):
 	BUF = 1024
-	def __init__(self, name, host = "localhost", port = 6000):
+	def __init__(self, name = "Pyro1", host = "localhost", port = 6000):
 		Robot.__init__(self)
 		self.devData["simulated"] = 1
 		self.devData["name"] = name
@@ -64,13 +73,22 @@ class RobocupRobot(Robot):
 		self.address = (self.devData["host"], self.devData["port"])
 		self.socket = socket(AF_INET, SOCK_DGRAM)
 		self.socket.sendto("(init %s)" % self.devData["name"], self.address)
-
+		self.devData["builtinDevices"] = ["truth"]
+		self.startDevice("truth")
+		self.sendMsg("(move 26 26)")
+		
+	def startDeviceBuiltin(self, item):
+		if item == "truth":
+			return {"truth": TruthDevice(self, "truth")}
+		else:
+			raise AttributeError, "robocup robot does not support device '%s'" % item
+		
 	def sendMsg(self, msg):
-		self.socket.sendto(msg, addr)
+		self.socket.sendto(msg, self.address)
 
 	def getMsg(self):
 		data, addr = self.socket.recvfrom(self.BUF)
-		return data
+		return parse(data)
 
 	def disconnect(self):
 		self.stop()
@@ -78,10 +96,22 @@ class RobocupRobot(Robot):
 
 	def update(self):
 		self._update()
-		data = self.getMsg()
-		print data
-		try:
-			pdata = parse(data)
-			print pdata
-		except:
-			print "error"
+			
+	def translate(self, translate_velocity):
+		# robocup takes values between -100 and 100
+		val = translate_velocity * 100.0
+		self.sendMsg("(dash %f)" % val)
+
+	def rotate(self, rotate_velocity):
+		# robocup takes degrees -180 180
+		val = rotate_velocity * 180.0
+		self.sendMsg("(turn %f)" % val)
+
+	def move(self, translate_velocity, rotate_velocity):
+		# only one per cycle!
+		if translate_velocity != 0.0:
+			val = translate_velocity * 100.0
+			self.sendMsg("(dash %f)" % val)
+		if rotate_velocity != 0.0:
+			val = rotate_velocity * 180.0
+			self.sendMsg("(turn %f)" % val)

@@ -3,4 +3,4 @@
 from pyro.robot.robocup import *
 
 def INIT():
-    return RobocupRobot("Robocup1")
+    return RobocupRobot()
