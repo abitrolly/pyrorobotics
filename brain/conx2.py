@@ -949,7 +949,9 @@ class Network:
         """
         self.orderedInputs = value
         if self.orderedInputs:
-            self.loadOrder = range(len(self.inputs))
+            self.loadOrder = [0] * len(self.inputs)
+            for i in range(len(self.inputs)):
+                self.loadOrder[i] = self.getData(i)
     def verifyArguments(self, arg):
         """
         Verifies that arguments to setInputs and setTargets are appropriately formatted.
@@ -970,7 +972,9 @@ class Network:
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
         self.inputs = inputs
-        self.loadOrder = range(len(self.inputs)) # not random
+        self.loadOrder = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = self.getData(i)
         # will randomize later, if need be
     def setOutputs(self, outputs):
         """
@@ -1172,11 +1176,8 @@ class Network:
         """
         for layer in self.layers:
             if layer.verify and layer.type == 'Input' and layer.active and not layer.activationSet:
-                if not self.learnDuringSequence and self.sequenceLength > 0: # FIX: be more specific here
-                    pass
-                else:
-                    raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
-                                       (layer.name, layer.type))
+                raise LayerError, ('Inputs are not set and verifyInputs() was called on layer.',\
+                                   (layer.name, layer.type))
             else:
                 layer.resetActivationFlag()
     def verifyTargets(self):
@@ -1869,7 +1870,9 @@ class Network:
             self.inputs.append(self.patternVector(data[0:icnt]))
             self.targets.append(self.patternVector(data[icnt:]))
             line = fp.readline()
-        self.loadOrder = range(len(self.inputs))
+        self.loadOrder = [0] * len(self.inputs)
+        for i in range(len(self.inputs)):
+            self.loadOrder[i] = self.getData(i)
 
     # patterning
     def replacePatterns(self, vector):
@@ -2012,9 +2015,7 @@ class SRN(Network):
         Constructor for SRN sub-class. Support for sequences and prediction added.
         """
         Network.__init__(self, name = name, verbosity = verbosity)
-        self.sequenceLength = 1
         self.learnDuringSequence = 0
-        self.autoSequence = 1 # auto detect length of sequence from input size
         self.prediction = []
         self.initContext = 1
         self.contextCopying = 1
@@ -2026,17 +2027,6 @@ class SRN(Network):
         Sets prediction between an input and output layer.
         """
         self.prediction.append((inName, outName))
-    def setAutoSequence(self, value):
-        """
-        Automatically determines the length of a sequence. Length of
-        input / Number of input nodes.
-        """
-        self.autoSequence = value
-    def setSequenceLength(self, value):
-        """
-        Manually sets self.sequenceLength.
-        """
-        self.sequenceLength = value
     def setInitContext(self, value):
         """
         Clear context layer between sequences.
@@ -2109,99 +2099,59 @@ class SRN(Network):
         Network.propagate(self)
     def backprop(self):
         """
-        Extends backprop() from Network to automatically deal with context layers.
+        Extends backprop() from Network to automatically deal with context
+        layers. Copies the contexts, if contextCopying is true.
         """
         retval = Network.backprop(self)
         if self.contextCopying:
             self.copyHiddenToContext() # must go after error computation
         return retval
-    def sweep(self):
-        """
-        SRN.step()
-        Enables sequencing over Network.sweep().
-        """
-        if self.loadOrder == []:
-            raise SRNError, ('No loadOrder. Make sure inputs are properly loaded and set.', self.loadOrder)
-        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
-        if not self.orderedInputs:
-            self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
-        for i in self.loadOrder:
-            if self.autoSequence:
-                self.sequenceLength = len(self.replacePatterns(self.inputs[i])) / self.layers[0].size
-            if self.verbosity > 0 or self.interactive:
-                print "-----------------------------------Pattern #", i + 1
-            if self.sequenceLength <= 0:
-                raise SRNError, ('Sequence length is invalid.', self.sequenceLength)
-            if self.sequenceLength == 1 and self.learnDuringSequence:
-                raise SRNError, ('Learning during sequence but sequence length is one.', \
-                                 (self.sequenceLength, self.learnDuringSequence))
-            for s in range(self.sequenceLength):
-                if self.verbosity > 0 or self.interactive:
-                    print "Step #", s + 1
-                #self.preprop(i, s)
-                self.propagate()
-                if (s + 1 < self.sequenceLength and not self.learnDuringSequence):
-                    # don't update error or count
-                    # accumulate history without learning in context layer
-                    pass 
-                else:
-                    (error, correct, total) = self.backprop() # compute_error()
-                    tssError += error
-                    totalCorrect += correct
-                    totalCount += total
-                if self.verbosity > 0 or self.interactive:
-                    print 'After propagation ...........................................'
-                    self.display()
-                    if self.interactive:
-                        self.prompt()
-                if self.sequenceLength > 1:
-                    if self.learning and self.learnDuringSequence:
-                        self.change_weights()
-                # else, do nothing here
-                sys.stdout.flush()
-            if self.sequenceLength > 1:
-                if self.learning and not self.learnDuringSequence:
-                    self.change_weights()
-            else:
-                if self.learning and not self.batch:
-                    self.change_weights()
-        if self.sequenceLength == 1:
-            if self.learning and self.batch:
-                self.change_weights() # batch
-        return (tssError, totalCorrect, totalCount)
     def step(self, **args):
         """
         SRN.step()
         Extends network step method by automatically copying hidden
         layer activations to the context layer.
         """
+        # take care of any params other than layer names:
+        # two ways to clear context:
+        # 1. force it to right now with arg clearContext = 1:
         if args.has_key('clearContext'):
             if args['clearContext']:
                 self.clearContext()
             del args['clearContext']
-        #if self.sequenceLength > 1:
-        #    if step == 0 and self.initContext:
-        #        self.clearContext()
-        #else: # if seq length is one, you better be doing ordered
-        #    if self.initContext: #pattern == 0 and
-        #        self.clearContext()
-        # FIX: figure out who is going to clear context
-        for p in self.prediction:
-            (inName, outName) = p
-            inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
-            outLayer = self.getLayer(outName)
-            if not outLayer.type == 'Output':
-                raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
-            if self.sequenceLength == 1:
-                position = (pattern + 1) % len(self.inputs)
-                outLayer.copyTargets(self.inputs[position])
-            else:
-                start = ((step + 1) * inLayer.size) % len(self.replacePatterns(self.inputs[pattern]))
-                self.copyTargets(outLayer, self.inputs[pattern], start)
-        return Network.step(self, **args)
+        # 2. have initContext be true:
+        elif self.initContext:
+            self.clearContext()
+        # replace all patterns
+        for key in args:
+            args[key] = self.replacePatterns( args[key] )
+        # for each input kind: FIX: assumes input
+        # compute length of sequence:
+        sequenceLength = len(args["input"]) / self["input"].size
+        patternLength = self["input"].size
+        for step in range(sequenceLength):
+            offset = step * patternLength
+            dict = {}
+            dict["input"] = args["input"][offset:offset+patternLength]
+            if dict.has_key("output"):
+                dict["output"] = args["output"][offset:offset+patternLength]
+            # get info for predicition:
+            for p in self.prediction:
+                (inName, outName) = p
+                inLayer = self.getLayer(inName)
+                if not inLayer.type == 'Input':
+                    raise LayerError, ('Prediction input layer not type \'Input\'.', inLayer.type)
+                outLayer = self.getLayer(outName)
+                if not outLayer.type == 'Output':
+                    raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
+                if step == sequenceLength - 1: # last one
+                    start = 0 # wrap arround
+                else:
+                    start = (step + 1) * inLayer.size
+                dict[outName] = args[inName][start:start+patternLength]
+            retvals = Network.step(self, **dict)
+        # FIX: return summary of all steps
+        return retvals
 
 if __name__ == '__main__':
 
@@ -2888,8 +2838,6 @@ if __name__ == '__main__':
             print "No exception caught."
         print "Sequence length is set to -1 and sweep() is called..."
         n.setLearnDuringSequence(0)
-        n.setSequenceLength(-1)
-        n.setAutoSequence(0)
         try:
             n.sweep()
         except SRNError, err:
