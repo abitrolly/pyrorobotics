@@ -112,8 +112,8 @@ class Camera(PyroImage, Device):
          self.devData["filters"] = self.callbackTextList # list
 
    def postSet(self, keyword):
-      if keyword == "visible":
-         if self.devData["visible"]:
+      if keyword == ".visible":
+         if self.devData[".visible"]:
             self.makeWindow()
          else:
             self.hideWindow()
@@ -436,11 +436,11 @@ class Camera(PyroImage, Device):
          while self.window.tk.dooneevent(2): pass
 
    def startDevice(self):
-      self.devData["state"] = "started"
+      self.devData[".state"] = "started"
       return self
 
    def stopDevice(self):
-      self.devData["state"] = "stopped"
+      self.devData[".state"] = "stopped"
       self.setVisible(0)
       return "Ok"
 
@@ -448,7 +448,7 @@ class Camera(PyroImage, Device):
       return self.data
 
    def getDeviceState(self):
-      return self.devData["state"]
+      return self.devData[".state"]
 
    def updateDevice(self):
       self.update()
