@@ -631,6 +631,8 @@ class Network:
         self.autoSaveWeightsFile = None
         self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
+        self._sweeping = 0 # flag set when sweeping through corpus (as apposed to just stepping)
+        self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
 
@@ -1337,6 +1339,10 @@ class Network:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
         return (error, correct, total)
+    def preStep(self):
+        pass
+    def postStep(self):
+        pass
     def sweep(self):
         """
         Runs through entire dataset. 
@@ -1357,7 +1363,15 @@ class Network:
             if self.verbosity > 0 or self.interactive:
                 print "-----------------------------------Pattern #", self.loadOrder[i] + 1
             datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
+            if cnt < len(self.loadOrder) - 1:
+                self.currentSweepCount = cnt
+            else:
+                self.currentSweepCount = None
+            self._sweeping = 1
+            self.preStep()
             (error, correct, total) = self.step( **datum )
+            self.postStep()
+            self._sweeping = 0
             if self.saveResults:
                 self.results[i] = (error, correct, total)
             tssError += error
@@ -1389,7 +1403,11 @@ class Network:
                 set = {"input": self.inputs[i]}
                 if self.targets:
                     set["output"] = self.targets[i]
+                self._sweeping = 1
+                self.preStep()
                 (error, correct, total) = self.step( **set )
+                self.postStep()
+                self._sweeping = 0
                 if self.crossValidationReportLayers != []:
                     (error, correct, total) = self.getError( *self.crossValidationReportLayers )
                 tssError += error
@@ -1397,7 +1415,11 @@ class Network:
                 totalCount += total
         else:
             for set in self.crossValidationCorpus:
+                self._sweeping = 1
+                self.preStep()
                 (error, correct, total) = self.step( **set )
+                self.postStep()
+                self._sweeping = 0
                 if self.crossValidationReportLayers != []:
                     (error, correct, total) = self.getError( *self.crossValidationReportLayers )
                 tssError += error
@@ -2323,7 +2345,10 @@ class SRN(Network):
         # This should really loop over each arg that is kind Input
         # For now, just assumes an "input" layer
         if not args.has_key("input"):
-            return self.networkStep(**args)
+            self.preStep()
+            retval = self.networkStep(**args)
+            self.postStep()
+            return retval
         # The rest of this assumes at least an "input" parameter!
         # compute length of sequence:
         sequenceLength = len(args["input"]) / self["input"].size
@@ -2349,17 +2374,33 @@ class SRN(Network):
                 outLayer = self.getLayer(outName)
                 if not outLayer.type == 'Output':
                     raise LayerError, ('Prediction output layer not type \'Output\'.', outLayer.type)
-                if step == sequenceLength - 1: # last one
-                    start = 0 # wrap arround
-                else:
+                if step == sequenceLength - 1: # last one in sequence; what do we do?
+                    start = 0 # wrap to next input vector
+                    if not self._sweeping: # not in sweep, in step, no target
+                        raise LayerError, "Attempting to predict last item in sequence, but using step(). Use sweep() instead."
+                    else: # in a sweep, so get the next pattern if one:
+                        if self.currentSweepCount == None: # last item in epoch, predict back to first pattern
+                            # Train it to predict first pattern, first sequence item
+                            pattern = self.getData(self.loadOrder[0])
+                            for key in pattern:
+                                pattern[key] = self.replacePatterns( pattern[key] )
+                            dict[outName] = pattern["input"][start:start+patternLength]
+                        else:
+                            pattern = self.getData(self.loadOrder[self.currentSweepCount+1]) 
+                            for key in pattern:
+                                pattern[key] = self.replacePatterns( pattern[key] )
+                            dict[outName] = pattern["input"][start:start+patternLength]
+                else: # in middle of sequence
                     start = (step + 1) * inLayer.size
-                dict[outName] = args[inName][start:start+patternLength]
+                    dict[outName] = args[inName][start:start+patternLength]
             # end predicition code -----------------------------
             if step < sequenceLength - 1: # not the last one
                 if not self.learnDuringSequence:
                     self.learning = 0
+            self.preStep()
             retvals = self.networkStep(**dict)
             self.learning = learning # in case we turned it off
+            self.postStep()
             totalRetvals = map(lambda x,y: x+y, totalRetvals, retvals)
         return totalRetvals
     def networkStep(self, **args):
