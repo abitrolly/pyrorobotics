@@ -1,5 +1,7 @@
 import Numeric, math
 
+version = '1.0'
+
 # general functions
 def averageVector(V):
     """
@@ -71,7 +73,7 @@ class RAVQ:
         else:
             self.buffer = self.buffer[1:] + [array]
             self.process() # process new information
-        if self.verbosity > 1: self.display()
+        if self.verbosity > 1: print self
         self.time += 1
 
     # attribute methods
@@ -79,6 +81,8 @@ class RAVQ:
         self.verbosity = value
     def setHistory(self, value):
         self.recordHistory = value
+    def setTolerance(self, value):
+        self.tolerance = value
         
     # process happens once the buffer is full
     def process(self):
@@ -142,21 +146,25 @@ class RAVQ:
         """
         s = ""
         s += "Time: " + str(self.time) + "\n"
-        s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
-        s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
-        s += "Moving average:\n"
-        s += stringArray(self.movingAverage)
-        s += "Winning model vector:\n"
-        s += stringArray(self.winner)
-        s += "Winning label:\n"
-        s += self.getLabel(self.winner) + "\n"
-        s += self.bufferString()
-        s += self.modelString()
-        s += self.labelString()
-        s += "Distance map:\n"
-        s += stringArray(self.distanceMap(), len(self.models))
-        s += self.historyString()
-        return s
+        if self.time < self.size:
+            s += self.bufferString()
+            return s
+        else:
+            s += "Moving average distance: " +  "%4.4f " % self.movingAverageDistance + "\n"
+            s += "Model vectors distance: " +  "%4.4f " % self.modelVectorsDistance + "\n"
+            s += "Moving average:\n"
+            s += stringArray(self.movingAverage)
+            s += "Winning model vector:\n"
+            s += stringArray(self.winner)
+            s += "Winning label:\n"
+            s += self.getLabel(self.winner) + "\n"
+            s += self.bufferString()
+            s += self.modelString()
+            s += self.labelString()
+            s += "Distance map:\n"
+            s += stringArray(self.distanceMap(), len(self.models))
+            s += self.historyString()
+            return s
 
     # helpful string methods
     def modelString(self):
