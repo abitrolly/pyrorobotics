@@ -6,7 +6,7 @@ class TwoDimPlot(Tkinter.Toplevel):
     TICK_LENGTH = 7
     TICK_SPACING = 75
 
-    def __init__(self, parent, plotName=" ", xTitle=" ", yTitle=" ", xMax=1.0, yMax=1.0, plotWidth=300, plotHeight=225, closeCallback=Tkinter.Toplevel.destroy):
+    def __init__(self, parent, plotName=" ", xTitle=" ", yTitle=" ", xMax=1.0, yMax=1.0, plotWidth=300, plotHeight=225, closeCallback=None):
         Tkinter.Toplevel.__init__(self, parent)
         self.plotData = []
         self.plotName = plotName
@@ -34,7 +34,10 @@ class TwoDimPlot(Tkinter.Toplevel):
         rootMenu.add_cascade(label="File", menu=fileMenu)
         fileMenu.add_command(label="Save data ...", command=self.writeToFile)
         fileMenu.add_separator()
-        fileMenu.add_command(label="Exit", command=closeCallback)
+        if closeCallback != None:
+            fileMenu.add_command(label="Exit", command=closeCallback)
+        else:
+            fileMenu.add_command(label="Exit", command=self.destroy)
         viewMenu = Tkinter.Menu(rootMenu)
         rootMenu.add_cascade(label="View", menu=viewMenu)
         viewMenu.add_checkbutton(label="Hide Lines", command=self.alterLines, state=Tkinter.ACTIVE)
@@ -218,10 +221,10 @@ class TwoDimPlot(Tkinter.Toplevel):
         self.redrawAll()
         
 if __name__ == "__main__":
-    test = TwoDimPlot(Tkinter.Tk(), plotName="TestPlot",xTitle="XLabel", yTitle="YLabel", plotHeight=556, plotWidth=647)
+    root = Tkinter.Tk()
+    root.withdraw()
+    test = TwoDimPlot(None, plotName="TestPlot",xTitle="XLabel", yTitle="YLabel", plotHeight=556, plotWidth=647)
     for i in xrange(20):
         test.addPoint((i, i**2))
     test.addPoint((0,0))
     test.mainloop()
-
-    
