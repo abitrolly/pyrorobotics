@@ -684,6 +684,18 @@ class Network:
         self.add( Layer('output', outc) )
         self.connect('input', 'hidden')
         self.connect('hidden', 'output')
+    def saveWeightsToFile(self, filename):
+        mylist = self.arrayify()
+        import pickle
+        fp = open(filename, "w")
+        pickle.dump(mylist, fp)
+        fp.close()
+    def loadWeightsFromFile(self, filename):
+        import pickle
+        fp = open(filename, "r")
+        mylist = pickle.load(fp)
+        fp.close()
+        self.unArrayify(mylist)
     def saveNetworkToFile(self, filename, saveData = 1):
         print "Error: FIX doesn't save postprop() or preprop() code! Pickle?"
         basename = filename.split('.')[0]
@@ -1021,4 +1033,9 @@ if __name__ == '__main__':
         n.setInteractive(1)
         n.sweep()
 
-
+    print "Do you want to save weights of final network? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        print "Filename to save weights (.wts): ",
+        filename = sys.stdin.readline().strip()
+        n.saveWeightsToFile(filename)
+        #n.loadWeightsFromFile(filename)
