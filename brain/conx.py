@@ -8,7 +8,7 @@
 """
 import RandomArray, Numeric, math, random, time, sys, signal
 
-version = "6.9"
+version = "6.10"
 
 # better to use Numeric.add.reduce()
 def sum(a):
@@ -141,17 +141,18 @@ class Layer:
     def __str__(self):
         return self.toString()
 
-    # modify layer methods
-    def setEpsilons(self, value):
+    # layer methods
+    def setEpsilon(self, value):
         self.epsilon = Numeric.ones(self.size, "f") * value
-    def getEpsilons(self):
-        return self.epsilon
+    def setEpsilons(self, values):
+        self.epsilon = values
     def setEpsilonAt(self, value, pos):
         self.epsilon[pos] = value
-    def getEpsilon(self):
+    def getEpsilons(self):
         return self.epsilon
     def getEpsilonAt(self, pos):
         return self.epsilon[pos]
+
     def setActive(self, value):
         """
         Sets layer to active or inactive. Layers must be active to propagate activations.
@@ -871,7 +872,7 @@ class Network:
         """
         self.epsilon = value
         for layer in self.layers:
-            layer.setEpsilons(value)
+            layer.setEpsilon(value)
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
@@ -1167,6 +1168,7 @@ class Network:
             (tssErr, totalCorrect, totalCount) = self.sweep()
             rmsErr = math.sqrt(tssErr / totalCount)
             if self.epoch % self.reportRate == 0:
+#                print "totalCorrect =", totalCorrect, "totalCount =", totalCount
                 print "Epoch #%6d" % self.epoch, "| TSS Error: %f" % tssErr, \
                       "| Correct =", totalCorrect * 1.0 / totalCount, \
                       "| RMS Error: %f" % rmsErr
@@ -1374,6 +1376,7 @@ class Network:
         Changes the weights according to the error values calculated
         during backprop(). Learning must be set.
         """
+        dweight_sum = 0.0
         for connection in self.connections:
             if not connection.frozen:
                 if connection.fromLayer.active:
@@ -1385,9 +1388,13 @@ class Network:
                                     self.momentum * toLayer.dbias
                     toLayer.bias = toLayer.bias + toLayer.dbias
                     toLayer.bed = toLayer.bed * 0.0
+                    dweight_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
+                    dweight_sum += Numeric.add.reduce(abs(toLayer.dbias))
         if self.verbosity > 0:
             print "WEIGHTS CHANGED"
             self.display()
+        return dweight_sum
+
     def ce_init(self):
         """
         Initializes error computation. Calculates error for output
