@@ -14,7 +14,8 @@ class SimpleBrain(Brain):
    def step(self):
       # do something here!
       # self.robot.move(translate, rotate)
-      sleep(1)
+      print "running..."
+      #sleep(1)
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.

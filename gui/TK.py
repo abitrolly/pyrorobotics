@@ -38,6 +38,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.update_interval = 100
       self.update_interval_detail = 1.0
       self.lastButtonUpdate = 0
+      self.maxBufferSize = 50000 # 50k characters in buffer
+                                 #set to 0 for infinite
       #store the gui structure in something nice insted of python code
 
       menu = [('File',[['New brain...', self.newBrain],
@@ -491,22 +493,23 @@ class TKgui(Tkinter.Toplevel, gui):
       pass
 
    def inform(self, message):
-      try:
-         self.status.config(state='normal')
-         self.status.insert('end', "%s\n" % (message))
-         self.status.config(state='disabled')
-         self.status.see('end')
-      except AttributeError: # gui not created yet
-         print message
-
-   def write(self, item):
+      self.write(message + "\n", echo = 1)
+   def write(self, item, echo = 0):
       try:
          self.status.config(state='normal')
          self.status.insert('end', "%s" % (item))
          self.status.config(state='disabled')
          self.status.see('end')
+         if self.maxBufferSize:
+            text = self.status.get(1.0, 'end')
+            lenText = len(text)
+            if lenText > self.maxBufferSize:
+               self.status.config(state='normal')
+               self.status.delete(1.0, float(lenText - self.maxBufferSize))
+               self.status.config(state='disabled')
+               self.status.see('end')
       except:
-         pass
+         if echo: print item
    def flush(self):
       pass
 
