@@ -1,6 +1,6 @@
 SAPHIRA_LIB = -L$(SAPHIRA)/handler/obj -lsfx 
 SAPHIRA_INC = -I$(SAPHIRA)/handler/include 
-PYTHON_INC  = -I/usr/local/include/python2.1/ -I/home/dblank/Python-2.1.1/Include/ -I/home/dblank/Python-2.1.1/
+PYTHON_INC  = -I/usr/local/include/python2.1/ -I/home/dblank/Python-2.1.1/Include/ -I/home/dblank/Python-2.1.1/ -I/usr/include/python2.1/
 
 CPPFLAGS = -Wall -Wno-unused -DNTSC -D_POSIX_THREADS \
 	-D_POSIX_THREAD_SAFE_FUNCTIONS \
