@@ -355,21 +355,21 @@ class AriaRobot(Robot):
 	self.devData['type'] = self.dev.getRobotType()
 	self.devData['subtype'] = self.params.getSubClassName()
         self.devData['units'] = 'METERS' # x,y,z units
-        self.devData['name'] = self.dev.getRobotName()
+        self.devData['name'] = name #self.dev.getRobotName()
         self.dev.runAsync(1)
-        self.devData["supports"] = []
+        self.devData["builtinDevices"] = []
         if self.params.getNumSonar() > 0:
-            self.devData["supports"].append( "sonar" )
+            self.devData["builtinDevices"].append( "sonar" )
             deviceName = self.startDevice("sonar")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
             self.devDataFunc["sonar"] = self.get("/devices/%s/object" % deviceName)
         if self.params.getLaserPossessed():
-            self.devData["supports"].append( "laser" )
+            self.devData["builtinDevices"].append( "laser" )
             deviceName = self.startDevice("laser")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
             self.devDataFunc["laser"] = self.get("/devices/%s/object" % deviceName)
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
-            self.devData["supports"].append( "bumper" )
+            self.devData["builtinDevices"].append( "bumper" )
             deviceName = self.startDevice("bumper")
         self.update()
         self.inform("Done loading Aria robot.")

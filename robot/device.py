@@ -1,7 +1,7 @@
 import pyro.robot
 import types, random
 
-def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
+def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0): 
     """
     Takes a device directory dictionary and makes it presentable for viewing.
 
@@ -37,8 +37,8 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
                 retval[keyword] = deviceDict[keyword]
             else:
                 retval.append( keyword )
-    #if isinstance(retval, (type((1,)), type([1,]))):
-    #    retval.sort()
+    if isinstance(retval, (type((1,)), type([1,]))):
+        retval.sort()
     return retval
 
 class WindowError(AttributeError):
@@ -46,6 +46,12 @@ class WindowError(AttributeError):
 
 class DeviceError(AttributeError):
     """ Used to signal device problem """
+
+class DeviceGetError(AttributeError):
+    """ Used to signal device get problem: item is not getable """
+
+class DeviceSetError(AttributeError):
+    """ Used to signal device set problem: item is not setable """
 
 class Device:
     """ A basic device class """
@@ -56,6 +62,11 @@ class Device:
         self.subDataFunc = {}
         self.groups = {}
         self.printFormat = {}
+        # things in this list can NOT be set() by user:
+        self.notSetables    = ['x','y','z','th','thr','model','type','subtype','rawunits','count','maxvalue','ox','oy','oz',".state",".help"] 
+        # things in this list can NOT be be get() by user:
+        self.notGetables = ["command"]
+        #self.notGetables = [] 
         self.dev = 0
         self.devData[".active"] = 1
         self.devData[".visible"] = visible
@@ -159,15 +170,17 @@ class Device:
     def preGet(self, pathList):
         pass
     def _set(self, path, value):
-        if path[0] in self.devData:
+        if len(path) == 1 and path[0] in self.devData:
+            if path[0] in self.notSetables:
+                raise DeviceSetError, ("%s is not setable" % path[0])
             self.devData[path[0]] = value
             self.postSet(path[0])
         else:
-            raise AttributeError, "invalid item to set: '%s'" % path[0]
+            raise AttributeError, "invalid item to set: '%s'" % path
                 
     def _get(self, path, showstars = 0):
         if len(path) == 0:
-            # return all of the things a sensor can show
+            # return all of the things a sensor can get
             tmp = self.devData.copy()
             tmp.update( self.devDataFunc )
             if showstars:
@@ -184,7 +197,9 @@ class Device:
                 #print "RETURNING", self.printFormat[path[0]]
                 return self.printFormat[path[0]]
             else:
-                #print "RETURNING real thing", 
+                #print "RETURNING real thing",
+                if path[0] in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % path[0])
                 self.preGet(path[0])
                 return self.devData[path[0]]
         elif len(path) == 1 and path[0] in self.devDataFunc:
@@ -192,6 +207,8 @@ class Device:
                 return self.printFormat[path[0]]
             else:
                 # return a value/ function with no argument
+                if path[0] in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % path[0])
                 self.preGet(path[0])
                 return self.devDataFunc[path[0]]()
         # otherwise, dealing with numbers or group
@@ -223,11 +240,15 @@ class Device:
             # 1 key 1 element
             if type(keys) == type(1) and type(elements) == type(""):
                 #print "CASE 2"
+                if elements in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % elements)
                 self.preGet(elements) 
                 return self.subDataFunc[elements](keys)
             # 1 key many elements
             elif type(keys) == type(1):
                 #print "CASE 3"
+                if elements in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % elements)
                 self.preGet(elements)
                 mydict = {}
                 for e in elements:
@@ -238,6 +259,8 @@ class Device:
                 #print "CASE 4", elements
                 if elements not in self.subDataFunc:
                     raise AttributeError, "no such item: '%s'" % elements
+                if elements in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % elements)
                 self.preGet(elements)
                 retval = []
                 if keys != None:
@@ -249,6 +272,8 @@ class Device:
                 #print "CASE 5", elements, keys
                 #if type(elements) == type(1):
                 #    return keys
+                if elements in self.notGetables:
+                    raise DeviceGetError, ("%s is not viewable" % elements)
                 self.preGet(elements)
                 retval = []
                 if keys != None:

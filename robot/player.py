@@ -19,6 +19,9 @@ class PlayerDevice(Device):
         self.groups = groups
         self.dev = dev
         self.name = type
+        self.printFormat["data"] = "<device data>"
+        self.devData["data"] = None
+        self.notSetables.extend( ["data"] )
         # Required:
         self.startDevice()
         if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
@@ -28,6 +31,9 @@ class PlayerDevice(Device):
         if kw == "pose":
             if ("get_%s_pose" % self.name) in self.dev.__class__.__dict__:
                 self.devData["pose"] = self.getPose()
+        elif kw == "data":
+            self.devData["data"] = self.getDeviceData()
+
 
     def postSet(self, keyword):
         if keyword == "pose":
@@ -102,8 +108,8 @@ class PlayerSonarDevice(PlayerDevice):
         # These are per reading:
         self.subDataFunc['ox']    = lambda pos: self.sonarGeometry[pos][0]
         self.subDataFunc['oy']    = lambda pos: self.sonarGeometry[pos][1]
-        self.subDataFunc['oz']    = lambda pos: 0.03 # meters
-        self.subDataFunc['thr']    = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
+        self.subDataFunc['oz']    = lambda pos: self.rawToUnits(300) # rawunits
+        self.subDataFunc['thr']   = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
         self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] # degrees
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
         self.subDataFunc['x']     = self.getX
@@ -118,15 +124,15 @@ class PlayerSonarDevice(PlayerDevice):
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
     def getX(self, pos):
-        thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180
-        dist = self.dev.sonar[0][pos]
-        x = self.sonarGeometry[pos][0]
+        thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180 # + 90
+        dist = self.rawToUnits(self.dev.sonar[0][pos])
+        x = self.rawToUnits(self.sonarGeometry[pos][0])
         return cos(thr) * dist
 
     def getY(self, pos):
-        thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180
-        dist = self.dev.sonar[0][pos]
-        y = self.sonarGeometry[pos][1]
+        thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180 # - 90
+        dist = self.rawToUnits(self.dev.sonar[0][pos])
+        y = self.rawToUnits(self.sonarGeometry[pos][1])
         return sin(thr) * dist
 
 class PlayerLaserDevice(PlayerDevice):
@@ -237,6 +243,7 @@ class PlayerPTZDevice(PlayerDevice):
         self.origPose = (0, 0, 120)
         self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
                                 """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
+        self.notGetables.extend (["tilt", "pan", "zoom"])
         self.devData.update( {"tilt": None, "pan": None,
                               "zoom": None, "command": None, "pose": None} )
 
@@ -363,9 +370,12 @@ class PlayerGripperDevice(PlayerDevice):
             self.devData["command"] = "open"
         self.devData[".help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
                                 """     down, store, deploy, halt.\n""" \
-                                """.get('/robot/gripper/KEYWORD') where KEYWORD is: gripperState, breakBeamState,\n""" \
-                                """     isClosed, isMoving, isLiftMoving, isLiftMaxed""" 
-        self.devData.update( {"gripperState": None, "breakBeamState": None, "isClosed": None,
+                                """.get('/robot/gripper/KEYWORD') where KEYWORD is: state, breakBeamState,\n""" \
+                                """     isClosed, isMoving, isLiftMoving, isLiftMaxed"""
+        #self.notGetables.extend( [] )
+        self.notSetables.extend( ["state", "breakBeamState", "isClosed",
+                                  "isMoving", "isLiftMoving", "isLiftMaxed"] )
+        self.devData.update( {"state": None, "breakBeamState": None, "isClosed": None,
                               "isMoving": None, "isLiftMoving": None, "isLiftMaxed": None} )
 
     def postSet(self, keyword):
@@ -390,7 +400,7 @@ class PlayerGripperDevice(PlayerDevice):
                 raise AttributeError, "invalid command to ptz: '%s'" % keyword
 
     def preGet(self, keyword):
-        if keyword == "gripperState":
+        if keyword == "state":
             self.devData[keyword] = self.dev.is_paddles_closed() # help!
         elif keyword == "breakBeamState":
             self.devData[keyword] = self.getBreakBeamState()
@@ -467,7 +477,7 @@ class PlayerRobot(Robot):
         devList = self.dev.get_device_list()
         # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
         devNameList = map(lambda triplet: triplet[0], devList)
-        self.devData["supports"] = devNameList
+        self.devData["builtinDevices"] = devNameList
         for device in ["position", "laser", "ir", "sonar", "bumper"]:
             #is it supported? if so start it up:
             if device in devNameList:
@@ -496,7 +506,7 @@ class PlayerRobot(Robot):
         self.devData["type"] = "Player"
         self.devData["subtype"] = 0
         self.devData["units"] = "METERS"
-        self.devData["name"] = 0
+        self.devData["name"] = self.name
         #self.devData["simulated"] = self.simulated
         self.localize(0.0, 0.0, 0.0)
         self.update()
@@ -512,7 +522,7 @@ class PlayerRobot(Robot):
             return {"laser": PlayerLaserDevice(self.dev, "laser")}
         elif item == "sonar":
             return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
-        elif item in self.devData["supports"]:
+        elif item in self.devData["builtinDevices"]:
             return {item: PlayerDevice(self.dev, item)}
         else:
             raise AttributeError, "player robot does not support device '%s'" % item
