@@ -479,7 +479,11 @@ class Robot:
             return retval
         elif item in self.devData["builtinDevices"]: # built-in name
             # deviceBuiltin returns dictionary
-            return self.startDevices( self.startDeviceBuiltin(item) )
+            deviceList = self.startDeviceBuiltin(item)
+            if type(deviceList) == type("device0"): # loaded it here, from the robot
+                return [ deviceList ]
+            else:
+                return self.startDevices( deviceList ) # dict of objs
         elif isinstance(item, (type((1,)), type([1,]))):
             retval = []
             for i in item:

@@ -275,11 +275,13 @@ class AiboRobot(Robot):
         for item in self.menuData["TekkotsuMon"]:
             servers[item] = self.menuData["TekkotsuMon"][item][2] # on or off
         self.devData["servers"] = servers # allows robot.get("robot/servers"); returns dictionary
-        self.devData["builtinDevices"] = [ "ptz" ]
+        self.devData["builtinDevices"] = [ "ptz", "camera" ]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
             return {"ptz": AiboHeadDevice(self)}
+        elif item == "camera":
+            return self.startDevice("AiboCamera")
 
     def connect(self):
         self.estop_control.s.send("start\n")
