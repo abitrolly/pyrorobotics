@@ -182,6 +182,9 @@ class Scatter: # Plot
         except:
             pass
 
+    def update(self):
+        while self.win.tk.dooneevent(2): pass
+
 
 if __name__ == '__main__':
     sp = Scatter()
@@ -189,5 +192,5 @@ if __name__ == '__main__':
     for y in range(100):
         for x in range(10):
             sp.addPoint(random(), random())
-            sp.win.tk.dooneevent(0)
+            sp.update()
     sp.win.mainloop()

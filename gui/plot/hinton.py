@@ -86,6 +86,8 @@ class Hinton: # Plot
          self.canvas.delete(last)
       except:
          pass
+      while self.win.tk.dooneevent(2): pass
+
 
 if __name__ == '__main__':
    hinton1 = Hinton(6)
@@ -95,4 +97,3 @@ if __name__ == '__main__':
    hinton2.update(v)
    print v
    hinton1.win.mainloop()
-   hinton2.win.mainloop()

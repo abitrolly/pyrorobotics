@@ -245,6 +245,7 @@ class VisPsom(psom):
                                 fill = 'green')
       self.lastMapped = pt
       self.inccount(pt[0], pt[1], 'map')
+      self.update()
       return retval
 
    def train(self, vector):
@@ -253,28 +254,36 @@ class VisPsom(psom):
       self.history[pt] = ACT_MAX
       self.inccount(pt[0], pt[1], 'train')
       self._updatefill()
+      self.update()
       return retval
 
+   def update(self):
+      while self.win.tk.dooneevent(2): pass
+
 if __name__ == "__main__":
+   def pause():
+      print "Press [Enter] to continue...",
+      raw_input();
    mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
    mydataset = dataset(file='ex.dat')
    mysom.init_training(0.02,4.0,5000)
    mysom.train_from_dataset(mydataset)
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()
+   pause()
    mysom.map(vector([14.0, 10.0, .3, -.8, 400.0]))
-   raw_input()
+   pause()
    mysom.map(vector([10.0, 30.0, -.3, .8, 375.0]))
-   raw_input()
+   pause()
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()
+   pause()
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()         
+   pause()         
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()
+   pause()
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()            
+   pause()            
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()                        
+   pause()                        
    mysom.map(vector([30.0, 20.0, -.3, -.8, 400.0]))
-   raw_input()
+   print "Close window when finished!"
+   mysom.win.mainloop()

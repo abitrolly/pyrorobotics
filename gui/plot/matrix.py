@@ -87,6 +87,7 @@ class Matrix: # Plot
          self.canvas.delete(last)
       except:
          pass
+      while self.win.tk.dooneevent(2): pass
 
 if __name__ == '__main__':
    matrix1 = Matrix(3, 2, type = 'grid', maxvalue = 1)
@@ -97,5 +98,3 @@ if __name__ == '__main__':
    v = [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 5.0, 5.0]
    matrix2.update(v)
    matrix1.win.mainloop()
-   matrix2.win.mainloop()
-   matrix3.win.mainloop()
