@@ -19,7 +19,7 @@ class TrackBall(Brain):
                     #print "center:", (centerX, centerY)
                     # ---------------------------------
                     diff = (centerX - (self.cam.width/2))
-                    if abs(diff) < (.05 * self.cam.width):
+                    if abs(diff) < (.1 * self.cam.width):
                         pass
                     elif diff < 0:
                         # negative is right, positive is left
@@ -28,7 +28,7 @@ class TrackBall(Brain):
                         self.ptz.pan( pose[0] - .05) 
                     # ---------------------------------
                     diff = (centerY - self.cam.height/2) 
-                    if abs(diff) < .05 * self.cam.height:
+                    if abs(diff) < .1 * self.cam.height:
                         pass
                     elif diff < 0: # down
                         self.ptz.tilt( pose[1] + .05) # positive is left
@@ -47,7 +47,7 @@ class TrackBall(Brain):
             self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
 
 def INIT(engine):
-    assert(engine.robot.hasA("ptz") != 0 and
-           engine.robot.hasA("camera") != 0)
+    engine.robot.requires("ptz")
+    engine.robot.requires("camera")
     return TrackBall("Tracker", engine)
       

@@ -64,20 +64,12 @@ class Listener:
         retval = self.s.send(message)
         return retval
 
-    def clear(self):
-        #try:
-        #    while 1:
-        #        self.s.recvfrom(4096)
-        #except:
-        #    pass # socket timeout
-        pass
-
 class AiboHeadDevice(Device):
     def __init__(self, robot):
         Device.__init__(self, "ptz")
         self.robot = robot
         # Turn on head remote control if off:
-        self.robot.setRemoteControl("Head Remote Control", "on")
+        self.robot.setRemoteControl("Head Remote Control")
         time.sleep(1) # pause for a second
         self.dev   = Listener(10052, self.robot.host) # head movement
         self.devData["supports"] = ["pan", "tilt", "roll"]
@@ -160,33 +152,6 @@ class AiboHeadDevice(Device):
     def center(self):
         return self.setPose(0, 0, 0, 0)
 
-def readMenu(listener, cnt):
-    # print "Reading %d menu entries..." % cnt
-    retval = {}
-    posDict = {}
-    pos = 0
-    for line in range(cnt):
-        # TODO: what are these?
-        x = listener.readUntil() # a number?
-        y = listener.readUntil() # selected
-        try:
-            x, y = int(x), int(y)
-        except:
-            print "error:", (x, y)
-        item = listener.readUntil() # item name
-        explain = listener.readUntil() # explain
-        if item[0] == "#":   # on
-            retval[item[1:]] = "on"
-            posDict[item[1:]] = pos
-        elif item[0] == "-": # off
-            retval[item[1:]] = "off"
-            posDict[item[1:]] = pos
-        else:                # off
-            retval[item] = "off"
-            posDict[item] = pos
-        pos += 1
-    return (retval, posDict)
-
 class AiboRobot(Robot):
     # TODO: put listeners in a dict, referenced by name
     # Look up port here:
@@ -202,11 +167,9 @@ class AiboRobot(Robot):
         self.menu_control     = Listener(10020,self.host) # menu controls
         self.menu_control.s.send("!reset\n") # reset menu
         # --------------------------------------------------
-        self.readMenu()
-        # --------------------------------------------------
-        self.setRemoteControl("Walk Remote Control", "on")
-        self.setRemoteControl("EStop Remote Control", "on")
-        self.setRemoteControl("World State Serializer", "on")
+        self.setRemoteControl("Walk Remote Control")
+        self.setRemoteControl("EStop Remote Control")
+        self.setRemoteControl("World State Serializer")
         time.sleep(1) # let the servers get going...
         self.walk_control     = Listener(10050, self.host) # walk command
         self.estop_control    = Listener(10053, self.host) # stop control
@@ -220,7 +183,7 @@ class AiboRobot(Robot):
         self.devData["servers"] = self.menuData['TekkotsuMon']
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
         self.startDevice("ptz")
-        self.startDevice("camera")
+        #self.startDevice("camera")
 
         # Commands available on menu_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,
@@ -240,28 +203,10 @@ class AiboRobot(Robot):
         # '!set section.key = value' - will be sent to Config::setValue(section,key,value)
         #  any text not beginning with ! - sent to takeInput() of the current control
 
-    def readMenu(self, menu = "TekkotsuMon"):
-        self.menu_control.s.send("%s\n" % menu) # go to monitor menu
-        self.menuData = {}
-        self.posData = {}
-        menuRead = None
-        while menuRead != menu:
-            command = self.menu_control.readUntil()
-            while command in ["refresh", "pop", "push"]:
-                command = self.menu_control.readUntil()
-            # print "Reading menu '%s'..." % command
-            menuCount = int(self.menu_control.readUntil()) # Options count
-            self.menuData[command], self.posData[command] = readMenu(self.menu_control, menuCount)
-            menuRead = command
-
-    def setRemoteControl(self, item, value):
-        # "Walk Remote Control", "off"
-        if self.menuData["TekkotsuMon"][item] != value:
-            self.menu_control.s.send("!reset\n")
-            self.menu_control.s.send("2\n") # TekkotsuMon menu
-            self.menu_control.s.send("%d\n" % self.posData["TekkotsuMon"][item])
-            self.menu_control.clear()
-            self.menuData["TekkotsuMon"][item] = value
+    def setRemoteControl(self, item):
+        # "Walk Remote Control"
+        # could also use "!root "TekkotsuMon" %(item)"
+        self.menu_control.s.send("!cmd \"%s\"\n" % item)
 
         # Main menu:
         # 0 Mode Switch - Contains the "major" apps, mutually exclusive selection
@@ -322,7 +267,7 @@ class AiboRobot(Robot):
         # --- same number as PID joints:             # ERS7: 18
         self.devData["dutyCycleRaw"] = self.sensor_socket.read(numPIDJoints * 4,
                                                             "<%df" % numPIDJoints,all=1)
-        if 1:
+        if 0:
             for item in self.devData:
                 print >> sys.stderr, item, self.devData[item]
 
@@ -365,7 +310,7 @@ class AiboRobot(Robot):
         elif jointName == "jaw":
             pos = 17
         else:
-            AttributeError, "no such joint: '%s'" %s jointName
+            AttributeError, "no such joint: '%s'" % jointName
         return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
 
     def startDeviceBuiltin(self, item):
@@ -413,7 +358,6 @@ class AiboRobot(Robot):
         self.menu_control.s.send("%d\n" % code[value]) # walk number
         self.menu_control.s.send("0\n") # stop walk socket
         self.menu_control.s.send("0\n") # start walk socket
-        self.menu_control.clear() # clear the port
         self.walk_control     = Listener(10050, self.host) # walk command
 
 #TODO:
