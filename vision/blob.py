@@ -1,6 +1,16 @@
-# Test Image and Blob class
+# Androids Image Library
+# Spring 2002
 
 class Image:
+   def __init__(self, width, height):
+      self.width = width
+      self.height = height
+      self.data = [init_val] * height * width * 3
+
+   def loadFromFile(self, filename):
+      pass
+
+class Bitmap:
    def __init__(self, width, height, init_val = 0):
       self.width = width
       self.height = height
@@ -34,7 +44,7 @@ class Image:
       for n in range(2000):
          self.equivList[n] = n
 
-      blob = Image(self.width, self.height)
+      blob = Bitmap(self.width, self.height)
       count = 1
 
       for w in range(self.width):
@@ -92,8 +102,8 @@ class Image:
       blob.display()
 
 if __name__ == '__main__':
-   image = Image(20, 15)
-   image.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
+   bitmap = Bitmap(20, 15)
+   bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
                 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
                 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
                 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
@@ -108,5 +118,5 @@ if __name__ == '__main__':
                 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
-   image.display()
-   image.blobify()
+   bitmap.display()
+   bitmap.blobify()
