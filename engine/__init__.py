@@ -112,7 +112,7 @@ class Engine(drawable.Drawable):
          if args:
             self.brain = system.loadINIT(file, self.robot, args=args)
          else:
-            self.brian = system.loadINIT(file, self.robot)
+            self.brain = system.loadINIT(file, self.robot)
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/brains/' + file): 
          self.brainfile = os.getenv('PYRO') + '/plugins/brains/' + file
