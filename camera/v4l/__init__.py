@@ -4,9 +4,7 @@ from UserString import UserString
 import types
 import sys, os
 
-import Tkinter
 import PIL.PpmImagePlugin
-import Image, ImageTk
 import time
 
 class V4LGrabber(Camera):
@@ -118,27 +116,11 @@ class V4LGrabber(Camera):
       file.write(self.cbuf)
       file.close
 
-   def makeWindow(self):
-      self.window = Tkinter.Tk()
-      while self.window.tk.dooneevent(2): pass
-      self.window.wm_title("pyro@%s: Camera View" \
-                           % os.getenv('HOSTNAME') )
-      self.im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                                    (self.width, self.height),
-                                                    self.cbuf, 'raw', "BGR")
-      self.image = ImageTk.PhotoImage(self.im)
-      self.label = Tkinter.Label(self.window, image=self.image, bd=0)
-      self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
-
-   def updateWindow(self):
-      self.update()
-      while self.window.tk.dooneevent(2): pass
-      self.im = PIL.PpmImagePlugin.Image.fromstring('RGBX',
-                                                    (self.width, self.height),
-                                                    self.cbuf, 'raw', "BGR")
-      self.image = ImageTk.PhotoImage(self.im)
-      self.label.configure(image = self.image)
-
+   def getImage(self):
+      return PIL.PpmImagePlugin.Image.fromstring('RGBX',
+                                                 (self.width, self.height),
+                                                 self.cbuf, 'raw', "BGR")
+   
 class CBuffer:
    """
    A private buffer class to transmute the CBuffer we get in V4LGrabber.data
