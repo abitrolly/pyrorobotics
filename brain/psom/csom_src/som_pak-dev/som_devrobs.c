@@ -880,12 +880,15 @@ struct data_entry *map_fromdataset(struct teach_params_counters *params,
       fprintf(stderr, "map_fromdataset(): map_one() returned NULL\n");
       return NULL;
     }
-    free(last_coords); /* YT 2003-07-28 */
+    /* for some reason, last_coords cannot be freed here, unlike in
+       train_fromdataset().  It segfaults, and I'm not sure why.  YT 2003-07-30
+    */
+    //free(last_coords); 
     last_coords = coords;
     last = entry;
     entry = next_entry(&p);
   }
-
+  free(last_coords); /* WKV 2003-07-28 */
   return last;
 }
 
