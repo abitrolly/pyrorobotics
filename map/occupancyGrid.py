@@ -161,7 +161,7 @@ class occupancyGrid(Tkinter.Tk):
    def tooTight(self, row, col, i, j):
       """ Check to see if you aren't cutting a corner next to an obstacle."""
       return self.value[row + i][col] == 1e5000 or \
-                 self.value[row][col + j] == 1e5000:
+                 self.value[row][col + j] == 1e5000
 
    def planPath(self, start, goal, iterations):
       """
