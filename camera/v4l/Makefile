@@ -308,7 +308,7 @@ boot:	clobber
 
 # Handy target to remove intermediate files and backups
 clean:
-		-rm -f *.o *~
+		-rm -f *.o *~ *.tga
 
 # Handy target to remove everything that is easily regenerated
 clobber:	clean
