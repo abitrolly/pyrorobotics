@@ -47,7 +47,10 @@ def stringArray(a, newline = 1, width = 0):
     return s
 
 def logBaseTwo(value):
-    return int(math.ceil(math.log(value)/math.log(2)))
+    if value < 2:
+        return 1
+    else:
+        return int(math.ceil(math.log(value)/math.log(2)))
 
 def makeOrthogonalBitList(maxbits = 8):
     retval = []
@@ -324,6 +327,8 @@ class RAVQ:
         Delete a label with key word.
         """
         del self.labels[word]
+    def delAllLabels(self):
+        self.labels = {}
     def compare(self, v1, v2):
         """
         Compares two values. Returns 1 if all values are withing
@@ -356,25 +361,30 @@ class RAVQ:
         """
         Label model vectors with strings.
         """
-        if mode == 'binary':
-            labels = makeBitList(logBaseTwo(len(self.models)))
-            if self.verbosity > 1: print labels
-            if self.verbosity > 1: print self.labels
-            for x in range(len(self.models)):
-                self.addLabel(''.join([str(y) for y in labels[x]]), self.models[x])
-        elif mode == 'orthogonal':
-            labels = makeOrthogonalBitList(len(self.models))
-            if self.verbosity > 1: print labels
-            if self.verbosity > 1: print self.labels
-            for x in range(len(self.models)):
-                self.addLabel(''.join([str(y) for y in labels[x]]), self.models[x])
-        elif mode == 'decimal':
-            if self.verbosity > 1: print labels
-            if self.verbosity > 1: print self.labels
-            for x in range(len(self.models)):
-                self.addLabel(str(x), self.models[x])
+        import string
+        if not self.models == []:
+            self.delAllLabels()
+            if mode == 'binary':
+                labels = makeBitList(logBaseTwo(len(self.models)))
+                if self.verbosity > 1: print labels
+                if self.verbosity > 1: print self.labels
+                for x in range(len(self.models)):
+                    self.addLabel(string.join([str(y) for y in labels[x]], ''), self.models[x])
+            elif mode == 'orthogonal':
+                labels = makeOrthogonalBitList(len(self.models))
+                if self.verbosity > 1: print labels
+                if self.verbosity > 1: print self.labels
+                for x in range(len(self.models)):
+                    self.addLabel(string.join([str(y) for y in labels[x]], ''), self.models[x])
+            elif mode == 'decimal':
+                if self.verbosity > 1: print labels
+                if self.verbosity > 1: print self.labels
+                for x in range(len(self.models)):
+                    self.addLabel(str(x), self.models[x])
+            else:
+                print 'Unsupported mode...not making labels.'
         else:
-            print 'Unsupported mode...not making labels.'
+            print 'No models. Labels cannot be made.'
             
         
 
