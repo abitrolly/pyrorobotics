@@ -1244,6 +1244,7 @@ class Network:
                           (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
                     sys.stdout.flush()
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
+                        self.lastTSSError = tssCVErr
                         self.saveWeightsToFile(self.autoSaveWeightsFile)
                         print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
                         sys.stdout.flush()
@@ -1274,6 +1275,7 @@ class Network:
                       (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr)
                 sys.stdout.flush()
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastTSSError:
+                    self.lastTSSError = tssCVErr
                     self.saveWeightsToFile(self.autoSaveWeightsFile)
                     print "auto saving weights to '%s'..." % self.autoSaveWeightsFile
                     sys.stdout.flush()
