@@ -129,8 +129,10 @@ class PyroImage:
    def histogram(self):
       for a in range(9):
          for b in range(9):
-            ration[a][b] = 0
-            
+            ratio[a][b] = 0
+            print ratio[a][b]
+         print ''
+
       for h in range(self.height):
          for w in range(self.width):
             r = self.data[(w + h * self.width) * self.depth + 0]
@@ -338,9 +340,11 @@ if __name__ == '__main__':
       for x in range(10):
          image.update()
          image.display()
-
+   else:
+      print "skipping..."
    print "Do you want to run test 8: create a histogram of the image?"
    if sys.stdin.readline().lower()[0] == 'y':
+      image = Camera()
       image.histogram()
    else:
       print "skipping..."
