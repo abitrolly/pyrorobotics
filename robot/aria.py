@@ -362,10 +362,12 @@ class AriaRobot(Robot):
             self.devData["supports"].append( "sonar" )
             deviceName = self.startDevice("sonar")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
+            self.devDataFunc["sonar"] = self.get("/devices/%s/object" % deviceName)
         if self.params.getLaserPossessed():
             self.devData["supports"].append( "laser" )
             deviceName = self.startDevice("laser")
             self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
+            self.devDataFunc["laser"] = self.get("/devices/%s/object" % deviceName)
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
             self.devData["supports"].append( "bumper" )
             deviceName = self.startDevice("bumper")
