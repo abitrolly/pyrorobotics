@@ -99,6 +99,7 @@ class Robot:
         self.supports = {} # keyword list of built-in devices
         self.devData = {} # items in /robot/ path
         self.devDataFunc = {} # function items in /robot/ path
+        self.devData['timestamp'] = time.time()
         # toplevel:
         self.directory["robot"] = self
         self.directory["devices"] = DeviceWrapper(self)
@@ -272,7 +273,7 @@ class Robot:
         self.move(0, 0)
 
     def _update(self):
-        self.devData['datestamp'] = time.time()
+        self.devData['timestamp'] = time.time()
         for service in self.getServices():
             if self.getService(service).getActive():
                 self.getService(service).updateService()
