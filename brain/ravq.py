@@ -498,8 +498,7 @@ class RAVQ:
         for array in self.models:
             s += str(self.counters[cnt]) + " "
             s += stringArray(array)
-            cnt += 1
-            
+            cnt += 1            
         return s
     def labelString(self):
         s = "Model vector labels:\n"
@@ -692,14 +691,14 @@ class ExperimentalRAVQ(ARAVQ):
         if self.recordHistory and self.winner != 'No Winner':
             # new model vector so we initialize new history list
             if len(self.history) < len(self.models):
-                self.history.append(self.currentInput)
+                self.history.append([self.currentInput[:]])
             # previous model vector, but corresponding history list is not full
             elif len(self.history[self.newWinnerIndex]) < self.historySize:
-                self.history[self.newWinnerIndex].append(self.currentInput)
+                self.history[self.newWinnerIndex].append(self.currentInput[:])
             # previous model vector, history list is full
             else:
                 self.history[self.newWinnerIndex] = self.history[self.newWinnerIndex][1:] + \
-                                                    [self.currentInput]
+                                                    [self.currentInput[:]]
         
 if __name__ == '__main__':
 
