@@ -184,7 +184,7 @@ int main() {
   }
   /* FIX:
   printf("    produces the fixed-window error-based SRN activations:\n");
-  levels = get_levels_by_error(params, sample, erange);
+  levels = get_levels_by_error(params, sample, erange[0]);
   for(i=0;i<codes->ydim;i++) {
     printf("    ");
     if(i%2==1) printf("   ");
@@ -193,7 +193,7 @@ int main() {
     printf("\n");
   }
   printf("    produces the dynamic-window error-based SRN activations:\n");
-  levels = get_levels_by_error(params, sample, NULL);
+  levels = get_levels_by_error(params, sample, 0.0);
   for(i=0;i<codes->ydim;i++) {
     printf("    ");
     if(i%2==1) printf("   ");
