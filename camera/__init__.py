@@ -255,7 +255,7 @@ class Camera(PyroImage, Device):
             self.window = Tkinter.Toplevel()
          except:
             print "Pyro camera cannot make window. Check DISPLAY variable."
-            self.visible = 0
+            self.setVisible(0)
             return
          self.window.wm_title(self.title)
          w, h = self.width, self.height
