@@ -50,7 +50,6 @@ void RunRobotStop(struct Robot *robot)
 
 boolean StepRobot(struct Robot *robot)
 {
-	usleep(20000);
 	return TRUE;
 }
 
