@@ -117,6 +117,11 @@ class GovernorNetwork(Governor, Network):
         if not mask == []: 
             self.ravq.setMask(mask)
 
+    def setLearning(self, value):
+        self.learning = value
+        self.governing = value
+        self.ravq.setAddModels(value)
+
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
@@ -151,6 +156,11 @@ class GovernorSRN(Governor, SRN):
         self.decayHistogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
+
+    def setLearning(self, value):
+        self.learning = value
+        self.governing = value
+        self.ravq.setAddModels(value)
 
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
