@@ -24,6 +24,7 @@ class SimpleRobot(Robot):
         self.senses['robot']['y'] = lambda dev: 0
         self.senses['robot']['th'] = lambda dev: 0
         self.senses['robot']['stall'] = lambda dev: 0
+        self.senses['robot']['name'] = lambda dev: "simple"
         self.senses['self'] = self.senses['robot']
         self.senses['range'] = {}
         self.senses['range']['value'] = lambda dev, pos: 0
@@ -55,7 +56,7 @@ class SimpleRobot(Robot):
                           'back-left' : (7, ), 
                           'back-right' : (6, ), 
                           'back-all' : (6, 7), 
-                          'back' : (6, 7)} 
+                          'back' : (6, 7)}
 
     def _draw(self,options,renderer):
         # do something to draw yourself
