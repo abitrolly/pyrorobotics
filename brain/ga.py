@@ -95,11 +95,15 @@ class Population:
         self.sumFitness = 0   
         self.avgFitness = 0   
         self.individuals = []
+        self.eliteMembers = []
+        self.elitePercent = 0.0
         self.bestMember = -1
         self.size = cnt
         self.geneConstructor = geneConstructor
         self.args = args
         self.verbose = 0
+        if args.has_key('elitePercent'):
+            self.elitePercent = args['elitePercent']
         if args.has_key('verbose'):
             self.verbose = args['verbose']
         for i in range(cnt):
@@ -193,21 +197,30 @@ class Population:
         """
         self.sumFitness = 0
         best = self.individuals[0]
+        bestPosition = 0
         worst= self.individuals[0]
+        self.eliteMembers = self.individuals[0:int(self.elitePercent * len(self.individuals))]
+        self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
         for i in range(self.size):
             current = self.individuals[i]
+            current.position = i
             self.sumFitness += current.fitness
             if current.fitness < worst.fitness:
                 worst = current
             if current.fitness > best.fitness:
                 best = current
-        self.bestMember = best
+                bestPosition = i
+            if len(self.eliteMembers) > 0 and current.fitness > self.eliteMembers[0].fitness:
+                self.eliteMembers.append( current )
+                self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
+                self.eliteMembers = self.eliteMembers[1:]
+        self.bestMember = deepcopy(best)
         self.avgFitness = (self.sumFitness * 1.0) / self.size
         if self.verbose > 0:
             print "Fitness: Total", "%7.2f" % self.sumFitness, 
             print "Best", "%5.2f" % best.fitness,
-            print "Worst", "%5.2f" % worst.fitness,
-            print "Average", "%5.2f" % self.avgFitness
+            print "Average", "%5.2f" % self.avgFitness,
+            print "Worst", "%5.2f" % worst.fitness
 
 class GA:
     """
@@ -290,8 +303,10 @@ class GA:
             newpop[self.pop.size-1] = self.pop.select().genotype[:]
             self.pop.mutate(newpop[self.pop.size-1], mode, self.mutationRate)
         # Copy new generation into population
+        elitePositions = map( lambda x: x.position, self.pop.eliteMembers)
         for i in range(self.pop.size):
-            self.pop.individuals[i].genotype = newpop[i][:]
+            if i not in elitePositions:
+                self.pop.individuals[i].genotype = newpop[i][:]
     
     def evolve(self):
         self.generation = 0
@@ -325,7 +340,8 @@ if __name__ == '__main__':
     print "Do you want to evolve a list of integers to maximize their sum? ",
     if sys.stdin.readline().lower()[0] == 'y':
         print
-        ga = MaxSumGA(Population(15, Gene, size=10, mode='integer', verbose=1),
+        ga = MaxSumGA(Population(15, Gene, size=10, mode='integer',
+                                 verbose=1, elitePercent = .1),
                       mutationRate=0.1, crossoverRate=0.5, verbose=1,
                       maxGeneration=50)
         ga.evolve()
@@ -353,10 +369,12 @@ if __name__ == '__main__':
                           [0.0]])
             n.setVerbosity(0)
             n.setTolerance(.4)
+            n.setLearning(0)
             g = n.arrayify()
             self.network = n
             GA.__init__(self,
-                        Population(cnt, Gene, size=len(g), verbose=1, min=-1, max=1),
+                        Population(cnt, Gene, size=len(g), verbose=1,
+                                   min=-1, max=1, elitePercent = .1),
                         mutationRate=0.5, crossoverRate=0.25,
                         maxGeneration=400, verbose=1)
         def fitnessFunction(self, genePos):
@@ -364,16 +382,16 @@ if __name__ == '__main__':
             error, correct, count = self.network.sweep()
             return 4 - error
         def isDone(self):
-            self.network.unArrayify(self.pop.individuals[0].genotype)
+            self.network.unArrayify(self.pop.bestMember.genotype)
             error, correct, count = self.network.sweep()
             print "Correct:", correct
             return correct == 4
 
     print "Do you want to evolve a neural network that can do XOR? ",
     if sys.stdin.readline().lower()[0] == 'y':
-        ga = NNGA(50)
+        ga = NNGA(20)
         ga.evolve()
-        ga.network.unArrayify(ga.pop.individuals[0].genotype)
+        ga.network.unArrayify(ga.pop.bestMember.genotype)
         ga.network.setInteractive(1)
         ga.network.sweep()
 
