@@ -4,7 +4,7 @@ from pyro.robot import *
 from pyro.geometry import *
 from pyro.robot.device import Device, DeviceError
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
-     ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4
+     ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4, ArSick
 try:
     import ArAudio
 except:
@@ -370,14 +370,25 @@ class AriaSonar(AriaSensor):
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
 class AriaLaser(AriaSensor):
-    def __init__(self,  params, device):
-        AriaSensor.__init__(self, params, device, "laser")
+    def __init__(self,  params, robotdev):
+        AriaSensor.__init__(self, params, robotdev, "laser")
+        self.params = params
+        self.robotdev = robotdev
+        self.dev = ArSick()
+        self.dev.configureShort(1)
+        self.robotdev.addRangeDevice(self.dev)
+        self.dev.runAsync()
+        self.dev.blockingConnect()
+        print "Pyro is connecting to Aria laser..."
+        time.sleep(3)
+        self.readings = self.dev.getRawReadingsAsVector()
+        #readings[0].getRange()
         self.devData['units']    = "ROBOTS"
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.devData["radius"] = 0.750 # meters
         # What are the raw units of "value"? CHECK to see if MM is correct
         self.devData["rawunits"] = "MM"
-        self.devData['maxvalueraw'] = 15000
+        self.devData['maxvalueraw'] = 8000
         # ----------------------------------------------------------
         # This should change when you change units:
         # (see postSet below)
@@ -389,7 +400,7 @@ class AriaLaser(AriaSensor):
         self.devData["y"] = self.params.getLaserY()
         self.devData["th"] = self.params.getLaserTh()
         # Compute groups based on count:
-        self.devData["count"] = self.params.getNumLaser()
+        self.devData["count"] = len(self.readings)
         count = self.devData["count"]
         part = int(count/8)
         start = 0
@@ -419,14 +430,26 @@ class AriaLaser(AriaSensor):
         # for each laser pos:
         self.subDataFunc['oz']    = lambda pos: 0.03
         self.subDataFunc['th']    = lambda pos: self.params.getLaserTh(pos) * PIOVER180
-        self.subDataFunc['thr']    = lambda pos: self.params.getLaserTh(pos)
+        self.subDataFunc['thr']    = self.params.getLaserTh
         self.subDataFunc['arc']   = lambda pos: 1.0
-        self.subDataFunc['x']     = lambda pos: 0.0 #
-        self.subDataFunc['y']     = lambda pos: 0.0 #
+        self.subDataFunc['x']     = lambda pos: self.getX
+        self.subDataFunc['y']     = lambda pos: self.getY
 	self.subDataFunc['z']     = lambda pos: 0.03 # meters
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.dev.getSonarRange(pos)) 
+        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.getRange(pos))
         self.subDataFunc['pos']   = lambda pos: pos
         self.startDevice()
+
+    def updateDevice(self):
+        self.readings = self.dev.getRawReadingsAsVector()
+
+    def getRange(self, pos):
+        return self.readings[pos].getRange()
+
+    def getX(self, pos):
+        return self.readings[pos].getSensorX()
+
+    def getY(self, pos):
+        return self.readings[pos].getSensorY()
 
     def postSet(self, keyword):
         self.devData['maxvalue'] = self.rawToUnits(self.devData['maxvalueraw'])
@@ -487,9 +510,6 @@ class AriaRobot(Robot):
             self.devDataFunc["sonar"] = self.get("/devices/%s/object" % deviceName)
         if self.params.getLaserPossessed():
             self.devData["builtinDevices"].append( "laser" )
-            deviceName = self.startDevice("laser")
-            self.devDataFunc["range"] = self.get("/devices/%s/object" % deviceName)
-            self.devDataFunc["laser"] = self.get("/devices/%s/object" % deviceName)
         if self.params.numFrontBumpers() + self.params.numRearBumpers() > 0:
             self.devData["builtinDevices"].append( "bumper" )
             deviceName = self.startDevice("bumper")
