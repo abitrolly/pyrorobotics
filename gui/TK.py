@@ -43,7 +43,9 @@ class TKgui(gui):
               ('Window', [['Fast Update 10/sec',self.fastUpdate],
                           ['Medium Update 3/sec',self.mediumUpdate],
                           ['Slow Update 1/sec',self.slowUpdate],
-                          ['Clear Messages', self.clearMessages]
+                          ['Clear Messages', self.clearMessages],
+                          ['Send Messages to Window', self.redirectToWindow],
+                          ['Send Messages to Terminal', self.redirectToTerminal],
                           ]),
               ('Load',[['Map...',self.loadMap],
                        ['Service...',self.loadService],

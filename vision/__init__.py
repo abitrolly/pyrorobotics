@@ -223,6 +223,20 @@ class PyroImage:
       """
       return self.data[(x + y * self.width) * self.depth + offset]
 
+   def getRow(self, y):
+      """ Get the entire row, in tuples """
+      retval = [0] * self.width
+      for x in range(self.width):
+         retval[x] = self.getVal(x, y)
+      return retval
+
+   def getCol(self, x):
+      """ Get the entire col, in tuples """
+      retval = [0] * self.height
+      for y in range(self.height):
+         retval[y] = self.getVal(x, y)
+      return retval
+
    def getVal(self, x, y):
       """
       Get the entire color value of the pixel in quetion, returned as a tuple.
