@@ -313,7 +313,7 @@ class AiboRobot(Robot):
         self.devData["dutyCycleRaw"] = socket.read(numPIDJoints * 4,
                                                    "<%df" % numPIDJoints,all=1)
                 
-    def getJoint(self, jointGroup, jointD1="", jointD2="", jointD3=""):
+    def getJoint(self, query):
         """ Get position, dutyCycle of joint by name """
         legOffset = 0
         numLegs = 4
@@ -323,43 +323,114 @@ class AiboRobot(Robot):
         numHeadJoints = 3
         tailOffset = headOffset + numHeadJoints
         numTailJoints = 2
-        mouthOffet = tailOffset + numTailJoints
-        if jointGroup == "leg":
-            if jointD2 == "front":
-                offset = 0
-            elif jointD2 == "back":
-                offset = numLegs/2
-            if jointD1 == "left":
-                offset = legOffset + offset*jointsPerLeg
-            elif jointD1 == "back":
-                offset = legOffset + (offset+1)*jointsPerLeg
-            if jointD3 == "rotator":
+        mouthOffset = tailOffset + numTailJoints
+        jointDict = query.split()
+        pos = 0
+        for joint in jointDict:
+            if joint == "leg":
+                pos += legOffset
+            elif joint == "head":
+                pos += headOffset
+            elif joint == "tail":
+                pos += tailOffset
+            elif joint == "mouth":
+                pos += mouthOffset
+            elif joint == "front":
+                pos += 0
+            elif joint == "back":
+                pos += numLegs/2*jointsPerLeg
+            elif joint == "left":
+                pos +=0
+            elif joint == "right":
+                pos += jointsPerLeg
+            elif joint == "rotator":
                 # moves leg forward or backward along body
-                pos = offset
-            elif jointD3 == "elevator":
+                pos +=0
+            elif joint == "elevator":
                 # moves leg toward or away from body
-                pos = offset + 1
-            elif jointD3 == "knee":
-                pos = offset + 2
-        elif jointGroup == "head":
-            if jointD1 == "tilt":
-                pos = headOffset
-            elif jointD1 == "pan":
-                pos = headOffset +1
-            elif jointD1 == "roll":
-                pos = headOffset +2
-            elif jointD1 == "nod":
-                pos = headOffset+2
-        elif jointGroup == "tail":
-            if jointD1 == "tilt":
-                pos = tailOffset
-            elif jointD1 == "pan":
-                pos = tailOffset +1
-        elif jointGroup == "mouth":
-            pos = mouthOffset
-        else:
-            AttributeError, "no such joint: '%s'" % jointGroup
+                pos += 1
+            elif joint == "knee":
+                pos += 2
+            elif joint == "tilt":
+                pos +=0
+            elif joint == "pan":
+                pos +=1
+            elif joint == "roll":
+                pos +=2
+            elif joint == "nod":
+                pos +=2
+            else:
+                raise AttributeError, "no such joint: '%s'" % joint
         return self.devData["positionRaw"][pos], self.devData["dutyCycleRaw"][pos]
+
+    def getButton(self, query):
+        pos = 0
+        btnDict = query.split()
+        for b in btnDict:
+            if b == "chin":
+                pos = 4
+            elif b == "head":
+                pos = 5
+            elif b == "body":
+                pos +=6
+            elif b == "front":
+                pos +=0
+            elif b == "middle":
+                pos +=1
+            elif b == "rear":
+                pos +=2
+            elif b == "wireless":
+                pos = 9
+            elif b == "paw":
+                pos +=0
+            elif b == "back":
+                pos +=2
+            elif b == "left":
+                pos +=0
+            elif b == "right":
+                pos +=1
+            else:
+                raise AttributeError, "no such button: '%s'" % b
+        return self.devData["buttonRaw"][pos]
+
+    def getSensor(self, query):
+        pos = 0
+        sensDict = query.split()
+        for s in sensDict:
+            if s == "ir":
+                pos +=0
+            elif s == "near":
+                # in mm 50-500
+                pos +=0
+            elif s == "far":
+                # in mm 200-1500
+                pos +=1
+            elif s == "chest":
+                # in mm 100-900
+                pos +=2
+            elif s == "accel":
+                pos +=3
+            elif s == "front-back":
+                pos +=0
+            elif s == "right-left":
+                pos +=1
+            elif s == "up-down":
+                pos +=2
+            elif s == "power":
+                pos +=6
+            elif s == "remaining":
+                pos +=0
+            elif s == "thermo":
+                pos +=1
+            elif s == "capacity":
+                pos +=2
+            elif s == "voltage":
+                pos +=3
+            elif s == "current":
+                pos +=4
+            else:
+                raise AttributeError , "no such sensor: '%s'" % b
+        return self.devData["sensorRaw"][pos]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
@@ -400,7 +471,7 @@ class AiboRobot(Robot):
         Robot.destroy(self)
 
     def setWalk(self, file):
-        # PACE.PRM, TIGER.PRM (crawl), WALK.PRM
+        # PACE.PRM, TIGER.PRM, WALK.PRM (crawl)
         self.walk_control.s.close()
         self.main_control.s.send("!select \"%s\"\n" % "Load Walk") # forces files to be read
         self.main_control.s.send("!select \"%s\"\n" % file) # select file
