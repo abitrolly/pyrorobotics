@@ -112,9 +112,11 @@ class AriaPTZService(AriaService):
             self.dev = ArVCC4(self.robot)
         else:
             raise TypeError, "invalid type: '%s'" % type
-        # this should happen until the robot is connected:
-        self.dev.init()
 
+    def init(self):
+        # this should NOT happen until the robot is connected:
+        self.dev.init()
+        
     ## Methods for moving camera
 
     def pan(self, numDegrees):
