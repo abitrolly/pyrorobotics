@@ -103,7 +103,7 @@ class Robot:
         self.devData['timestamp'] = time.time()
         # toplevel:
         self.directory["robot"] = self
-        self.directory["device"] = DeviceWrapper(self)
+        self.directory["devices"] = DeviceWrapper(self)
         # user init:
         self.setup(**kwargs)
 
@@ -135,10 +135,11 @@ class Robot:
         if isinstance(pathList, (type((1,)), type([1,]))):
             pathList.sort()
         for item in pathList:
+            # HACK!
+            if "range" in item:
+                retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("robot/range/name")))
+                continue
             if item[0] == "*": # a group (link), do not recur
-                if item == "*range/":
-                    retval += ("   " * depth) + ("%s = <alias to *%s/>\n" % (item, self.get("%s/%s/type" % (path, item[1:]), showstars = 1)))
-                    continue
                 retval += ("   " * depth) + ("%s = %s\n" % (item, self.get("%s/%s/pos" % (path, item[1:]), showstars = 1)))
                 if item == "*all/":
                     retval += ("   " * depth) + ("   attributes: %s\n" % self.get("%s/1" % (path,), showstars = 1))
