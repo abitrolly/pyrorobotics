@@ -337,6 +337,7 @@ class KheperaRobot(Robot):
             return self.senseData[data]
         
     def update(self):
+        self._update()
         self.sendMsg('N', 'ir')     # proximity
         self.sendMsg('O', 'light')  # ambient light
         self.sendMsg('H', 'position')
@@ -499,7 +500,6 @@ class KheperaRobot(Robot):
         There currently isn't, so this not useful yet.
         """
         self._move_now(self, trans, rotate)
-        self.update()
 
     def _move_now(self, dev, trans, rotate):
         left  = int((trans * dev.translateFactor - \
@@ -508,11 +508,9 @@ class KheperaRobot(Robot):
                       rotate * dev.rotateFactor))
         self.currSpeed = [left, right]
         dev.sendMsg('D,%i,%i' % (left, right))
-        self.update()
 
     def move(self, trans, rotate):
         self._move(self, trans, rotate)
-        self.update()
 
     def adjustSpeed(dev):
         # This will send new motor commands based on the

@@ -14,22 +14,102 @@ SINDEG90RADS = sin(DEG90RADS) / 1000.0
 from pyro.robot.service import Service
 
 class PlayerService(Service):
-    def __init__(self, dev, item):
+    def __init__(self, dev, name):
         Service.__init__(self)
         self.dev = dev
-        self.item = item
+        self.name = name
 
-    def start(self):
-        self.dev.start(self.item)
+    def startService(self):
+        self.dev.start(self.name)
         time.sleep(1)
 
-    def stop(self):
-        self.dev.stop(self.item)
+    def stopService(self):
+        self.dev.stop(self.name)
+        self.dev.__dict__[self.name] = {}
+
+    def getServiceData(self, pos = 0):
+        return self.dev.__dict__[self.name][pos]
+
+    def getServiceState(self):
+        if self.dev.__dict__[self.name] != {}:
+            return "started"
+        else:
+            return "stopped"
+
+class PlayerCommService(PlayerService):
+    def sendMessage(self, message):
+        if self.dev.comms == {}:
+            print "Need to startService 'comms' interface in robot"
+            return
+        self.dev.send_message(message)
+
+    def getMessages(self):
+        if not 'comms' in dir(self.dev) or self.dev.comms == {}:
+            raise "Need to loadService('comm') in robot"
+        if self.dev.comms[0] != '':
+            self.update()
+        tmp = self.messages
+        # reset queue:
+        self.messages = []
+        return tmp
+
+class PlayerGripperService(PlayerService):
+    # Gripper functions
+    #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
+
+    def open(self):
+        return self.dev.gripper_open() 
+
+    def close(self):
+        return self.dev.gripper_close() 
+
+    def stopMoving(self):
+        return self.dev.gripper_stop()
+
+    def liftUp(self):
+        return self.dev.gripper_up()
+
+    def liftDown(self):
+        return self.dev.gripper_down()
+
+    def liftStop(self):
+        return self.dev.gripper_stop()
+
+    def store(self):
+        return self.dev.gripper_store() 
+
+    def deploy(self):
+        return self.dev.gripper_deploy()
+
+    def halt(self):
+        return self.dev.gripper_halt()
+
+    def getState(self):
+        return self.dev.is_paddles_closed() # help!
+
+    def getBreakBeamState(self):
+        sum = 0
+        sum += self.dev.is_ibeam_obstructed() * 2 #FIX: which?
+        sum += self.dev.is_obeam_obstructed()
+        return sum
+
+    def isClosed(self): # FIX: add this to aria
+        return self.dev.is_paddles_closed() #ok
+
+    def isMoving(self):
+        return self.dev.is_paddles_moving() #ok
+
+    def isLiftMoving(self):
+        return self.dev.is_lift_moving() # ok
+
+    def isLiftMaxed(self):
+        return self.dev.is_lift_up() # ok
 
 class PlayerBase(Robot):
     def __init__(self, name = "Player", port = 6665):
         Robot.__init__(self, name, "player") # robot constructor
         self.simulated = 1
+        self.pause = 0.0
         self.port = port
         self.inform("Loading Player robot interface...")
         self.name = name
@@ -43,31 +123,42 @@ class PlayerBase(Robot):
         self.messages = []
         self.noise = .05 # 5 % noise
         self.supports["blob"] = PlayerService(self.dev, "blobfinder")
-        self.supports["communication"] = PlayerService(self.dev, "comms")
-        self.supports["gripper"] = PlayerService(self.dev, "gripper")
+        self.supports["comm"] = PlayerService(self.dev, "comms")
+        self.supports["gripper"] = PlayerGripperService(self.dev, "gripper")
+        self.supports["power"] = PlayerService(self.dev, "power")
+        self.supports["position"] = PlayerService(self.dev, "position")
+        self.supports["sonar"] = PlayerService(self.dev, "sonar")
+        self.supports["laser"] = PlayerService(self.dev, "laser")
+        self.supports["ptz"] = PlayerService(self.dev, "ptz")
+        self.supports["gps"] = PlayerService(self.dev, "gps")
+        self.supports["bumper"] = PlayerService(self.dev, "bumper")
+        self.supports["truth"] = PlayerService(self.dev, "truth")
         
     def translate(self, translate_velocity):
         self.translateDev(self.dev, translate_velocity)
 
     def translateDev(self, dev, translate_velocity):
         self.update()
-        dev.set_speed(translate_velocity * 1100.0, None, None)
+        dev.set_speed(translate_velocity * 900.0, None, None)
+        time.sleep(self.pause)
 
     def rotate(self, rotate_velocity):
         self.rotateDev(self.dev, rotate_velocity)
 
     def rotateDev(self, dev, rotate_velocity):
         self.update()
-        dev.set_speed(None, None, rotate_velocity * 75.0)
+        dev.set_speed(None, None, rotate_velocity * 65.0)
+        time.sleep(self.pause)
 
     def move(self, translate_velocity, rotate_velocity):
         self.moveDev(self.dev, translate_velocity, rotate_velocity)
 
     def moveDev(self, dev, translate_velocity, rotate_velocity):
         self.update()
-        dev.set_speed(translate_velocity * 1100.0,
+        dev.set_speed(translate_velocity * 900.0,
                       0,
-                      rotate_velocity * 75.0)
+                      rotate_velocity * 65.0)
+        time.sleep(self.pause)
 
     # FIX: either sonar values are changing between calls to X, Y
     # or sin/cos values are not taking into account offset from center
@@ -103,6 +194,7 @@ class PlayerBase(Robot):
         self.updateDev(self.dev)
     
     def updateDev(self, dev):
+        self._update()
         data = dev.get_position()
         pos, speeds, stall = data
         # (xpos, ypos, th), (xspeed, yspeed, rotatespeed), stall
@@ -150,86 +242,16 @@ class PlayerBase(Robot):
         else:
             raise 'InvalidType', "Units are set to invalid type"
 
-    def sendMessage(self, message):
-        if self.dev.comms == {}:
-            print "Need to startService 'comms' interface in robot"
-            return
-        self.dev.send_message(message)
-
-    def getMessages(self):
-        if not 'comms' in dir(self.dev) or self.dev.comms == {}:
-            raise "Need to startService 'comms' interface in robot"
-        if self.dev.comms[0] != '':
-            self.update()
-        tmp = self.messages
-        # reset queue:
-        self.messages = []
-        return tmp
-
-    #def startService(self, item):
-    #    self.dev.start(item)
-    #    print "Starting service '%s'..." % item
-    #    time.sleep(1)
-
-    #def stopService(self, item):
-    #    self.dev.stop(item)
-
-    #def hasService(self, item):
-    #    return item in dir(self.dev) and self.dev.__dict__[item] != {}
-
-    #def getServiceData(self, item):
-    #    return self.dev.__dict__[item][0]
-
-    # Gripper functions
-    #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
-
-    def gripperOpen(self):
-        return self.dev.gripper_open() 
-
-    def gripperClose(self):
-        return self.dev.gripper_close() 
-
-    def gripperStop(self):
-        return self.dev.gripper_stop()
-
-    def liftUp(self):
-        return self.dev.gripper_up()
-
-    def liftDown(self):
-        return self.dev.gripper_down()
-
-    def liftStop(self):
-        return self.dev.gripper_stop()
-
-    def gripperStore(self):
-        return self.dev.gripper_store() 
-
-    def gripperDeploy(self):
-        return self.dev.gripper_deploy()
-
-    def gripperHalt(self):
-        return self.dev.gripper_halt()
-
-    def getGripperState(self):
-        return self.dev.is_paddles_closed() # help!
-
-    def getBreakBeamState(self):
-        sum = 0
-        sum += self.dev.is_ibeam_obstructed() * 2 #FIX: which?
-        sum += self.dev.is_obeam_obstructed()
-        return sum
-
-    def isGripperClosed(self): # FIX: add this to aria
-        return self.dev.is_paddles_closed() #ok
-
-    def isGripperMoving(self):
-        return self.dev.is_paddles_moving() #ok
-
-    def isLiftMoving(self):
-        return self.dev.is_lift_moving() # ok
-
-    def isLiftMaxed(self):
-        return self.dev.is_lift_up() # ok
+    def localize(self, x = 0, y = 0, th = 0):
+        """
+        Set robot's internal pose to x (meters), y (meters),
+        th (radians)
+        """
+        self.dev.set_odometry(x * 1000, y * 1000, th)
+        self.x = x
+        self.y = y
+        self.th = th
+        self.thr = self.th * PIOVER180
 
     # Gripper functions
     #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',

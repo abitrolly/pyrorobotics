@@ -1,13 +1,13 @@
 # A Base Camera class
 
 from pyro.vision import *
-from pyro.brain.fuzzy import *
+from pyro.robot.service import Service
 
 import Tkinter
 import PIL.PpmImagePlugin
 import Image, ImageTk
 
-class Camera(PyroImage):
+class Camera(PyroImage, Service):
    """
    A base class for Camera
    """
@@ -17,6 +17,7 @@ class Camera(PyroImage):
       constructor with one that initalizes the dimensions itself
       """
       PyroImage.__init__(self, width, height, depth, 0)
+      Service.__init__(self)
       self.update() # call it once to initialize
       
    def _update(self):
@@ -56,21 +57,34 @@ class Camera(PyroImage):
       self.app = Tkinter.Tk()
       self.app.wm_state('withdrawn')
       self.window = Tkinter.Toplevel()
-      while self.window.tk.dooneevent(2): pass
       self.window.wm_title("Camera View")
       self.im = self.getImage()
       self.image = ImageTk.PhotoImage(self.im)
       self.label = Tkinter.Label(self.window, image=self.image, bd=0)
-      #self.label = Tkinter.Label(self.window, bd=0)
-      #self.label.configure(image=self.image)
       self.label.pack({'fill':'both', 'expand':1, 'side': 'left'})
-
-   def updateWindow(self):
-      self.update()
+      self.visible = 1
       while self.window.tk.dooneevent(2): pass
+      
+   def updateWindow(self):
       self.im = self.getImage()
       self.image = ImageTk.PhotoImage(self.im)
       self.label.configure(image = self.image)
+      while self.window.tk.dooneevent(2): pass
+
+   def startService(self):
+      self.state = "started"
+      return "Ok"
+
+   def stopService(self):
+      self.state = "stopped"
+      self.visible = 0
+      return "Ok"
+
+   def getServiceData(self):
+      return self.data
+
+   def getServiceState(self):
+      return self.state
 
 if __name__ == '__main__':
    from os import getenv

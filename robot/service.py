@@ -2,16 +2,29 @@ class Service:
     """ A basic service class """
 
     def __init__(self):
+        self.active = 1
         self.visible = 0
+        self.state = "stopped"
 
-    def start(self):
-        print "Starting service..."
+    def startService(self):
+        self.state = "started"
+        return "Ok"
 
-    def stop(self):
-        print "Stopping service..."
+    def stopService(self):
+        self.state = "stopped"
+        return "Ok"
 
     def makeWindow(self):
-        print "Making window..."
+        raise "NoServiceWindowDefined"
 
     def updateWindow(self):
-        print "Updating window..."
+        raise "NoServiceWindowDefined"
+
+    def getServiceData(self):
+        return {}
+
+    def getServiceState(self):
+        return self.state
+
+    def update(self):
+        pass

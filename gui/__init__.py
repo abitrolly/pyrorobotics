@@ -87,8 +87,6 @@ class gui(Drawable):
          about()
       elif retval == "reload":
          self.engine.reset()
-      elif retval == "load camera":
-         self.loadCamera()
       elif retval == "load robot":
          self.loadRobot()
       elif retval == "load brain":
@@ -125,7 +123,8 @@ class gui(Drawable):
          inspector = Inspector.Inspector(('share.brain', 'share.robot', 'share.engine'))
       else:
          # elif len(retval) > 0 and retval[0] == "!":
-         exp1 = "_retval = " + string.strip(retval)
+         exp1 = """_retval = """ + string.strip(retval)
+         _retval = "error"
          exp2 = string.strip(retval)
          brain = self.engine.brain
          robot = self.engine.robot
@@ -142,11 +141,20 @@ class gui(Drawable):
                exec exp2
                print "Ok"
             except:
-               import sys
-               print sys.exc_value
+               print gui.formatExceptionInfo()
          self = gui
-         #print "Unknown command: '" + retval + "'" sys.exc_type
       return 0
+
+   def formatExceptionInfo(self, maxTBlevel=1):
+      import sys, traceback
+      cla, exc, trbk = sys.exc_info()
+      excName = cla.__name__
+      try:
+         excArgs = exc.__dict__["args"]
+      except KeyError:
+         excArgs = ("<no args>",)
+      excTb = traceback.format_tb(trbk, maxTBlevel)
+      return "%s: %s %s" % (excName, excArgs[0], "in command line")
 
    def redraw(self):
       # FIX: this is way awkward:
@@ -255,7 +263,7 @@ class gui(Drawable):
       self.redraw()
       if f != '':
          if self.engine != 0 and self.engine.robot != 0:
-            self.engine.robot.loadService(f)
+            self.engine.robot.startService(f)
             self.redraw()
 
    def freeBrain(self):
@@ -286,13 +294,6 @@ class gui(Drawable):
          self.freeBrain()
          self.freeRobot()
          self.engine.loadRobot(f)
-         self.redraw()
-
-   def loadCamera(self):
-      f = self.fileloaddialog("cameras","*.py")
-      self.redraw()
-      if f != '':
-         self.engine.loadCamera(f)
          self.redraw()
 
    def freeRobot(self):

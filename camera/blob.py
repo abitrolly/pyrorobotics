@@ -6,8 +6,7 @@ class BlobCamera(Camera):
    """
    """
    def __init__(self, robot, createVisionRep = 1):
-      if not robot.hasService('blobfinder'):
-         robot.startService('blobfinder')
+      robot.startService('blob')
       self.robot = robot
       self.createVisionRep = createVisionRep
       self.blobdata = []
@@ -37,7 +36,7 @@ class BlobCamera(Camera):
       blobdata has list of blobs from device, listed by channel
       blobimage has a PIL image formed from bloblist
       """
-      self.blobdata = self.robot.getServiceData('blobfinder')
+      self.blobdata = self.robot.getServiceData('blob')
       if len(self.blobdata[0]) == 2: 
          self.width, self.height = self.blobdata[0]
          # mode, (x, y), color (r, g, b): 0 - 255

@@ -150,7 +150,6 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     munmap(map, vidmbuf.size);
     return(NULL);
   }
-
   //Start caputring
   if (ioctl(dev, VIDIOCMCAPTURE, &vidmmap)){
     perror("Cgrab_image, ioctl CMCAPTURE");
@@ -159,7 +158,6 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     free(image_struct);
     return NULL;
   }
-
   if (ioctl(dev, VIDIOCSYNC, &vidmmap)){
     perror("Cgrab_image, ioctl CSYNC");
     munmap(map, vidmbuf.size);
@@ -167,12 +165,9 @@ struct image_cap* Cgrab_image(char* device, int width, int height, int color){
     free(image_struct);
     return NULL;
   }
-    
-
   image_struct->data = map;
   image_struct->bpp  = depth * 8;
   image_struct->handle = dev;
-
   return image_struct;
 }
 

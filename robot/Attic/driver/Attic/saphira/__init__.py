@@ -90,8 +90,10 @@ class SaphiraControlDriver(driver.Driver):
         #self.controls['accelerate'] = Saphira_Accelerate
         self.controls['translate'] = Saphira_Translate
         self.controls['rotate'] = Saphira_Rotate
-        self.controls['update'] = Saphira_UpdateReadings
+        self.controls['update'] = self.update
         self.controls['localize'] = Saphira_Localize
         console.log(console.INFO,'saphira control drivers loaded')
 
-
+    def update(self, dev):
+        self._update()
+        Saphira_UpdateReadings(dev)

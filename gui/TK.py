@@ -89,7 +89,6 @@ class TKgui(gui):
       # Display:
       self.loadables = [ ('button', 'Simulator:', self.loadSim, self.editWorld),
                          ('button', 'Robot:', self.loadRobot, self.editRobot),
-#                         ('button', 'Camera:', self.loadCamera, self.editCamera),
                          ('button', 'Brain:', self.loadBrain, self.editBrain),
                         ]
       self.buttonArea = {}
@@ -200,7 +199,10 @@ class TKgui(gui):
    def slowUpdate(self):
       self.update_interval = 1.0
 
-   def update(self):
+   def update(self): # FIX: I don't think this does anything
+      pass
+
+   def temp(self):
       if self.engine != 0:
          if self.engine.robot != 0:
             self.engine.robot.update()
@@ -290,14 +292,7 @@ class TKgui(gui):
       if os.getenv("EDITOR"):
          os.system(os.getenv("EDITOR") + " " + self.engine.robotfile + "&")
       else:
-         os.system("emacs " + self.engine.robotfile + "&")
-   def editCamera(self):
-      import os
-      if os.getenv("EDITOR"):
-         os.system(os.getenv("EDITOR") + " " + self.engine.camerafile + "&")
-      else:
-         os.system("emacs " + self.engine.camerafile + "&")
-         
+         os.system("emacs " + self.engine.robotfile + "&")         
    def run(self, command = []):
       self.done = 0
       while len(command) > 0:
@@ -311,7 +306,8 @@ class TKgui(gui):
          try: needToUpdateState = self.engine.brain.needToStop
          except: pass
          if needToUpdateState:
-            try: self.engine.robot.update()
+            try:
+               self.engine.robot.update()
             except: pass
          self.redrawWindowBrain()
          self.redrawViews()
@@ -392,10 +388,9 @@ class TKgui(gui):
                                              self.engine.robot.get('robot', 'y'),
                                              self.engine.robot.get('robot', 'th'),
                                              bump))
-         try:
-            self.engine.robot.camera.updateWindow()
-         except:
-            pass
+            for service in self.engine.robot.getServices():
+               if self.engine.robot.getService(service).visible:
+                  self.engine.robot.getService(service).updateWindow()
          while self.win.tk.dooneevent(2): pass
          sleep(self.update_interval)
 
@@ -433,7 +428,6 @@ class TKgui(gui):
 
    def inform(self, message):
       try:
-         #self.status.set(message[0:50])
          self.status.config(state='normal')
          self.status.insert('end', "%s\n" % (message))
          self.status.config(state='disabled')
