@@ -147,12 +147,12 @@ class Engine(drawable.Drawable):
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
-         self.robot.camera = system.loadINIT(file)
+         self.robot.camera = system.loadINIT(file, self)
          self.camerafile = file
       elif system.file_exists(os.getenv('PYRO') + \
                               '/plugins/cameras/' + file): 
          self.robot.camera = system.loadINIT(os.getenv('PYRO') + \
-                                      '/plugins/cameras/' + file)
+                                      '/plugins/cameras/' + file, self)
          self.camerafile = os.getenv('PYRO') + '/plugins/cameras/' + file
       else:
          raise 'Camera file not found: ' + file
