@@ -53,6 +53,7 @@ class Device:
         self.devData["visible"] = visible
         self.devData["type"] = deviceType
         self.devData["state"] = "stopped"
+        #self.devData["object"] = self
         if visible:
             self.makeWindow()
         self.setup()
@@ -95,13 +96,11 @@ class Device:
 
     def setup(self):
         pass
-
     def getVisible(self):
         return self.devData["visible"]
     def setVisible(self, value):
         self.devData["visible"] = value
         return "Ok"
-
     def getActive(self):
         return self.devData["active"]
     def setActive(self, value):
@@ -117,10 +116,10 @@ class Device:
         return "Ok"
 
     def makeWindow(self):
-        raise WindowError, "No Device Window Defined"
+        pass
 
     def updateWindow(self):
-        raise WindowError, "No Device Window Defined"
+        pass
 
     def getDeviceData(self):
         return {}
@@ -155,6 +154,8 @@ class Device:
             else:
                 tmp.update( dict([(key + "/", self.groups[key]) for key in self.groups]))
             return deviceDirectoryFormat(tmp, 0)
+        elif len(path) == 1 and path[0] == "object":
+            return self
         elif len(path) == 1 and path[0] in self.devData:
             # return a value
             if showstars and path[0] in self.printFormat:

@@ -371,35 +371,21 @@ class PlayerRobot(Robot):
         # for some basic devices:
         # Make sure laser is before sonar, so if you have
         # sonar, it will be the default 'range' device
-        for device in ["power", "position", "ir", "laser", "sonar", "bumper"]:
+        devList = self.dev.get_device_list()
+        # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
+        devNameList = map(lambda triplet: triplet[0], devList)
+        self.devData["supports"] = devNameList
+        self.supports = devNameList
+        for device in ["position", "ir", "laser", "sonar", "bumper"]:
             #is it supported? if so start it up:
-            devList = self.dev.get_device_list()
-            # (('fiducial', 0, 6665), ('comms', 0, 6665), ...)
-            devNameList = map(lambda triplet: triplet[0], devList)
             if device in devNameList:
-                if device == "ptz":
-                    self.devDataFunc[device] = PlayerPTZDevice(self.dev, "ptz")
-                elif device == "comms":
-                    self.devDataFunc[device] = PlayerCommDevice(self.dev, "comms")
-                elif device == "gripper":
-                    self.devDataFunc[device] = PlayerGripperDevice(self.dev, "gripper")
-                elif device == "laser":
-                    self.devDataFunc[device] = PlayerLaserDevice(self.dev, "laser")
-                    self.devDataFunc["range"] = self.devDataFunc["laser"]
-                elif device == "sonar":
-                    self.devDataFunc[device] = PlayerSonarDevice(self.dev, "sonar")
-                    self.devDataFunc["range"] = self.devDataFunc["sonar"]
-                else:
-                    self.devDataFunc[device] = PlayerDevice(self.dev, device)
-            #self.supports["blob"] = PlayerDevice(self.dev, "blobfinder")
-            #self.supports["power"] = PlayerDevice(self.dev, "power")
-            #self.supports["position"] = PlayerDevice(self.dev, "position")
-            #self.supports["sonar"] = PlayerDevice(self.dev, "sonar")
-            #self.supports["laser"] = PlayerDevice(self.dev, "laser")
-            #self.supports["ptz"] = PlayerPTZDevice(self.dev, "ptz")
-            #self.supports["gps"] = PlayerDevice(self.dev, "gps")
-            #self.supports["bumper"] = PlayerDevice(self.dev, "bumper")
-            #self.supports["truth"] = PlayerDevice(self.dev, "truth")
+                deviceName = self.startDevice(device)
+        if "laser" in self.supports:
+            self.devData["range"] = self.get("/device/laser0/object")
+        if "ir" in self.supports:
+            self.devData["range"] = self.get("/device/ir0/object")
+        if "sonar" in self.supports:
+            self.devData["range"] = self.get("/device/sonar0/object")
         # default values
         self.devData["stall"] = 0
         self.devData["x"] = 0.0
@@ -416,6 +402,22 @@ class PlayerRobot(Robot):
         #self.devData["simulated"] = self.simulated
         self.localize(0.0, 0.0, 0.0)
         self.update()
+
+    def startDeviceBuiltin(self, item):
+        if item == "ptz":
+            return {"ptz": PlayerPTZDevice(self.dev, "ptz")}
+        elif item == "comms":
+            return {"comms": PlayerCommDevice(self.dev, "comms")}
+        elif item == "gripper":
+            return {"gripper": PlayerGripperDevice(self.dev, "gripper")}
+        elif item == "laser":
+            return {"laser": PlayerLaserDevice(self.dev, "laser")}
+        elif item == "sonar":
+            return {"sonar": PlayerSonarDevice(self.dev, "sonar")}
+        elif item in self.supports:
+            return {item: PlayerDevice(self.dev, item)}
+        else:
+            raise AttributeError, "player robot does not support device '%s'" % item
     
     def translate(self, translate_velocity):
         self.dev.set_speed(translate_velocity * 900.0, None, None)
