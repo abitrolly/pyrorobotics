@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export PATH=$PATH:/usr/local/stage/bin:/usr/local/player/bin
+
+stage /usr/local/stage/worlds/everything.world &
