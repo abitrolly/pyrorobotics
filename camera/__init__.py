@@ -474,8 +474,8 @@ class Camera(PyroImage, Device):
    def clearCallbackList(self):
       # callback is a function that has first param
       # as self (ie, the visionSystem object)
-      self.callbackList = []
-      self.callbackTextList = []
+      while len(self.callbackList) > 0: self.callbackList.pop()
+      while len(self.callbackTextList) > 0: self.callbackTextList.pop()
       if not self.getActive():
          self.updateOnce()
       return "Ok"

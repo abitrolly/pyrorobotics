@@ -40,8 +40,8 @@ class MyState(State):
 def INIT(engine):
     ptzID = engine.robot.startDevice("ptz"); 
     ptz = engine.robot.get("devices/%s/object" % ptzID); 
-    brain = BBB({'pan' : lambda args: ptz.panRel(args),
-                 'tilt': lambda args: ptz.tiltRel(args),
+    brain = BBB({'pan' : ptz.panRel,
+                 'tilt': ptz.tiltRel,
                  'update' : engine.robot.update },
                 engine) 
     brain.add(MyState(1)) # make it active
