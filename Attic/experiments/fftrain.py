@@ -1,7 +1,7 @@
 from pyro.brain.conx import *
 # Create the network  
 n = Network()  
-n.addThreeLayers(140,15,2)  
+n.addThreeLayers(105,15,2)  
 # Set learning parameters  
 n.setEpsilon(0.1)  
 n.setMomentum(0.9)  

@@ -2,10 +2,10 @@ Path Protoplanning Experiments
 
 8/28/2003
 
-1. collect.py -> camera.dat  motors.dat  poses.dat  sonar.dat
-2. somtrain.py   -> camera.cod sonar.cod
-3. ffprepare.py -> fftargets.dat ffinputs.dat
-4. fftrain.py -> ff.wts
+1. collect.py -> camera.dat  motors.dat  poses.dat  sonar.dat (120 minutes)
+2. somtrain.py   -> camera.cod (50 minutes) sonar.cod (3 minutes)
+3. ffprepare.py -> fftargets.dat ffinputs.dat (1 minute)
+4. fftrain.py -> ff.wts 
 
 Support Programs:
 
