@@ -64,6 +64,13 @@ class Engine(drawable.Drawable):
       else:
          raise 'Simulator file not found: ' + file
       console.log(console.INFO,'Loaded ' + file)
+      print "Loading.",
+      time.sleep(1)
+      print ".",
+      time.sleep(1)
+      print ".",
+      time.sleep(1)
+      print "."
 
    def loadPlot(self,file):
       import os
