@@ -457,10 +457,13 @@ class TKgui(gui):
       pass
 
    def write(self, item):
-      self.status.config(state='normal')
-      self.status.insert('end', "%s" % (item))
-      self.status.config(state='disabled')
-      self.status.see('end')
+      try:
+         self.status.config(state='normal')
+         self.status.insert('end', "%s" % (item))
+         self.status.config(state='disabled')
+         self.status.see('end')
+      except:
+         pass
    def flush(self):
       pass
    

@@ -40,14 +40,14 @@ class Inspector(Tkinter.Tk):
         filesFrame = Tkinter.Frame(frame)
         filesFrame['relief'] = 'flat'
         filesFrame['bd']	 = '2'
-        filesFrame.pack({'side':'top', 'expand':'no', 'fill':'x'})
+        filesFrame.pack({'side':'top', 'expand':'yes', 'fill':'x'})
         # Methods:
         label = Tkinter.Label(filesFrame)
         label['text'] = 'Methods:'
-        label.pack({'side':'top', 'expand':'yes', 'anchor':'w',
+        label.pack({'side':'top', 'expand':'no', 'anchor':'w',
                     'fill':'none'})
         scrollBar = Tkinter.Scrollbar(filesFrame, {'orient':'vertical'})
-        scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
+        scrollBar.pack({'expand':'yes', 'side':'right', 'fill':'y'})
         self.methods = Tkinter.Listbox(filesFrame, {'yscroll':scrollBar.set})
         self.methods.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
                            'fill' :'both'})
@@ -64,10 +64,10 @@ class Inspector(Tkinter.Tk):
         # Variables:
         label = Tkinter.Label(filesFrame)
         label['text'] = 'Variables:'
-        label.pack({'side':'top', 'expand':'yes', 'anchor':'w',
+        label.pack({'side':'top', 'expand':'no', 'anchor':'w',
                     'fill':'none'})
         scrollBar = Tkinter.Scrollbar(filesFrame, {'orient':'vertical'})
-        scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
+        scrollBar.pack({'expand':'yes', 'side':'right', 'fill':'y'})
         self.variables = Tkinter.Listbox(filesFrame, {'yscroll':scrollBar.set})
         self.variables.pack({'expand':'yes', 'side' :'bottom', 'pady' :'1', 
                              'fill' :'both'})        
@@ -89,12 +89,12 @@ class Inspector(Tkinter.Tk):
         # help:
         scrollBar = Tkinter.Scrollbar(filesFrame, {'orient':'vertical'})
         scrollBar.pack({'expand':'no', 'side':'right', 'fill':'y'})
-        self.helptext = Tkinter.Text(filesFrame, {'yscroll':scrollBar.set})
+        self.helptext = Tkinter.Text(filesFrame, {'yscroll':scrollBar.set, "width": 40})
         self.helptext.pack({'expand':'yes', 'side' :'top', 'pady' :'1', 
                              'fill' :'both'})        
 
-        #if root == None:
-        #    root = dir(self)
+        if root == None:
+            root = dir()
         for thing_s in root:
             self.dirLb.insert('end', thing_s)
         #    self.loadItems(thing_s)
@@ -103,8 +103,9 @@ class Inspector(Tkinter.Tk):
     def loadItems(self, thing_s):
         self.methods.delete(0, self.methods.size())
         self.variables.delete(0, self.variables.size())
+        self.helptext.delete(1.0, 'end')
         exec "thing = %s" % thing_s
-        self.helptext.configure(text = thing.__doc__)
+        self.helptext.insert('end', thing.__doc__)
         for subthing_s in dir(thing):
             exec "subthing = %s.%s" % (thing_s, subthing_s)
             if type(subthing) == types.MethodType:
@@ -118,6 +119,7 @@ class Inspector(Tkinter.Tk):
 
 if __name__ == '__main__':
     class Testing:
+        """ This is the class Testing"""
         var1 = 56
         def __init__(self):
             pass

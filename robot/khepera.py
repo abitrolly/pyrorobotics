@@ -154,9 +154,12 @@ class KheperaRobot(Robot):
         self.x = 0.0
         self.y = 0.0
         self.thr = 0.0
-        self.th = 0.0 
-        self.w0 = self.senseData['position'][0]
-        self.w1 = self.senseData['position'][1]
+        self.th = 0.0
+        try:
+            self.w0 = self.senseData['position'][0]
+            self.w1 = self.senseData['position'][1]
+        else:
+            raise "KheperaConnectionError"
 	self.update() 
         self.inform("Done loading robot.")
 
@@ -360,8 +363,11 @@ class KheperaRobot(Robot):
         http://www.dcs.qmul.ac.uk/~adamb/
         """
         # get wheel positions:
-        w0 = self.senseData['position'][0]
-        w1 = self.senseData['position'][1]
+        try:
+            w0 = self.senseData['position'][0]
+            w1 = self.senseData['position'][1]
+        except:
+            return
         if w0 == self.w0 and w1 == self.w1:
             # no difference to compute
             return
