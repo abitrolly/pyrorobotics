@@ -60,6 +60,9 @@ class Device:
             self.makeWindow()
         self.setup()
 
+    def setup(self):
+        pass
+    
     def getGroupNames(self, pos):
         retval = []
         for key in self.groups:
@@ -96,8 +99,6 @@ class Device:
         else:
             raise TypeError, "Units are set to invalid type"
 
-    def setup(self):
-        pass
     def getVisible(self):
         return self.devData["visible"]
     def setVisible(self, value):
@@ -108,36 +109,26 @@ class Device:
     def setActive(self, value):
         self.devData["active"] = value
         return "Ok"
-
     def startDevice(self):
         self.devData["state"] = "started"
         return self
-
     def stopDevice(self):
         self.devData["state"] = "stopped"
         return "Ok"
-
     def makeWindow(self):
         pass
-
     def updateWindow(self):
         pass
-
     def getDeviceData(self):
         return {}
-
     def getDeviceState(self):
         return self.devData["state"]
-
     def updateDevice(self):
         pass
-
     def postSet(self, keyword):
         pass
-
     def preGet(self, pathList):
         pass
-
     def _set(self, path, value):
         if path[0] in self.devData:
             self.devData[path[0]] = value
