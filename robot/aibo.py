@@ -220,6 +220,7 @@ class AiboRobot(Robot):
         self.setRemoteControl("Walk Remote Control", "on")
         self.setRemoteControl("EStop Remote Control", "on")
         self.setRemoteControl("World State Serializer", "on")
+        self.setRemoteControl("Aibo 3D", "on")
         time.sleep(1) # let the servers get going...
         self.walk_control     = Listener(self.PORT["Walk Remote Control"],
                                          self.host)
@@ -229,6 +230,8 @@ class AiboRobot(Robot):
         #wspids_port     =10032 # world state read pids        
         self.sensor_socket    = Listener(self.PORT["World State Serializer"],
                                          self.host) # sensors
+        self.joint_socket    = Listener(self.PORT["Joint Writer"],
+                                        self.host) # joints
         self.sensor_thread    = ListenerThread(self.sensor_socket, self.readWorldState)
         self.sensor_thread.start()
         #self.pid_socket       = Listener(10032, self.host) # sensors
@@ -236,6 +239,9 @@ class AiboRobot(Robot):
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
         self.devData["builtinDevices"] = [ "ptz", "camera" ]
+        self.setConfig("vision.rawcam_interval", "0")
+        self.setConfig("vision.rle_interval", "0")
+        self.setConfig("vision.worldState_interval", "0")
         self.startDevice("ptz")
         self.startDevice("camera", visible=0)
 
@@ -258,7 +264,7 @@ class AiboRobot(Robot):
         #  any text not beginning with ! - sent to takeInput() of the current control
 
     def setConfig(self, item, state):
-        self.main_control.s.send("!set \"%s=%s\"\n" % (item, state))
+        self.main_control.s.send("!set %s=%s\n" % (item, state))
 
     def setRemoteControl(self, item, state):
         # "Walk Remote Control"
@@ -458,7 +464,7 @@ class AiboRobot(Robot):
         self.walk_control.write( makeControlCommand('r', amount)) 
 
     def translate(self, amount):
-        self.walk_control.write( makeControlCommand('t', amount)) 
+        self.walk_control.write( makeControlCommand('f', amount)) 
 
     def strafe(self, amount):
         # strafe (side-to-side) -1 to 1 :(right to left)
@@ -487,15 +493,31 @@ class AiboRobot(Robot):
         self.walk_control     = Listener(self.PORT["Walk Remote Control"],
                                          self.host) # walk command
 
-    def setPose(self, joint, amt):
-        soc = Listener(self.PORT["Joint Writer"], self.host)
-        time.sleep(1)
-        list = self.devData["sensorRaw"]
-        print "setPose"
-        if joint == "jaw":
-            list[17] = amt
-        soc.write(struct.pack(f,list))
-        print "wrote ", list
+    def setPose(self, joint, amtx, amty=0, amtz =0):
+        l = list(self.devData["positionRaw"])
+        if joint == "mouth":
+            l[17] = amtx
+        elif joint == "tail":
+            l[15] = amtx;
+            l[16] = amty;
+        elif joint == "front left leg":
+            l[0] = amtx #elevate
+            l[1] = amty #roate
+            l[2] = amtz #knee
+        elif joint == "front right leg":
+            l[3] = amtx #elevate
+            l[4] = amty #roate
+            l[5] = amtz #knee
+        elif joint == "back left leg":
+            l[6] = amtx #elevate
+            l[7] = amty #roate
+            l[8] = amtz #knee
+        elif joint == "back right leg":
+            l[9] = amtx #elevate
+            l[10] = amty #roate
+            l[11] = amtz #knee
+        self.joint_socket.write(struct.pack("<18f",*l))
+        
 
 #TODO:
 
