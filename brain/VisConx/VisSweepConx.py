@@ -103,7 +103,8 @@ class SweepGUIBase(VisConxBase.VisConxBase):
             self.updatePlot(self.pCorrectPlot, self.pCorrectData[-1])
         else:
             self.write("Nothing done.")
-        self.activButton.config(state=Tkinter.NORMAL)
+        if self.root:
+            self.activButton.config(state=Tkinter.NORMAL)
 
     #handlers for activations diagram
     def handleActivDiag(self):

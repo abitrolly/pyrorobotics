@@ -332,7 +332,7 @@ class VisConxBase:
 
     #handler to save weights
     def saveAllWeights(self):
-        fileWindow = tkFileDialog.SaveAs(self)
+        fileWindow = tkFileDialog.SaveAs(self.root)
         fileName = fileWindow.show()
 
         try:
