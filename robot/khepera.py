@@ -10,12 +10,24 @@ import math
 import termios
 from time import sleep
 
+class SerialSimulator:
+    def __init__(self):
+        self.last_msg = ''
+        
+    def writeline(self, msg):
+        #if len(msg) > 2:
+        #    print msg
+        self.last_msg = msg
+
+    def readline(self): # 1 = block till we get something
+        return self.last_msg + ',0,0,0,0,0,0,0,0'
+    
 class KheperaRobot(Robot):
     def __init__(self, name = None, simulator = 0): # 0 makes it real
         Robot.__init__(self, name, "khepera") # robot constructor
         self.simulated = simulator
         if simulator == 1:
-            self.sc = "Fix: Make Simulated Connection"
+            self.sc = SerialSimulator()
         else:
             self.sc = SerialConnection("/dev/ttyS1", termios.B38400)
             #self.sc = SerialConnection("/dev/ttyS1", termios.B115200)
