@@ -1,32 +1,25 @@
-"""
-__init__.py file for psom
--------------------------
-daniel sproul
-june 24, 2002
--------------
-psom is a python interface to csom.so, which is itself in turn a low-level
-python interface to the som-pak c library.
-if you don't know what a som is you probably shouldn't be mucking around
-in here just yet
--------------------
-this file implements the following classes:
-	psom
-	vector
-	dataset
-	point
-	activations
-in general use, one will create a psom instance, initialize a training
-session (init_training()), and then map data vectors to it (map() or train()),
-using the returned model vectors to do various things, and also calling
-get_activations() to feed information to an SRN
-------------------------
-all classes have a display() method
-"""
+# daniel sproul, june 24, 2002
+
+# psom is a python interface to csom.so, which is itself in turn a low-level
+# python interface to the som-pak c library.
+
+# this file implements the following classes:
+#		psom
+#		vector
+#		dataset
+#		point
+#		activations
+
+
 
 import csom
-csom.set_globals()
+csom.set_globals()  # neither worry about nor change this
 
 
+<<<<<<< __init__.py
+
+
+=======
 """
 class psom
 ----------
@@ -97,11 +90,29 @@ by get_error() time dependent on the last 'errorwindow' number of
 training samples.  the default is 1, which should just return the error
 associated with the most recent training sample
 """
+>>>>>>> 1.3
 
 class psom:
+	"""
+	data members of interest to a user:
+	self.xdim  (x dimension of map)
+	self.ydim  (y dimension of map)
+	self.dim   (length of vectors)
+	self.topol ('rect' or 'hexa')
+	"""
 	def __init__(self, xdim='unset', ydim='unset', topol='hexa', 
 									neigh='gaussian', alpha_mode='linear', radius_mode='linear',
 									rmin=0.0, rmax=1.0, data='unset', file='unset'):
+		"""
+		to read a som from a .cod file (the same file format as used in som_pak):
+		>>> mysom = psom(file=filename)
+		to create a som with model vectors evenly distributed in the space of
+		a pre-existing data set:
+		>>> mysom = psom(xdim,ydim,data=mydataset)
+		to randomly initialize (this doesn't actually work yet)
+		>>> mysom = psom(xdim,ydim) ...
+		"""
+
 		if(alpha_mode=='inverse_t'):
 			alpha_mode = csom.INVERSE_T
 		else:
@@ -144,6 +155,38 @@ class psom:
 	def init_training(self,alpha_0,radius_0,runlen,errorwindow=1):
 		csom.init_training_session(self.params,alpha_0,radius_0,runlen,
 																	errorwindow)
+		"""
+		a few notes about init_training():
+		   runlen is the number of training samples you expect to use in the
+		current training session.  this affects the rate at which alpha and radius
+		decay.  by default, the decay of these is linear, such that after running
+		runlen samples, alpha is zero and radius is 1.0.  so it is kind of important
+		to set runlen appropriately.  also, both radius and alpha can be set
+		to decay with an inverse time function (alpha_mode='inverse_t'...),
+		which can sometimes be less drastic because then your alpha never
+		actually ends up at zero, even if you exceed the expected runlen number
+		of training samples.  you can also reinitialize a training session
+		whenever you like (currently alpha_mode and radius_mode are set in stone
+		when the psom is created, however)
+ 		  errorwindow is sort of an ad-hoc way of making the error value returned
+		by get_error() time dependent on the last 'errorwindow' number of
+		training samples.  the default is 1, which should just return the error
+		associated with the most recent training sample
+
+		training examples:
+		>>> mysom.init_training(initial_alpha,initial_radius,run_length)
+		then either:
+		>>> mysom.train_from_dataset(mydataset)
+		or:
+		>>> model1 = mysom.train(vec1)
+		>>> model2 = mysom.train(vec2)
+		>>> ...
+		there are straightforward timing functions available if you like that
+		sort of thing.
+		map() acts a lot like train() but will not actually adjust any map
+		weights (equivalent to training with zero alpha)
+		"""
+
 	def timing_start(self):
 		csom.timing_start(self.params)
 	def timing_stop(self):
@@ -181,6 +224,25 @@ class psom:
 
 	def get_activations(self,mode='bubble',radius=1.0,
 																		emin='unset',emax='unset'):
+		"""
+		looking at SRN activation levels:
+		after calling map(), train(), or train_from_dataset(),
+		calling get_activation_levels() returns an activations class instance
+		corresponding to the appropriate activation levels.
+		This can either be done based on simple bubble or gaussian neighborhoods,
+		or (as suggested by doug) by assigning activation weight according to
+		error in mapping to each corresponding model vector.  this can either be
+		done with a dynamically calculated error window, or a user-defined
+		error window.
+		some examples:
+		>>> mysom.train(myvec)
+		>>> myact = mysom.get_activations('bubble',2.0)
+		>>> myact = mysom.get_activations('gaussian',3.0)
+		>>> myact = mysom.get_activations('error')
+		>>> myact = mysom.get_activations('error',emin=0.0,emax=1.0)
+		note that error values are always >= 0.0
+		"""
+
 		if(self.last == 'unset'):
 			raise "get_activations(): som has not yet been mapped to"
 		if(mode == 'gaussian' or mode == 'bubble'):
@@ -213,25 +275,26 @@ class psom:
 
 
 
-"""
-class vector
-------------
-used both for data and model vectors
-get_elts() and get() can be used to access the actual values of the entries
-in the vector.  the point data member should remain 'unset' for data
-vectors, but for model vectors represents its coordinates in the SOM
---------------------------------------
-everything is pretty self-explanatory, except the constructor.
-typically all a user need worry about is doing something like
->>> mylist = [1.0, 2.0, 3.0, ...]
->>> myvec = vector(mylist)
-if you want to use masking or weighting, you can do that too
-the other constructor parameters are primarily for internal use
-"""
 
 class vector:
+	"""
+	used both for data and model vectors
+	get_elts() and get() can be used to access the actual values of the entries
+	in the vector.  the point data member should remain 'unset' for data
+	vectors, but for model vectors represents its coordinates in the SOM
+	"""
+
 	def __init__(self, elts='unset', weight=1, mask='NULL', entry='unset',
 										dim='unset', point='unset'):
+		"""
+		everything is pretty self-explanatory, except the constructor.
+		typically all a user need worry about is doing something like
+		>>> mylist = [1.0, 2.0, 3.0, ...]
+		>>> myvec = vector(mylist)
+		if you want to use masking or weighting, you can do that too
+		the other constructor parameters are primarily for internal use
+		"""
+
 		if(elts != 'unset'):
 			points = list_to_arr(elts, "float")
 			dim = len(elts)
@@ -247,12 +310,10 @@ class vector:
 		points = csom.data_entry_points_get(self.entry)
 		return arr_to_list(points,self.dim)
 	def __getitem__(self, key):
-		return self.get(key)
+		mylist = self.get_elts()
+		return mylist[key]
 	def __len__(self):
 		return len(self.get_elts())
-	def get(self, index):
-		mylist = self.get_elts()
-		return mylist[index]
 	def get_weight(self):
 		return csom.data_entry_weight_get(self.entry)
 	def get_mask(self):
@@ -273,41 +334,36 @@ class vector:
 
 
 
-"""
-class dataset
--------------
-a python front-end to the c library's wacky linked-list data set
-implementation.  can read and write to .dat files (same file format
-as specified in the som_pak documentation)
-keeps a pointer to the current position in the list, so you can
-call next() until the end of the list is reached, at which point you
-need to call rewind().  there is also a get() method, but this will
-interfere with the previous pointer (so if you call get(6) and then
-next(), next() will return the 7th vector in the list)
-addvec() adds a vector to the list, and also causes wacky pointer
-behavior (bad idea to try to traverse the list and add things to it at
-the same time)
---------------------
-ways to use the constructor:
-to read in a data set from a file:
->>> mydataset = dataset(file=filename)
-to build a data set by hand, first initialize it, either by dimension or
-with an initial vector:
->>> mydataset = dataset(dim=4)
-or
->>> mydataset = dataset(initial_vector)
-then just add vectors to it
->>> mydataset.addvec(vec1)
->>> mydataset.addvec(vec2)
-and so on...
----------------------------
-datasets are useful for training a som all in one go, so to speak.
-eventually, expect support for some sort of logging feature, but its
-not here yet...
-"""
-
 class dataset:
+	"""
+	a python front-end to the c library's wacky linked-list data set
+	implementation.  can read and write to .dat files (same file format
+	as specified in the som_pak documentation)
+	keeps a pointer to the current position in the list, so you can
+	call next() until the end of the list is reached, at which point you
+	need to call rewind().  there is also a get() method, but this will
+	interfere with the previous pointer (so if you call get(6) and then
+	next(), next() will return the 7th vector in the list)
+	addvec() adds a vector to the list, and also causes wacky pointer
+	behavior (bad idea to try to traverse the list and add things to it at
+	the same time)
+	"""
+
 	def __init__(self, init_vector='NULL', dim='unset', file='unset'):
+		"""
+		ways to use the constructor:
+		to read in a data set from a file:
+		>>> mydataset = dataset(file=filename)
+		to build a data set by hand, first initialize it, either by dimension or
+		with an initial vector:
+		>>> mydataset = dataset(dim=4)
+		or
+		>>> mydataset = dataset(initial_vector)
+		then just add vectors to it
+		>>> mydataset.addvec(vec1)
+		>>> mydataset.addvec(vec2)
+		"""
+
 		self.p = csom.get_eptr()
 		if(file!='unset'):
 			self.data = csom.open_entries(file)
@@ -320,8 +376,11 @@ class dataset:
 				self.addvec(init_vector)
 			self.dim = dim
 
-	def __del__(self):
-		csom.close_entries(self.data)
+	# this was giving me problems with python2.2's garbage collection
+	# no idea why, but if you are creating a whole lot of datasets
+	# with this commented out you might end up with a memory leak
+	#def __del__(self):
+	#	csom.close_entries(self.data)
 
 	def addvec(self, vec):
 		csom.addto_dataset(self.data, vec.entry)
@@ -357,16 +416,14 @@ class dataset:
 
 
 
-"""
-class activations
------------------
-really just an elaborate float array when you think about it...
-most of the real work is done in psom.get_activations()
-in any case, this class is used to communicate SRN-appropriate activation
-levels of the som after each mapping
-"""
 
 class activations:
+	"""
+	really just an elaborate float array when you think about it...
+	most of the real work is done in psom.get_activations()
+	in any case, this class is used to communicate SRN-appropriate activation
+	levels of the som after each mapping
+	"""
 	def __init__(self, xdim, ydim, levels=[], topol='hexa'):
 		self.xdim=xdim
 		self.ydim=ydim
@@ -376,6 +433,14 @@ class activations:
 				self.levels.append(0.0)
 		self.topol=topol
 
+	def get(self, x, y):
+		index = x + y * self.xdim
+		return levels[index]
+	def __getitem__(self, key):
+		return levels[key]
+	def __len__(self):
+		return len(levels)
+	
 	def display(self):
 		for j in range(0,self.ydim):
 			if(j % 2 == 1 and self.topol=='hexa'):
@@ -387,10 +452,10 @@ class activations:
 
 
 
-"""
-simple x,y coordinate holder
-"""
 class point:
+	"""
+	simple x,y coordinate holder
+	"""
 	def __init__(self, x=0, y=0):
 		self.x = x
 		self.y = y
@@ -405,12 +470,12 @@ class point:
 
 
 
-"""
-functions to convert between python lists and c arrays/pointers
-users should not ever use these functions
-"""
 
 def list_to_arr(mylist,type):
+	"""
+	functions to convert between python lists and c arrays/pointers
+	users should not ever use these functions
+	"""
 	nitems = len(mylist)
 	myarr = csom.ptrcreate(type,0,nitems)
 	i = 0
@@ -420,6 +485,10 @@ def list_to_arr(mylist,type):
 	return myarr
 
 def arr_to_list(myarr,nitems):
+	"""
+	functions to convert between python lists and c arrays/pointers
+	users should not ever use these functions
+	"""
 	mylist = []
 	for i in range(0,nitems):
 		mylist.append(csom.ptrvalue(myarr,i))
@@ -514,37 +583,3 @@ if(__name__ == '__main__'):
 
 	mysom.save_to_file("test3.cod")
 	print "output written to \"test3.cod\""
-	
-
-#	mysom.display()
-
-
-
-
-	#mysom = psom(12,8,data=mydataset)
-
-"""
-	mylist = [1.2, 3.4, 5.6, 7.8, 3.6]
-	myvector = vector(mylist, 4)
-	myvector.display()
-
-	mydataset = dataset(myvector)
-	mydataset.addvec(vector([1.4, 5.3, 2.89, .003, .123]))	
-	mydataset.display()
-	print mydataset.n_vectors()
-
-	myvec = mydataset.rewind()
-	myvec.display()
-	myvec = mydataset.next()
-	myvec.display()
-	myvec = mydataset.get(0)
-	myvec.display()
-
-	mydataset.load_from_file("ex.dat")
-
-	mydata = dataset(file="ex.dat")
-	mydata.display()
-
-	mypoint = point(1,3)
-	mypoint.display()
-"""
