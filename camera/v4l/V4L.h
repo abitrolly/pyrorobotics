@@ -41,14 +41,16 @@ class V4L : public Device
   void swap_rgb24(char *mem, int n); 
   void setRGB(int r, int g, int b);
 
-#ifdef VIDIOC_QUERYCAP
+  /*
+  //#ifdef VIDIOC_QUERYCAP
 
   struct v4l2_capability    grab_cap;
   struct v4l2_format        grab_pix;
   int                       grab_fd, grab_size;
   //unsigned char            *grab_data;
 
-#endif
+//#endif
+*/
 
 #ifdef VIDIOCGCAP
 

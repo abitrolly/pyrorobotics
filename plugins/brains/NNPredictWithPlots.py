@@ -8,7 +8,7 @@ from pyro.brain.conx import *
 from pyro.gui.plot.scatter import *
 from pyro.gui.plot.hinton import *
 
-class predict(Brain):
+class NNPredict(Brain):
    def setup(self):
       """ Create the network. """
       self.net = SRN()
@@ -122,5 +122,5 @@ class predict(Brain):
       self.counter += 1
 
 def INIT(engine):
-   return predict('predict', engine)
+   return NNPredict('NNPredict', engine)
       

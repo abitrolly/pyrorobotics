@@ -49,6 +49,9 @@
   <model:Pioneer2AT>
     <id>robot1</id>
     <xyz>0.0 0.0 0.5</xyz>
+    <model:Pioneer2Sonars>
+      <id>sonars1</id>
+    </model:Pioneer2Sonars>
     <model:SickLMS200>
       <id>laser1</id>
       <xyz>0.15 0 0.20</xyz>

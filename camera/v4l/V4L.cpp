@@ -57,7 +57,7 @@ PyObject *V4L:: updateMMap( )
 
 // Two methods: v4l, or v4l2
 
-#ifdef VIDIOC_QUERYCAP
+#ifdef DUMMY_VIDIOC_QUERYCAP
 
 void V4L::init(void) {
   fprintf(stderr,"Init-ing Video under Querycap-V4L2\n");

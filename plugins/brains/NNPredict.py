@@ -4,10 +4,10 @@
 from pyro.brain import Brain
 from pyro.brain.conx import *
 
-class predict(Brain):
+class NNPredict(Brain):
    def setup(self):
       """ Create the network. """
-      self.sensorCount = self.get('robot', 'range', 'count')
+      self.sensorCount = self.get('robot/range/count')
       self.net = Network()
       self.net.addThreeLayers(self.sensorCount + 2, 5, 2)
       self.net.initialize()
@@ -18,8 +18,8 @@ class predict(Brain):
       self.trans = 0
       self.rotate = 0
       self.counter = 0
-      self.maxvalue = self.get('robot', 'range', 'maxvalue')
-      self.new = map(self.scale, self.get('robot', 'range', 'all', 'value'))
+      self.maxvalue = self.get('robot/range/maxvalue')
+      self.new = map(self.scale, self.get('robot/range/all/value'))
 
    def destroy(self):
       del self.net
@@ -32,8 +32,8 @@ class predict(Brain):
       target_trans  = 1.0
       target_rotate = 0.5
       # left and right and front:
-      left = min(self.get('robot', 'range', 'front-left', 'value'))
-      right = min(self.get('robot', 'range', 'front-right', 'value'))
+      left = min(self.get('robot/range/front-left/value'))
+      right = min(self.get('robot/range/front-right/value'))
       if left < 1.5 or right < 1.5:
          target_trans = 0.5
       elif left < 1.8:
@@ -46,7 +46,7 @@ class predict(Brain):
       target = self.avoid()
 
       old = self.new + [self.trans, self.rotate] #trans and rotate
-      self.new = map(self.scale, self.get('robot', 'range', 'all', 'value'))
+      self.new = map(self.scale, self.get('robot/range/all/value'))
 
       # results
       if self.net.learning:
@@ -65,5 +65,5 @@ class predict(Brain):
       self.counter += 1
 
 def INIT(engine):
-   return predict('predict', engine)
+   return NNPredict('NNPredict', engine)
       
