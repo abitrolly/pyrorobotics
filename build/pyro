@@ -128,6 +128,8 @@ if pyro.startup_check():
         c.put('pyro', 'args', pyroargs)
     c.put('pyro', 'gui', window)
     share.config = c
+    if services == None:
+        services = ""
     eng = Engine(robotfile, brainfile, simulator,
                  pyroargs, c, worldfile, services.split(",") )
     if window == 'GL':
