@@ -4,6 +4,7 @@
 from pyro.brain import Brain
 from pyro.brain.conx import *
 from pyro.gui.plot.scatter import *
+from pyro.gui.plot.hinton import *
 
 class NNBrain(Brain):
    """
@@ -29,6 +30,10 @@ class NNBrain(Brain):
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])
+      self.hidHinton = Hinton(2, title = 'Hidden Layer')
+      self.inHinton = Hinton(self.getRobot().get('range', 'count'),
+                             title = 'Input Layer')
+      self.outHinton = Hinton(2, title = 'Output Layer')
 
    def scale(self, val):
       return (val / self.maxvalue)
@@ -73,6 +78,9 @@ class NNBrain(Brain):
                              rotate * 2 + .5, 1)
       self.hidScat.addPoint( target_trans,
                              target_rotate, 2)
+      self.inHinton.update(self.net.getLayer('input').activation)
+      self.hidHinton.update(self.net.getLayer('hidden').activation)
+      self.outHinton.update(self.net.getLayer('output').activation)
       #print "Move    : trans =", trans, "rotate =", rotate
       self.getRobot().move(trans, rotate)
       self.counter += 1
