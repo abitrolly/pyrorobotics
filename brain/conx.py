@@ -144,6 +144,8 @@ class Layer:
     # modify layer methods
     def setEpsilons(self, value):
         self.epsilon = Numeric.ones(self.size, "f") * value
+    def getEpsilons(self):
+        return self.epsilon
     def setEpsilonAt(self, value, pos):
         self.epsilon[pos] = value
     def getEpsilon(self):
