@@ -83,7 +83,7 @@ class KheperaRobot(Robot):
 	self.senses['ir']['th'] = self.light_th
         # in radians:
         self.senses['ir']['arc'] = lambda self, pos, \
-                                      x = (5 * math.pi / 180) : x
+                                      x = (15 * math.pi / 180) : x
         # Make a copy, for default:
         self.senses['range'] = self.senses['ir']
 
@@ -108,7 +108,7 @@ class KheperaRobot(Robot):
 	self.senses['light']['th'] = self.light_th
         # in radians:
         self.senses['light']['arc'] = lambda self, pos, \
-                                      x = (5 * math.pi / 180) : x
+                                      x = (15 * math.pi / 180) : x
 
         console.log(console.INFO,'khepera sense drivers loaded')
 
