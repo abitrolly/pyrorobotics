@@ -44,15 +44,9 @@ int main(int argc, char** argv){
   Blobdata_init(thedata, bmp);
   printf("Blobdata_init\n");
 
-  out = fopen("blob.pgm", "w");
-  fprintf(out, PGMHEADER_F, thedata->blobmap->width,
-	  thedata->blobmap->height, thedata->nblobs);
-  printf("Wrote header\n");
-  printf("Writing, %d bytes\n", 2*thedata->blobmap->width * thedata->blobmap->height);
-  i = fwrite(thedata->blobmap->data, 2, thedata->blobmap->width * thedata->blobmap->height, out);
-  printf("Wrote data, %d bytes written.\n", i);
-  fclose(out);
- 
+  if (!Bitmap_write_to_pgm(thedata->blobmap, "blob.pgm", thedata->nblobs)){
+    printf("Error");
+  }
   
   Blobdata_del(thedata);
   free(thedata);

@@ -79,6 +79,56 @@ void Bitmap_del(struct bitmap* map){
   free(map->data);
 }
 
+/*
+  Write a bitmap to a pgm file.  Levels is the number of gray levels.
+  If levels is 0, it will defaul to the maximum, 65535.
+  Warning:  if levels is less than 255, every pixel will have to be truncated
+  to one byte from two; this will take much longer. Returns 1 on success
+  and 0 on failure*/
+int Bitmap_write_to_pgm(struct bitmap* map, char* filename, int levels){
+  FILE* out;
+  int max = 0;
+  int i, w;
+  uint8_t temp;
+  
+  out = fopen(filename, "w");
+  if (out == NULL){
+    perror("Bitmap_write_to_pgm: Error opening file for write");
+    return 0;
+  }
+
+  if (levels <= 0 || levels > 65535){
+    //default to the maximum
+    fprintf(out, "P5\n%d %d\n65535\n", map->width, map->height);
+    max = 1;
+  } else{
+    fprintf(out, "P5\n%d %d\n%d\n", map->width, map->height, levels);
+  }
+  if (max || levels > 255){
+    i = fwrite(map->data, 2, map->width * map->height, out);
+    if (i == 0 && map->width * map->height != 0){
+      perror("Bitmap_write_to_pgm: error writing to file");
+      return 0;
+    }
+  } else{
+    //We have to write single-bytes instead of double-bytes
+    for (i = 0; i < map->width * map->height; i++){
+      //This could definately be optimized by doing some pointer math
+      temp = (uint8_t)(map->data[i] & 0xFF);
+      w = fwrite(&temp, 1, 1, out);
+      if (w == 0){
+	perror("Bitmap_write_to_pgm: error writing to file");
+	return 0;
+      }
+    }
+  }
+  fclose(out);
+  return 1;
+}
+  
+    
+  
+
 /* -------------- Blobdata operations ---------------*/
 
 void Blobdata_init(struct blobdata* data, struct bitmap* theBitmap){
@@ -348,11 +398,99 @@ struct bitmap* bitmap_from_pgm(char* filename){
    Given an array of blobdatas, an array of ints, and an int representing the
    length of the previous two arrays (which much be equal), return a struct that looks
    like the player-stage blob struct
+*/
 
+player_blobfinder_data_t* make_player_blob(struct blobdata** blobs,
+						 uint32_t* channels,
+						 int n_channels){
+  player_blobfinder_data_t* data;
+  player_blobfinder_header_elt_t header;
+  player_blobfinder_blob_elt_t blob;
+  struct blob* currblob;
+  int maxn, maxb, i, j, lastj;
 
-struct playerblob* make_player_blob(struct blobdata** blobs, int* channels, int n_channels){
+  data = (player_blobfinder_data_t*)malloc(sizeof(player_blobfinder_data_t));
+  data->width = blobs[0]->width;
+  data->height = blobs[0]->height;
+  
+  maxn = min(n_channels, PLAYER_BLOBFINDER_MAX_CHANNELS);
+  lastj = 0;
+  for (i = 0; i < maxn; i++){
+    header.index = lastj;
+    maxb = min(blobs[i]->nblobs, PLAYER_BLOBFINDER_MAX_BLOBS_PER_CHANNEL);
+    header.num = maxb;
+    data->header[i] = header;
+
+    for (j = 0; j < maxb; j++){
+      currblob = blobs[i]->bloblist[j];
+      blob.color = channels[i];
+      blob.area = (currblob->lr.x - currblob->ul.x) * (currblob->lr.y - currblob->ul.y);
+      blob.x = (uint16_t)currblob->cm_x;
+      blob.y = (uint16_t)currblob->cm_y;
+      blob.left = currblob->ul.x;
+      blob.top = currblob->ul.y;
+      blob.right = currblob->lr.x;
+      blob.bottom = currblob->lr.y;
+      blob.range = 0;
+      data->blobs[lastj+j] = blob;
+    }
+
+    lastj += maxb;
+  }
+  return data;
 }
-*/      
+	
+playerblob_t* make_player_blob_varsize(struct blobdata** blobs,
+				       uint32_t* channels,
+				       int n_channels){
+  playerblob_t* data;
+  player_blobfinder_header_elt_t header;
+  player_blobfinder_blob_elt_t blob;
+  struct blob* currblob;
+  int i, j, lastj, totalblobs;
+
+  data = (playerblob_t*)malloc(sizeof(playerblob_t));
+  data->width = blobs[0]->width;
+  data->height = blobs[0]->height;
+  data->n_channels = n_channels;
+  //Allocate enough space for the array of headers
+  data->header = (player_blobfinder_header_elt_t*)malloc(sizeof(player_blobfinder_header_elt_t)*n_channels);
+  totalblobs = 0;
+  for (i = 0; i < n_channels; i++){
+    totalblobs += blobs[i]->nblobs;
+  }
+  data->blobs = (player_blobfinder_blob_elt_t*)malloc(sizeof(player_blobfinder_blob_elt_t)*totalblobs);
+  
+    
+  lastj = 0;
+  for (i = 0; i < n_channels; i++){
+    header.index = lastj;
+    header.num = blobs[i]->nblobs;
+    data->header[i] = header;
+
+    for (j = 0; j < blobs[i]->nblobs; j++){
+      currblob = blobs[i]->bloblist[j];
+      blob.color = channels[i];
+      blob.area = (currblob->lr.x - currblob->ul.x) * (currblob->lr.y - currblob->ul.y);
+      blob.x = (uint16_t)currblob->cm_x;
+      blob.y = (uint16_t)currblob->cm_y;
+      blob.left = currblob->ul.x;
+      blob.top = currblob->ul.y;
+      blob.right = currblob->lr.x;
+      blob.bottom = currblob->lr.y;
+      blob.range = 0;
+      data->blobs[lastj+j] = blob;
+    }
+
+    lastj += blobs[i]->nblobs;
+  }
+  return data;
+}   
+
+void playerblob_del(playerblob_t* blobs){
+  free(blobs->header);
+  free(blobs->blobs);
+}
 	
 	  
   

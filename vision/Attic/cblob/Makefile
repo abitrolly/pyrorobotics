@@ -4,6 +4,8 @@ OBJS = blob.o hsbrgb.o
 include ../../Makefile.cfg
 include ../../Makefile.src
 
+CFLAGS += -g 
+
 INC = -I ../../camera/v4l/
 
 all:: _blob$(SO) _hsbrgb$(SO)
@@ -29,5 +31,5 @@ blob.o: blob.c blob.h hsbrgb.h
 clean::
 	$(RM) blob$(SO) *module.c _*$(SO) *.o *.pyc 
 
-v4lblobtest: v4lblob.c blob.o hsbrgb.o
-	gcc -I../../camera/v4l/ -o v4lblobtest v4lblobtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
+v4lblobtest: blob.o hsbrgb.o v4lblobtest.c
+	gcc -g -I../../camera/v4l/ -o v4lblobtest v4lblobtest.c blob.o hsbrgb.o ../../camera/v4l/v4lcap.o
