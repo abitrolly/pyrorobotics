@@ -133,6 +133,8 @@ class RAVQ:
         self.recordHistory = 0
         self.history = [] # last inputs to map to each model vector
         self.historySize = 5
+        self.winnerIndexHistory = [] # records the model indicies
+        self.winnerHistory = [] # not implemented yet
         self.tolerance = delta
         self.counters = []
         self.addModels = 1
@@ -201,15 +203,18 @@ class RAVQ:
         # used to limit flat searches of history with getHistory()
         #return self.historySize * len(self.history) 
         return nestedLength(self.history, 2)
-    def getHistory(self, index):
+    def getHistory(self, index, colFirst = 1):
         """
         Index into history as if history were a flat list. Note that
         this method iterates across columns.
         """
-        # index into self.history, index into self.history[i], check this logic?
-        i = index % len(self.history)
-        # here the mod is for the case where the history isn't full yet
-        j = (index / len(self.history)) % len(self.history[i])
+        if colFirst:
+            i = index % len(self.history)
+            # here the mod is for the case where the history isn't full yet
+            j = (index / len(self.history)) % len(self.history[i])
+        else:
+            i = (index / len(self.history)) % len(self.history)
+            j = index % len(self.history[i])
         return self.history[i][j]
     def getWinnerTotalCount(self):
         """
@@ -316,6 +321,11 @@ class RAVQ:
                 self.winnerCount += 1
             else:
                 self.winnerCount = 0
+                if len(self.winnerIndexHistory) < len(self.models):
+                    self.winnerIndexHistory.append(self.newWinnerIndex)
+                else:
+                    self.winnerIndexHistory = self.winnerIndexHistory[1:] + \
+                                         [self.newWinnerIndex]
             self.winner = self.models[self.newWinnerIndex]
             self.counters[self.newWinnerIndex] += 1
             self.totalCount += 1
