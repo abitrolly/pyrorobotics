@@ -30,23 +30,25 @@ class PlayerService(Service):
 
     def checkService(self):
         if self.dev == 0:
-            raise ServiceError, "Service '%s' not available" % self.name
+            print "Service '%s' not available" % self.name
+            return 0
+        return 1
 
     def stopService(self):
-        self.checkService()
-        self.dev.stop(self.name)
-        self.dev.__dict__[self.name] = {}
+        if self.checkService():
+            self.dev.stop(self.name)
+            self.dev.__dict__[self.name] = {}
 
     def getServiceData(self, pos = 0):
-        self.checkService()
-        return self.dev.__dict__[self.name][pos]
+        if self.checkService():
+            return self.dev.__dict__[self.name][pos]
 
     def getServiceState(self):
-        self.checkService()
-        if self.dev.__dict__[self.name] != {}:
-            return "started"
-        else:
-            return "stopped"
+        if self.checkService():
+            if self.dev.__dict__[self.name] != {}:
+                return "started"
+            else:
+                return "stopped"
 
     def getPose(self):
         function = self.dev.__class__.__dict__[ "get_%s_pose" % self.name]
