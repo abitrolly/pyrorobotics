@@ -534,3 +534,174 @@ class Blobdata:
          print "Blob", n, ":"
          self.bloblist[n].display()            
          print ""
+
+if __name__ == '__main__':
+   from os import getenv
+   import sys
+   bitmap = Bitmap(20, 15)
+   bitmap.reset([1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 
+                 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+                 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+   print "Do you want to run test 1: create bitmap, blobify, and display results? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      bitmap.display()
+      blob = bitmap.blobify()
+      blob.display()
+      myblobdata = Blobdata(bitmap)
+      myblobdata.sort("area")
+      myblobdata.display()
+      print "Done!"
+   else:
+      print "skipping..."
+   print "Do you want to run test 2: create image from file, save it back out? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = PyroImage(0, 0)
+      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+      image.saveToFile("test.ppm")
+      print "Done! To see output, use 'xv test.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 3: create a grayscale image, save to file? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image.grayScale()
+      image.saveToFile("testgray.ppm")
+      #image.display()
+      print "Done! To see output, use 'xv testgray.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 4: convert PyroImage to PIL image, and display it using xv? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      try:
+         image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+         import PIL.PpmImagePlugin
+         from struct import *
+         c = ''
+         for x in range(len(image.data)):
+            c += pack('h', image.data[x] * 255.0)[0]
+         i = PIL.PpmImagePlugin.Image.fromstring('RGB', (image.width, image.height),c)
+         if getenv('DISPLAY'): i.show()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have PIL installed"
+   else:
+      print "skipping..."
+   print "Do you want to run test 5: convert Bitmap to PIL image, and display it using xv? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      try:
+         import PIL.PpmImagePlugin
+         from struct import *
+         c = ''
+         for x in range(len(bitmap.data)):
+            c += pack('h', bitmap.data[x] * 255.0)[0]
+         i = PIL.PpmImagePlugin.Image.fromstring('L', (bitmap.width, bitmap.height),c)
+         if getenv('DISPLAY'): i.show()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have PIL installed"
+   else:
+      print "skipping..."
+   print "Do you want to run test 6: create a TK window, and display PPM from file or PyroImage? ",
+   if getenv('DISPLAY') and sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      try:
+         from Tkinter import *
+         import Image, ImageTk
+         class UI(Label):
+            def __init__(self, master, im):
+               if im.mode == "1":
+                  # bitmap image
+                  self.image = ImageTk.BitmapImage(im, foreground="white")
+                  Label.__init__(self, master, image=self.image, bg="black", bd=0)
+               else:
+                  # photo image
+                  self.image = ImageTk.PhotoImage(im)
+                  Label.__init__(self, master, image=self.image, bd=0)
+         root = Tk()
+         filename = 'test.ppm'
+         root.title(filename)
+         #im = Image.open(filename)
+         im = i
+         UI(root, im).pack()
+         root.mainloop()
+         print "Done!"
+      except:
+         print "Failed! Probably you don't have Tkinter or ImageTk installed"
+   else:
+      print "skipping..."
+   print "Do you want to run test 7: create a camera view, and display 10 frames in ASCII? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = Camera()
+      for x in range(10):
+         image.update()
+         image.display()
+      print "Done!"
+   else:
+      print "skipping..."
+   print "Do you want to run test 8: create a histogram of the image? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = Camera()
+      image.update()
+      histogram = image.histogram(15, 20)
+      histogram.display()
+      #for x in range(99):
+      #   image.update()
+      #   histogram = image.histogram(15, 20, histogram)
+      #   histogram.display()
+      print "Done!"
+   else:
+      print "skipping..."
+   print "Do you want to run test 9: create a filter bitmap of an image? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      image = PyroImage()
+      image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
+      filter = image.filter(.65, .35, .22, .01) # r, g, b, threshold
+      filter.saveToFile("filter.ppm")
+      blob = filter.blobify()
+      blob.display()
+      print "Done! View filter bitmap with 'xv filter.ppm'"
+   else:
+      print "skipping..."
+   print "Do you want to run test 10: find motion in 100 frames? ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      camera = Camera()
+      camera.update()
+      for x in range(100):
+         camera.update(1)
+         camera.motion.display()
+         print "avg color of motion:", camera.motion.avgColor(camera)
+      print "Done!"
+   else:
+      print "skipping..."
+   print "Do you want to run test 11: find edges in bitmap ",
+   if sys.stdin.readline().lower()[0] == 'y':
+      print "Running..."
+      bitmap.display()
+      mask = bitmap.maskify()
+      print "Here is your final image"
+      bitmap.display()
+   else:
+      print "skipping..."
+
+
+   print "All done!"
