@@ -69,7 +69,7 @@ class KheperaRobot(Robot):
 	# location of sensors' hits:
 	self.senses['ir']['x'] = self.getIRXCoord
 	self.senses['ir']['y'] = self.getIRYCoord
-	self.senses['ir']['z'] = lambda self, pos: 0.25
+	self.senses['ir']['z'] = lambda self, pos: 0.03
 	self.senses['ir']['value'] = self.getIRRange
         self.senses['ir']['all'] = self.getIRRangeAll
         self.senses['ir']['maxvalue'] = self.getIRMaxRange
@@ -79,7 +79,7 @@ class KheperaRobot(Robot):
 	# location of origin of sensors:
         self.senses['ir']['ox'] = self.light_ox
 	self.senses['ir']['oy'] = self.light_oy
-	self.senses['ir']['oz'] = lambda self, pos: 0.25 # meters
+	self.senses['ir']['oz'] = lambda self, pos: 0.03 # meters
 	self.senses['ir']['th'] = self.light_th
         # in radians:
         self.senses['ir']['arc'] = lambda self, pos, \
@@ -97,14 +97,14 @@ class KheperaRobot(Robot):
         # location of sensors' hits:
         self.senses['light']['x'] = self.getIRXCoord
 	self.senses['light']['y'] = self.getIRYCoord
-	self.senses['light']['z'] = lambda self, pos: 0.25
+	self.senses['light']['z'] = lambda self, pos: 0.03
 	self.senses['light']['value'] = self.getLightRange
 	self.senses['light']['flag'] = self.getIRFlag
 
 	# location of origin of sensors:
         self.senses['light']['ox'] = self.light_ox
 	self.senses['light']['oy'] = self.light_oy
-	self.senses['light']['oz'] = lambda self, pos: 0.25 # meters
+	self.senses['light']['oz'] = lambda self, pos: 0.03 # meters
 	self.senses['light']['th'] = self.light_th
         # in radians:
         self.senses['light']['arc'] = lambda self, pos, \
@@ -139,7 +139,7 @@ class KheperaRobot(Robot):
         #renderer.xformXlate((self.get('robot', 'x'), \
         #                     self.get('robot','y'), \
         #                     self.get('robot','z')))
-        renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
+        #renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
 
         renderer.xformXlate(( 0, 0, .09))
         renderer.torus(.12, .12, 12, 24)
@@ -162,7 +162,7 @@ class KheperaRobot(Robot):
 
         # IR
         renderer.xformPush()
-        renderer.color((0, 0, .7))
+        renderer.color((0.7, 0, 0))
         for i in range(self.get('ir', 'count')):
             y1, x1, z1 = -self.get('ir', 'x', i), \
                          -self.get('ir', 'y', i), \
@@ -170,7 +170,7 @@ class KheperaRobot(Robot):
             y2, x2, z2 = -self.get('ir', 'ox', i), \
                          -self.get('ir', 'oy', i), \
                          self.get('ir', 'oz', i)
-            #x2, y2, z2 = 0, 0, 0
+            #x2, y2, z2 = 0, 0, z1
             arc    = self.get('ir', 'arc', i) # in radians
             renderer.ray((x1, y1, z1), (x2, y2, z2), arc)
 
@@ -178,6 +178,77 @@ class KheperaRobot(Robot):
 
         # end of robot
         renderer.xformPop()
+
+    def getIRXCoord(self, dev, pos):
+        # convert to x,y relative to robot
+        dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
+        angle = (self.light_thd(dev, pos)  - 90.0) / 180.0 * math.pi
+        return dist * math.cos(angle)
+        
+
+    def getIRYCoord(self, dev, pos):
+        # convert to x,y relative to robot
+        dist = self.rawToUnits(dev, self.senseData['ir'][pos], 'ir', 'METERS')
+        angle = (self.light_thd(dev, pos) - 90.0) / 180.0 * math.pi
+        return dist * math.sin(angle)
+    
+    def light_ox(self, dev, pos):
+        # in mm
+        if pos == 0:
+            retval = -30.0
+        elif pos == 1:
+            retval = -25.0
+        elif pos == 2:
+            retval = -10.0
+        elif pos == 3:
+            retval = 10.0 
+        elif pos == 4:
+            retval = 25.0
+        elif pos == 5:
+            retval = 30.0
+        elif pos == 6:
+            retval = 10.0
+        elif pos == 7:
+            retval = -10.0
+        return self.mmToUnits(retval, 'METERS')
+
+    def light_oy(self, dev, pos):
+        # in mm
+        if pos == 0:
+            retval = -10.0
+        elif pos == 1:
+            retval = -20.0
+        elif pos == 2:
+            retval = -30.0
+        elif pos == 3:
+            retval = -30.0 
+        elif pos == 4:
+            retval = -20.0
+        elif pos == 5:
+            retval = -10.0
+        elif pos == 6:
+            retval = 30.0
+        elif pos == 7:
+            retval = 30.0
+        return self.mmToUnits(retval, 'METERS')
+
+    def light_thd(self, dev, pos):
+        if pos == 0:
+            return -90.0
+        elif pos == 1:
+            return -45.0
+        elif pos == 2:
+            return 0.0
+        elif pos == 3:
+            return 0.0 
+        elif pos == 4:
+            return 45.0
+        elif pos == 5:
+            return 90.0
+        elif pos == 6:
+            return 180.0
+        elif pos == 7:
+            return 180.0
 
     def getOptions(self): # overload 
         pass
@@ -245,65 +316,6 @@ class KheperaRobot(Robot):
     def getThr(self, dev):
         return 0
     
-    def getIRXCoord(self, dev, pos):
-        return 0
-
-    def light_oy(self, dev, pos):
-        # in mm
-        if pos == 0:
-            return 10.0
-        elif pos == 1:
-            return 20.0
-        elif pos == 2:
-            return 30.0
-        elif pos == 3:
-            return 30.0 
-        elif pos == 4:
-            return 20.0
-        elif pos == 5:
-            return 10.0
-        elif pos == 6:
-            return -30.0
-        elif pos == 7:
-            return -30.0
-
-    def light_ox(self, dev, pos):
-        # in mm
-        if pos == 0:
-            return 30.0
-        elif pos == 1:
-            return 25.0
-        elif pos == 2:
-            return 10.0
-        elif pos == 3:
-            return -10.0 
-        elif pos == 4:
-            return -25.0
-        elif pos == 5:
-            return -30.0
-        elif pos == 6:
-            return -10.0
-        elif pos == 7:
-            return 10.0
-
-    def light_thd(self, dev, pos):
-        if pos == 0:
-            return 90.0
-        elif pos == 1:
-            return 45.0
-        elif pos == 2:
-            return 0.0
-        elif pos == 3:
-            return 0.0 
-        elif pos == 4:
-            return -45.0
-        elif pos == 5:
-            return -90.0
-        elif pos == 6:
-            return -180.0
-        elif pos == 7:
-            return 180.0
-
     def getIRMaxRange(self, dev):
         return self.rawToUnits(dev, 60.0, 'ir')
 
@@ -316,7 +328,19 @@ class KheperaRobot(Robot):
     def getLightMaxRange(self, dev):
         return self.rawToUnits(dev, 200.0, 'light')
 
-    def rawToUnits(self, dev, raw, name):
+    def mmToUnits(self, mm, units):
+        if units == 'MM':
+            return mm
+        elif units == 'CM':
+            return mm / 10.0
+        elif units == 'METERS':
+            return mm / 1000.0
+        elif units == 'ROBOTS':
+            return mm / 60.0
+        
+    def rawToUnits(self, dev, raw, name, units = None):
+        if units == None:
+            units = self.senses[name]['units'](dev)
         if name == 'ir':
             maxvalue = 60.0
             mm = min(max(((1023.0 - raw) / 1023.0) * maxvalue, 0.0), maxvalue)
@@ -325,17 +349,17 @@ class KheperaRobot(Robot):
             mm = min(max((raw / 511.0) * maxvalue, 0.0), maxvalue)
         else:
             raise 'InvalidType', "Type is invalid"
-        if self.senses[name]['units'](dev) == "ROBOTS":
+        if units == "ROBOTS":
             return mm / 55.0 # khepera is 55mm diameter
-        elif self.senses[name]['units'](dev) == "MM":
+        elif units == "MM":
             return mm
-        elif self.senses[name]['units'](dev) == "RAW":
+        elif units == "RAW":
             return raw 
-        elif self.senses[name]['units'](dev) == "CM":
+        elif units == "CM":
             return mm / 10.0 # cm
-        elif self.senses[name]['units'](dev) == "METERS":
+        elif units == "METERS":
             return mm / 100.0 # meters
-        elif self.senses[name]['units'](dev) == "SCALED":
+        elif units == "SCALED":
             return mm / maxvalue
         else:
             raise 'InvalidType', "Units are set to invalid type"
@@ -355,9 +379,6 @@ class KheperaRobot(Robot):
     def getIRFlag(self, dev, pos):
         return 0
 
-    def getIRYCoord(self, dev, pos):
-        return 0
-    
     def light_th(self, dev, pos):
         return self.light_thd(dev, pos) / 180.0 * math.pi
     
