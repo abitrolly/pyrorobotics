@@ -106,7 +106,7 @@ class RAVQ:
         self.tolerance = delta
         self.counters = []
         self.addModels = 1
-        self.newWinner = 0
+        self.winnerCount = 0
 
     # update the RAVQ
     def input(self, vec):
@@ -121,7 +121,12 @@ class RAVQ:
 
     # attribute methods
     def getNewWinner(self):
-        return self.newWinner
+        if self.winnerCount > 0:
+            return 0
+        else:
+            return 1
+    def getWinnerCount(self):
+        return self.winnerCount
     def setVerbosity(self, value):
         self.verbosity = value
     def setHistory(self, value):
@@ -185,9 +190,9 @@ class RAVQ:
             self.oldWinnerIndex= self.winnerIndex
             self.winnerIndex = Numeric.argmin(min)
             if self.oldWinnerIndex == self.winnerIndex:
-                self.newWinner = 0
+                self.winnerCount = 0
             else:
-                self.newWinner = 1
+                self.winnerCount += 1
             self.winner = self.models[self.winnerIndex]
             self.counters[self.winnerIndex] += 1
     def updateHistory(self):
