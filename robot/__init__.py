@@ -55,7 +55,7 @@ class Robot (Drawable):
     def disconnect(self):
         console.log(console.WARNING, "need to override DISCONNECT in robot")
 
-    def localize(self):
+    def localize(self, x = 0, y = 0, th = 0):
         console.log(console.WARNING, "need to override LOCALIZE in robot")
 
     def load_drivers(self): # call this after init!
