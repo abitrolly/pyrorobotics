@@ -94,6 +94,7 @@ class VisConxBase:
         self.root = Tkinter.Tk()
         self.root.title("VisConx")
         self.root.resizable(0,0)
+        self.root.protocol("WM_DELETE_WINDOW", handleWindowClose)
         
         self.visualFrame = Tkinter.Frame(self.root)
         Tkinter.Label(self.visualFrame, text="Visualization Tools:", font=("Arial", 14, "bold")).grid(row=0, col=0, columnspan=2, sticky=Tkinter.W)
@@ -333,3 +334,12 @@ class VisConxBase:
         self.refreshHintonListBox()
         self.refreshArchDiag()
         self.refreshActivDiag()
+
+    def handleWindowClose(self):
+        self.root.destroy()
+        self.activDiag = None
+        self.hintonDiags = {}
+        self.RMSPlot = None
+        self.TSSPlot = None
+        self.pCorrectPlot = None
+        self.archDiag = None
