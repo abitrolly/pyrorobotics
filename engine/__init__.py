@@ -60,6 +60,7 @@ class Engine(drawable.Drawable):
          os.system(os.getenv('PYRO') + '/plugins/simulators/' + file + " &")
       else:
          raise 'Simulator file not found: ' + file
+      console.log(console.INFO,'Loaded ' + file)
 
    def loadRobot(self,file):
       import os
@@ -76,6 +77,7 @@ class Engine(drawable.Drawable):
                                       '/plugins/robots/' + file)
       else:
          raise 'Robot file not found: ' + file
+      console.log(console.INFO,'Loaded ' + file)
       self.append(self.robot)
 
    def loadBrain(self,file):
@@ -95,6 +97,7 @@ class Engine(drawable.Drawable):
                                       '/plugins/brains/' + file, self.robot)
       else:
          raise 'File not found: ' + file
+      console.log(console.INFO,'Loaded ' + file)
       # FIX: currently, brain is not a drawable
       #self.append(self.brain)
 
