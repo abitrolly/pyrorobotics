@@ -182,14 +182,26 @@ class GPGene(Gene):
         """
         Depending on the mutationRate, will mutate particular terminal.
         """
+        #if self.genotype.leaf():
+        #    total_points = 1
+        #else:
+        #    total_points = 1 # count self
+        #    total_points += reduce(operator.add, self.genotype.internals, 0)
+        #    total_points += reduce(operator.add, self.genotype.externals, 0)
         if self.genotype.leaf():
-            terminal_points = 1
+            total_points = 1
         else:
-            terminal_points = reduce(operator.add, self.genotype.externals, 0)
-        rand = int(random.random() * terminal_points)
-        subtree = self.genotype.getTerminalTree(rand) # return Tree
-        temp = GPGene( **self.args)
-        self.replaceTree(subtree, temp.genotype)
+            total_points = reduce(operator.add, self.genotype.externals, 0)
+        for i in range(total_points): # WHY IS THIS SO BAD?
+            if flip(mutationRate):
+                if self.genotype.leaf():
+                    terminal_points = 1
+                else:
+                    terminal_points = reduce(operator.add, self.genotype.externals, 0)
+                rand = int(random.random() * terminal_points)
+                subtree = self.genotype.getTerminalTree(rand) # return Tree
+                temp = GPGene( **self.args)
+                self.replaceTree(subtree, temp.genotype)
         self.genotype.resetCounts()
     def replaceTree(self, subtree, temp):
         subtree.op = temp.op
@@ -238,6 +250,7 @@ if __name__ == '__main__':
         def __init__(self, cnt, **args):
             GA.__init__(self, Population( cnt, GPGene, bias =.6, 
                                           elitePercent = .1, verbose = 1),
+                        maxGeneration = 100,
                         verbose = 1)
     
         def fitnessFunction(self, pos):
