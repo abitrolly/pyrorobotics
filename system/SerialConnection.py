@@ -37,7 +37,7 @@ class SerialConnection:
         self.mCoordinate = Event()
         self.mCoordinate.set()
         # Maximal Timeout
-        self.mMaxTime = 5
+        self.mMaxTime = 5 # was 5
 
         self.mIOmutex = Lock()
 
@@ -138,6 +138,7 @@ class SerialConnection:
         self.mIOmutex.acquire()
         if (not self.mCoordinate.isSet()):
             # We got a time out
+            print "sc: timeout"
             self.mIOmutex.release()
             raise TimeOut()
 
@@ -204,11 +205,13 @@ class SerialConnection:
         vPuffer = ""
         while 1:
             # Wait for data
+            print "cs: wait on read"
             (vIn, vOut, vExt) = select.select([self.mSerial_nr],  
                                               [],
                                               [], 0.01)
             # Check for timeout
             if (len(vIn) == 0):
+                print "sc: read timeout"
                 break
             # We got data -> Lock serial IO
             self.mIOmutex.acquire()
@@ -221,6 +224,7 @@ class SerialConnection:
         # If we send a query from the GUI this is the answer if the
         # protocal is handled correctly.
         # Thus, a new send is allowed
+        print "cs: got message:", vPuffer
         self.mCoordinate.set()
 
         # Return string 

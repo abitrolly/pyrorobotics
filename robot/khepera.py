@@ -3,10 +3,11 @@
 from pyro.system.share import config
 from pyro.robot import *
 from pyro.robot.device import *
-from pyro.system.SerialConnection import *
+#from pyro.system.SerialConnection import *
+from pyro.system.serial import *
 import pyro.robot.driver as driver
 import pyro.gui.console as console
-import string, array, math, termios
+import string, array, math #, termios
 from time import sleep
 from pyro.simulators.khepera.CNTRL import _ksim as ksim
 
@@ -179,7 +180,11 @@ class SerialSimulator:
 		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
-        return self.last_msg #+ ',0,0,0,0,0,0,0,0'
+        return self.last_msg 
+
+    def readlines(self):
+        return [self.last_msg] 
+        
     
 class KheperaRobot(Robot):
     def __init__(self,
@@ -189,6 +194,7 @@ class KheperaRobot(Robot):
                  subtype = "Khepera"):
         # simulator = 0 makes it real
         Robot.__init__(self) # robot constructor
+        self.debug = 0
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"
@@ -203,7 +209,7 @@ class KheperaRobot(Robot):
                 if port == None:
                     port = "/dev/ttyS1"
                 if rate == None:
-                    rate = termios.B38400
+                    rate = 38400
             else:
                 if port == None:
                     try:
@@ -213,9 +219,12 @@ class KheperaRobot(Robot):
                 if port == None:
                     port = "/dev/ttyUB0"
                 if rate == None:
-                    rate = termios.B115200
+                    rate = 115200
             print "K-Team opening port", port, "..."
-            self.sc = SerialConnection(port, rate)
+            #self.sc = SerialConnection(port, rate)
+            self.sc = Serial(port, baudrate=rate)
+            self.sc.setTimeout(0)
+            self.sc.readlines() # to clear out the line
         self.stallTolerance = 0.25
         self.stallHistoryPos = 0
         self.stallHistorySize = 5
@@ -303,7 +312,7 @@ class KheperaRobot(Robot):
             try:
                 self.sc.writeline(msg, self.newline)
                 retval = self.sc.readline() # 1 = block till we get something
-                #print retval
+                if self.debug: print ("sendMsg loop #%d:" % tries), retval
                 if retval[0].upper() == msg[0]:
                     done = 1
                 else:
@@ -311,17 +320,17 @@ class KheperaRobot(Robot):
             except:
                 tries += 1
         if done == 0:
-            #print "khepera serial read/write error..."
+            print "K-Team serial read/write error..."
             self.senseData[data] = array.array(type, [0] * 20)
             return
         if data:
             lines = string.split(retval, "\r\n")
             for line in lines:
                 if not line == '':
-                    # print "processing line:", line
+                    #print "processing line:", line
                     irs = string.split(line, ",")
                     irs = irs[1:]
-                    #print "RECEIVE data:", data, retval
+                    if self.debug: print "RECEIVE data:", data, retval
                     try:
                         self.senseData[data] = array.array(type, map(int, irs))
                     except:

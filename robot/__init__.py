@@ -517,7 +517,7 @@ class Robot:
     def getSupportedDevices(self):
         return self.devData["builtinDevices"]
 
-    def hasADeviceOfType(self, dtype):
+    def hasA(self, dtype):
         for dev in self.device:
             if self.device[dev].devData["type"] == dtype:
                 return dev
