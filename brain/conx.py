@@ -226,11 +226,17 @@ class Layer:
     # used so pickle will work
     def __getstate__(self):
         odict = self.__dict__.copy() 
-        del odict['_logPtr']             
+        try:
+            del odict['_logPtr']
+        except:
+            pass
         return odict
     def __setstate__(self,dict):
-        self._logPtr = open(dict['logFile'], 'a') 
-        self.__dict__.update(dict)
+        try:
+            self._logPtr = open(dict['logFile'], 'a') 
+            self.__dict__.update(dict)
+        except:
+            pass
         
     # log methods
     def setLog(self, fileName):

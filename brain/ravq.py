@@ -187,12 +187,17 @@ class RAVQ:
     # used so pickle will work
     def __getstate__(self):
         odict = self.__dict__.copy() 
-        del odict['log']             
+        try:
+            del odict['log']
+        except:
+            pass
         return odict
     def __setstate__(self,dict):
-        self.log = open(dict['logName'], 'a') 
-        self.__dict__.update(dict)            
-
+        try:
+            self.log = open(dict['logName'], 'a') 
+            self.__dict__.update(dict)            
+        except:
+            pass
     
     def logHistory(self, labels = 1, tag = 'None'):
         """
