@@ -21,10 +21,14 @@ include Makefile.src
 
 tar: pyro-$(PYRO_VERSION).tgz
 
+config: 
+	python configure.py
+	make
+
 pyro-$(PYRO_VERSION).tgz: Makefile
 	mkdir tars || true
 	mv *.tgz tars/ || true
-	make clean; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude CVS --exclude tars --exclude test --exclude examples/som --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
+	make cleanall; cd ..; tar cfz pyro-$(PYRO_VERSION).tgz pyro --exclude CVS --exclude tars --exclude test --exclude examples/som --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc; mv pyro-$(PYRO_VERSION).tgz pyro; cd -; mv *.tgz tars
 
 Makefile.cfg:
 	python configure.py
@@ -38,5 +42,6 @@ bin/pyro: Makefile.src build/pyro Makefile.cfg
 	chmod a+x bin/pyro
 
 cleanall::
+	$(RM) Makefile.cfg
 	rm -rf `find . | grep \.pyc$$`
 	rm -rf `find . | grep ~$$`
