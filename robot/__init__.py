@@ -447,7 +447,11 @@ class Robot:
         raise AttributeError, "too many devices of type '%s'" % devname
 
     def startDevice(self, item):
-        return self.startDevices(item)[0]
+        dev = self.startDevices(item)
+        if len(dev) != 1:
+            raise AttributeError, ("unknown device: '%s'" % item)
+        else:
+            return dev[0]
         
     def startDevices(self, item):
         """ Load devices: dict, list, builtin name, or filename """
