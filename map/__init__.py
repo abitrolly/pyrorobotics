@@ -21,19 +21,45 @@ class Map:
         self.label = [['' for col in range(self.cols)]
                       for row in range(self.rows)]
 
-    def setGridLocation(self, x, y, value, label = None):
-        xpos = int((self.originMM[0] + x) / self.colScaleMM)
-        ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+    def setGridLocation(self, x, y, value, label = None, absolute = 0):
+        if( absolute == 0 ):
+            xpos = int((self.originMM[0] + x) / self.colScaleMM)
+            ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+        else:
+            xpos = x
+            ypos = y
+
         if self.inRange(ypos, xpos):
             # if hit was already detected, leave it alone!
-            if self.grid[ypos][xpos] != 1.0:
-                self.grid[ypos][xpos] = value
-                if label != None:
-                    self.label[ypos][xpos] = "%d" % label
+            ##if self.grid[ypos][xpos] != 1.0:
+            self.grid[ypos][xpos] = value
+            if label != None:
+                self.label[ypos][xpos] = "%d" % label
+        else:
+            print "INVALID GRID LOCATION"
 
-    def addGridLocation(self, x, y, value, label = None):
-        xpos = int((self.originMM[0] + x) / self.colScaleMM)
-        ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+    def getGridLocation(self, x, y, absolute = 0 ):
+        if( absolute == 0 ):
+            xpos = int((self.originMM[0] + x) / self.colScaleMM)
+            ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+        else:
+            xpos = x
+            ypos = y
+
+        if self.inRange(ypos, xpos):
+            return( self.grid[ypos][xpos] )
+        else:
+            print "INVALID GRID LOCATION"
+            return( -1 )
+        
+    def addGridLocation(self, x, y, value, label = None, absolute = 0 ):
+        if( absolute == 0 ):
+            xpos = int((self.originMM[0] + x) / self.colScaleMM)
+            ypos = int((self.originMM[1] - y) / self.rowScaleMM)
+        else:
+            xpos = x
+            ypos = y
+
         if self.inRange(ypos, xpos):
             self.grid[ypos][xpos] += value
             if label != None:
