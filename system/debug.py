@@ -7,11 +7,21 @@ import signal
 from traceback import print_exc as print_exc
 from traceback import extract_stack
 
+def colorize(txt, col="red"):
+    """Return colorized text"""
+    cols = { 'red':1, 'green':2, 'yellow':3, 'blue':4}
+    initcode = '\033[;3'
+    endcode  = '\033[0m'
+    if type(col) == type(1): 
+        return initcode + str(col) + 'm' + txt + endcode
+    try: return initcode + str(cols[col]) + 'm' + txt + endcode
+    except: return txt
+
 class PyroDebugger(code.InteractiveConsole):
     def __init__(self, filename="<console>",
                  histfile=os.path.expanduser("~/.pyrohist"),
                  frame=None):
-        code.InteractiveConsole.__init__(self, locals=frame.f_locals)
+        code.InteractiveConsole.__init__(self)
         self.init_history(histfile)
         self.stack = extract_stack()
         self.frames = [frame]
@@ -25,8 +35,9 @@ class PyroDebugger(code.InteractiveConsole):
         self.frames.reverse()
         self.frames.append(None)
         self.frames.append(None)
-        self.currentPos = -3
-        self.lastPos = -3
+        self.currentPos = -len(self.frames) + 1
+        self.lastPos = self.currentPos
+        self.locals = self.frames[self.currentPos].f_locals
         self.initDisplay = 0
 
     def displayTrace(self):
@@ -46,13 +57,16 @@ class PyroDebugger(code.InteractiveConsole):
             else:
                 pointer = " "
             nameFormat = ("%-" + ("%d" % (maxFuncName + 2))) + "s"
-            print (" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es)
+            if pointer == ">":
+                print colorize((" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es),"green")
+            else:
+                print (" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es)
             c += 1
         print
 
     def displayHelp(self):
-        print "Commands: up, down, top, bot, help, quit, edit; <CONTROL+D> to continue"
-        print "          or any Python expression.  Try: dir() for current stack vars."
+        print "Commands:", colorize("up, down, top, bottom, help, quit, a frame number, edit,")
+        print colorize("          or any Python expression. <CONTROL+D> to continue.")
 
     def init_history(self, histfile):
         readline.parse_and_bind("tab: complete")
@@ -84,11 +98,16 @@ class PyroDebugger(code.InteractiveConsole):
                 self.currentPos = -len(self.frames) + 1
             elif line == "bot":
                 self.currentPos = -3
+            # ---------------- check and return
             if self.currentPos >= -len(self.frames) + 1 and \
                self.currentPos <= -3:
                 self.locals = self.frames[self.currentPos].f_locals
             else:
                 self.currentPos = self.lastPos
+            return
+        if line in map(str, range(len(self.stack))):
+            self.currentPos = int(line) - len(self.stack) - 1
+            self.locals = self.frames[self.currentPos].f_locals
             return
         if line == "quit":
             sys.exit(1)
@@ -106,7 +125,7 @@ class PyroDebugger(code.InteractiveConsole):
 def handler(signum, frame):
     console = PyroDebugger(frame=frame)
     console.interact()
-    print "\nContinuing..."
+    print colorize("\nContinuing...", "yellow")
 signal.signal(signal.SIGTSTP, handler) # suspend
 
-print "PyroDebugger is installed. Press <CONTROL+Z> to activate."
+print colorize("PyroDebugger is installed. Press <CONTROL+Z> to activate.")
