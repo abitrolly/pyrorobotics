@@ -1,7 +1,8 @@
 
 ifeq ($(PYRO),)
-# Give it some default
-PYRO=/usr/local/pyro
+$(warning You do not have a PYRO environment variable set.)
+$(warning Try:    export PYRO=/usr/local/pyro)
+$(error )
 endif
 
 include $(PYRO)/Makefile.cfg
