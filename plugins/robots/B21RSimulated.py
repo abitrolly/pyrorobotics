@@ -10,7 +10,19 @@ class B21RSimulated(PlayerRobot):
         self.dev.start('ptz')
         self.dev.start('laser')
         self.laserNoise = 0.01
-        
+
+        self.sensorSet = {'all': range(180),
+                          'front' : range(45, 135), 
+                          'front-left' : range(115, 165), 
+                          'front-right' :range (22,70),
+                          'front-all' : range(45, 135),
+                          'left' : range(135,180),
+                          'right' : range(0,45), 
+                          'back-left' : (), 
+                          'back-right' : (), 
+                          'back-all' : (), 
+                          'back' : ()} 
+
         self.senses['laser'] = {}
         self.laserGeometry = self.dev.get_laser_geometry()
         # ((0, 0, 0), (154, 154))
@@ -21,8 +33,8 @@ class B21RSimulated(PlayerRobot):
         self.senses['laser']['all'] =   self.getLaserRangeAll
         
         # location of sensors' hits:
-        self.senses['laser']['x'] = self.getLaserXCoord
-        self.senses['laser']['y'] = self.getLaserYCoord
+        self.senses['laser']['x'] = lambda dev: self.laserGeometry[0][0]
+        self.senses['laser']['y'] = lambda dev: self.laserGeometry[0][1]
         self.senses['laser']['z'] = lambda self, pos: 0.03
         self.senses['laser']['value'] = self.getLaserRange
         self.senses['laser']['flag'] = self.getLaserFlag
@@ -30,7 +42,7 @@ class B21RSimulated(PlayerRobot):
         # location of origin of sensors:
         self.senses['laser']['ox'] = self.laser_ox
         self.senses['laser']['oy'] = self.laser_oy
-        self.senses['laser']['oz'] = lambda self, pos: 0.03 # meters
+        self.senses['laser']['oz'] = lambda self, pos: 0.3 # meters
         self.senses['laser']['th'] = self.laser_th
         # in radians:
         self.senses['laser']['arc'] = lambda self, pos : 1
@@ -38,7 +50,7 @@ class B21RSimulated(PlayerRobot):
         self.senses['range'] = self.senses['laser']
 
     def getLaserMaxRange(self, dev):
-        return 8.0
+        return self.rawToUnits(dev, 8.0, 'laser', 0.0)
     def getLaserRangeAll(self, dev):
         return [self.getLaserRange(self.dev, x) for x in range(180)]
     def getLaserXCoord(self, dev):
