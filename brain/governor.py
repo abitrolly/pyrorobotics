@@ -101,6 +101,14 @@ class Governor:
         """ Loads RAVQ data from a file. """
         self.ravq.loadRAVQFromFile(filename)
 
+    def setLearning(self, value):
+        if self.governing:
+            self.trainingNetwork.learning = value
+            self.governing = value
+            self.ravq.setAddModels(value)
+        else:
+            self.learning = value
+
 class GovernorNetwork(Governor, Network):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
@@ -109,6 +117,8 @@ class GovernorNetwork(Governor, Network):
                          verbosity = verbosity)
         # ravq
         self.governing = 1
+        self.learning = 0
+        self.trainingNetwork.learning = 1
         self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
         self.ravq.setAddModels(1)
         self.setVerbosity(verbosity)
@@ -116,11 +126,6 @@ class GovernorNetwork(Governor, Network):
         self.decayHistogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
-
-    def setLearning(self, value):
-        self.learning = value
-        self.governing = value
-        self.ravq.setAddModels(value)
 
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
@@ -153,6 +158,18 @@ class GovernorNetwork(Governor, Network):
             if self.verbosity:
                 print "mask:", self.ravq.mask
 
+    def setEpsilon(self, value):
+        self.trainingNetwork.setEpsilon(value)
+        Network.setEpsilon(self, value)
+
+    def setTolerance(self, value):
+        self.trainingNetwork.setTolerance(value)
+        Network.setTolerance(self, value)
+
+    def setMomentum(self, value):
+        self.trainingNetwork.setMomentum(value)
+        Network.setMomentum(self, value)
+
 class GovernorSRN(Governor, SRN): 
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
@@ -164,6 +181,8 @@ class GovernorSRN(Governor, SRN):
         self.trainingNetwork.setMomentum(0)
         self.trainingNetwork.setInitContext(0)
         self.setInitContext(0)
+        self.learning = 0
+        self.trainingNetwork.learning = 1
         # ravq:
         self.governing = 1
         self.decay = 0
@@ -174,11 +193,6 @@ class GovernorSRN(Governor, SRN):
         self.decayHistogram = {}
         if not mask == []: 
             self.ravq.setMask(mask)
-
-    def setLearning(self, value):
-        self.learning = value
-        self.governing = value
-        self.ravq.setAddModels(value)
 
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
@@ -210,6 +224,7 @@ class GovernorSRN(Governor, SRN):
     def addThreeLayers(self, i, h, o):
         SRN.addThreeLayers(self, i, h, o)
         self.trainingNetwork.addThreeLayers(i, h, o)
+        self.trainingNetwork.setLayerVerification(0)
         self.shareWeights(self.trainingNetwork)
         if not self.ravq.mask:
             sum = float(max(i, h, o))
@@ -243,7 +258,9 @@ class GovernorSRN(Governor, SRN):
     def sweep(self):
         retval = SRN.sweep(self)
         if self.governing and (self.epoch % self.reportRate == 0):
-            print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
+            print "Model vectors: %d" % len(self.ravq.models)
+            print "Report Histogram: %s" % self.histogram
+            print "Decay Histogram : %s" % self.decayHistogram
             self.histogram = {}
         if self.governing and self.decay:
             self.decayModelVectors()
@@ -272,7 +289,28 @@ class GovernorSRN(Governor, SRN):
                                       output=output,
                                       context=context)
         return Network.step(self, **args)
+
+    def setEpsilon(self, value):
+        self.trainingNetwork.setEpsilon(value)
+        SRN.setEpsilon(self, value)
+
+    def setTolerance(self, value):
+        self.trainingNetwork.setTolerance(value)
+        SRN.setTolerance(self, value)
+
+    def setMomentum(self, value):
+        self.trainingNetwork.setMomentum(value)
+        SRN.setMomentum(self, value)
+
+    def setSequenceType(self, value):
+        self.trainingNetwork.setSequenceType(value)
+        SRN.setSequenceType(self, value)
         
+    def setInteractive(self, value):
+        self.trainingNetwork.setInteractive(value)
+        SRN.setInteractive(self, value)
+        
+
 
 if __name__ == '__main__':
     import os, gzip, sys

@@ -15,7 +15,7 @@ def sequentialXor(n, limit):
     totalErr2 = 0
     totalErr3 = 0
     current = randomBit()
-    n.clearContext()
+    n.setContext()
     while step < limit:
         if n.interactive:
             print "***** Step %dA *****" % step
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     n.setEpsilon(0.25)
     n.setMomentum(0.1)
     n.setBatch(0)
-    n.setAutoSequence(0)
+    n.setSequenceType("epoch")
     n.setReportRate(100)
     n.setLayerVerification(0) # turn off automatic error checking
     sequentialXor(n, 100000)

@@ -2173,6 +2173,8 @@ class SRN(Network):
                 print "-----------------------------------Step #", step + 1
             offset = step * patternLength
             dict = {}
+            dict.update(args) # in case context, or others
+            # now, overwrite input and output, if necessary
             dict["input"] = args["input"][offset:offset+patternLength]
             if args.has_key("output"):
                 dict["output"] = args["output"][offset:offset+patternLength]
