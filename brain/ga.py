@@ -140,20 +140,31 @@ class Gene:
             child1 = [0] * geneLength
             child2 = [0] * geneLength
             # go through and pick the crossoverpoints:
-            if self.crossoverPoints > 0:
-                crossPoints = [0] * geneLength
-                crossovers = 0
-                while crossovers < self.crossoverPoints:
-                    crossPoints[(int)(random.random() * geneLength)] = 1
-                    crossovers += 1
-            else: # uniform crossover when crossoverPoints = 0
+            if self.crossoverPoints < 0:
+                # shuffle: every other one
                 crossPoints = [1] * geneLength
-            # now, each time there is one, swap parents
+            elif self.crossoverPoints > 0:
+                # number of cross points:
+                # NOTE: not guaranteed to be exactly that many;
+                # could duplicate randomly
+                crossPoints = [0] * geneLength
+                for i in range(self.crossoverPoints):
+                    crossPoints[(int)(random.random() * geneLength)] = 1
+            elif self.crossoverPoints == 0:
+                # uniform crossover when crossoverPoints = 0
+                crossPoints = [0] * geneLength
+                for i in range(geneLength):
+                    # flip coin for each position:
+                    if random.random() < .5:
+                        crossPoints[i] = 1
+            else:
+                raise "unknownCrossoverType", self.crossoverPoints
+            # now, each time there is a cross point, swap parents
             for i in range(geneLength):
                 if crossPoints[i]:
                     if self.verbose > 2:
                         print "crossing over at point", i
-                        p1, p2 = p2, p1
+                    p1, p2 = p2, p1
                 child1[i] = p1[i]
                 child2[i] = p2[i]
             new_child1 = self.__class__(**self.args)
