@@ -88,7 +88,7 @@ class PlayerRobot(PlayerBase):
         print "Device: ", self.dev
         self.dev.start('position')
         self.dev.start('sonar')
-        #self.localize(0.0, 0.0, 0.0)
+        self.localize(0.0, 0.0, 0.0)
         
         #     def localize(self, x = 0.0, y = 0.0, th = 0.0):
         #         self.diffX = x - self.dev.getX()
@@ -177,3 +177,14 @@ class PlayerRobot(PlayerBase):
         self.controls['update'] = self.updateDev
         #self.controls['localize'] = self.localizeDev
         console.log(console.INFO,'Player control drivers loaded')
+
+    def localize(self, x = 0, y = 0, th = 0):
+        """
+        Set robot's internal pose to x (meters), y (meters),
+        th (radians)
+        """
+        self.dev.set_odometry(x * 1000, y * 1000, th)
+        self.x = x
+        self.y = y
+        self.th = th
+        self.thr = self.th * PIOVER180
