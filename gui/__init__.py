@@ -173,11 +173,8 @@ class gui(Drawable):
    def loadRobot(self):
       f = self.fileloaddialog("robots","*.py")
       if f != '':
-         try:
-            self.engine.loadRobot(f)
-            self.redraw()
-         except:
-            raise "Error loading Robot File"
+         self.engine.loadRobot(f)
+         self.redraw()
 
    def freeRobot(self):
       self.engine.freeRobot()
