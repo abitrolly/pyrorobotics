@@ -773,19 +773,26 @@ class Network:
         fp.writelines("net = Network()\n")
         fp.writelines("# Set the network parameters:\n")
         for i in dir(self):
+            try:
+                result = eval("self.%s" % i)
+            except:
+                print "No such thing: self.%s" % i
+                continue
             if i.find("Count") >= 0 or i.find("_") == 0:
                 # skip it
                 continue
-            if type(eval("self.%s" % i)) == type(1.2):
+            elif type(result) == type(1.2):
                 methodName =  "%s" % i
                 methodName = methodName[0].upper() + methodName[1:]
                 fp.writelines("net.set%s(%f)\n" % \
                               (methodName, eval("self.%s" % i)))
-            if type(eval("self.%s" % i)) == type(1):
+            elif type(result) == type(1):
                 methodName =  "%s" % i
                 methodName = methodName[0].upper() + methodName[1:]
                 fp.writelines("net.set%s(%d)\n" % \
                               (methodName, eval("self.%s" % i)))
+            else:
+                print "Unknown type: self.%s" % i
         fp.writelines("net.setSeed(net.seed1)\n")
         fp.writelines("# Create the layers:\n")
         for layer in self.layer:
