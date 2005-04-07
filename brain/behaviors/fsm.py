@@ -83,7 +83,7 @@ class State:
       if not (name in self.deactivatelist):
          self.deactivatelist.append(name)
    def onActivate(self):
-      self.setup()
+      pass
    def setup(self):
       pass # normally will overload
    def onDeactivate(self):
@@ -91,8 +91,6 @@ class State:
    def update(self):
       self.step()
    def step(self):
-      pass # normally will overload
-   def setup(self):
       pass # normally will overload
    def add(self, b):
       if b.name in self.behaviors.keys():

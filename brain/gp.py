@@ -6,7 +6,7 @@ Extension of GA (pyro/brain/ga.py)
 from pyro.brain.ga import *
 import pyro.system.share as share
 from math import pi
-import operator, sys
+import operator, sys, types
 
 ### WORKAROUND: deepcopy can't copy dicts with functions
 ### Currently using global share.env to avoid having it
@@ -124,12 +124,20 @@ class GPTree:
             total_points += reduce(operator.add, self.externals, 0)
         return total_points
     def terminalPoints(self):
-        if self.genotype.leaf():
+        if self.leaf():
             total_points = 1 # just self
         else:
             # don't count self
-            total_points = reduce(operator.add, self.genotype.externals, 0)
+            total_points = reduce(operator.add, self.externals, 0)
         return total_points
+    def getTerminalPoints(self):
+        if self.leaf():
+            return [self.op]
+        else:
+            lyst = []
+            for i in range(len(self.children)):
+                lyst.extend( self.children[i].getTerminalPoints() )
+            return lyst
     def getTerminalTree(self, pos):
         if pos == 0 and self.leaf():
             return self
@@ -211,7 +219,8 @@ class GPGene(Gene):
             terminals = share.env.terminals().keys()
             if len(terminals) == 0:
                 raise AttributeError, "no terminals given in environment or eval()"
-            self.genotype = GPTree(terminals[ int(random.random() * len(terminals))])
+            term = terminals[ int(random.random() * len(terminals))]
+            self.genotype = GPTree(term)
         else:
             operators = share.env.operators().keys()
             if len(operators) == 0:
@@ -221,6 +230,8 @@ class GPGene(Gene):
             for i in range( share.env.env[operators[pos]].operands ):
                 treeArgs.append( GPGene(**args).genotype )
             self.genotype = GPTree( *treeArgs )
+    def __str__(self):
+        return str(self.genotype)
     def display(self):
         print self.genotype
     def eval(self, additionalEnv = {}):

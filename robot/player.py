@@ -212,6 +212,7 @@ class PlayerLaserDevice(PlayerDevice):
         self.subDataFunc['oz']    = lambda pos: 0
         # FIX: the index here should come from the "index"
         self.subDataFunc['th']    = lambda pos: self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos) # in degrees
+        self.subDataFunc['thr']   = lambda pos: pos * PIOVER180
         self.subDataFunc['arc']   = lambda pos: self.client.laser[0][0][2] # in degrees
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
