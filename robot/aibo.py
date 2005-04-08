@@ -617,6 +617,21 @@ class AiboRobot(Robot):
     def setPose(self, joint, amtx, amty=None, amtz=None):
         """ Set the position of a joint """
         # all values passed in are between -1.0 and 1.0
+        if amtx < -1.0:
+            amtx = -1.0
+        elif amtx > 1.0:
+            amtx =  1.0
+        if amty !=None:
+            if amty < -1.0:
+                amty = -1.0
+            elif amty > 1.0:
+                amty = 1.0
+        if amtz !=None:
+            if amtz < -1.0:
+                amtz = -1.0
+            elif amtz > 1.0:
+                amtz = 1.0
+            
         if (amtx>=-1.0 and amtx<=1.0) and \
            ((amty==None) or ( amty>=-1.0 and amty<=1.0)) and \
            ((amtz==None) or ( amtz>=-1.0 and amtz<=1.0)):
@@ -635,13 +650,13 @@ class AiboRobot(Robot):
                     raise AttributeError, "incorrect joint name"    
             elif "tail" in jointDict:
                 if len(jointDict) == 1:
-                    l[15] = amtx; #pan
-                    l[16] = amty; #tilt
+                    l[16] = amtx; #pan
+                    l[15] = amty; #tilt
                 elif len(jointDict) == 2:
                     if "pan" in jointDict:
-                        l[15] = amtx;
-                    elif "tilt" in jointDict:
                         l[16] = amtx;
+                    elif "tilt" in jointDict:
+                        l[15] = amtx;
                     else:
                         raise AttributeError, "incorrect joint name"     
                 else:
@@ -706,6 +721,7 @@ class AiboRobot(Robot):
                             if check !=4:
                                 raise AttributeError, "incorrect joint name"
                             l[offset] = amtx
+                    
                     else:
                         raise AttributeError, "incorrect joint name"
                 else:
@@ -713,6 +729,7 @@ class AiboRobot(Robot):
             else:
                 raise AttributeError, "no such joint"  
             self.joint_socket.write(struct.pack("<18f",*l))
+            self.update()
         else:
             raise AttributeError, "values out of range -1.0, 1.0"
 
