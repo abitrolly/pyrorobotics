@@ -90,6 +90,7 @@ class PlayerCameraDevice(PlayerDevice):
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "sonar")
+        self.handle.get_geom() # stores it in self.handle.poses[]
         while len(self) == 0: pass
         if len(self) == 16:
             self.groups = {'all': range(16),
@@ -122,11 +123,11 @@ class PlayerSonarDevice(PlayerDevice):
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
         self.devData["noise"] = 0.05 # 5 percent
         # These are per reading:
-        self.subDataFunc['ox']    = lambda pos: self.sonarGeometry[pos][0]
-        self.subDataFunc['oy']    = lambda pos: self.sonarGeometry[pos][1]
+        self.subDataFunc['ox']    = lambda pos: self.handle.poses[pos][0]
+        self.subDataFunc['oy']    = lambda pos: self.handle.poses[pos][1]
         self.subDataFunc['oz']    = lambda pos: self.rawToUnits(300) # rawunits
-        self.subDataFunc['thr']   = lambda pos:self.sonarGeometry[pos][2] * PIOVER180 # radians
-        self.subDataFunc['th']    = lambda pos:self.sonarGeometry[pos][2] # degrees
+        self.subDataFunc['thr']   = lambda pos: self.handle.poses[pos][2] 
+        self.subDataFunc['th']    = lambda pos: self.handle.poses[pos][2] / PIOVER180 # degrees
         self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
@@ -134,7 +135,6 @@ class PlayerSonarDevice(PlayerDevice):
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group'] = self.getGroupNames
-
     def __len__(self):
         return self.handle.scan_count
     def getSensorValue(self, pos):
@@ -144,21 +144,17 @@ class PlayerSonarDevice(PlayerDevice):
                             0.03,
                             self.handle.poses[pos][2]/PIOVER180),
                            self.devData["noise"])
-
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
 
     def hitX(self, pos):
-        thr = (self.sonarGeometry[pos][2] + 90.0) * PIOVER180 # + 90
-        dist = self.rawToUnits(self.client.sonar[0][pos])
-        x = self.rawToUnits(self.sonarGeometry[pos][0])
+        thr = self.handle.poses[pos][2] #+ (90.0 /  PIOVER180)
+        dist = self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
         return cos(thr) * dist
-
     def hitY(self, pos):
-        thr = (self.sonarGeometry[pos][2] - 90.0) * PIOVER180 # - 90
-        dist = self.rawToUnits(self.client.sonar[0][pos])
-        y = self.rawToUnits(self.sonarGeometry[pos][1])
+        thr = self.handle.poses[pos][2] #+ (90.0 /  PIOVER180)
+        dist = self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
         return sin(thr) * dist
     def hitZ(self, pos):
         return .03
@@ -207,20 +203,19 @@ class PlayerLaserDevice(PlayerDevice):
         # -------------------------------------------
         self.devData['index'] = 0 # self.client.laser.keys()[0] FIX
         self.devData["count"] = count
-        self.subDataFunc['ox']    = lambda pos: 0
-        self.subDataFunc['oy']    = lambda pos: 0
-        self.subDataFunc['oz']    = lambda pos: 0
+        self.subDataFunc['ox']    = lambda pos: self.handle.pose[0]
+        self.subDataFunc['oy']    = lambda pos: self.handle.pose[1]
+        self.subDataFunc['oz']    = lambda pos: self.handle.pose[2]
         # FIX: the index here should come from the "index"
-        self.subDataFunc['th']    = lambda pos: self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos) # in degrees
-        self.subDataFunc['thr']   = lambda pos: pos * PIOVER180
-        self.subDataFunc['arc']   = lambda pos: self.client.laser[0][0][2] # in degrees
+        self.subDataFunc['th']    = lambda pos: (pos - 90)
+        self.subDataFunc['thr']   = lambda pos: (pos - 90) * PIOVER180
+        self.subDataFunc['arc']   = lambda pos: len(self) / 180.0
         self.subDataFunc['x']     = self.hitX
         self.subDataFunc['y']     = self.hitY
 	self.subDataFunc['z']     = self.hitZ
         self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
         self.subDataFunc['pos']   = lambda pos: pos
         self.subDataFunc['group']   = self.getGroupNames
-
     def __len__(self):
         return self.handle.scan_count
     def getSensorValue(self, pos):
@@ -230,20 +225,17 @@ class PlayerLaserDevice(PlayerDevice):
                             0.03,
                             pos - 90),
                            self.devData["noise"])
-
     def postSet(self, keyword):
         """ Anything that might change after a set """
         self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
 
     def hitX(self, pos):
-        th = self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos)
-        thr = th * PIOVER180
-        dist = self.client.laser[0][1][pos] / 1000.0 # METERS
+        thr = (pos - 90) * PIOVER180
+        dist = self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
         return cos(thr) * dist
     def hitY(self, pos):
-        th = self.client.laser[0][0][0] + (self.client.laser[0][0][2] * pos)
-        thr = th * PIOVER180
-        dist = self.client.laser[0][1][pos] / 1000.0 # METERS
+        thr = (pos - 90) * PIOVER180
+        dist = self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
         return sin(thr) * dist
     def hitZ(self, pos):
         return 0.03 # meters
@@ -538,6 +530,8 @@ class PlayerRobot(Robot):
     def __init__(self, name = "Player", port = 6665, hostname = 'localhost',
                  startDevices = 1):
         Robot.__init__(self) # robot constructor
+        self.last_rotate = 0.0
+        self.last_translate = 0.0
         self.devData["simulated"] = 1 # FIX: how can you tell?
         self.hostname = hostname
         self.port = port
@@ -632,11 +626,18 @@ class PlayerRobot(Robot):
 ##            raise AttributeError, "player robot does not support device '%s'" % item
     
     def translate(self, translate_velocity):
-        self.position.handle.set_cmd_vel(translate_velocity, 0, 0, 1)
+        self.last_translate = translate_velocity
+        self.position.handle.set_cmd_vel(translate_velocity, 0,
+                                         self.last_rotate, 1)
     def rotate(self, rotate_velocity):
-        self.position.handle.set_cmd_vel(0, 0, rotate_velocity, 1)
+        self.last_rotate = rotate_velocity
+        self.position.handle.set_cmd_vel(self.last_translate, 0,
+                                         rotate_velocity, 1)
     def move(self, translate_velocity, rotate_velocity):
-        self.position.handle.set_cmd_vel(translate_velocity, 0, rotate_velocity, 1)
+        self.last_rotate = rotate_velocity
+        self.last_translate = translate_velocity
+        self.position.handle.set_cmd_vel(translate_velocity, 0,
+                                         rotate_velocity, 1)
         
     def update(self):
         self._update()
