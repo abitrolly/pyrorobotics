@@ -473,7 +473,7 @@ class Robot:
                     self.device[dev[0]].setVisible(args[keyword])
             return dev[0]
         
-    def startDevices(self, item, **args):
+    def startDevices(self, item, override = False, **args):
         """ Load devices: dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
@@ -484,7 +484,8 @@ class Robot:
                 console.log(console.INFO,"Loading device '%s'..." % deviceName)
                 self.device[deviceName] = item[dev]
                 item[dev].devData["name"] = deviceName
-                self.devDataFunc[dev] = item[dev]
+                if (override or not self.devDataFunc.has_key(dev)):
+                    self.devDataFunc[dev] = item[dev]
                 item[dev].setTitle( deviceName )
                 retval.append(deviceName)
                 retval.append( None )

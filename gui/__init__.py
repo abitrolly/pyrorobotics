@@ -271,6 +271,7 @@ class gui:
       import sys, traceback
       cla, exc, trbk = sys.exc_info()
       print "ERROR:", cla, exc
+      traceback.print_exc()
       if type(exc) == type(""):
          excName = exc   # one our fake, string exceptions
       elif cla.__dict__.get("__name__") != None:

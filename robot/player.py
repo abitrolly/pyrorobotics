@@ -13,13 +13,13 @@ import playerc
 # dev.__dict__[name] 
 
 class PlayerDevice(Device):
-    def __init__(self, client, type, groups = {}, mode=playerc.PLAYERC_ALL_MODE):
+    def __init__(self, client, type, groups = {}, mode=playerc.PLAYERC_ALL_MODE, index=0):
         Device.__init__(self, type)
         self.groups = groups
         self.client = client
         self.handle = None
-        self.index = 0
-        self.name = type + ("%d" % self.index)
+        self.index = index
+        self.name =  type + ("%d" % self.index)
         self.printFormat["data"] = "<device data>"
         self.devData["data"] = None
         self.devData["noise"] = 0.0
@@ -52,7 +52,7 @@ class PlayerDevice(Device):
         # color is a pointer
         # robot.blobfinder.blob_count, height, width
     def getDeviceData(self, pos = 0):
-        return self.handle.scan[0]
+        return self.getPose()  #self.handle.scan[0]
     def getPose(self):
         """ Move the device. x, y are in meters """
         x, y, th = self.handle.px, self.handle.py, self.handle.pa
@@ -597,7 +597,20 @@ class PlayerRobot(Robot):
         except:
             pass
 
-    def startDeviceBuiltin(self, item):
+    # Used to open an interface to an additional player device.  eg,
+    # if you want to open position:10 in addition to position:0.
+    #
+    # name and idx correspond to the player interface type and device
+    # number.
+    #
+    # Override is whether the new device should override devices
+    # already open (eg, if some other position is being used by
+    # default, should this override it or leave it alone).
+    def startPlayerDevice(self, name, idx, override=False):
+        d = self.robot.startDeviceBuiltin(name, idx)
+        self.robot.startDevices(d, override=override)        
+        
+    def startDeviceBuiltin(self, item, index=0):
 ##         if item == "ptz":
 ##             return {"ptz": PlayerPTZDevice(self.client, "ptz")}
 ##         elif item == "gripper":
@@ -621,7 +634,7 @@ class PlayerRobot(Robot):
 ##             else:
 ##                 return self.startDevice("V4LCamera")
 ##        elif item in self.devData["builtinDevices"]:
-        return {item: PlayerDevice(self.client, item)}
+        return {item: PlayerDevice(self.client, item, index=index)}
 ##        else:
 ##            raise AttributeError, "player robot does not support device '%s'" % item
     
