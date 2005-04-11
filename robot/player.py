@@ -122,6 +122,7 @@ class PlayerSonarDevice(PlayerDevice):
         # see also postSet below
         self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
         self.devData["noise"] = 0.05 # 5 percent
+        self.devData["count"] = len(self)
         # These are per reading:
         self.subDataFunc['ox']    = lambda pos: self.handle.poses[pos][0]
         self.subDataFunc['oy']    = lambda pos: self.handle.poses[pos][1]

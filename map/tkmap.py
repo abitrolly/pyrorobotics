@@ -75,7 +75,7 @@ class TkMap(Map, Tkinter.Tk):
             self.height = int(self.winfo_height()) - self.canvas_height_diff
         except:
             return
-        print self.width, self.height
+        #print self.width, self.height
         self.canvas.configure(width = self.width, height = self.height)
         #print self.canvas["width"], self.canvas["height"]
         self.colScale = self.width / self.cols

@@ -106,7 +106,7 @@ class LPS(TkMap):
          self.computeOccupancy(offx, offy, hitx, hity, arc, senseObstacle, i)
       robot.set("robot/%s/units" % item, originalUnits)
 
-   def redraw(self):
+   def redraw(self, drawRobot = False, drawLabels = True):
       maxval = 1
       for i in range(self.rows):
          for j in range(self.cols):
@@ -118,25 +118,25 @@ class LPS(TkMap):
                                          fill=self.color(self.grid[i][j],
                                                          maxval),
                                          tag = "cell%d" % self.step)
-            if self.label[i][j]:
+            if drawLabels and self.label[i][j]:
                self.canvas.create_text(int((j + .5) * self.colScale),
                                        int((i + .5) * self.rowScale),
                                        text = self.label[i][j],
                                        fill="yellow",
                                        tag = "cell%d" % self.step)
-      self.canvas.create_oval( self.width / 2.0 - 10,
-                               self.height / 2.0 - 10,
-                               self.width / 2.0 + 10,
-                               self.height / 2.0 + 10,
-                               fill = "red",
-                               tag = "cell%d" % self.step)
-      self.canvas.create_rectangle( self.width / 2.0 + 5,
-                               self.height / 2.0 - 5,
-                               self.width / 2.0 + 15,
-                               self.height / 2.0 + 5,
-                               fill = "blue",
-                               tag = "cell%d" % self.step)
-                               
+      if drawRobot:
+         self.canvas.create_oval( self.width / 2.0 - 10,
+                                  self.height / 2.0 - 10,
+                                  self.width / 2.0 + 10,
+                                  self.height / 2.0 + 10,
+                                  fill = "red",
+                                  tag = "cell%d" % self.step)
+         self.canvas.create_rectangle( self.width / 2.0 + 5,
+                                       self.height / 2.0 - 5,
+                                       self.width / 2.0 + 15,
+                                       self.height / 2.0 + 5,
+                                       fill = "blue",
+                                       tag = "cell%d" % self.step)
       self.step = not self.step
       self.canvas.delete("cell%d" % self.step)
       self.update_idletasks()
