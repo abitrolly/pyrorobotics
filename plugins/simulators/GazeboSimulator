@@ -6,14 +6,16 @@
 pyropid=$1
 shift
 config="/usr/local/share/player/config/gazebo.cfg"
+gui=1
 
 if [ "$1" = "-g" ]
 then
+    gui=0
     if [ "$2" = "" ]
     then
-	world="-g /usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
+	world="/usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
     else
-	world="-g $2"
+	world="$2"
     fi
 else
     if [ "$1" = "" ]
@@ -26,7 +28,12 @@ fi
 # clean up any old starts
 rm -rf /tmp/gazebo-$USER*
 # Start gazebo
-wxgazebo $world &
+if [ "$gui" == "1" ]
+then
+    wxgazebo $world &
+else
+    gazebo $world &
+fi
 # Wait a bit for it to get started
 sleep 3
 # Now, start the player layer
