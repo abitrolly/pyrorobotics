@@ -133,7 +133,7 @@ class DeviceWrapper:
 
 class Robot:
     """
-    this be the one.
+    The base robot class. This class is the basis of all robots.
     """
     def __init__(self, **kwargs):
         """
@@ -595,6 +595,9 @@ class Robot:
         return "Ok"
         
     def destroy(self):
+        """
+        This method removes all of the devices. Called by the system.
+        """
         for item in self.device:
             self.removeDevice(item)
 
@@ -612,6 +615,25 @@ class Robot:
         constructor and all the gory details.
         """
         pass
+
+    def setRangeSensor(self, name, index = 0):
+        """
+        Change the default range sensor. By default the range sensor
+        is set to be sonar, if a robot has it, or laser, if it has it,
+        or IR if a robot has it. Otherwise, it is not set.
+
+        Takes the name of a range sensor, and an optional index identifier.
+        An index of 0 is used if not given.
+
+        Examples:
+
+        >>> robot.setRangeSensor("sonar")
+        >>> robot.setRangeSensor("laser", 1)
+
+        returns "Ok" on success, otherwise raises an exception.
+        """
+        self.devDataFunc["range"] = self.get("devices/%s%d/object" % (name, index))
+        return "Ok"
 
 if __name__ == "__main__":
     r = Robot()
