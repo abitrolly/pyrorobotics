@@ -16,13 +16,13 @@ class Scatter(Toplevel):
     """
     Scatter(Tpolevel)
     app = None,
-    xLabel = 'X',
-    yLabel = 'Y',
+    xLabel = None,
+    yLabel = None,
     legend = None,
     title = None,
     winTitle = "Pyro Scatter Plot",
-    width = 275,
-    height = 200,
+    width = 400,
+    height = 300,
     history= None,
     linecount = 1,
     xStart = 0.0, xEnd = 1.0,
@@ -36,9 +36,9 @@ class Scatter(Toplevel):
              'magenta', 'aquamarine', 'khaki', 'sea green', 'hot pink',
              'sienna', 'tomato', 'orchid', 'cornflower blue', 'deep sky blue',
              'forest green', 'rosy brown']
-    def __init__(self, app = None, xLabel = 'X', yLabel = 'Y', legend = None,
+    def __init__(self, app = None, xLabel = None, yLabel = None, legend = None,
                  title = None, winTitle = "Pyro Scatter Plot",
-                 width = 275, height = 200,
+                 width = 400, height = 300,
                  history= None, linecount = 1, xStart = 0.0, xEnd = 1.0,
                  connectPoints = 1, yStart = 0.0, yEnd = 1.0):
         Toplevel.__init__(self, app)
@@ -50,15 +50,26 @@ class Scatter(Toplevel):
             self.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
         else:
             self.wm_title(winTitle)
+        self.xLabel = xLabel
+        self.yLabel = yLabel
         self.connectPoints = connectPoints
         self.width = width
         self.height = height
         self.title = title
-        self.leftBorder = 70
-        self.topBorder = 45
-        self.bottomBorder = 70
+        if self.yLabel:
+            self.leftBorder = 70
+        else:
+            self.leftBorder = 45
+        if self.title:
+            self.topBorder = 45
+        else:
+            self.topBorder = 10
+        if self.xLabel:
+            self.bottomBorder = 70
+        else:
+            self.bottomBorder = 45
         self.plotHeight = self.height - (self.topBorder + self.bottomBorder)
-        self.plotWidth =  self.plotHeight # / max value
+        self.plotWidth =  self.plotHeight 
         self.xStart = xStart
         self.xEnd = xEnd
         self.yStart = yStart
@@ -87,9 +98,11 @@ class Scatter(Toplevel):
     def init_graphics(self):
         self.canvas.delete('graph')
         self.canvas.delete('object')
-        self.canvas.create_rectangle(self.leftBorder, self.topBorder,
+        self.canvas.create_rectangle(self.leftBorder,
+                                     self.topBorder,
                                      self.leftBorder + self.plotWidth,
-                                     self.height - self.bottomBorder,
+                                     self.topBorder + self.plotHeight,
+                                     #self.height - self.bottomBorder,
                                      tag = 'graph',
                                      width = 1, fill='white')
         # title
@@ -109,12 +122,12 @@ class Scatter(Toplevel):
                                     text=self.legend[i], fill='black',
                                     tag = 'graph',
                                     anchor='w')
-        # text
+        # text across bottom
         tick = 0.0 
         xtick_label = self.xStart
         while tick <= 1.0: 
             self.canvas.create_text(self.leftBorder + self.plotWidth * tick,
-                                    self.height - self.topBorder - 40,
+                                    self.height - self.bottomBorder + 15,
                                     tag = 'graph',
                                     text=xtick_label, fill='black')
             self.canvas.create_line(self.leftBorder + self.plotWidth * tick,
@@ -125,11 +138,13 @@ class Scatter(Toplevel):
                                     width = 2, fill='black')
             tick += 1.0 / 4.0
             xtick_label += (self.xEnd - self.xStart) / 4.0
+        # labels down the side:
         tick = 1.0
         ytick_label = self.yStart
         while tick >= 0.0:
-            self.canvas.create_text(self.leftBorder - 40,
+            self.canvas.create_text(self.leftBorder - 10,
                                     self.topBorder + self.plotHeight * tick,
+                                    anchor='e',
                                     tag = 'graph',
                                     text=ytick_label, fill='black')
             self.canvas.create_line(self.leftBorder - 5,
@@ -140,12 +155,38 @@ class Scatter(Toplevel):
                                     width = 2, fill='black')
             tick -= 1.0 / 4.0
             ytick_label += (self.yEnd - self.yStart) / 4.0
+        if self.xLabel:
+            self.canvas.create_text(self.plotWidth /2 + self.leftBorder,
+                                    self.height - self.bottomBorder/2,
+                                    text=self.xLabel,
+                                    tag='graph',
+                                    fill='black')
+        if self.yLabel:
+            self.canvas.create_text(20,
+                                    self.topBorder + (self.plotHeight - (len(self.yLabel) * 13))/2,
+                                    text=self.yLabel,
+                                    width=2,
+                                    anchor="n",
+                                    tag='graph',
+                                    fill='black')
         #self.canvas.lower('graph')
             
-    def changeSize(self, event):
+    def changeSize(self, event = None):
+        if self.title:
+            self.topBorder = 45
+        else:
+            self.topBorder = 10
+        if self.xLabel:
+            self.bottomBorder = 70
+        else:
+            self.bottomBorder = 45
+        if self.yLabel:
+            self.leftBorder = 70
+        else:
+            self.leftBorder = 45
         self.width = self.winfo_width() 
         self.height = self.winfo_height() 
-        self.plotHeight = self.height - (self.topBorder - self.bottomBorder) 
+        self.plotHeight = self.height - (self.topBorder + self.bottomBorder) 
         self.plotWidth =  self.width - self.leftBorder - 20 - (max(map(len, self.legend)) * 8) # left side, legend box, legend text
         #self.plotHeight # / max value
         self.init_graphics()
