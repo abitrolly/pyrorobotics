@@ -38,7 +38,7 @@ class BuildExtension(build_ext):
     are the following:
         - It adds a '-I' (include) swig option for each directory that
         contains a source file in the given Extension.
-        - Determines whether to add the '-c++" option by checking the source
+        - Determines whether to add the '-c++' option by checking the source
         file extensions (even if the 'swig_cpp' and 'swig_opts' do not
         explicitly specify that the extension is a c++ wrapper).
         - Builds the swig-generated high-level python module (build_ext builds

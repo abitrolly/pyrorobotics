@@ -12,31 +12,52 @@ class Line:
         self.lineId = lineId
         self.pointId = pointId
 
-class Scatter: # Plot
-    def __init__(self, history = [100,], xLabel = 'X', yLabel = 'Y',
-                 title = None, legend = [None, ], width = 275, height = 200,
-                 linecount = 1, xStart = 0.0, xEnd = 1.0, yStart = 0.0, yEnd = 1.0):
-        self.color = ['blue', 'red', 'green', 'yellow', 'orange',
-                      'black', 'azure', 'beige', 'brown', 'coral',
-                      'gold', 'ivory', 'moccasin', 'navy', 'salmon',
-                      'tan', 'ivory', 'pink', 'violet', 'cyan',
-                      'magenta', 'aquamarine', 'khaki', 'sea green', 'hot pink',
-                      'sienna', 'tomato', 'orchid', 'cornflower blue', 'deep sky blue',
-                      'forest green', 'rosy brown']
-
-        self.app = Tk()
-        self.app.wm_state('withdrawn')
-        self.win = Toplevel()
-        if title == None:
-            self.win.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
+class Scatter(Toplevel):
+    """
+    Scatter(Tpolevel)
+    app = None,
+    xLabel = 'X',
+    yLabel = 'Y',
+    legend = None,
+    title = None,
+    winTitle = "Pyro Scatter Plot",
+    width = 275,
+    height = 200,
+    history= None,
+    linecount = 1,
+    xStart = 0.0, xEnd = 1.0,
+    connectPoints = 1,
+    yStart = 0.0, yEnd = 1.0):
+    """
+    COLOR = ['blue', 'red', 'green', 'yellow', 'orange',
+             'black', 'azure', 'beige', 'brown', 'coral',
+             'gold', 'ivory', 'moccasin', 'navy', 'salmon',
+             'tan', 'ivory', 'pink', 'violet', 'cyan',
+             'magenta', 'aquamarine', 'khaki', 'sea green', 'hot pink',
+             'sienna', 'tomato', 'orchid', 'cornflower blue', 'deep sky blue',
+             'forest green', 'rosy brown']
+    def __init__(self, app = None, xLabel = 'X', yLabel = 'Y', legend = None,
+                 title = None, winTitle = "Pyro Scatter Plot",
+                 width = 275, height = 200,
+                 history= None, linecount = 1, xStart = 0.0, xEnd = 1.0,
+                 connectPoints = 1, yStart = 0.0, yEnd = 1.0):
+        Toplevel.__init__(self, app)
+        if legend == None:
+            legend = [None] * linecount
+        if history == None:
+            history = [100] * linecount
+        if winTitle == None:
+            self.wm_title("scatter@%s:"%os.getenv('HOSTNAME'))
         else:
-            self.win.wm_title(title)
+            self.wm_title(winTitle)
+        self.connectPoints = connectPoints
         self.width = width
         self.height = height
         self.title = title
-        self.xBorder = 30
-        self.yBorder = 30
-        self.plotHeight = self.height - 2 * self.yBorder # / max value
+        self.leftBorder = 70
+        self.topBorder = 45
+        self.bottomBorder = 70
+        self.plotHeight = self.height - (self.topBorder + self.bottomBorder)
         self.plotWidth =  self.plotHeight # / max value
         self.xStart = xStart
         self.xEnd = xEnd
@@ -51,25 +72,24 @@ class Scatter: # Plot
         self.firstEver = [0] * self.linecount
         self.last = [0] * self.linecount
         self.count = [0] * self.linecount
+        self.dot = 2
         for i in range(self.linecount):
             self.hist[i] = [0] * history[i]
             self.firstEver[i] = 1
             self.last[i] = 0
             self.count[i] = 0
-
-        # width - 2 * self.xBorder # / max value
         # background
-        self.canvas = Canvas(self.win, width=width, height=height)
-        self.win.bind("<Configure>", self.changeSize)
+        self.canvas = Canvas(self, width=width, height=height)
+        self.bind("<Configure>", self.changeSize)
         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
         self.init_graphics()
         
     def init_graphics(self):
         self.canvas.delete('graph')
         self.canvas.delete('object')
-        self.canvas.create_rectangle(self.xBorder, self.yBorder,
-                                     self.xBorder + self.plotWidth,
-                                     self.height - self.yBorder,
+        self.canvas.create_rectangle(self.leftBorder, self.topBorder,
+                                     self.leftBorder + self.plotWidth,
+                                     self.height - self.bottomBorder,
                                      tag = 'graph',
                                      width = 1, fill='white')
         # title
@@ -78,14 +98,14 @@ class Scatter: # Plot
                                 text=self.title, fill='black')
         # legend
         for i in range(self.linecount):
-            self.canvas.create_rectangle(self.xBorder + self.plotWidth + 5,
-                                         self.yBorder + i * 20,
-                                         self.xBorder + self.plotWidth + 5 + 15,
-                                         self.yBorder + i * 20 + 15,
+            self.canvas.create_rectangle(self.leftBorder + self.plotWidth + 5,
+                                         self.topBorder + i * 20,
+                                         self.leftBorder + self.plotWidth + 5 + 15,
+                                         self.topBorder + i * 20 + 15,
                                          tag = 'graph',
-                                         width = 1, fill=self.color[i])
-            self.canvas.create_text(self.xBorder + self.plotWidth + 5 + 20,
-                                    self.yBorder + i * 20 + 8,
+                                         width = 1, fill=self.COLOR[i])
+            self.canvas.create_text(self.leftBorder + self.plotWidth + 5 + 20,
+                                    self.topBorder + i * 20 + 8,
                                     text=self.legend[i], fill='black',
                                     tag = 'graph',
                                     anchor='w')
@@ -93,13 +113,14 @@ class Scatter: # Plot
         tick = 0.0 
         xtick_label = self.xStart
         while tick <= 1.0: 
-            self.canvas.create_text(self.xBorder + self.plotWidth * tick, self.height - 10,
+            self.canvas.create_text(self.leftBorder + self.plotWidth * tick,
+                                    self.height - self.topBorder - 40,
                                     tag = 'graph',
                                     text=xtick_label, fill='black')
-            self.canvas.create_line(self.xBorder + self.plotWidth * tick,
-                                    self.height - self.yBorder - 5,
-                                    self.xBorder + self.plotWidth * tick,
-                                    self.height - self.yBorder + 5,
+            self.canvas.create_line(self.leftBorder + self.plotWidth * tick,
+                                    self.height - self.bottomBorder - 5,
+                                    self.leftBorder + self.plotWidth * tick,
+                                    self.height - self.bottomBorder + 5,
                                     tag = 'graph',
                                     width = 2, fill='black')
             tick += 1.0 / 4.0
@@ -107,13 +128,14 @@ class Scatter: # Plot
         tick = 1.0
         ytick_label = self.yStart
         while tick >= 0.0:
-            self.canvas.create_text(10, self.yBorder + self.plotHeight * tick,
+            self.canvas.create_text(self.leftBorder - 40,
+                                    self.topBorder + self.plotHeight * tick,
                                     tag = 'graph',
                                     text=ytick_label, fill='black')
-            self.canvas.create_line(self.xBorder - 5,
-                                    self.yBorder + self.plotHeight * tick,
-                                    self.xBorder + 5,
-                                    self.yBorder + self.plotHeight * tick,
+            self.canvas.create_line(self.leftBorder - 5,
+                                    self.topBorder + self.plotHeight * tick,
+                                    self.leftBorder + 5,
+                                    self.topBorder + self.plotHeight * tick,
                                     tag = 'graph',
                                     width = 2, fill='black')
             tick -= 1.0 / 4.0
@@ -121,34 +143,42 @@ class Scatter: # Plot
         #self.canvas.lower('graph')
             
     def changeSize(self, event):
-        self.width = self.win.winfo_width() 
-        self.height = self.win.winfo_height() 
-        self.plotHeight = self.height - (2 * self.yBorder) # / max value
-        self.plotWidth =  self.plotHeight # / max value
+        self.width = self.winfo_width() 
+        self.height = self.winfo_height() 
+        self.plotHeight = self.height - (self.topBorder - self.bottomBorder) 
+        self.plotWidth =  self.width - self.leftBorder - 20 - (max(map(len, self.legend)) * 8) # left side, legend box, legend text
+        #self.plotHeight # / max value
         self.init_graphics()
             
     def setTitle(self, title):
-        self.win.wm_title(title)
+        self.wm_title(title)
 
     def _x(self, val):
         val = (val - self.xStart) / (self.xEnd - self.xStart)
-        return int(val * self.plotWidth) + self.xBorder
+        return int(val * self.plotWidth) + self.leftBorder
 
     def _y(self, val):
         val = (val - self.yStart) / (self.yEnd - self.yStart)
-        return int(self.plotHeight - val * self.plotHeight + self.yBorder)
+        return int(self.plotHeight - val * self.plotHeight + self.topBorder)
 
-    def clear(self):
-        self.canvas.delete('object')
+    def clear(self, linenum = None):
+        if linenum == None:
+            self.canvas.delete('object')
+        else:
+            self.canvas.delete('line%d' % linenum)
 
     def addPoint(self, x, y, line = 0, flush = 1):
+        if not (x >= self.xStart and x <= self.xEnd and
+                y >= self.yStart and y <= self.yEnd):
+            print "pyro scatter: data point out of range (%f,%f)" % (x, y)
+            return
         if self.count[line] >= self.history[line]:
             self.count[line] = 0
         # if there is an old one here, delete it
         if type(self.hist[line][self.count[line]]) != type(1):
             self.canvas.delete( self.hist[line][self.count[line]].lineId )
             self.canvas.delete( self.hist[line][self.count[line]].pointId )
-        if type(self.last[line]) != type(1):
+        if type(self.last[line]) != type(1) and self.connectPoints:
             last_x = self._x(self.last[line].x)
             last_y = self._y(self.last[line].y)
             self.canvas.delete( self.last[line].pointId)
@@ -158,7 +188,7 @@ class Scatter: # Plot
                                                                   last_x + 2,
                                                                   last_y + 2,
                                                                   width = 0,
-                                                                  tag = 'object',
+                                                                  tags = ('object','line%d' % line),
                                                                   fill = 'coral')
             except:
                 pass
@@ -168,7 +198,7 @@ class Scatter: # Plot
             if self.firstEver[line]:
                 self.firstEver[line] = 0
                 lid = -1
-            else:
+            elif self.connectPoints:
                 last_x = self._x(self.last[line].x)
                 last_y = self._y(self.last[line].y)
                 lid = self.canvas.create_line(last_x,
@@ -176,28 +206,25 @@ class Scatter: # Plot
                                               my_x,
                                               my_y,
                                               width = 1,
-                                              tag = 'object',
+                                              tags = ('object','line%d'%line),
                                               fill = 'tan')
-            pid = self.canvas.create_oval(my_x - 3,
-                                          my_y - 3,
-                                          my_x + 3,
-                                          my_y + 3,
+            pid = self.canvas.create_oval(my_x - self.dot,
+                                          my_y - self.dot,
+                                          my_x + self.dot,
+                                          my_y + self.dot,
                                           width = 0,
-                                          tag = 'object',
-                                          fill = self.color[line])
+                                          tags = ('object','line%d'%line),
+                                          fill = self.COLOR[line])
             self.hist[line][self.count[line]] = Line(x, y, lid, pid)
             self.last[line] = self.hist[line][self.count[line]]
             self.count[line] += 1
         except:
             pass
         if flush:
-            self.win.update_idletasks()
+            self.update_idletasks()
 
     def update(self):
-        while self.win.tk.dooneevent(2): pass
-
-    def destroy(self):
-        self.win.destroy()
+        while self.tk.dooneevent(2): pass
 
 if __name__ == '__main__':
     sp = Scatter()

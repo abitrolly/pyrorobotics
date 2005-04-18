@@ -3,6 +3,13 @@
  *
  * $Header$
  * $Log$
+ * Revision 1.2  2005/04/18 14:30:38  dblank
+ * Stefanie Teller's map align fix;
+ * scatter plot unfinished;
+ * cluster compile fix;
+ * NNPredict with new scatter plot usage;
+ * setup and distutils under constructions
+ *
  * Revision 1.1  2002/07/03 01:08:51  dblank
  * Cluster 2.9 added to pyro/tools
  *
@@ -29,9 +36,11 @@
  *
  */
 
+#ifndef __malloc_and_calloc_defined
 extern char *malloc();
 extern char *calloc();
 extern free();
+#endif
 
 #ifndef FLOAT
 #define FLOAT	float			/* float type used throughout */

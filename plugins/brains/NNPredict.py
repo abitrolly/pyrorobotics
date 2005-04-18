@@ -3,6 +3,8 @@
 
 from pyro.brain import Brain
 from pyro.brain.conx import *
+from pyro.gui.plot.scatter import Scatter
+import pyro.system.share as share
 
 class NNPredict(Brain):
    def setup(self):
@@ -20,9 +22,13 @@ class NNPredict(Brain):
       self.counter = 0
       self.maxvalue = self.get('robot/range/maxvalue')
       self.new = map(self.scale, self.get('robot/range/all/value'))
-
+      self.plot = Scatter(app=share.gui, linecount=2, connectPoints=0,
+                          xEnd=7.0, yEnd=1.2, legend=["Trained", "Test"],
+                          title="NN Generalization", width=400)
+      self.min = 0.0
+      
    def destroy(self):
-      del self.net
+      self.plot.destroy()
       
    def scale(self, val):
       return (val / self.maxvalue)           
@@ -32,6 +38,7 @@ class NNPredict(Brain):
       target_trans  = 1.0
       target_rotate = 0.5
       # left and right and front:
+      self.min = min(self.get('robot/range/front/value'))
       left = min(self.get('robot/range/front-left/value'))
       right = min(self.get('robot/range/front-right/value'))
       if left < 1.5 or right < 1.5:
@@ -44,10 +51,8 @@ class NNPredict(Brain):
 
    def step(self):
       target = self.avoid()
-
       old = self.new + [self.trans, self.rotate] #trans and rotate
       self.new = map(self.scale, self.get('robot/range/all/value'))
-
       # results
       if self.net.learning:
          e, c, t = self.net.step(input=old, output=target)
@@ -57,10 +62,10 @@ class NNPredict(Brain):
       else:
          old = self.new + [self.trans, self.rotate] 
          self.net.step(input=old, output=target)
-         self.trans, self.rotate = self.net['output'].activations
+         self.trans, self.rotate = self.net['output'].activation
          if self.counter % 10 == 0:
             print self.trans, self.rotate
-
+      self.plot.addPoint(self.min, self.trans, not self.net.learning)
       self.robot.move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
       self.counter += 1
 

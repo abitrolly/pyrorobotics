@@ -108,20 +108,23 @@ class LPS(TkMap):
 
    def redraw(self, drawRobot = False, drawLabels = True):
       maxval = 1
-      for i in range(self.rows):
-         for j in range(self.cols):
+      for a in range(self.rows):
+         for b in range(self.cols):
+            i = self.cols - 1 - b
+            j = a
+            
             self.canvas.create_rectangle(int(j * self.colScale),
                                          int(i * self.rowScale),
                                          int((j + 1) * self.colScale),
                                          int((i + 1) * self.rowScale),
                                          width = 0,
-                                         fill=self.color(self.grid[i][j],
+                                         fill=self.color(self.grid[a][b],
                                                          maxval),
                                          tag = "cell%d" % self.step)
-            if drawLabels and self.label[i][j]:
+            if drawLabels and self.label[a][b]:
                self.canvas.create_text(int((j + .5) * self.colScale),
                                        int((i + .5) * self.rowScale),
-                                       text = self.label[i][j],
+                                       text = self.label[a][b],
                                        fill="yellow",
                                        tag = "cell%d" % self.step)
       if drawRobot:
@@ -131,10 +134,10 @@ class LPS(TkMap):
                                   self.height / 2.0 + 10,
                                   fill = "red",
                                   tag = "cell%d" % self.step)
-         self.canvas.create_rectangle( self.width / 2.0 + 5,
+         self.canvas.create_rectangle( self.width / 2.0 - 5,
                                        self.height / 2.0 - 5,
-                                       self.width / 2.0 + 15,
-                                       self.height / 2.0 + 5,
+                                       self.width / 2.0 + 5,
+                                       self.height / 2.0 - 15,
                                        fill = "blue",
                                        tag = "cell%d" % self.step)
       self.step = not self.step
