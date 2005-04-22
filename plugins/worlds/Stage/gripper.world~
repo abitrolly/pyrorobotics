@@ -1,0 +1,30 @@
+#unit_length "m"			# All units are in meters
+resolution 0.02
+
+include "pioneer.inc"
+
+
+
+
+#GUI settings
+window
+(
+  size [357.000 489.000]
+  center [0.985  1.956]
+  scale 0.017		# 1 pixel = 0.01 meters
+)
+
+model 
+(
+        size [5.0 5.0]
+        color "white"
+        pose [1.000 2.000 0.000]
+)
+
+pioneer2dx
+(
+  color "red"
+  name "Pioneer"
+  port 6665
+  pose [1.000 0.482 90.000]
+)
