@@ -44,6 +44,8 @@ class Scatter(Toplevel):
         Toplevel.__init__(self, app)
         if legend == None:
             legend = [None] * linecount
+        else:
+            legend = map(str, legend)
         if history == None:
             history = [100] * linecount
         if winTitle == None:
@@ -187,7 +189,7 @@ class Scatter(Toplevel):
         self.width = self.winfo_width() 
         self.height = self.winfo_height() 
         self.plotHeight = self.height - (self.topBorder + self.bottomBorder) 
-        self.plotWidth =  self.width - self.leftBorder - 20 - (max(map(len, self.legend)) * 8) # left side, legend box, legend text
+        self.plotWidth =  self.width - self.leftBorder - 20 - (max(map(len, self.legend)) * 12) # left side, legend box, legend text
         #self.plotHeight # / max value
         self.init_graphics()
             
@@ -262,7 +264,8 @@ class Scatter(Toplevel):
         except:
             pass
         if flush:
-            self.update_idletasks()
+            #self.update_idletasks()
+            self.update()
 
     def update(self):
         while self.tk.dooneevent(2): pass
