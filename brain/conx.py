@@ -1244,6 +1244,10 @@ class Network:
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
     def reportPattern(self):
         pass
+
+    def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
+        self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                   (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         
     # train and sweep methods
     def train(self, cont=0):
@@ -1292,8 +1296,7 @@ class Network:
             self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                       (self.epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+            self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr)
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                 (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
