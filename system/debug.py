@@ -7,7 +7,7 @@ import signal
 from traceback import print_exc as print_exc
 from traceback import extract_stack
 
-def colorize(txt, col="red"):
+def _colorize(txt, col="red"):
     """Return colorized text"""
     cols = { 'red':1, 'green':2, 'yellow':3, 'blue':4}
     initcode = '\033[;3'
@@ -58,15 +58,15 @@ class PyroDebugger(code.InteractiveConsole):
                 pointer = " "
             nameFormat = ("%-" + ("%d" % (maxFuncName + 2))) + "s"
             if pointer == ">":
-                print colorize((" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es),"green")
+                print _colorize((" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es),"green")
             else:
                 print (" %s %2d) "+ nameFormat +" at %s:%s") % (pointer, c, c_es, a_es, b_es)
             c += 1
         print
 
     def displayHelp(self):
-        print "Commands:", colorize("up, down, top, bot, help, quit, a frame number, edit,")
-        print colorize("          or any Python expression. <CONTROL+D> to continue.")
+        print "Commands:", _colorize("up, down, top, bot, help, quit, a frame number, edit,")
+        print _colorize("          or any Python expression. <CONTROL+D> to continue.")
 
     def init_history(self, histfile):
         readline.parse_and_bind("tab: complete")
@@ -80,7 +80,6 @@ class PyroDebugger(code.InteractiveConsole):
     def save_history(self, histfile = None):
         if histfile == None:
             histfile=os.path.expanduser("~/.pyrohist")
-        print histfile
         readline.write_history_file(histfile)
 
     def raw_input(self, prompt):
@@ -127,13 +126,13 @@ class PyroDebugger(code.InteractiveConsole):
 
 def Break():
     import inspect
-    handler(None, inspect.currentframe())
+    _handler(None, inspect.currentframe())
 
-def handler(signum, frame):
+def _handler(signum, frame):
     console = PyroDebugger(frame=frame)
     console.interact()
     console.save_history()
-    print colorize("\nContinuing...", "yellow")
-signal.signal(signal.SIGTSTP, handler) # suspend
+    print _colorize("\nContinuing...", "yellow")
+signal.signal(signal.SIGTSTP, _handler) # suspend
 
-print colorize("Pyro debugger is installed. Press <CONTROL+Z> to activate.")
+print _colorize("Pyro debugger is installed. Press <CONTROL+Z> to activate.")

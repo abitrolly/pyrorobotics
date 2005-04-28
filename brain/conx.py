@@ -996,7 +996,7 @@ class Network:
         Sets the targets.
         """
         if not self.verifyArguments(targets) and not self.patterned:
-            raise NetworkError, ('setOutputs() requires a nested list of the form [[...],[...],...].', targets)
+            raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
         self.targets = targets
     def associate(self, inName, outName):
         """
@@ -1067,6 +1067,11 @@ class Network:
         if self.verbosity > 4:
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
+    def getDataCrossValidation(self, pos):
+        set = {"input": self.inputs[i]}
+        if self.targets:
+            set["output"] = self.targets[i]
+        return set
     def getData(self, pos):
         """
         Returns dictionary with input and target given pos. 
@@ -1234,6 +1239,9 @@ class Network:
             self.log.write(msg + "\n")
         else:
             print msg
+    def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
+        self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                   (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         
     # train and sweep methods
     def train(self, cont=0):
@@ -1256,8 +1264,7 @@ class Network:
             else:
                 self.Print("Warning: sweep didn't do anything!")
             if self.epoch % self.reportRate == 0:
-                self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                      (self.epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+                self.reportEpoch(self.epoch, tssErr, totalCorrect, totalCount, rmsErr)
                 if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                     (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
@@ -1408,9 +1415,7 @@ class Network:
         self._cv = True # in cross validation
         if self.autoCrossValidation:
             for i in range(len(self.inputs)):
-                set = {"input": self.inputs[i]}
-                if self.targets:
-                    set["output"] = self.targets[i]
+                set = self.getDataCrossValidation(i)
                 self._sweeping = 1
                 (error, correct, total) = self.step( **set )
                 self._sweeping = 0
