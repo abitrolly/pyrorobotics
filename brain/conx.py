@@ -1079,7 +1079,7 @@ class Network:
         retval = {}
         if pos >= len(self.inputs):
             raise IndexError, ('getData() pattern beyond range.', pos)
-        if self.verbosity > 0: print "Getting input", pos, "..."
+        if self.verbosity >= 1: print "Getting input", pos, "..."
         if len(self.inputMap) == 0:
             retval[self.layers[0].name] = self.inputs[pos]
         else: # mapInput set manually
@@ -1242,6 +1242,8 @@ class Network:
     def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
         self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+    def reportPattern(self):
+        pass
         
     # train and sweep methods
     def train(self, cont=0):
@@ -1349,6 +1351,7 @@ class Network:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
         self.postStep()
+        self.reportPattern()
         return (error, correct, total)
     def preStep(self):
         pass
@@ -1368,7 +1371,7 @@ class Network:
             raise NetworkError, ('No loadOrder for the inputs. Make sure inputs are properly set.', self.loadOrder)
         if len(self.targets) != 0 and len(self.targets) != len(self.inputs):
             raise NetworkError, "Number of inputs does not equal number of targets (inputs=%d, targets=%d)" % (len(self.targets), len(self.inputs))
-        if self.verbosity > 0: print "Epoch #", self.epoch, "Cycle..."
+        if self.verbosity >= 1: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
         tssError = 0.0; totalCorrect = 0; totalCount = 0;
@@ -1376,7 +1379,7 @@ class Network:
         if self.saveResults:
             self.results = [(0,0,0) for x in self.loadOrder]
         for i in self.loadOrder:
-            if self.verbosity > 0 or self.interactive:
+            if self.verbosity >= 1 or self.interactive:
                 print "-----------------------------------Pattern #", self.loadOrder[i] + 1
             datum = self.getData(i) # creates a dictionary of input/targets from self.inputs, self.targets
             if cnt < len(self.loadOrder) - 1:
@@ -1579,7 +1582,7 @@ class Network:
                 connection.wed = connection.wed * 0.0
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
-        if self.verbosity > 0:
+        if self.verbosity >= 1:
             print "WEIGHTS CHANGED"
             if self.verbosity > 2:
                 self.display()
@@ -1689,7 +1692,7 @@ class Network:
                             print "Word   = %s" % "No match"
                         else:
                             print "Word   = '%s'" % actWord
-                if self.verbosity > 0:
+                if self.verbosity >= 1:
                     weights = range(len(self.connections))
                     weights.reverse()
                     for j in weights:
@@ -2370,7 +2373,7 @@ class SRN(Network):
         learning = self.learning
         totalRetvals = (0.0, 0, 0) # error, correct, total
         for step in range(sequenceLength):
-            if self.verbosity > 0 or self.interactive:
+            if self.verbosity >= 1 or self.interactive:
                 print "-----------------------------------Step #", step + 1
             offset = step * patternLength
             dict = {}
