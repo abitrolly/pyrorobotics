@@ -241,6 +241,14 @@ class PlayerLaserDevice(PlayerDevice):
     def hitZ(self, pos):
         return 0.03 # meters
 
+class PlayerFiducialDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_READ_MODE)
+
+    def getDeviceData(self):
+        fs = self.handle.fiducials
+        return fs
+
 class PlayerCommDevice(PlayerDevice):
     def __init__(self, client, name):
         PlayerDevice.__init__(self, client, name)
@@ -612,16 +620,14 @@ class PlayerRobot(Robot):
         self.robot.startDevices(d, override=override)        
         
     def startDeviceBuiltin(self, item, index=0):
-##         if item == "ptz":
-##             return {"ptz": PlayerPTZDevice(self.client, "ptz")}
-##         elif item == "gripper":
-##             return {"gripper": PlayerGripperDevice(self.client, "gripper")}
         if item == "laser":
             return {"laser": PlayerLaserDevice(self.client)}
         elif item == "sonar":
             return {"sonar": PlayerSonarDevice(self.client)}
         elif item == "camera":
             return {"camera": PlayerCameraDevice(self.client)}
+        elif item == "fiducial":
+            return {"fiducial": PlayerFiducialDevice(self.client)}
         elif item == "simulation":
             obj = None
             try:
