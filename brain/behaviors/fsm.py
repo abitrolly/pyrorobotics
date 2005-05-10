@@ -9,7 +9,6 @@ class FSMBrain (Brain):
    def __init__(self, engine = 0):
       Brain.__init__(self, 'FSMBrain', engine)
       self.states = {}
-      self.stack = []
       self.robot = self.engine.robot
 
    def activate(self, name):

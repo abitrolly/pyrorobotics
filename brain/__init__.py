@@ -35,6 +35,7 @@ class Brain(threading.Thread):
     def __init__(self, name = 'brain', engine = 0, **kwargs):
         threading.Thread.__init__(self)
         self.debug = 0
+        self.stack = [] # used in brains with states (BehaviorBasedBrain and FSMBrain)
         self.devData = {}
         self.devData["stepCount"] = 0
         self.lastRun = time.time() # seconds
