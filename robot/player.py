@@ -53,6 +53,7 @@ class PlayerDevice(Device):
         # robot.blobfinder.blob_count, height, width
     def getDeviceData(self, pos = 0):
         return self.getPose()  #self.handle.scan[0]
+    
     def getPose(self):
         """ Move the device. x, y are in meters """
         x, y, th = self.handle.px, self.handle.py, self.handle.pa
@@ -81,6 +82,30 @@ class PlayerSimulationDevice(PlayerDevice):
             return x, y, (thr / PIOVER180)
         else:
             raise "simulation.getPose() failed"
+
+class PlayerFiducialDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_READ_MODE)
+
+        self.devData["count"] = len(self)
+        self.devData["id"] = self.getFiducialsById
+        self.devData["idlist"] = self.getFiducialIDs
+
+    def getFiducialsById(self, id):
+        for f in self.handle.fiducials:
+            if f.id==id:
+                return f
+        return
+
+    def getFiducialIDs(self):
+        return [f.id for f in self.handle.fiducials]
+
+    def getDeviceData(self):
+        fs = self.handle.fiducials
+        return fs
+
+    def __len__(self):
+        return len(self.handle.fiducials)
 
 class PlayerCameraDevice(PlayerDevice):
     def __init__(self, client):
@@ -240,14 +265,6 @@ class PlayerLaserDevice(PlayerDevice):
         return sin(thr) * dist
     def hitZ(self, pos):
         return 0.03 # meters
-
-class PlayerFiducialDevice(PlayerDevice):
-    def __init__(self, client):
-        PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_READ_MODE)
-
-    def getDeviceData(self):
-        fs = self.handle.fiducials
-        return fs
 
 class PlayerCommDevice(PlayerDevice):
     def __init__(self, client, name):
@@ -642,8 +659,6 @@ class PlayerRobot(Robot):
 ##                 return self.startDevice("V4LCamera")
 ##        elif item in self.devData["builtinDevices"]:
         return {item: PlayerDevice(self.client, item, index=index)}
-##        else:
-##            raise AttributeError, "player robot does not support device '%s'" % item
     
     def translate(self, translate_velocity):
         self.last_translate = translate_velocity

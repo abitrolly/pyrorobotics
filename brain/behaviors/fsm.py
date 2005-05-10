@@ -70,6 +70,7 @@ class State:
       self.deactivate(self.name)
       self.activate(state)
       self.brain.states[state].onGoto(args)
+      self.brain.goto(state)
    def onGoto(self, args = []):
       # FIX: could make a nice way of setting class vars here.
       # Currently:

@@ -20,15 +20,18 @@ class BehaviorBasedBrain(Brain):
       self.desires = []
       self.effectsTotal = {}
       self.initialized = 0
+      self.activeState = None
    def set_controls(self, controllers):
       self.controls = controllers
       self.history = [{}, {}, {}]
    def activate(self, name):
       self.states[name].status = 1
       self.states[name].onActivate()
+      self.goto(name)
    def deactivate(self, name):
       self.states[name].status = 0
       self.states[name].onDeactivate()
+      self.activeState = None
    def add(self, state):
       if state.name in self.states.keys():
          raise "ERROR: state already exists: '" + state.name + "'"
@@ -44,6 +47,8 @@ class BehaviorBasedBrain(Brain):
       #self.status = -1
       self.desires = []
       self.effectsTotal = {}
+   def goto(self, name):
+      self.activeState = self.states[name]
    def step(self):
       if not self.initialized:
          for s in self.states.keys():
