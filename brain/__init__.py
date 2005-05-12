@@ -157,6 +157,7 @@ class Brain(threading.Thread):
                     self.profileTotalTime = 0.0
                     self.profileCount = 0
             if self.profilePerformance == 1:
+                self.profileTotalTime = 0.0
                 self.profilePerformance = 2
             self.lastRun = time.time() # seconds
             #print "release()"

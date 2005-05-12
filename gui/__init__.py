@@ -284,7 +284,7 @@ class gui:
       if "__dict__" in dir(exc):
          excArgs = exc.__dict__["args"]
       else:
-         excArgs = ("<no args>",)
+         excArgs = ("",)
       excTb = traceback.format_tb(trbk, maxTBlevel)
       # FIX: This is only the errors back four lines!
       # how do you get them before that?
