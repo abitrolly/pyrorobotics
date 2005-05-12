@@ -418,16 +418,8 @@ class PlayerPTZDevice(PlayerDevice):
         return 120
 
 class PlayerGripperDevice(PlayerDevice):
-    # Gripper functions
-    #these also exist: 'gripper_carry', 'gripper_press', 'gripper_stay',
-    def __init__(self, client, name):
-        PlayerDevice.__init__(self, client, name)
-        if "data" in self.devData:
-            del self.devData["data"]
-        if self.client.is_paddles_closed():
-            self.devData["command"] = "close"
-        else:
-            self.devData["command"] = "open"
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "gripper")
         self.devData[".help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
                                 """     down, store, deploy, halt.\n""" \
                                 """.get('/robot/gripper/KEYWORD') where KEYWORD is: state, breakBeamState,\n""" \
@@ -441,87 +433,96 @@ class PlayerGripperDevice(PlayerDevice):
     def postSet(self, keyword):
         if keyword == "command":
             if self.devData["command"] == "open":
-                self.devData["command"] = self.client.gripper_open() 
+                self.devData["command"] = self.open() 
             elif self.devData["command"] == "close":
-                self.devData["command"] = self.client.gripper_close() 
+                self.devData["command"] = self.close() 
             elif self.devData["command"] == "stop":
-                self.devData["command"] = self.client.gripper_stop()
+                self.devData["command"] = self.stop()
             elif self.devData["command"] == "up":
-                self.devData["command"] = self.client.gripper_up()
+                self.devData["command"] = self.liftUp()
             elif self.devData["command"] == "down":
-                self.devData["command"] = self.client.gripper_down()
+                self.devData["command"] = self.liftDown()
             elif self.devData["command"] == "store":
-                self.devData["command"] = self.client.gripper_store() 
+                self.devData["command"] = self.store() 
             elif self.devData["command"] == "deploy":
-                self.devData["command"] = self.client.gripper_deploy()
+                self.devData["command"] = self.deploy()
             elif self.devData["command"] == "halt":
-                self.devData["command"] = self.client.gripper_halt()
+                self.devData["command"] = self.halt()
             else:
                 raise AttributeError, "invalid command to gripper: '%s'" % self.devData["command"]
 
     def preGet(self, keyword):
         if keyword == "state":
-            self.devData[keyword] = self.client.is_paddles_closed() # help!
+            self.devData[keyword] = self.handle.state
         elif keyword == "breakBeamState":
             self.devData[keyword] = self.getBreakBeamState()
         elif keyword == "isClosed":
-            self.devData[keyword] = self.client.is_paddles_closed() #ok
+            self.devData[keyword] = self.handle.isClosed() 
         elif keyword == "isMoving":
-            self.devData[keyword] = self.client.is_paddles_moving() #ok
+            self.devData[keyword] = self.handle.isMoving()
         elif keyword == "isLiftMoving":
-            self.devData[keyword] = self.client.is_lift_moving() # ok
+            self.devData[keyword] = None
         elif keyword == "isLiftMaxed":
-            self.devData[keyword] = self.client.is_lift_up() # ok
+            self.devData[keyword] = None
 
     def open(self):
-        return self.client.gripper_open() 
+        return self.handle.set_cmd(1, 0) 
 
     def close(self):
-        return self.client.gripper_close() 
+        return self.handle.set_cmd(2, 0) 
 
     def stopMoving(self):
-        return self.client.gripper_stop()
+        pass
 
     def liftUp(self):
-        return self.client.gripper_up()
+        return self.handle.set_cmd(4, 0) 
 
     def liftDown(self):
-        return self.client.gripper_down()
+        return self.handle.set_cmd(5, 0) 
 
     def liftStop(self):
-        return self.client.gripper_stop()
+        pass
 
     def store(self):
-        return self.client.gripper_store() 
+        pass
 
     def deploy(self):
-        return self.client.gripper_deploy()
+        self.open()
+        self.liftDown()
 
     def halt(self):
-        return self.client.gripper_halt()
+        pass
 
     def getState(self):
-        return self.client.is_paddles_closed() # help!
+        return self.handle.state
+
+    def getBreakBeam(self, name):
+        if name == "inner":
+            return self.handle.inner_break_beam
+        elif name == "outer":
+            return self.handle.outer_break_beam
+        else:
+            raise "no such gripper beam name: '%s'" % name
 
     def getBreakBeamState(self):
         sum = 0
-        if self.client.is_ibeam_obstructed() == 8:
+        if self.handle.beams & 8: # back
             sum += 2
-        if self.client.is_obeam_obstructed() == 4:
+        if self.handle.beams & 4: # front
             sum += 1
         return sum
 
-    def isClosed(self): # FIX: add this to aria
-        return self.client.is_paddles_closed() #ok
+    def isClosed(self): 
+        return self.handle.paddles_closed
 
     def isMoving(self):
-        return self.client.is_paddles_moving() #ok
+        return self.handle.paddles_moving
 
     def isLiftMoving(self):
-        return self.client.is_lift_moving() # ok
+        return self.handle.lift_moving
 
     def isLiftMaxed(self):
-        return self.client.is_lift_up() # ok
+        pass
 
 class PlayerUpdater(threading.Thread):
     """
@@ -647,6 +648,8 @@ class PlayerRobot(Robot):
             return {"camera": PlayerCameraDevice(self.client)}
         elif item == "fiducial":
             return {"fiducial": PlayerFiducialDevice(self.client)}
+        elif item == "gripper":
+            return {"gripper": PlayerGripperDevice(self.client)}
         elif item == "simulation":
             obj = None
             try:
