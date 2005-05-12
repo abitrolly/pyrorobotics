@@ -274,13 +274,16 @@ class gui:
       traceback.print_exc()
       if type(exc) == type(""):
          excName = exc   # one our fake, string exceptions
-      elif cla.__dict__.get("__name__") != None:
-         excName = cla.__name__  # a real exception object
+      elif type(cla) == type(""):
+         excName = cla
       else:
-         excName = cla   # one our fake, string exceptions
-      try:
+         if "__dict__" in dir(cla) and  cla.__dict__.get("__name__") != None:
+            excName = cla.__name__  # a real exception object
+         else:
+            excName = cla   # one our fake, string exceptions
+      if "__dict__" in dir(exc):
          excArgs = exc.__dict__["args"]
-      except KeyError:
+      else:
          excArgs = ("<no args>",)
       excTb = traceback.format_tb(trbk, maxTBlevel)
       # FIX: This is only the errors back four lines!

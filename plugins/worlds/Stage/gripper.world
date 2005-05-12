@@ -27,5 +27,12 @@ pioneer2dx
   name "Pioneer"
   port 6665
   pose [1.000 0.482 90.000]
-  gripper()
+  gripper( pose [0.24 0.000 0.000] )
+)
+
+# a block for gripping
+model(
+  size [ 0.1 0.1 ]
+  pose [1.0 1.043 0.000 ]
+  color "green"
 )

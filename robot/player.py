@@ -578,7 +578,10 @@ class PlayerRobot(Robot):
             for device in ["position", "laser", "ir", "sonar", "bumper"]:
                 #is it supported? if so start it up:
                 if device in devNameList:
-                    deviceName = self.startDevice(device)
+                    try: # this is for gazebo; can't tell what it really has
+                        deviceName = self.startDevice(device)
+                    except:
+                        continue
                     self.devDataFunc[device] = self.get("/devices/%s0/object" % device)
                     if device == "laser":
                         self.devDataFunc["range"] = self.get("/devices/laser0/object")
@@ -597,7 +600,6 @@ class PlayerRobot(Robot):
         except:
             self.devData["builtinDevices"].remove("simulation")
             del self.device["simulation0"]
-            print "No such device 'simulation0' on port 7000!"
         # specific things about this robot type:
         self.devData["port"] = port
         self.devData["hostname"] = hostname
