@@ -123,7 +123,9 @@ class Engine:
             raise 'Simulator file not found: ' + file
       print "Loading.",
       sys.stdout.flush()
-      wait = share.config.get("gui", "sim_start_delay")
+      wait = None
+      if type(share.config) != type(0):
+         wait = share.config.get("gui", "sim_start_delay")
       if wait == None:
          time.sleep(1) # default
       elif wait:
