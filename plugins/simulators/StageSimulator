@@ -19,6 +19,7 @@ else
     fi
 fi
 export PLAYERPATH=$PLAYERPATH:/usr/local/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 #stage -p $(( 16000 + $UID )) $world &
 player $world &
 while ps --noheaders $pyropid; do sleep 1; done > /dev/null
