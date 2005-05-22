@@ -3,10 +3,10 @@
 
 # Not a true predictor but useful as a platform for testing the new Conx step method.
 
-from pyro.brain import Brain
-from pyro.brain.conx import *
-from pyro.gui.plot.scatter import *
-from pyro.gui.plot.hinton import *
+from pyrobot.brain import Brain
+from pyrobot.brain.conx import *
+from pyrobot.gui.plot.scatter import *
+from pyrobot.gui.plot.hinton import *
 
 class NNPredict(Brain):
    def setup(self):

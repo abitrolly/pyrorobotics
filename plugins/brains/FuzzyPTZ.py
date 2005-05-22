@@ -1,8 +1,8 @@
 # A Fuzzy Logic PTZ Vision Tracker
 # Uses Python-integrated Vision System
 
-from pyro.brain.fuzzy import * 
-from pyro.brain.behaviors import * 
+from pyrobot.brain.fuzzy import * 
+from pyrobot.brain.behaviors import * 
 
 class BBB(BehaviorBasedBrain):
     def destroy(self):

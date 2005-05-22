@@ -1,8 +1,8 @@
-from pyro.brain import *
-from pyro.tools.joystick import Joystick
-import pyro.system.share as share
-from pyro.map.lps import LPS
-from pyro.map.gps import GPS
+from pyrobot.brain import *
+from pyrobot.tools.joystick import Joystick
+import pyrobot.system.share as share
+from pyrobot.map.lps import LPS
+from pyrobot.map.gps import GPS
 import thread
 
 class Map(Brain):

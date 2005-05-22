@@ -1,6 +1,6 @@
 """ ----------------------------------------------------
     An Artificial Neural Network System Implementing
-    Backprop. Part of the Pyro Robotics Project.
+    Backprop. Part of the Pyrobot Robotics Project.
     Provided under the GNU General Public License.
     ----------------------------------------------------
     (c) 2001-2005, Developmental Robotics Research Group
@@ -8,7 +8,7 @@
 
     This file implements the major classes and functions for
     making artificial neural networks in Python. Part of the
-    Pyro project.
+    Pyrobot project.
 """
 
 import Numeric, math, random, time, sys, operator
@@ -1865,7 +1865,7 @@ class Network:
         # make wrapper python file:
         if makeWrapper:
             fp = open(basename + ".py", "w")
-            fp.write("from pyro.brain.conx import *\n")
+            fp.write("from pyrobot.brain.conx import *\n")
             fp.write("import pickle\n")
             fp.write("fp = open('%s', 'r')\n" % filename)
             fp.write("network = pickle.load(fp)")
@@ -1876,7 +1876,7 @@ class Network:
         print "   >>> network.train() # for example"
         print "--- OR ---"
         print "   % python"
-        print "   >>> from pyro.brain.conx import *"
+        print "   >>> from pyrobot.brain.conx import *"
         print "   >>> network = loadNetworkFromFile(%s)" % filename
         print "   >>> network.train() # for example"
     def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,

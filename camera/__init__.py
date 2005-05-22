@@ -1,7 +1,7 @@
 """ A Base Camera class """
 
-from pyro.vision import PyroImage
-from pyro.robot.device import Device
+from pyrobot.vision import PyrobotImage
+from pyrobot.robot.device import Device
 
 import Tkinter
 import PIL.PpmImagePlugin
@@ -62,7 +62,7 @@ class CBuffer:
    def __str__(self):
       return str(self[:])   
 
-class Camera(PyroImage, Device):
+class Camera(PyrobotImage, Device):
    """
    A base class for Camera
    """
@@ -71,7 +71,7 @@ class Camera(PyroImage, Device):
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
       """
-      PyroImage.__init__(self, width, height, depth, 0)
+      PyrobotImage.__init__(self, width, height, depth, 0)
       Device.__init__(self, 'camera')
       self.notSetables.extend( ["filterResults", "width", "height", "depth",
                                 "image", "data", "source", "filters",
@@ -250,7 +250,7 @@ class Camera(PyroImage, Device):
          try:
             self.window = Tkinter.Toplevel()
          except:
-            print "Pyro camera cannot make window. Check DISPLAY variable."
+            print "Pyrobot camera cannot make window. Check DISPLAY variable."
             self.setVisible(0)
             return
          self.window.wm_title(self.title)
@@ -502,8 +502,8 @@ class Camera(PyroImage, Device):
             self.devData["filterResults"].append( filterFunc(self) )
 
 if __name__ == '__main__':
-   from pyro.vision.cvision import VisionSystem
-   from pyro.camera.fake import FakeCamera
+   from pyrobot.vision.cvision import VisionSystem
+   from pyrobot.camera.fake import FakeCamera
    cam = FakeCamera(visionSystem = VisionSystem())
    cam.makeWindow()
    cam.window.mainloop()

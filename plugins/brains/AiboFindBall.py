@@ -13,7 +13,7 @@ Note: Complete Behavior brain
 
 """
 
-from pyro.brain.behaviors.fsm import *
+from pyrobot.brain.behaviors.fsm import *
 from time import sleep
 import random
 

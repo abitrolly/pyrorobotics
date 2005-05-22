@@ -1,7 +1,7 @@
-from pyro.brain.conx import *
+from pyrobot.brain.conx import *
 
-from pyro.brain.VisConx import VisRobotConx
-from pyro.brain.VisConx import VisSweepConx
+from pyrobot.brain.VisConx import VisRobotConx
+from pyrobot.brain.VisConx import VisSweepConx
 
 VNetwork = VisSweepConx.VisSweepNetwork
 VINetwork = VisRobotConx.VisRobotNetwork

@@ -1,5 +1,5 @@
-from pyro.camera import Camera, CBuffer
-from pyro.camera.robocup.robocup import Robocup
+from pyrobot.camera import Camera, CBuffer
+from pyrobot.camera.robocup.robocup import Robocup
 from math import pi, sin, cos
 import time
 

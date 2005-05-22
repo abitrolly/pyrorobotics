@@ -1,4 +1,4 @@
-from pyro.brain.ga import *
+from pyrobot.brain.ga import *
 
 def safe_queen(new_row, new_col, sol):
     for row in range(new_row):

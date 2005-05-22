@@ -1,7 +1,7 @@
 # A Behavior sequencing sample
 # D.S. Blank
 
-# This Pyro example will go (roughly) in a square
+# This Pyrobot example will go (roughly) in a square
 
 # This example has two states, "edge" that goes straight, and "turn"
 # that turns 90 degrees to the left. It bounces back and forth between
@@ -28,9 +28,9 @@
 # that by using the onGoto() and Goto() methods. But you would have to
 # make the next state to goto a parameter that you pass in. Why?
 
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
-from pyro.geometry import *   # import distance function
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
+from pyrobot.geometry import *   # import distance function
 import math
 from random import random
 

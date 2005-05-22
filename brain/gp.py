@@ -1,10 +1,10 @@
 """
-Pyro Module for Genetic Program.
-Extension of GA (pyro/brain/ga.py)
+Pyrobot Module for Genetic Program.
+Extension of GA (pyrobot/brain/ga.py)
 """
 
-from pyro.brain.ga import *
-import pyro.system.share as share
+from pyrobot.brain.ga import *
+import pyrobot.system.share as share
 from math import pi
 import operator, sys, types
 

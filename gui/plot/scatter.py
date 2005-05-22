@@ -20,7 +20,7 @@ class Scatter(Toplevel):
     yLabel = None,
     legend = None,
     title = None,
-    winTitle = "Pyro Scatter Plot",
+    winTitle = "Pyrobot Scatter Plot",
     width = 400,
     height = 300,
     history= None,
@@ -37,7 +37,7 @@ class Scatter(Toplevel):
              'sienna', 'tomato', 'orchid', 'cornflower blue', 'deep sky blue',
              'forest green', 'rosy brown']
     def __init__(self, app = None, xLabel = None, yLabel = None, legend = None,
-                 title = None, winTitle = "Pyro Scatter Plot",
+                 title = None, winTitle = "Pyrobot Scatter Plot",
                  width = 400, height = 300,
                  history= None, linecount = 1, xStart = 0.0, xEnd = 1.0,
                  connectPoints = 1, yStart = 0.0, yEnd = 1.0):
@@ -213,7 +213,7 @@ class Scatter(Toplevel):
     def addPoint(self, x, y, line = 0, flush = 1):
         if not (x >= self.xStart and x <= self.xEnd and
                 y >= self.yStart and y <= self.yEnd):
-            print "pyro scatter: data point out of range (%f,%f)" % (x, y)
+            print "pyrobot scatter: data point out of range (%f,%f)" % (x, y)
             return
         if self.count[line] >= self.history[line]:
             self.count[line] = 0

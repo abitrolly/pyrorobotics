@@ -1,5 +1,5 @@
 import struct
-from pyro.system import file_exists
+from pyrobot.system import file_exists
 
 # Standard convolution matrices:
 
@@ -17,7 +17,7 @@ fill     = ([ 1,  1,  1,  1,  1,  1,  1,  1,  1], 5)
 smooth   = ([ 1,  2,  1,  2,  4,  2,  1,  2,  1], 16)
 bw       = ([ 0,  0,  0,  0,  1,  0,  0,  0,  0], 1)
 
-class PyroImage:
+class PyrobotImage:
    """
    A Basic Image class. 
    """
@@ -95,7 +95,7 @@ class PyroImage:
       """
       if yscale=='unset':
          yscale = xscale
-      newImage = PyroImage(int(xscale*self.width), int(yscale*self.height), 
+      newImage = PyrobotImage(int(xscale*self.width), int(yscale*self.height), 
                            self.depth)
       xpixels = int(1/xscale)
       ypixels = int(1/yscale)
@@ -141,7 +141,7 @@ class PyroImage:
       """
       if self.depth==1:
          raise "cannot apply a colour filter to greyscale image"
-      newimage = PyroImage(self.width,self.height)
+      newimage = PyrobotImage(self.width,self.height)
       for h in range(self.height):
          for w in range(self.width):
             red = self.get(w,h,0)*r
@@ -154,7 +154,7 @@ class PyroImage:
 
    def display(self):
       """
-      Display PyroImage in ASCII Art.
+      Display PyrobotImage in ASCII Art.
       """
       if self.depth == 3:
          line = ''
@@ -331,7 +331,7 @@ class PyroImage:
             mode = 'gb/r'
             
       if mode == 'brightness':
-         grayImage = PyroImage(self.width,self.height,depth=1)
+         grayImage = PyrobotImage(self.width,self.height,depth=1)
          grayImage.data = self.getGrayScale()
          bitmap = Bitmap(grayImage.width, grayImage.height)
          for h in range(bitmap.height):
@@ -388,7 +388,7 @@ class PyroImage:
    
    def convolve(self, convmask, bit = 0, threshold = 0):
       (mask, z) = convmask
-      data = PyroImage(self.width, self.height, self.depth)
+      data = PyrobotImage(self.width, self.height, self.depth)
       for x in range(1, self.width-2):
          for y in range(1, self.height-2):
             for c in range(self.depth):
@@ -424,12 +424,12 @@ class PyroImage:
             self.set(w, h, c2, plane1)
             self.set(w, h, c1, plane2)
 
-class Histogram(PyroImage):
+class Histogram(PyrobotImage):
    """
    Histogram class. Based on Image, but has methods for display.
    """
    def __init__(self, width, height, init_val = 0):
-      PyroImage.__init__(self, width, height, 1, init_val) # 1 bit depth
+      PyrobotImage.__init__(self, width, height, 1, init_val) # 1 bit depth
 
    def display(self):
       """
@@ -455,12 +455,12 @@ class Histogram(PyroImage):
             sum += min(self.get(w, h), hist.get(w, h))
       return sum
 
-class Bitmap(PyroImage):
+class Bitmap(PyrobotImage):
    """
    Bitmap class. Based on Image, but has methods for blobs, etc.
    """
    def __init__(self, width, height, init_val = 0):
-      PyroImage.__init__(self, width, height, 1, init_val) # 1 bit depth
+      PyrobotImage.__init__(self, width, height, 1, init_val) # 1 bit depth
       self.equivList = [0] * 2000
       for n in range(2000):
          self.equivList[n] = n
@@ -775,8 +775,8 @@ if __name__ == '__main__':
    print "Do you want to run test 2: create image from file, save it back out? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = PyroImage(0, 0)
-      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+      image = PyrobotImage(0, 0)
+      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-1.ppm")
       image.saveToFile("test2.ppm")
       print "Done! To see output, use 'xv test2.ppm'"
    else:
@@ -817,8 +817,8 @@ if __name__ == '__main__':
    print "Do you want to run test 3: create a grayscale image, save to file? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = PyroImage(0, 0)
-      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
+      image = PyrobotImage(0, 0)
+      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-21.ppm")
       image.grayScale()
       image.saveToFile("test3.ppm")
       #image.display()
@@ -829,8 +829,8 @@ if __name__ == '__main__':
    print "Do you want to run test 3.01: recognize a yellow object? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = PyroImage(0, 0)
-      image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-21.ppm")
+      image = PyrobotImage(0, 0)
+      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-21.ppm")
       image.saveToFile("test3.01a.ppm")
       mybitmap = image.getBitmap(4.0, mode='rg/b')
       mybitmap.saveToFile("test3.01b.ppm")
@@ -848,11 +848,11 @@ if __name__ == '__main__':
 
    
    
-   print "Do you want to run test 4: convert PyroImage to PIL image, and display it using xv? ",
+   print "Do you want to run test 4: convert PyrobotImage to PIL image, and display it using xv? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       try:
-         image.loadFromFile(getenv('PYRO') + "/vision/snaps/som-1.ppm")
+         image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-1.ppm")
          import PIL.PpmImagePlugin
          from struct import *
          c = ''
@@ -881,7 +881,7 @@ if __name__ == '__main__':
       print "Done!"
    else:
       print "skipping..."
-   print "Do you want to run test 6: create a TK window, and display PPM from file or PyroImage? ",
+   print "Do you want to run test 6: create a TK window, and display PPM from file or PyrobotImage? ",
    if getenv('DISPLAY') and sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       try:
@@ -898,7 +898,7 @@ if __name__ == '__main__':
                   self.image = ImageTk.PhotoImage(im)
                   Tkinter.Label.__init__(self, master, image=self.image, bd=0)
          root = Tkinter.Toplevel()
-         filename = getenv('PYRO') + "/vision/snaps/som-1.ppm"
+         filename = getenv('PYROBOT') + "/vision/snaps/som-1.ppm"
          root.title(filename)
          im = Image.open(filename)
          #im = i
@@ -912,7 +912,7 @@ if __name__ == '__main__':
    print "Do you want to run test 7: create a camera view, and display 10 frames in ASCII? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      from pyro.camera.fake import FakeCamera
+      from pyrobot.camera.fake import FakeCamera
       image = FakeCamera()
       for x in range(10):
          image.update()
@@ -923,7 +923,7 @@ if __name__ == '__main__':
    print "Do you want to run test 8: create a histogram of the image? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      from pyro.camera.fake import FakeCamera
+      from pyrobot.camera.fake import FakeCamera
       image = FakeCamera()
       image.update()
       histogram = image.histogram(15, 20)
@@ -939,7 +939,7 @@ if __name__ == '__main__':
    print "Do you want to run test 9: find motion in 10 frames? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      from pyro.camera.fake import FakeCamera
+      from pyrobot.camera.fake import FakeCamera
       camera = FakeCamera()
       camera.update()
       for x in range(10):
@@ -952,8 +952,8 @@ if __name__ == '__main__':
    print "Do you want to run test 10: find edges in bitmap? ",
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
-      image = PyroImage(0,0)
-      image.loadFromFile(getenv('PYRO') + '/vision/snaps/som-16.ppm')
+      image = PyrobotImage(0,0)
+      image.loadFromFile(getenv('PYROBOT') + '/vision/snaps/som-16.ppm')
       image.grayScale()
       mask = image.convolve(edge, 1, 128)
       #mask = mask.convolve(fill, 1)
@@ -978,14 +978,14 @@ if __name__ == '__main__':
 
       for x in range( len(files)):
          print "Loading " + files[x] + "..."
-         imgs[x] = PyroImage(0,0)
-         imgs[x].loadFromFile(getenv('PYRO') + files[x])
+         imgs[x] = PyrobotImage(0,0)
+         imgs[x].loadFromFile(getenv('PYROBOT') + files[x])
          hists[x] = imgs[x].histogram(20, 20)
 
       f = "/vision/snaps/som-dsb4.ppm"
       print "========================= Testing " + f
-      i = PyroImage(0,0)
-      i.loadFromFile(getenv('PYRO') + f)
+      i = PyrobotImage(0,0)
+      i.loadFromFile(getenv('PYROBOT') + f)
       h = i.histogram(20,20)
       maxcomp = 0
       for x in range( len(files)):

@@ -1,6 +1,6 @@
 # A Robot Stub
 
-from pyro.robot import Robot
+from pyrobot.robot import Robot
 
 def INIT():
     return Robot() 

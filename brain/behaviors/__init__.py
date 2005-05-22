@@ -3,8 +3,8 @@
 
 # defines the Behavior-based brain, behaviors, and states
 import time
-from pyro.brain import *
-from pyro.brain.behaviors.fsm import State # State is not used here, but needed when you import this
+from pyrobot.brain import *
+from pyrobot.brain.behaviors.fsm import State # State is not used here, but needed when you import this
 
 class BehaviorBasedBrain(Brain):
    """

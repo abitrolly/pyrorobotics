@@ -2,8 +2,8 @@
 # Inputs are the two front sensor readings  
 # Output is a translate value, used to control the robot  
    
-from pyro.brain import Brain  
-from pyro.brain.conx import *  
+from pyrobot.brain import Brain  
+from pyrobot.brain.conx import *  
 from time import *  
      
 class NNBrain(Brain):  

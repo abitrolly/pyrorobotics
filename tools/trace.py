@@ -34,10 +34,10 @@ class Trace:
         self.pathDataFilename = pathDataFilename
         self.outfile = ""
         self.app = 0
-        if os.environ.has_key('PYRO'):
-            path = os.environ['PYRO']
+        if os.environ.has_key('PYROBOT'):
+            path = os.environ['PYROBOT']
         else:
-            raise "Unknown Environment Variable", "PYRO"
+            raise "Unknown Environment Variable", "PYROBOT"
         self.fontFilename = path + "/tools/pilfonts/courR08.pil"
         self.symbols = 1        # activates/deactivates symbol mode
         self.color = "0"          # activates/deactivates color

@@ -1,7 +1,7 @@
 #import csom
 #import sys
-import pyro.brain.psom._csom as csom
-from pyro.brain.psom import _ptrset
+import pyrobot.brain.psom._csom as csom
+from pyrobot.brain.psom import _ptrset
 
 def init_float_array(mylist):
 	nitems = len(mylist)

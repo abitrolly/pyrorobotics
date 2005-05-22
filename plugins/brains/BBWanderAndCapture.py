@@ -1,8 +1,8 @@
 # A Behavior-based system
 
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
-from pyro.brain.behaviors.core import *  # Stop
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
+from pyrobot.brain.behaviors.core import *  # Stop
 
 import math
 from random import random
@@ -102,6 +102,6 @@ def INIT(engine): # passes in robot, if you need it
 
     # activate a state:
     brain.activate('state1') # could have made it active in constructor
-    import pyro.camera
-    brain.camera = pyro.camera.Camera()
+    import pyrobot.camera
+    brain.camera = pyrobot.camera.Camera()
     return brain

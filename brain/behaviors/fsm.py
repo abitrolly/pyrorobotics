@@ -1,6 +1,6 @@
 # FSM code
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 class FSMBrain (Brain):
    """

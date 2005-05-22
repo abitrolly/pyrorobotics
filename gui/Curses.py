@@ -1,4 +1,4 @@
-from pyro.gui import *
+from pyrobot.gui import *
 import curses
 #import curses.wrapper
 
@@ -20,7 +20,7 @@ class Curses(gui):
             self.processCommand(retval)
             command = command[1:]
         while self.done is not 1:
-            self.stdscr.addstr( "Pyro > ")
+            self.stdscr.addstr( "Pyrobot > ")
             self.stdscr.refresh()
             curses.echo()            # Enable echoing of characters
             retval = self.stdscr.getstr()

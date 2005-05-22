@@ -1,6 +1,6 @@
 
-from pyro.general.ca import *
-from pyro.brain.ga import *
+from pyrobot.general.ca import *
+from pyrobot.brain.ga import *
 
 class GACAGene(Gene):
     def __init__(self, **args):

@@ -1,6 +1,6 @@
 # A bare brain
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 class SimpleBrain(Brain):
    # Only method you must define is the step method:

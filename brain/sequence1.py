@@ -1,5 +1,5 @@
-from pyro.brain.governor import GovernorSRN
-#from pyro.brain.conx import SRN
+from pyrobot.brain.governor import GovernorSRN
+#from pyrobot.brain.conx import SRN
 
 mask = [0] * 4 + [0] * 5 + [1] * 4
 net = GovernorSRN(delta = 0.3, epsilon = 2.1, historySize = 5, mask = mask)

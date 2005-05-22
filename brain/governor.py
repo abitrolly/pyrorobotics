@@ -4,8 +4,8 @@ Governor code for self regulating networks.
 
 """
 
-from pyro.brain.conx import *
-from pyro.brain.ravq import ARAVQ, euclideanDistance
+from pyrobot.brain.conx import *
+from pyrobot.brain.ravq import ARAVQ, euclideanDistance
 
 class Governor:
     """

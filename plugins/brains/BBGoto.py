@@ -2,8 +2,8 @@
 # Goto a particular Point
 # D.S. Blank
 
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
 
 class Goto (Behavior):
     def setup(self): # called when created

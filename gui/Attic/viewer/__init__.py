@@ -1,7 +1,7 @@
 from PIL import ImageTk
 from Tkinter import *
 from math import *
-#from pyro.gui import drawable
+#from pyrobot.gui import drawable
 import struct
 
 #class KheperaViewer(drawable.Drawable):

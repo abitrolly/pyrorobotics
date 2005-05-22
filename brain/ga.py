@@ -523,7 +523,7 @@ if __name__ == '__main__':
     # Here is a test to evolve the weights/biases in a neural network
     # that solves the XOR problem:
 
-    from pyro.brain.conx import *
+    from pyrobot.brain.conx import *
     class NNGA(GA):
         def __init__(self, cnt):
             n = Network()

@@ -4,13 +4,13 @@
 #VisVectorFactory.  Each new class should follow the nameing convention
 #XVisVector, where X is the string that gets passed to VisVectorFactory
 
-from pyro.brain.psom import *
+from pyrobot.brain.psom import *
 from Tkinter import *
 import struct
 from types import *
 from PIL import ImageTk
-import pyro.gui.plot.hinton
-import pyro.gui.plot.matrix
+import pyrobot.gui.plot.hinton
+import pyrobot.gui.plot.matrix
 
 class VisVector:
    """
@@ -99,7 +99,7 @@ class GrayscaleVisVector(VisVector):
       b.pack(side=BOTTOM)
       self.win.mainloop()
 
-class HintonVisVector(VisVector, pyro.gui.plot.hinton.Hinton):
+class HintonVisVector(VisVector, pyrobot.gui.plot.hinton.Hinton):
    """
    Use the Hinton plot to display the vector
    """
@@ -107,12 +107,12 @@ class HintonVisVector(VisVector, pyro.gui.plot.hinton.Hinton):
       maxval = opts[0]
       if not maxval:
          maxval = max(vector)
-      pyro.gui.plot.hinton.Hinton.__init__(self, data=vector.get_elts(),
+      pyrobot.gui.plot.hinton.Hinton.__init__(self, data=vector.get_elts(),
                                            maxvalue=maxval, title=title)
       b = Button(self.win, text="Close", command=self.close)
       b.pack()
 
-class MatrixVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
+class MatrixVisVector(VisVector, pyrobot.gui.plot.matrix.Matrix):
    """
    Use the Matrix plot to display the vector
    """
@@ -122,13 +122,13 @@ class MatrixVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
       else:
          maxval = max(vector)
       cols, rows = opts[0], opts[1]
-      pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
+      pyrobot.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
                                            rows = rows, cols = cols,
                                            maxvalue=maxval, title=title)
       b = Button(self.win, text="Close", command=self.close)
       b.pack()
 
-class SOMVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
+class SOMVisVector(VisVector, pyrobot.gui.plot.matrix.Matrix):
    """
    Use the SOM plot to display the vector as a SOM
    """
@@ -138,7 +138,7 @@ class SOMVisVector(VisVector, pyro.gui.plot.matrix.Matrix):
          maxval = max(vector)
       cols, rows = opts
       print "Title %s" % title
-      pyro.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
+      pyrobot.gui.plot.matrix.Matrix.__init__(self, data=vector.get_elts(),
                                            rows = rows, cols = cols,
                                            maxvalue=255, title=title,
                                            type = 'som')
@@ -213,7 +213,7 @@ def getVisVectorByName(type):
       raise "VisVector type not supported"
 
 #if __name__=="__main__":
-#   from pyro.brain.psom import *
+#   from pyrobot.brain.psom import *
 #   grayvis = getVisVectorByName("BarGraph")
 #   piclist = [float(x)/16.0 for x in range(16)]
 #   grayvis(vector(piclist))

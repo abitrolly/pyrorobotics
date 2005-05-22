@@ -1,5 +1,5 @@
 from bt848 import BT848      # cameraDevice
-from pyro.camera import Camera, CBuffer
+from pyrobot.camera import Camera, CBuffer
 
 class BT848Camera(Camera):
    """

@@ -1,9 +1,9 @@
-from pyro.map import Map
+from pyrobot.map import Map
 import Tkinter
 from math import cos, sin
-import pyro.gui.widgets.TKwidgets as TKwidgets
-import pyro.system as system
-import pyro.gui.console as console
+import pyrobot.gui.widgets.TKwidgets as TKwidgets
+import pyrobot.system as system
+import pyrobot.gui.console as console
 
 class TkMap(Map, Tkinter.Tk):
     """ Map with Tkinter GUI functions """
@@ -98,16 +98,16 @@ class TkMap(Map, Tkinter.Tk):
 
     def fileloaddialog(self, filetype, skel, startdir = ''):
         from string import replace
-        import pyro
+        import pyrobot
         from os import getcwd, getenv, chdir
         retval = ""
         cwd = getcwd()
         if startdir == '':
-            chdir(pyro.pyrodir() + "/plugins/" + filetype)
+            chdir(pyrobot.pyrobotdir() + "/plugins/" + filetype)
         else:
             chdir(startdir)
         d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel,
-                                     pyro.pyrodir() + "/plugins/" + filetype)
+                                     pyrobot.pyrobotdir() + "/plugins/" + filetype)
         if d.Show() == 1:
             doc = d.GetFileName()
             d.DialogCleanup()
@@ -128,9 +128,9 @@ class TkMap(Map, Tkinter.Tk):
             file = file + '.py'
         if system.file_exists(file):
             grid = system.loadINIT(file)
-        elif system.file_exists(os.getenv('PYRO') + \
+        elif system.file_exists(os.getenv('PYROBOT') + \
                                 '/plugins/maps/' + file): 
-            grid = system.loadINIT(os.getenv('PYRO') + \
+            grid = system.loadINIT(os.getenv('PYROBOT') + \
                                    '/plugins/plots/' + file)
         else:
             raise 'Map file not found: ' + file

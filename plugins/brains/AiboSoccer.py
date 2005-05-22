@@ -8,7 +8,7 @@ Project: Two robots play soccer against each other
 Robot: Aibo ERS-7
 """
 
-from pyro.brain.behaviors.fsm import *
+from pyrobot.brain.behaviors.fsm import *
 from time import sleep
 import random
 

@@ -1,4 +1,4 @@
-from pyro.gui.renderer import *
+from pyrobot.gui.renderer import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 #from OpenGL.Tk import *

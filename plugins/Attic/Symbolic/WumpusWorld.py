@@ -19,10 +19,10 @@ class GUI(Tkinter.Toplevel):
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
         # sensors: stench, breeze, glitter, bump, scream
-        self.goldFilename = os.environ["PYRO"] + "/images/gold.gif" 
-        self.wumpusFilename = os.environ["PYRO"] + "/images/wumpus.gif" 
-        self.pitFilename = os.environ["PYRO"] + "/images/pit.gif"
-        self.agentFilename = os.environ["PYRO"] + "/images/agent.gif" 
+        self.goldFilename = os.environ["PYROBOT"] + "/images/gold.gif" 
+        self.wumpusFilename = os.environ["PYROBOT"] + "/images/wumpus.gif" 
+        self.pitFilename = os.environ["PYROBOT"] + "/images/pit.gif"
+        self.agentFilename = os.environ["PYROBOT"] + "/images/agent.gif" 
         # --------------------------------------------------------
         self.goldImage = Image.open(self.goldFilename)
         self.goldImage = self.goldImage.resize( (100, 25), Image.BILINEAR )

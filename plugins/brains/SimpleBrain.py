@@ -1,6 +1,6 @@
 # A bare brain
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 from time import sleep
 
 class SimpleBrain(Brain):

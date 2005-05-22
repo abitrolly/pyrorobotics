@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from pyro.system import file_exists
-from pyro.tools import OptionHandler, Option
+from pyrobot.system import file_exists
+from pyrobot.tools import OptionHandler, Option
 import os, operator, sys, string, inspect, types
 
 # Handle options -------------------------------------------------
@@ -17,7 +17,7 @@ includeOthers = 0
 for module in args:
     print "= Module %s =\n" % module
     print "This is a reference page for the module {{{%s}}}. You can find the entire reference manual" % module
-    print """at ["PyroReferenceManual"], and more on the whole project at ["Pyro"].\n""" 
+    print """at ["PyrobotReferenceManual"], and more on the whole project at ["Pyrobot"].\n""" 
     exec("import %s" % module)
     exec("items = dir(%s)" % module)
     for i in items:
@@ -73,4 +73,4 @@ for module in args:
 #                print "    ", m
 
 print "--------"
-print """End of auto-generated documentation. See ["PyroReferenceManual"] for more. (c) 2004 D.S. Blank"""
+print """End of auto-generated documentation. See ["PyrobotReferenceManual"] for more. (c) 2004 D.S. Blank"""

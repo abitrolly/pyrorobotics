@@ -2,8 +2,8 @@
 D.S. Blank
 """
 
-from pyro.brain import Brain
-from pyro.tools.slider import Slider
+from pyrobot.brain import Brain
+from pyrobot.tools.slider import Slider
 
 class Controller(Brain):
    def setup(self):

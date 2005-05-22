@@ -1,5 +1,5 @@
-from pyro.brain import Brain
-from pyro.gui.plot.scatter import *
+from pyrobot.brain import Brain
+from pyrobot.gui.plot.scatter import *
 from random import random
 from time import sleep
 from math import sqrt, fabs, floor

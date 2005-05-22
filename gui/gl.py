@@ -3,10 +3,10 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import Tkinter
 import OpenGL.Tk as Opengl
-from pyro.gui.drawable import *
-from pyro.gui.renderer.gl import *
-from pyro.gui.renderer.streams import *
-from pyro.robot.service import Service
+from pyrobot.gui.drawable import *
+from pyrobot.gui.renderer.gl import *
+from pyrobot.gui.renderer.streams import *
+from pyrobot.robot.service import Service
 from time import time
 
 # A GL gui
@@ -42,7 +42,7 @@ class GLView(Service):
                                height = self.height, double = self.db, \
                                depth = self.depth)
       self.win.pack(side = 'top', expand = 1, fill = 'both')
-      self.win.winfo_toplevel().title("3D Pyro Robot View")
+      self.win.winfo_toplevel().title("3D Pyrobot Robot View")
       self.win.redraw = self.redraw
       self.mode = Tkinter.IntVar(self.win)
       self.mode.set(GL_EXP)
@@ -134,7 +134,7 @@ class GLView(Service):
          glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(str[i]))
 
 if __name__ == '__main__':
-   from pyro.plugins.robots.SimpleRobot import SimpleRobot
+   from pyrobot.plugins.robots.SimpleRobot import SimpleRobot
 
    class SimpleDrawableRobot(SimpleRobot):
       def _draw(self, options, renderer): # overloaded from robot

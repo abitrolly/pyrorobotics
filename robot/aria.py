@@ -1,8 +1,8 @@
 # Defines AriaRobot, a subclass of robot
 
-from pyro.robot import *
-from pyro.geometry import *
-from pyro.robot.device import Device, DeviceError, SensorValue
+from pyrobot.robot import *
+from pyrobot.geometry import *
+from pyrobot.robot.device import Device, DeviceError, SensorValue
 from AriaPy import Aria, ArRobot, ArSerialConnection, ArTcpConnection, \
      ArRobotParams, ArGripper, ArSonyPTZ, ArVCC4, ArSick
 try:
@@ -349,7 +349,7 @@ class AriaSonar(AriaSensor):
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         else:
-            print "Pyro warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar()
+            print "Pyrobot warning: Need to define sensor groups for sonars with %d sensors" % self.params.getNumSonar()
             self.groups = {'all': range(self.params.getNumSonar())}
         self.subDataFunc['ox']    = lambda pos: self.params.getSonarX(pos)
         self.subDataFunc['oy']    = lambda pos: self.params.getSonarY(pos)
@@ -392,7 +392,7 @@ class AriaLaser(AriaSensor):
         self.robotdev.addRangeDevice(self.dev)
         self.dev.runAsync()
         self.dev.blockingConnect()
-        print "Pyro is connecting to Aria laser..."
+        print "Pyrobot is connecting to Aria laser..."
         time.sleep(3)
         self.readings = self.dev.getRawReadingsAsVector()
         #readings[0].getRange()

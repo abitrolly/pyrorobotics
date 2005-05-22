@@ -1,7 +1,7 @@
 # Aibo robot
 
-from pyro.robot.aibo import AiboRobot
-from pyro.system.share import ask
+from pyrobot.robot.aibo import AiboRobot
+from pyrobot.system.share import ask
 
 def INIT():
     # replace "aibo" with your dog's IP or DNS name

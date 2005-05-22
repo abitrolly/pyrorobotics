@@ -1,5 +1,5 @@
-from pyro.camera import Camera, CBuffer
-from pyro.camera.blob.blob import Blob
+from pyrobot.camera import Camera, CBuffer
+from pyrobot.camera.blob.blob import Blob
 import time
 
 class BlobCamera(Camera):

@@ -1,8 +1,8 @@
 # A Behavior-based control system
 
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
-from pyro.brain import select
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
+from pyrobot.brain import select
 import math, time
 
 class Avoid (Behavior):

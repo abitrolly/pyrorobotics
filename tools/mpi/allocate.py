@@ -63,7 +63,7 @@ if __name__ == '__main__':
         taskList = sampleTaskList(taskListSize)
         a = TaskAllocator(taskList)
         a.run()
-##         from pyro.brain.conx import *
+##         from pyrobot.brain.conx import *
 ##         n = Network()
 ##         n.addThreeLayers(2, 2, 1)
 ##         n.setInputs([[0.0, 0.0],

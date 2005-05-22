@@ -1,10 +1,10 @@
 # A Neural Network Brain
 # D.S. Blank
 
-from pyro.brain import Brain
-from pyro.brain.conx import *
-from pyro.gui.plot.scatter import Scatter
-import pyro.system.share as share
+from pyrobot.brain import Brain
+from pyrobot.brain.conx import *
+from pyrobot.gui.plot.scatter import Scatter
+import pyrobot.system.share as share
 
 class NNPredict(Brain):
    def setup(self):

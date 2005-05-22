@@ -1,5 +1,5 @@
-import pyro.robot.driver as driver
-import pyro.gui.console as console
+import pyrobot.robot.driver as driver
+import pyrobot.gui.console as console
 import string
 import array
 import math

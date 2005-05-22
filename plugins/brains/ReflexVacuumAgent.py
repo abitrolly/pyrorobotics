@@ -1,8 +1,8 @@
-# A Pyro brain to clean up two rooms using a
+# A Pyrobot brain to clean up two rooms using a
 # simple reflex brain.After Russell and Norvig
 # (AIMA, 2003) page 46.
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 class SimpleBrain(Brain):
    def ReflexVaccumAgent(self, location, status):

@@ -2,8 +2,8 @@
 # Inputs: 7 sensor readings 
 # Outputs: translate and rotate values (unscaled) 
    
-from pyro.brain.conx import * 
-from pyro.system.log import * 
+from pyrobot.brain.conx import * 
+from pyrobot.system.log import * 
     
 # Create the network 
 n = Network() 

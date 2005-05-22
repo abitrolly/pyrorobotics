@@ -1,5 +1,5 @@
-from pyro.camera import Camera, CBuffer
-from pyro.camera.player.playercam import PlayerCam
+from pyrobot.camera import Camera, CBuffer
+from pyrobot.camera.player.playercam import PlayerCam
 import threading
 import time
 

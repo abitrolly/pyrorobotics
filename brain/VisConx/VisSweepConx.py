@@ -1,8 +1,8 @@
-from pyro.brain.conx import *
+from pyrobot.brain.conx import *
 import Tkinter
 import tkSimpleDialog
-import pyro.brain.VisConx.ActivationsDiag as ActivationsDiag
-import pyro.brain.VisConx.VisConxBase as VisConxBase
+import pyrobot.brain.VisConx.ActivationsDiag as ActivationsDiag
+import pyrobot.brain.VisConx.VisConxBase as VisConxBase
 
 class SweepGUIBase(VisConxBase.VisConxBase):
     def __init__(self):

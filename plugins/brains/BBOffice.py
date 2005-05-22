@@ -3,9 +3,9 @@
 # You should make yours based on walls, doorways, etc.
 # -dsb
 
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
-from pyro.brain.behaviors.core import *  # Stop
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
+from pyrobot.brain.behaviors.core import *  # Stop
 
 import math
 from random import random

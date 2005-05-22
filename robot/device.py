@@ -1,6 +1,6 @@
-import pyro.robot
+import pyrobot.robot
 import types, random, exceptions
-from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0): 
     """
@@ -22,8 +22,8 @@ def deviceDirectoryFormat(deviceDict, retdict = 1, showstars = 0):
             continue
         #print keyword, type(deviceDict[keyword])
         # if this is an instance, then don't follow
-        below = issubclass(deviceDict[keyword].__class__, pyro.robot.Robot) \
-                or issubclass(deviceDict[keyword].__class__, pyro.robot.DeviceWrapper) \
+        below = issubclass(deviceDict[keyword].__class__, pyrobot.robot.Robot) \
+                or issubclass(deviceDict[keyword].__class__, pyrobot.robot.DeviceWrapper) \
                 or issubclass(deviceDict[keyword].__class__, Device)
         #print "THINGS BELOW?:", keyword, below
         if below:

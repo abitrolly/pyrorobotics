@@ -1,16 +1,16 @@
-""" Base GUI Class for Pyro Robotics. This is used for the -g tty GUI. """
+""" Base GUI Class for Python Robotics. This is used for the -g tty GUI. """
 
 import os
 import sys
 import signal
 import time
 import string
-from pyro.system.version import version as version
-from pyro.system import help, usage, about, file_exists
+from pyrobot.system.version import version as version
+from pyrobot.system import help, usage, about, file_exists
 
 class BrainStem:
    """
-   A stub used in the Pyro command evaluator to define "self"
+   A stub used in the Pyrobot command evaluator to define "self"
    so that self.get() self.set() will work. Without this
    self is not defined. Only works when you have a robot, but
    no brain yet.
@@ -46,8 +46,8 @@ class gui:
       self.environment = {}
       self.environment["gui"] = self
       self.lastDir = {}
-      if file_exists(os.getenv('HOME') + "/.pyrohist"):
-         fp = open(os.getenv('HOME') + "/.pyrohist", "r")
+      if file_exists(os.getenv('HOME') + "/.pyrobothist"):
+         fp = open(os.getenv('HOME') + "/.pyrobothist", "r")
          self.history = map( string.strip, fp.readlines())
          fp.close()
          self.history_pointer = len(self.history) - 1
@@ -66,12 +66,12 @@ class gui:
       """
       done = 0
       print "========================================================="
-      print "Pyro Robotics, (c) 2005, D.S. Blank"
+      print "Pyrobot, Python Robotics, (c) 2005, D.S. Blank"
       print "http://PyroRobotics.org"
       print "Version " + version()
       print "========================================================="
       while done is not 1:
-         print "Pyro > ", 
+         print "Pyrobot > ", 
          if len(command) > 0:
             print command[0],
             retval = command[0].strip()
@@ -97,7 +97,7 @@ class gui:
       cwd = os.getcwd()
       if self.engine.simfile:
          file = self.engine.simfile
-         if os.environ["PYRO"] + "/plugins/" in file or \
+         if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
@@ -105,7 +105,7 @@ class gui:
          config.put("simulator", "file", file)
       if self.engine.worldfile:
          file = self.engine.worldfile
-         if os.environ["PYRO"] + "/plugins/" in file or \
+         if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
@@ -113,7 +113,7 @@ class gui:
          config.put("world", "file", file)
       if self.engine.robotfile:
          file = self.engine.robotfile
-         if os.environ["PYRO"] + "/plugins/" in file or \
+         if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
@@ -121,7 +121,7 @@ class gui:
          config.put("robot", "file", file)
       if self.engine.brainfile:
          file = self.engine.brainfile
-         if os.environ["PYRO"] + "/plugins/" in file or \
+         if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
@@ -133,28 +133,28 @@ class gui:
       commandLine = sys.argv[0] + " "
       if self.engine.simfile:
          file = self.engine.simfile
-         if os.environ["PYRO"] + "/plugins/" in file:
+         if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
             file = file[:-3]
          commandLine += "-s %s " % file
       if self.engine.worldfile:
          file = self.engine.worldfile
-         if os.environ["PYRO"] + "/plugins/" in file:
+         if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
             file = file[:-3]
          commandLine += "-w %s " % file
       if self.engine.robotfile:
          file = self.engine.robotfile
-         if os.environ["PYRO"] + "/plugins/" in file:
+         if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
             file = file[:-3]
          commandLine += "-r %s " % file
       if self.engine.brainfile:
          file = self.engine.brainfile
-         if os.environ["PYRO"] + "/plugins/" in file:
+         if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          if file[-3:] == ".py":
             file = file[:-3]
@@ -338,7 +338,7 @@ class gui:
          if self.engine != 0:
             self.engine.shutdown()
          try:
-            fp = open(os.getenv('HOME') + "/.pyrohist", "w")
+            fp = open(os.getenv('HOME') + "/.pyrobothist", "w")
             line_count = min( len(self.history), self.MAXHISTORY)
             for i in range( line_count ):
                fp.write( self.history[ len(self.history) - line_count + i] +"\n" )
@@ -401,7 +401,7 @@ class gui:
       self.engine.brainfile = ''
 
    def loadSim(self, worldfile = ''):
-      pyropath = os.getenv('PYRO')
+      pyropath = os.getenv('PYROBOT')
       f = self.fileloaddialog("simulators","*",self.lastDir.get("sim", ''))
       if f != '' and f != 0:
          self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')
@@ -470,7 +470,7 @@ class gui:
       print "STOP ----------------------------------------------------"
       self.triedToStop += 1
       if self.triedToStop > 1:
-         os.system("killall -9 pyro")
+         os.system("killall -9 pyrobot")
       self.engine.pleaseStop()
       self.cleanup()
 

@@ -1,4 +1,4 @@
-from pyro.brain import Brain 
+from pyrobot.brain import Brain 
 from time import *
 import random
   

@@ -1,4 +1,4 @@
-# pyro.gui.console
+# pyrobot.gui.console
 #
 # This is a text output facility for the xrcl base.
 # it is modeled after the normal syslog(3) 

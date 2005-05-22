@@ -17,9 +17,9 @@ def _colorize(txt, col="red"):
     try: return initcode + str(cols[col]) + 'm' + txt + endcode
     except: return txt
 
-class PyroDebugger(code.InteractiveConsole):
+class PyrobotDebugger(code.InteractiveConsole):
     def __init__(self, filename="<console>",
-                 histfile=os.path.expanduser("~/.pyrohist"),
+                 histfile=os.path.expanduser("~/.pyrobothist"),
                  frame=None):
         code.InteractiveConsole.__init__(self)
         self.init_history(histfile)
@@ -79,7 +79,7 @@ class PyroDebugger(code.InteractiveConsole):
 
     def save_history(self, histfile = None):
         if histfile == None:
-            histfile=os.path.expanduser("~/.pyrohist")
+            histfile=os.path.expanduser("~/.pyrobothist")
         readline.write_history_file(histfile)
 
     def raw_input(self, prompt):
@@ -129,10 +129,10 @@ def Break():
     _handler(None, inspect.currentframe())
 
 def _handler(signum, frame):
-    console = PyroDebugger(frame=frame)
+    console = PyrobotDebugger(frame=frame)
     console.interact()
     console.save_history()
     print _colorize("\nContinuing...", "yellow")
 signal.signal(signal.SIGTSTP, _handler) # suspend
 
-print _colorize("Pyro debugger is installed. Press <CONTROL+Z> to activate.")
+print _colorize("Pyrobot debugger is installed. Press <CONTROL+Z> to activate.")

@@ -1,12 +1,12 @@
-# Pyro - Python Robotics Config Script
-# Please edit Makefile.cfg
+# Pyrobot - Python Robotics Config Script
+# Please edit Makefile.cfg or run "make config"
 
 # -----------------------------------------------------
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYRO_VERSION = 4.0.0
-PYRO_DEFINE = -DPYRO_VERSION=\"$(PYRO_VERSION)\"
+PYROBOT_VERSION = 4.0.0
+PYROBOT_DEFINE = -DPYROBOT_VERSION=\"$(PYROBOT_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean all
 

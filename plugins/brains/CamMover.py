@@ -1,6 +1,6 @@
-from pyro.brain import Brain
-from pyro.robot.saphira import *
-from pyro.brain.fuzzy import *
+from pyrobot.brain import Brain
+from pyrobot.robot.saphira import *
+from pyrobot.brain.fuzzy import *
 
 import time
 

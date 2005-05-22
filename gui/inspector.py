@@ -1,7 +1,7 @@
 
 import Tkinter
 import types
-import pyro.system.share as share
+import pyrobot.system.share as share
 
 class Inspector(Tkinter.Tk):
 
@@ -11,7 +11,7 @@ class Inspector(Tkinter.Tk):
         leftFrame = Tkinter.Frame(self)
         leftFrame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 
                         'fill' :'y'})
-        leftFrame.winfo_toplevel().title("Pyro Object Inspector")
+        leftFrame.winfo_toplevel().title("Pyrobot Object Inspector")
         frame = Tkinter.Frame(leftFrame)
         frame.pack({'expand':'yes', 'side' :'left', 'pady' :'1', 
                     'fill' :'y'})

@@ -8,7 +8,7 @@
 # - stephen -
 #
 
-import pyro.gui.console as console
+import pyrobot.gui.console as console
 
 class Sense:
     def __init__(self,geometry,reading):

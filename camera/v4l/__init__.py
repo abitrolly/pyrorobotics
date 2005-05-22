@@ -1,5 +1,5 @@
 from v4l import V4L      # cameraDevice
-from pyro.camera import Camera, CBuffer
+from pyrobot.camera import Camera, CBuffer
 
 class V4LCamera(Camera):
    """

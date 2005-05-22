@@ -1,9 +1,9 @@
 # Uses RAVQ to segment input data.
  
-from pyro.brain import Brain 
+from pyrobot.brain import Brain 
 from random import random 
 from time import sleep 
-import pyro.brain.ravq 
+import pyrobot.brain.ravq 
  
 class SimpleBrain(Brain): 
    # Only method you have to define is the step method: 
@@ -11,7 +11,7 @@ class SimpleBrain(Brain):
    def setup(self): 
       self.blockedFront = 0 
       self.direction = 1 
-      self.ravq = pyro.brain.ravq.ARAVQ(10, 1.75, 3.75, .1) 
+      self.ravq = pyrobot.brain.ravq.ARAVQ(10, 1.75, 3.75, .1) 
       self.ravq.setHistory(0)
       self.ravq.openLog('ravq_2.log')
       self.counter = 0 

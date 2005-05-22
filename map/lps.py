@@ -1,5 +1,5 @@
 
-from pyro.map.tkmap import TkMap
+from pyrobot.map.tkmap import TkMap
 from math import cos, sin, pi, sqrt
 
 class LPS(TkMap):

@@ -1,4 +1,4 @@
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 def process(camera):
    camera.apply('match', 158 , 71 , 48 , )

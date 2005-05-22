@@ -104,7 +104,7 @@ if __name__ == "__main__":
     #print myNetStruct.levelList
     #print myNetStruct.layerDict
     #print myNetStruct.edgeList
-    from pyro.brain.conx import SRN
+    from pyrobot.brain.conx import SRN
     x = SRN()
     x.addThreeLayers(3,3,3)
     SRNStruct = NetStruct(x)

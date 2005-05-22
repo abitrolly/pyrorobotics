@@ -1,4 +1,4 @@
-from pyro.brain.conx import *
+from pyrobot.brain.conx import *
 import random
 
 def xor(a,b):

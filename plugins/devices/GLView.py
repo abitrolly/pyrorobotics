@@ -1,5 +1,5 @@
 
-from pyro.gui.gl import *
+from pyrobot.gui.gl import *
 
 def INIT(robot):
     return {"view": GLView(robot)}

@@ -1,4 +1,4 @@
-from pyro.gui.renderer import *
+from pyrobot.gui.renderer import *
 from math import sin, cos
 
 class TKRenderer(Renderer):

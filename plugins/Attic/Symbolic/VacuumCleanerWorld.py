@@ -17,8 +17,8 @@ class GUI(Tkinter.Toplevel):
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.dirtFilename = os.environ["PYRO"] + "/images/dirt.gif" 
-        self.vacFilename = os.environ["PYRO"] + "/images/vac.gif" 
+        self.dirtFilename = os.environ["PYROBOT"] + "/images/dirt.gif" 
+        self.vacFilename = os.environ["PYROBOT"] + "/images/vac.gif" 
         self.dirtImage = Image.open(self.dirtFilename)
         self.vacImage = Image.open(self.vacFilename)
         self.vacImageTk = ImageTk.PhotoImage(self.vacImage)

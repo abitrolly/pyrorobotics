@@ -1,5 +1,5 @@
-from pyro.robot.symbolic import TCPRobot
-from pyro.system.share import ask
+from pyrobot.robot.symbolic import TCPRobot
+from pyrobot.system.share import ask
 
 def INIT():
 	retval = ask("Please enter the Simulator Connection Data",

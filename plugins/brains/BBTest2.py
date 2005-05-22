@@ -1,5 +1,5 @@
-from pyro.brain.fuzzy import *
-from pyro.brain.behaviors import *
+from pyrobot.brain.fuzzy import *
+from pyrobot.brain.behaviors import *
 
 class beh1 (Behavior):
     def setup(self): # called when created

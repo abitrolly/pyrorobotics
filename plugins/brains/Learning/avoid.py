@@ -1,6 +1,6 @@
 # robot goes forward and then slows to a stop when it detects something 
   
-from pyro.brain import Brain 
+from pyrobot.brain import Brain 
 import random
   
 class NNBrain(Brain): 

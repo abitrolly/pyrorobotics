@@ -1,6 +1,6 @@
 # A bare robot and brain
 
-from pyro.robot.simple import *
+from pyrobot.robot.simple import *
 
 class bareEngine:
    def __init__(self):

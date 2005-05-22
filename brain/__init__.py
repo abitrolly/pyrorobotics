@@ -1,7 +1,7 @@
 # a basic brain class
 
 import threading, time, operator
-import pyro.gui.console
+import pyrobot.gui.console
 
 def avg(list):
     sum = reduce(operator.add, list)
@@ -185,13 +185,13 @@ class Brain(threading.Thread):
         
     def pleaseRun(self, callback = 0):
         if not self.isAlive():
-            pyro.gui.console.log(pyro.gui.console.WARNING,"Brain thread is not alive but request to run was made.");
+            pyrobot.gui.console.log(pyrobot.gui.console.WARNING,"Brain thread is not alive but request to run was made.");
         self.needToStop = 0
         if callback != 0:
             callback()
 		
     def step(self):
-        print "need to override pyro.brain.Brain.step()."
+        print "need to override pyrobot.brain.Brain.step()."
 
     def setup(self, **kwargs):
         """

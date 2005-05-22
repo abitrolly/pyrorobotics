@@ -1,6 +1,6 @@
 # Uses RobocupRobot, a subclass of robot
 
-from pyro.robot.robocup import *
+from pyrobot.robot.robocup import *
 
 def INIT():
     # Make a team of 11 robots:

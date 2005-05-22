@@ -1,12 +1,12 @@
 import Tkinter, time, sys
-from pyro.gui import *
-import pyro.gui.widgets.TKwidgets as TKwidgets
-from pyro.system.version import *
-from pyro.engine import *
-import pyro.system as system
-import pyro.system.share as share
+from pyrobot.gui import *
+import pyrobot.gui.widgets.TKwidgets as TKwidgets
+from pyrobot.system.version import *
+from pyrobot.engine import *
+import pyrobot.system as system
+import pyrobot.system.share as share
 from posixpath import exists
-from pyro.tools.joystick import Joystick
+from pyrobot.tools.joystick import Joystick
 
 def ask(title, qlist):
    d = TKwidgets.AskDialog(share.gui, title, qlist)
@@ -135,7 +135,7 @@ class TKgui(Tkinter.Toplevel, gui):
 
       #self.menuButtons["Built-in Devices"] = Tkinter.Menubutton(self.mBar,text="Test",underline=0)
 
-      self.frame.winfo_toplevel().title("pyro@%s" % os.getenv('HOSTNAME'))
+      self.frame.winfo_toplevel().title("pyrobot@%s" % os.getenv('HOSTNAME'))
       self.frame.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.cleanup)
 
       # create a command text area:
@@ -182,7 +182,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.redirectToWindow()
       #self.tk_focusFollowsMouse()
       self.commandEntry.focus_force()
-      self.inform("Pyro Version " + version() + ": Ready...")
+      self.inform("Pyrobot Version " + version() + ": Ready...")
 
    def showAll(self):
       if self.engine and self.engine.robot:
@@ -397,7 +397,7 @@ class TKgui(Tkinter.Toplevel, gui):
          myfile = "~/MyBrain%d.py" % i
          if not exists(myfile):
             break
-      os.system( "cp " + os.getenv("PYRO") + ("/build/brainTemplate.py %s" % myfile))
+      os.system( "cp " + os.getenv("PYROBOT") + ("/build/brainTemplate.py %s" % myfile))
       if os.getenv("EDITOR"):
          os.system(os.getenv("EDITOR") + " %s &" % myfile)
       else:
@@ -650,7 +650,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self.status.see('end')
 
    def saveConfig(self):
-      retval = self.filesavedialog("Config", "*.ini", ".", "pyro.ini")
+      retval = self.filesavedialog("Config", "*.ini", ".", "pyrobot.ini")
       if retval:
          self.setCurrentConfig(self.engine.config)
          self.engine.config.save(retval)
@@ -658,16 +658,16 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def fileloaddialog(self, filetype, skel, startdir = ''):
       from string import replace
-      import pyro
+      import pyrobot
       from os import getcwd, getenv, chdir
       retval = ""
       cwd = getcwd()
       if startdir == '':
-         chdir(pyro.pyrodir() + "/plugins/" + filetype)
+         chdir(pyrobot.pyrobotdir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
       d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel, \
-                                   pyro.pyrodir() + "/plugins/" + filetype)
+                                   pyrobot.pyrobotdir() + "/plugins/" + filetype)
       try:
          retval = d.Show()
          if retval == 1:
@@ -687,12 +687,12 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def filesavedialog(self, filetype, skel, startdir = '', default=None):
       from string import replace
-      import pyro
+      import pyrobot
       from os import getcwd, getenv, chdir
       retval = ""
       cwd = getcwd()
       if startdir == '':
-         chdir(pyro.pyrodir() + "/plugins/" + filetype)
+         chdir(pyrobot.pyrobotdir() + "/plugins/" + filetype)
       else:
          chdir(startdir)
       d = TKwidgets.SaveFileDialog(self, "Save " + filetype, skel, defaultFilename=default)

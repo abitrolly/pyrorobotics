@@ -1,5 +1,5 @@
-from pyro.brain import Brain
-from pyro.tools import joystick
+from pyrobot.brain import Brain
+from pyrobot.tools import joystick
 from time import sleep
 
 class JoystickControl(Brain):

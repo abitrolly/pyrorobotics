@@ -1,5 +1,5 @@
 import socket, pickle
-from pyro.robot import Robot
+from pyrobot.robot import Robot
 
 class TCPRobot(Robot):
 	"""

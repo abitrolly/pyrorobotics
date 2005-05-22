@@ -1,5 +1,5 @@
 """
-Pyro module for interfacing with the Robocup Server.
+Pyrobot module for interfacing with the Robocup Server.
 
 TODO: need localize that would triangulate from flags/landmarks OR
       need someother way of dead reckoning (for x, y, th)
@@ -7,13 +7,13 @@ TODO: need localize that would triangulate from flags/landmarks OR
       need to make laser sensor have more than single angle hits
 """
 from socket import *
-from pyro.robot import Robot
-from pyro.robot.device import Device, SensorValue
+from pyrobot.robot import Robot
+from pyrobot.robot.device import Device, SensorValue
 from random import random
 from time import sleep
 from math import sin, cos
 import threading
-from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class ReadUDP(threading.Thread):
     """
@@ -239,7 +239,7 @@ class RobocupLaserDevice(Device):
 
 class RobocupRobot(Robot):
     """ A robot to interface with the Robocup simulator. """
-    def __init__(self, name="TeamPyro", host="localhost", port=6000,
+    def __init__(self, name="TeamPyrobot", host="localhost", port=6000,
              goalie = 0):
         Robot.__init__(self)
         self.lastTranslate = 0

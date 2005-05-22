@@ -1,4 +1,4 @@
-from pyro.map.tkmap import TkMap
+from pyrobot.map.tkmap import TkMap
 
 class occupancyGrid(TkMap):
    """

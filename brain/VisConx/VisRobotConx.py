@@ -1,7 +1,7 @@
 import Tkinter
-from pyro.brain.conx import *
-import pyro.brain.VisConx.ActivationsDiag as ActivationsDiag
-import pyro.brain.VisConx.VisConxBase as VisConxBase
+from pyrobot.brain.conx import *
+import pyrobot.brain.VisConx.ActivationsDiag as ActivationsDiag
+import pyrobot.brain.VisConx.VisConxBase as VisConxBase
 
 class RobotGUIBase(VisConxBase.VisConxBase):
     def __init__(self):

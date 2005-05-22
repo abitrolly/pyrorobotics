@@ -3,13 +3,13 @@
 
 # just reinforcement, for now, without prediction
 
-from pyro.brain import Brain
-from pyro.brain.conx import *
-from pyro.gui.plot.scatter import *
-from pyro.gui.plot.hinton import *
+from pyrobot.brain import Brain
+from pyrobot.brain.conx import *
+from pyrobot.gui.plot.scatter import *
+from pyrobot.gui.plot.hinton import *
 from random import random
 from time import sleep
-from pyro.brain.fuzzy import *
+from pyrobot.brain.fuzzy import *
 
 class Reinforce(Brain):
    def setup(self):

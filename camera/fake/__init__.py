@@ -1,6 +1,6 @@
-from pyro.camera.fake.fake import Fake # cameraDevice
-from pyro.camera import Camera, CBuffer # base class
-import pyro.system as system
+from pyrobot.camera.fake.fake import Fake # cameraDevice
+from pyrobot.camera import Camera, CBuffer # base class
+import pyrobot.system as system
 import re, time, os
 
 class FakeCamera(Camera):
@@ -47,8 +47,8 @@ class FakeCamera(Camera):
          currname = self.pattern
       if system.file_exists(currname):
          self.path = ''
-      elif system.file_exists( os.getenv('PYRO') + "/" + currname):
-         self.path = os.getenv('PYRO') + "/"
+      elif system.file_exists( os.getenv('PYROBOT') + "/" + currname):
+         self.path = os.getenv('PYROBOT') + "/"
       else:
          raise ValueError, "file not found: '%s'" % currname
       if self.verbose:

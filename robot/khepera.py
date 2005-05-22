@@ -1,15 +1,15 @@
 # Defines KheperaRobot, a subclass of robot
 
-from pyro.system.share import config
-from pyro.robot import *
-from pyro.robot.device import *
-from pyro.system.serial import *
-import pyro.robot.driver as driver
-import pyro.gui.console as console
+from pyrobot.system.share import config
+from pyrobot.robot import *
+from pyrobot.robot.device import *
+from pyrobot.system.serial import *
+import pyrobot.robot.driver as driver
+import pyrobot.gui.console as console
 import string, array, math 
 from time import sleep
-from pyro.simulators.khepera.CNTRL import _ksim as ksim
-from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+from pyrobot.simulators.khepera.CNTRL import _ksim as ksim
+from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class IRSensor(Device):
     def __init__(self, dev, type = "ir"):

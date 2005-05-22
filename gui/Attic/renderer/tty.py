@@ -1,4 +1,4 @@
-from pyro.gui.renderer import *
+from pyrobot.gui.renderer import *
 
 class TTYRenderer(Renderer):
    def __init__(self):

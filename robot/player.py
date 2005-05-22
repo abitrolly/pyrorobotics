@@ -1,11 +1,11 @@
 # Defines PlayerRobot, a subclass of robot
 
-from pyro.robot import *
+from pyrobot.robot import *
 from math import pi, cos, sin
 import threading, time
 from os import getuid
-from pyro.robot.device import Device, DeviceError, SensorValue
-from pyro.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+from pyrobot.robot.device import Device, DeviceError, SensorValue
+from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 import playerc
 
 # todo:

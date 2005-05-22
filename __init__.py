@@ -1,7 +1,7 @@
 from os import getenv
 
-def pyrodir():
-    return getenv("PYRO")
+def pyrobotdir():
+    return getenv("PYROBOT")
 
 def startup_check():
-    return pyrodir() != None
+    return pyrobotdir() != None

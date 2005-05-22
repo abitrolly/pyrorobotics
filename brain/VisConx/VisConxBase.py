@@ -2,12 +2,12 @@ import Tkinter
 import tkMessageBox
 import tkFileDialog
 import tkSimpleDialog
-from pyro.brain.conx import *
-import pyro.brain.VisConx.TwoDimPlot as TwoDimPlot
-import pyro.brain.VisConx.NetStruct as NetStruct
-import pyro.brain.VisConx.Hinton as Hinton
-import pyro.brain.VisConx.ActivationsDiag as ActivationsDiag
-import pyro.brain.VisConx.ArchDiag as ArchDiag
+from pyrobot.brain.conx import *
+import pyrobot.brain.VisConx.TwoDimPlot as TwoDimPlot
+import pyrobot.brain.VisConx.NetStruct as NetStruct
+import pyrobot.brain.VisConx.Hinton as Hinton
+import pyrobot.brain.VisConx.ActivationsDiag as ActivationsDiag
+import pyrobot.brain.VisConx.ArchDiag as ArchDiag
 
 class NNSettingsDialog(tkSimpleDialog.Dialog):
     def __init__(self, parent, network):

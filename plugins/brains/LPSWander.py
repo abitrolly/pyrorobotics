@@ -1,11 +1,11 @@
 # A bare brain with a Local Perceptual View
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 from random import random
 from time import sleep
-from pyro.map.lps import LPS
-from pyro.map.gps import GPS
-from pyro.tools.joystick import Joystick
+from pyrobot.map.lps import LPS
+from pyrobot.map.gps import GPS
+from pyrobot.tools.joystick import Joystick
 
 class SimpleBrain(Brain):
    def setup(self):

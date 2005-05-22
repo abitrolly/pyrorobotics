@@ -1,6 +1,6 @@
-from pyro.camera.v4l import V4LCamera
-from pyro.vision.cvision import VisionSystem
-from pyro.system.share import ask
+from pyrobot.camera.v4l import V4LCamera
+from pyrobot.vision.cvision import VisionSystem
+from pyrobot.system.share import ask
 
 def INIT(robot):
     retval = ask("Please enter the parameters for the Video4Linux Camera",

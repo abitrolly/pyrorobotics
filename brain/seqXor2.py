@@ -1,6 +1,6 @@
 # Test of Elman-style XOR in time. 
 
-from pyro.brain.conx import *
+from pyrobot.brain.conx import *
 
 def xor(a,b):
     """ XOR for floating point numbers """

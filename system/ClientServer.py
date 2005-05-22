@@ -6,7 +6,7 @@
 #
 
 
-from pyro.gui import console
+from pyrobot.gui import console
 import socket
 import SocketServer
 import cPickle

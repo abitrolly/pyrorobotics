@@ -4,7 +4,7 @@
 
 import Tkinter
 import random
-from pyro.robot.device import Device
+from pyrobot.robot.device import Device
 
 class SimplePlot(Device): 
     COLORS = ['blue', 'red', 'tan', 'yellow', 'orange', 'black',
@@ -39,10 +39,10 @@ class SimplePlot(Device):
             try:
                 self.win = Tkinter.Toplevel()
             except:
-                print "Pyro view cannot make window. Check DISPLAY variable."
+                print "Pyrobot view cannot make window. Check DISPLAY variable."
                 self.setVisible(0)
                 return
-            self.win.title("Pyro view: %s range sensors" % self.what)
+            self.win.title("Pyrobot view: %s range sensors" % self.what)
             self.canvas = Tkinter.Canvas(self.win,width=self.width,height=self.height)
             self.canvas.pack()
             self.win.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)

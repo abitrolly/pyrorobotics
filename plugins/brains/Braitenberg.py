@@ -5,7 +5,7 @@ D.S. Blank
 
 # import some additional libraries:
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 from math import fabs
 
 # subclass brain:

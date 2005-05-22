@@ -1,6 +1,6 @@
 # A Simple Device
 
-from pyro.robot.device import Device
+from pyrobot.robot.device import Device
 
 class Test(Device):
 

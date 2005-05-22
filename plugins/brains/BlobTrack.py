@@ -1,10 +1,10 @@
 # A bare brain
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 from time import sleep
-from pyro.vision.cblob import blob
-from pyro.vision.cblob import bitmap_from_V4LGrabber
-from pyro.camera.v4l import *
+from pyrobot.vision.cblob import blob
+from pyrobot.vision.cblob import bitmap_from_V4LGrabber
+from pyrobot.camera.v4l import *
 
 class SimpleBrain(Brain):
 

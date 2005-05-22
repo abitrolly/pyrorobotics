@@ -1,7 +1,7 @@
 # robot goes forward and then slows to a stop when it detects something  
    
-from pyro.brain import Brain  
-from pyro.brain.conx import *  
+from pyrobot.brain import Brain  
+from pyrobot.brain.conx import *  
 from time import *  
    
 class Avoid(Brain):  

@@ -1,5 +1,5 @@
-from pyro.robot.player import PlayerRobot
-from pyro.system.share import ask
+from pyrobot.robot.player import PlayerRobot
+from pyrobot.system.share import ask
 
 # This should work for real and simulated Player-based robots
 

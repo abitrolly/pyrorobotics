@@ -236,7 +236,7 @@ class AskDialog(AlertDialog):
 class Watcher(Tkinter.Toplevel):
    def __init__(self, root):
       Tkinter.Toplevel.__init__(self, root)
-      self.winfo_toplevel().title("Pyro Expression Watcher")
+      self.winfo_toplevel().title("Pyrobot Expression Watcher")
       self.data = []
 
    def unwatch(self, exp):
@@ -343,7 +343,7 @@ class FileDialog(ModalDialog):
               #       self.cwd != self.pyro_dir:
               self.lastCwd = self.cwd
               self.cwd = getenv('HOME')
-              self.goHomeButton['text'] = 'Pyro'
+              self.goHomeButton['text'] = 'Pyrobot'
               self.UpdateListBoxes()
            elif self.goHomeButton['text'] == 'Last':
               tmp = self.cwd 
@@ -353,7 +353,7 @@ class FileDialog(ModalDialog):
               self.lastCwd = tmp
               self.goHomeButton['text'] = 'Home'
               self.UpdateListBoxes()
-           elif self.goHomeButton['text'] == 'Pyro':
+           elif self.goHomeButton['text'] == 'Pyrobot':
               #if self.lastCwd != getenv('HOME') and \
               #       self.lastCwd != self.pyro_dir:
               #   self.goHomeButton['text'] = 'Last'

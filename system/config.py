@@ -1,5 +1,5 @@
 from os import environ
-from pyro.system import file_exists
+from pyrobot.system import file_exists
 import ConfigParser
 import string
 
@@ -9,7 +9,7 @@ class Configuration:
             "robot":       {},
             "brain":       {},
             "simulator":   {},
-            "pyro":        {}
+            "pyrobot":        {}
             }
         if file != None and file != "None":
             self.load(file)
@@ -42,7 +42,7 @@ class Configuration:
             for opt in cp.options(sec):
                 self.data[name][string.lower(opt)] = string.strip(cp.get(sec, opt))
 
-    def save(self, file="pyro.ini"):
+    def save(self, file="pyrobot.ini"):
         fp = open(file, "w")
         for section in self.data:
             print >> fp, "[%s]" % section
@@ -53,28 +53,28 @@ class Configuration:
 
     def load(self, file = None):
         cp = ConfigParser.ConfigParser()
-        if file_exists( environ['PYRO'] + "/.pyro"): # $PYRO?
-            self.processFile( environ['PYRO'] + "/.pyro", cp)
-        if file_exists( environ['PYRO'] + "/pyro.ini"): # $PYRO?
-            self.processFile( environ['PYRO'] + "/pyro.ini", cp)
-        if file_exists( environ['PYRO'] +
-                        "/.pyro-" + environ['HOSTNAME']):
+        if file_exists( environ['PYROBOT'] + "/.pyrobot"): # $PYROBOT?
+            self.processFile( environ['PYROBOT'] + "/.pyrobot", cp)
+        if file_exists( environ['PYROBOT'] + "/pyrobot.ini"): # $PYRO?
+            self.processFile( environ['PYROBOT'] + "/pyrobot.ini", cp)
+        if file_exists( environ['PYROBOT'] +
+                        "/.pyrobot-" + environ['HOSTNAME']):
             # $PYRO-HOSTNAME?
-            self.processFile( environ['PYRO'] +
-                              "/.pyro-" + environ['HOSTNAME'], cp)
-        if file_exists( environ['PYRO'] +
-                        "/pyro-" + environ['HOSTNAME'] + ".ini"):
+            self.processFile( environ['PYROBOT'] +
+                              "/.pyrobot-" + environ['HOSTNAME'], cp)
+        if file_exists( environ['PYROBOT'] +
+                        "/pyrobot-" + environ['HOSTNAME'] + ".ini"):
             # $PYRO-HOSTNAME?
-            self.processFile( environ['PYRO'] +
-                              "/pyro-" + environ['HOSTNAME'] + ".ini", cp)
-        if file_exists( environ['HOME'] + "/.pyro"): # home dir?
-            self.processFile( environ['HOME'] + "/.pyro", cp)
-        if file_exists( environ['HOME'] + "/pyro.ini"): # home dir?
-            self.processFile( environ['HOME'] + "/pyro.ini", cp)
-        if file_exists(".pyro"): # current dir?
-            self.processFile( ".pyro", cp)
-        if file_exists("pyro.ini"): # current dir?
-            self.processFile( "pyro.ini", cp)
+            self.processFile( environ['PYROBOT'] +
+                              "/pyrobot-" + environ['HOSTNAME'] + ".ini", cp)
+        if file_exists( environ['HOME'] + "/.pyrobot"): # home dir?
+            self.processFile( environ['HOME'] + "/.pyrobot", cp)
+        if file_exists( environ['HOME'] + "/pyrobot.ini"): # home dir?
+            self.processFile( environ['HOME'] + "/pyrobot.ini", cp)
+        if file_exists(".pyrobot"): # current dir?
+            self.processFile( ".pyrobot", cp)
+        if file_exists("pyrobot.ini"): # current dir?
+            self.processFile( "pyrobot.ini", cp)
         if file and file_exists(file):
             self.processFile( file, cp)
 

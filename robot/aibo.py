@@ -4,8 +4,8 @@ Aibo client commands for talking to the Tekkotsu servers
 from Python.
 """
 
-from pyro.robot import Robot
-from pyro.robot.device import Device
+from pyrobot.robot import Robot
+from pyrobot.robot.device import Device
 from socket import *
 import struct, time, sys, threading
 
@@ -197,9 +197,9 @@ class AiboHeadDevice(Device):
 
 class AiboRobot(Robot):
     """
-    Class for an Aibo robot in Pyro. 
+    Class for an Aibo robot in Pyrobot. 
     """
-    # pyro/camera/aibo/__init__.py references this:
+    # pyrobot/camera/aibo/__init__.py references this:
     PORT = {"Head Remote Control": 10052,
             "Walk Remote Control": 10050, 
             "EStop Remote Control": 10053,
@@ -641,7 +641,7 @@ class AiboRobot(Robot):
             check = 0
             if "mouth" in jointDict:
                 # original: 0.0(closed) and -1.0(open)
-                # pyro: 0.0(closed) and 1.0(open)
+                # pyrobot: 0.0(closed) and 1.0(open)
                 if len(jointDict) == 1:
                     if amtx < 0:
                         amtx = 0
@@ -663,13 +663,13 @@ class AiboRobot(Robot):
                     raise AttributeError, "incorrect joint name"    
             elif "leg" in jointDict:
                 # back rotator original: -2.4(fwd) to 2.2 (bwd)
-                #   pyro: -1.0(fwd) to 1.0(bwd) where 0 is straight
+                #   pyrobot: -1.0(fwd) to 1.0(bwd) where 0 is straight
                 # front rotator, original: -2.2(bwd) to 2.4(fwd)
-                #   pyro: -1.0(bwd) to 1.0(fwd) where 0 is straight down
+                #   pyrobot: -1.0(bwd) to 1.0(fwd) where 0 is straight down
                 # elevator, original: -0.3 to 1.6 (up)
-                #   pyro: -1.0 to 1.0(up) where 0 is straight down
+                #   pyrobot: -1.0 to 1.0(up) where 0 is straight down
                 # knee, original: -0.6 to 2.3 (contraction)
-                #   pyro: -1.0 to 1.0(contraction)
+                #   pyrobot: -1.0 to 1.0(contraction)
                 if len(jointDict) == 3 or len(jointDict) == 4:
                     check +=1
                     offset = 0

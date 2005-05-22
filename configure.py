@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Pyro configure.py script
+# Pyrobot configure.py script
 
 import sys
 from posixpath import exists, isdir, isfile, islink
@@ -59,14 +59,14 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
 
 print """
 ---------------------------------------------------------------------
-This is the configure.py script for installing Pyro, Python Robotics.
+This is the configure.py script for installing Pyrobot, Python Robotics.
 Pressing ENTER by itself will accept the default (shown in brackets).
 ---------------------------------------------------------------------
 """
 text = """
-# Pyro - Python Robotics Config Script
+# Pyrobot - Python Robotics Config Script
 
-# What version of Python do you want to build Pyro for?
+# What version of Python do you want to build Pyrobot for?
 # Leave empty if your python binary is just "python"
 PYTHON_VERSION=%s
 
@@ -85,7 +85,7 @@ CONFIGDIRS = %s
 """
 
 print """
-What version of Python do you want to build Pyro for?
+What version of Python do you want to build Pyrobot for?
 (Leave empty if your Python binary is just "python")
 If you need to type 'python2.2' to run Python, then
 enter "2.2".

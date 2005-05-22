@@ -1,5 +1,4 @@
-# pyro/map/__init__.py
-
+# pyrobot/map/__init__.py
 
 class Map:
     """ Basic class for global internal robot maps"""

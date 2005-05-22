@@ -3,7 +3,7 @@ Braitenberg Vehicle1 for the Khepera
 D.S. Blank
 """
 
-from pyro.brain import Brain, avg
+from pyrobot.brain import Brain, avg
 
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:

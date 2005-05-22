@@ -1,4 +1,4 @@
-""" The main Pyro robot object, and support functions
+""" The main Pyrobot robot object, and support functions
 
 
  This file contains the class that represents a computer controlled
@@ -19,14 +19,14 @@
  RAW    - right from the sensor
 """
 
-import pyro.gui.console as console
-import pyro.system as system
-from pyro.geometry import Polar, distance
-from pyro.robot.device import *
+import pyrobot.gui.console as console
+import pyrobot.system as system
+from pyrobot.geometry import Polar, distance
+from pyrobot.robot.device import *
 import math, string, time, os
 
-if not os.environ.has_key('PYRO'):
-    raise AttributeError, "PYRO not defined: export PYRO=/usr/local/pyro"
+if not os.environ.has_key('PYROBOT'):
+    raise AttributeError, "PYROBOT not defined: export PYROBOT=/usr/local/pyrobot"
 
 def ellipses(things):
     if isinstance(things, (type((1,)), type([1,]))):
@@ -508,9 +508,9 @@ class Robot:
                 file = file + '.py'
             if system.file_exists(file):
                 return self.startDevices( system.loadINIT(file, self), **args )
-            elif system.file_exists(os.getenv('PYRO') + \
+            elif system.file_exists(os.getenv('PYROBOT') + \
                                     '/plugins/devices/' + file): 
-                return self.startDevices( system.loadINIT(os.getenv('PYRO') + \
+                return self.startDevices( system.loadINIT(os.getenv('PYROBOT') + \
                                                    '/plugins/devices/'+ \
                                                    file, self), **args)
             else:

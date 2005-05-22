@@ -1,7 +1,7 @@
-# A Pyro brain to clean up two rooms
+# A Pyrobot brain to clean up two rooms
 # After Russell and Norvig AIMA
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 class CleanUp(Brain):
       

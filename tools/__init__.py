@@ -1,5 +1,5 @@
 # Module for wrapping command-line business
-# Module pyro.tools
+# Module pyrobot.tools
 
 import getopt, sys, string
 

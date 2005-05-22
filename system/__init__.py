@@ -1,10 +1,10 @@
 import string
 import sys
-from pyro.system.version import version
+from pyrobot.system.version import version
 
 def about():
     print "-------------------------------------------------------------"
-    print "Pyro - Python Robotics"
+    print "Pyrobot - Python Robotics"
     print "Version:", version()
     print "See: http://PyroRobotics.org"
     print "(c) 2005, D.S. Blank"
@@ -12,7 +12,7 @@ def about():
 
 def usage():
     print "-------------------------------------------------------------"
-    print " Pyro Command Line Arguments:"
+    print " Pyrobot Command Line Arguments:"
     print "-------------------------------------------------------------"
     print "  -h                 show this help"
     print "  -r ROBOT           name of robot.py file to load"
@@ -29,7 +29,7 @@ def usage():
 
 def help():
     print "-------------------------------------------------------------"
-    print "Pyro GUI Command line editing commands:"
+    print "Pyrobot GUI Command line editing commands:"
     print "-------------------------------------------------------------"
     print "  Control+p or UpArrow        previous line"
     print "  Control+n or DownArrow      next line"
@@ -38,7 +38,7 @@ def help():
     print "  Control+f or RightArrow     forward one character"
     print "  Control+b or LeftArrow      back one character"
     print "-------------------------------------------------------------"
-    print "Pyro TTY GUI commands:"
+    print "Pyrobot TTY GUI commands:"
     print "-------------------------------------------------------------"
     print "  <command>                   execute <command> in Python"
     print "  <exp>                       print <exp> in Python"
@@ -49,7 +49,7 @@ def help():
     print "  load brain                  load a brain file"
     print "  load robot                  load a robot file"
     print "  load simulator              load a simulator"
-    print "  quit | exit | bye           exit from Pyro"
+    print "  quit | exit | bye           exit from Pyrobot"
     print "  reload                      reload the brain"
     print "  run                         start brain running"
     print "  stop                        stop brain and robot"

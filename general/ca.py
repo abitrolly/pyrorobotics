@@ -134,7 +134,7 @@ class Rules(Matrix):
     def watch(self, lat):
         self.width = lat.size 
         length = lat.height - 1
-        self.gui = GUI("Pyro CA", lat.size, lat.height - 1)
+        self.gui = GUI("Pyrobot CA", lat.size, lat.height - 1)
         for c in range( length):
             self.apply(lat, c)
         self.gui.draw(lat, length)

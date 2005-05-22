@@ -1,5 +1,5 @@
 import Numeric, math, random, sys
-from pyro.tools.circularlist import CircularList
+from pyrobot.tools.circularlist import CircularList
 
 version = '1.4'
 

@@ -1,7 +1,7 @@
 """ A simple loader for a Video for Linux (V4L) frame grabber """
 
-from pyro.camera.v4l import V4LGrabber
-from pyro.vision.cvision import VisionSystem
+from pyrobot.camera.v4l import V4LGrabber
+from pyrobot.vision.cvision import VisionSystem
 
 def INIT(robot):
     if robot.get("/robot/name") == "Aria":

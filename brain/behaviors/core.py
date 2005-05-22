@@ -1,6 +1,6 @@
 # Some core/stock behaviors
 
-from pyro.brain.behaviors import *
+from pyrobot.brain.behaviors import *
 from math import sqrt
 
 class StopBehavior (Behavior):

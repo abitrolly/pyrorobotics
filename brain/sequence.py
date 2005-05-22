@@ -1,5 +1,5 @@
-from pyro.brain.conx import *
-from pyro.brain.governor import *
+from pyrobot.brain.conx import *
+from pyrobot.brain.governor import *
 import sys
 
 # goal is to remember first input given in several sequences

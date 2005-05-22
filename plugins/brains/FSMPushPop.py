@@ -1,7 +1,7 @@
 # A FSM sequencing sample
 # D.S. Blank
 
-# This Pyro example will go (roughly) in a square
+# This Pyrobot example will go (roughly) in a square
 
 # This example has two states, "edge" that goes straight, and "turn"
 # that turns 90 degrees to the left. It bounces back and forth between
@@ -28,8 +28,8 @@
 # that by using the onGoto() and Goto() methods. But you would have to
 # make the next state to goto a parameter that you pass in. Why?
 
-from pyro.geometry import *   # import distance function
-from pyro.brain.behaviors.fsm import State, FSMBrain
+from pyrobot.geometry import *   # import distance function
+from pyrobot.brain.behaviors.fsm import State, FSMBrain
 
 class stuck(State):
     def onActivate(self):

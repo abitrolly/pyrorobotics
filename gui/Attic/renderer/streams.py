@@ -1,7 +1,7 @@
 import string
 #from pickle import *
 from cPickle import *
-from pyro.gui.renderer import Renderer
+from pyrobot.gui.renderer import Renderer
 
 class GenericStream:
    def __init__(self):

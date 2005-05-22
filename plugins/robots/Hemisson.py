@@ -1,7 +1,7 @@
 # Uses KheperaRobot, a subclass of robot, for the Hemisson
 
 #import termios
-from pyro.robot.khepera import *
+from pyrobot.robot.khepera import *
 
 def INIT():
     # For serial connected Hemisson:
