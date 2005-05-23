@@ -22,7 +22,7 @@ else:
 # ----------------------------------------------------
 # Add cwd to our PYTHON search path
 # ----------------------------------------------------
-(binpath,spare) = os.path.split(cwd) # peel off pyro filename
+(binpath,spare) = os.path.split(cwd) # peel off pyrobot filename
 (pyropath,spare) = os.path.split(binpath) # peel off bin dir
 (path,spare) = os.path.split(pyropath) # peel off pyro dir
 sys.path.insert(0, path) # put PARENT at front of list PARENT/pyro/bin/pyro
@@ -44,17 +44,17 @@ elif os.name in ['posix']:
         newlibpath = (pyropath + '/lib')
     os.environ['LD_LIBRARY_PATH'] = newlibpath
     os.putenv('LD_LIBRARY_PATH', newlibpath)
-if not os.environ.has_key('PYRO'):
-    os.environ['PYRO'] = pyropath
-    os.putenv('PYRO', pyropath )
+if not os.environ.has_key('PYROBOT'):
+    os.environ['PYROBOT'] = pyropath
+    os.putenv('PYROBOT', pyropath )
 if not os.environ.has_key('HOSTNAME'):
     os.environ['HOSTNAME'] = 'computer'
     os.putenv('HOSTNAME', 'computer' )
 try:
-    from pyro.system import share
-    from pyro.engine import *
+    from pyrobot.system import share
+    from pyrobot.engine import *
 except ImportError:
-    raise "$PYTHONPATH needs to include dir ABOVE where $PYRO is installed"
+    raise "$PYTHONPATH needs to include dir ABOVE where $PYROBOT is installed"
 
 robotfile = 0
 devices = 0
@@ -68,15 +68,15 @@ worldfile = 0
 evalcommand = ""
 
 def basichelp():
-    print "You may need to define the PYRO environment variable. Try:"
-    print "         export PYRO=/usr/local/pyro"
-    print "or maybe export PYRO=~/pyro"
+    print "You may need to define the PYROBOT environment variable. Try:"
+    print "         export PYROBOT=/usr/local/pyrobot"
+    print "or maybe export PYROBOT=~/pyrobot"
     print ""
-    print "Also, make sure PYRO is in PYTHONPATH. Try:"
-    print "         export PYTHONPATH=$PYTHONPATH:$PYRO/bin"
+    print "Also, make sure PYROBOT is in PYTHONPATH. Try:"
+    print "         export PYTHONPATH=$PYTHONPATH:$PYROBOT/bin"
 
 try:
-    import pyro
+    import pyrobot
 except:
     import sys
     basichelp()
@@ -96,12 +96,12 @@ def process_options():
                                     "devices=", "config=", "var="])
     except getopt.GetoptError:
         # print help information and exit:
-        pyro.system.usage()
+        pyrobot.system.usage()
         sys.exit(1)
 
     for o, a in opts:
         if o in ("-h", "--help"):
-            pyro.system.usage()
+            pyrobot.system.usage()
             sys.exit(1)
         elif o in ("-g", "--gui"):
             window = string.upper(a)
@@ -124,9 +124,9 @@ def process_options():
 	elif o in ("-v", "--var"):
             vars.append( a )
 
-if pyro.startup_check():
-    import pyro.system
-    from pyro.system.config import Configuration
+if pyrobot.startup_check():
+    import pyrobot.system
+    from pyrobot.system.config import Configuration
     process_options()
     c = Configuration(configfile)
     if configfile:
@@ -152,10 +152,10 @@ if pyro.startup_check():
     else:
         c.put('world', 'file', worldfile)
     if not pyroargs:
-        pyroargs = c.get('pyro', 'args')
+        pyroargs = c.get('pyrobot', 'args')
     else:
-        c.put('pyro', 'args', pyroargs)
-    c.put('pyro', 'gui', window)
+        c.put('pyrobot', 'args', pyroargs)
+    c.put('pyrobot', 'gui', window)
     for var in vars:
         section, variableValue = var.split(".")
         variable, value = variableValue.split("=")
@@ -168,23 +168,23 @@ if pyro.startup_check():
     if window == "TK":
         import Tkinter
         # save it, in case we need it:
-        import pyro.system.share as share
+        import pyrobot.system.share as share
         if not share.gui:
             share.gui = Tkinter.Tk()
             share.gui.withdraw()
     eng = Engine(robotfile, brainfile, simulator,
                  pyroargs, c, worldfile, devices.split(",") )
     if window == 'GL':
-        from pyro.gui.GL import GLgui
+        from pyrobot.gui.GL import GLgui
         gui = GLgui(eng)
         gui.win.redraw = gui.redraw
     elif window == 'TK':
-        from pyro.gui.TK import TKgui
+        from pyrobot.gui.TK import TKgui
         gui = TKgui(eng)
     elif window == 'TTY':
-        gui = pyro.gui.gui("tty gui", {}, eng)
+        gui = pyrobot.gui.gui("tty gui", {}, eng)
     elif window == 'CURSES':
-        from pyro.gui.Curses import Curses as Curses
+        from pyrobot.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)
     if evalcommand != "":
         evalcommand = evalcommand.split(';')
