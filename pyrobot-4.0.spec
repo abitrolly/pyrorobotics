@@ -1,6 +1,12 @@
 # Pyrobot RPM SPEC File
 
+#%_topdir /home/your_userid/rpm
+#cd /home/your_userid/rpm
+#mkdir SOURCES SPECS BUILD SRPMS
+#mkdir -p RPMS/i386 RPMS/athlon RPMS/i486 RPMS/i586 RPMS/i686 RPMS/noarch
+
 %define pythonver %(%{__python} -c 'import sys; print sys.version[:3]' || echo 2.3)
+%define pythondir %(%{__python} -c 'import sys; print [x for x in sys.path if x[-13:] == "site-packages"][0]')
 
 Summary: Python Robotics, toolkit for explore AI and robotics
 Name: pyrobot
@@ -15,7 +21,6 @@ Requires: python >= %{pythonver}
 BuildRequires: python, python-devel
 Obsoletes: pyrobot <= %{version}
 Provides: pyrobot = %{version}-%{release}
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 Python Robotics is designed to explore robotics in education
@@ -31,7 +36,10 @@ server, Player/Stage/Gazebo, and others.
 
 %install
 %{__rm} -rf %{buildroot}
-install -d %{_libdir}/python*/site-packages/pyrobot/
+install -d %{pythondir}/pyrobot/
+cp -r * %{pythondir}/pyrobot/
+install bin/pyrobot %{_bindir}
+install bin/ipyrobot %{_bindir}
 
 %clean
 %{__rm} -rf %{buildroot}
@@ -39,7 +47,9 @@ install -d %{_libdir}/python*/site-packages/pyrobot/
 %files
 %defattr(-, root, root, 0755)
 #%doc CHANGES* CONTENTS README Images/ Sane/ Scripts/
-#%{_libdir}/python*/site-packages/pyrobot/
+%{_libdir}/python*/site-packages/pyrobot/
+%{_bindir}/pyrobot
+%{_bindir}/ipyrobot
 
 %changelog
 * Sun May 22 2005 Douglas Blank <dblank@saliva.brynmawr.edu> - 
