@@ -345,7 +345,10 @@ class gui:
             fp.close()
          except:
             pass
+         sys.stdout.flush()
          sys.exit(1)
+      else:
+         os._exit(1)
 
    def stepEngine(self):
       self.engine.pleaseStep()
