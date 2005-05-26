@@ -66,6 +66,7 @@ def _ptrset(myarr, item, i):
     into the array at position indexed by i.
     NOTE: Users should not ever use this function.
     """
+    print "FIXME:", myarr, item, i
     if myarr[-5:] == 'float':
         csom.floatarray_setitem(myarr, i, item)
     elif myarr[-5:] == 'short':

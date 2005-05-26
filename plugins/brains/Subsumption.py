@@ -2,13 +2,16 @@ from pyrobot.brain import Brain
 import time
 import random
 
-class Behavior:
+class SubsumptionBehavior:
     def __init__(self):
         self.translate = 0
         self.rotate = 0
         self.flag = 0
 
-    def move(self, translate, rotate):
+    def get(self, *args):
+         return self.robot.get(*args)
+
+     def move(self, translate, rotate):
         self.translate = translate
         self.rotate = rotate
         self.flag = 1
@@ -42,11 +45,11 @@ class SubsumptionBrain(Brain):
 
 # -----------------------------------------------------
 
-class Wander(Behavior):
+class Wander(SubsumptionBehavior):
     def update(self):
         self.move( .2, random.random() * 2 - 1)
 
-class Avoid(Behavior):
+class Avoid(SubsumptionBehavior):
     def update(self):
         if min(self.get('/robot/range/front-all/value')) < 1:
             self.move( -.2, 0)

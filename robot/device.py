@@ -66,13 +66,15 @@ class SensorValue:
         noise - percentage of noise to add to reading
         """
         self.device = device
-        self.value = value
+        self.rawValue = self.device.rawToUnits(value, noise, "RAW") # raw noisy value
+        self.value = self.distance() # noisy value in default units
         self.pos = pos
         self.geometry = geometry
         self.noise = noise
     def distance(self, unit=None): # defaults to current unit of device
-        return self.device.rawToUnits(self.value,
-                                      self.noise,
+        # uses raw value; this will change if noise > 0
+        return self.device.rawToUnits(self.rawValue,
+                                      0.0,
                                       unit)        
     def angle(self, unit="degrees"):
         if self.geometry == None:
@@ -212,12 +214,13 @@ class Device:
                 return raw
             else:
                 raw = raw / 100.0
-        elif self.devData["rawunits"].upper() == "METERS":
-            if units == "METERS":
+        elif (self.devData["rawunits"].upper() == "METERS" or
+              self.devData["rawunits"].upper() == "M"):
+            if units == "METERS" or units == "M":
                 return raw
             # else, no conversion necessary
         else:
-            raise AttributeError, "device can't convert '%s' to '%s'" % (self.devData["rawunits"], units)
+            raise AttributeError, "device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.devData["rawunits"], units)
         # now, it is in meters. convert it to output units:
         if units == "ROBOTS":
             return raw / self.devData["radius"] # in meters
@@ -225,10 +228,10 @@ class Device:
             return raw * 1000.0
         elif units == "CM":
             return raw * 100.0 
-        elif units == "METERS":
+        elif units == "METERS" or units == "M":
             return raw 
         else:
-            raise TypeError, "Units are set to invalid type '%s'" % units
+            raise TypeError, "Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units
 
     def getVisible(self):
         return self.devData[".visible"]
