@@ -6,6 +6,7 @@
 from pyrobot.brain.fuzzy import *
 from pyrobot.brain.behaviors import *
 from pyrobot.brain.behaviors.core import *  # Stop
+from pyrobot.geometry import distance
 
 import math
 from random import random

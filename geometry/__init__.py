@@ -17,13 +17,13 @@ COSDEG90RADS = math.cos(DEG90RADS) / 1000.0
 SINDEG90RADS = math.sin(DEG90RADS) / 1000.0
 
 def distance(x1, y1, x2, y2):
-    return math.sqrt( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
+    return math.sqrt( (x1 - x2) ** 2 + (y1 - y2) ** 2 )
 
-def angleAdd(angle, degree):
-    return ((angle + degree) + 720) % 360 # make positive, in range 0-360
+def angleAdd(angle, degree): # angles in degrees
+    return (angle + degree) % 360 # make positive, in range 0-360
 
-def angleEqual(angle1, angle2, tolerance = 5):
-    return abs((angle1 + 720) - (angle2 + 720)) < tolerance
+def angleEqual(angle1, angle2, tolerance = 5): # angles and tolerance in degrees
+    return abs((angle1 % 360)  - (angle2 % 360)) < tolerance
 
 class Polar:
    def __init__(self, dt = 0.0, dr = 0.0, bIsPolar = 1):

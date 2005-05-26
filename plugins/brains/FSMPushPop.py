@@ -29,7 +29,7 @@
 # make the next state to goto a parameter that you pass in. Why?
 
 from pyrobot.geometry import *   # import distance function
-from pyrobot.brain.behaviors.fsm import State, FSMBrain
+from pyrobot.brain.behaviors import State, FSMBrain
 
 class stuck(State):
     def onActivate(self):
@@ -73,13 +73,13 @@ class turn (State):
             self.push() # current statename is default;
             # can also take another statename to return to
             self.goto('stuck')
-        elif angleAdd(th, - self.th) > 90: 
+        elif (th - self.th) % 360 > 90: 
             self.goto('edge')
         else:
             self.move(0, .2)
 
 def INIT(engine): # passes in engine, if you need it
-    brain = FSMBrain(engine)
+    brain = FSMBrain("Push Pop", engine)
     # add a few states:
     brain.add(edge(1))
     brain.add(turn())
