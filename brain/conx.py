@@ -1516,7 +1516,7 @@ class Network:
         
         """
         for layerName in args:
-            if self[layerName].type != "Input":
+            if self[layerName].type != "Input" and self[layerName].verify:
                 raise AttributeError, "attempt to set activations on a non-input layer"
             self[layerName].copyActivations(args[layerName])
         self.verifyInputs() # better have inputs set
@@ -1527,6 +1527,59 @@ class Network:
                 layer.netinput = layer.bias.tolist() # was slice [:]; is that safe here?
         # for each connection, in order:
         for layer in self.layers:
+            if layer.active:
+                for connection in self.connections:
+                    if connection.toLayer.name == layer.name and connection.fromLayer.active:
+                        connection.toLayer.netinput = connection.toLayer.netinput + \
+                                                      Numeric.matrixmultiply(connection.fromLayer.activation,\
+                                                                             connection.weight) # propagate!
+                if layer.type != 'Input':
+                    layer.activation = self.activationFunction(layer.netinput)
+        for layer in self.layers:
+            if layer.log and layer.active:
+                layer.writeLog()
+        self.count += 1 # counts number of times propagate() is called
+        if len(args) != 0:
+            dict = {}
+            for layer in self.layers:
+                if layer.type == "Output":
+                    dict[layer.name] = layer.activation.tolist()
+            if len(dict) == 1:
+                return dict[dict.keys()[0]]
+            else:
+                return dict
+    def propagateFrom(self, startLayer, **args):
+        """
+        Propagates activation through the network. Optionally, takes input layer names
+        as keywords, and their associated activations. If input layer(s) are given, then
+        propagate() will return the output layer's activation. If there is more than
+        one output layer, then a dictionary is returned.
+
+        Examples:
+
+        >>> net.propagate()
+        >>> net.propagate(input = [0, .5, 0], context = [.5, .5, .5])
+        {"output": [0.345]}
+        
+        """
+        for layerName in args:
+            self[layerName].copyActivations(args[layerName])
+        # initialize netinput:
+        started = 0
+        for layer in self.layers:
+            if layer.name == startLayer:
+                started = 1
+                continue # don't set this one
+            if not started: continue
+            if layer.type != 'Input' and layer.active:
+                layer.netinput = layer.bias.tolist() # was slice [:]; is that safe here?
+        # for each connection, in order:
+        started = 0
+        for layer in self.layers:
+            if layer.name == startLayer:
+                started = 1
+                continue # don't get inputs into this one
+            if not started: continue
             if layer.active:
                 for connection in self.connections:
                     if connection.toLayer.name == layer.name and connection.fromLayer.active:
@@ -2320,15 +2373,15 @@ class SRN(Network):
         for context in self.contextLayers.values():
             context.resetFlags() # hidden activations have already been copied in
             context.setActivations(value)
-    def propagate(self):
+    def propagate(self, **args):
         """
-        Sets error flags and propogates.
+        SRN.propagate: Sets error flags and propagates.
         """
         if not self.contextCopying:
             for layer in self.layers:
                 if layer.kind == "Context":
                     layer.activationSet = 1
-        Network.propagate(self)
+        return Network.propagate(self, **args)
     def backprop(self):
         """
         Extends backprop() from Network to automatically deal with context
