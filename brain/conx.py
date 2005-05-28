@@ -998,6 +998,28 @@ class Network:
         if not self.verifyArguments(targets) and not self.patterned:
             raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
         self.targets = targets
+    def setInputsAndTargets(self, data1, data2=None):
+        """
+        Network.setInputsAndTargets()
+        Sets the corpus of data for training. Can be in one of two formats:
+
+        Format 1: setInputsAndTargets([[input0, target0], [input1, target1]...])
+        Network.setInputsAndTargets([[[i00, i01, ...], [t00, t01, ...]],
+                                     [[i10, i11, ...], [t10, t11, ...]],
+                                     ...])
+        Format 2: setInputsAndTargets([input0, input1, ...], [target0, target1, ...])
+        Network.setInputsAndTargets([[i00, i01, ...], [i10, i11, ...],...],
+                                    [[t00, t01, ...], [t10, t11, ...],...] )
+        
+        """
+        if data2 == None: # format #1
+            inputs = map(lambda x: x[0], data1)
+            targets = map(lambda x: x[1], data1)
+        else: # format 2
+            inputs = data1
+            targets = data2
+        self.setInputs(inputs)
+        self.setTargets(targets)
     def associate(self, inName, outName):
         """
         inName layer and outName layer will be auto-associating.
