@@ -306,7 +306,7 @@ class State:
       self.brain.stack.append( statename )
 
    def pop(self):
-      if len(self.brain.states) > 0:
+      if len(self.brain.stack) > 0:
          returnState = self.brain.stack.pop()
          self.goto(returnState)
       else:
