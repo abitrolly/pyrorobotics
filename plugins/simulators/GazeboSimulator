@@ -5,7 +5,7 @@
 
 pyropid=$1
 shift
-config="/usr/local/share/player/config/gazebo.cfg"
+config="/usr/share/player/config/gazebo.cfg"
 gui=1
 
 if [ "$1" = "-g" ]
@@ -13,14 +13,14 @@ then
     gui=0
     if [ "$2" = "" ]
     then
-	world="/usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
+	world="/usr/share/gazebo/worlds/pioneer2dxGrip.world"
     else
 	world="$2"
     fi
 else
     if [ "$1" = "" ]
     then
-	world="/usr/local/share/gazebo/worlds/pioneer2dxGrip.world"
+	world="/usr/share/gazebo/worlds/pioneer2dxGrip.world"
     else
 	world="$1"
     fi

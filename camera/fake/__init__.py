@@ -52,15 +52,22 @@ class FakeCamera(Camera):
       else:
          raise ValueError, "file not found: '%s'" % currname
       if self.verbose:
-         print "info: readings file '%s'..." % (self.path + currname)
+         print "info: reading file '%s'..." % (self.path + currname)
       self.cameraDevice = Fake(self.path + currname)
       # connect vision system: --------------------------
-      self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
-      self.width = self.vision.getWidth()
-      self.height = self.vision.getHeight()
-      self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
+      if visionSystem:
+         self.vision = visionSystem
+         self.vision.registerCameraDevice(self.cameraDevice)
+         self.width = self.vision.getWidth()
+         self.height = self.vision.getHeight()
+         self.depth = self.vision.getDepth()
+         self.cbuf = self.vision.getMMap()
+      else:
+         self.vision = None
+         self.width = 0
+         self.height = 0
+         self.depth = 0
+         self.cbuf = None
       # -------------------------------------------------
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
@@ -107,7 +114,7 @@ class FakeCamera(Camera):
             else:
                currname = self.pattern
             if self.verbose:
-               print "info: readings file '%s'..." % (self.path + currname)
+               print "info: reading file '%s'..." % (self.path + currname)
             self.cameraDevice.updateMMap(self.path + currname)
             self.processAll()
             self.current += 1
@@ -115,3 +122,7 @@ class FakeCamera(Camera):
       else:
          self.current = self.start 
 
+if __name__ == "__main__":
+   from pyrobot.vision.cvision import VisionSystem
+   camera = FakeCamera(visionSystem=VisionSystem())
+   camera._update()

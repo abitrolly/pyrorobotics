@@ -35,4 +35,5 @@ model(
   size [ 0.1 0.1 ]
   pose [1.0 1.043 0.000 ]
   color "green"
+  gripper_return 1 
 )

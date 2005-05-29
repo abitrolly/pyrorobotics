@@ -430,10 +430,8 @@ class TKgui(Tkinter.Toplevel, gui):
       try: needToUpdateState = self.engine.brain.needToStop
       except: pass
       if needToUpdateState:
-         #try:
          if type(self.engine.robot) != type(1):
             self.engine.robot.update()
-         #except: pass
       self.redrawWindowBrain()
       if self.watcher:
          self.watcher.update(self.environment)

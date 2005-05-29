@@ -100,7 +100,7 @@ class Camera(PyrobotImage, Device):
       # Required:
       self.startDevice()
       # make these visible by default
-      if visible:
+      if visible and self.vision:
          self.makeWindow()
 
    def preGet(self, keyword):
@@ -495,7 +495,7 @@ class Camera(PyrobotImage, Device):
       self.clearCallbackList()
       
    def processAll(self):
-      if self.filterMode:
+      if self.filterMode and self.vision != None:
          self.vision.applyFilterList()
          while len(self.devData["filterResults"]): self.devData["filterResults"].pop()
          for filterFunc in self.callbackList:
