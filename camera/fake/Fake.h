@@ -6,8 +6,7 @@
 class Fake : public Device {
 
  public:
-  Fake(char filename[]);
-  Fake(int w, int h, int d);
+  Fake(char filename[]=NULL, int w=0, int h=0, int d=0);
   PyObject *updateMMap(char filename[]);
 };
 

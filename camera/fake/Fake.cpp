@@ -1,19 +1,22 @@
 #include "Fake.h"
 
-Fake::Fake(int w, int h, int d) {
-  if (d == 3) 
-    initialize(w, h, 3, 0, 1, 2);
-  else if (d == 1)
-    initialize(w, h, 1, 0, 0, 0);
-}
-
-Fake::Fake(char filename[]) {
-  int limit, w, h, num, maxval, color, d;
+Fake::Fake(char filename[], int width, int height, int depth) {
+  int limit, w, h, num, maxval, color;
   PyObject *buffer, *tuple;
   FILE* theFile;
+  if (width != 0 && height != 0 and depth != 0) { // no filename, just the mmap
+    if (depth == 3) 
+      initialize(width, height, 3, 0, 1, 2);
+    else if (depth == 1)
+      initialize(width, height, 1, 0, 0, 0);
+    return;
+  }
   theFile = fopen(filename, "rb");
   if (!theFile){
+    printf("Fake: Error loading file '%s'\n", filename);
     PyErr_SetString(PyExc_IOError, "Fake: Error loading file");
+    initialize(0, 0, 1, 0, 0, 0);
+    return;
   }
   fscanf(theFile, "P%d\n%d %d\n%3d%*c", &num, &w, &h, &maxval);
   fclose(theFile);
@@ -39,29 +42,30 @@ Fake::Fake(char filename[]) {
 }
 
 PyObject *Fake::updateMMap(char filename[]) {
-  int w, h, num, maxval;
+  int w, h, num, maxval, retval;
   FILE *theFile;
   theFile = fopen(filename, "rb");
   if (!theFile){
     PyErr_SetString(PyExc_IOError, "Fake: Error loading file");
     return NULL;
   }
-  fscanf(theFile, "P%d\n%d %d\n%3d%*c", &num, &w, &h, &maxval);
+  fscanf(theFile, "P%d\n%d %d\n%3d\n", &num, &w, &h, &maxval);
+  //printf("P%d\n%d %d\n%d\n", num, w, h, maxval);
   if (w != width || h != height || 
       (num == 5 && depth != 1) ||
-      (num != 5 && depth != 3)){
+      (num == 6 && depth != 3)){
     PyErr_SetString(PyExc_IOError, "Fake: can't change image type or size");
     fclose(theFile);
     return NULL;
   }
   if (num == 5) {
-    fread(image, 1, w * h, theFile);
+    retval = fread(image, 1, w * h, theFile);
   } else {
-    fread(image, 1, w * h * 3, theFile);
+    retval = fread(image, 1, w * h * 3, theFile);
   }
   width = w;
   height = h;
   fclose(theFile);
-  return PyInt_FromLong(0L);
+  return PyInt_FromLong(retval);
 }
 
