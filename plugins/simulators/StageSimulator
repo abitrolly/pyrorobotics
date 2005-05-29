@@ -4,19 +4,9 @@ pyropid=$1
 shift
 if [ "$1" = "-g" ]
 then
-    if [ "$2" = "" ]
-    then
-	world="-g /usr/local/share/stage/worlds/everything.world"
-    else
-	world="-g $2"
-    fi
+    world="-g $2"
 else
-    if [ "$1" = "" ]
-    then
-	world="/usr/local/share/stage/worlds/everything.world"
-    else
-	world="$1"
-    fi
+    world="$1"
 fi
 export PLAYERPATH=$PLAYERPATH:/usr/local/lib:/usr/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib

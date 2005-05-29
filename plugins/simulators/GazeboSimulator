@@ -5,25 +5,26 @@
 
 pyropid=$1
 shift
-config="/usr/share/player/config/gazebo.cfg"
+if [ -f "/usr/share/player/config/gazebo.cfg" ];
+then
+    config="/usr/share/player/config/gazebo.cfg"
+else
+    if [ -f "/usr/local/share/player/config/gazebo.cfg" ];
+    then
+	config="/usr/local/share/player/config/gazebo.cfg"
+    else
+	echo "Can't find player's share files! Need gazebo.cfg"
+	exit 1
+    fi
+fi
 gui=1
 
 if [ "$1" = "-g" ]
 then
     gui=0
-    if [ "$2" = "" ]
-    then
-	world="/usr/share/gazebo/worlds/pioneer2dxGrip.world"
-    else
-	world="$2"
-    fi
+    world="$2"
 else
-    if [ "$1" = "" ]
-    then
-	world="/usr/share/gazebo/worlds/pioneer2dxGrip.world"
-    else
-	world="$1"
-    fi
+    world="$1"
 fi
 # clean up any old starts
 rm -rf /tmp/gazebo-$USER*
