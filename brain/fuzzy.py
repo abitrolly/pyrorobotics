@@ -1,197 +1,458 @@
-# Fuzzy Logic Class
-# D.S. Blank, 2001
-# http://ai.uark.edu/
+# Fuzzy Logic Base Class
+# E. Jucovy, 2005
+# based on fuzzy.py by D.S. Blank, 2001
 
-class Fuzzy:
-   """
-   Fuzzy logic class. Value is alwas between 0, and 1. Min, and Max
-   can be any values.
-   """
-   def __init__(self, *args): # with no args, default to 0, 1, .5
-      if len(args) == 0:
-         self.Max = 1
-         self.Min = 0
-         self.Value = 0.5
-      elif len(args) == 1: # with 1 arg, default to 0, 1, value
-         self.Max = 1
-         self.Min = 0
-         self.SetUp(args[0])
-      elif len(args) == 2: # with 2 args, default to min, max, .5
-         self.Min = args[0]
-         self.Max = args[1]
-         self.Value = 0.5
-      elif len(args) == 3: # with three args, default to min, max, value
-         self.Min = args[0] # NOTE: this applies an Up() to value
-         self.Max = args[1]
-         self.SetUp(args[2])
-   def __call__(self, *args):
-      if len(args) == 0: # with no args, return value
-         return self.Value
-      elif len(args) == 1: # with 1 arg, return arg as value
-         self.SetUp(args[0])
-         return self.Value
-      elif len(args) == 2: # with 2 args, default to min, max, .5
-         raise "ERROR: what does this mean?"
-      elif len(args) == 3: # with three args, default to min, max, value
-         self.Min = args[0] # NOTE: this applies an Up() to value
-         self.Max = args[1]
-         self.SetUp(args[2])
-         return self.Value
-   def Up(self, value): # uphill, from left to right, slope
-      temp = Fuzzy(self.Min, self.Max)
-      temp.SetUp(value)
-      return temp
-   def Down(self, value): #downhill, from left to right, slope
-      temp = Fuzzy(self.Min, self.Max)
-      temp.SetDown(value)
-      return temp
-   def MinMax(self, value, min, max): # func
-      if (value > max):
-         return max
-      elif (value < min):
-         return min
-      else:
-         return value
-   def Set(self, value): # set in range
-      self.Value = float(self.MinMax(value, 0.0, 1.0))
-      return self.Value
-   def SetUp(self, value):
-      if (self.Max == self.Min):
-         self.Set(1.0)
-      else:
-         self.Set(float(value - self.Min)/(self.Max - self.Min))
-      return self.Value
-   def SetDown(self, value):
-      if (self.Max == self.Min):
-         self.Set(0.0)
-      else:
-         self.Set(1.0-(float(value - self.Min)/(self.Max-self.Min)))
-      return self.Value
+from math import *
+  
+def __upMF():
+  """
+  A linear rising membership function
+  """
+  if x < a:
+    return 0.0
+  elif x > b:
+    return 1.0
+  else:
+    return float(x - a) / (b - a)
 
-   def __str__(self):
-      return "<Fuzzy instance value = " + str(self.Value) + \
-             " min = " + str(self.Min) + \
-             " max = " + str(self.Max) + ">"
-   def __cmp__(self, other):
-      if hasattr(other, 'Value'): # probably a Fuzzy
-         return int(self.Value - other.Value)
-      else:
-         return (self.Value - other)
+def __downMF():
+  """
+  A linear falling membership function
+  """
+  if x < a:
+    return 1.0
+  elif x > b:
+    return 0.0
+  else:
+    return float(b - x) / (b - a)
 
-#      ret = Fuzzy(self.Min,self.Max)
-#      if (self.Max - self.Min) == 0:
-#         ret.Set(0)
-#      else:
-#         if (other > (self.Min + self.Max)/2.0):
-#            ret.Set((other - self.Min) / (self.Min - self.Max))
-#         else:
-#            ret.Set(1.0-((other - self.Min) / (self.Min - self.Max)))
-#      return ret
-   
-   def __add__ (self, other) :
-      if hasattr(other, 'Value'): # could be Fuzzy on right
-         return self.Value + other.Value
-      else:
-         return self.Value + other
-   def __sub__ (self, other) :
-      if hasattr(other, 'Value'): # could be Fuzzy on right
-         return self.Value - other.Value
-      else:
-         return self.Value - other
-   
-   def __lshift__ (self, other) :
-      return self.Down(other)
-   
-   def __rshift__ (self, other) :
-      return self.Up(other)
-   
-   def __and__ (self, other) :
-      ret = Fuzzy(self.Min, self.Max)
-      if (self.Value < other.Value):
-         ret.Set(self.Value)
-      else:
-         ret.Set(other.Value)
-      return ret
-   
-   def __or__ (self, other):
-      ret = Fuzzy(self.Min, self.Max)
-      if (self.Value > other.Value):
-         ret.Set(self.Value)
-      else:
-         ret.Set(other.Value)
-      return ret
+def __triMF():
+  """
+  A linear triangular membership function
+  """
+  if x < a:
+    return 0.0
+  elif x < b:
+    return float(x - a) / (b - a)
+  elif x < c:
+    return float(c - x) / (c - b)
+  else:
+    return 0.0
 
-   def __neg__ (self) :
-      return 1.0 - self.Value
-   
-   def __pos__ (self) :
-      return self.Value
-   
-   def __abs__ (self) :
-      return abs(self.Value)
-   
-   def __invert__ (self) :
-      ret = Fuzzy(self.Min,self.Max)
-      ret.Set(1.0 - self.Value)
-      return ret
+def __trapMF():
+  """
+  A linear trapezoidal membership function
+  """
+  if x < a:
+    return 0.0
+  elif x < b:
+    return float(x - a) / (b - a)
+  elif x < c:
+    return 1.0
+  elif x < d:
+    return float(d - x) / (d - c)
+  else:
+    return 0.0
 
-   def __float__(self) :
-      return float(self.Value)
+def __BellMF():
+  """
+  I wouldn't use this yet if I were you
+  """
+  return 1.0 / (1.0 + pow((x - c) / a, 2.0*b))
 
-   def __nonzero__(self) :
-      return (self.Value > 0.5)
+def __SigmoidMF():
+  """
+  I wouldn't use this yet if I were you
+  """
+  return 1.0 / (1.0 + exp(-a * (x - c)))
 
-   def __mul__ (self, other) :
-      if hasattr(other, 'Value'): # could be Fuzzy on right
-         return self.Value * other.Value
-      else:
-         return self.Value * other
-   
-   def __div__ (self, other) :
-      if hasattr(other, 'Value'): # could be Fuzzy on right
-         return self.Value / other.Value
-      else:
-         return self.Value / other
+def __GaussMF():
+  """
+  A Gaussian membership function
+  """
+  return exp(pow((float(x) - c) / s, 2.0) / -2.0)
 
-   __radd__ = __add__
-   __rsub__ = __sub__
+def __LRMF():
+  """
+  I wouldn't use this yet if I were you
+  """
+  if x <= c:
+    return f((c - x) / a)
+  return g((x - c) / b)
 
-# Do we need these? What would they mean?
+class FuzzyValue:
+  """
+  Fuzzy value class
+
+  Contains a floating-point value between 0 and 1
+  """
+  
+  def __init__(self, val):
+    """
+    Initialize the fuzzy value
+
+    If val is less than zero or greater than one, limit val to those bounds
+    """
+    
+    if val < 0:
+      self.Value = 0.0
+    elif val > 1:
+      self.Value = 1.0
+    else:
+      self.Value = float(val)
+
+  def __and__(self, other):
+    """
+    Return the min of self and other
+    """  
+    return FuzzyValue(min(self.Value, float(other)))
+
+  def __or__(self, other):
+    """
+    Return the max of self and other
+    """
+    return FuzzyValue(max(self.Value, float(other)))
+
+  def __neg__(self):
+    """
+    Return 1.0 - self
+    """
+    return FuzzyValue(1.0 - self.Value)
+
+  __inv__ = __neg__
+
+  def __add__(self, other):
+    return FuzzyValue(self.Value + float(other))
+
+  __radd__ = __add__
+  
+  def __sub__(self, other):
+    return FuzzyValue(self.Value - float(other))
+
+  def __rsub__(self, other):
+    return FuzzyValue(float(other) - self.Value)
+
+  def __mul__(self, other):
+    return FuzzyValue(self.Value * float(other))
+
+  __rmul__ = __mul__
+  
+  def __div__(self, other):
+    return FuzzyValue(self.Value / float(other))
+
+  def __rdiv__(self, other):
+    return FuzzyValue(float(other) / self.Value)
+
+  def __cmp__(self, other):
+    return self.Value - float(other)
+  
+  def __float__(self):
+    return self.Value
+
+  defuzzify = __float__
+
+  def __str__(self):
+    return "<Fuzzy value " + str(self.Value) + ">"
+  
+#  def alphaCut(self, alpha):
+#    return self.Value >= alpha 
+
+class FuzzyClassifier:
+  """
+  Fuzzy classifier class with a membership function and parameters.
+
+  Membership function can be set on initialization or with
+  setMembershipFunction(function). The membership function should
+  return a value between 0 and 1; values outside that range will be
+  automatically set to either 0 or 1. The function should take no
+  arguments; it can access its 'arguments' by x0, x1, x2.. etc, or
+  x (shorthand for x0).
+  
+  All relevant parameters used by the membership function can be set
+  on initialization or by setParams()
+  """
+  
+  def __init__(self, func=None, fName=None, **kwargs):
+    """
+    Initialize the FuzzyClassifier
+    
+    First argument is a dictionary of parameter names and values
+    Second argument is a reference to the membership function
+    Third argument is the name of the membership function
+    """
+    if not func is None:
+      self.Function = func
+    else:
+      def Halfway():
+        return 0.5
+      self.Function = Halfway
+
+    if not fName is None:
+      self.FunctionName = fName
+    else:
+      self.FunctionName = self.Function.__name__
+
+    self.myParams = kwargs
+    
+  def __call__(self, *args):
+    """
+    Apply the fuzzy classifier to a set of values
+
+    Return a FuzzyValue with value Function(args)
+    """
+
+    # get Params and arguments (x or x0,x1..etc)
+    locdict = self.myParams.copy()
+    n = 0
+    locdict['x'] = args[0]
+    for arg in args:
+      locdict['x%d'%n] = arg
+      n = n + 1
+    tdict = globals().copy()
+    for x in locdict:
+      tdict[x] = locdict[x]
+    tdict['argList'] = args  #add local variable argList
+    return FuzzyValue(eval(self.Function.func_code, tdict))
+
+  def setParams(self, **kwargs):
+    """
+    Set one or more of the classifier's parameters
+    without deleting predefined parameters
+    """
+    keys = kwargs.keys()
+    for key in keys:
+      self.myParams[key] = kwargs[key]
+
+  def resetParams(self, **kwargs):
+    """
+    Set all the classifier's parameters at once and
+    delete any parameters that might already exist
+    """
+    self.myParams = kwargs
+    
+  def getParam(self, name):
+    """
+    Return one of the classifier's parameters
+    """
+    return self.myParams[name]
+
+  def setFunction(self, func, fName = None):
+    """
+    Set the classifier's membership function
+
+    First (required) parameter is the membership function itself.
+    This function must take no arguments; the values being applied to
+    the function are stored as x (= x0), x1, x2... etc. The entire
+    list of arguments can be accessed as 'argList'. The function can
+    additionally use any number of parameters, which will have to be
+    defined in the FuzzyClassifier.
+    
+    Second (optional) parameter is a name for the function, recommended,
+    e.g., for lambda functions; if this is not set then the function's
+    actual name will be used
+    """
+
+    self.Function = func
+    if fName is None:
+      self.FunctionName = func.__name__
+    else:
+      self.FunctionName = fName      
    
-#   def __mod__ (self, other) :
-#      return self.Value
+  def __str__(self):
+    return "<FuzzyClassifier instance with parameters " + \
+           str(self.myParams) + " and membership function " + \
+           self.FunctionName + ">"
    
-#   def __divmod__ (self, other) :
-#      return self.Value
-   
-#   def __pow__ (self, other, modulo = 0) :
-#      return self.Value
-   
-#   def __xor__ (self, other) :
-#      return self.Value
-   
+  def __and__ (self, other):
+    """
+    Return a FuzzyClassifier with the membership function
+    min(self, other)
+    """
+
+    return FuzzyClassifier(min(f(*argList), g(*argList)),
+                           self.FunctionName + "And" + other.FunctionName,
+                           f=self, g=other)
+
+  def __or__ (self, other):
+    """
+    Return a FuzzyClassifier with the membership function
+    max(self, other)
+
+    self, other must take the same arguments
+    """
+
+    return FuzzyClassifier(lambda : max(f(*argList), g(*argList)),
+                           self.FunctionName + "Or" + other.FunctionName,
+                           f=self, g=other)
+
+  def __neg__(self):
+    """
+    Return a FuzzyClassifier with the membership function
+    (1.0 - self)
+    """
+
+    return FuzzyClassifier(lambda : 1.0 - f(*argList),
+                           "Not" + self.FunctionName, f=self)
+
+  __inv__ = __neg__
+         
+  def __nonzero__(self):
+    return True
+
+  def __rshift__(self, val):
+    """
+    Return a FuzzyValue classified under a linear rising
+    membership function whose parameters are decided by the
+    current FuzzyClassifier's parameters
+
+    Implemented for backwards compatibility
+    """
+    keys = self.myParams.keys()
+    if len(keys) > 2:
+      print "This may not do what you expect."
+    a = self.myParams[keys[0]]
+    b = self.myParams[keys[1]]
+    if a > b:
+      aFC = RisingFuzzy(b,a)
+    else:
+      aFC = RisingFuzzy(a,b)
+    return aFC(val)
+
+  def __lshift__(self, val):
+    """
+    Return a FuzzyValue classified under a linear falling
+    membership function whose parameters are decided by the
+    current FuzzyClassifier's parameters
+
+    Implemented for backwards compatibility
+    """
+    keys = self.myParams.keys()
+    if len(keys) > 2:
+      print "This may not do what you expect."
+    a = self.myParams[keys[0]]
+    b = self.myParams[keys[1]]
+    if a > b:
+      aFC = FallingFuzzy(b,a)
+    else:
+      aFC = FallingFuzzy(a,b)
+    return aFC(val)
+
+def Fuzzy(a,b):
+  """
+  Create a new FuzzyClassifier with two parameters and
+  default membership function
+
+  Implemented for backwards compatibility
+  """
+  return FuzzyClassifier(a=a,b=b)
+
+def RisingFuzzy(a,b):
+  """
+  Create a new FuzzyClassifier with a linear rising membership
+  function and parameters a,b
+
+  a: lower bound, mu(a) = 0.0
+  b: upper bound, mu(b) = 1.0
+  """
+  return FuzzyClassifier(__upMF, "Rising", a=a, b=b)
+
+def FallingFuzzy(a,b):
+  """
+  Create a new FuzzyClassifier with a linear falling membership
+  function and parameters a,b
+
+  a: lower bound, mu(a) = 1.0
+  b: upper bound, mu(b) = 0.0
+  """
+  return FuzzyClassifier(__downMF, "Falling", a=a, b=b)
+
+def TriangleFuzzy(a,b,c):
+  """
+  Create a new FuzzyClassifier with a linear triangular membership
+  function and parameters a,b,c
+
+  a: lower bound, mu(a) = 0.0
+  b: midpoint, mu(b) = 1.0
+  c: upper bound, mu(c) = 0.0
+  """
+  return FuzzyClassifier(__triMF, "Triangle", a=a, b=b, c=c)
+
+def TrapezoidFuzzy(a,b,c,d):
+  """
+  Create a new FuzzyClassifier with a linear trapezoidal membership
+  function and parameters a,b,c,d
+
+  a: lower bound, mu(a) = 0.0
+  b: start of top, mu(b) = 1.0
+  c: end of top, mu(c) = 1.0
+  d: upper bound, mu(d) = 0.0
+  """
+  return FuzzyClassifier(__trapMF, "Trapezoid", a=a, b=b, c=c, d=d)
+
+def GaussianFuzzy(c,s):
+  """
+  Create a new FuzzyClassifier with a gaussian membership function
+  and parameters c,s
+
+  c: center (mean), mu(c) = 1.0
+  s: spread (standard deviation)
+  """
+  return FuzzyClassifier(__GaussMF, "Gaussian", c=c, s=s)
+
+def BellFuzzy(a,b,c):
+  """
+  Create a new FuzzyClassifier with a bell-curve membership function
+  and parameters a,b,c
+
+  I wouldn't use this yet if I were you.
+  """
+  
+  return FuzzyClassifier(__BellMF, "BellCurve", a=a,b=b,c=c)
+
+def SigmoidFuzzy(a,c):
+  """
+  Create a new FuzzyClassifier with a sigmoid membership function
+  and parameters a,c
+
+  I wouldn't use this yet if I were you.
+  """
+  return FuzzyClassifier(__SigmoidMF, "Sigmoid", a=a, c=c)
+
+def LRFuzzy(f,g,c,a,b):
+  """
+  Create a new FuzzyClassifier with a left-right membership
+  function and parameters f,g,c,a,b
+
+  f: left-side function (actually a FuzzyClassifier)
+  g: right-side function (actually a FuzzyClassifier)
+  c: switching point
+
+  This could be a lot better.
+  """
+
+  return FuzzyClassifier(__LRMF, "Left"+f.__name__+"Right"+g.__name__,
+                         f=f,g=g,c=c,a=a,b=b)
+    
 if __name__ == '__main__': # some tests
-   x = Fuzzy(1, 7, 5)
-   x2 = Fuzzy(1, 7, 2)
-   y = Fuzzy(10, 100)
-   z = Fuzzy(9, 4)
-   f = Fuzzy(5, 10, 5)
-   t = Fuzzy(11, 23, 23)
-
-   print "1)", (z >> 8).Value
-   print "2)", (z << 8).Value
-   print "3)", x.Value
-   print "4)", x2 + 0
-   print "5)", not x
-   print "6)", x & y
-   print "7)", x or y
-   print "8)", x == x2
-   print "9)",
-   if x and x2:
-      print 'true'
-   else:
-      print 'false'
-   print "10)", x - x2
-   print "11)", x >> 5
-   print "12)", Fuzzy(10, 1) >> 3
-
+  def Bounds():
+    if x == first:
+      return 0.0
+    elif x == last:
+      return 1
+    return 0.5
+  bound = FuzzyClassifier(Bounds, first=0, last=10)
+  far = RisingFuzzy(0, 10)
+  
+  def Two():
+    return one(x0) * two(x1)
+  
+#  foo = FuzzyClassifier(Two, one=bound, two=far)
+#  print foo(10, 10)
+#  nonfoo = -foo
+  foo = far
+  print foo(5)
+  nonfoo = -foo
+  print nonfoo(10)
+#  print (nonfoo | foo)(10,10)
+  s = GaussianFuzzy(35,5)
+  print s(30)
