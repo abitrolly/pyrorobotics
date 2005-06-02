@@ -237,6 +237,8 @@ class Camera(PyrobotImage, Device):
          self.window.wm_title(self.title)
       except:
          pass
+   def printit(self, event):
+      print "Pressed:", event
 
    def makeWindow(self):
       try:
@@ -263,8 +265,10 @@ class Camera(PyrobotImage, Device):
          self.canvas.bind("<ButtonRelease-1>", self.processLeftClickUp)
          self.canvas.bind("<Button-2>", self.processMiddleClick)
          self.canvas.bind("<Button-3>", self.processRightClick)
-         #self.canvas.bind("<Enter>", self.togglePlay)
-         #self.canvas.focus_set()
+         self.canvas.bind("<Return>", lambda event: self.updateOnce())
+         self.canvas.bind("-", lambda event: self.popCallbackList())
+         self.canvas.bind("=", lambda event: self.listCallbackList())
+         self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
 
          if self.vision:
@@ -506,4 +510,5 @@ if __name__ == '__main__':
    from pyrobot.camera.fake import FakeCamera
    cam = FakeCamera(visionSystem = VisionSystem())
    cam.makeWindow()
+   cam.updateWindow()
    cam.window.mainloop()
