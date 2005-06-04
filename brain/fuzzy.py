@@ -45,7 +45,7 @@ class FuzzyValue:
     If val is less than zero or greater than one, limit val to those bounds
     """
     
-    self.Ops = opscloc
+    self.Ops = ops
     if val < 0:
       self.Value = 0.0
     elif val > 1:
@@ -131,22 +131,25 @@ class FuzzyClassifier:
     Third argument is the name of the membership function
     """
 
-    # how should i do this
+    self.myParams = {}
+
     if func.__class__ is FuzzyClassifier:
       self.Function = func.Function
-      self.myParams = func.myParams
+      self.myParams = func.myParams 
     elif not func is None:
       self.Function = func
-      self.myParams = {}
     else:
       def Halfway():
         return 0.5
       self.Function = Halfway
 
-    if not fName is None:
+    if func.__class__ is FuzzyClassifier:
+      self.FunctionName = func.FunctionName      
+    elif not fName is None:
       self.FunctionName = fName
     else:
       self.FunctionName = self.Function.__name__
+    self.__name__ = "FuzzyClassifier:%s" % self.FunctionName
 
     self.Ops = ops
     for i in kwargs:
@@ -165,9 +168,9 @@ class FuzzyClassifier:
     funcargs = list(self.Function.func_code.co_varnames
                     [:self.Function.func_code.co_argcount])
     for i in funcargs:
-      try:
+      if self.myParams.has_key(i):
         mydict[i] = self.myParams[i]
-      except KeyError:
+      else:
         try:
           mydict[i] = args.pop(0)
         except IndexError:
@@ -184,10 +187,23 @@ class FuzzyClassifier:
     
     return FuzzyValue(self.Function(**mydict), self.Ops)
 
+  def safesetParams(self, **kwargs):
+    """
+    Set one or more of the classifier's parameters
+    without overwriting any predefined parameters.
+    If a parameter is already defined safesetParams
+    will not overwrite it.
+    """
+    keys = kwargs.keys()
+    for key in keys:
+      if not self.myParams.has_key(key):
+        self.myParams[key] = kwargs[key]
+
   def setParams(self, **kwargs):
     """
     Set one or more of the classifier's parameters
-    without deleting predefined parameters
+    without deleting predefined parameters; but will
+    overwrite parameters.
     """
     keys = kwargs.keys()
     for key in keys:
@@ -196,10 +212,11 @@ class FuzzyClassifier:
   def resetParams(self, **kwargs):
     """
     Set all the classifier's parameters at once and
-    delete any parameters that might already exist
+    delete all parameters that might already exist
     """
     self.myParams = kwargs
     
+  # this is a BAD function and should CHANGE
   def getParam(self, name):
     """
     Return one of the classifier's parameters
@@ -217,51 +234,26 @@ class FuzzyClassifier:
     actual name will be used
     """
 
-    self.Function = func
-    if fName is None:
-      self.FunctionName = func.__name__
-    else:
+    if not fName is None:
       self.FunctionName = fName      
+    elif func.__class__ is FuzzyClassifier:
+      self.FunctionName = func.FunctionName
+    else:
+      self.FunctionName = func.__name__
+
+    if func.__class__ is FuzzyClassifier:
+      self.Function = func.Function
+      self.safesetParams(**func.myParams)
+    else:
+      self.Function = func
+
+    self.__name__ = "FuzzyClassifier:%s" % self.FunctionName
    
   def __str__(self):
-    return "FuzzyClassifier instance with\n\tmembership function %s\n\tparameters %s\n\toperator set %s" \
+    return "FuzzyClassifier instance with\n\tmembership function " + \
+           "%s\n\tparameters %s\n\toperator set %s" \
            % (self.FunctionName, self.myParams, self.Ops)
    
-  def __and__ (self, other):
-    """
-    Return a FuzzyClassifier with the membership function
-    min(self, other)
-
-    This is really bad
-    """
-
-    return FuzzyClassifier(min(f(*argList), g(*argList)),
-                           self.FunctionName + "And" + other.FunctionName,
-                           f=self, g=other)
-
-  def __or__ (self, other):
-    """
-    Return a FuzzyClassifier with the membership function
-    max(self, other)
-
-    This is really bad
-    """
-
-    return FuzzyClassifier(lambda : max(f(*argList), g(*argList)),
-                           self.FunctionName + "Or" + other.FunctionName,
-                           f=self, g=other)
-
-  def __neg__(self):
-    """
-    Return a FuzzyClassifier with the membership function
-    (1.0 - self)
-    """
-
-    return FuzzyClassifier(lambda : 1.0 - f(*argList),
-                           "Not" + self.FunctionName, f=self)
-
-  __inv__ = __neg__
-         
   def __nonzero__(self):
     return True
 
@@ -466,8 +458,8 @@ def LRFuzzy(f,g,c,a,b):
   Create a new FuzzyClassifier with a left-right membership
   function and parameters f,g,c,a,b
 
-  f: left-side function (actually a FuzzyClassifier)
-  g: right-side function (actually a FuzzyClassifier)
+  f: left-side function (or FuzzyClassifier)
+  g: right-side function (or FuzzyClassifier)
   c: switching point
 
   This could be a lot better.
