@@ -26,11 +26,11 @@ compile:
 	$(PYTHON_BIN) compile.py
 
 pyrobot-$(PYROBOT_VERSION).tgz: Makefile
-	mkdir tars || true
-	mv *.tgz tars/ || true
-	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz pyrobot --exclude wikiparser.php --exclude stylesheet.css --exclude knoppix --exclude pyrobot/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz tars
-	$(RM) -f tars/pyrobot-latest.tgz
-	cd tars; ln -s pyrobot-$(PYROBOT_VERSION).tgz pyrobot-latest.tgz
+	mkdir download || true
+	mv *.tgz download/ || true
+	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz pyrobot --exclude wikiparser.php --exclude stylesheet.css --exclude knoppix --exclude pyrobot/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude download --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz download
+	$(RM) -f download/pyrobot-latest.tgz
+	cd download; ln -s pyrobot-$(PYROBOT_VERSION).tgz pyrobot-latest.tgz
 
 Makefile.cfg:
 	$(PYTHON_BIN) configure.py

@@ -1,10 +1,21 @@
 #!/usr/bin/env python
-# Pyrobot configure.py script
+# Pyro configure.py script
 
 import sys
 from posixpath import exists, isdir, isfile, islink
 from posix import popen
 import os
+
+prefix = "/usr"
+if "--prefix" in map(lambda s: s[0:8], sys.argv):
+    for command in sys.argv:
+        if command[0:8] == "--prefix":
+            com, prefix = command.split("=", 2)
+    
+if "--defaults" in sys.argv:
+    useDefaults = 1
+else:
+    useDefaults = 0
 
 def file_exists(file_name, type = 'file'):
     if len(file_name) == 0:
@@ -28,7 +39,7 @@ def ask_yn(title, list_of_options):
     print title
     retval = ''
     for directory, desc in list_of_options:
-        if ask("Option:    Do you want to build " + desc + "? (y/n)", "n", 0) == "y":
+        if ask("Option:    Do you want to build " + desc + "? (y/n)", "y", 0) == "y":
             retval = retval + " " + directory
     return retval
 
@@ -37,18 +48,21 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    print "-------------------------------------------------------------------"
    while not done:
       print question
-      if locate:
+      if locate and not useDefaults:
           pipe = popen("locate %s | head -1 " % locate )
           default = pipe.readline().strip()
       print 'Default = [' + default + ']: ',
-      retval = raw_input()
+      if useDefaults:
+          retval = ""
+      else:
+          retval = raw_input()
       if retval == "":
          retval = default
       if retval == 'none':
          done = 1
       elif not filecheck:
          done = 1
-      elif file_exists(retval, type):
+      elif useDefaults or file_exists(retval, type):
          done = 1
       else:
          print "WARNING: '%s' does not exist, or wrong type (file or dir)!" % retval
@@ -59,14 +73,14 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
 
 print """
 ---------------------------------------------------------------------
-This is the configure.py script for installing Pyrobot, Python Robotics.
+This is the configure.py script for installing Pyro, Python Robotics.
 Pressing ENTER by itself will accept the default (shown in brackets).
 ---------------------------------------------------------------------
 """
 text = """
-# Pyrobot - Python Robotics Config Script
+# Pyro - Python Robotics Config Script
 
-# What version of Python do you want to build Pyrobot for?
+# What version of Python do you want to build Pyro for?
 # Leave empty if your python binary is just "python"
 PYTHON_VERSION=%s
 
@@ -85,26 +99,26 @@ CONFIGDIRS = %s
 """
 
 print """
-What version of Python do you want to build Pyrobot for?
+What version of Python do you want to build Pyro for?
 (Leave empty if your Python binary is just "python")
 If you need to type 'python2.2' to run Python, then
 enter "2.2".
 """
-python_script_name = ask("1. Python version number?", "", 0)
+python_script_name = ask("1. Python version number?", "2.3", 0)
 
 python_include_files = ask("2. Where are Python's include files?",
-                           "/usr/local/include/python" + python_script_name,
+                           ("%s/include/python" + python_script_name) % prefix,
                            type = "dir",
                            locate = "include/python" + python_script_name)
 
 python_bin_path = ask("3. What is Python's binary? (enter path and name)",
-                           "/usr/local/bin/python" + python_script_name,
+                           ("%s/bin/python" + python_script_name) % prefix,
                       locate = "bin/python" + python_script_name)
 
 x11_include_dir = ask("4. Where is the X11 include directory?",
-                      "/usr/X11",
+                      "/usr/X11R6",
                       type = "dir",
-                      locate = "/usr/X11")
+                      locate = "/usr/X11R6")
 
 included_packages = ask_yn("\n5. Options:", [
     ('vision/cvision', "Image Processing"),

@@ -1,23 +1,18 @@
 # Pyrobot RPM SPEC File
 
-#%_topdir /home/your_userid/rpm
-#cd /home/your_userid/rpm
-#mkdir SOURCES SPECS BUILD SRPMS
-#mkdir -p RPMS/i386 RPMS/athlon RPMS/i486 RPMS/i586 RPMS/i686 RPMS/noarch
-
 %define pythonver %(%{__python} -c 'import sys; print sys.version[:3]' || echo 2.3)
 %define pythondir %(%{__python} -c 'import sys; print [x for x in sys.path if x[-13:] == "site-packages"][0]')
 
-Summary: Python Robotics, toolkit for explore AI and robotics
+Summary: Python Robotics, toolkit for exploring AI and robotics
 Name: pyrobot
 Version: 4.0.2
 Release: 1
-Group: Education/Robotics
+Group: Application
 License: GPL
 URL: http://PyroRobotics.org/
-Source: http://PyroRobotics.org/tars/%{name}-%{version}.tgz
+Source: http://PyroRobotics.org/download/%{name}-%{version}.tgz
 Packager: D.S. Blank <dblank@cs.brynmawr.edu>
-Requires: python >= %{pythonver}, python-imaging, python, python-tkinter
+Requires: python >= %{pythonver}, python-imaging, python-tkinter
 BuildRequires: python, python-devel
 Obsoletes: pyrobot <= %{version}
 Provides: pyrobot = %{version}-%{release}
@@ -32,7 +27,8 @@ server, Player/Stage/Gazebo, and others.
 %setup -q -n pyrobot
 
 %build
-./configure 
+./configure.py --defaults --prefix=%{_prefix}
+make
 
 %install
 %{__rm} -rf %{buildroot}
@@ -52,6 +48,6 @@ install bin/ipyrobot %{_bindir}
 %{_bindir}/ipyrobot
 
 %changelog
-* Sun May 22 2005 Douglas Blank <dblank@saliva.brynmawr.edu> - 
+* Sun May 22 2005 Douglas Blank <dblank@brynmawr.edu> - 
 - Initial build.
 
