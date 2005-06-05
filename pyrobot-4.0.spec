@@ -6,13 +6,13 @@
 Summary: Python Robotics, toolkit for exploring AI and robotics
 Name: pyrobot
 Version: 4.0.2
-Release: 1
+Release: fc3
 Group: Application
 License: GPL
 URL: http://PyroRobotics.org/
 Source: http://PyroRobotics.org/download/%{name}-%{version}.tgz
 Packager: D.S. Blank <dblank@cs.brynmawr.edu>
-Requires: python >= %{pythonver}, python-imaging, python-tkinter
+Requires: python >= %{pythonver}, python-imaging, tkinter
 BuildRequires: python, python-devel
 Obsoletes: pyrobot <= %{version}
 Provides: pyrobot = %{version}-%{release}
