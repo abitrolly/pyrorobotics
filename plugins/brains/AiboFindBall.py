@@ -13,7 +13,7 @@ Note: Complete Behavior brain
 
 """
 
-from pyrobot.brain.behaviors.fsm import *
+from pyrobot.brain.behaviors import *
 from time import sleep
 import random
 
@@ -38,7 +38,6 @@ class RobotVsRobotSoccer(FSMBrain):
         #self.cam.addFilter("matchRange",178,19,41,250,101,214,0)#pink ball
         self.cam.addFilter("match", 193, 27, 31,70)#red ball
         self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
-      
 
     def destroy(self):
         self.cam.clearFilters()
@@ -525,7 +524,7 @@ class gameOver(State):
         self.robot.move(0,0)
                     
 def INIT(engine):
-    brain = RobotVsRobotSoccer(engine)
+    brain = RobotVsRobotSoccer(engine=engine)
     brain.add(searchDown(1))
     brain.add(searchLeftRight())
     brain.add(searchRightLeft())
