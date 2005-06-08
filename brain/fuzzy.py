@@ -115,8 +115,8 @@ class FuzzyClassifier:
 
   Membership function can be set on initialization or with
   setMembershipFunction(function). The membership function should
-  return a value between 0 and 1; values outside that range will be
-  automatically set to either 0 or 1.
+  return a value between 0 and 1 (values outside that range will be
+  automatically set to either 0 or 1).
   
   All relevant parameters used by the membership function can be set
   on initialization or by setParams()
@@ -126,9 +126,9 @@ class FuzzyClassifier:
     """
     Initialize the FuzzyClassifier
     
-    First argument is a dictionary of parameter names and values
-    Second argument is a reference to the membership function
-    Third argument is the name of the membership function
+    First argument is a reference to the membership function
+    Second argument is the name of the membership function
+    Remaining arguments are parameter names and values
     """
 
     self.myParams = {}
@@ -168,9 +168,9 @@ class FuzzyClassifier:
     funcargs = list(self.Function.func_code.co_varnames
                     [:self.Function.func_code.co_argcount])
     for i in funcargs:
-      if self.myParams.has_key(i):
+      try:
         mydict[i] = self.myParams[i]
-      else:
+      except KeyError:
         try:
           mydict[i] = args.pop(0)
         except IndexError:
@@ -216,12 +216,17 @@ class FuzzyClassifier:
     """
     self.myParams = kwargs
     
-  # this is a BAD function and should CHANGE
-  def getParam(self, name):
+  def getParam(self, *names):
     """
-    Return one of the classifier's parameters
+    Return one or more of the classifier's parameters
     """
-    return self.myParams[name]
+    retlist = []
+    for name in names:
+      try:
+        retlist.append(self.myParams[name])
+      except KeyError:
+        retlist.append(None)
+    return retlist
 
   def setFunction(self, func, fName = None):
     """
@@ -418,19 +423,14 @@ def GaussianFuzzy(c,s):
 
   return FuzzyClassifier(__GaussMF, "Gaussian", c=c, s=s)
 
-# NOT YET
+# needs comment
 def BellFuzzy(a,b,c):
   """
-  Create a new FuzzyClassifier with a bell-curve membership function
-  and parameters a,b,c
-
-  I wouldn't use this yet if I were you.
+  All values will effectively be mapped to either 0, 0.5, or 1.
+  (Not quite, since it's continuous, but close.)
   """
   
-  def __BellMF():
-    """
-    I wouldn't use this yet if I were you
-    """
+  def __BellMF(x,a,b,c):
     return 1.0 / (1.0 + pow((x - c) / a, 2.0*b))
   
   return FuzzyClassifier(__BellMF, "BellCurve", a=a,b=b,c=c)
@@ -452,7 +452,7 @@ def SigmoidFuzzy(a,c):
 
   return FuzzyClassifier(__SigmoidMF, "Sigmoid", a=a, c=c)
 
-# NOT YET
+# NOT YET TESTED
 def LRFuzzy(f,g,c,a,b):
   """
   Create a new FuzzyClassifier with a left-right membership
@@ -461,8 +461,6 @@ def LRFuzzy(f,g,c,a,b):
   f: left-side function (or FuzzyClassifier)
   g: right-side function (or FuzzyClassifier)
   c: switching point
-
-  This could be a lot better.
   """
 
   def __LRMF():
@@ -477,30 +475,6 @@ def LRFuzzy(f,g,c,a,b):
                          f=f,g=g,c=c,a=a,b=b)
     
 if __name__ == '__main__': # some tests
-  f = RisingFuzzy(0,10)
-  print f
-  print f(0,10)
-  print f(5,10)
-  print f(15)
-#  def Bounds():
-#    if x == first:
-#      return 0.0
-#    elif x == last:
-#      return 1
-#    return 0.5
-#  bound = FuzzyClassifier(Bounds, first=0, last=10)
-#  far = RisingFuzzy(0, 10)
-#  
-#  def Two():
-#    return one(x0) * two(x1)
-#  
-#  foo = FuzzyClassifier(Two, one=bound, two=far)
-#  print foo(10, 10)
-#  nonfoo = -foo
-#  foo = far
-#  print foo(5)
-#  nonfoo = -foo
-#  print nonfoo(10)
-#  print (nonfoo | foo)(10,10)
-#  s = GaussianFuzzy(35,5)
-#  print s(30)
+  f = BellFuzzy(10,20,30)
+  for i in range(100):
+    print str(i) + ", " + str(float(f(i)))
