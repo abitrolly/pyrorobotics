@@ -52,6 +52,12 @@ class gui:
          fp.close()
          self.history_pointer = len(self.history) - 1
 
+   def listCommandHistory(self):
+      cnt = 1
+      for line in self.history:
+         print cnt, line
+         cnt += 1
+
    def addCommandHistory(self, command):
       if len(self.history) > 0:
          if command != self.history[ len(self.history) - 1]:
@@ -165,6 +171,14 @@ class gui:
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
       retval = retval.strip()
+      # Macro-style substitutions here:
+      if len(retval)>= 1 and retval[0] == ".":
+         if len(retval) >= 2:
+            if retval[1].isalpha():
+               retval = "self" + retval
+         else:
+            retval = "self" + retval
+      # Now process the command, case-like:
       if retval == "run":
          self.inform("Running in thread...")
          self.engine.pleaseRun() # pass in callback, or not
@@ -194,6 +208,11 @@ class gui:
             self.inform("Done!")
          else:
             self.inform("Define a robot first!")
+      elif len(retval) >= 1 and retval[0] == "!":
+         if retval == "!":
+            self.listCommandHistory()
+         else:
+            self.processCommand(self.history[int(retval[1:]) - 1])
       elif retval == "about":
          about()
       elif retval == "reload":

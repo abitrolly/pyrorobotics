@@ -301,6 +301,14 @@ class TKgui(Tkinter.Toplevel, gui):
    def CommandTabKey(self, event):
       from string import strip
       command = strip(self.commandEntry.get())
+      # Macro-style substitutions here:
+      if len(command)>= 1 and command[0] == ".":
+         if len(command) >= 2:
+            if command[1].isalpha():
+               command = "self" + command
+         else:
+            command = "self" + command
+      # Process the tab:
       if len(command) > 0:
          if command[-1] == ".":
             command = command[:-1]
