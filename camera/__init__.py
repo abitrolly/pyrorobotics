@@ -440,17 +440,15 @@ class Camera(PyrobotImage, Device):
          try:
             self.im = self.im.resize( (self.getCanvasWidth(),
                                        self.getCanvasHeight()) )
-            #Image.BILINEAR ) # too slow
          except:
             print "error: could not resize window"         
          self.image = ImageTk.PhotoImage(self.im)
-         self.canvas.create_image(0, 0, image = self.image, anchor=Tkinter.NW,
-                                  tag="image")
-         #self.canvas.create_rectangle(1, 1,
-         #                             self.getCanvasWidth(),
-         #                             self.getCanvasHeight(),
-         #                             tag="image")
-         #self.canvas.pack()
+         try:
+            self.canvas.create_image(0, 0, image = self.image,
+                                     anchor=Tkinter.NW,
+                                     tag="image")
+         except:
+            pass # just skip it
          while self.window.tk.dooneevent(2): pass
 
    def startDevice(self):
