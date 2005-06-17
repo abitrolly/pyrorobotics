@@ -1,7 +1,63 @@
 from pyrobot.camera.fake.fake import Fake # cameraDevice
 from pyrobot.camera import Camera, CBuffer # base class
+from pyrobot.vision.cvision import VisionSystem
 import pyrobot.system as system
 import re, time, os
+
+class ManualFakeCamera(Camera):
+   """
+   camera = ManualFakeCamera(w, h, d)
+
+   Used when you are creating the image from Python, and wish
+   to have the camera class show or manipulate the image.
+
+   Currently only depth 3 works.
+
+   Values in camera array are ints between 0 and 255.
+   """
+   def __init__(self, width, height, depth):
+      self.width = width
+      self.height = height
+      self.depth = depth
+      self.cameraDevice = Fake("", self.width, self.height, self.depth)
+      self.vision = VisionSystem()
+      self.vision.registerCameraDevice(self.cameraDevice)
+      self.cbuf = self.vision.getMMap()
+      # -------------------------------------------------
+      self.rgb = (0, 1, 2) # offsets to RGB
+      self.format = "RGB"
+      Camera.__init__(self, self.width, self.height, self.depth,
+                      "Fake Camera View")
+      self.devData["subtype"] = "simulated"
+      self.data = CBuffer(self.cbuf)
+
+   def blankImage(self, val=0):
+      for w in range(self.width):
+         for h in range(self.height):
+            for d in range(self.depth):
+               self.vision.setVal(w, h, d, val)
+
+   def setGrayImage(self, array):
+      """
+      Will set the RGB camera image from a grayscale array (depth 1)
+      assuming column major order.
+      """
+      for w in range(self.width):
+         for h in range(self.height):
+            val = array[h * self.width + w]
+            for d in range(self.depth):
+               self.vision.setVal(w, h, d, val)
+
+   def setRGBImage(self, array):
+      """
+      Will set the RGB camera image from a RGB array (depth 3)
+      assuming column major order.
+      """
+      for w in range(self.width):
+         for h in range(self.height):
+            for d in range(self.depth):
+               self.vision.setVal(w, h, d, array[h * self.width + w + d])
+
 
 class FakeCamera(Camera):
    """
