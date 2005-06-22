@@ -9,9 +9,9 @@ class SubsumptionBehavior:
         self.flag = 0
 
     def get(self, *args):
-         return self.robot.get(*args)
+        return self.robot.get(*args)
 
-     def move(self, translate, rotate):
+    def move(self, translate, rotate):
         self.translate = translate
         self.rotate = rotate
         self.flag = 1
