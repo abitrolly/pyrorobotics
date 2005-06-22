@@ -87,7 +87,7 @@ CFLAGS	= -O2 -f $(DEFINES)
 # generic optimizing compiler
 #
 CC	= cc
-CFLAGS	= -O $(DEFINES)
+CFLAGS	= -O3 $(DEFINES)
 #endif
 
 FILES	= $(HDRS) $(SRCS) $(OTHERS)

@@ -3,6 +3,9 @@
  *
  * $Header$
  * $Log$
+ * Revision 1.3  2005/06/22 05:06:57  dblank
+ * Optimized; fixed for gcc4; commented out a free to keep from segfaulting
+ *
  * Revision 1.2  2005/04/18 14:30:38  dblank
  * Stefanie Teller's map align fix;
  * scatter plot unfinished;
@@ -37,10 +40,15 @@
  */
 
 #ifndef __malloc_and_calloc_defined
-extern char *malloc();
-extern char *calloc();
-extern free();
+extern void *calloc(size_t nmemb, size_t size);
+extern void *malloc(size_t size);
+extern void free(void *ptr);
+// DSB at Pomona
+//extern char *malloc();
+//extern char *calloc();
+//extern free();
 #endif
+
 
 #ifndef FLOAT
 #define FLOAT	float			/* float type used throughout */

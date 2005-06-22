@@ -2,6 +2,9 @@
  * graph.c -- graphing support for cluster
  *
  * $Log$
+ * Revision 1.2  2005/06/22 05:06:57  dblank
+ * Optimized; fixed for gcc4; commented out a free to keep from segfaulting
+ *
  * Revision 1.1  2002/07/03 01:08:51  dblank
  * Cluster 2.9 added to pyro/tools
  *
@@ -24,6 +27,7 @@
 static char rcsid[] = "$Header$";
 #endif				/* not lint */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
