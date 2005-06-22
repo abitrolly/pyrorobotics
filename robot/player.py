@@ -8,12 +8,9 @@ from pyrobot.robot.device import Device, DeviceError, SensorValue
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 import playerc
 
-# todo:
-# check get_pose
-# dev.__dict__[name] 
-
 class PlayerDevice(Device):
-    def __init__(self, client, type, groups = {}, mode=playerc.PLAYERC_ALL_MODE, index=0):
+    def __init__(self, client, type, groups = {},
+                 mode=None, index=0):
         Device.__init__(self, type)
         self.groups = groups
         self.client = client
@@ -45,8 +42,17 @@ class PlayerDevice(Device):
     def startDevice(self, mode):
         exec("self.handle = playerc.playerc_%s(self.client, %d)" %
              (self.type, self.index))
-        if self.handle.subscribe(mode) != 0:
-            raise playerc.playerc_error_str()
+        if mode == None: # auto
+            # try all first:
+            mode = playerc.PLAYERC_ALL_MODE
+            if self.handle.subscribe(mode) != 0:
+                # if that fails, try read:
+                mode = playerc.PLAYERC_READ_MODE
+                if self.handle.subscribe(mode) != 0:
+                    raise playerc.playerc_error_str()
+        else:
+            if self.handle.subscribe(mode) != 0:
+                raise playerc.playerc_error_str()
         # robot.blobfinder.blobs[0].x, y, top, left, range, right, color,
         #   area, bottom,
         # color is a pointer

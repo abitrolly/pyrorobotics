@@ -1,3 +1,4 @@
+from __future__ import generators
 import pyrobot.robot
 import types, random, exceptions
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS

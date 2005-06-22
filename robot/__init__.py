@@ -23,7 +23,10 @@ import pyrobot.gui.console as console
 import pyrobot.system as system
 from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
-import math, string, time, os
+import math, string, time, os, sys
+
+if float(sys.version[0:3]) < 2.4:
+    False = 0
 
 if not os.environ.has_key('PYROBOT'):
     raise AttributeError, "PYROBOT not defined: export PYROBOT=/usr/local/pyrobot"
