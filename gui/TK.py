@@ -10,6 +10,7 @@ from pyrobot.tools.joystick import Joystick
 
 def ask(title, qlist):
    d = TKwidgets.AskDialog(share.gui, title, qlist)
+   d.top.bind("<Return>", lambda event: d.OkPressed())
    ok = d.Show()
    if ok:
       retval = {"ok": 1}

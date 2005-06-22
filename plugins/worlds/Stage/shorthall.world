@@ -3,6 +3,7 @@ resolution 0.02
 
 include "pioneer.inc"
 
+
 #GUI settings
 window
 (
@@ -23,5 +24,5 @@ pioneer2dx
   color "red"
   name "Pioneer"
   port 6665
-  pose [1.000 2.000 90.000]
+  pose [1.000 1.000 90.000]
 )

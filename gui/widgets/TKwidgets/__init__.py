@@ -238,6 +238,10 @@ class Watcher(Tkinter.Toplevel):
       Tkinter.Toplevel.__init__(self, root)
       self.winfo_toplevel().title("Pyrobot Expression Watcher")
       self.data = []
+      self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.minimize)
+
+   def minimize(self):
+      self.withdraw()
 
    def unwatch(self, exp):
       i = 0
@@ -253,17 +257,19 @@ class Watcher(Tkinter.Toplevel):
       for (oldExp, textbox) in self.data:
          if oldExp == exp:
             return # don't watch the same expression more than once
-      textbox = self.CreateTextBox(exp, width=30, default="")
-      self.data.append( (exp, textbox))
+      frame = self.CreateTextBox(exp, width=30, default="")
+      self.data.append( (exp, frame))
 
-   def update(self, locals):
-      for exp, textbox in self.data:
+   def update(self, locals = None):
+      if locals == None:
+         locals = globals()
+      for exp, frame in self.data:
          try:
             value = eval(exp, locals)
          except:
             value = "<Undefined>"
-         textbox.delete(0, 'end')
-         textbox.insert(0, value)
+         frame.textbox.delete(0, 'end')
+         frame.textbox.insert(0, value)
 
    def CreateTextBox(self, text, width = 30, default = ""):
       frame = Tkinter.Frame(self)
@@ -278,7 +284,9 @@ class Watcher(Tkinter.Toplevel):
       textbox = Tkinter.Entry(frame, width=width, bg="white")
       textbox.insert(0, default)
       textbox.pack({'expand':'no', 'side':'right', 'fill':'x'})
-      return textbox
+      label.bind("<1>", lambda event: self.unwatch(text))
+      frame.textbox = textbox
+      return frame
 
 ####
 #	Class MessageDialog
@@ -877,3 +885,9 @@ def string_printable(s):
 		return res + s[l:length]
 
 
+if __name__ == "__main__":
+   from Tkinter import Tk
+   tk = Tk()
+   w = Watcher(tk)
+   w.watch("w")
+   w.mainloop()

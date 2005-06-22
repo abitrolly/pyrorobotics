@@ -52,6 +52,10 @@ else:
 if not os.environ.has_key('HOSTNAME'):
     os.environ['HOSTNAME'] = 'computer'
     os.putenv('HOSTNAME', 'computer' )
+# add PYROBOT to PYTHONPATH first
+(path,spare) = os.path.split(os.environ["PYROBOT"]) # peel off pyrobot dir
+sys.path.insert(0, path)
+# ------------------------------ All done with environment business!
 try:
     from pyrobot.system import share
     from pyrobot.engine import *
