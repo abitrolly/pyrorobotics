@@ -107,11 +107,6 @@ class PlayerFiducialDevice(PlayerDevice):
     def __len__(self):
         return len(self.handle.fiducials)
 
-class PlayerCameraDevice(PlayerDevice):
-    def __init__(self, client):
-        PlayerDevice.__init__(self, client, "camera",
-                              mode=playerc.PLAYERC_READ_MODE)
-
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "sonar")
@@ -533,7 +528,7 @@ class PlayerUpdater(threading.Thread):
         """
         self.runable = runable
         self._stopevent = threading.Event()
-        self._sleepperiod = 0.001
+        self._sleepperiod = 0.0001
         # We have to read it this fast to keep up!
         threading.Thread.__init__(self, name="PlayerUpdater")
         
@@ -645,7 +640,10 @@ class PlayerRobot(Robot):
         elif item == "sonar":
             return {"sonar": PlayerSonarDevice(self.client)}
         elif item == "camera":
-            return {"camera": PlayerCameraDevice(self.client)}
+            from pyrobot.camera.player import PlayerCamera
+            from pyrobot.vision.cvision import VisionSystem
+            camera = PlayerCamera(self.hostname, self.port, visionSystem=VisionSystem())
+            return {"camera": camera}
         elif item == "fiducial":
             return {"fiducial": PlayerFiducialDevice(self.client)}
         elif item == "gripper":

@@ -66,3 +66,11 @@ class PlayerCamera(Camera):
 
    def destroy(self):
       self.thread.join()
+
+if __name__ == "__main__":
+    from pyrobot.vision.cvision import VisionSystem
+    camera = PlayerCamera("localhost", 6665, VisionSystem())
+    camera.makeWindow()
+    while 1:
+        camera.update()
+        camera.updateWindow()

@@ -91,6 +91,7 @@ class gui:
          done = self.processCommand(retval)
 
    def makeWatcher(self):
+      """ Text-based watcher """
       pass
       #self.watcher = FIX: set a list to eval
       
@@ -244,6 +245,8 @@ class gui:
             self.engine.reset()
          else:
             self.inform("Need to load a brain first!")
+      elif retval[:7] == "unwatch":
+         self.watcher.unwatch(retval[7:].strip())
       elif retval[:5] == "watch":
          if self.engine.brain:
             self.environment["self"] = self.engine.brain

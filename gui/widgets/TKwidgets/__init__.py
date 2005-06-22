@@ -254,6 +254,7 @@ class Watcher(Tkinter.Toplevel):
       raise AttributeError, "expression not found: '%s'" % exp
 
    def watch(self, exp):
+      self.deiconify()
       for (oldExp, textbox) in self.data:
          if oldExp == exp:
             return # don't watch the same expression more than once
@@ -283,7 +284,7 @@ class Watcher(Tkinter.Toplevel):
                   'fill':'none'})
       textbox = Tkinter.Entry(frame, width=width, bg="white")
       textbox.insert(0, default)
-      textbox.pack({'expand':'no', 'side':'right', 'fill':'x'})
+      textbox.pack({'expand':'yes', 'side':'right', 'fill':'x'})
       label.bind("<1>", lambda event: self.unwatch(text))
       frame.textbox = textbox
       return frame
