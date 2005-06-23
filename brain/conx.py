@@ -13,7 +13,7 @@
 
 import Numeric, math, random, time, sys, operator
 
-version = "7.1"
+version = "7.2"
 
 def loadNetworkFromFile(filename):
     """
@@ -1351,21 +1351,21 @@ class Network:
                 layer.copyActivations(args[key])
             else:
                 raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
+        # Propagate activation through network:
+        self.propagate()
         # Next, take care of any Auto-association, and copy
         # activations to targets
         for aa in self.association:
             (inName, outName) = aa
             inLayer = self.getLayer(inName)
-            if not inLayer.type == 'Input':
-                raise LayerError, ('Associated input layer not type \'Input\'.', \
+            if inLayer.type not in ['Input', "Hidden"]:
+                raise LayerError, ('Associated input layer not type \'Input\' or \'Hidden\'.', \
                                    inLayer.type)
             outLayer = self.getLayer(outName)
             if not outLayer.type == 'Output':
                 raise LayerError, ('Associated output layer not type \'Output\'.', \
                                    outLayer.type)
             outLayer.copyTargets(inLayer.activation)
-        # Propagate activation through network:
-        self.propagate()
         if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
