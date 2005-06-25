@@ -23,21 +23,22 @@ matchGoal = 40
 class RobotVsRobotSoccer(FSMBrain):
     def setup(self):
         self.cam = self.getDevice( self.hasA("camera") )
+        camera = self.cam # local variable
         self.ptz = self.getDevice( self.hasA("ptz") )
         # goal filter
-        #self.cam.addFilter("match", 30, 58, 132, 50, 2)#blue
-        #self.cam.addFilter("match", 146, 191, 212, 50, 2)#blue
-        self.cam.addFilter("match", 64, 104, 153, 30, 2)#blue
-        self.cam.addFilter("blobify",2,255,255,0,1,1,1,)#blue
-        
-        #self.cam.addFilter("match", 101, 189, 67, 50, 1)#green
-        #self.cam.addFilter("blobify",1,255,255,0,1,1,1,)#green
-        
+        camera.addFilter("match",32,102,52,30,2,) # green goal
+        camera.addFilter("match",65,165,67,30,2,) # grean goal
+        camera.addFilter("match",31,143,45,30,2,) # green goal
+        camera.addFilter("blobify",2,255,255,0,1,1,1,)#blue blob
+        self.goal = 3
         
         # ball filter
-        #self.cam.addFilter("matchRange",178,19,41,250,101,214,0)#pink ball
-        self.cam.addFilter("match", 193, 27, 31,70)#red ball
-        self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
+        camera.addFilter("match",248,14,73,)
+        camera.addFilter("match",237,75,116,)
+        camera.addFilter("match",247,115,138,)
+        camera.addFilter("match",237,165,166,)
+        camera.addFilter("blobify",0,255,255,0,1,1,1,) # red blob
+        self.ball = 8
 
     def destroy(self):
         self.cam.clearFilters()
@@ -54,9 +55,9 @@ class approachBall(State):
 
     def step(self):
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
                 if area > matchBall:
                     pose = self.robot.ptz.pose # p,t,z,r; acts as a pointer
@@ -115,24 +116,24 @@ class lostBall(State):
         print "LOST"
 
     def onGoto(self, args):
-        self.ballCenterX = args[0]
-        self.ballCenterY = args[1]
+        self.brain.ballCenterX = args[0]
+        self.brain.ballCenterY = args[1]
         
     def step(self):
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
         pose = self.robot.ptz.pose# p,t,z,r; acts as a pointer
-        diffX = abs(self.ballCenterX - self.robot.camera.width/2)
-        diffY = abs(self.ballCenterY - self.robot.camera.height/2)
+        diffX = abs(self.brain.ballCenterX - self.robot.camera.width/2)
+        diffY = abs(self.brain.ballCenterY - self.robot.camera.height/2)
         if diffX > diffY:
             turnDirVer = 0
             # need to search horizontally
-            if (self.ballCenterX > self.robot.camera.width/2):
+            if (self.brain.ballCenterX > self.robot.camera.width/2):
                 # right
                 turnDirHor = -1
             else:
@@ -140,7 +141,7 @@ class lostBall(State):
                 turnDirHor = 1
         else:
             turnDirHor = 0
-            if (self.ballCenterY > self.robot.camera.width/2):
+            if (self.brain.ballCenterY > self.robot.camera.width/2):
                 # down
                 turnDirVer = -1
             else:
@@ -163,9 +164,9 @@ class searchDown(State):
     def step(self):
         pose = self.robot.ptz.pose
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
@@ -188,9 +189,9 @@ class searchLeftRight(State):
     def step(self):
         pose = self.robot.ptz.pose
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
@@ -214,9 +215,9 @@ class searchRightLeft(State):
     def step(self):
         pose = self.robot.ptz.pose
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
@@ -242,9 +243,9 @@ class searchDynamic(State):
             
     def step(self):
         results = self.robot.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
@@ -265,9 +266,9 @@ class prepareToKick(State):
 
     def step(self):
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a blob in sight
-                x1, y1, x2, y2, area = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a blob in sight
+                x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area> 50:
                     # 1.center the image
                     centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
@@ -361,9 +362,9 @@ class lookForGoal(State):
     def step(self):
         results = self.get("robot/camera/filterResults")
         pose = self.robot.ptz.pose
-        if len(results) > 1 and len(results[1]) > 0: # need a match, and blobify at least
-            if len(results[1][0]) == 5: # have a goal blob in sight
-                x1, y1, x2, y2, area = results[1][0]
+        if len(results) > 1 and len(results[self.brain.goal]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.goal][0]) == 5: # have a goal blob in sight
+                x1, y1, x2, y2, area = results[self.brain.goal][0]
                 if area >35:
                     sleep(1)
                     if abs(pose[0]) > 0.1:
@@ -408,13 +409,13 @@ class findGoal(State):
         self.robot.move(0,0)
         areab = 0
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a ball blob in sight
-                x1b, y1b, x2b, y2b, areab = results[-1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a ball blob in sight
+                x1b, y1b, x2b, y2b, areab = results[self.brain.ball][0]
                 centerXb, centerYb = (x1b + x2b)/2, (y1b + y2b)/2
-        if len(results) > 1 and len(results[1]) > 0: # need a match, and blobify at least
-            if len(results[1][0]) == 5: # have a goal blob in sight
-                x1g, y1g, x2g, y2g, areag = results[1][0]
+        if len(results) > 1 and len(results[self.brain.goal]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.goal][0]) == 5: # have a goal blob in sight
+                x1g, y1g, x2g, y2g, areag = results[self.brain.goal][0]
                 centerXg, centerYg = (x1g + x2g)/2, (y1g + y2g)/2
         if areab > 10: #self.matchBall:
             # see the ball and search for the goal
@@ -475,12 +476,12 @@ class didYouScore(State):
     def step(self):
         pose = self.robot.ptz.pose
         results = self.get("robot/camera/filterResults")
-        if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
-            if len(results[-1][0]) == 5: # have a ball blob in sight
-                x1b, y1b, x2b, y2b, areab = results[-1][0]
-        if len(results) > 1 and len(results[1]) > 0: # need a match, and blobify at least
-            if len(results[1][0]) == 5: # have a goal blob in sight
-                x1g, y1g, x2g, y2g, areag = results[1][0]
+        if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.ball][0]) == 5: # have a ball blob in sight
+                x1b, y1b, x2b, y2b, areab = results[self.brain.ball][0]
+        if len(results) > 1 and len(results[self.brain.goal]) > 0: # need a match, and blobify at least
+            if len(results[self.brain.goal][0]) == 5: # have a goal blob in sight
+                x1g, y1g, x2g, y2g, areag = results[self.brain.goal][0]
         if areab> matchBall:
             # see the ball 
             if areag> matchGoal:
