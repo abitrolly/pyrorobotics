@@ -71,9 +71,10 @@ class PCAViewer(Tkinter.Toplevel):
         self.mBar.pack(fill=Tkinter.X)
         self.menuButtons = {}
         menu = [
-            ('File', [['Exit', lambda : sys.exit(0)],
-                      ['Help', self.help]]),
+            ('File', [['Help', self.help],
+                      ['Exit', lambda : sys.exit(0)]]),
             ('Options',[['Set PCAs to plot...', self.setPCA],
+                        ['Set Eigen Vector File', self.setEV],
                         ['Toggle History Trail', self.toggleHistory],
                         ['Clear History Trail', self.clearHistory],
                         ]
@@ -172,6 +173,13 @@ class PCAViewer(Tkinter.Toplevel):
         retval = ask(self.root, "Set PCA", (("X", self.pca[0]), ("Y", self.pca[1])))
         if retval["ok"]:
             self.pca = [int(retval["X"]), int(retval["Y"])]
+            self.last = {}
+            self.lastTimeFrame = ""
+            self.scroll("moveto", 0, 0)
+    def setEV(self):
+        retval = ask(self.root, "Set Eigen vector file", (("File", self.eigenfile),))
+        if retval["ok"]:
+            self.setEigens(retval["File"])
             self.last = {}
             self.lastTimeFrame = ""
             self.scroll("moveto", 0, 0)
