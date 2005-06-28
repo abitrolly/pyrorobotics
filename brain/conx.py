@@ -1266,7 +1266,8 @@ class Network:
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
     def reportPattern(self):
         pass
-
+    def reportStart(self):
+        pass
     def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
         self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                    (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
@@ -1282,6 +1283,8 @@ class Network:
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1;
         if not cont:
+            self.epoch = 0
+            self.reportStart()
             self.resetCount = 1
             self.epoch = 1
             self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
@@ -1826,6 +1829,11 @@ class Network:
         Sets the layerName's log feature.
         """
         self.getLayer(layerName).setLog(fileName)
+    def closeLog(self, layerName):
+        """
+        Close the layerName's log file.
+        """
+        self.getLayer(layerName).closeLog()
     def saveWeightsToFile(self, filename, mode = 'pickle'):
         """
         Saves weights to file in pickle, plain, or tlearn mode.
