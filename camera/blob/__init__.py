@@ -13,14 +13,14 @@ class BlobCamera(Camera):
       if camera == None:
          # is there a default one?
          try:
-            self.deviceName = self.robot.get("/devices/blobfinder0/name")
+            self.blobfinder = self.robot.blobfinder[0]
          except AttributeError:
             # no,then we'll try to start one:
-            self.deviceName = self.robot.startDevice('blobfinder')
+            self.blobfinder = self.robot.startDevice('blobfinder')
       else:
          # else, you better have supplied a name, like "blobfinder0"
-         self.deviceName = camera
-      self.blobHandle = self.robot.devices.__getattr__(self.deviceName).handle
+         self.blobfinder = camera
+      self.blobHandle = self.blobfinder.handle
       while self.blobHandle.width == 0: pass
       self.width, self.height = self.blobHandle.width,self.blobHandle.height
       self.depth = depth
@@ -40,9 +40,9 @@ class BlobCamera(Camera):
       print self.width, self.height
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Blob Camera View")
-      self.devData["requires"] = ["blobfinder"]
-      self.devData["subtype"] = "blob"
-      self.devData["source"] = self.deviceName
+      self.requires = ["blobfinder"]
+      self.subtype = "blob"
+      self.source = self.blobfinder.type + "[" + self.blobfinder.number + "]"
       self.data = CBuffer(self.cbuf)
       
    def _update(self):

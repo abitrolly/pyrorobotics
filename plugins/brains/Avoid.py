@@ -21,9 +21,9 @@ class Avoid(Brain):
          return(0.3, 0.0) 
       
    def step(self):  
-      front = min(self.get('/robot/range/front/value'))
-      left = min(self.get('/robot/range/left-front/value'))
-      right = min(self.get('/robot/range/right-front/value'))
+      front = min([s.distance() for s in self.robot.range["front"]])
+      left = min([s.distance() for s in self.robot.range["left-front"]])
+      right = min([s.distance() for s in self.robot.range["right-front"]])
       translation, rotate = self.determineMove(front, left, right)  
       self.robot.move(translation, rotate)
 

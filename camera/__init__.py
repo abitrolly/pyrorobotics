@@ -80,7 +80,7 @@ class Camera(PyrobotImage, Device):
       self.title = title
       self.filterMode = 1
       self.callbackList = []
-      self.devData["filterResults"] = []
+      self.filterResults = []
       self.callbackTextList = []
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
@@ -90,13 +90,13 @@ class Camera(PyrobotImage, Device):
       self.printFormat["image"] = "<%d x %d x %d PIL image>" % (self.width, self.height, self.depth)
       self.printFormat["data"] = "<%d x %d x %d image data>" % (self.width, self.height, self.depth)
       self.printFormat["grayscale"] = "<%d x %d grayscale data>" % (self.width, self.height)
-      self.devData["image"] = []
-      self.devData["data"] = self.data
-      self.devData["grayscale"] = []
-      self.devData["height"] = self.height
-      self.devData["width"] = self.width
-      self.devData["depth"] = self.depth
-      self.devData["filters"] = self.callbackTextList
+      self.image = []
+      self.data = self.data
+      self.grayscale = []
+      self.height = self.height
+      self.width = self.width
+      self.depth = self.depth
+      self.filters = self.callbackTextList
       # Required:
       self.startDevice()
       # make these visible by default
@@ -106,17 +106,17 @@ class Camera(PyrobotImage, Device):
    def preGet(self, keyword):
       #print "preGet", keyword
       if keyword == "grayscale":
-         self.devData["grayscale"] = self.getGrayScale() # list
+         self.grayscale = self.getGrayScale() # list
       elif keyword == "data":
-         self.devData["data"] = self.data # list
+         self.data = self.data # list
       elif keyword == "image":
-         self.devData["image"] = self.getImage() # <image>
+         self.image = self.getImage() # <image>
       else:
-         self.devData["filters"] = self.callbackTextList # list
+         self.filters = self.callbackTextList # list
 
    def postSet(self, keyword):
       if keyword == ".visible":
-         if self.devData[".visible"]:
+         if self.visible:
             self.makeWindow()
          else:
             self.hideWindow()
@@ -199,17 +199,12 @@ class Camera(PyrobotImage, Device):
       file.write(self.cbuf)
       file.close
 
-   def _update(self):
-      """
-      This method should be overloaded to interface with the camera.
-      """
-      pass
 
    def update(self):
       """
       Update method for getting next sequence from a video camera.
       """
-      self._update()
+      pass
 
    def updateOnce(self):
       oldActive = self.getActive()
@@ -452,11 +447,11 @@ class Camera(PyrobotImage, Device):
          while self.window.tk.dooneevent(2): pass
 
    def startDevice(self):
-      self.devData[".state"] = "started"
+      self.state = "started"
       return self
 
    def stopDevice(self):
-      self.devData[".state"] = "stopped"
+      self.state = "stopped"
       self.setVisible(0)
       return "Ok"
 
@@ -464,7 +459,7 @@ class Camera(PyrobotImage, Device):
       return self.data
 
    def getDeviceState(self):
-      return self.devData[".state"]
+      return self.state
 
    def updateDevice(self):
       self.update()
@@ -499,9 +494,9 @@ class Camera(PyrobotImage, Device):
    def processAll(self):
       if self.filterMode and self.vision != None:
          self.vision.applyFilterList()
-         while len(self.devData["filterResults"]): self.devData["filterResults"].pop()
+         while len(self.filterResults): self.filterResults.pop()
          for filterFunc in self.callbackList:
-            self.devData["filterResults"].append( filterFunc(self) )
+            self.filterResults.append( filterFunc(self) )
 
 if __name__ == '__main__':
    from pyrobot.vision.cvision import VisionSystem

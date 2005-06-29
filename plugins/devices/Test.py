@@ -4,23 +4,19 @@ from pyrobot.robot.device import Device
 
 class Test(Device):
 
-    def seeData(self, *args):
-        return args
-
     def setup(self):
-        self.devData['specialvalue'] = 42
-        self.subDataFunc['subdata'] = self.seeData
+        self.type = "test"
+        self.specialvalue = 42
 
     def makeWindow(self):
-        self.devData[".visible"] = 1
+        self.visible = 1
         print "[[[[ made window! ]]]]"
 
     def updateWindow(self):
-        print "update window!" # when visible
+        print "update window!" # when visible, few times a second
 
     def updateDevice(self):
-        #print "------------- update device!" 10 times a second!
-        pass
+        print "------------- update device!" # 10 times a second!
 
 def INIT(robot):
     return {"test": Test()}

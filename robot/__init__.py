@@ -158,7 +158,7 @@ class Robot:
         if len(dev) < 1:
             raise AttributeError, ("unknown device: '%s'" % item)
         else:
-            self.devices.append( item )
+            self.devices.append( dev[0].type )
             return dev[0]
         
     def startDevices(self, item, override = False, **args):
@@ -173,8 +173,7 @@ class Robot:
                 self.__dict__[dev][deviceNumber] = item[dev]
                 item[dev].number = deviceNumber
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
-                retval.append(dev + "[" + str(deviceNumber) + "]" )
-                retval.append( None )
+                retval.append(item[dev]) # return object
             return retval
         elif item in self.builtinDevices: # built-in name
             # deviceBuiltin returns dictionary
@@ -249,20 +248,32 @@ class Robot:
         else:
             return 0
 
-    def removeDevice(self, item, number = 0):
-        print "removing", item
-        if item in self.__dict__:
-            self.__dict__[item][number].setVisible(0)
-            self.__dict__[item][number].setActive(0)
-            self.__dict__[item][number].destroy()
-            del self.__dict__[item][number]
+    def removeDevice(self, item, number = None):
+        if number == None: # remove all
+            print "removing all", item, "devices..."
+            if item in self.__dict__:
+                for device in self.__dict__[item]:
+                    device.setVisible(0)
+                    device.setActive(0)
+                    device.destroy()
+                del self.__dict__[item]
+            else:
+                raise AttributeError,"no such device: '%s'" % item
         else:
-            raise AttributeError,"no such device: '%s'" % item
+            print "removing %s[%d] device..." % (item, number)
+            if item in self.__dict__:
+                device = self.__dict__[item][number]
+                device.setVisible(0)
+                device.setActive(0)
+                device.destroy()
+                del self.__dict__[item][number]
+            else:
+                raise AttributeError,"no such device: %s[%d]" % (item, number)
         return "Ok"
         
     def destroy(self):
         """
-        This method removes all of the devices. Called by the system. FIXME: delete all!
+        This method removes all of the devices. Called by the system.
         """
         for item in self.__dict__:
             self.removeDevice(item)

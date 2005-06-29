@@ -22,9 +22,15 @@ matchGoal = 40
         
 class RobotVsRobotSoccer(FSMBrain):
     def setup(self):
-        self.cam = self.getDevice( self.hasA("camera") )
+        if self.hasA("camera"):
+            self.cam = self.camera[0]
+        else:
+            raise AttributeError, "requires a camera"
         camera = self.cam # local variable
-        self.ptz = self.getDevice( self.hasA("ptz") )
+        if self.hasA("ptz"):
+            self.ptz = self.ptz[0]
+        else:
+            raise AttributeError, "requires a ptz"
         # goal filter
         camera.addFilter("match",32,102,52,30,2,) # green goal
         camera.addFilter("match",65,165,67,30,2,) # grean goal
@@ -54,7 +60,7 @@ class approachBall(State):
         print "APPROACH"
 
     def step(self):
-        results = self.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
