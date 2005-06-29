@@ -37,19 +37,6 @@ class JoystickDriver(Joystick):
    def move(self, translate, rotate):
       self.robot.move(translate, rotate)
 
-class AskDialog(TKwidgets.AlertDialog):
-   def __init__(self, root, dict):
-      TKwidgets.AlertDialog(self, root)
-      self.dict = dict
-   def SetupDialog(self):
-      TKwidgets.AlertDialog.SetupDialog(self)
-      self.bitmap['bitmap'] = 'warning'
-      self.CreateButton("Yes", self.OkPressed)
-      self.CreateButton("No", self.CancelPressed)
-
-def ask(root, dict):
-   box = AskDialog(root, dict)
-
 class TKgui(Tkinter.Toplevel, gui): 
    def __init__(self, engine):
       Tkinter.Toplevel.__init__(self, share.gui)
@@ -91,20 +78,11 @@ class TKgui(Tkinter.Toplevel, gui):
               ('Load',[['Server...', self.loadSim],
                        ['Robot...',self.loadRobot],
                        ['Brain...',self.loadBrain],
-                       None,
                        ['Devices...',self.loadDevice],
                        #['Built-in Devices', None],
                        ]),
-              ('Robot',[['Unload robot', self.freeRobot],
-                        ['Unload brain', self.freeBrain],
+              ('Robot',[['Joystick...', self.joystick],
                         None,
-                        ['Connect robot', self.connectRobot],
-                        ['Disconnect robot', self.disconnectRobot],
-                        None,
-                        ['Enable motors', self.enableMotors],
-                        ['Disable motors', self.disableMotors],
-                        None,
-                        ['Joystick...', self.joystick],
                         ['Forward',self.stepForward],
                         ['Back',self.stepBack],
                         ['Left',self.stepLeft],
@@ -113,7 +91,11 @@ class TKgui(Tkinter.Toplevel, gui):
                         ['Stop Rotate',self.stopRotate],
                         ['Stop Translate',self.stopTranslate],
                         ['Stop All',self.stopEngine],
-                        ['Update',self.update]
+                        None,
+                        ['Unload robot', self.freeRobot],
+                        ['Unload brain', self.freeBrain],
+                        None,
+                        ['Update',self.update],
                         ]),
               ('Help',[['Help',self.help],
                        ['About',self.about],
