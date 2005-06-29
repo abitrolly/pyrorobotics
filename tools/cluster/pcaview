@@ -34,15 +34,19 @@ TODO and NOTES:
   - creates .pca and .ev files in directory of the data
 """
 
-import Tkinter
 import re, os, sys
-from posixpath import exists
-from pyrobot.gui.widgets import TKwidgets
 
 # add pca to system search path:
 os.environ["PATH"] += ":" + os.environ["PYROBOT"] + "/tools/cluster"
-(path,spare) = os.path.split(os.environ["PYROBOT"]) # peel off pyrobot dir
+spare = ''
+path = os.environ["PYROBOT"] 
+while spare == '':
+   (path,spare) = os.path.split(path) # peel off pyrobot dir
 sys.path.insert(0, path) # add PYROBOT to PYTHON search path
+
+import Tkinter
+from posixpath import exists
+from pyrobot.gui.widgets import TKwidgets
 
 def ask(root, title, qlist):
    d = TKwidgets.AskDialog(root, title, qlist)
