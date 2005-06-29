@@ -14,14 +14,14 @@ class IRSensor(Device):
     def __init__(self, dev, type = "ir"):
         Device.__init__(self, type)
         self.dev = dev
-        self.devData['units']    = "ROBOTS" # current report units
-        self.devData["radius"] = 55 / 1000.0 # meters
+        self.units    = "ROBOTS" # current report units
+        self.radius = 55 / 1000.0 # meters
         # natural units:
-        self.devData["rawunits"] = "CM"
-        self.devData['maxvalueraw'] = 6.0 # in rawunits
+        self.rawunits = "CM"
+        self.maxvalueraw = 6.0 # in rawunits
         # ----------------------------------------------
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
-        self.devData["count"] = 8
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
+        self.count = 8
         self.groups = {'all': range(8),
                        'front' : (2, 3), 
                        'front-left' : (0, 1), 
@@ -37,28 +37,27 @@ class IRSensor(Device):
                        'back-right' : (6, ), 
                        'back-all' : (6, 7), 
                        'back' : (6, 7)} 
-        self.subDataFunc['ox']    = self.ox
-        self.subDataFunc['oy']    = self.oy
-        self.subDataFunc['oz']    = lambda pos: 0.0
-        self.subDataFunc['th']    = self.th
-        self.subDataFunc['thr']    = lambda pos: self.th(pos) * PIOVER180
-        self.subDataFunc['arc']   = lambda pos: (15 * PIOVER180)
-        self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['group']   = self.getGroupNames
-        self.subDataFunc['x'] = self.hitX
-        self.subDataFunc['y'] = self.hitY
-	self.subDataFunc['z'] = self.hitZ
-	self.subDataFunc['value'] = self.getIRRange
+        self.ox    = self.ox
+        self.oy    = self.oy
+        self.thr    = lambda pos: self.th(pos) * PIOVER180
+        self.oz    = lambda pos: 0.0
+        self.arc   = lambda pos: (15 * PIOVER180)
+        self.pos   = lambda pos: pos
+        self.group   = self.getGroupNames
+        self.x = self.hitX
+        self.y = self.hitY
+	self.z = self.hitZ
+	self.value = self.getIRRange
         self.startDevice()    
 
     def __len__(self):
-        return self.devData["count"]
+        return self.count
     def getSensorValue(self, pos):
         return SensorValue(self, self.getVal(pos), pos,
                            (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
     
     def postSet(self, keyword):
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
 
     def ox(self, pos):
         # in mm
@@ -120,7 +119,7 @@ class IRSensor(Device):
 
     def getVal(self, pos):
         try:
-            return (1023 - self.dev.senseData['ir'][pos])/1023.0 * 6.0
+            return (1023 - self.dev.rawData['ir'][pos])/1023.0 * 6.0
         except:
             return 0
 
@@ -146,23 +145,23 @@ class LightSensor(IRSensor):
     def __init__(self, dev):
         IRSensor.__init__(self, dev, "light")
         # now, just overwrite those differences
-        self.devData['units'] = "RAW"
-        self.devData["maxvalueraw"] = 511.0
-        self.devData['maxvalue'] = self.devData["maxvalueraw"]
-	self.subDataFunc['value'] = self.getLightRange
+        self.units = "RAW"
+        self.maxvalueraw = 511.0
+        self.maxvalue = self.maxvalueraw
+	self.value = self.getLightRange # FIXME: function; what to do?
 
     def __len__(self):
-        return self.devData["count"]
+        return self.count
     def getSensorValue(self, pos):
-        return SensorValue(self, self.dev.senseData['light'][pos], pos,
+        return SensorValue(self, self.dev.rawData['light'][pos], pos,
                            (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
     
     def postSet(self, kw):
-        self.devData['maxvalue'] = self.devData["maxvalueraw"]
+        self.maxvalue = self.maxvalueraw
 
     def getLightRange(self, pos):
         try:
-            data = self.dev.senseData['light'][pos]
+            data = self.dev.rawData['light'][pos]
         except:
             print "not enough sensor data"
             return 0.0
@@ -175,7 +174,7 @@ class SerialSimulator:
         
     def writeline(self, msg, newline = "\n"):
         self.last_msg.append(ksim.sendMessage(self.p, msg))
-        sleep(.01)  # for some reason it seems as if python doesn't block
+        sleep(.001)  # for some reason it seems as if python doesn't block
 		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
@@ -200,7 +199,7 @@ class KheperaRobot(Robot):
         Robot.__init__(self) # robot constructor
         self.buffer = ''
         self.debug = 0
-        self.pause = 0.1
+        self.pause = 0.001
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"
@@ -223,7 +222,7 @@ class KheperaRobot(Robot):
                     except:
                         pass
                 if port == None:
-                    port = "/dev/ttyUB0"
+                    port = "/dev/rfcomm0"
                 if rate == None:
                     rate = 115200
             print "K-Team opening port", port, "..."
@@ -255,29 +254,27 @@ class KheperaRobot(Robot):
                           't1h0' : 'gripper state',
                           't1j'  : 'gripper jumpers'
                           }
-        self.senseData = {}
-        self.senseData['position'] = [0] * 3
-        self.senseData['ir'] = [0] * 6
-        self.senseData['light'] = [0] * 6
-        self.senseData['stall'] = [0] * 6
-        self.devData["subtype"] = subtype
+        self.rawData = {}
+        self.rawData['position'] = [0] * 3
+        self.rawData['ir'] = [0] * 6
+        self.rawData['light'] = [0] * 6
+        self.rawData['stall'] = [0] * 6
+        self.subtype = subtype
         if subtype == "Hemisson":
-            self.devData["builtinDevices"] = ['ir', 'light', 'audio']
+            self.builtinDevices = ['ir', 'light', 'audio']
             self.newline = "\r"
         elif subtype == "Khepera":
-            self.devData["builtinDevices"] = ['ir', 'light', 'gripper']
+            self.builtinDevices = ['ir', 'light', 'gripper']
             self.newline = "\n"
         else:
             raise TypeError, "invalid K-Team subtype: '%s'" % subtype
         self.startDevice("ir")
-        self.devDataFunc["range"] = self.get("/devices/ir0/object")
-        self.devDataFunc["ir"] = self.get("/devices/ir0/object")
+        self.range = self.ir[0]
         self.startDevice("light")
-        self.devDataFunc["light"] = self.get("/devices/light0/object")
         if subtype == "Khepera":
             self.sendMsg('H') # position
         else:
-            self.senseData["position"] = 0, 0
+            self.rawData["position"] = 0, 0
             self.sendMsg('B') # version
             self.sendMsg('j') # extensionDevices
         self.x = 0.0
@@ -285,29 +282,29 @@ class KheperaRobot(Robot):
         self.thr = 0.0
         self.th = 0.0
         try:
-            self.w0 = self.senseData['position'][0]
-            self.w1 = self.senseData['position'][1]
+            self.w0 = self.rawData['position'][0]
+            self.w1 = self.rawData['position'][1]
         except:
             raise "KTeamConnectionError"
-        self.devData["type"] = "K-Team"
-        self.devData["port"] = port
-        self.devData["simulated"] = simulator
+        self.type = "K-Team"
+        self.port = port
+        self.simulated = simulator
         if subtype == "Khepera":
-            self.devData['radius'] = 55.0 # in MM
+            self.radius = 55.0 # in MM
         else:
-            self.devData['radius'] = 120.0 # in MM
+            self.radius = 120.0 # in MM
         # ----- Updatable things:
-        self.devData['stall'] = self.isStall()
-        self.devData['x'] = self.getX()
-        self.devData['y'] = self.getY()
-        self.devData['z'] = self.getZ()
-        self.devData['th'] = self.getTh() # in degrees
-        self.devData['thr'] = self.getThr() # in radians
-        self.devData["supportedFeatures"].append( "odometry" )
-        self.devData["supportedFeatures"].append( "continuous-movement" )
-        self.devData["supportedFeatures"].append( "range-sensor" )
+        self.stall = self.isStall()
+        self.x = self.getX()
+        self.y = self.getY()
+        self.z = self.getZ()
+        self.th = self.getTh() # in degrees
+        self.thr = self.getThr() # in radians
+        self.supportedFeatures.append( "odometry" )
+        self.supportedFeatures.append( "continuous-movement" )
+        self.supportedFeatures.append( "range-sensor" )
 	self.update() 
-        self.inform("Done loading K-Team robot.")
+        print "Done loading K-Team robot."
 
     def startDeviceBuiltin(self, item):
         if item == "ir":
@@ -325,7 +322,7 @@ class KheperaRobot(Robot):
     def sendMsg(self, msg):
         if self.debug: print "DEBUG: sendMsg:", msg
         self.sc.writeline(msg, self.newline)
-        if self.devData["subtype"] == "Hemisson":
+        if self.subtype == "Hemisson":
             sleep(self.pause)
 
     def readData(self):
@@ -353,14 +350,13 @@ class KheperaRobot(Robot):
                     key = self.dataTypes.get(dtype, None)
                     if key != None:
                         try:
-                            self.senseData[key] = map(int,data)
+                            self.rawData[key] = map(int,data)
                         except:
                             #pass
                             if self.debug: print "K-Team packet error:", rawdata
 
     def update(self):
-        self._update()
-        if self.devData["subtype"] == "Khepera":
+        if self.subtype == "Khepera":
             self.sendMsg('N') #, 'ir')     # proximity
             self.sendMsg('O') #, 'light')  # ambient light
             self.sendMsg('H') #, 'position')
@@ -373,7 +369,7 @@ class KheperaRobot(Robot):
                 self.sendMsg('T,1,G')    # gripper beam state
                 self.sendMsg('T,1,F')    # gripper resistivity
                 
-        elif self.devData["subtype"] == "Hemisson":
+        elif self.subtype == "Hemisson":
             self.sendMsg('N') #, 'ir')     # proximity
             self.sendMsg('O') #, 'light')  # ambient light
         while self.sc.inWaiting(): self.readData()
@@ -387,23 +383,23 @@ class KheperaRobot(Robot):
         self.stallHistory[self.stallHistoryPos] = 0
         try:
             if self.currSpeed[0] != 0:
-                err = abs(float(self.senseData['stall'][2])/float(self.currSpeed[0]) - 1)
+                err = abs(float(self.rawData['stall'][2])/float(self.currSpeed[0]) - 1)
                 if err < .25:
                     self.stallHistory[self.stallHistoryPos] = 1
             if self.currSpeed[1] != 0:
-                err = abs(float(self.senseData['stall'][5])/float(self.currSpeed[1]) - 1)
+                err = abs(float(self.rawData['stall'][5])/float(self.currSpeed[1]) - 1)
                 if err < .25:
                     self.stallHistory[self.stallHistoryPos] = 1
         except:
             pass
         # ----------- end compute stall
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
-        self.devData['stall'] = self.isStall()
-        self.devData['x'] = self.getX()
-        self.devData['y'] = self.getY()
-        self.devData['z'] = self.getZ()
-        self.devData['th'] = self.getTh() # in degrees
-        self.devData['thr'] = self.getThr() # in radians
+        self.stall = self.isStall()
+        self.x = self.getX()
+        self.y = self.getY()
+        self.z = self.getZ()
+        self.th = self.getTh() # in degrees
+        self.thr = self.getThr() # in radians
 
         self.deadReckon()
 
@@ -415,8 +411,8 @@ class KheperaRobot(Robot):
         """
         # get wheel positions:
         try:
-            w0 = self.senseData['position'][0]
-            w1 = self.senseData['position'][1]
+            w0 = self.rawData['position'][0]
+            w1 = self.rawData['position'][1]
         except:
             return
         if w0 == self.w0 and w1 == self.w1:
@@ -456,11 +452,9 @@ class KheperaRobot(Robot):
         return (stalls / self.stallHistorySize) > 0.5
 
     def getX(self, dev = 0):
-        #return self.mmToUnits(self.x, self.devData['units'](dev))
         return self.x / 1000.0
     
     def getY(self, dev = 0):
-        #return self.mmToUnits(self.y, self.devData['units'](dev))
         return self.y / 1000.0
     
     def getZ(self, dev = 0):
@@ -520,27 +514,27 @@ class Gripper(Device):
 
     # preGet methods
     def getGripState(self):
-        gripState = self.robot.senseData['FIX ME'][0]
+        gripState = self.robot.rawData['FIX ME'][0]
         if gripState < 100:
             return 'closed'
         else:
             return 'open'
 
     def getBreakBeamState(self):
-        beamState = self.robot.senseData['gripper beam state'][0]
+        beamState = self.robot.rawData['gripper beam state'][0]
         if beamState < 100:
             return 'nothing'
         else:
             return 'something'
 
     def getArmPosition(self):
-        return self.robot.senseData['gripper arm position'][0]
+        return self.robot.rawData['gripper arm position'][0]
 
     def getResistivity(self):
-        return self.robot.senseData['gripper resistivity'][0]
+        return self.robot.rawData['gripper resistivity'][0]
 
     def getSoftwareVersion(self):
-        version, revision = self.robot.senseData['gripper software'][0:2]
+        version, revision = self.robot.rawData['gripper software'][0:2]
         return version + 0.1 * revision
 
     def isClosed(self):

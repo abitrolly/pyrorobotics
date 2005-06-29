@@ -212,7 +212,7 @@ class Robot:
 
     def getDevice(self, item):
         if item in self.__dict__:
-            return self.__dict__[item]
+            return self.__dict__[item][0]
         else:
             raise AttributeError, "unknown device '%s'" % item
 
