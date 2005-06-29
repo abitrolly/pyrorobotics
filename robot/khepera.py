@@ -4,7 +4,6 @@ from pyrobot.system.share import config
 from pyrobot.robot import *
 from pyrobot.robot.device import *
 from pyrobot.system.serial import *
-import pyrobot.robot.driver as driver
 import pyrobot.gui.console as console
 import string, array, math 
 from time import sleep
