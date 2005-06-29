@@ -385,22 +385,22 @@ class gui:
       self.inform("Stopped!")
 
    def stopTranslate(self):
-      self.engine.robot.step('ST')
+      self.engine.robot.moveDir('ST')
 
    def stopRotate(self):
-      self.engine.robot.step('SR')
+      self.engine.robot.moveDir('SR')
 
    def stepForward(self):
-      self.engine.robot.step('F')
+      self.engine.robot.moveDir('F')
 
    def stepBack(self):
-      self.engine.robot.step('B')
+      self.engine.robot.moveDir('B')
 
    def stepLeft(self):
-      self.engine.robot.step('L')
+      self.engine.robot.moveDir('L')
 
    def stepRight(self):
-      self.engine.robot.step('R')
+      self.engine.robot.moveDir('R')
 
    def resetEngine(self):
       self.engine.reset()

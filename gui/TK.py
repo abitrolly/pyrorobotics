@@ -429,14 +429,14 @@ class TKgui(Tkinter.Toplevel, gui):
       self.updateStatus()
       # -----------------------
       if self.engine.robot != 0:
-         if self.engine.robot.get('/robot/stall'):
+         if self.engine.robot.stall:
             bump = "[STALL!]"
          else:
             bump = ''
          self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
-                                       % (self.engine.robot.get('robot', 'x'),
-                                          self.engine.robot.get('robot', 'y'),
-                                          self.engine.robot.get('robot', 'th'),
+                                       % (self.engine.robot.x,
+                                          self.engine.robot.y,
+                                          self.engine.robot.th,
                                           bump))
          for device in self.engine.robot.getDevices():
             if self.engine.robot.getDevice(device).getVisible():

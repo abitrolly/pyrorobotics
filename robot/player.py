@@ -18,26 +18,12 @@ class PlayerDevice(Device):
         self.index = index
         self.name =  type + ("%d" % self.index)
         self.printFormat["data"] = "<device data>"
-        self.devData["data"] = None
-        self.devData["noise"] = 0.0
-        self.notSetables.extend( ["data"] )
+        self.data = None
+        self.noise = 0.0
         # Required:
         self.startDevice(mode)
         if "get_geom" in self.client.__dict__:
             self.client.get_geom() # reads it into handle.pose or poses
-
-    def preGet(self, kw):
-        if kw == "pose":
-            self.devData["pose"] = self.handle.pose
-        elif kw == "poses":
-            self.devData["poses"] = self.handle.poses[:len(self)-1]
-        elif kw == "data":
-            self.devData["data"] = self.getDeviceData()
-
-    def postSet(self, keyword):
-        if keyword == "pose":
-            if "set_cmd_pose" in self.client.__class__.__dict__:
-                self.setPose( *self.devData[keyword] )
 
     def startDevice(self, mode):
         exec("self.handle = playerc.playerc_%s(self.client, %d)" %
@@ -93,9 +79,9 @@ class PlayerFiducialDevice(PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_READ_MODE)
 
-        self.devData["count"] = len(self)
-        self.devData["id"] = self.getFiducialsById
-        self.devData["idlist"] = self.getFiducialIDs
+        self.count = len(self)
+        self.id = self.getFiducialsById
+        self.idlist = self.getFiducialIDs
 
     def getFiducialsById(self, id):
         for f in self.handle.fiducials:
@@ -136,32 +122,32 @@ class PlayerSonarDevice(PlayerDevice):
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
         else:
             self.groups= {'all': range(len(self))}
-        self.devData['units']    = "ROBOTS"
+        self.units    = "ROBOTS"
         # What are the raw units?
         # Anything that you pass to rawToUnits should be in these units
-        self.devData["rawunits"] = "METERS"
-        self.devData['maxvalueraw'] = 8.0 # meters
+        self.rawunits = "METERS"
+        self.maxvalueraw = 8.0 # meters
         # These are fixed in meters: DO NOT CONVERT ----------------
-        self.devData["radius"] = 0.750 # meters
+        self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
         # see also postSet below
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
-        self.devData["noise"] = 0.05 # 5 percent
-        self.devData["count"] = len(self)
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
+        self.noise = 0.05 # 5 percent
+        self.count = len(self)
         # These are per reading:
-        self.subDataFunc['ox']    = lambda pos: self.handle.poses[pos][0]
-        self.subDataFunc['oy']    = lambda pos: self.handle.poses[pos][1]
-        self.subDataFunc['oz']    = lambda pos: self.rawToUnits(300) # rawunits
-        self.subDataFunc['thr']   = lambda pos: self.handle.poses[pos][2] 
-        self.subDataFunc['th']    = lambda pos: self.handle.poses[pos][2] / PIOVER180 # degrees
-        self.subDataFunc['arc']   = lambda pos: (7.5 * PIOVER180) # radians
-        self.subDataFunc['x']     = self.hitX
-        self.subDataFunc['y']     = self.hitY
-	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
-        self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['group'] = self.getGroupNames
+        self.ox    = lambda pos: self.handle.poses[pos][0]
+        self.oy    = lambda pos: self.handle.poses[pos][1]
+        self.oz    = lambda pos: self.rawToUnits(300) # rawunits
+        self.thr   = lambda pos: self.handle.poses[pos][2] 
+        self.th    = lambda pos: self.handle.poses[pos][2] / PIOVER180 # degrees
+        self.arc   = lambda pos: (7.5 * PIOVER180) # radians
+        self.x     = self.hitX
+        self.y     = self.hitY
+	self.z     = self.hitZ
+        self.value = lambda pos: self.rawToUnits(self.handle.scan[pos], self.noise)
+        self.pos   = lambda pos: pos
+        self.group = self.getGroupNames
     def __len__(self):
         return self.handle.scan_count
     def getSensorValue(self, pos):
@@ -170,18 +156,18 @@ class PlayerSonarDevice(PlayerDevice):
                             self.handle.poses[pos][1],
                             0.03,
                             self.handle.poses[pos][2]/PIOVER180),
-                           self.devData["noise"])
+                           self.noise)
     def postSet(self, keyword):
         """ Anything that might change after a set """
-        self.devData['maxvalue'] = self.rawToUnits(self.devData["maxvalueraw"])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
 
     def hitX(self, pos):
         thr = self.handle.poses[pos][2] #+ (90.0 /  PIOVER180)
-        dist = self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
+        dist = self.rawToUnits(self.handle.scan[pos], self.noise)
         return cos(thr) * dist
     def hitY(self, pos):
         thr = self.handle.poses[pos][2] #+ (90.0 /  PIOVER180)
-        dist = self.rawToUnits(self.handle.scan[pos], self.devData["noise"])
+        dist = self.rawToUnits(self.handle.scan[pos], self.noise)
         return sin(thr) * dist
     def hitZ(self, pos):
         return .03
@@ -216,33 +202,33 @@ class PlayerLaserDevice(PlayerDevice):
                        'back-left': [],
                        'back': [],
                        'back-all': []}
-        self.devData['units']    = "ROBOTS"
-        self.devData["noise"]    = 0.01
+        self.units    = "ROBOTS"
+        self.noise    = 0.01
         # -------------------------------------------
-        self.devData["rawunits"] = "METERS"
-        self.devData['maxvalueraw'] = 8.0 # rawunits
+        self.rawunits = "METERS"
+        self.maxvalueraw = 8.0 # rawunits
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
-        self.devData["radius"] = 0.750 # meters
+        self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # MM to units:
-        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
         # -------------------------------------------
-        self.devData['index'] = 0 # self.client.laser.keys()[0] FIX
-        self.devData["count"] = count
-        self.subDataFunc['ox']    = lambda pos: self.handle.pose[0]
-        self.subDataFunc['oy']    = lambda pos: self.handle.pose[1]
-        self.subDataFunc['oz']    = lambda pos: self.handle.pose[2]
+        self.index = 0 # self.client.laser.keys()[0] FIX
+        self.count = count
+        self.ox    = lambda pos: self.handle.pose[0]
+        self.oy    = lambda pos: self.handle.pose[1]
+        self.oz    = lambda pos: self.handle.pose[2]
         # FIX: the index here should come from the "index"
-        self.subDataFunc['th']    = lambda pos: (pos - 90)
-        self.subDataFunc['thr']   = lambda pos: (pos - 90) * PIOVER180
-        self.subDataFunc['arc']   = lambda pos: len(self) / 180.0
-        self.subDataFunc['x']     = self.hitX
-        self.subDataFunc['y']     = self.hitY
-	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
-        self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['group']   = self.getGroupNames
+        self.th    = lambda pos: (pos - 90)
+        self.thr   = lambda pos: (pos - 90) * PIOVER180
+        self.arc   = lambda pos: len(self) / 180.0
+        self.x     = self.hitX
+        self.y     = self.hitY
+	self.z     = self.hitZ
+        self.value = lambda pos: self.rawToUnits(self.handle.scan[pos][0], self.noise)
+        self.pos   = lambda pos: pos
+        self.group = self.getGroupNames
     def __len__(self):
         return self.handle.scan_count
     def getSensorValue(self, pos):
@@ -251,18 +237,18 @@ class PlayerLaserDevice(PlayerDevice):
                             self.handle.pose[1],
                             0.03,
                             pos - 90),
-                           self.devData["noise"])
+                           self.noise)
     def postSet(self, keyword):
         """ Anything that might change after a set """
-        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
 
     def hitX(self, pos):
         thr = (pos - 90) * PIOVER180
-        dist = self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
+        dist = self.rawToUnits(self.handle.scan[pos][0], self.noise)
         return cos(thr) * dist
     def hitY(self, pos):
         thr = (pos - 90) * PIOVER180
-        dist = self.rawToUnits(self.handle.scan[pos][0], self.devData["noise"])
+        dist = self.rawToUnits(self.handle.scan[pos][0], self.noise)
         return sin(thr) * dist
     def hitZ(self, pos):
         return 0.03 # meters
@@ -299,26 +285,11 @@ class PlayerPTZDevice(PlayerDevice):
     def __init__(self, client, name):
         PlayerDevice.__init__(self, client, name)
         self.origPose = (0, 0, 120)
-        self.devData[".help"] = """.set('/robot/ptz/COMMAND', VALUE) where COMMAND is: pose, pan, tilt, zoom.\n""" \
-                                """.get('/robot/ptz/KEYWORD') where KEYWORD is: pose\n"""
-        self.notGetables.extend (["tilt", "pan", "zoom"])
-        self.devData.update( {"tilt": None, "pan": None,
-                              "zoom": None, "command": None, "pose": None} )
-        self.devData["supports"] = ["pan", "tilt", "zoom"]
-
-    def preGet(self, keyword):
-        if keyword == "pose": # make sure it is the current pose
-            self.devData["pose"] = self.client.get_ptz()
-
-    def postSet(self, keyword):
-        if keyword == "pose":
-            self.setPose( *self.devData[keyword] )
-        elif keyword == "pan":
-            self.pan( self.devData[keyword] )
-        elif keyword == "tilt":
-            self.tilt( self.devData[keyword] )
-        elif keyword == "zoom":
-            self.zoom( self.devData[keyword] )
+        self.tilt = None
+        self.pan = None
+        self.zoom = None
+        self.pose = None
+        self.supports = ["pan", "tilt", "zoom"]
 
     def init(self):
         self.setPose( *self.origPose )
@@ -421,50 +392,12 @@ class PlayerPTZDevice(PlayerDevice):
 class PlayerGripperDevice(PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "gripper")
-        self.devData[".help"] = """.set('/robot/gripper/command', VALUE) where VALUE is: open, close, stop, up,\n""" \
-                                """     down, store, deploy, halt.\n""" \
-                                """.get('/robot/gripper/KEYWORD') where KEYWORD is: state, breakBeamState,\n""" \
-                                """     isClosed, isMoving, isLiftMoving, isLiftMaxed"""
-        #self.notGetables.extend( [] )
-        self.notSetables.extend( ["state", "breakBeamState", "isClosed",
-                                  "isMoving", "isLiftMoving", "isLiftMaxed"] )
-        self.devData.update( {"state": None, "breakBeamState": None, "isClosed": None,
-                              "isMoving": None, "isLiftMoving": None, "isLiftMaxed": None} )
-
-    def postSet(self, keyword):
-        if keyword == "command":
-            if self.devData["command"] == "open":
-                self.devData["command"] = self.open() 
-            elif self.devData["command"] == "close":
-                self.devData["command"] = self.close() 
-            elif self.devData["command"] == "stop":
-                self.devData["command"] = self.stop()
-            elif self.devData["command"] == "up":
-                self.devData["command"] = self.liftUp()
-            elif self.devData["command"] == "down":
-                self.devData["command"] = self.liftDown()
-            elif self.devData["command"] == "store":
-                self.devData["command"] = self.store() 
-            elif self.devData["command"] == "deploy":
-                self.devData["command"] = self.deploy()
-            elif self.devData["command"] == "halt":
-                self.devData["command"] = self.halt()
-            else:
-                raise AttributeError, "invalid command to gripper: '%s'" % self.devData["command"]
-
-    def preGet(self, keyword):
-        if keyword == "state":
-            self.devData[keyword] = self.handle.state
-        elif keyword == "breakBeamState":
-            self.devData[keyword] = self.getBreakBeamState()
-        elif keyword == "isClosed":
-            self.devData[keyword] = self.handle.isClosed() 
-        elif keyword == "isMoving":
-            self.devData[keyword] = self.handle.isMoving()
-        elif keyword == "isLiftMoving":
-            self.devData[keyword] = None
-        elif keyword == "isLiftMaxed":
-            self.devData[keyword] = None
+        self.state = None
+        self.breakBeamState = None
+        self.isClosed = None
+        self.isMoving = None
+        self.isLiftMoving = None
+        self.isLiftMaxed = None
 
     def open(self):
         return self.handle.set_cmd(1, 0) 
@@ -560,7 +493,7 @@ class PlayerRobot(Robot):
         Robot.__init__(self) # robot constructor
         self.last_rotate = 0.0
         self.last_translate = 0.0
-        self.devData["simulated"] = 1 # FIX: how can you tell?
+        self.simulated = 1 # FIX: how can you tell?
         self.hostname = hostname
         self.port = port
         self.name = name
@@ -572,51 +505,50 @@ class PlayerRobot(Robot):
         # Make sure laser is before sonar, so if you have
         # sonar, it will be the default 'range' device
         devNameList = [playerc.playerc_lookup_name(device.code) for device in self.client.devinfos]
-        self.devData["builtinDevices"] = devNameList
-        if "blobfinder" in self.devData["builtinDevices"]:
-            self.devData["builtinDevices"].append( "camera" )
-        self.devData["builtinDevices"].append( "simulation" )
+        self.builtinDevices = devNameList
+        if "blobfinder" in self.builtinDevices:
+            self.builtinDevices.append( "camera" )
+        self.builtinDevices.append( "simulation" )
         if startDevices:
             for device in ["position", "laser", "ir", "sonar", "bumper"]:
                 #is it supported? if so start it up:
                 if device in devNameList:
-                    try: # this is for gazebo; can't tell what it really has
-                        deviceName = self.startDevice(device)
-                    except:
-                        continue
-                    self.devDataFunc[device] = self.get("/devices/%s0/object" % device)
+                    #try: # this is for gazebo; can't tell what it really has
+                    deviceName = self.startDevice(device)
+                    #except:
+                    #    continue
                     if device == "laser":
-                        self.devDataFunc["range"] = self.get("/devices/laser0/object")
+                        self.range = self.laser[0]
                     elif device == "ir":
-                        self.devDataFunc["range"] = self.get("/devices/ir0/object")
+                        self.range = self.ir[0]
                     elif device == "sonar":
-                        self.devDataFunc["range"] = self.get("/devices/sonar0/object")
+                        self.range = self.sonar[0]
                     elif device == "position":
-                        self.devData["supportedFeatures"].append( "odometry" )
-                        self.devData["supportedFeatures"].append( "continuous-movement" )
-        if "range" in self.devDataFunc:
-            self.devData["supportedFeatures"].append( "range-sensor" )
+                        self.supportedFeatures.append( "odometry" )
+                        self.supportedFeatures.append( "continuous-movement" )
+        if "range" in self.__dict__:
+            self.supportedFeatures.append( "range-sensor" )
         # try to add a simulation device from port 7000
         try:
             self.startDevice("simulation")
         except:
-            self.devData["builtinDevices"].remove("simulation")
-            del self.device["simulation0"]
+            self.builtinDevices.remove("simulation")
+            del self.simulation
         # specific things about this robot type:
-        self.devData["port"] = port
-        self.devData["hostname"] = hostname
+        self.port = port
+        self.hostname = hostname
         # default values for all robots:
-        self.devData["stall"] = 0
-        self.devData["x"] = 0.0
-        self.devData["y"] = 0.0
-        self.devData["th"] = 0.0
-        self.devData["thr"] = 0.0
+        self.stall = 0
+        self.x = 0.0
+        self.y = 0.0
+        self.th = 0.0
+        self.thr = 0.0
         # Can we get these from player?
-        self.devData["radius"] = 0.75
-        self.devData["type"] = "Player"
-        self.devData["subtype"] = 0
-        self.devData["units"] = "METERS"
-        self.devData["name"] = self.name
+        self.radius = 0.75
+        self.type = "Player"
+        self.subtype = 0
+        self.units = "METERS"
+        self.name = self.name
         self.localize(0.0, 0.0, 0.0)
         self.update()
 
@@ -662,35 +594,34 @@ class PlayerRobot(Robot):
                 pass
             return {"simulation": obj}
 ##         elif item == "camera":
-##             if self.devData["simulated"]:
+##             if self.simulated:
 ##                 return self.startDevice("BlobCamera", visible=0)
 ##             else:
 ##                 return self.startDevice("V4LCamera")
-##        elif item in self.devData["builtinDevices"]:
+##        elif item in self.builtinDevices:
         return {item: PlayerDevice(self.client, item, index=index)}
     
     def translate(self, translate_velocity):
         self.last_translate = translate_velocity
-        self.position.handle.set_cmd_vel(translate_velocity, 0,
+        self.position[0].handle.set_cmd_vel(translate_velocity, 0,
                                          self.last_rotate, 1)
     def rotate(self, rotate_velocity):
         self.last_rotate = rotate_velocity
-        self.position.handle.set_cmd_vel(self.last_translate, 0,
+        self.position[0].handle.set_cmd_vel(self.last_translate, 0,
                                          rotate_velocity, 1)
     def move(self, translate_velocity, rotate_velocity):
         self.last_rotate = rotate_velocity
         self.last_translate = translate_velocity
-        self.position.handle.set_cmd_vel(translate_velocity, 0,
+        self.position[0].handle.set_cmd_vel(translate_velocity, 0,
                                          rotate_velocity, 1)
         
     def update(self):
-        self._update()
         if self.hasA("position"):
-            self.devData["x"] = self.devDataFunc["position"].handle.px
-            self.devData["y"] = self.devDataFunc["position"].handle.py
-            self.devData["thr"] = self.devDataFunc["position"].handle.pa # radians
-            self.devData["th"] = self.devData["thr"] / PIOVER180
-            self.devData["stall"] = self.devDataFunc["position"].handle.stall
+            self.x = self.position[0].handle.px
+            self.y = self.position[0].handle.py
+            self.thr = self.position[0].handle.pa # radians
+            self.th = self.thr / PIOVER180
+            self.stall = self.position[0].handle.stall
             
     def localize(self, x = 0, y = 0, th = 0):
         """
@@ -714,8 +645,8 @@ class PlayerRobot(Robot):
             self.client = playerc.playerc_client(None, self.hostname, self.port)
             retval = self.client.connect()
 
-    def removeDevice(self, item):
-        self.devData[item].unsubscribe()
+    def removeDevice(self, item, number = 0):
+        self.__dict__[item][number].unsubscribe()
         Robot.removeDevice(self, item)
         
 if __name__ == '__main__':

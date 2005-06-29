@@ -5,8 +5,10 @@
 # defines Pioneer-like robots
 include "pioneer.inc"
 
+
 # defines 'map' object used for floorplans
 include "map.inc"
+
 
 # set the size of a pixel in meters
 resolution 0.04
@@ -14,9 +16,9 @@ resolution 0.04
 # configure the GUI window
 window
 ( 
-  size [ 662.000 654.000 ] 
-  center [0.221 -0.005] 
-  scale 0.025 
+  size [ 406.000 486.000 ] 
+  center [-0.177 0.128] 
+  scale 0.044 
 )
 
 # load an environment bitmap
@@ -34,7 +36,7 @@ map
 pioneer2dx
 (
   name "robot"
-  pose [2 1 0]
+  pose [2.000 1.000 0.000]
   laser()
 )
 
@@ -43,6 +45,6 @@ pioneer2dx
 (
   laser_return 0
   name "robotb"
-  pose [3 1 0]
+  pose [3.000 1.000 0.000]
   laser()
 )
