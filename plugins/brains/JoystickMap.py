@@ -8,14 +8,14 @@ import thread
 class Map(Brain):
    def setup(self):
       # We want our map to measure in MM, so we first store our current unit of measure
-      units = self.get('robot/range/units')
+      units = self.robot.range.units
       # We then reset our measurements to MMs
-      self.set('robot/range/units', 'MM')
+      self.robot.range.units = 'MM'
       # Calculate the maximum range of our sensors
-      rangeMaxMM = self.get('robot/range/maxvalue')
-      sizeMM = rangeMaxMM * 3 + self.get('robot/radius')
+      rangeMaxMM = self.robot.range.maxvalue
+      sizeMM = rangeMaxMM * 3 + self.robot.radius
       # Reset our unit of measure
-      self.set('robot/range/units', units)
+      self.robot.range.units = units
       # Now, we create our Local Perceptual Space window - this will hold our local map
       # Map will be 20px by 20px and will represent a height and width of sizeMM (total sensor range)
       self.lps = LPS( 40, 40,

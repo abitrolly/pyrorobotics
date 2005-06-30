@@ -8,9 +8,9 @@ class SimpleBrain(Brain):
    def step(self):
       TOLERANCE = 1.0
 
-      left = min(self.get('robot/range/left/value'))
-      right = min(self.get('robot/range/right/value'))
-      front = min(self.get('robot/range/front/value'))
+      left = min([s.distance() for s in self.robot.range["left"]])
+      right = min([s.distance() for s in self.robot.range["right"]])
+      front = min([s.distance() for s in self.robot.range["front"]])
 
       #print "left", left, "front", front, "right", right
 

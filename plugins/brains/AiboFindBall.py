@@ -66,34 +66,34 @@ class approachBall(State):
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
                 centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
                 if area > matchBall:
-                    pose = self.robot.ptz.pose # p,t,z,r; acts as a pointer
+                    pose = self.robot.ptz[0].pose # p,t,z,r; acts as a pointer
                     # 1. center camera on ball
                     # ---------------X direction------------------
-                    diff = (centerX - (self.robot.camera.width/2))
-                    if abs(diff) < (.1 * self.robot.camera.width):
+                    diff = (centerX - (self.robot.camera[0].width/2))
+                    if abs(diff) < (.1 * self.robot.camera[0].width):
                         pass
                     elif diff < 0:
                         # negative is right, positive is left
-                        self.robot.ptz.pan( pose[0] + self.speed) 
+                        self.robot.ptz[0].pan( pose[0] + self.speed) 
                     else:
-                        self.robot.ptz.pan( pose[0] - self.speed) 
+                        self.robot.ptz[0].pan( pose[0] - self.speed) 
                     # ---------------Y direction------------------
-                    diff = (centerY - self.robot.camera.height/2) 
-                    if abs(diff) < .1 * self.robot.camera.height:
+                    diff = (centerY - self.robot.camera[0].height/2) 
+                    if abs(diff) < .1 * self.robot.camera[0].height:
                         pass
                     elif diff < 0: # down
-                        self.robot.ptz.tilt( pose[1] + self.speed) # positive is left
+                        self.robot.ptz[0].tilt( pose[1] + self.speed) # positive is left
                     else:
-                        self.robot.ptz.tilt( pose[1] - self.speed) # negative is right
+                        self.robot.ptz[0].tilt( pose[1] - self.speed) # negative is right
                     # 2. get closer to ball
                     if abs(pose[0]) > self.headMaxTurn:
                         # 2.1 rotate so ball is in front of you
                         if pose[0] > 0:
                             self.robot.move(0,self.turnSpeed)
-                            self.robot.ptz.pan(pose[0] - self.speed)
+                            self.robot.ptz[0].pan(pose[0] - self.speed)
                         else:
                             self.robot.move(0,-self.turnSpeed)
-                            self.robot.ptz.pan(pose[0] + self.speed)
+                            self.robot.ptz[0].pan(pose[0] + self.speed)
                     elif area<300:
                         # 2.2 get closer to ball
                         self.robot.move(0.7,0)
@@ -133,13 +133,13 @@ class lostBall(State):
                 if area > matchBall:
                     self.goto("approachBall")
                     return
-        pose = self.robot.ptz.pose# p,t,z,r; acts as a pointer
-        diffX = abs(self.brain.ballCenterX - self.robot.camera.width/2)
-        diffY = abs(self.brain.ballCenterY - self.robot.camera.height/2)
+        pose = self.robot.ptz[0].pose# p,t,z,r; acts as a pointer
+        diffX = abs(self.brain.ballCenterX - self.robot.camera[0].width/2)
+        diffY = abs(self.brain.ballCenterY - self.robot.camera[0].height/2)
         if diffX > diffY:
             turnDirVer = 0
             # need to search horizontally
-            if (self.brain.ballCenterX > self.robot.camera.width/2):
+            if (self.brain.ballCenterX > self.robot.camera[0].width/2):
                 # right
                 turnDirHor = -1
             else:
@@ -147,13 +147,13 @@ class lostBall(State):
                 turnDirHor = 1
         else:
             turnDirHor = 0
-            if (self.brain.ballCenterY > self.robot.camera.width/2):
+            if (self.brain.ballCenterY > self.robot.camera[0].width/2):
                 # down
                 turnDirVer = -1
             else:
                 turnDirVer = 1
-        self.robot.ptz.pan(pose[0]+ turnDirHor*self.speed)
-        self.robot.ptz.tilt(pose[1] + turnDirVer*self.speed)
+        self.robot.ptz[0].pan(pose[0]+ turnDirHor*self.speed)
+        self.robot.ptz[0].tilt(pose[1] + turnDirVer*self.speed)
         if (((pose[0] == 1.0 or pose[0] == -1.0) and turnDirVer == 0) or
             ((pose[1] == -1.0 or pose[1] == 0.0) and turnDirHor == 0)):
             self.goto("searchDown")
@@ -163,20 +163,20 @@ class searchDown(State):
     Searches for the ball by turning the head down
     """
     def onActivate(self):
-        self.robot.ptz.center()
+        self.robot.ptz[0].center()
         self.speed = 0.1
         print "DOWN"
         
     def step(self):
-        pose = self.robot.ptz.pose
-        results = self.get("robot/camera/filterResults")
+        pose = self.robot.ptz[0].pose
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
-        self.robot.ptz.tilt(pose[1] - self.speed)
+        self.robot.ptz[0].tilt(pose[1] - self.speed)
         if (pose[1] < -0.9):
             self.goto("searchLeftRight")
 
@@ -185,23 +185,23 @@ class searchLeftRight(State):
     Searches for the ball by turning the head left-right
     """
     def onActivate(self):
-        self.robot.ptz.tilt(-0.1)
+        self.robot.ptz[0].tilt(-0.1)
         sleep(1)
-        self.robot.ptz.pan(1.0)
+        self.robot.ptz[0].pan(1.0)
         self.speed = 0.05
         print "L - R"
 
 
     def step(self):
-        pose = self.robot.ptz.pose
-        results = self.get("robot/camera/filterResults")
+        pose = self.robot.ptz[0].pose
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
-        self.robot.ptz.pan(pose[0] - self.speed)
+        self.robot.ptz[0].pan(pose[0] - self.speed)
         if (pose[0] == -1.0):
             self.goto("searchRightLeft")
 
@@ -212,22 +212,22 @@ class searchRightLeft(State):
     Searches for the ball by turning the head right-left
     """
     def onActivate(self):
-        self.robot.ptz.tilt(-0.6)
+        self.robot.ptz[0].tilt(-0.6)
         sleep(0.5)
-        self.robot.ptz.pan(-1.0)
+        self.robot.ptz[0].pan(-1.0)
         self.speed = 0.05
         print "R - L"
 
     def step(self):
-        pose = self.robot.ptz.pose
-        results = self.get("robot/camera/filterResults")
+        pose = self.robot.ptz[0].pose
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area > matchBall:
                     self.goto("approachBall")
                     return
-        self.robot.ptz.pan(pose[0] + self.speed)
+        self.robot.ptz[0].pan(pose[0] + self.speed)
         if (pose[0] == 1.0):
             self.goto("searchDynamic")
 
@@ -239,8 +239,8 @@ class searchDynamic(State):
     Searches for the ball by spinning in place
     """
     def onActivate(self):
-        self.robot.ptz.center()
-        self.robot.ptz.tilt(-0.1)
+        self.robot.ptz[0].center()
+        self.robot.ptz[0].tilt(-0.1)
         self.counter = 0
         if random.random() > 0.5: # randomize the turn direction
             self.turnSpeed = 0.2
@@ -248,7 +248,7 @@ class searchDynamic(State):
             self.turnSpeed = -0.2
             
     def step(self):
-        results = self.robot.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
@@ -257,7 +257,7 @@ class searchDynamic(State):
                     return
         self.counter +=1
         if self.counter == 50:# after 360 change the angle
-            self.robot.ptz.tilt(-0.5)
+            self.robot.ptz[0].tilt(-0.5)
         self.robot.move(0.0,self.turnSpeed)
 
 class prepareToKick(State):
@@ -271,31 +271,31 @@ class prepareToKick(State):
         print "PREPARE TO KICK"
 
     def step(self):
-        results = self.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]
                 if area> 50:
                     # 1.center the image
                     centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
-                    pose = self.robot.ptz.pose # p,t,z,r
+                    pose = self.robot.ptz[0].pose # p,t,z,r
                     # ---------------X direction------------------
-                    diff = (centerX - (self.robot.camera.width/2))
-                    if abs(diff) < (.1 * self.robot.camera.width):
+                    diff = (centerX - (self.robot.camera[0].width/2))
+                    if abs(diff) < (.1 * self.robot.camera[0].width):
                         pass
                     elif diff < 0:
                         # negative is right, positive is left
-                        self.robot.ptz.pan( pose[0] + self.speed) 
+                        self.robot.ptz[0].pan( pose[0] + self.speed) 
                     else:
-                        self.robot.ptz.pan( pose[0] - self.speed) 
+                        self.robot.ptz[0].pan( pose[0] - self.speed) 
                     # ---------------Y direction------------------
-                    diff = (centerY - self.robot.camera.height/2) 
-                    if abs(diff) < .1 * self.robot.camera.height:
+                    diff = (centerY - self.robot.camera[0].height/2) 
+                    if abs(diff) < .1 * self.robot.camera[0].height:
                         pass
                     elif diff < 0: # down
-                        self.robot.ptz.tilt( pose[1] + self.speed) # positive is left
+                        self.robot.ptz[0].tilt( pose[1] + self.speed) # positive is left
                     else:
-                        self.robot.ptz.tilt( pose[1] - self.speed) # negative is right
+                        self.robot.ptz[0].tilt( pose[1] - self.speed) # negative is right
                     # 2. put your foor next to the ball
                     if  abs(pose[0]) >= self.turnHeadMin and abs(pose[0]) <= self.turnHeadMax:
                         # 3.move close enough
@@ -323,12 +323,12 @@ class prepareToKick(State):
 class kick(State):
     def onActivate(self):
         self.robot.move(0,0)
-        self.pose = self.robot.ptz.pose # p,t,z,r
+        self.pose = self.robot.ptz[0].pose # p,t,z,r
         if (self.pose[0] > 0):
             self.leg = "left"
         else:
             self.leg = "right"
-        self.robot.ptz.center()
+        self.robot.ptz[0].center()
         print "KICK"
 
     def step(self):
@@ -353,21 +353,21 @@ class kick(State):
 class lookForGoal(State):
     def onActivate(self):
         self.robot.move(0,0)
-        self.p,self.t, self.z,self.r = self.robot.ptz.pose # remember where you were looking
-        self.robot.ptz.center()
+        self.p,self.t, self.z,self.r = self.robot.ptz[0].pose # remember where you were looking
+        self.robot.ptz[0].center()
         if random.random() > 0.5:
             self.maxTurn = -1.0
             self.speed = 0.1
         else:
             self.maxTurn = 1.0
             self.speed = -0.1
-        self.robot.ptz.pan(self.maxTurn)
+        self.robot.ptz[0].pan(self.maxTurn)
         sleep(1)
         print "LOOK FOR GOAL"
 
     def step(self):
-        results = self.get("robot/camera/filterResults")
-        pose = self.robot.ptz.pose
+        results = self.robot.camera[0].filterResults
+        pose = self.robot.ptz[0].pose
         if len(results) > 1 and len(results[self.brain.goal]) > 0: # need a match, and blobify at least
             if len(results[self.brain.goal][0]) == 5: # have a goal blob in sight
                 x1, y1, x2, y2, area = results[self.brain.goal][0]
@@ -390,7 +390,7 @@ class lookForGoal(State):
                 dir = -1
             self.goto("findGoal",[self.p,self.t,self.z,self.r],dir)
             return
-        self.robot.ptz.pan(pose[0] + self.speed)
+        self.robot.ptz[0].pan(pose[0] + self.speed)
         
 class findGoal(State):
     def onActivate(self):
@@ -403,7 +403,7 @@ class findGoal(State):
         print "FIND GOAL"
 
     def onGoto(self, args):
-        self.robot.ptz.setPose(args[0])
+        self.robot.ptz[0].setPose(args[0])
         sleep(1)
         self.dir = args[1]
         if self.dir == 0:
@@ -414,7 +414,7 @@ class findGoal(State):
         self.robot.strafe(0)
         self.robot.move(0,0)
         areab = 0
-        results = self.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a ball blob in sight
                 x1b, y1b, x2b, y2b, areab = results[self.brain.ball][0]
@@ -425,37 +425,37 @@ class findGoal(State):
                 centerXg, centerYg = (x1g + x2g)/2, (y1g + y2g)/2
         if areab > 10: #self.matchBall:
             # see the ball and search for the goal
-            pose = self.robot.ptz.pose # p,t,z,r
+            pose = self.robot.ptz[0].pose # p,t,z,r
             # 1. center camera on ball
             # ---------------X direction------------------
-            diff = (centerXb - (self.robot.camera.width/2))
-            if abs(diff) < (.1 * self.robot.camera.width):
+            diff = (centerXb - (self.robot.camera[0].width/2))
+            if abs(diff) < (.1 * self.robot.camera[0].width):
                 pass
             elif diff < 0:
                 # negative is right, positive is left
-                self.robot.ptz.pan( pose[0] + self.speed) 
+                self.robot.ptz[0].pan( pose[0] + self.speed) 
             else:
-                self.robot.ptz.pan( pose[0] - self.speed)
+                self.robot.ptz[0].pan( pose[0] - self.speed)
             # ---------------Y direction------------------
             # keep ball at the bottom of the image
-            if y1b < (.5*self.robot.camera.width):
-                self.robot.ptz.tilt( pose[1] + .5*self.speed) # up
-            elif y1b > .8*self.robot.camera.width:
+            if y1b < (.5*self.robot.camera[0].width):
+                self.robot.ptz[0].tilt( pose[1] + .5*self.speed) # up
+            elif y1b > .8*self.robot.camera[0].width:
                 # don't want to lose ball
-                self.robot.ptz.tilt(pose[1] - .5*self.speed) # down
+                self.robot.ptz[0].tilt(pose[1] - .5*self.speed) # down
             # keep the ball centered
             if abs(pose[0]) > self.headMaxTurn:
                 # 2.1 rotate so ball is in front of you
                 if pose[0] > 0:
                     self.robot.move(0,self.turnSpeed)
-                    self.robot.ptz.pan(pose[0] - self.speed)
+                    self.robot.ptz[0].pan(pose[0] - self.speed)
                 else:
                     self.robot.move(0,-self.turnSpeed)
-                    self.robot.ptz.pan(pose[0] + self.speed)
+                    self.robot.ptz[0].pan(pose[0] + self.speed)
             if areag> 10:#self.matchGoal:
                 # if you see the goal
-                diff = (centerXg - (self.robot.camera.width/2))
-                if abs(diff) < (.1 * self.robot.camera.width):
+                diff = (centerXg - (self.robot.camera[0].width/2))
+                if abs(diff) < (.1 * self.robot.camera[0].width):
                     # if centered on x direction
                     self.robot.strafe(0)
                     self.goto("prepareToKick")
@@ -472,16 +472,16 @@ class didYouScore(State):
 
     def onActivate(self):
         self.robot.move(0,0)
-        self.robot.ptz.pan(0)
-        self.robot.ptz.tilt(-0.1)
+        self.robot.ptz[0].pan(0)
+        self.robot.ptz[0].tilt(-0.1)
         self.speed = 0.05
         self.speedHor = 0.05
         self.tiltSpeed = 0.3
         print "DID YOU SCORE"
            
     def step(self):
-        pose = self.robot.ptz.pose
-        results = self.get("robot/camera/filterResults")
+        pose = self.robot.ptz[0].pose
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a ball blob in sight
                 x1b, y1b, x2b, y2b, areab = results[self.brain.ball][0]
@@ -506,8 +506,8 @@ class didYouScore(State):
                     # did not find ball
                     self.goto("searchDown")
                     return
-                self.robot.ptz.tilt(pose[1] - self.tiltSpeed)
-            self.robot.ptz.pan(pose[0] - self.speedHor)
+                self.robot.ptz[0].tilt(pose[1] - self.tiltSpeed)
+            self.robot.ptz[0].pan(pose[0] - self.speedHor)
 
 class moveTail(State):
     def onActivate(self):

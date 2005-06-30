@@ -14,9 +14,9 @@ class Track(Behavior):
         # assumes that a camera device is already running!
         # we don't put it here, so that you can load whatever
         # type of camera you want: fake, blob, v4l, etc.
-        self.camera = self.get("devices/camera0/object")
-        self.camWidth = self.get("devices/camera0/width")
-        self.camHeight = self.get("devices/camera0/height")
+        self.camera = self.camera[0]
+        self.camWidth = self.camera[0].width
+        self.camHeight = self.camera[0].height
     def update(self):
         # match a reddish color:
         self.camera.apply("match", 144, 78, 76)
@@ -38,8 +38,7 @@ class MyState(State):
         self.add(Track(1, {'pan': 1, 'tilt': 1})) 
 
 def INIT(engine):
-    ptzID = engine.startDevice("ptz"); 
-    ptz = engine.robot.get("devices/%s/object" % ptzID); 
+    ptz = engine.startDevice("ptz"); 
     brain = BBB({'pan' : ptz.panRel,
                  'tilt': ptz.tiltRel,
                  'update' : engine.robot.update },

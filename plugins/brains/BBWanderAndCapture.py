@@ -29,9 +29,7 @@ class Avoid (Behavior):
             self.count = 0
             self.lasttime =  time.mktime(time.localtime())
 
-        close = select(min, "value", self.get("robot/range/all/value,th"))
-        close_dist = close.value
-        close_angl = close.th / math.pi
+        close_dist, close_angle = min([(s.distance(), s.angle(unit="radians")/math.pi) for s in self.robot.range["all"]])
         print "Closest distance is:", close_dist
         # FIX: direction
         self.IF(Fuzzy(1.0, 3.0) << close_dist, 'translate', 0)
@@ -61,10 +59,6 @@ class state2 (State):
 
     def update(self):
         print "State 2"
-        # save the current readings
-        # FIX: how to get this data?
-        self.engine.history[1]['speed'] = self.engine.robot.senseData['speed']
-        self.engine.history[1]['ir'] = self.engine.robot.senseData['ir']
         self.goto("state3")
 
 class state3 (State):
@@ -77,7 +71,7 @@ class state3 (State):
 
     def update(self):
         print "State 3"
-        self.engine.camera.snap("som2/snap-%d.pgm" % self.count) # can name the file right here
+        self.engine.camera.saveImage("som2/snap-%d.pgm" % self.count) # can name the file right here
         # save IR, motors
         fp = open("som2/snap-%d.dat" % self.count, "w")
         fp.write("translate=%f\n" % self.engine.history[2]['translate'])

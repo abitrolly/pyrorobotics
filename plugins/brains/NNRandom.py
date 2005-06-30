@@ -15,7 +15,7 @@ class Reinforce(Brain):
    def setup(self):
       '''Init the brain, and create the network'''
       self.net = SRN()
-      self.sensorCount = self.get('robot/range/count')
+      self.sensorCount = self.robot.range.count
       self.net.add(Layer('input', self.sensorCount+2))
       self.net.addContext(Layer('context', 2), 'hidden')
       self.net.add(Layer('hidden', 2))
@@ -35,8 +35,8 @@ class Reinforce(Brain):
 
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.get('robot/range/maxvalue')
-      self.curr_sensors = map(self.scale, self.get('robot/range/all/value'))
+      self.maxvalue = self.robot.range.maxvalue
+      self.curr_sensors = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.curr_motors = [0.0, 0.0]
       self.target_trans = 1
       self.target_rotate = .5
@@ -48,9 +48,9 @@ class Reinforce(Brain):
       self.plot = Scatter(title = 'Reinforce and Predict',
                           history = [100, 5, 5], linecount = 3,
                           legend = ['Hidden', 'Motor Output', 'Motor Target'])
-      self.pred = Hinton(self.get('robot/range/count'),
+      self.pred = Hinton(self.robot.range.count,
                          title = 'Predicted Inputs')
-      self.targ = Hinton(self.get('robot/range/count'),
+      self.targ = Hinton(self.robot.range.count,
                          title = 'Actual Inputs')
 
    def destroy(self):
@@ -80,7 +80,7 @@ class Reinforce(Brain):
          self.net.setLearning(1)
 
       # gather inputs (latest sensors and motor values)
-      self.curr_sensors = map(self.scale, self.get('robot/range/all/value'))
+      self.curr_sensors = [self.scale(s.distance()) for s in self.robot.range["all"]]
       input = (self.curr_sensors) 
       input.append(self.curr_motors[0])
       input.append(self.curr_motors[1])
@@ -104,12 +104,12 @@ class Reinforce(Brain):
       #    first set sensorOutput targets
       sleep(.1)
       self.update()
-      next_sensors = map(self.scale, self.get('robot/range/all/value'))
+      next_sensors = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.net['sensorOutput'].copyTargets(next_sensors)
 
       #    next set motorOutput targets
       #       determine fuzzy values
-      next_min = min(self.get('robot/range/all/value'))
+      next_min = min([s.distance() for s in self.robot.range["all"]])
 
       distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
       speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)

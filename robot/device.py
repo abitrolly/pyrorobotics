@@ -30,7 +30,7 @@ class SensorValue:
         # uses raw value; this will change if noise > 0
         return self.device.rawToUnits(self.rawValue,
                                       0.0,
-                                      unit)        
+                                      unit)
     def angle(self, unit="degrees"):
         if self.geometry == None:
             return None
@@ -47,10 +47,9 @@ class SensorValue:
         z = self.geometry[2] 
         return (x, y, z)
     def hit(self):
-        x = self.device.hitX(self.pos)
-        y = self.device.hitY(self.pos)
-	z = self.device.hitZ(self.pos) 
-        return (x, y, z)
+        return self.device.hit(self.pos)
+    def geometry(self):
+        return self.device.geometry(self.pos)
 
 class Device:
     """ A basic device class """

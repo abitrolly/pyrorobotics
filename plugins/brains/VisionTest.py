@@ -11,15 +11,13 @@ def process(camera):
 
 class VisionBrain(Brain):
    def setup(self):
-      self.cameraID = self.robot.hasA("camera")
-      if self.cameraID == 0:
-         self.cameraID = self.robot.startDevice("V4LCamera0") #"TutorialCamera")
-         self.camera = self.get("devices/%s/object" % self.cameraID)
+      if not self.robot.hasA("camera"):
+         self.camera = self.robot.startDevice("V4LCamera0")
          self.camera.addFilter( process )
       
    def step(self):
       # do something with the camera processed data:
-      print self.get("devices/%s/filterResults" % self.cameraID)
+      print self.camera[0].filterResults
 
 def INIT(engine):
    return VisionBrain('VisionTest', engine)

@@ -8,9 +8,6 @@ class SubsumptionBehavior:
         self.rotate = 0
         self.flag = 0
 
-    def get(self, *args):
-        return self.robot.get(*args)
-
     def move(self, translate, rotate):
         self.translate = translate
         self.rotate = rotate
@@ -51,7 +48,7 @@ class Wander(SubsumptionBehavior):
 
 class Avoid(SubsumptionBehavior):
     def update(self):
-        if min(self.get('/robot/range/front-all/value')) < 1:
+        if min([s.distance() for s in self.robot.range["front-all"]]) < 1:
             self.move( -.2, 0)
 
 def INIT(engine):

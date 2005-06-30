@@ -12,8 +12,8 @@ class SimpleBrain(Brain):
       
    def step(self):
       # ask the robot for perceptions:
-      location = self.get("robot/location")
-      status = self.get("robot/status")
+      location = self.robot.location
+      status = self.robot.status
       # call the agent program
       action = self.ReflexVaccumAgent(location, status)
       # make the move:

@@ -3,8 +3,8 @@ from pyrobot.brain import Brain
 class TrackBall(Brain):
 
     def setup(self):
-        self.cam = self.getDevice( self.hasA("camera") )
-        self.ptz = self.getDevice( self.hasA("ptz") )
+        self.cam = self.camera[0]
+        self.ptz = self.ptz[0]
         self.ptz.setPose(0, 0, 0)
         #self.cam.addFilter("matchList", 229, 68, 164, 234, 18, 129, 0)
         self.cam.addFilter("match", 229, 68, 164)
@@ -15,7 +15,7 @@ class TrackBall(Brain):
         self.cam.clearFilters()
 
     def step(self):
-        results = self.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[-1]) > 0: # need a match, and blobify at least
             if len(results[-1][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[-1][0]

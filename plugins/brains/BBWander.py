@@ -2,7 +2,6 @@
 
 from pyrobot.brain.fuzzy import *
 from pyrobot.brain.behaviors import *
-from pyrobot.brain import select
 import math, time
 
 class Avoid (Behavior):
@@ -26,9 +25,8 @@ class Avoid (Behavior):
             self.lasttime =  time.time()
         else:
             self.count += 1
-        close = select(min, "value", self.get('/robot/range/front-all/value,thr'))
-        close_dist, angle = close["value"], close["thr"]
-        max_sensitive = self.get('/robot/range/maxvalue') * 0.8
+        close_dist, angle = min( [(s.distance(), s.angle(unit="radians")) for s in self.robot.range["front-all"]])
+        max_sensitive = self.robot.range.maxvalue * 0.8
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'translate', 0.0, "TooClose")
         self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'translate', 0.3, "Ok")
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'rotate', self.direction(angle), "TooClose")
@@ -36,7 +34,7 @@ class Avoid (Behavior):
 
 class TurnAround(State):
     def update(self):
-        if min(self.get("/robot/range/front-all/value")) < 1.0:
+        if min([s.distance() for s in self.robot.range["front-all"]]) < 1.0:
             self.move(0, .2)
         else:
             self.goto("state1")
@@ -47,7 +45,7 @@ class state1 (State):
         self.add(Avoid(1, {'translate': .3, 'rotate': .3}))
         print "initialized state", self.name
     def update(self):
-        if min(self.get("/robot/range/front-all/value")) < 1:
+        if min([s.distance() for s in self.robot.range["front-all"]]) < 1: 
             self.goto("TurnAround")
 
 def INIT(engine): # passes in robot, if you need it

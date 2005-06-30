@@ -9,7 +9,7 @@ import pyrobot.system.share as share
 class NNPredict(Brain):
    def setup(self):
       """ Create the network. """
-      self.sensorCount = self.get('robot/range/count')
+      self.sensorCount = self.robot.range.count
       self.net = Network()
       self.net.addThreeLayers(self.sensorCount + 2, 5, 2)
       self.net.initialize()
@@ -20,8 +20,8 @@ class NNPredict(Brain):
       self.trans = 0
       self.rotate = 0
       self.counter = 0
-      self.maxvalue = self.get('robot/range/maxvalue')
-      self.new = map(self.scale, self.get('robot/range/all/value'))
+      self.maxvalue = self.robot.range.maxvalue
+      self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.plot = Scatter(app=share.gui, linecount=2, connectPoints=0,
                           xEnd=7.0, yEnd=1.2, legend=["Trained", "Test"],
                           title="NN Generalization", width=400)
@@ -38,9 +38,9 @@ class NNPredict(Brain):
       target_trans  = 1.0
       target_rotate = 0.5
       # left and right and front:
-      self.min = min(self.get('robot/range/front/value'))
-      left = min(self.get('robot/range/front-left/value'))
-      right = min(self.get('robot/range/front-right/value'))
+      self.min = min([s.distance() for s in self.robot.range["front"]])
+      left = min([s.distance() for s in self.robot.range["front-left"]])
+      right = min([s.distance() for s in self.robot.range["front-right"]])
       if left < 1.5 or right < 1.5:
          target_trans = 0.5
       elif left < 1.8:
@@ -52,7 +52,7 @@ class NNPredict(Brain):
    def step(self):
       target = self.avoid()
       old = self.new + [self.trans, self.rotate] #trans and rotate
-      self.new = map(self.scale, self.get('robot/range/all/value'))
+      self.new = [self.scale(s.distance) for s in self.robot.range["all"]]
       # results
       if self.net.learning:
          e, c, t = self.net.step(input=old, output=target)

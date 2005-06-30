@@ -117,18 +117,18 @@ class DevelopBrain(Brain):
    def step(self):
       if self.state == 'capture':
          if self.t < self.capture:
-            x = self.robot.get('robot', 'x')
-            y = self.robot.get('robot', 'y')
+            x = self.robot.x
+            y = self.robot.y
             dist = distance(x, y, self.lastx, self.lasty)
             print "Distance =", dist
             if dist > self.dist_away_enough:
                print "  Capture #", self.t
                self.data.append([])
-               for i in range(self.robot.get('sonar', 'count')):
+               for i in range(self.robot.sonar[0].count):
                   print ".",
-                  self.data[self.t].append(self.robot.get('sonar', 'value', i))
-               self.lastx = self.robot.get('robot', 'x')
-               self.lasty = self.robot.get('robot', 'y')
+                  self.data[self.t].append(self.robot.sonar[0][i].distance())
+               self.lastx = self.robot.x
+               self.lasty = self.robot.y
                print "Done!"
                self.t += 1
          else:
@@ -140,16 +140,16 @@ class DevelopBrain(Brain):
          sleep(1.0) # go for a bit
       elif self.state == 'average':
          self.diff = []
-         for i in range(self.robot.get('sonar', 'count')):
+         for i in range(self.robot.sonar[0].count):
             self.diff.append([])
-            for j in range(self.robot.get('sonar', 'count')):
+            for j in range(self.robot.sonar[0].count):
                self.diff[i].append(0)
          for t in range(self.capture):
-            for i in range(self.robot.get('sonar', 'count')):
-               for j in range(i + 1, self.robot.get('sonar', 'count')):
+            for i in range(self.robot.sonar[0].count):
+               for j in range(i + 1, self.robot.sonar[0].count):
                   self.diff[i][j] += fabs(self.data[t][i] - self.data[t][j])
-         for i in range(self.robot.get('sonar', 'count')):
-            for j in range(self.robot.get('sonar', 'count')):
+         for i in range(self.robot.sonar[0].count):
+            for j in range(self.robot.sonar[0].count):
                self.diff[i][j] /= self.capture
                #print diff[i][j], 
             #print ''

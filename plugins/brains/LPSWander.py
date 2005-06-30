@@ -10,11 +10,11 @@ from pyrobot.tools.joystick import Joystick
 class SimpleBrain(Brain):
    def setup(self):
       # create the Local Perceptiual Space window
-      units = self.get('/robot/range/units')
-      self.robot.set('/robot/range/units', 'MM')
-      sizeMM = self.get('/robot/range/maxvalue') * 3 + \
-               self.get('robot/radius')
-      self.robot.set('/robot/range/units', units)
+      units = self.robot.range.units
+      self.robot.range.units = 'MM'
+      sizeMM = self.robot.range.maxvalue * 3 + \
+               self.robot.radius
+      self.robot.range.units = units
       self.lps = LPS( 20, 20,
                       widthMM = sizeMM,
                       heightMM = sizeMM)

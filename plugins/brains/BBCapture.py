@@ -30,9 +30,9 @@ class Avoid (Behavior):
         #self.IF(1, 'translate', .2) 
         #self.IF(1, 'rotate', 0)
         
-        left = min(self.get('robot/range/left/value'))
-        front = min(self.get('robot/range/front/value'))
-        right = min(self.get('robot/range/right/value'))
+        left = min([s.distance() for s in self.robot.range["left"]])
+        front = min([s.distance() for s in self.robot.range["front"]])
+        right = min([s.distance() for s in self.robot.range["right"]])
         
         if (left < LTOLERANCE and right < RTOLERANCE):
             #self.move(0, .2)
@@ -83,10 +83,6 @@ class state2 (State):
 
     def update(self):
         print "State 2"
-        # save the current readings
-        # Fix: how to get these two items?
-        #self.engine.history[1]['speed'] = self.engine.robot.senseData['speed']
-        #self.engine.history[1]['ir'] = self.engine.robot.senseData['ir']
         self.goto("state3")
 
 class state3 (State):

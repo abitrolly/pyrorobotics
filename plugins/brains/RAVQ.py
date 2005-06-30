@@ -15,8 +15,7 @@ class SimpleBrain(Brain):
       self.ravq.setHistory(0)
       self.ravq.openLog('ravq_2.log')
       self.counter = 0 
-      self.startDevice('truth') 
-      self.set('robot/range/units', 'ROBOTS') 
+      self.robot.range.units = 'ROBOTS'
 
    def avoidObstacles(self): 
       """ 
@@ -30,11 +29,11 @@ class SimpleBrain(Brain):
       minRange = 0.50
       maxRange = 1.50
       rand = random() * 0.5
-      minFront = min(self.get('robot/range/front/value'))
-      minLeft  = min(self.get('robot/range/front-left/value'))
-      minRight = min(self.get('robot/range/front-right/value'))
-      left =  min(self.get('robot/range/left/value'))
-      right = min(self.get('robot/range/right/value'))
+      minFront = min([s.distance() for s in self.robot.range["front"]])
+      minLeft  = min([s.distance() for s in self.robot.range["front-left"]])
+      minRight = min([s.distance() for s in self.robot.range["front-right"]])
+      left =  min([s.distance() for s in self.robot.range["left"]])
+      right = min([s.distance() for s in self.robot.range["right"]])
       
       if minFront < minRange: 
          if not self.blockedFront: 
@@ -65,10 +64,10 @@ class SimpleBrain(Brain):
          return [0.5, 0.0]
    
    def recordRAVQ(self): 
-      all = self.get('robot/range/all/value') 
+      all = [s.distance() for s in self.robot.range["all"]]
       self.ravq.input(all)
       if self.counter % 1000 == 0:
-         self.ravq.logHistory(0, str(self.robot.dev.get_truth_pose()))
+         self.ravq.logHistory(0, str(self.robot.simulation[0].getPose("Pioneer")))
  
    def step(self): 
       print self.counter 
@@ -83,5 +82,6 @@ class SimpleBrain(Brain):
 
       self.counter += 1 
  
-def INIT(engine): 
+def INIT(engine):
+   print "This brain needs a robot named 'Pioneer' in the world"
    return SimpleBrain('SimpleBrain', engine) 

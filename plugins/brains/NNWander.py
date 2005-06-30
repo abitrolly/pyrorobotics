@@ -17,7 +17,7 @@ class NNBrain(Brain):
       """ Init the brain, and create the network. """
       # create the network
       self.net = Network()
-      self.net.addThreeLayers(self.get('robot/range/count'), 2, 2)
+      self.net.addThreeLayers(self.robot.range.count, 2, 2)
       self.net.initialize()
       # learning parameters
       self.net.setEpsilon(0.5)
@@ -26,13 +26,13 @@ class NNBrain(Brain):
       # some helpful attributes
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.get('robot/range/maxvalue')
+      self.maxvalue = self.robot.range.maxvalue
       # visualization
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])
       self.hidHinton = Hinton(2, title = 'Hidden Layer')
-      self.inHinton = Hinton(self.get('robot/range/count'),
+      self.inHinton = Hinton(self.robot.range.count,
                              title = 'Input Layer')
       self.outHinton = Hinton(2, title = 'Output Layer')
 
@@ -54,17 +54,17 @@ class NNBrain(Brain):
          print self.counter,
          
       # first inputs and targets:
-      inputs = map(self.scale, self.get('robot/range/all/value'))
+      inputs = [self.scale(s.distance()) for s in self.robot.range["all"]]
       # Compute targets:
-      if min(self.get('robot/range/front/value')) < 1:
+      if min([s.distance() for s in self.robot.range["front"]]) < 1:
          target_trans = 0.0
-      elif min(self.get('robot/range/back/value')) < 1:
+      elif min([s.distance() for s in self.robot.range["back"]]) < 1:
          target_trans = 1.0
       else:
          target_trans = 1.0
-      if min(self.get('robot/range/left/value')) < 1:
+      if min([s.distance() for s in self.robot.range["left"]]) < 1:
          target_rotate = 0.0
-      elif min(self.get('robot/range/right/value')) < 1:
+      elif min([s.diatnce() for s in self.robot.range["right"]]) < 1:
          target_rotate = 1.0
       else:
          target_rotate = 0.5

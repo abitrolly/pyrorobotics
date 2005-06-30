@@ -57,12 +57,12 @@ class edge (State):
         self.add(StraightBehavior(1))
 
     def onActivate(self): # method called when activated or gotoed
-        self.startX = self.get('robot/x') 
-        self.startY = self.get('robot/y') 
+        self.startX = self.robot.x
+        self.startY = self.robot.y
         
     def update(self):
-        x = self.get('robot/x')
-        y = self.get('robot/y')
+        x = self.robot.x
+        y = self.robot.y
         dist = distance( self.startX, self.startY, x, y) 
         #print "actual = (%f, %f) start = (%f, %f); dist = %f" \
         #      % (x, y, self.startX, self.startY, dist)
@@ -75,10 +75,10 @@ class turn (State):
         self.add(TurnLeftBehavior(1))
 
     def onActivate(self):
-        self.th = self.get('robot/th')
+        self.th = self.robot.th
 
     def update(self):
-        th = self.get('robot/th')
+        th = self.robot.th
         #print "actual = %f start = %f" % (th, self.th)
         if angleAdd(th, - self.th) > 90: 
             self.goto('edge')

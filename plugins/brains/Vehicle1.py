@@ -9,15 +9,15 @@ class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
    def setup(self):
-      self.set('/devices/light0/units', "RAW")
-      self.maxvalue = self.get('/devices/light0/maxvalue')
+      self.light[0].units = "RAW"
+      self.maxvalue = self.robot.light[0].maxvalue
    def step(self):
-      sensorValue = avg(self.get('/devices/light0/2,3/value')) # front lights
+      sensorValue = avg([s.distance() for s in self.light[0][2:4]]) # front lights
       forward = (self.maxvalue - sensorValue) / self.maxvalue
       self.motors(forward,  forward) # to the left
 
 def INIT(engine):
-   if engine.robot.get("robot/type") != 'K-Team':
+   if engine.robot.robot.type != 'K-Team':
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
    return Vehicle('Braitenberg', engine)

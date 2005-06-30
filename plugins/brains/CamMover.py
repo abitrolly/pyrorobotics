@@ -1,20 +1,13 @@
 from pyrobot.brain import Brain
-from pyrobot.robot.saphira import *
-from pyrobot.brain.fuzzy import *
-
-import time
 
 class SimpleBrain(Brain):
    # Only method you have to define is the step method:
-    
    def step(self):
-	#self.robot.camera.update()
-	#self.robot.camera.track(cutoff=4.0,mode='yellow')
         pass
 
 # -------------------------------------------------------
-# This is the interface for calling from the gui engine.
-# Takes one param (the robot), and returns a Brain object:
+# This is the interface for calling from the loader.
+# Takes one param (an engine), and returns a Brain object:
 # -------------------------------------------------------
 
 def INIT(engine):

@@ -6,11 +6,11 @@ from pyrobot.brain import Brain
 class CleanUp(Brain):
       
    def step(self):
-      if self.get("robot/status") == "dirty":
+      if self.robot.status == "dirty":
          self.robot.move("suck")
-      elif self.get("robot/location") == "A":
+      elif self.robot.location == "A":
          self.robot.move("right")
-      elif self.get("robot/location") == "B":
+      elif self.robot.location == "B":
          self.robot.move("left")
 
 def INIT(engine):
