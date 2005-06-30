@@ -87,10 +87,14 @@ class Robot:
         self.move(0, 0)
 
     def update(self):
+        self.updateDevices()
+
+    def updateDevices(self):
         self.timestamp = time.time()
-        for device in self.getDevices():
-            if self.getDevice(device).getActive():
-                self.getDevice(device).updateDevice()
+        for deviceType in self.devices:
+            for device in self.__dict__[deviceType]:
+                if device.active:
+                    device.updateDevice()
 
     # Need to define these:
 
@@ -147,6 +151,7 @@ class Robot:
         robot.sonar[0]
         """
         if devname not in self.__dict__:
+            self.devices.append( devname ) # keep track of all of the loaded types
             self.__dict__[devname] = [None]
             return 0
         else:
@@ -158,7 +163,6 @@ class Robot:
         if len(dev) < 1:
             raise AttributeError, ("unknown device: '%s'" % item)
         else:
-            self.devices.append( dev[0].type )
             return dev[0]
         
     def startDevices(self, item, override = False, **args):

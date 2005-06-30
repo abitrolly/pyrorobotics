@@ -28,7 +28,7 @@ class ManualFakeCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Fake Camera View")
-      self.devData["subtype"] = "simulated"
+      self.subtype = "simulated"
       self.data = CBuffer(self.cbuf)
 
    def blankImage(self, val=0):
@@ -129,8 +129,8 @@ class FakeCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Fake Camera View")
-      self.devData["subtype"] = "simulated"
-      self.devData["source"] = self.pattern
+      self.subtype = "simulated"
+      self.source = self.pattern
       self.data = CBuffer(self.cbuf)
       self.oldStart = None
       self.oldStop = None
@@ -159,7 +159,7 @@ class FakeCamera(Camera):
          self.oldStart = None
          self.oldStop = None
          
-   def _update(self):
+   def update(self):
       if (self.current < self.stop):
          currentTime = time.time()
          if currentTime - self.lastUpdate > self.interval:
@@ -181,4 +181,4 @@ class FakeCamera(Camera):
 if __name__ == "__main__":
    from pyrobot.vision.cvision import VisionSystem
    camera = FakeCamera(visionSystem=VisionSystem())
-   camera._update()
+   camera.update()

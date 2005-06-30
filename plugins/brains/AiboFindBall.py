@@ -126,7 +126,7 @@ class lostBall(State):
         self.brain.ballCenterY = args[1]
         
     def step(self):
-        results = self.get("robot/camera/filterResults")
+        results = self.robot.camera[0].filterResults
         if len(results) > 1 and len(results[self.brain.ball]) > 0: # need a match, and blobify at least
             if len(results[self.brain.ball][0]) == 5: # have a blob in sight
                 x1, y1, x2, y2, area = results[self.brain.ball][0]

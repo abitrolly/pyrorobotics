@@ -135,19 +135,16 @@ class PlayerSonarDevice(PlayerDevice):
         self.maxvalue = self.rawToUnits(self.maxvalueraw)
         self.noise = 0.05 # 5 percent
         self.count = len(self)
-        # These are per reading:
-        self.ox    = lambda pos: self.handle.poses[pos][0]
-        self.oy    = lambda pos: self.handle.poses[pos][1]
-        self.oz    = lambda pos: self.rawToUnits(300) # rawunits
-        self.thr   = lambda pos: self.handle.poses[pos][2] 
-        self.th    = lambda pos: self.handle.poses[pos][2] / PIOVER180 # degrees
-        self.arc   = lambda pos: (7.5 * PIOVER180) # radians
-        self.x     = self.hitX
-        self.y     = self.hitY
-	self.z     = self.hitZ
-        self.value = lambda pos: self.rawToUnits(self.handle.scan[pos], self.noise)
-        self.pos   = lambda pos: pos
-        self.group = self.getGroupNames
+    def distance(self, pos):
+        """ Distance to hit from originating position """
+        return self.rawToUnits(self.handle.scan[pos], self.noise)
+    def geometry(self, pos):
+        """ (x, y, z, thr, arc) of originating position of sensor ray """
+        return (self.handle.poses[pos][0], self.handle.poses[pos][1], self.rawToUnits(300),
+                self.handle.poses[pos][2], (7.5 * PIOVER180) )
+    def hit(self, pos):
+        """ (x, y, z) of intersecting hit """
+        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
     def __len__(self):
         return self.handle.scan_count
     def getSensorValue(self, pos):
@@ -614,7 +611,6 @@ class PlayerRobot(Robot):
         self.last_translate = translate_velocity
         self.position[0].handle.set_cmd_vel(translate_velocity, 0,
                                          rotate_velocity, 1)
-        
     def update(self):
         if self.hasA("position"):
             self.x = self.position[0].handle.px
@@ -622,6 +618,7 @@ class PlayerRobot(Robot):
             self.thr = self.position[0].handle.pa # radians
             self.th = self.thr / PIOVER180
             self.stall = self.position[0].handle.stall
+        self.updateDevices()
             
     def localize(self, x = 0, y = 0, th = 0):
         """
@@ -636,8 +633,8 @@ class PlayerRobot(Robot):
             self.thr = self.th * PIOVER180
 
     def connect(self):
-        print "hostname=", self.hostname, "port=", self.port
-        # FIX: arbitrary time! How can we know server is up and running?
+        print "Pyrobot Player: hostname=", self.hostname, "port=", self.port
+        # FIXME: arbitrary time! How can we know server is up and running?
         time.sleep(1)
         self.client = playerc.playerc_client(None, self.hostname, self.port)
         retval = self.client.connect() 

@@ -42,10 +42,10 @@ class BlobCamera(Camera):
                       "Blob Camera View")
       self.requires = ["blobfinder"]
       self.subtype = "blob"
-      self.source = self.blobfinder.type + "[" + self.blobfinder.number + "]"
+      self.source = "%s[%d]" % (self.blobfinder.type, self.blobfinder.number)
       self.data = CBuffer(self.cbuf)
       
-   def _update(self):
+   def update(self):
       blobs = []
       for i in range(self.blobHandle.blob_count):
          blobs.append( (self.blobHandle.blobs[i].left,

@@ -37,19 +37,16 @@ class IRSensor(Device):
                        'back-right' : (6, ), 
                        'back-all' : (6, 7), 
                        'back' : (6, 7)} 
-        self.ox    = self.ox
-        self.oy    = self.oy
-        self.thr    = lambda pos: self.th(pos) * PIOVER180
-        self.oz    = lambda pos: 0.0
-        self.arc   = lambda pos: (15 * PIOVER180)
-        self.pos   = lambda pos: pos
-        self.group   = self.getGroupNames
-        self.x = self.hitX
-        self.y = self.hitY
-	self.z = self.hitZ
-	self.value = self.getIRRange
         self.startDevice()    
-
+    def geometry(self, pos):
+        """ (x, y, z, thr, arc) of originating position of sensor ray """
+        return (self.ox(pos), self.oy(pos), 0.0, self.th(pos) * PIOVER180, (15 * PIOVER180))
+    def hit(self, pos):
+        """ (x, y, z) of intersecting hit """
+        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
+    def distance(self, pos):
+        """ Distance to hit from originating position """
+        return self.getIRRange(pos)
     def __len__(self):
         return self.count
     def getSensorValue(self, pos):
@@ -148,8 +145,9 @@ class LightSensor(IRSensor):
         self.units = "RAW"
         self.maxvalueraw = 511.0
         self.maxvalue = self.maxvalueraw
-	self.value = self.getLightRange # FIXME: function; what to do?
-
+    def distance(self, pos):
+        """ Distance to hit from originating position """
+        return self.getIRRange(pos)
     def __len__(self):
         return self.count
     def getSensorValue(self, pos):
@@ -174,7 +172,7 @@ class SerialSimulator:
         
     def writeline(self, msg, newline = "\n"):
         self.last_msg.append(ksim.sendMessage(self.p, msg))
-        sleep(.001)  # for some reason it seems as if python doesn't block
+        sleep(.01)  # for some reason it seems as if python doesn't block
 		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
@@ -295,11 +293,11 @@ class KheperaRobot(Robot):
             self.radius = 120.0 # in MM
         # ----- Updatable things:
         self.stall = self.isStall()
-        self.x = self.getX()
-        self.y = self.getY()
-        self.z = self.getZ()
-        self.th = self.getTh() # in degrees
-        self.thr = self.getThr() # in radians
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.th = 0.0
+        self.thr = 0.0
         self.supportedFeatures.append( "odometry" )
         self.supportedFeatures.append( "continuous-movement" )
         self.supportedFeatures.append( "range-sensor" )
@@ -395,12 +393,6 @@ class KheperaRobot(Robot):
         # ----------- end compute stall
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
         self.stall = self.isStall()
-        self.x = self.getX()
-        self.y = self.getY()
-        self.z = self.getZ()
-        self.th = self.getTh() # in degrees
-        self.thr = self.getThr() # in radians
-
         self.deadReckon()
 
     def deadReckon(self):
@@ -450,21 +442,6 @@ class KheperaRobot(Robot):
         stalls = float(reduce(lambda x, y: x + y, self.stallHistory))
         # if greater than % of last history is stall, then stall
         return (stalls / self.stallHistorySize) > 0.5
-
-    def getX(self, dev = 0):
-        return self.x / 1000.0
-    
-    def getY(self, dev = 0):
-        return self.y / 1000.0
-    
-    def getZ(self, dev = 0):
-        return 0
-    
-    def getTh(self, dev = 0):
-        return self.th
-
-    def getThr(self, dev = 0):
-        return self.thr
 
     def move(self, trans, rotate):
         self.lastTranslate = trans

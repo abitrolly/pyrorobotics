@@ -73,9 +73,6 @@ class Camera(PyrobotImage, Device):
       """
       PyrobotImage.__init__(self, width, height, depth, 0)
       Device.__init__(self, 'camera')
-      self.notSetables.extend( ["filterResults", "width", "height", "depth",
-                                "image", "data", "source", "filters",
-                                "grayscale"] )
       self.app = 0
       self.title = title
       self.filterMode = 1

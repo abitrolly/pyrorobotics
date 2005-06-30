@@ -256,14 +256,6 @@ class TKgui(Tkinter.Toplevel, gui):
    def slowUpdate(self):
       self.update_interval = 1000
 
-   def update(self): # FIX: I don't think this does anything
-      pass
-
-   def temp(self):
-      if self.engine != 0:
-         if self.engine.robot != 0:
-            self.engine.robot.update()
-
    def CommandPreviousKey(self, event):
       if self.history_pointer - 1 <= len(self.history) and self.history_pointer - 1 >= 0:
          self.history_pointer -= 1
@@ -358,9 +350,6 @@ class TKgui(Tkinter.Toplevel, gui):
       done = self.processCommand(command)
       if done:
          self.cleanup()
-      #self.commandEntry.insert(0, filter)
-      #self.commandButton.flash()
-      #self.UpdateListBoxes()
 
    def joystick(self):
       self.joywin = JoystickDriver(self.engine.robot)
@@ -411,11 +400,7 @@ class TKgui(Tkinter.Toplevel, gui):
          os.system(os.getenv("EDITOR") + " " + self.engine.robotfile + "&")
       else:
          os.system("emacs " + self.engine.robotfile + "&")
-   def generalUpdate(self):
-      #
-      # This contains the former contents of the while not self.done: loop in
-      # .run()
-      #
+   def update(self):
       now = time.time() 
       needToUpdateState = 1
       try: needToUpdateState = self.engine.brain.needToStop
@@ -443,7 +428,7 @@ class TKgui(Tkinter.Toplevel, gui):
                self.engine.robot.getDevice(device).updateWindow()
       # Don't need to do the rest of this but once a second
       if now - self.lastButtonUpdate < 1:
-         self.after(self.update_interval,self.generalUpdate)
+         self.after(self.update_interval,self.update)
          return
       self.lastButtonUpdate = now
       if self.textArea['Brain:']["text"] != self.engine.brainfile:
@@ -520,7 +505,7 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Reload Brain']["state"] = 'disabled'
          #if self.goButtons['View']["state"] != 'disabled':
          #   self.goButtons['View']["state"] = 'disabled'
-      self.after(self.update_interval,self.generalUpdate)
+      self.after(self.update_interval,self.update)
       
    def run(self, command = []):
       self.done = 0
@@ -530,24 +515,8 @@ class TKgui(Tkinter.Toplevel, gui):
          if retval:
             self.processCommand(retval)
          command = command[1:]
-         
-      #
-      # get the general update going -jp
-      #
-      self.after(self.update_interval,self.generalUpdate)
+      self.after(self.update_interval,self.update)
       self.mainloop()
-
-   def refresh(self):
-      #   self.win.autospin = 1
-      #   self.win.xspin = 0
-      #   self.win.yspin = 0
-      #   self.win.after(500, self.win.do_AutoSpin)
-      print "refresh!"
-
-   def redraw_pass(self, win = 0): pass
-
-   def redraw(self, win = 0):
-      pass
 
    def inform(self, message):
       self.write(message + "\n")

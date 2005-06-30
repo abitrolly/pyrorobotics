@@ -64,9 +64,10 @@ class Device:
         self.visible = visible
         self.type = deviceType
         self.state = "stopped"
+        self.title = deviceType
+        self.setup()
         if visible:
             self.makeWindow()
-        self.setup()
 
     def getSensorValue(self, pos):
         """
@@ -103,7 +104,7 @@ class Device:
             raise AttributeError, "invalid device[%s]" % item
 
     def setTitle(self, title):
-        pass
+        self.title = title
 
     def setup(self):
         pass

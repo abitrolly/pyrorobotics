@@ -42,11 +42,11 @@ class V4LCamera(Camera):
       self.format = "BGR"
       Camera.__init__(self, width, height, depth, title = title,
                       visible = visible)
-      self.devData["subtype"] = "video4linux"
-      self.devData["source"] = device
+      self.subtype = "video4linux"
+      self.source = device
       self.data = CBuffer(self.cbuf)
 
-   def _update(self):
+   def update(self):
       """
       Since data is mmaped to the capture card, all we have to do is call
       refresh.
