@@ -32,8 +32,9 @@ class GUI(Tkinter.Toplevel):
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
         self.count = 0
         self.tag = "data-%d" % self.count
-        self.updateables = []
-        self.notSetables = ["world"]
+        self.properties = ["world", "whosMove", "board"]
+        for i in self.properties:
+            self.__dict__[i] = None
         self.movements = ["remove", "jump"]
         self.ports = [60000, 60001]
         self.initWorld()
@@ -140,10 +141,8 @@ class GUI(Tkinter.Toplevel):
             retval = "ok"
             self.done = 1
             self.quit = 1
-        elif request == 'updateables':
-            retval = self.updateables
-        elif request == 'notsetables':
-            retval = self.notSetables
+        elif request == 'properties':
+            retval = self.properties
         elif request == 'movements':
             retval = self.movements
         else:   # unknown command; returns "error"

@@ -23,7 +23,7 @@ import pyrobot.gui.console as console
 import pyrobot.system as system
 from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
-import math, string, time, os, sys
+import math, string, time, os, sys, types
 
 if float(sys.version[0:3]) < 2.4:
     False = 0
@@ -81,7 +81,11 @@ class Robot:
             dictkeys = thing.__dict__.keys()
             dictkeys.sort()
             for item in dictkeys:
-                if item[0] != "_":
+                if item[0] == "_":
+                    pass # skip it; private
+                elif type(thing.__dict__[item]) in [types.FunctionType, types.LambdaType, types.MethodType]:
+                    pass # skip it; function
+                else:
                     if item in self.devices:
                         count = 0
                         for i in thing.__dict__[item]:
@@ -98,6 +102,7 @@ class Robot:
                 print "%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing)
             else:
                 print "%s%-15s = %s" % (" " * indent, "." + toplevel, thing)
+        return "Ok"
     def displayDevice(self, device, indent = 0, count = 0):
         toplevel = "%s[%d]" % (device.type, count)
         self.getAll(device, toplevel, indent)
@@ -220,7 +225,6 @@ class Robot:
                 deviceNumber = self.getNextDeviceNumber(dev)
                 console.log(console.INFO,"Loading device %s[%d]..." % (dev, deviceNumber))
                 self.__dict__[dev][deviceNumber] = item[dev]
-                item[dev].number = deviceNumber
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
                 retval.append(item[dev]) # return object
             return retval

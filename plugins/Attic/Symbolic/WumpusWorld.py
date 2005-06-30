@@ -38,12 +38,13 @@ class GUI(Tkinter.Toplevel):
         self.pitImageTk = ImageTk.PhotoImage(self.pitImage)
         self.agentImageTk = ImageTk.PhotoImage(self.agentImage)
         # --------------------------------------------------------
+        self.properties = ["percept", "location", "direction", "arrow", "score", "alive"]
+        for i in self.properties:
+            self.__dict__[i] = None
         self.initWorld()
         self.checkMovement()
         self.count = 0
         self.tag = "data-%d" % self.count
-        self.updateables = ["percept", "location", "direction", "arrow", "score", "alive"]
-        self.notSetables = ["percept", "location", "direction", "arrow", "score", "alive"]
         self.movements = ["left", "right", "forward", "shoot", "grab"]
         self.ports = [60000]
         self.redraw()
@@ -149,10 +150,8 @@ class GUI(Tkinter.Toplevel):
             retval = "ok"
             self.done = 1
             self.quit = 1
-        elif request == 'updateables':
-            retval = self.updateables
-        elif request == 'notsetables':
-            retval = self.notSetables
+        elif request == 'properties':
+            retval = self.properties
         elif request == 'movements':
             retval = self.movements
         elif request == 'percept':

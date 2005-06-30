@@ -87,7 +87,7 @@ class Reinforce(Brain):
       
       # set inputs
       if self.counter == 0:
-         self.net.clearContext(.5)
+         self.net.setContext(.5)
       self.net['input'].copyActivations(input)
 
       # propagate...to see what output would be
@@ -114,19 +114,19 @@ class Reinforce(Brain):
       distance = Fuzzy(0,.8) >> self.scale(next_min) #used to be Fuzzy(0,1)
       speed = Fuzzy(.1,.4) >> abs(next_motors[0] - .5) #was Fuzzy(0,.5)
       fitness = distance & speed
-      improvement = Fuzzy(-.1, .3) >> fitness() - self.lastf
-      self.lastf = fitness()
+      improvement = Fuzzy(-.1, .3) >> (fitness - self.lastf)
+      self.lastf = fitness
 
       best = fitness | improvement
          
       #       determine weights for randomness
-      if best() > .4:
+      if best > .4:
          self.weight /= 4
-      elif best()-self.lastbest >= .005:
+      elif best - self.lastbest >= .005:
          self.weight /= 2
-      elif best()-self.lastbest <= -.005:
+      elif best - self.lastbest <= -.005:
          self.weight += 1.5*self.deltaw
-      elif best() < .4:
+      elif best < .4:
          self.weight += self.deltaw
 
       if self.weight > .75:
@@ -134,7 +134,7 @@ class Reinforce(Brain):
       elif self.weight < 0:
          self.weight = 0
       
-      self.lastbest = best()
+      self.lastbest = best
       
       # compute and set motorOutput targets
       tt = self.PorM(next_motors[0], random()*self.weight)

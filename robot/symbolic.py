@@ -9,8 +9,8 @@ class TCPRobot(Robot):
 	def __init__(self, host, port):
 		Robot.__init__(self)
 		# Set the socket parameters
-		self.devData["host"] = host
-		self.devData["port"] = port
+		self.host = host
+		self.port = port
 		self.addr = (host, port)
 		# Create socket
 		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -19,32 +19,18 @@ class TCPRobot(Robot):
 		except:
 			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
 		self.socket.connect( self.addr )
-		notsetables = self.getItem("notsetables")
-		for item in notsetables:
-			self.devData[item] = None
-		self.notSetables.extend( notsetables )
-		self.connectionNum = self.getItem("connectionNum:%d" % self.devData["port"])
-		self.updateables = self.getItem("updateables")
-		self.devData["id"]   = self.getItem("connectionNum:%d" % self.devData["port"])
-
-	def __getattr__(self, attr):
-		""" Overides default get attribute to return devData if exists """
-		try:
-			return Robot.__getattr__(self, attr)
-		except:
-			if attr[:2] == "__":
-				raise AttributeError
-			else:
-				return self.getItem(attr)
+		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
+		self.properties = self.getItem("properties")
+		self.id   = self.getItem("connectionNum:%d" % self.port)
 
 	def localize(self, x = 0, y = 0, th = 0):
 		pass
-		
-	def update(self):
-		for item in self.updateables:
-			self.devData[item] = self.move(item)
-		self._update()
 
+	def update(self):
+		for i in self.properties:
+			self.__dict__[i] = self.getItem(i)
+		self.updateDevices()
+		
 	def getItem(self, item):
 		return self.move(item)
 

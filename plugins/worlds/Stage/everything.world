@@ -17,8 +17,12 @@ include "pioneer.inc"
 
 
 
+
+
 # defines 'map' object used for floorplans
 include "map.inc"
+
+
 
 
 
@@ -110,7 +114,7 @@ laserpioneer
 position( 	
   name "invader" 
   size [0.3 0.3]
-  pose [-6.595 0.004 0.000] 
+  pose [-4.455 2.356 0.000] 
   color "red"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/space_invader.png"
@@ -122,7 +126,7 @@ position(
 position( 	
   name "ghost" 
   size [0.3 0.3 ]
-  pose [-9.492 0.894 0.000] 
+  pose [-9.380 -1.178 0.000] 
   color "blue"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/ghost.png"

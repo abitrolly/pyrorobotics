@@ -43,7 +43,7 @@ class Scatter(Toplevel):
                  connectPoints = 1, yStart = 0.0, yEnd = 1.0):
         Toplevel.__init__(self, app)
         if legend == None:
-            legend = [None] * linecount
+            legend = [''] * linecount
         else:
             legend = map(str, legend)
         if history == None:

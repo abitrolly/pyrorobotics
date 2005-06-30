@@ -22,6 +22,7 @@ class NNPredict(Brain):
       self.net.connect('context', 'hidden')
       self.net.connect('hidden', 'prediction')
       self.net.connect('hidden', 'motorOutput')
+      self.net.setSequenceType('random-continuous')
       
       self.net.initialize()
       self.net.setVerbosity(0)
@@ -35,7 +36,7 @@ class NNPredict(Brain):
       self.rotate = 0
       self.counter = 0
       self.doneLearning = 0
-      self.set('robot/range/units', 'METERS')
+      self.robot.range.units = 'METERS'
       self.maxvalue = self.robot.range.maxvalue
       print " Max value: ", self.maxvalue
       

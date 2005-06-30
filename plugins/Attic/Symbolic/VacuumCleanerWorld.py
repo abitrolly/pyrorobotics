@@ -23,8 +23,9 @@ class GUI(Tkinter.Toplevel):
         self.vacImage = Image.open(self.vacFilename)
         self.vacImageTk = ImageTk.PhotoImage(self.vacImage)
         self.dirtImageTk = ImageTk.PhotoImage(self.dirtImage)
-        self.notSetables = ["location", "status"]
-        self.updateables = ["location", "status"]
+        self.properties = ["location", "status"]
+        for i in self.properties:
+            self.__dict__[i] = None
         self.movements = ["left", "right", "suck", "dump"]
         self.ports = [60000]
         self.initWorld()
@@ -72,10 +73,8 @@ class GUI(Tkinter.Toplevel):
             retval = "ok"
             self.done = 1
             self.quit = 1
-        elif request == 'notsetables':
-            retval = self.notSetables
-        elif request == 'updateables':
-            retval = self.updateables
+        elif request == 'properties':
+            retval = self.properties
         elif request == 'movements':
             retval = self.movements
         else:   # unknown command; returns "error"

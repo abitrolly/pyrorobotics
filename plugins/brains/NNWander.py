@@ -64,7 +64,7 @@ class NNBrain(Brain):
          target_trans = 1.0
       if min([s.distance() for s in self.robot.range["left"]]) < 1:
          target_rotate = 0.0
-      elif min([s.diatnce() for s in self.robot.range["right"]]) < 1:
+      elif min([s.distance() for s in self.robot.range["right"]]) < 1:
          target_rotate = 1.0
       else:
          target_rotate = 0.5

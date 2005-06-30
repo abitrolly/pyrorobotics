@@ -52,7 +52,7 @@ class NNPredict(Brain):
    def step(self):
       target = self.avoid()
       old = self.new + [self.trans, self.rotate] #trans and rotate
-      self.new = [self.scale(s.distance) for s in self.robot.range["all"]]
+      self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       # results
       if self.net.learning:
          e, c, t = self.net.step(input=old, output=target)
