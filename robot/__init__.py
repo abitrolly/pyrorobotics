@@ -32,6 +32,15 @@ if float(sys.version[0:3]) < 2.4:
 if not os.environ.has_key('PYROBOT'):
     raise AttributeError, "PYROBOT not defined: export PYROBOT=/usr/local/pyrobot"
 
+def commas(lyst):
+    retval = ""
+    for i in lyst:
+        if retval:
+            retval += ", '%s'" % i
+        else:
+            retval = "'%s'" % i
+    return retval
+
 class Robot:
     """
     The base robot class. This class is the basis of all robots.
@@ -56,6 +65,42 @@ class Robot:
         self.thr = 0
         # user init:
         self.setup(**kwargs)
+
+    def getAll(self, thing = None, toplevel = "robot", indent = 0):
+        if thing == None: thing = self
+        dictable = 0
+        try:
+            thing.__dict__
+            dictable = 1
+        except: pass
+        if dictable:
+            if toplevel == "robot":
+                print "%s%s:" % (" " * indent, toplevel)
+            else:
+                print "%s%s:" % (" " * indent, "." + toplevel)
+            dictkeys = thing.__dict__.keys()
+            dictkeys.sort()
+            for item in dictkeys:
+                if item[0] != "_":
+                    if item in self.devices:
+                        count = 0
+                        for i in thing.__dict__[item]:
+                            self.displayDevice(i, indent + 3, count)
+                            count += 1
+                    elif type(thing.__dict__[item]) == type({}): # dict
+                        print "%s%-15s = {%s}" % (" " * (indent + 3), "." + item, commas(thing.__dict__[item].keys()))
+                    elif type(thing.__dict__[item]) == type(''): # string
+                        print "%s%-15s = '%s'" % (" " * (indent + 3), "." + item, thing.__dict__[item])
+                    else:
+                        print "%s%-15s = %s" % (" " * (indent + 3), "." + item, thing.__dict__[item])
+        else:
+            if type(thing) == type(''):
+                print "%s%-15s = '%s'" % (" " * indent, "." + toplevel, thing)
+            else:
+                print "%s%-15s = %s" % (" " * indent, "." + toplevel, thing)
+    def displayDevice(self, device, indent = 0, count = 0):
+        toplevel = "%s[%d]" % (device.type, count)
+        self.getAll(device, toplevel, indent)
 
     def localize(self, x = 0, y = 0, th = 0):
         console.log(console.WARNING, "need to override LOCALIZE in robot")

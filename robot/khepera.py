@@ -260,10 +260,10 @@ class KheperaRobot(Robot):
         self.subtype = subtype
         if subtype == "Hemisson":
             self.builtinDevices = ['ir', 'light', 'audio']
-            self.newline = "\r"
+            self._newline = "\r"
         elif subtype == "Khepera":
             self.builtinDevices = ['ir', 'light', 'gripper']
-            self.newline = "\n"
+            self._newline = "\n"
         else:
             raise TypeError, "invalid K-Team subtype: '%s'" % subtype
         self.startDevice("ir")
@@ -319,7 +319,7 @@ class KheperaRobot(Robot):
 
     def sendMsg(self, msg):
         if self.debug: print "DEBUG: sendMsg:", msg
-        self.sc.writeline(msg, self.newline)
+        self.sc.writeline(msg, self._newline)
         if self.subtype == "Hemisson":
             sleep(self.pause)
 
