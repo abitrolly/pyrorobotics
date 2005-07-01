@@ -12,7 +12,7 @@ class MyBrain(Brain):
 
    def step(self):
       # Called many times a second
-      # self.get("robot/range/all/pos")
+      # [s.value for s in self.robot.range["all"]]
       translate, rotate = 0.5, 0.0
       self.robot.move(translate, rotate)
 

@@ -346,7 +346,6 @@ class TKgui(Tkinter.Toplevel, gui):
       from string import strip
       command = strip(self.commandEntry.get())
       self.commandEntry.delete(0, 'end')
-      self.addCommandHistory(command)
       done = self.processCommand(command)
       if done:
          self.cleanup()

@@ -50,7 +50,7 @@ class gui:
          fp = open(os.getenv('HOME') + "/.pyrobothist", "r")
          self.history = map( string.strip, fp.readlines())
          fp.close()
-         self.history_pointer = len(self.history) - 1
+         self.history_pointer = len(self.history)
 
    def listCommandHistory(self):
       cnt = 1
@@ -169,6 +169,7 @@ class gui:
       print commandLine
 
    def processCommand(self, retval):
+      self.addCommandHistory(retval)
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
       retval = retval.strip()
@@ -212,6 +213,8 @@ class gui:
       elif len(retval) >= 1 and retval[0] == "!":
          if retval == "!":
             self.listCommandHistory()
+         elif retval == "!!":
+            self.processCommand(self.history[-2]) # -1 is !!
          else:
             self.processCommand(self.history[int(retval[1:]) - 1])
       elif retval == "about":

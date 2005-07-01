@@ -318,24 +318,24 @@ class RobocupRobot(Robot):
                 self.__dict__[msg[0]] = makeDict(msg[1:])
             elif msg[0] == "player_type": # types
                 # next is list of ["id" num], pairs...
-                id = "%s:%d" % (msg[0], msg[1][1])
+                id = "%s_%d" % (msg[0], msg[1][1])
                 self.__dict__[id] = makeDict(msg[2:])
             elif msg[0] == "sense_body": # time pairs...
                 self.__dict__[msg[0]] = makeDict(msg[2:])
-                self.__dict__["sense_body:time"] = msg[1]
+                self.__dict__["sense_body_time"] = msg[1]
             elif msg[0] == "see": # time tuples...
                 self.__dict__[msg[0]] = msg[2:]
-                self.__dict__["%s:time" % msg[0]] = msg[1]
+                self.__dict__["%s_time" % msg[0]] = msg[1]
             elif msg[0] == "error":
                 print "Robocup error:", msg[1]
             elif msg[0] == "warning":
                 print "Robocup warning:", msg[1]
             elif msg[0] == "hear": # hear time who what
                 self.__dict__[msg[0]] = msg[2:]
-                self.__dict__["%s:time" % msg[0]] = msg[1]
+                self.__dict__["%s_time" % msg[0]] = msg[1]
             elif msg[0] == "score": 
                 self.__dict__[msg[0]] = msg[2:]
-                self.__dict__["%s:time" % msg[0]] = msg[1]
+                self.__dict__["%s_time" % msg[0]] = msg[1]
             else:
                 print "unhandled message in robocup.py: '%s'" % msg[0], msg
             self.messageHandler(msg)

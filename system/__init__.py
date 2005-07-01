@@ -37,8 +37,10 @@ def help():
     print "  Control+e or End            end of line"
     print "  Control+f or RightArrow     forward one character"
     print "  Control+b or LeftArrow      back one character"
+    print "  TAB                         show command completions"
+    print "  watch EXP                   watch a Python expression in window"
     print "-------------------------------------------------------------"
-    print "Pyrobot TTY GUI commands:"
+    print "Pyrobot TTY and GUI commands:"
     print "-------------------------------------------------------------"
     print "  <command>                   execute <command> in Python"
     print "  <exp>                       print <exp> in Python"
@@ -53,6 +55,9 @@ def help():
     print "  reload                      reload the brain"
     print "  run                         start brain running"
     print "  stop                        stop brain and robot"
+    print "  !                           show command history"
+    print "  ! N                         rerun Nth command from history"
+    print "  !!                          rerun last command from history"
     print ""
 
 def file_exists(file_name):

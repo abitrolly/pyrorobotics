@@ -114,6 +114,10 @@ public:
   PyObject *addNoise(float percent, int range);
   PyObject *getMenu();
   PyObject *swapPlanes(int d1, int d2);
+  PyObject *rgb2yuv();
+  PyObject *yuv2rgb();
+  PyObject *rgb2hsv();
+  PyObject *hsv2rgb();
 
  protected:
   unsigned char *Image; // current image (image, original, workspace)

@@ -1156,6 +1156,7 @@ PyObject *Vision::restore() {
 
 PyObject *Vision::motion(int threshold, int outChannel) { 
   static unsigned char *temp = new unsigned char[width * height * depth];
+  int motionPixelCount = 0;
   if (motionCount >= MAXMOTIONLEVELS) {
     PyErr_SetString(PyExc_TypeError, "too many calls detecting motion; increase MAXMOTIONLEVELS in Vision.cpp");
     return NULL;
@@ -1169,8 +1170,10 @@ PyObject *Vision::motion(int threshold, int outChannel) {
 	temp[(h * width + w) * depth + d] = 0;
       }
       // mark the outChannel bright if qualifies:
-      if (totalDiff/3 > threshold)
+      if (totalDiff/3 > threshold) {
 	temp[(h * width + w) * depth + rgb[outChannel]] = 255;
+	motionPixelCount++;
+      }
     }
   }
   // Copy current image to motion:
@@ -1179,6 +1182,113 @@ PyObject *Vision::motion(int threshold, int outChannel) {
   memcpy(Image, temp, width * height * depth);
   // increase motion counter for next call:
   motionCount++;
+  return PyInt_FromLong(motionPixelCount);
+}
+
+PyObject *Vision::hsv2rgb() {
+  int R, G, B;
+  double var_r, var_g, var_b;
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      int H = Image[(h * width + w) * depth + rgb[0]];
+      int S = Image[(h * width + w) * depth + rgb[1]];
+      int V = Image[(h * width + w) * depth + rgb[2]];
+      if (S == 0) {                      //HSV values = 0 ÷ 1
+	R = int(V * 255.0);
+	G = int(V * 255.0);
+	B = int(V * 255.0);
+      } else {
+	double var_h = H * 6.0;
+	double var_i = int( var_h );         //Or ... var_i = floor( var_h )
+	double var_1 = V * ( 1.0 - S );
+	double var_2 = V * ( 1.0 - S * ( var_h - var_i ) );
+	double var_3 = V * ( 1.0 - S * ( 1 - ( var_h - var_i ) ) );
+	if      (var_i == 0) { var_r = V    ; var_g = var_3; var_b = var_1; }
+	else if (var_i == 1) { var_r = var_2; var_g = V    ; var_b = var_1; }
+	else if (var_i == 2) { var_r = var_1; var_g = V    ; var_b = var_3; }
+	else if (var_i == 3) { var_r = var_1; var_g = var_2; var_b = V;     }
+	else if (var_i == 4) { var_r = var_3; var_g = var_1; var_b = V;     }
+	else                 { var_r = V    ; var_g = var_1; var_b = var_2; }
+	R = int(var_r * 255.0);                  //RGB results = 0 ÷ 255
+	G = int(var_g * 255.0);
+	B = int(var_b * 255.0);
+	Image[(h * width + w) * depth + rgb[0]] = MAX(MIN(R,255),0);
+	Image[(h * width + w) * depth + rgb[1]] = MAX(MIN(G,255),0);
+	Image[(h * width + w) * depth + rgb[2]] = MAX(MIN(B,255),0);
+      }
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::rgb2hsv() {
+  double H, S, V;
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      H = 1; S = 1; V = 1;
+      int R = Image[(h * width + w) * depth + rgb[0]];
+      int G = Image[(h * width + w) * depth + rgb[1]];
+      int B = Image[(h * width + w) * depth + rgb[2]];
+      double var_R = (R / 255.0);   //RGB values = 0 ÷ 255
+      double var_G = (G / 255.0);
+      double var_B = (B / 255.0);
+      double var_Min = MIN(MIN(var_R, var_G), var_B);    //Min. value of RGB
+      double var_Max = MAX(MAX(var_R, var_G), var_B);    //Max. value of RGB
+      double del_Max = var_Max - var_Min;             //Delta RGB value
+      double V = var_Max;
+      if (del_Max == 0) {                     //This is a gray, no chroma...
+	H = 0;                                //HSV results = 0 ÷ 1
+	S = 0;
+      } else {                                   //Chromatic data...
+	S = del_Max / var_Max;
+	double del_R = (((var_Max - var_R) / 6.0) + (del_Max / 2.0))/del_Max;
+	double del_G = (((var_Max - var_G) / 6.0) + (del_Max / 2.0))/del_Max;
+	double del_B = (((var_Max - var_B) / 6.0) + (del_Max / 2.0))/del_Max;
+	if      (var_R == var_Max) H = del_B - del_G;
+	else if (var_G == var_Max) H = (1.0 / 3.0) + del_R - del_B;
+	else if (var_B == var_Max) H = (2.0 / 3.0) + del_G - del_R;
+	if ( H < 0 ) H += 1;
+	if ( H > 1 ) H -= 1;
+      }
+      Image[(h * width + w) * depth + rgb[0]] = int(MAX(MIN(H * 255,255),0));
+      Image[(h * width + w) * depth + rgb[1]] = int(MAX(MIN(S * 255,255),0));
+      Image[(h * width + w) * depth + rgb[2]] = int(MAX(MIN(V * 255,255),0));
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::rgb2yuv() {
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      int R = Image[(h * width + w) * depth + rgb[0]];
+      int G = Image[(h * width + w) * depth + rgb[1]];
+      int B = Image[(h * width + w) * depth + rgb[2]];
+      int Y = int(0.299 * R + 0.587 * G + 0.114 * B);
+      int U = int(-0.147 * R - 0.289 * G + 0.436 * B);
+      int V = int(0.615 * R - 0.515 * G - 0.100 * B);
+      Image[(h * width + w) * depth + rgb[0]] = MAX(MIN(Y,255),0);
+      Image[(h * width + w) * depth + rgb[1]] = MAX(MIN(U,255),0);
+      Image[(h * width + w) * depth + rgb[2]] = MAX(MIN(V,255),0);
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::yuv2rgb() {
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      int Y = Image[(h * width + w) * depth + rgb[0]];
+      int U = Image[(h * width + w) * depth + rgb[1]];
+      int V = Image[(h * width + w) * depth + rgb[2]];
+      int R = int(Y + 1.140 * V);
+      int G = int(Y - 0.395 * U - 0.581 * V);
+      int B = int(Y + 2.032 * U);
+      Image[(h * width + w) * depth + rgb[0]] = MAX(MIN(R,255),0);
+      Image[(h * width + w) * depth + rgb[1]] = MAX(MIN(G,255),0);
+      Image[(h * width + w) * depth + rgb[2]] = MAX(MIN(B,255),0);
+    }
+  }
   return PyInt_FromLong(0L);
 }
 
@@ -1311,6 +1421,10 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Swap planes", "swapPlanes", rgb[0], rgb[2]));
   PyList_Append(menu, Py_BuildValue("sssfi", "Misc", "Add noise", "addNoise", 0.05, 30));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "RGB -> YUV", "rgb2yuv"));
+  PyList_Append(menu, Py_BuildValue("sss", "Misc", "YUV -> RGB", "yuv2rgb"));
+  //PyList_Append(menu, Py_BuildValue("sss", "Misc", "RGB -> HSV", "rgb2hsv"));
+  //PyList_Append(menu, Py_BuildValue("sss", "Misc", "HSV -> RGB", "hsv2rgb"));
   PyList_Append(menu, Py_BuildValue("sssiiii", "Draw", "Box", "drawRect", 10, 10, 30, 30));
   PyList_Append(menu, Py_BuildValue("sssiii", "Draw", "Cross", "drawCross", 20, 20, 10));
   return menu;
@@ -1433,6 +1547,14 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     retval = matchList(pyobj);
   } else if (strcmp((char *)command, "grayScale") == 0) {
     retval = grayScale();
+  } else if (strcmp((char *)command, "rgb2yuv") == 0) {
+    retval = rgb2yuv();
+  } else if (strcmp((char *)command, "yuv2rgb") == 0) {
+    retval = yuv2rgb();
+  } else if (strcmp((char *)command, "rgb2hsv") == 0) {
+    retval = rgb2hsv();
+  } else if (strcmp((char *)command, "hsv2rgb") == 0) {
+    retval = hsv2rgb();
   } else if (strcmp((char *)command, "backup") == 0) {
     retval = backup();
   } else if (strcmp((char *)command, "restore") == 0) {
