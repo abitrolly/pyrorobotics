@@ -40,8 +40,8 @@ class BT848Camera(Camera):
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
       Camera.__init__(self, width, height, depth, title = title)
-      self.devData["subtype"] = "bt848"
-      self.devData["source"] = device
+      self.subtype = "bt848"
+      self.source = device
       self.data = CBuffer(self._cbuf)
 
    def _update(self):

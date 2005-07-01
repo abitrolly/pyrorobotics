@@ -54,7 +54,7 @@ class PlayerCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Player Camera View")
-      self.devData["subtype"] = "player"
+      self.subtype = "player"
       self.data = CBuffer(self._cbuf)
       self.thread = CameraThread(self)
       self.thread.start()

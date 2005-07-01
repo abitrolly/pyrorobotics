@@ -77,7 +77,10 @@ class Device:
 
     def __iter__(self):
         """ Used to iterate through values of device """
-        for pos in range(len(self)):
+        length = 0
+        try: length = len(self)
+        except: pass
+        for pos in range(length):
             yield self.getSensorValue(pos)
         raise exceptions.StopIteration
 

@@ -37,12 +37,11 @@ class BlobCamera(Camera):
       self.data = CBuffer(self._cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
-      print self.width, self.height
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Blob Camera View")
       self.requires = ["blobfinder"]
       self.subtype = "blob"
-      self.source = "%s[%d]" % (self.blobfinder.type, self.blobfinder.number)
+      self.source = "%s[%d]" % (self.blobfinder.type, self.blobfinder.index)
       self.data = CBuffer(self._cbuf)
       
    def update(self):

@@ -23,7 +23,7 @@ class SimplePlot(Device):
         self.dataCount = 0
         self.lastRun = 0
         self.dataHist = [0] * self.robot.get('robot', 'range', 'count')
-        self.devData["source"] = self.what
+        self.source = self.what
         self.startDevice()
         self.makeWindow()
     def makeWindow(self):

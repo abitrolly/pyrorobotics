@@ -67,7 +67,7 @@ class AiboCamera(Camera):
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Aibo Camera View")
-      self.devData["subtype"] = "aibo"
+      self.subtype = "aibo"
       self.data = CBuffer(self._cbuf)
       self.thread = CameraThread(self)
       self.thread.start()
