@@ -43,6 +43,14 @@ class TCPRobot(Robot):
 	def ask(self, item):
 		return self.move(item)
 
+	def moveDir(self, dir):
+		if dir == 'L':
+			self.move("left")
+		elif dir == 'R':
+			self.move("right")
+		elif dir == 'F':
+			self.move("forward")
+
 	def move(self, message, other = None):
 		exp = None
 		if self.socket == 0: return "not connected"

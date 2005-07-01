@@ -68,7 +68,6 @@ class Listener:
         retval = self.s.send(message)
         return retval
         
-
 class ListenerThread(threading.Thread):
     """
     A thread class, for ports where Aibo feeds it to us
@@ -113,29 +112,11 @@ class AiboHeadDevice(Device):
         time.sleep(1) # pause for a second
         self.dev   = Listener(self.robot.PORT["Head Remote Control"],
                               self.robot.host)
-        self.devData["supports"] = ["pan", "tilt", "roll"]
-        self.notGetables.extend (["tilt", "pan", "zoom", "roll"])
+        self.supports = ["pan", "tilt", "roll"]
         self.pose = [0, 0, 0, 0]
 
     def init(self):
         self.center()
-
-    def postGet(self, keyword):
-        if keyword == "pose":
-            return self.pose
-
-    def postSet(self, keyword):
-        if keyword == "pose":
-            self.setPose( self.devData[keyword] )
-        elif keyword == "pan":
-            self.pan( self.devData[keyword] )
-        elif keyword == "tilt":
-            self.tilt( self.devData[keyword] )
-        elif keyword == "zoom":
-            self.zoom( self.devData[keyword] )
-        elif keyword == "roll":
-            self.roll( self.devData[keyword] )
-        return "ok"
 
     def setPose(self, *args):
         pan, tilt, zoom, roll = 0, 0, 0, 0
@@ -193,8 +174,6 @@ class AiboHeadDevice(Device):
     def center(self):
         return self.setPose(0, 0, 0, 0)
 
-
-
 class AiboRobot(Robot):
     """
     Class for an Aibo robot in Pyrobot. 
@@ -244,7 +223,7 @@ class AiboRobot(Robot):
         time.sleep(1) # let all of the servers get going...
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
-        self.devData["builtinDevices"] = [ "ptz", "camera" ]
+        self.builtinDevices = [ "ptz", "camera" ]
         # start up some devices:
         self.startDevice("ptz")
         self.startDevice("camera", visible=1)
@@ -301,31 +280,28 @@ class AiboRobot(Robot):
         #                           and current pid values to port 10032
         # 8 EStop Remote Control
 
-    def update(self):
-        self._update()
-
     def readWorldState(self, socket):
         """ Used as a callback in ListenerThread for sockets that produce data fast for us to read. """
         # read sensor/pid states:
-        self.devData["ws_timestamp"] = socket.read(4, "l")
+        self.ws_timestamp = socket.read(4, "l")
         # ---
         numPIDJoints = socket.read(4, "l")
-        self.devData["numPIDJoints"] = numPIDJoints # ERS7: 18
-        self.devData["positionRaw"] = socket.read(numPIDJoints * 4,
-                                                  "<%df" % numPIDJoints,all=1)
+        self.numPIDJoints = numPIDJoints # ERS7: 18
+        self.positionRaw = socket.read(numPIDJoints * 4,
+                                       "<%df" % numPIDJoints,all=1)
         # ---
         numSensors = socket.read(4, "l") # ERS7: 8
-        self.devData["numSensors"] = numSensors
-        self.devData["sensorRaw"] = socket.read(numSensors * 4,
-                                                "<%df" % numSensors,all=1)
+        self.numSensors = numSensors
+        self.sensorRaw = socket.read(numSensors * 4,
+                                     "<%df" % numSensors,all=1)
         # ---
         numButtons = socket.read(4, "l") # ERS7: 6
-        self.devData["numButtons"] = numButtons
-        self.devData["buttonRaw"] = socket.read(numButtons * 4,
-                                                "<%df" % numButtons,all=1)
+        self.numButtons = numButtons
+        self.buttonRaw = socket.read(numButtons * 4,
+                                     "<%df" % numButtons,all=1)
         # --- same number as PID joints:             # ERS7: 18
-        self.devData["dutyCycleRaw"] = socket.read(numPIDJoints * 4,
-                                                   "<%df" % numPIDJoints,all=1)
+        self.dutyCycleRaw = socket.read(numPIDJoints * 4,
+                                        "<%df" % numPIDJoints,all=1)
                 
     def getJoint(self, query):
         """ Get position, dutyCycle of joint by name """
@@ -417,7 +393,7 @@ class AiboRobot(Robot):
 
         else:
             raise AttributeError, "no such joint"
-        return self.devData["positionRaw"][pos]/normalize, self.devData["dutyCycleRaw"][pos]
+        return self.positionRaw[pos]/normalize, self.dutyCycleRaw[pos]
 
     def getButton(self, query):
         """ Get value of button by name """
@@ -476,7 +452,7 @@ class AiboRobot(Robot):
                     raise AttributeError, "incorrect button request"
             else:
                 raise AttributeError, "no such button"
-        return self.devData["buttonRaw"][pos]
+        return self.buttonRaw[pos]
 
     def getSensor(self, query):
         """ Get the sensor value """
@@ -545,7 +521,7 @@ class AiboRobot(Robot):
                 raise AttributeError , "incorrect sensor request"
         else:
                 raise AttributeError , "no such sensor"
-        return self.devData["sensorRaw"][pos]
+        return self.sensorRaw[pos]
 
     def startDeviceBuiltin(self, item):
         if item == "ptz":
@@ -557,12 +533,6 @@ class AiboRobot(Robot):
         self.estop_control.s.send("start\n")
 
     def disconnect(self):
-        self.estop_control.s.send("stop\n")
-
-    def enableMotors(self):
-        self.estop_control.s.send("start\n")
-
-    def disableMotors(self):
         self.estop_control.s.send("stop\n")
 
     def rotate(self, amount):
@@ -586,12 +556,17 @@ class AiboRobot(Robot):
         Robot.destroy(self)
 
     def playSound(self, file):
-        # 3BARKS.WAV, 3YIPS.WAV, BARKHIGH.WAV, BARKLOW.WAV, BARKMED.WAV
-        # BARKREAL.WAV, CAMERA.WAV, CATCRY.WAV, CATYOWL.WAV, CRASH.WAV
-        # CUTEY.WAV, DONKEY.WAV, FART.WAV, GLASS.WAV, GROWL.WAV
-        # GROWL2.WAV, GRRR.WAV, HOWL.WAV, MEW.WAV, PING.WAV, ROAR.WAV
-        # SKID.WAV, SNIFF.WAV, TICK.WAV, TOC.WAV, WHIIP.WAV, WHIMPER.WAV
-        # WHOOP.WAV, YAP.WAV, YIPPER.WAV
+        """
+        AiboRobot.playSound(FILENAME) takes one of the following filenames
+        (WAV is optional):
+        
+        3BARKS.WAV, 3YIPS.WAV, BARKHIGH.WAV, BARKLOW.WAV, BARKMED.WAV
+        BARKREAL.WAV, CAMERA.WAV, CATCRY.WAV, CATYOWL.WAV, CRASH.WAV
+        CUTEY.WAV, DONKEY.WAV, FART.WAV, GLASS.WAV, GROWL.WAV
+        GROWL2.WAV, GRRR.WAV, HOWL.WAV, MEW.WAV, PING.WAV, ROAR.WAV
+        SKID.WAV, SNIFF.WAV, TICK.WAV, TOC.WAV, WHIIP.WAV, WHIMPER.WAV
+        WHOOP.WAV, YAP.WAV, YIPPER.WAV
+        """
         file = file.upper();
         if (not file.endswith(".WAV")):
             file +=".WAV"
@@ -599,7 +574,11 @@ class AiboRobot(Robot):
         self.main_control.s.send("!select \"%s\"\n" % file) #select file
         
     def setWalk(self, file):
-        # PACE.PRM, TIGER.PRM, WALK.PRM (crawl)
+        """
+        AiboRobot.setWalk(FILENAME) - takes one of the following filenames:
+        
+        PACE.PRM, TIGER.PRM, WALK.PRM (crawl)
+        """
         file = file.upper();
         if (not file.endswith(".PRM")):
             file +=".PRM"
@@ -636,7 +615,7 @@ class AiboRobot(Robot):
            ((amty==None) or ( amty>=-1.0 and amty<=1.0)) and \
            ((amtz==None) or ( amtz>=-1.0 and amtz<=1.0)):
             self.update()
-            l = list(self.devData["positionRaw"])
+            l = list(self.positionRaw)
             jointDict = joint.split()
             check = 0
             if "mouth" in jointDict:
@@ -733,7 +712,7 @@ class AiboRobot(Robot):
         else:
             raise AttributeError, "values out of range -1.0, 1.0"
 
-    def inverseKinematics(self, joint):
+    def getPose(self, joint):
         jointDict = joint.split()
         res = {}
         if "tilt" in jointDict:
@@ -750,13 +729,6 @@ class AiboRobot(Robot):
             res["roll"] = val/0.71
         return res
    
-#TODO:
-
-# 1. How to read sensors? Infrared, Touch, joint positions
-# 2. How to change gait? Running? Walking? On knees?
-# 3. Make a "virtual range sensor" from vision
-
 # Aibo 3D: Listens to aibo3d control commands coming in from port 10051
-
 # World State Serializer: Sends sensor information to port 10031 and
 # current pid values to port 10032

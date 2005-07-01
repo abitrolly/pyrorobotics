@@ -32,9 +32,9 @@ class BlobCamera(Camera):
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
+      self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
       print self.width, self.height
@@ -43,7 +43,7 @@ class BlobCamera(Camera):
       self.requires = ["blobfinder"]
       self.subtype = "blob"
       self.source = "%s[%d]" % (self.blobfinder.type, self.blobfinder.number)
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
       
    def update(self):
       blobs = []

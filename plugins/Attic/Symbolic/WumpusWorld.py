@@ -38,7 +38,7 @@ class GUI(Tkinter.Toplevel):
         self.pitImageTk = ImageTk.PhotoImage(self.pitImage)
         self.agentImageTk = ImageTk.PhotoImage(self.agentImage)
         # --------------------------------------------------------
-        self.properties = ["percept", "location", "direction", "arrow", "score", "alive"]
+        self.properties = ["percept", "location", "x", "y", "direction", "arrow", "score", "alive"]
         for i in self.properties:
             self.__dict__[i] = None
         self.initWorld()
@@ -52,6 +52,7 @@ class GUI(Tkinter.Toplevel):
     def initWorld(self):
         self.direction = "right"
         self.location = (0, 0)
+        self.x, self.y = self.location
         self.dead = 0
         self.score = 0
         self.arrow = 1
@@ -87,6 +88,8 @@ class GUI(Tkinter.Toplevel):
             y = loc[1]
             self.bump = 1
         self.location = (x, y)
+        self.x, self.y = self.location
+
 
     def checkMovement(self):
         if ('W' in self.world[self.location[0]][self.location[1]] and not self.wumpusDead) or \
@@ -131,6 +134,10 @@ class GUI(Tkinter.Toplevel):
             retval = self.ports.index( int(port) )
         elif request == 'location':
             retval = (self.location[0] + 1, self.location[1] + 1)
+        elif request == 'x':
+            retval = self.x + 1
+        elif request == 'y':
+            retval = self.y + 1
         elif request == 'direction':
             retval = self.direction
         elif request == 'arrow':

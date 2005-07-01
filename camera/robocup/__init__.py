@@ -23,7 +23,7 @@ class RobocupCamera(Camera):
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
+      self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       # outer boundaries: Top, Left, Right, Bottom
       # inner lines: top, left, right, bottom
@@ -49,13 +49,13 @@ class RobocupCamera(Camera):
                     "z": ["prt", "rt20"], # draw pentalty box sides
                     "Z": ["prb", "rb20"], # draw pentalty box sides
                     }
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Robocup Camera View")
-      self.devData["subtype"] = "robocup"
-      self.data = CBuffer(self.cbuf)
+      self.subtype = "robocup"
+      self.data = CBuffer(self._cbuf)
 
    def getPoint( self, distance, direction): # meters, angle off center
       row = self.height - \
@@ -75,9 +75,9 @@ class RobocupCamera(Camera):
             retval.append( lineName )
       return retval
 
-   def _update(self):
+   def update(self):
       try:
-         see = self.robot.get("robot/see")
+         see = self.robot.see
       except:
          print "waiting for Robocup camera to come online..."
          return # not ready yet

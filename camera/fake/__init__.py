@@ -22,14 +22,14 @@ class ManualFakeCamera(Camera):
       self.cameraDevice = Fake("", self.width, self.height, self.depth)
       self.vision = VisionSystem()
       self.vision.registerCameraDevice(self.cameraDevice)
-      self.cbuf = self.vision.getMMap()
+      self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Fake Camera View")
       self.subtype = "simulated"
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
 
    def blankImage(self, val=0):
       for w in range(self.width):
@@ -117,13 +117,13 @@ class FakeCamera(Camera):
          self.width = self.vision.getWidth()
          self.height = self.vision.getHeight()
          self.depth = self.vision.getDepth()
-         self.cbuf = self.vision.getMMap()
+         self._cbuf = self.vision.getMMap()
       else:
          self.vision = None
          self.width = 0
          self.height = 0
          self.depth = 0
-         self.cbuf = None
+         self._cbuf = None
       # -------------------------------------------------
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
@@ -131,7 +131,7 @@ class FakeCamera(Camera):
                       "Fake Camera View")
       self.subtype = "simulated"
       self.source = self.pattern
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
       self.oldStart = None
       self.oldStop = None
 

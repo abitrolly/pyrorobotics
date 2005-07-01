@@ -21,7 +21,7 @@ class BT848Camera(Camera):
          raise ValueError, "height must be greater than 48"
       self.device = device
       self.handle=None
-      self.cbuf=None
+      self._cbuf=None
       try:
          self.cameraDevice = BT848(device, width, height, depth)
 	 self.cameraDevice.setRGB( 2, 1, 0)
@@ -33,7 +33,7 @@ class BT848Camera(Camera):
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
+      self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       if title == None:
 	 title = self.device
@@ -42,7 +42,7 @@ class BT848Camera(Camera):
       Camera.__init__(self, width, height, depth, title = title)
       self.devData["subtype"] = "bt848"
       self.devData["source"] = device
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
 
    def _update(self):
       """

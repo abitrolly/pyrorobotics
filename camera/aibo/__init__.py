@@ -61,14 +61,14 @@ class AiboCamera(Camera):
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
-      self.data = CBuffer(self.cbuf)
+      self._cbuf = self.vision.getMMap()
+      self.data = CBuffer(self._cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
       Camera.__init__(self, self.width, self.height, self.depth,
                       "Aibo Camera View")
       self.devData["subtype"] = "aibo"
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
       self.thread = CameraThread(self)
       self.thread.start()
 

@@ -22,7 +22,7 @@ class V4LCamera(Camera):
          raise ValueError, "height must be greater than 48"
       self.device = device
       self.handle=None
-      self.cbuf=None
+      self._cbuf=None
       try:
          self.cameraDevice = V4L(device, width, height, depth, channel)
          self.cameraDevice.setRGB( 2, 1, 0)
@@ -34,7 +34,7 @@ class V4LCamera(Camera):
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
-      self.cbuf = self.vision.getMMap()
+      self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       if title == None:
 	 title = self.device
@@ -44,7 +44,7 @@ class V4LCamera(Camera):
                       visible = visible)
       self.subtype = "video4linux"
       self.source = device
-      self.data = CBuffer(self.cbuf)
+      self.data = CBuffer(self._cbuf)
 
    def update(self):
       """

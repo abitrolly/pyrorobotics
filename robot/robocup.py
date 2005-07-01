@@ -118,15 +118,13 @@ def parse(str):
         return []
     return currentlist[0]
 
-class RobocupTruthDevice(Device):
-    """ A Truth Device for the Robocup robot"""
+class RobocupSimulationDevice(Device):
+    """ A Simulation Device for the Robocup robot"""
     def __init__(self, robot):
-        Device.__init__(self, "truth")
+        Device.__init__(self, "simulation")
         self.robot = robot
-        self.devData["pose"] = (0, 0)
-    def postSet(self, item):
-        if item == "pose":
-            self.robot.sendMsg("(move %f %f)" % (self.devData["pose"][0], self.devData["pose"][1] ))
+    def setPose(self, poseX, poseY):
+        self.robot.sendMsg("(move %f %f)" % (poseX, poseY ))
             
 class RobocupLaserDevice(Device):
     def __init__(self, robot):
@@ -158,36 +156,29 @@ class RobocupLaserDevice(Device):
                        'back-left': [],
                        'back': [],
                        'back-all': []}
-        self.devData['units']    = "ROBOTS"
-        self.devData["noise"]    = 0.0
+        self.units    = "ROBOTS"
+        self.noise    = 0.0
         # -------------------------------------------
-        self.devData["rawunits"] = "METERS"
-        self.devData['maxvalueraw'] = 100.0
+        self.rawunits = "METERS"
+        self.maxvalueraw = 100.0
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
-        self.devData["radius"] = 0.750 # meters
+        self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # MM to units:
-        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
         # -------------------------------------------
-        self.devData['index'] = 0 # self.dev.laser.keys()[0] FIX
-        self.devData["count"] = count
-        self.subDataFunc['ox']    = lambda pos: 0
-        self.subDataFunc['oy']    = lambda pos: 0
-        self.subDataFunc['oz']    = lambda pos: 0
-        # FIX: the index here should come from the "index"
-        self.subDataFunc['th']    = lambda pos: pos - 45 # in degrees
-        self.subDataFunc['thr']   = lambda pos: (pos - 45) * PIOVER180 
-        self.subDataFunc['arc']   = lambda pos: 1
-        self.subDataFunc['x']     = self.hitX
-        self.subDataFunc['y']     = self.hitY
-	self.subDataFunc['z']     = self.hitZ
-        self.subDataFunc['value'] = lambda pos: self.rawToUnits(self.getVal(pos), self.devData["noise"]) 
-        self.subDataFunc['pos']   = lambda pos: pos
-        self.subDataFunc['group']   = self.getGroupNames
+        self.index = 0 # self.dev.laser.keys()[0] FIX
+        self.count = count
+
+    def hit(self, pos):
+        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
+
+    def geometry(self, pos):
+        return (0, 0, 0, (pos - 45) * PIOVER180, 1)
 
     def __len__(self):
-        return self.devData["count"]
+        return self.count
     def getSensorValue(self, pos):
         return SensorValue(self, self.getVal(pos), pos,
                            (0.0,
@@ -196,12 +187,12 @@ class RobocupLaserDevice(Device):
                             pos - 45))
     def postSet(self, keyword):
         """ Anything that might change after a set """
-        self.devData["maxvalue"] = self.rawToUnits(self.devData['maxvalueraw'])
+        self.maxvalue = self.rawToUnits(self.maxvalueraw)
 
     def updateDevice(self):
-        self.values = [self.devData["maxvalueraw"]] * self.devData["count"]
+        self.values = [self.maxvalueraw] * self.count
         try:
-            see = self.robot.get("robot/see")
+            see = self.robot.see
         except:
             print "waiting for Robocup laser to come online..."
             return # not ready yet
@@ -225,7 +216,7 @@ class RobocupLaserDevice(Device):
                     self.values[ pos ] = item[1]
                     
     def getVal(self, pos):
-        return self.values[pos] # zero based, from right
+        return self.rawToUnits(self.values[pos], self.noise) # zero based, from right
     def hitX(self, pos):
         thr = (pos - 45.0) * PIOVER180
         dist = self.getVal(pos) # METERS
@@ -245,53 +236,53 @@ class RobocupRobot(Robot):
         self.lastTranslate = 0
         self.lastRotate = 0
         self.updateNumber = 0L
-        self.historyNumber = 0L
-        self.lastHistory = 0
-        self.historySize = 100
-        self.history = [0] * self.historySize
-        self.devData["simulated"] = 1
-        self.devData["name"] = name
-        self.devData["host"] = host
-        self.devData["port"] = port
-        self.devData["continuous"] = 1
-        self.devData["goalie"] = goalie
-        self.devData["address"] = (self.devData["host"], self.devData["port"])
+        self._historyNumber = 0L
+        self._lastHistory = 0
+        self._historySize = 100
+        self._history = [0] * self._historySize
+        self.simulated = 1
+        self.name = name
+        self.host = host
+        self.port = port
+        self.continuous = 1
+        self.goalie = goalie
+        self.address = (self.host, self.port)
         self.socket = socket(AF_INET, SOCK_DGRAM)
         self.reader = ReadUDP(self)
         self.reader.start()
-        msg = "(init %s (version 9.0)" % self.devData["name"]
+        msg = "(init %s (version 9.0)" % self.name
         if goalie:
             msg += "(goalie)"
         msg += ")" 
-        self.socket.sendto(msg, self.devData["address"])
+        self.socket.sendto(msg, self.address)
         # wait to get the real address
-        while self.devData["address"][1] == self.devData["port"]: pass
-        self.devData["builtinDevices"] = ["truth", "laser"]
-        self.startDevice("truth")
+        while self.address[1] == self.port: pass
+        self.builtinDevices = ["simulation", "laser"]
+        self.startDevice("simulation")
         self.startDevice("laser")
-        self.set("/devices/truth0/pose", (random() * 100 - 50,
-                                          random() * 20 - 10))
-        self.devDataFunc["range"] = self.get("/devices/laser0/object")
+        self.simulation[0].setPose( random() * 100 - 50,
+                                    random() * 20 - 10 )
+        self.range = self.laser[0]
         # default values for all robots:
-        self.devData["stall"] = 0
-        self.devData["x"] = 0.0
-        self.devData["y"] = 0.0
-        self.devData["th"] = 0.0
-        self.devData["thr"] = 0.0
+        self.stall = 0
+        self.x = 0.0
+        self.y = 0.0
+        self.th = 0.0
+        self.thr = 0.0
         # Can we get these from robocup?
-        self.devData["radius"] = 0.75
-        self.devData["type"] = "Robocup"
-        self.devData["subtype"] = 0
-        self.devData["units"] = "METERS"
-        #self.devData["supportedFeatures"].append( "odometry" )
-        self.devData["supportedFeatures"].append( "continuous-movement" )
-        self.devData["supportedFeatures"].append( "range-sensor" )
+        self.radius = 0.75
+        self.type = "Robocup"
+        self.subtype = 0
+        self.units = "METERS"
+        #self.supportedFeatures.append( "odometry" )
+        self.supportedFeatures.append( "continuous-movement" )
+        self.supportedFeatures.append( "range-sensor" )
         self.localize(0, 0, 0)
         self.update()
         
     def startDeviceBuiltin(self, item):
-        if item == "truth":
-            return {"truth": RobocupTruthDevice(self)}
+        if item == "simulation":
+            return {"simulation": RobocupSimulationDevice(self)}
         if item == "laser":
             return {"laser": RobocupLaserDevice(self)}
         else:
@@ -299,7 +290,7 @@ class RobocupRobot(Robot):
         
     def sendMsg(self, msg, address = None):
         if address == None:
-            address = self.devData["address"]
+            address = self.address
         self.socket.sendto(msg + chr(0), address)
 
     def disconnect(self):
@@ -312,39 +303,39 @@ class RobocupRobot(Robot):
             print "heard message:", message[1:]
 
     def processMsg(self, msg, addr):
-        self.lastHistory = self.historyNumber % self.historySize
+        self._lastHistory = self._historyNumber % self._historySize
         if len(msg):
-            self.history[self.lastHistory] = msg
-            self.historyNumber += 1
+            self._history[self._lastHistory] = msg
+            self._historyNumber += 1
             if msg[0] == "init":
-                self.devData[msg[0]] = msg[1:]
-                self.devData["address"] = addr
+                self.__dict__[msg[0]] = msg[1:]
+                self.address = addr
             elif msg[0] == "server_param":
                 # next is list of pairs
-                self.devData[msg[0]] = makeDict(msg[1:])
+                self.__dict__[msg[0]] = makeDict(msg[1:])
             elif msg[0] == "player_param":
                 # next is list of pairs
-                self.devData[msg[0]] = makeDict(msg[1:])
+                self.__dict__[msg[0]] = makeDict(msg[1:])
             elif msg[0] == "player_type": # types
                 # next is list of ["id" num], pairs...
                 id = "%s:%d" % (msg[0], msg[1][1])
-                self.devData[id] = makeDict(msg[2:])
+                self.__dict__[id] = makeDict(msg[2:])
             elif msg[0] == "sense_body": # time pairs...
-                self.devData[msg[0]] = makeDict(msg[2:])
-                self.devData["sense_body:time"] = msg[1]
+                self.__dict__[msg[0]] = makeDict(msg[2:])
+                self.__dict__["sense_body:time"] = msg[1]
             elif msg[0] == "see": # time tuples...
-                self.devData[msg[0]] = msg[2:]
-                self.devData["%s:time" % msg[0]] = msg[1]
+                self.__dict__[msg[0]] = msg[2:]
+                self.__dict__["%s:time" % msg[0]] = msg[1]
             elif msg[0] == "error":
                 print "Robocup error:", msg[1]
             elif msg[0] == "warning":
                 print "Robocup warning:", msg[1]
             elif msg[0] == "hear": # hear time who what
-                self.devData[msg[0]] = msg[2:]
-                self.devData["%s:time" % msg[0]] = msg[1]
+                self.__dict__[msg[0]] = msg[2:]
+                self.__dict__["%s:time" % msg[0]] = msg[1]
             elif msg[0] == "score": 
-                self.devData[msg[0]] = msg[2:]
-                self.devData["%s:time" % msg[0]] = msg[1]
+                self.__dict__[msg[0]] = msg[2:]
+                self.__dict__["%s:time" % msg[0]] = msg[1]
             else:
                 print "unhandled message in robocup.py: '%s'" % msg[0], msg
             self.messageHandler(msg)
@@ -352,8 +343,8 @@ class RobocupRobot(Robot):
             return
 
     def update(self):
-        self._update()
-        if self.devData["continuous"]:
+        Robot.update(self)
+        if self.continuous:
             self.keepGoing()
         self.updateNumber += 1
 

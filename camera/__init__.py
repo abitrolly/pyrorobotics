@@ -30,6 +30,9 @@ class CBuffer:
    def __init__(self, cbuf):
       self.data = cbuf
 
+   def __str__(self):
+      return "<pyrobot.camera.CBuffer instance, %d bytes>" % len(self.data)
+
    def __getitem__(self, key):
       if isinstance(key, types.SliceType):
          if key.stop > len(self):
@@ -58,9 +61,6 @@ class CBuffer:
 
    def __len__(self):
       return len(self.data)
-
-   def __str__(self):
-      return str(self[:])   
 
 class Camera(PyrobotImage, Device):
    """
@@ -193,7 +193,7 @@ class Camera(PyrobotImage, Device):
       file.write("%c%c" % (self.height & 0xFF, self.height >> 8)) #Height
       file.write("%c" % (self.depth*8)) #bpp
       file.write("\x20") #attributes
-      file.write(self.cbuf)
+      file.write(self._cbuf)
       file.close
 
 
@@ -420,7 +420,7 @@ class Camera(PyrobotImage, Device):
    def getImage(self):
       return PIL.PpmImagePlugin.Image.fromstring('RGBX',
                                                  (self.width, self.height),
-                                                 self.cbuf, 'raw', self.format)
+                                                 self._cbuf, 'raw', self.format)
    def updateWindow(self):
       if self.getVisible():
          now = time.time()
