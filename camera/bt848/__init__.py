@@ -19,24 +19,24 @@ class BT848Camera(Camera):
          raise ValueError, "width must be greater than 48"
       if height < 48:
          raise ValueError, "height must be greater than 48"
-      self.device = device
+      self.deviceFile = device
       self.handle=None
       self._cbuf=None
       try:
-         self.cameraDevice = BT848(device, width, height, depth)
-	 self.cameraDevice.setRGB( 2, 1, 0)
+         self._dev = BT848(device, width, height, depth)
+	 self._dev.setRGB( 2, 1, 0)
       except:
          print "bt848: grab_image failed!"
       # connect vision system: --------------------------
       self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
       self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       if title == None:
-	 title = self.device
+	 title = self.deviceFile
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
       Camera.__init__(self, width, height, depth, title = title)
@@ -44,13 +44,13 @@ class BT848Camera(Camera):
       self.source = device
       self.data = CBuffer(self._cbuf)
 
-   def _update(self):
+   def update(self):
       """
       Since data is mmaped to the capture card, all we have to do is call
       refresh.
       """
       try:
-         self.cameraDevice.updateMMap()
+         self._dev.updateMMap()
          self.processAll()
       except:
          print "bt848: updateMMap() failed"

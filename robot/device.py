@@ -57,7 +57,6 @@ class Device:
     def __init__(self, deviceType = 'unspecified', visible = 0):
         self.window = 0
         self.groups = {}
-        self._dev = 0
         self.active = 1
         self.visible = visible
         self.type = deviceType

@@ -72,7 +72,7 @@ class AiboCamera(Camera):
       self.thread = CameraThread(self)
       self.thread.start()
 
-   def _update(self):
+   def update(self):
        if self.thread:
            self._dev.updateMMap(1) # read and map
            self.processAll() # need to process filters

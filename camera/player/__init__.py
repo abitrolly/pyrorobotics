@@ -40,7 +40,6 @@ class PlayerCamera(Camera):
       """
       """
       self.thread = None
-      time.sleep(1)
       self._dev = PlayerCam( host, port)
       # connect vision system: --------------------------
       self.vision = visionSystem
@@ -59,7 +58,7 @@ class PlayerCamera(Camera):
       self.thread = CameraThread(self)
       self.thread.start()
 
-   def _update(self):
+   def update(self):
        if self.thread:
            self._dev.updateMMap(1) # read and map
            self.processAll() # need to process filters

@@ -41,7 +41,7 @@ class V4LCamera(Camera):
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
       Camera.__init__(self, width, height, depth, title = title,
-                      visible = visible)
+                      visible = visible) # this overwrites _dev!
       self.subtype = "video4linux"
       self.source = device
       self.data = CBuffer(self._cbuf)
