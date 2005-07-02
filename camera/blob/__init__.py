@@ -46,12 +46,10 @@ class BlobCamera(Camera):
    def update(self):
       blobs = []
       for i in range(self._devBlobFinder.blob_count):
-         blobs.append( (self._devBlobFinder.blobs[i].left,
-                        self._devBlobFinder.blobs[i].top,
-                        self._devBlobFinder.blobs[i].right,
-                        self._devBlobFinder.blobs[i].bottom,
-                        self._devBlobFinder.blobs[i].color
-                        )
-                       )
+         try:
+            b = self._devBlobFinder.blobs[i]
+            blobs.append((b.left, b.top, b.right, b.bottom, b.color))
+         except IndexError:
+            pass
       self._dev.updateMMap(blobs)
       self.processAll()
