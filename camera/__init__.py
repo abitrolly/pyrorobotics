@@ -84,9 +84,6 @@ class Camera(PyrobotImage, Device):
       self.lastWindowUpdate = 0
       self.updateWindowInterval = 0.0 # update window once a second
       self.update() # call it once to initialize
-      self.printFormat["image"] = "<%d x %d x %d PIL image>" % (self.width, self.height, self.depth)
-      self.printFormat["data"] = "<%d x %d x %d image data>" % (self.width, self.height, self.depth)
-      self.printFormat["grayscale"] = "<%d x %d grayscale data>" % (self.width, self.height)
       self.image = []
       self.data = self.data
       self.grayscale = []
@@ -241,8 +238,12 @@ class Camera(PyrobotImage, Device):
       if ok:
          self.window.deiconify()
       else:
+         import pyrobot.system.share as share
          try:
-            self.window = Tkinter.Toplevel()
+            if not share.gui:
+               share.gui = Tkinter.Tk()
+               share.gui.withdraw()
+            self.window = Tkinter.Toplevel(share.gui)
          except:
             print "Pyrobot camera cannot make window. Check DISPLAY variable."
             self.setVisible(0)

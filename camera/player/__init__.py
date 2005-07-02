@@ -23,7 +23,7 @@ class CameraThread(threading.Thread):
         main control loop
         """
         while not self._stopevent.isSet():
-            self.runable.cameraDevice.updateMMap(0) # 0 = read and throw away; 1 = process
+            self.runable._dev.updateMMap(0) # 0 = read and throw away; 1 = process
             self._stopevent.wait(self._sleepperiod)
 
     def join(self,timeout=None):
@@ -41,10 +41,10 @@ class PlayerCamera(Camera):
       """
       self.thread = None
       time.sleep(1)
-      self.cameraDevice = PlayerCam( host, port)
+      self._dev = PlayerCam( host, port)
       # connect vision system: --------------------------
       self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
@@ -61,7 +61,7 @@ class PlayerCamera(Camera):
 
    def _update(self):
        if self.thread:
-           self.cameraDevice.updateMMap(1) # read and map
+           self._dev.updateMMap(1) # read and map
            self.processAll() # need to process filters
 
    def destroy(self):

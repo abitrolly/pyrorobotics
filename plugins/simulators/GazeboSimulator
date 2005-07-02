@@ -5,18 +5,7 @@
 
 pyropid=$1
 shift
-if [ -f "/usr/share/player/config/gazebo.cfg" ];
-then
-    config="/usr/share/player/config/gazebo.cfg"
-else
-    if [ -f "/usr/local/share/player/config/gazebo.cfg" ];
-    then
-	config="/usr/local/share/player/config/gazebo.cfg"
-    else
-	echo "Can't find player's share files! Need gazebo.cfg"
-	exit 1
-    fi
-fi
+config="$PYROBOT/plugins/configs/Player/gazebo.cfg"
 gui=1
 
 if [ "$1" = "-g" ]

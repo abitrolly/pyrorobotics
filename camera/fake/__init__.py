@@ -19,9 +19,9 @@ class ManualFakeCamera(Camera):
       self.width = width
       self.height = height
       self.depth = depth
-      self.cameraDevice = Fake("", self.width, self.height, self.depth)
+      self._dev = Fake("", self.width, self.height, self.depth)
       self.vision = VisionSystem()
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       self.rgb = (0, 1, 2) # offsets to RGB
@@ -109,11 +109,11 @@ class FakeCamera(Camera):
          raise ValueError, "file not found: '%s'" % currname
       if self.verbose:
          print "info: reading file '%s'..." % (self.path + currname)
-      self.cameraDevice = Fake(self.path + currname)
+      self._dev = Fake(self.path + currname)
       # connect vision system: --------------------------
       if visionSystem:
          self.vision = visionSystem
-         self.vision.registerCameraDevice(self.cameraDevice)
+         self.vision.registerCameraDevice(self._dev)
          self.width = self.vision.getWidth()
          self.height = self.vision.getHeight()
          self.depth = self.vision.getDepth()
@@ -171,7 +171,7 @@ class FakeCamera(Camera):
                currname = self.pattern
             if self.verbose:
                print "info: reading file '%s'..." % (self.path + currname)
-            self.cameraDevice.updateMMap(self.path + currname)
+            self._dev.updateMMap(self.path + currname)
             self.processAll()
             self.current += 1
             self.lastUpdate = currentTime

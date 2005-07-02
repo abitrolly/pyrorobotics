@@ -49,8 +49,8 @@ class Robot:
         """
         The main robot object. Access the last loaded devices here, plus all of
         the robot-specific fields (such as x, y, and th). Use
-        robot.move(translate, rotate) to move the robot. If you need to initialize
-        things, call setup().
+        robot.move(translate, rotate) to move the robot. If you need to
+        initialize things, put them in setup().
         """
         self.brain = None
         self.timestamp = time.time()
@@ -142,23 +142,20 @@ class Robot:
     def updateDevices(self):
         self.timestamp = time.time()
         for deviceType in self.devices:
-            for device in self.__dict__[deviceType]:
-                if device.active:
-                    device.updateDevice()
+            if deviceType in self.__dict__:
+                for device in self.__dict__[deviceType]:
+                    if device.active:
+                        device.updateDevice()
+            else:
+                self.devices.remove(deviceType)
 
-    # Need to define these:
+    # Need to define these in subclassed robots:
 
     def connect(self): pass
     def disconnect(self): pass
-
-    def move(self, translate, rotate):
-        pass
-
-    def translate(self, val):
-        pass
-
-    def rotate(self, val):
-        pass
+    def move(self, translate, rotate): pass
+    def translate(self, val): pass
+    def rotate(self, val): pass
 
     # -------------------- Angle and Distance functions:
 
@@ -293,8 +290,7 @@ class Robot:
 
     def hasA(self, dtype):
         """
-        FIXME: meaning changes if allow 0 position. Need another call
-        to determine number?
+        Returns 1 if robot has a dtype, else 0.
         """
         if dtype in self.devices:
             return 1
@@ -358,7 +354,9 @@ class Robot:
         Examples:
 
         >>> robot.setRangeSensor("sonar")
+        Ok
         >>> robot.setRangeSensor("laser", 1)
+        Ok
 
         returns "Ok" on success, otherwise raises an exception.
         """

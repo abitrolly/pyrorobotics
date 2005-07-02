@@ -20,24 +20,24 @@ class V4LCamera(Camera):
          raise ValueError, "width must be greater than 48"
       if height < 48:
          raise ValueError, "height must be greater than 48"
-      self.device = device
+      self.deviceFilename = device
       self.handle=None
       self._cbuf=None
       try:
-         self.cameraDevice = V4L(device, width, height, depth, channel)
-         self.cameraDevice.setRGB( 2, 1, 0)
+         self._dev = V4L(device, width, height, depth, channel)
+         self._dev.setRGB( 2, 1, 0)
       except:
          print "v4l: grab_image failed!"
       # connect vision system: --------------------------
       self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
       self._cbuf = self.vision.getMMap()
       # -------------------------------------------------
       if title == None:
-	 title = self.device
+	 title = self.deviceFilename
       self.rgb = (2, 1, 0) # offsets to BGR
       self.format = "BGR"
       Camera.__init__(self, width, height, depth, title = title,
@@ -52,7 +52,7 @@ class V4LCamera(Camera):
       refresh.
       """
       try:
-         self.cameraDevice.updateMMap()
+         self._dev.updateMMap()
          self.processAll()
       except:
          print "v4l: updateMMap() failed"

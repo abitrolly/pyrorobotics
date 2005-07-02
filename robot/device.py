@@ -20,15 +20,15 @@ class SensorValue:
         geometry - (origin x, origin y, origin z, th in degrees) of ray
         noise - percentage of noise to add to reading
         """
-        self.device = device
-        self.rawValue = self.device.rawToUnits(value, noise, "RAW") # raw noisy value
+        self._dev = device
+        self.rawValue = self._dev.rawToUnits(value, noise, "RAW") # raw noisy value
         self.value = self.distance() # noisy value in default units
         self.pos = pos
         self.geometry = geometry
         self.noise = noise
     def distance(self, unit=None): # defaults to current unit of device
         # uses raw value; this will change if noise > 0
-        return self.device.rawToUnits(self.rawValue,
+        return self._dev.rawToUnits(self.rawValue,
                                       0.0,
                                       unit)
     def angle(self, unit="degrees"):
@@ -47,9 +47,9 @@ class SensorValue:
         z = self.geometry[2] 
         return (x, y, z)
     def hit(self):
-        return self.device.hit(self.pos)
+        return self._dev.hit(self.pos)
     def geometry(self):
-        return self.device.geometry(self.pos)
+        return self._dev.geometry(self.pos)
 
 class Device:
     """ A basic device class """
@@ -57,8 +57,7 @@ class Device:
     def __init__(self, deviceType = 'unspecified', visible = 0):
         self.window = 0
         self.groups = {}
-        self.printFormat = {}
-        self.dev = 0
+        self._dev = 0
         self.active = 1
         self.visible = visible
         self.type = deviceType

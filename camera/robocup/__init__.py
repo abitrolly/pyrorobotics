@@ -15,11 +15,10 @@ class RobocupCamera(Camera):
       self.width = width
       self.height = height
       self.depth = depth
-      self.cameraDevice = Robocup(self.width, self.height,
-                                  self.depth)
+      self._dev = Robocup(self.width, self.height, self.depth)
       # connect vision system: --------------------------
       self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
@@ -110,7 +109,7 @@ class RobocupCamera(Camera):
                   retval = self.getPoint(item[1],item[2])
                   objlist.append( (itemName, retval[0], retval[1]) )
       try:
-         self.cameraDevice.updateMMap(linePoints, objlist)
+         self._dev.updateMMap(linePoints, objlist)
       except TypeError:
          print "error in RobocupCamera data format: ignored"
       self.processAll() # filters

@@ -20,15 +20,14 @@ class BlobCamera(Camera):
       else:
          # else, you better have supplied a name, like "blobfinder0"
          self.blobfinder = camera
-      self.blobHandle = self.blobfinder.handle
-      while self.blobHandle.width == 0: pass
-      self.width, self.height = self.blobHandle.width,self.blobHandle.height
+      self._devBlobFinder = self.blobfinder._dev
+      while self._devBlobFinder.width == 0: pass
+      self.width, self.height = self._devBlobFinder.width,self._devBlobFinder.height
       self.depth = depth
-      self.cameraDevice = Blob(self.width, self.height,
-                               self.depth)
+      self._dev = Blob(self.width, self.height, self.depth)
       # connect vision system: --------------------------
       self.vision = visionSystem
-      self.vision.registerCameraDevice(self.cameraDevice)
+      self.vision.registerCameraDevice(self._dev)
       self.width = self.vision.getWidth()
       self.height = self.vision.getHeight()
       self.depth = self.vision.getDepth()
@@ -46,13 +45,13 @@ class BlobCamera(Camera):
       
    def update(self):
       blobs = []
-      for i in range(self.blobHandle.blob_count):
-         blobs.append( (self.blobHandle.blobs[i].left,
-                        self.blobHandle.blobs[i].top,
-                        self.blobHandle.blobs[i].right,
-                        self.blobHandle.blobs[i].bottom,
-                        self.blobHandle.blobs[i].color
+      for i in range(self._devBlobFinder.blob_count):
+         blobs.append( (self._devBlobFinder.blobs[i].left,
+                        self._devBlobFinder.blobs[i].top,
+                        self._devBlobFinder.blobs[i].right,
+                        self._devBlobFinder.blobs[i].bottom,
+                        self._devBlobFinder.blobs[i].color
                         )
                        )
-      self.cameraDevice.updateMMap(blobs)
+      self._dev.updateMMap(blobs)
       self.processAll()
