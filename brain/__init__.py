@@ -39,8 +39,6 @@ class Brain(threading.Thread):
     # wrappers here to talk to default robot:
     def set(self, path, value):
         return self.robot.set(path, value)
-    def get(self, *args):
-        return self.robot.get(*args)
     def move(self, *args):
         return self.robot.move(*args)
     def translate(self, *args):
@@ -63,25 +61,15 @@ class Brain(threading.Thread):
         return self.robot.hasA(*args)
     def requires(self, *args):
         return self.robot.requires(*args)
-
-    def getAll(self, *args):
-        return self.robot.getAll(*args)
-
     def _draw(self, options, renderer):
         pass
-
-    def getRobot(self):
-        return self.robot
-
     def getEngine(self):
         return self.engine
-
     def quit(self):
         self.needToStop = 0
         self.needToQuit = 1
         if self.engine and self.engine.gui:
             self.engine.gui.done = 1
-    
     def run(self):
         self.couldBeMoving = 0
         while self.needToQuit is not 1 and self.isAlive():

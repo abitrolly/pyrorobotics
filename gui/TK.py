@@ -182,6 +182,9 @@ class TKgui(Tkinter.Toplevel, gui):
          elif type(thing) == type({}): # dict
             thingStr += "[%s]" % item
             thing = thing[item]
+         elif item == "methods": # method
+            thingStr += ".%s%s" % (full_id[i+1], full_id[i+2:])
+            break
          else:
             thingStr += ".%s" % item
             thing = thing.__dict__[item] # property
@@ -197,6 +200,20 @@ class TKgui(Tkinter.Toplevel, gui):
             thing = thing[item]
          elif type(thing) == type({}): # dict
             thing = thing[item]
+         elif item == "methods": # methods
+            for method in dir(thing):
+               if method[0] != "_" and method not in thing.__dict__:
+                  docString = eval("thing.%s.__doc__" % method)
+                  if docString != None:
+                     docString = docString.replace("\n","")
+                     docString = docString.strip()
+                     if len(docString) > 50:
+                        docString = docString[0:50].strip() + "..."
+                     tree.add_node("%s(): %s" % (method,docString), id=method, flag=0)
+                  else:
+                     tree.add_node("%s()" % (method,), id=method, flag=0)
+                     
+            return # no more things to show
          else:
             thing = thing.__dict__[item] # property
       # now that you have it, see what it is: --------------
@@ -211,7 +228,6 @@ class TKgui(Tkinter.Toplevel, gui):
       else: # a complex object with parts:
          dictkeys = thing.__dict__.keys()
          dictkeys.sort()
-         methods = []
          for item in dictkeys:
             if item[0] == "_":
                pass # skip it; private
@@ -234,8 +250,9 @@ class TKgui(Tkinter.Toplevel, gui):
                   tree.add_node("%s = {%s}" % (item, keysComma), id=item, flag=0)
                elif type(thing.__dict__[item]) == type(''): # string
                   tree.add_node("%s = '%s'" % (item, thing.__dict__[item]), id=item, flag=0)
-               else:                                        # number
+               else:                                        # number, other primitive
                   tree.add_node("%s = %s" % (item, thing.__dict__[item]), id=item, flag=0)
+         tree.add_node("methods", id="methods", flag=1)
 
    def makeRobotTree(self):
       if self.engine and self.engine.robot:

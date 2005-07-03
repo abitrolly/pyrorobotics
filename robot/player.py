@@ -52,7 +52,6 @@ class PlayerDevice(Device):
         self.groups = groups
         self._client = client
         self.index = index
-        self.name =  type + ("%d" % self.index)
         self.data = None
         self.noise = 0.0
         # Required:
@@ -98,7 +97,7 @@ class PlayerDevice(Device):
         if function != None:
             return function( self._client, xM * 1000.0, yM * 1000.0, thDeg % 360)
         else:
-            raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.name
+            raise DeviceError, "Function 'setPose' is not available for device '%s'" % self.type
 
 class PlayerSimulationDevice(PlayerDevice):
     def __init__(self, hostname):
@@ -629,7 +628,6 @@ class PlayerRobot(Robot):
         self.type = "Player"
         self.subtype = 0
         self.units = "METERS"
-        self.name = self.name
         self.localize(0.0, 0.0, 0.0)
         self.update()
 

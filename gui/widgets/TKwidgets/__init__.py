@@ -267,6 +267,7 @@ class Watcher(Tkinter.Toplevel):
       for exp, frame in self.data:
          try:
             value = eval(exp, locals)
+            value = "%s" % value
          except:
             value = "<Undefined>"
          frame.textbox.delete(0, 'end')

@@ -19,7 +19,6 @@
  RAW    - right from the sensor
 """
 
-import pyrobot.gui.console as console
 import pyrobot.system as system
 from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
@@ -108,7 +107,7 @@ class Robot:
         self.getAll(device, toplevel, indent)
 
     def localize(self, x = 0, y = 0, th = 0):
-        console.log(console.WARNING, "need to override LOCALIZE in robot")
+        print "need to override LOCALIZE in robot"
 
     def moveDir(self, dir):
         if dir == 'L':
@@ -220,7 +219,7 @@ class Robot:
             retval = []
             for dev in item.keys():
                 deviceNumber = self.getNextDeviceNumber(dev)
-                console.log(console.INFO,"Loading device %s[%d]..." % (dev, deviceNumber))
+                print "Loading device %s[%d]..." % (dev, deviceNumber)
                 self.__dict__[dev][deviceNumber] = item[dev]
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
                 retval.append(item[dev]) # return object
