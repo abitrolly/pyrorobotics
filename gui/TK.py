@@ -1,8 +1,9 @@
-import Tkinter, time, sys
+import Tkinter, time, sys, os, types
 from pyrobot.gui import *
 import pyrobot.gui.widgets.TKwidgets as TKwidgets
 from pyrobot.system.version import *
 from pyrobot.engine import *
+from pyrobot.gui.widgets.tree import TreeWindow
 import pyrobot.system as system
 import pyrobot.system.share as share
 from posixpath import exists
@@ -49,6 +50,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.windowBrain = 0
       self.lastRun = 0
       self.lasttime = 0
+      self.brainTreeWindow = None
+      self.robotTreeWindow = None
       self.update_interval = 100
       self.update_interval_detail = 1.0
       self.lastButtonUpdate = 0
@@ -125,8 +128,8 @@ class TKgui(Tkinter.Toplevel, gui):
       self.makeCommandArea()
       # Display:
       self.loadables = [ ('button', 'Server:', self.loadSim, self.editWorld, 0), # 0 = False
-                         ('button', 'Robot:', self.loadRobot, self.editRobot, self.showAll),
-                         ('button', 'Brain:', self.loadBrain, self.editBrain, self.openBrainWindow),
+                         ('button', 'Robot:', self.loadRobot, self.editRobot, self.makeRobotTree),
+                         ('button', 'Brain:', self.loadBrain, self.editBrain, self.makeBrainTree), # self.openBrainWindow),
                         ]
       self.buttonArea = {}
       self.textArea = {}
@@ -167,10 +170,92 @@ class TKgui(Tkinter.Toplevel, gui):
       self.commandEntry.focus_force()
       self.inform("Pyrobot Version " + version() + ": Ready...")
 
-   def showAll(self):
+   def makeExpression(self, full_id):
+      thingStr = ""
+      thing = self.engine
+      i = 0
+      while i < len(full_id):
+         item = full_id[i]
+         if type(thing) == type([]): # list
+            thingStr += "[%s]" % item
+            thing = thing[item]
+         elif type(thing) == type({}): # dict
+            thingStr += "[%s]" % item
+            thing = thing[item]
+         else:
+            thingStr += ".%s" % item
+            thing = thing.__dict__[item] # property
+         i += 1
+      self.processCommand("watch " + thingStr[1:])
+
+   def getTreeContents(self, node, tree):
+      currentName = node.full_id()[-1]
+      # look up the object by path: ------------------------
+      thing = self.engine
+      for item in node.full_id():
+         if type(thing) == type([]): # list
+            thing = thing[item]
+         elif type(thing) == type({}): # dict
+            thing = thing[item]
+         else:
+            thing = thing.__dict__[item] # property
+      # now that you have it, see what it is: --------------
+      if type(thing) == type([]): # list:
+         # if a list of objects, get them as nodes:
+         if len(thing) == 0 or (len(thing) > 0 and type(thing[0]) != types.InstanceType):
+            tree.add_node("%s = %s" % (currentName, thing), id=thing, flag=0)
+         else:
+            for i in range(len(thing)):
+               tree.add_node("%s[%d]" % (currentName,i), id=i, flag=1)
+         # if just strings, numbers, list them:
+      else: # a complex object with parts:
+         dictkeys = thing.__dict__.keys()
+         dictkeys.sort()
+         methods = []
+         for item in dictkeys:
+            if item[0] == "_":
+               pass # skip it; private
+            elif type(thing.__dict__[item]) in [types.FunctionType, types.LambdaType, types.MethodType]:
+               pass 
+            else:
+               if "devices" in thing.__dict__ and item in thing.devices: # robot
+                  for device in thing.__dict__[item]:
+                     tree.add_node("%s devices" % (device.type,), id=device.type, flag=1)
+               elif type(thing.__dict__[item]) == type({}): # dict
+                  # each is a pair; list them
+                  keys = thing.__dict__[item].keys()
+                  keys.sort()
+                  keysComma = ""
+                  for key in keys:
+                     if keysComma:
+                        keysComma += ", '%s'" % key
+                     else:
+                        keysComma = "'%s'" % key
+                  tree.add_node("%s = {%s}" % (item, keysComma), id=item, flag=0)
+               elif type(thing.__dict__[item]) == type(''): # string
+                  tree.add_node("%s = '%s'" % (item, thing.__dict__[item]), id=item, flag=0)
+               else:                                        # number
+                  tree.add_node("%s = %s" % (item, thing.__dict__[item]), id=item, flag=0)
+
+   def makeRobotTree(self):
       if self.engine and self.engine.robot:
-         print "=" * 30
-         print self.engine.robot.getAll()
+         if self.robotTreeWindow:
+            self.robotTreeWindow.deiconify()
+            self.robotTreeWindow.tree.root.collapse()
+            self.robotTreeWindow.tree.root.expand()
+         else:
+            self.robotTreeWindow = TreeWindow(share.gui, "robot", self.getTreeContents, self.makeExpression)
+            self.robotTreeWindow.tree.root.expand()
+
+   def makeBrainTree(self):
+      if self.engine and self.engine.brain:
+         if self.brainTreeWindow:
+            self.brainTreeWindow.deiconify()
+            self.brainTreeWindow.tree.root.collapse()
+            self.brainTreeWindow.tree.root.expand()
+         else:
+            self.brainTreeWindow = TreeWindow(share.gui, "brain", self.getTreeContents, self.makeExpression)
+            self.brainTreeWindow.tree.root.expand()
 
    def makeWindows(self):
       if self.engine and self.engine.robot:

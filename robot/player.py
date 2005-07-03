@@ -462,18 +462,24 @@ class PlayerGripperDevice(PlayerDevice):
     def addWidgets(self, window):
         window.addButton("open", ".open()", self.open)
         window.addButton("close", ".close()", self.close)
-        window.addButton("up", ".liftUp()", self.liftUp)
-        window.addButton("down", ".liftDown()", self.liftDown)
+        window.addButton("up", ".up()", self.up)
+        window.addButton("down", ".down()", self.down)
+        window.addButton("down", ".stop()", self.stop)
+        window.addButton("down", ".store()", self.store)
+        window.addButton("down", ".deploy()", self.deploy)
+        window.addButton("down", ".halt()", self.halt)
         window.addData("inner", ".getBreakBeam('inner')", self.getBreakBeam("inner"))
         window.addData("outer", ".getBreakBeam('outer')", self.getBreakBeam("outer"))
         window.addData("1", ".isClosed()", self.isClosed())
-        window.addData("2", ".isMoving()", self.isMoving())
-        window.addData("3", ".isLiftMoving()", self.isLiftMoving())
+        window.addData("2", ".isOpened()", self.isOpened())
+        window.addData("3", ".isMoving()", self.isMoving())
+        window.addData("4", ".isLiftMoving()", self.isLiftMoving())
 
     def updateWindow(self):
         self.window.updateWidget("1", self.isClosed())
-        self.window.updateWidget("2", self.isMoving())
-        self.window.updateWidget("3", self.isLiftMoving())
+        self.window.updateWidget("2", self.isOpened())
+        self.window.updateWidget("3", self.isMoving())
+        self.window.updateWidget("4", self.isLiftMoving())
         
     def open(self):
         return self._dev.set_cmd(1, 0) 
@@ -484,24 +490,23 @@ class PlayerGripperDevice(PlayerDevice):
     def stopMoving(self):
         pass
 
-    def liftUp(self):
+    def up(self):
         return self._dev.set_cmd(4, 0) 
 
-    def liftDown(self):
+    def down(self):
         return self._dev.set_cmd(5, 0) 
 
-    def liftStop(self):
-        pass
+    def stop(self):
+        return self._dev.set_cmd(6, 0) 
 
     def store(self):
-        pass
+        return self._dev.set_cmd(7, 0) 
 
     def deploy(self):
-        self.open()
-        self.liftDown()
+        return self._dev.set_cmd(8, 0) 
 
     def halt(self):
-        pass
+        return self._dev.set_cmd(15, 0) 
 
     def getState(self):
         return self._dev.state
@@ -525,14 +530,14 @@ class PlayerGripperDevice(PlayerDevice):
     def isClosed(self): 
         return self._dev.paddles_closed
 
+    def isOpened(self): 
+        return self._dev.paddles_open
+
     def isMoving(self):
         return self._dev.paddles_moving
 
     def isLiftMoving(self):
         return self._dev.lift_moving
-
-    def isLiftMaxed(self):
-        pass
 
 class PlayerUpdater(threading.Thread):
     """
@@ -721,6 +726,7 @@ class PlayerRobot(Robot):
         retval = self._client.connect() 
         while retval == -1:
             self._client = playerc.playerc_client(None, self.hostname, self.port)
+            time.sleep(1)
             retval = self._client.connect()
 
     def removeDevice(self, item, number = 0):
