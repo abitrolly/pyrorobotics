@@ -4,7 +4,7 @@ from pyrobot.camera.v4l import V4LGrabber
 from pyrobot.vision.cvision import VisionSystem
 
 def INIT(robot):
-    if robot.get("/robot/name") == "Aria":
+    if robot.name == "Aria":
         # Pioneers. You may have to set channel by hand to one that works
         ch = 0 # channel
     else:

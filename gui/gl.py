@@ -109,10 +109,10 @@ class GLView(Service):
       self.bitmapString(1, self.height - 60, "Y:", (0, 0, 0))
       self.bitmapString(1, self.height - 90, "Th:", (0, 0, 0))
       if self.robot != 0:
-         self.bitmapString(1, self.height - 30, "    %.2f" % self.robot.get('robot', 'x'), (1, 0, 0))
-         self.bitmapString(1, self.height - 60, "    %.2f" % self.robot.get('robot', 'y'), (1, 0, 0))
-         self.bitmapString(1, self.height - 90, "      %.2f" % self.robot.get('robot', 'th'), (1, 0, 0))
-         if self.robot.get('self', 'stall'):
+         self.bitmapString(1, self.height - 30, "    %.2f" % self.robot.x, (1, 0, 0))
+         self.bitmapString(1, self.height - 60, "    %.2f" % self.robot.y, (1, 0, 0))
+         self.bitmapString(1, self.height - 90, "      %.2f" % self.robot.th, (1, 0, 0))
+         if self.robot.stall:
             self.bitmapString(1, self.height - 120, "[BUMP!]", (1, 1, 0))
       else:
          self.bitmapString(1, self.height - 30, "    0.0", (1, 0, 0))
@@ -144,13 +144,8 @@ if __name__ == '__main__':
          #                 self.senses['robot']['thr'] )
          renderer.xformPush()
          renderer.color((1, 0, 0))
-         #print "position: (", self.get('robot', 'x'), ",",  \
-         #      self.get('robot', 'y'), ")"
         
-         #renderer.xformXlate((self.get('robot', 'x'), \
-         #                     self.get('robot','y'), \
-         #                     self.get('robot','z')))
-         renderer.xformRotate(self.get('robot', 'th'), (0, 0, 1))
+         renderer.xformRotate(self.robot.th), (0, 0, 1))
          
          renderer.xformXlate(( 0, 0, .15))
          

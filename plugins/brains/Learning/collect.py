@@ -17,7 +17,7 @@ class CollectDataBrain(Brain):
       self.countstopping = 0 
       self.datafile1 = open("sensors.dat", "w") 
       self.datafile2 = open("targets.dat", "w") 
-      self.maxvalue = self.getRobot().get('range', 'maxvalue') 
+      self.maxvalue = self.robot.range.maxvalue
       print "max sensor value is ", self.maxvalue 
    ######################################################
  
@@ -54,7 +54,7 @@ class CollectDataBrain(Brain):
 
    def step(self): 
       robot = self.getRobot()
-      sensors = robot.get('range', 'value', 'all')
+      sensors = [x.value for x in robot.range['all']]
       translate = self.determineMove(sensors) 
       rotate = self.determineTurn(sensors) 
       print "front sensors", sensors[2], sensors[3] 

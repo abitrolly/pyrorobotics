@@ -187,12 +187,6 @@ class Behavior:
       if name == '':
          name = "Rule%d" % (len(self.rules) + 1)
       self.rules.append([float(fvalue), controller, float(amount), name])
-   def get(self, *args):
-      return self.robot.get(*args)
-   def getAll(self, *args):
-      return self.robot.getAll(*args)
-   def set(self, path, value):
-      return self.robot.set(path, value)
 
 class FSMBrain(BehaviorBasedBrain):
    """
@@ -313,10 +307,6 @@ class State:
          raise AttributeError, "pop without a push in state '%s'" % self.name
 
    # wrappers here to talk to default robot:
-   def set(self, path, value):
-      return self.robot.set(path, value)
-   def get(self, *args):
-      return self.robot.get(*args)
    def move(self, *args):
       return self.robot.move(*args)
    def translate(self, *args):

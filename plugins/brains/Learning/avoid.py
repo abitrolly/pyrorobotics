@@ -33,7 +33,7 @@ class NNBrain(Brain):
      
    def step(self): 
       robot = self.getRobot()
-      sensors = robot.get('range', 'value', 'all')
+      sensors = [x.value for x in robot.range['all']]
       translate = self.determineMove(sensors) 
       rotate = self.determineTurn(sensors) 
       print "front sensors", sensors[2], sensors[3] 

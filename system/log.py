@@ -31,7 +31,7 @@ class Log:
       if name != None:
          self.writeln('Experiment name: ' + name)
       if robot != None:
-         self.writeln('Robot: ' + robot.get('robot','type'))
+         self.writeln('Robot: ' + robot.type)
       if brain != None:
          self.writeln('Brain: ' + brain.name)
       if os.environ.has_key('HOSTNAME'):

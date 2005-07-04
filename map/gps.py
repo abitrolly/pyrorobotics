@@ -141,9 +141,9 @@ class GPS(TkMap):
       # things we will need:
       #grid, x, y, th, cellxMM, cellyMM:
       #self.canvas.delete("old")
-      x = robot.get("robot/x") * 1000
-      y = robot.get("robot/y") * 1000
-      thr = robot.get("robot/thr")
+      x = robot.x * 1000
+      y = robot.y * 1000
+      thr = robot.thr
       # In GPS, the origin is at the bottom left corner.
       # This matches the way world files are specified.
       ypos = self.rows - int(y / self.rowScaleMM) - 1

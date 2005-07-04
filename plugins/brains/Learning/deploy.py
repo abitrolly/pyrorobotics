@@ -10,7 +10,7 @@ class NNBrain(Brain):
    def setup(self):  
       self.n = Network()  
       self.n.addThreeLayers(8,1,2)  
-      self.maxvalue = self.getRobot().get('range', 'maxvalue')  
+      self.maxvalue = self.robot.range.maxvalue
       self.doneLearning = 1  
       self.n.loadWeightsFromFile("E05M01.wts")  
       self.n.setLearning(0)  
@@ -21,7 +21,7 @@ class NNBrain(Brain):
    def step(self):  
       robot = self.getRobot()  
       # Set inputs  
-      sensors = robot.get('range', 'value', 'all')
+      sensors = [x.value for x in robot.range["all"]]
       self.n.getLayer('input').copyActivations( map(self.scale, sensors) ) 
       self.n.propagate()  
       translateActual = self.n.getLayer('output').activation[0] * 2 - 1.0
