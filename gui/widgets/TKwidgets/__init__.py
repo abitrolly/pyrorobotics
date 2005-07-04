@@ -266,8 +266,7 @@ class Watcher(Tkinter.Toplevel):
          locals = globals()
       for exp, frame in self.data:
          try:
-            value = eval(exp, locals)
-            value = "%s" % value
+            value = str(eval(exp, locals))
          except:
             value = "<Undefined>"
          frame.textbox.delete(0, 'end')

@@ -170,6 +170,12 @@ class TKgui(Tkinter.Toplevel, gui):
       self.commandEntry.focus_force()
       self.inform("Pyrobot Version " + version() + ": Ready...")
 
+   def pasteCallback(self, full_id):
+      self.commandEntry.insert('end', self.makeExpression(full_id))
+
+   def watchCallback(self, full_id):
+      self.processCommand("watch " + self.makeExpression(full_id))
+
    def makeExpression(self, full_id):
       thingStr = ""
       thing = self.engine
@@ -183,13 +189,16 @@ class TKgui(Tkinter.Toplevel, gui):
             thingStr += "[%s]" % item
             thing = thing[item]
          elif item == "methods": # method
-            thingStr += ".%s%s" % (full_id[i+1], full_id[i+2:])
+            if full_id[i+1][-2:] == "()": # method
+               thingStr += ".%s%s" % (full_id[i+1][:-2], full_id[i+2:])
+            else:
+               thingStr += ".%s" % full_id[i+1]
             break
          else:
             thingStr += ".%s" % item
             thing = thing.__dict__[item] # property
          i += 1
-      self.processCommand("watch " + thingStr[1:])
+      return thingStr[1:]
 
    def getTreeContents(self, node, tree):
       currentName = node.full_id()[-1]
@@ -203,15 +212,19 @@ class TKgui(Tkinter.Toplevel, gui):
          elif item == "methods": # methods
             for method in dir(thing):
                if method[0] != "_" and method not in thing.__dict__:
-                  docString = eval("thing.%s.__doc__" % method)
-                  if docString != None:
-                     docString = docString.replace("\n","")
-                     docString = docString.strip()
-                     if len(docString) > 50:
-                        docString = docString[0:50].strip() + "..."
-                     tree.add_node("%s(): %s" % (method,docString), id=method, flag=0)
+                  object = eval("thing.%s" % method)
+                  if type(object) in [types.FloatType, types.IntType, types.BooleanType, types.LongType, types.DictType, types.ListType, types.TupleType]:
+                     tree.add_node("%s = %s" % (method,object), id=method, flag=0)
                   else:
-                     tree.add_node("%s()" % (method,), id=method, flag=0)
+                     docString = eval("thing.%s.__doc__" % method)
+                     if docString != None:
+                        docString = docString.replace("\n"," ")
+                        docString = docString.strip()
+                        if len(docString) > 50:
+                           docString = docString[0:50].strip() + "..."
+                        tree.add_node("%s(): %s" % (method,docString), id="%s()" % method, flag=0)
+                     else:
+                        tree.add_node("%s()" % (method,), id="%s()" % method, flag=0)
                      
             return # no more things to show
          else:
@@ -261,7 +274,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.robotTreeWindow.tree.root.collapse()
             self.robotTreeWindow.tree.root.expand()
          else:
-            self.robotTreeWindow = TreeWindow(share.gui, "robot", self.getTreeContents, self.makeExpression)
+            self.robotTreeWindow = TreeWindow(share.gui, "robot", self.getTreeContents,
+                                              self.watchCallback, self.pasteCallback)
             self.robotTreeWindow.tree.root.expand()
 
    def makeBrainTree(self):
@@ -271,7 +285,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.brainTreeWindow.tree.root.collapse()
             self.brainTreeWindow.tree.root.expand()
          else:
-            self.brainTreeWindow = TreeWindow(share.gui, "brain", self.getTreeContents, self.makeExpression)
+            self.brainTreeWindow = TreeWindow(share.gui, "brain", self.getTreeContents,
+                                              self.watchCallback, self.pasteCallback)
             self.brainTreeWindow.tree.root.expand()
 
    def makeWindows(self):

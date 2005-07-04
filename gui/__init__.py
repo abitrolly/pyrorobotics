@@ -11,18 +11,12 @@ from pyrobot.system import help, usage, about, file_exists
 class BrainStem:
    """
    A stub used in the Pyrobot command evaluator to define "self"
-   so that self.get() self.set() will work. Without this
+   so that self.robot will work. Without this
    self is not defined. Only works when you have a robot, but
    no brain yet.
    """
    def __init__(self, robot = 0):
       self.robot = robot
-   def get(self, *args):
-      return self.robot.get(*args)
-   def getAll(self, *args):
-      return self.robot.getAll(*args)
-   def set(self, path, value):
-      return self.robot.set(path, value)
 
 class gui:
    """

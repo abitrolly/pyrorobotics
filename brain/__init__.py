@@ -37,8 +37,6 @@ class Brain(threading.Thread):
         self.start()
 
     # wrappers here to talk to default robot:
-    def set(self, path, value):
-        return self.robot.set(path, value)
     def move(self, *args):
         return self.robot.move(*args)
     def translate(self, *args):
