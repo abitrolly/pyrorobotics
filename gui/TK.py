@@ -239,6 +239,13 @@ class TKgui(Tkinter.Toplevel, gui):
                tree.add_node("%s[%d]" % (currentName,i), id=i, flag=1)
          # if just strings, numbers, list them:
       else: # a complex object with parts:
+         # first, get all of the devices, if any:
+         if "devices" in thing.__dict__: # robot
+            for device in thing.devices:
+               tree.add_node("%s devices" % (device,), id=device, flag=1)
+         # list the methods:
+         tree.add_node("methods", id="methods", flag=1)
+         # now, get everything else:
          dictkeys = thing.__dict__.keys()
          dictkeys.sort()
          for item in dictkeys:
@@ -248,8 +255,7 @@ class TKgui(Tkinter.Toplevel, gui):
                pass 
             else:
                if "devices" in thing.__dict__ and item in thing.devices: # robot
-                  for device in thing.__dict__[item]:
-                     tree.add_node("%s devices" % (device.type,), id=device.type, flag=1)
+                  pass
                elif type(thing.__dict__[item]) == type({}): # dict
                   # each is a pair; list them
                   keys = thing.__dict__[item].keys()
@@ -265,7 +271,6 @@ class TKgui(Tkinter.Toplevel, gui):
                   tree.add_node("%s = '%s'" % (item, thing.__dict__[item]), id=item, flag=0)
                else:                                        # number, other primitive
                   tree.add_node("%s = %s" % (item, thing.__dict__[item]), id=item, flag=0)
-         tree.add_node("methods", id="methods", flag=1)
 
    def makeRobotTree(self):
       if self.engine and self.engine.robot:
@@ -291,9 +296,9 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def makeWindows(self):
       if self.engine and self.engine.robot:
-         objs = self.engine.robot.getDevices()
-         for serv in objs:
-            self.engine.robot.getDevice(serv).makeWindow()
+         for devType in self.engine.robot.getDevices():
+            for serv in self.engine.robot.__dict__[devType]:
+               serv.makeWindow()
       else:
          print "Error: you need to load a robot first"
 
@@ -539,9 +544,10 @@ class TKgui(Tkinter.Toplevel, gui):
                                           self.engine.robot.y,
                                           self.engine.robot.th,
                                           bump))
-         for device in self.engine.robot.getDevices():
-            if self.engine.robot.getDevice(device).getVisible():
-               self.engine.robot.getDevice(device).updateWindow()
+         for deviceType in self.engine.robot.getDevices():
+            for device in self.engine.robot.__dict__[deviceType]:
+               if device.getVisible():
+                  device.updateWindow()
       # Don't need to do the rest of this but once a second
       if now - self.lastButtonUpdate < 1:
          self.after(self.update_interval,self.update)

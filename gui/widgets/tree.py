@@ -815,6 +815,7 @@ class TreeWindow(Toplevel):
                          root_label=item,
                          get_contents_callback=contents_callback,
                          width=300,
+                         bg='white',
                          node_class=ClickNode)
         self.title("Pyrobot Object Viewer: " + item)
         self.tree.watchCallback = watch_callback

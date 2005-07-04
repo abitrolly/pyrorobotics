@@ -5,24 +5,25 @@
 import Tkinter
 import random
 from pyrobot.robot.device import Device
+import pyrobot.system.share as share
 
 class SimplePlot(Device): 
     COLORS = ['blue', 'red', 'tan', 'yellow', 'orange', 'black',
               'azure', 'beige', 'brown', 'coral', 'gold', 'ivory',
               'moccasin', 'navy', 'salmon', 'tan', 'ivory']
     def __init__(self, robot, what, width = 400, height = 120):
-        Device.__init__(self, "view", 0) # 1 = visible
+        Device.__init__(self, "view")
         self.width = width
         self.height = height
         self.what = what
         self.robot = robot
         self.dataMin = 0
-        self.dataMax = robot.get('robot', 'range', 'maxvalue')
+        self.dataMax = robot.range.maxvalue
         self.dataWindowSize = 400
         self.dataSample = 1
         self.dataCount = 0
         self.lastRun = 0
-        self.dataHist = [0] * self.robot.get('robot', 'range', 'count')
+        self.dataHist = [0] * self.robot.range.count
         self.source = self.what
         self.startDevice()
         self.makeWindow()
@@ -37,7 +38,7 @@ class SimplePlot(Device):
             self.setVisible(1)
         else:
             try:
-                self.win = Tkinter.Toplevel()
+                self.win = Tkinter.Toplevel(share.gui)
             except:
                 print "Pyrobot view cannot make window. Check DISPLAY variable."
                 self.setVisible(0)
@@ -59,10 +60,8 @@ class SimplePlot(Device):
             self.dataCount = self.dataWindowSize / 2
         else:
             self.dataCount += 1
-        results = self.robot.get('robot', 'range', self.what, 'value,pos')
-        for pair in results:
-            dist = pair["value"]
-            sensor = pair["pos"]
+        results = [(x.value, x.pos) for x in self.robot.range[self.what]]
+        for dist,sensor in results:
             if self.dataCount < self.dataWindowSize/2:
                 tag = "data1"
             else:
@@ -81,15 +80,21 @@ if __name__ == '__main__':
     class Robot:
         def __init__(self):
             self.groups = {'all': (0,1)}
-        def get(self, t1 = None, t2 = None, t3 = None):
-            if t1 == "range" and t2 == "count":
-                return 2
-            elif t1 == "range" and t2 == "maxvalue":
-                return 10.0
-            else:
-                return int(random.random() * 10)
+            self.range = Range(2)
+    class Range:
+        def __init__(self, count):
+            self.count = count
+            self.maxvalue = 10.0
+        def __getitem__(self, pos):
+            return [Sensor(self.maxvalue, self.count)] * self.count
+    class Sensor:
+        pos = 0
+        def __init__(self, maxvalue, count):
+            self.value = random.random() * maxvalue
+            self.pos = Sensor.pos
+            Sensor.pos = (Sensor.pos + 1) % count
+
     plot = SimplePlot(Robot(), 'all')
     for i in range(2500):
-        plot.redraw()
+        plot.updateWindow()
     print "Done!"
-    plot.mainloop()
