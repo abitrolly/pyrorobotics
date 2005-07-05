@@ -145,7 +145,7 @@ if __name__ == '__main__':
          renderer.xformPush()
          renderer.color((1, 0, 0))
         
-         renderer.xformRotate(self.robot.th), (0, 0, 1))
+         renderer.xformRotate(self.robot.th, (0, 0, 1))
          
          renderer.xformXlate(( 0, 0, .15))
          
