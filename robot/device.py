@@ -1,6 +1,6 @@
 from __future__ import generators
 import pyrobot.robot
-import types, random, exceptions
+import types, random, exceptions, math
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class WindowError(AttributeError):
@@ -17,7 +17,7 @@ class SensorValue:
         device - an object with rawToUnits, hitX, hitY, hitZ methods
         value - the rawvalue of the device
         pos - the ID of this sensor
-        geometry - (origin x, origin y, origin z, th in degrees) of ray
+        geometry - (origin x, origin y, origin z, th, arc in degrees) of ray
         noise - percentage of noise to add to reading
         """
         self._dev = device
@@ -42,14 +42,20 @@ class SensorValue:
             raise AttributeError, "invalid unit = '%s'" % unit
     def position(self):
         if self.geometry == None: return (None, None, None)
-        x = self.geometry[0]
-        y = self.geometry[1]
-        z = self.geometry[2] 
-        return (x, y, z)
+        return (self.geometry[0], self.geometry[1], self.geometry[2])
     def hit(self):
-        return self._dev.hit(self.pos)
-    def geometry(self):
-        return self._dev.geometry(self.pos)
+        if self.geometry == None: return (None, None, None)
+        return (self.hitX(), self.hitY(), self.hitZ())
+    def hitX(self):
+        thr = self.geometry[3] # theta in radians
+        dist = self.distance(unit="M")
+        return math.cos(thr) * dist
+    def hitY(self):
+        thr = self.geometry[3] # theta in radians
+        dist = self.distance(unit="M")
+        return math.sin(thr) * dist
+    def hitZ(self):
+        return self.geometry[2]
 
 class Device:
     """ A basic device class """
@@ -116,7 +122,11 @@ class Device:
                 if pos in self.groups[key]:
                     retval.append( key )
         return retval
-
+    def setMaxvalue(self, maxvalue):
+        defaultUnits = self.rawToUnits(maxvalue)
+        self.maxvalueraw = self.rawToUnits(defaultUnits, units=self.rawunits)
+    def getMaxvalue(self):
+        return self.rawToUnits(self.maxvalueraw)
     def rawToUnits(self, raw, noise = 0.0, units=None):
         if units == None:
             units = self.units.upper()

@@ -8,15 +8,18 @@ import pyrobot.gui.console as console
 import string, array, math 
 from time import sleep
 from pyrobot.simulators.khepera.CNTRL import _ksim as ksim
-from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+from pyrobot.geometry import PITIMES180, PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class IRSensor(Device):
     def __init__(self, dev, type = "ir"):
         Device.__init__(self, type)
-        self.dev = dev
+        self._dev = dev
+        self.arc = 15.0 * PIOVER180 # radians
         self.units    = "ROBOTS" # current report units
-        self.radius = 55 / 1000.0 # meters
-        # natural units:
+        self.radius = 55 / 1000.0 # universally in METERS
+        # ox, oy, oz in METERS as well
+        # ----------------------------------------------
+        # natural units (not alterable):
         self.rawunits = "CM"
         self.maxvalueraw = 6.0 # in rawunits
         # ----------------------------------------------
@@ -38,25 +41,19 @@ class IRSensor(Device):
                        'back-all' : (6, 7), 
                        'back' : (6, 7)} 
         self.startDevice()    
-    def geometry(self, pos):
-        """ (x, y, z, thr, arc) of originating position of sensor ray """
-        return (self.ox(pos), self.oy(pos), 0.0, self.th(pos) * PIOVER180, (15 * PIOVER180))
-    def hit(self, pos):
-        """ (x, y, z) of intersecting hit """
-        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
-    def distance(self, pos):
-        """ Distance to hit from originating position """
-        return self.getIRRange(pos)
     def __len__(self):
         return self.count
     def getSensorValue(self, pos):
-        return SensorValue(self, self.getVal(pos), pos,
-                           (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
-    
-    def postSet(self, keyword):
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
-
-    def ox(self, pos):
+        """
+        Send sensor device, dist, pos, geometry (ox, oy, oz, thr, arc).
+        """
+        return SensorValue(self, self._getVal(pos), pos,
+                           (self._ox(pos) / 1000.0,
+                            self._oy(pos) / 1000.0,
+                            0.0,
+                            self._thr(pos),
+                            self.arc))
+    def _ox(self, pos):
         # in mm
         if pos == 0:
             retval = 10.0
@@ -76,7 +73,7 @@ class IRSensor(Device):
             retval = -30.0
         return retval
 
-    def oy(self, pos):
+    def _oy(self, pos):
         # in mm
         if pos == 0:
             retval = 30.0
@@ -96,7 +93,10 @@ class IRSensor(Device):
             retval = 10.0
         return retval
 
-    def th(self, pos):
+    def _thr(self, pos):
+        return self._th(pos) * PIOVER180
+
+    def _th(self, pos):
         if pos == 0:
             return 90.0
         elif pos == 1:
@@ -114,29 +114,11 @@ class IRSensor(Device):
         elif pos == 7:
             return 180.0
 
-    def getVal(self, pos):
+    def _getVal(self, pos):
         try:
-            return (1023 - self.dev.rawData['ir'][pos])/1023.0 * 6.0
+            return (1023 - self._dev.rawData['ir'][pos])/1023.0 * 6.0
         except:
             return 0
-
-    def getIRRange(self, pos):
-        data = self.getVal(pos)
-        return self.rawToUnits(data)
-
-    def hitX(self, pos):
-        # convert to x,y relative to robot
-        dist = self.getVal(pos)
-        angle = (-self.th(pos)  - 90.0) / 180.0 * math.pi
-        return dist * math.cos(angle)
-        
-    def hitY(self, pos):
-        # convert to x,y relative to robot
-        dist = self.getVal(pos)
-        angle = (-self.th(pos) - 90.0) / 180.0 * math.pi
-        return dist * math.sin(angle)
-
-    def hitZ(self, pos): return 0.0
 
 class LightSensor(IRSensor):
     def __init__(self, dev):
@@ -145,23 +127,11 @@ class LightSensor(IRSensor):
         self.units = "RAW"
         self.maxvalueraw = 511.0
         self.maxvalue = self.maxvalueraw
-    def distance(self, pos):
-        """ Distance to hit from originating position """
-        return self.getIRRange(pos)
-    def __len__(self):
-        return self.count
-    def getSensorValue(self, pos):
-        return SensorValue(self, self.dev.rawData['light'][pos], pos,
-                           (self.ox(pos), self.oy(pos), 0.0, self.th(pos)))
-    
-    def postSet(self, kw):
-        self.maxvalue = self.maxvalueraw
-
-    def getLightRange(self, pos):
+        self.arc = 0 # no meaning for light sensor
+    def _getVal(self, pos):
         try:
-            data = self.dev.rawData['light'][pos]
+            data = self._dev.rawData['light'][pos]
         except:
-            print "not enough sensor data"
             return 0.0
         return data
 
@@ -197,7 +167,7 @@ class KheperaRobot(Robot):
         Robot.__init__(self) # robot constructor
         self.buffer = ''
         self.debug = 0
-        self.pause = 0.001
+        self.pause = 0.1
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"

@@ -173,43 +173,19 @@ class PlayerSonarDevice(PlayerDevice):
         self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
-        # see also postSet below
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
         self.noise = 0.05 # 5 percent
         self.count = len(self)
-    def distance(self, pos):
-        """ Distance to hit from originating position """
-        return self.rawToUnits(self._dev.scan[pos], self.noise)
-    def geometry(self, pos):
-        """ (x, y, z, thr, arc) of originating position of sensor ray """
-        return (self._dev.poses[pos][0], self._dev.poses[pos][1], self.rawToUnits(300),
-                self._dev.poses[pos][2], (7.5 * PIOVER180) )
-    def hit(self, pos):
-        """ (x, y, z) of intersecting hit """
-        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
+        self.arc = 7.5 * PIOVER180
     def __len__(self):
         return self._dev.scan_count
     def getSensorValue(self, pos):
         return SensorValue(self, self._dev.scan[pos], pos,
-                           (self._dev.poses[pos][0],
-                            self._dev.poses[pos][1],
-                            0.03,
-                            self._dev.poses[pos][2]/PIOVER180),
-                           self.noise)
-    def postSet(self, keyword):
-        """ Anything that might change after a set """
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
-
-    def hitX(self, pos):
-        thr = self._dev.poses[pos][2] #+ (90.0 /  PIOVER180)
-        dist = self.rawToUnits(self._dev.scan[pos], self.noise)
-        return cos(thr) * dist
-    def hitY(self, pos):
-        thr = self._dev.poses[pos][2] #+ (90.0 /  PIOVER180)
-        dist = self.rawToUnits(self._dev.scan[pos], self.noise)
-        return sin(thr) * dist
-    def hitZ(self, pos):
-        return .03
+                           (self._dev.poses[pos][0], # x in meters
+                            self._dev.poses[pos][1], # y
+                            0.03,                    # z
+                            self._dev.poses[pos][2], # rads
+                            self.arc),               # rads
+                           noise=self.noise)
     def addWidgets(self, window):
         for i in range(self.count):
             window.addData(str(i), "[%d]:" % i, self._dev.scan[i])
@@ -249,6 +225,7 @@ class PlayerLaserDevice(PlayerDevice):
                        'back': [],
                        'back-all': []}
         self.units    = "ROBOTS"
+        self.arc      = 1.0 * PIOVER180 # in radians
         self.noise    = 0.01
         # -------------------------------------------
         self.rawunits = "METERS"
@@ -258,30 +235,19 @@ class PlayerLaserDevice(PlayerDevice):
         self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # MM to units:
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
         # -------------------------------------------
-        self.index = 0 # self._client.laser.keys()[0] FIX
         self.count = count
     def __len__(self):
         return self._dev.scan_count
     def getSensorValue(self, pos):
-        return SensorValue(self, self._dev.scan[pos][0], pos,
+        return SensorValue(self, self._dev.scan[pos][0],
+                           pos,
                            (self._dev.pose[0],
                             self._dev.pose[1],
                             0.03,
-                            pos - 90),
-                           self.noise)
-    def distance(self, pos):
-        """ Distance to hit from originating position """
-        return self.rawToUnits(self._dev.scan[pos][0], self.noise)
-    def geometry(self, pos):
-        """ (x, y, z, thr, arc) of originating position of sensor ray """
-        return (self._dev.poses[0], self._dev.poses[1],
-                self.rawToUnits(300),
-                (pos - 90) * PIOVER180, (7.5 * PIOVER180) )
-    def hit(self, pos):
-        """ (x, y, z) of intersecting hit """
-        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
+                            (pos - 90) * PIOVER180,
+                            self.arc),
+                           noise=self.noise)
     def addWidgets(self, window):
         for i in range(0, self.count, 10):
             window.addData(str(i), "[%d]:" % i, self._dev.scan[i][0])
@@ -289,20 +255,6 @@ class PlayerLaserDevice(PlayerDevice):
         if self.visible:
             for i in range(0, self.count, 10):
                 self.window.updateWidget(str(i), "%.2f" % self.distance(i))
-    def postSet(self, keyword):
-        """ Anything that might change after a set """
-        # FIXME!
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
-    def hitX(self, pos):
-        thr = (pos - 90) * PIOVER180
-        dist = self.rawToUnits(self._dev.scan[pos][0], self.noise)
-        return cos(thr) * dist
-    def hitY(self, pos):
-        thr = (pos - 90) * PIOVER180
-        dist = self.rawToUnits(self._dev.scan[pos][0], self.noise)
-        return sin(thr) * dist
-    def hitZ(self, pos):
-        return 0.03 # meters
 
 class PlayerCommDevice(PlayerDevice):
     def __init__(self, client, name):
