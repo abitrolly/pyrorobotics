@@ -85,13 +85,12 @@ class LPS(TkMap):
       
       """
       originalUnits = robot.__dict__[item].units
-      arc = arc = robot.__dict__[item].geometry(0)[4] # FIXME! rads or deg?
       robot.__dict__[item].units = 'METERS'
       radius = robot.radius
       # -----------------------------------
       for i in range(robot.__dict__[item].count):
          # in MM:
-         offx, offy, z, theta = robot.__dict__[item][i].geometry
+         offx, offy, z, theta, arc = robot.__dict__[item][i].geometry
          # in METERS, because we set it so above:
          dist = robot.__dict__[item][i].value
          if dist < robot.__dict__[item].getMaxvalue():

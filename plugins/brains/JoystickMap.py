@@ -13,7 +13,7 @@ class Map(Brain):
       self.robot.range.units = 'MM'
       # Calculate the maximum range of our sensors
       rangeMaxMM = self.robot.range.getMaxvalue()
-      sizeMM = rangeMaxMM * 3 + self.robot.radius
+      sizeMM = rangeMaxMM * 3 + (self.robot.radius / 1000.0) # in MMs
       # Reset our unit of measure
       self.robot.range.units = units
       # Now, we create our Local Perceptual Space window - this will hold our local map
@@ -22,7 +22,7 @@ class Map(Brain):
                       widthMM = sizeMM,
                       heightMM = sizeMM)
       # Then create our Global Perceptual Space window - this will hold our global map
-      # This map will be 500px by 500px and will represent an area ten times the size of our maximum range
+      # This map will be 500px by 500px and will represent an area N times the size of our maximum range
       self.gps = GPS( cols=300, rows=300,
                       heightMM = sizeMM * 5, widthMM = sizeMM * 5)
       self.joystick = Joystick(share.gui)
