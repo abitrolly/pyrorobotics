@@ -161,7 +161,7 @@ class RobocupLaserDevice(Device):
         self.arc      = 1.0 * PIOVER180 # in radians
         # -------------------------------------------
         self.rawunits = "METERS"
-        self.maxvalueraw = 100.0
+        self.maxvalueraw = 10.0
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.radius = 0.750 # meters
