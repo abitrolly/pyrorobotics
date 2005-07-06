@@ -24,6 +24,7 @@ class IRSensor(Device):
         self.maxvalueraw = 6.0 # in rawunits
         # ----------------------------------------------
         self.count = 8
+        self.noise = 0.0
         self.groups = {'all': range(8),
                        'front' : (2, 3), 
                        'front-left' : (0, 1), 
@@ -51,7 +52,8 @@ class IRSensor(Device):
                             self._oy(pos) / 1000.0, # meters
                             20.0 / 1000.0, # meters
                             self._thr(pos),
-                            self.arc))
+                            self.arc),
+                           noise=self.noise)
     def _ox(self, pos):
         # in mm
         if pos == 0:

@@ -158,6 +158,7 @@ class RobocupLaserDevice(Device):
                        'back-all': []}
         self.units    = "ROBOTS"
         self.noise    = 0.0
+        self.arc      = 1.0 * PIOVER180 # in radians
         # -------------------------------------------
         self.rawunits = "METERS"
         self.maxvalueraw = 100.0
@@ -165,30 +166,18 @@ class RobocupLaserDevice(Device):
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.radius = 0.750 # meters
         # ----------------------------------------------------------
-        # MM to units:
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
-        # -------------------------------------------
-        self.index = 0 # self.dev.laser.keys()[0] FIX
         self.count = count
-
-    def hit(self, pos):
-        return (self.hitX(pos), self.hitY(pos), self.hitZ(pos))
-
-    def geometry(self, pos):
-        return (0, 0, 0, (pos - 45) * PIOVER180, 1)
 
     def __len__(self):
         return self.count
     def getSensorValue(self, pos):
-        return SensorValue(self, self.getVal(pos), pos,
+        return SensorValue(self, self.values[pos], pos,
                            (0.0,
                             0.0,
                             0.03,
-                            pos - 45))
-    def postSet(self, keyword):
-        """ Anything that might change after a set """
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
-
+                            (pos - 45) * PIOVER180,
+                            self.arc),
+                           noise=self.noise)
     def updateDevice(self):
         self.values = [self.maxvalueraw] * self.count
         try:
@@ -215,19 +204,6 @@ class RobocupLaserDevice(Device):
                     pos = min(max(int(item[2]) + 45,0),89)
                     self.values[ pos ] = item[1]
                     
-    def getVal(self, pos):
-        return self.rawToUnits(self.values[pos], self.noise) # zero based, from right
-    def hitX(self, pos):
-        thr = (pos - 45.0) * PIOVER180
-        dist = self.getVal(pos) # METERS
-        return cos(thr) * dist
-    def hitY(self, pos):
-        thr = (pos - 45.0) * PIOVER180
-        dist = self.getVal(pos) # METERS
-        return sin(thr) * dist
-    def hitZ(self, pos):
-        return 0.03
-
 class RobocupRobot(Robot):
     """ A robot to interface with the Robocup simulator. """
     def __init__(self, name="TeamPyrobot", host="localhost", port=6000,

@@ -233,8 +233,6 @@ class PlayerLaserDevice(PlayerDevice):
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
         self.radius = 0.750 # meters
-        # ----------------------------------------------------------
-        # MM to units:
         # -------------------------------------------
         self.count = count
     def __len__(self):
