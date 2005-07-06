@@ -35,7 +35,7 @@ class Reinforce(Brain):
 
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       self.curr_sensors = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.curr_motors = [0.0, 0.0]
       self.target_trans = 1

@@ -18,7 +18,7 @@ class SimplePlot(Device):
         self.what = what
         self.robot = robot
         self.dataMin = 0
-        self.dataMax = robot.range.maxvalue
+        self.dataMax = robot.range.getMaxvalue()
         self.dataWindowSize = 400
         self.dataSample = 1
         self.dataCount = 0

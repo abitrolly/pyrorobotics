@@ -9,8 +9,7 @@ class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
    def setup(self):
-      self.light[0].units = "RAW"
-      self.maxvalue = self.robot.light[0].maxvalue
+      self.maxvalue = self.robot.light[0].getMaxvalue()
    def step(self):
       sensorValue = avg([s.distance() for s in self.light[0][2:4]]) # front lights
       forward = (self.maxvalue - sensorValue) / self.maxvalue

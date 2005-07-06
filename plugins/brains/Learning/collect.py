@@ -17,7 +17,7 @@ class CollectDataBrain(Brain):
       self.countstopping = 0 
       self.datafile1 = open("sensors.dat", "w") 
       self.datafile2 = open("targets.dat", "w") 
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       print "max sensor value is ", self.maxvalue 
    ######################################################
  

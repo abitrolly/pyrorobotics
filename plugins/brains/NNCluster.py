@@ -33,7 +33,7 @@ class NNBrain(Brain):
       self.net.setMomentum(.1)
       self.net.setLearning(1)
       self.counter = 0
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,
                              legend=['Hidden', 'Motor Out', 'Motor Target'])

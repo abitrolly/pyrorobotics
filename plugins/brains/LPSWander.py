@@ -12,7 +12,7 @@ class SimpleBrain(Brain):
       # create the Local Perceptiual Space window
       units = self.robot.range.units
       self.robot.range.units = 'MM'
-      sizeMM = self.robot.range.maxvalue * 3 + \
+      sizeMM = self.robot.range.getMaxvalue() * 3 + \
                self.robot.radius
       self.robot.range.units = units
       self.lps = LPS( 20, 20,

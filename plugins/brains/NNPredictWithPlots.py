@@ -37,7 +37,7 @@ class NNPredict(Brain):
       self.counter = 0
       self.doneLearning = 0
       self.robot.range.units = 'METERS'
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       print " Max value: ", self.maxvalue
       
       self.plot1 = Scatter()

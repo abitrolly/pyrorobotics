@@ -26,7 +26,7 @@ class Avoid (Behavior):
         else:
             self.count += 1
         close_dist, angle = min( [(s.distance(), s.angle(unit="radians")) for s in self.robot.range["front-all"]])
-        max_sensitive = self.robot.range.maxvalue * 0.8
+        max_sensitive = self.robot.range.getMaxvalue() * 0.8
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'translate', 0.0, "TooClose")
         self.IF(Fuzzy(0.1, max_sensitive) >> close_dist, 'translate', 0.3, "Ok")
         self.IF(Fuzzy(0.1, max_sensitive) << close_dist, 'rotate', self.direction(angle), "TooClose")

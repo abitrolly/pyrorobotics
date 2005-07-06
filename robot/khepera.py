@@ -16,14 +16,13 @@ class IRSensor(Device):
         self._dev = dev
         self.arc = 15.0 * PIOVER180 # radians
         self.units    = "ROBOTS" # current report units
-        self.radius = 55 / 1000.0 # universally in METERS
+        self.radius = dev.radius # universally in METERS
         # ox, oy, oz in METERS as well
         # ----------------------------------------------
         # natural units (not alterable):
         self.rawunits = "CM"
         self.maxvalueraw = 6.0 # in rawunits
         # ----------------------------------------------
-        self.maxvalue = self.rawToUnits(self.maxvalueraw)
         self.count = 8
         self.groups = {'all': range(8),
                        'front' : (2, 3), 
@@ -48,49 +47,49 @@ class IRSensor(Device):
         Send sensor device, dist, pos, geometry (ox, oy, oz, thr, arc).
         """
         return SensorValue(self, self._getVal(pos), pos,
-                           (self._ox(pos) / 1000.0,
-                            self._oy(pos) / 1000.0,
-                            0.0,
+                           (self._ox(pos) / 1000.0, # meters
+                            self._oy(pos) / 1000.0, # meters
+                            20.0 / 1000.0, # meters
                             self._thr(pos),
                             self.arc))
     def _ox(self, pos):
         # in mm
         if pos == 0:
-            retval = 10.0
+            retval = 20.0
         elif pos == 1:
-            retval = 20.0
+            retval = 40.0
         elif pos == 2:
-            retval = 30.0
+            retval = 60.0
         elif pos == 3:
-            retval = 30.0 
+            retval = 60.0 
         elif pos == 4:
-            retval = 20.0
+            retval = 40.0
         elif pos == 5:
-            retval = 10.0
+            retval = 20.0
         elif pos == 6:
-            retval = -30.0
+            retval = -60.0
         elif pos == 7:
-            retval = -30.0
+            retval = -60.0
         return retval
 
     def _oy(self, pos):
         # in mm
         if pos == 0:
-            retval = 30.0
+            retval = 60.0
         elif pos == 1:
-            retval = 20.0
+            retval = 40.0
         elif pos == 2:
-            retval = 10.0
+            retval = 20.0
         elif pos == 3:
-            retval = -10.0 
+            retval = -20.0 
         elif pos == 4:
-            retval = -20.0
+            retval = -40.0
         elif pos == 5:
-            retval = -30.0
+            retval = -60.0
         elif pos == 6:
-            retval = -10.0
+            retval = -20.0
         elif pos == 7:
-            retval = 10.0
+            retval = 20.0
         return retval
 
     def _thr(self, pos):
@@ -125,8 +124,8 @@ class LightSensor(IRSensor):
         IRSensor.__init__(self, dev, "light")
         # now, just overwrite those differences
         self.units = "RAW"
+        self.rawunits = "RAW"
         self.maxvalueraw = 511.0
-        self.maxvalue = self.maxvalueraw
         self.arc = 0 # no meaning for light sensor
     def _getVal(self, pos):
         try:
@@ -229,9 +228,11 @@ class KheperaRobot(Robot):
         self.rawData['stall'] = [0] * 6
         self.subtype = subtype
         if subtype == "Hemisson":
+            self.radius = 120.0 / 1000.0 # universally in meters
             self.builtinDevices = ['ir', 'light', 'audio']
             self._newline = "\r"
         elif subtype == "Khepera":
+            self.radius = 55.0 / 1000.0 # universally in meters
             self.builtinDevices = ['ir', 'light', 'gripper']
             self._newline = "\n"
         else:
@@ -257,10 +258,6 @@ class KheperaRobot(Robot):
         self.type = "K-Team"
         self.port = port
         self.simulated = simulator
-        if subtype == "Khepera":
-            self.radius = 55.0 # in MM
-        else:
-            self.radius = 120.0 # in MM
         # ----- Updatable things:
         self.stall = self.isStall()
         self.x = 0.0
@@ -440,12 +437,6 @@ class KheperaRobot(Robot):
     def rotate(dev, value):
         dev.lastRotate = value
         dev.adjustSpeed()
-    
-    def localize(self, x = 0.0, y = 0.0, th = 0.0):
-        self.x = x * 1000
-        self.y = y * 1000
-        self.th = th
-        self.thr = self.th * PIOVER180
     
 class Gripper(Device):
     def __init__(self, robot, type = "gripper"):

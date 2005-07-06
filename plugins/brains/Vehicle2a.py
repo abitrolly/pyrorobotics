@@ -9,17 +9,11 @@ class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
    def setup(self):
-      self.robot.light[0].units = "RAW"
-      self.maxvalue = self.robot.light[0].maxvalue
+      self.robot.light[0].units = "SCALED"
 
-   def convert(self, raw):
-      return (self.maxvalue - raw) / self.maxvalue
-      
    def step(self):
-      leftSensorValue  = self.robot.light[0][1].distance() # left lights
-      rightSensorValue = self.robot.light[0][4].distance() # right lights
-      leftSpeed  = self.convert(leftSensorValue)
-      rightSpeed = self.convert(rightSensorValue)
+      leftSpeed  = self.robot.light[0][1].value # left lights
+      rightSpeed = self.robot.light[0][4].value # right lights
       self.motors(leftSpeed,  rightSpeed) # to the left
 
 def INIT(engine):

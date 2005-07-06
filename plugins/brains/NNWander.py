@@ -26,7 +26,7 @@ class NNBrain(Brain):
       # some helpful attributes
       self.counter = 0
       self.doneLearning = 0
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       # visualization
       self.hidScat = Scatter(title = 'Hidden Layer Activations',
                              history = [100, 2, 2], linecount = 3,

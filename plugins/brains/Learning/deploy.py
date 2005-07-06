@@ -10,7 +10,7 @@ class NNBrain(Brain):
    def setup(self):  
       self.n = Network()  
       self.n.addThreeLayers(8,1,2)  
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       self.doneLearning = 1  
       self.n.loadWeightsFromFile("E05M01.wts")  
       self.n.setLearning(0)  

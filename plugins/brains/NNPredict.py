@@ -20,7 +20,7 @@ class NNPredict(Brain):
       self.trans = 0
       self.rotate = 0
       self.counter = 0
-      self.maxvalue = self.robot.range.maxvalue
+      self.maxvalue = self.robot.range.getMaxvalue()
       self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.plot = Scatter(app=share.gui, linecount=2, connectPoints=0,
                           xEnd=7.0, yEnd=1.2, legend=["Trained", "Test"],

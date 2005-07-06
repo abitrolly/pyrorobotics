@@ -94,7 +94,7 @@ class LPS(TkMap):
          offx, offy, z, theta = robot.__dict__[item][i].geometry
          # in METERS, because we set it so above:
          dist = robot.__dict__[item][i].value
-         if dist < robot.__dict__[item].maxvalue:
+         if dist < robot.__dict__[item].getMaxvalue():
             senseObstacle = 1
          else:
             senseObstacle = 0

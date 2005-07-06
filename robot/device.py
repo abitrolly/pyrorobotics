@@ -48,11 +48,11 @@ class SensorValue:
         return (self.hitX(), self.hitY(), self.hitZ())
     def hitX(self):
         thr = self.geometry[3] # theta in radians
-        dist = self.distance(unit="M")
+        dist = self.distance(unit="M") + self._dev.radius
         return math.cos(thr) * dist
     def hitY(self):
         thr = self.geometry[3] # theta in radians
-        dist = self.distance(unit="M")
+        dist = self.distance(unit="M") + self._dev.radius
         return math.sin(thr) * dist
     def hitZ(self):
         return self.geometry[2]
@@ -123,16 +123,45 @@ class Device:
                     retval.append( key )
         return retval
     def setMaxvalue(self, maxvalue):
-        defaultUnits = self.rawToUnits(maxvalue)
-        self.maxvalueraw = self.rawToUnits(defaultUnits, units=self.rawunits)
+        self.maxvalueraw = self.rawToUnits(maxvalue, units="UNRAW")
+        return self.maxvalueraw
     def getMaxvalue(self):
         return self.rawToUnits(self.maxvalueraw)
     def rawToUnits(self, raw, noise = 0.0, units=None):
+        # what do you want the return value in?
         if units == None:
             units = self.units.upper()
         else:
             units = units.upper()
-        # first, add noise, if you want:
+        # if UNRAW, then you want to do the inverse
+        if units == "UNRAW": # go from default to raw
+            meters = None
+            if self.units.upper() == "ROBOTS":
+                meters = raw * self.radius
+            elif self.units.upper() == "SCALED":
+                return raw * float(self.maxvalueraw)
+            elif self.units.upper() == "RAW":
+                return raw
+            elif (self.units.upper() == "METERS" or
+                  self.units.upper() == "METERS"):
+                meters = raw
+            elif self.units.upper() == "CM":
+                meters = raw / 100.0
+            elif self.units.upper() == "MM":
+                meters = raw / 1000.0
+            else:
+                raise AttributeError, "can't convert from units"
+            # now, have it in meters, want to go to rawunits:
+            if (self.rawunits.upper() == "METERS" or
+                self.rawunits.upper() == "M"):
+                return meters
+            elif self.rawunits.upper() == "CM":
+                return meters * 100.0
+            elif self.rawunits.upper() == "MM":
+                return meters * 1000.0
+            else:
+                raise AttributeError, "can't convert to rawunits"
+        # next, add noise, if you want:
         if noise > 0:
             if random.random() > .5:
                 raw += (raw * (noise * random.random()))
@@ -148,7 +177,7 @@ class Device:
         # now, get it into meters:
         if self.rawunits.upper() == "MM":
             if units == "MM":
-                return raw
+                return raw 
             else:
                 raw = raw / 1000.0
         elif self.rawunits.upper() == "RAW":

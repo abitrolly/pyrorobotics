@@ -12,7 +12,7 @@ class Map(Brain):
       # We then reset our measurements to MMs
       self.robot.range.units = 'MM'
       # Calculate the maximum range of our sensors
-      rangeMaxMM = self.robot.range.maxvalue
+      rangeMaxMM = self.robot.range.getMaxvalue()
       sizeMM = rangeMaxMM * 3 + self.robot.radius
       # Reset our unit of measure
       self.robot.range.units = units
