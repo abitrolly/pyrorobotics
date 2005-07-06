@@ -223,10 +223,10 @@ class AiboRobot(Robot):
         time.sleep(1) # let all of the servers get going...
         self.estop_control.s.send("start\n") # send "stop\n" to emergency stop the robot
         time.sleep(1) # let all of the servers get going...
-        self.builtinDevices = [ "ptz", "camera" ]
+        self.builtinDevices = ["ptz"]
         # start up some devices:
         self.startDevice("ptz")
-        self.startDevice("camera", visible=1)
+        #self.startDevice("camera", visible=1)
 
         # Commands available on main_control (port 10020):
         # '!refresh' - redisplays the current control (handy on first connecting,

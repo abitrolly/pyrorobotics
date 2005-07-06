@@ -79,3 +79,13 @@ class AiboCamera(Camera):
 
    def destroy(self):
       self.thread.join()
+
+if __name__ == "__main__":
+    from pyrobot.vision.cvision import VisionSystem
+    class MyRobot:
+        host = "k-8"
+        PORT = {"Raw Cam Server": 10011}
+        def setRemoteControl(self, *args):
+            pass
+
+    camera = AiboCamera(MyRobot(), VisionSystem())

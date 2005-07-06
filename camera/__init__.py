@@ -97,24 +97,6 @@ class Camera(PyrobotImage, Device):
       if visible and self.vision:
          self.makeWindow()
 
-   def preGet(self, keyword):
-      #print "preGet", keyword
-      if keyword == "grayscale":
-         self.grayscale = self.getGrayScale() # list
-      elif keyword == "data":
-         self.data = self.data # list
-      elif keyword == "image":
-         self.image = self.getImage() # <image>
-      else:
-         self.filters = self.callbackTextList # list
-
-   def postSet(self, keyword):
-      if keyword == ".visible":
-         if self.visible:
-            self.makeWindow()
-         else:
-            self.hideWindow()
-
    def setFilterList(self, filterList):
       """
       Filters take the form: ("name", (args))
