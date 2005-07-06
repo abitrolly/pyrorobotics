@@ -214,7 +214,6 @@ class Robot:
     def startDevices(self, item, override = False, **args):
         """ Load devices: dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
-        print "startDevices", item
         if type(item) == type({}):
             # this is the only one that does anything
             retval = []
