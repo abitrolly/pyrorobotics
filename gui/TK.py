@@ -228,7 +228,10 @@ class TKgui(Tkinter.Toplevel, gui):
                      
             return # no more things to show
          else:
-            thing = thing.__dict__[item] # property
+            if item in thing.__dict__:
+               thing = thing.__dict__[item] # property
+            else:
+               return
       # now that you have it, see what it is: --------------
       if type(thing) == type([]): # list:
          # if a list of objects, get them as nodes:
@@ -271,6 +274,10 @@ class TKgui(Tkinter.Toplevel, gui):
                   tree.add_node("%s = '%s'" % (item, thing.__dict__[item]), id=item, flag=0)
                else:                                        # number, other primitive
                   tree.add_node("%s = %s" % (item, thing.__dict__[item]), id=item, flag=0)
+
+   def objectBrowser(self, objectName):
+      TreeWindow(share.gui, objectName, self.getTreeContents,
+                 self.watchCallback, self.pasteCallback)
 
    def makeRobotTree(self):
       if self.engine and self.engine.robot:
@@ -671,6 +678,7 @@ class TKgui(Tkinter.Toplevel, gui):
             self.status.insert('end', message, "red")
          else:
             self.status.insert('end', message)
+      self.status.update()
 
    def write(self, item, tag = None):
       try:

@@ -15,16 +15,8 @@ interval_real 100 # real-time milliseconds per update step
 # defines Pioneer-like robots
 include "pioneer.inc"
 
-
-
-
-
 # defines 'map' object used for floorplans
 include "map.inc"
-
-
-
-
 
 window( size [ 830.000 556.000 ] center [-4.296 1.424] scale 0.014 )
 

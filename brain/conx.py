@@ -1745,7 +1745,13 @@ class Network:
         return output
     def prompt(self):
         print "--More-- [quit, go] ",
-        chr = sys.stdin.readline()
+        if sys.stdout.name == "<tkgui>":
+            chr = "\n"
+            print
+        else:
+            chr = sys.stdin.readline()
+        if len(chr) == 0:
+            char = "g"
         if chr[0] == 'g':
             self.interactive = 0
         elif chr[0] == 'q':

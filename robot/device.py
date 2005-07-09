@@ -98,10 +98,11 @@ class Device:
                 return retval
             else: # got a string, but it isn't a group name
                 raise AttributeError, "invalid device groupname '%s'" % item
+        elif type(item) == types.TupleType:
+            return [self.getSensorValue(p) for p in item]
         elif type(item) == types.IntType:
             return self.getSensorValue(item)
         elif type(item) == types.SliceType:
-            retval = []
             step = 1
             if item.step:
                 step = item.step

@@ -7,7 +7,7 @@ pyropid=$1
 shift
 config="$PYROBOT/plugins/configs/Player/gazebo.cfg"
 gui=1
-
+export GAZEBOPATH=$GAZEBOPATH:/usr/local/lib:/usr/lib
 if [ "$1" = "-g" ]
 then
     gui=0

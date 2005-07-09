@@ -39,14 +39,14 @@ class NNSettingsDialog(tkSimpleDialog.Dialog):
     def body(self, parent):
         i=0
         for paramTuple in self.entryList:
-            Tkinter.Label(parent,text=paramTuple[0]).grid(row=i,col=0,sticky=Tkinter.W)
-            Tkinter.Entry(parent, textvariable=paramTuple[3]).grid(row=i, col=1, sticky=Tkinter.W)
+            Tkinter.Label(parent,text=paramTuple[0]).grid(row=i,column=0,sticky=Tkinter.W)
+            Tkinter.Entry(parent, textvariable=paramTuple[3]).grid(row=i, column=1, sticky=Tkinter.W)
             i += 1
             
         i=0
         for paramTuple in self.checkList:
-            tempLabel = Tkinter.Label(parent, text=paramTuple[0]).grid(row=i,col=2,sticky=Tkinter.W)
-            Tkinter.Checkbutton(parent, variable=paramTuple[3]).grid(row=i, col=3, sticky=Tkinter.W)
+            tempLabel = Tkinter.Label(parent, text=paramTuple[0]).grid(row=i,column=2,sticky=Tkinter.W)
+            Tkinter.Checkbutton(parent, variable=paramTuple[3]).grid(row=i, column=3, sticky=Tkinter.W)
             i += 1
 
     def validate(self):
@@ -105,41 +105,41 @@ class VisConxBase:
         # --BEGIN visualFrame
         self.visualFrame = Tkinter.Frame(self.root)
         Tkinter.Label(self.visualFrame, text="Visualization Tools:",
-                      font=("Arial", 14, "bold")).grid(row=0, col=0, columnspan=2, sticky=Tkinter.W)
+                      font=("Arial", 14, "bold")).grid(row=0, column=0, columnspan=2, sticky=Tkinter.W)
         
         #setup options for basic data plots
-        Tkinter.Label(self.visualFrame, text="Plot:").grid(col=0, row=1, sticky= Tkinter.W)
+        Tkinter.Label(self.visualFrame, text="Plot:").grid(column=0, row=1, sticky= Tkinter.W)
         self.TSSCheck = Tkinter.Checkbutton(self.visualFrame, text="Show TSS Plot", command = self.handleTSSBox)
-        self.TSSCheck.grid(col=1,row=1, sticky=Tkinter.W)
+        self.TSSCheck.grid(column=1,row=1, sticky=Tkinter.W)
         self.RMSCheck = Tkinter.Checkbutton(self.visualFrame, text="Show RMS Plot", command = self.handleRMSBox)
-        self.RMSCheck.grid(col=1,row=2, sticky=Tkinter.W)
+        self.RMSCheck.grid(column=1,row=2, sticky=Tkinter.W)
         self.pCorrectCheck = Tkinter.Checkbutton(self.visualFrame, text="Show % Correct  Plot",
                                                  command = self.handlePCorrectBox)
-        self.pCorrectCheck.grid(col=1,row=3, sticky=Tkinter.W)
+        self.pCorrectCheck.grid(column=1,row=3, sticky=Tkinter.W)
 
         #options for displaying hinton diagrams
-        Tkinter.Label(self.visualFrame, text="Connections:").grid(col=0, row=4, sticky=Tkinter.NW)
+        Tkinter.Label(self.visualFrame, text="Connections:").grid(column=0, row=4, sticky=Tkinter.NW)
         self.hintonListBox = Tkinter.Listbox(self.visualFrame, selectmode = Tkinter.SINGLE, height=4, width = 40)
-        self.hintonListBox.grid(col=1, row=4, sticky=Tkinter.NSEW)
+        self.hintonListBox.grid(column=1, row=4, sticky=Tkinter.NSEW)
         conButtonFrame = Tkinter.Frame(self.visualFrame)
         Tkinter.Button(conButtonFrame,text="Show connection weights",
-                       command=self.createHintonDiag).grid(row=0, col=0, columnspan=2) 
-        Tkinter.Button(conButtonFrame, text="Save all weights", command=self.saveAllWeights).grid(row=1, col=0)
-        Tkinter.Button(conButtonFrame, text="Load all weights", command=self.loadAllWeights).grid(row=1, col=1)
-        conButtonFrame.grid(col=1, row=5)
+                       command=self.createHintonDiag).grid(row=0, column=0, columnspan=2) 
+        Tkinter.Button(conButtonFrame, text="Save all weights", command=self.saveAllWeights).grid(row=1, column=0)
+        Tkinter.Button(conButtonFrame, text="Load all weights", command=self.loadAllWeights).grid(row=1, column=1)
+        conButtonFrame.grid(column=1, row=5)
         self.refreshHintonListBox()
 
         #options for displaying the network topology
-        Tkinter.Label(self.visualFrame, text="Network Architecture:").grid(col=0,row=6, sticky=Tkinter.W)
+        Tkinter.Label(self.visualFrame, text="Network Architecture:").grid(column=0,row=6, sticky=Tkinter.W)
         self.archButton = Tkinter.Checkbutton(self.visualFrame, text="Draw network architecture",
                                               command=self.handleNetworkArchBox)
-        self.archButton.grid(col=1,row=6, sticky=Tkinter.W)
+        self.archButton.grid(column=1,row=6, sticky=Tkinter.W)
 
         #options for displaying node activations
-        Tkinter.Label(self.visualFrame, text="Node Activations:").grid(col=0,row=7,sticky=Tkinter.W)
+        Tkinter.Label(self.visualFrame, text="Node Activations:").grid(column=0,row=7,sticky=Tkinter.W)
         self.activButton = Tkinter.Checkbutton(self.visualFrame, text="Examine Node Activations",
                                                command=self.handleActivDiag)
-        self.activButton.grid(col=1,row=7,sticky=Tkinter.W)
+        self.activButton.grid(column=1,row=7,sticky=Tkinter.W)
         #END - visualFrame
 
         #BEGIN - Command evaluation

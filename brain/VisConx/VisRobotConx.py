@@ -6,12 +6,12 @@ import pyrobot.brain.VisConx.VisConxBase as VisConxBase
 class RobotGUIBase(VisConxBase.VisConxBase):
     def __init__(self):
         VisConxBase.VisConxBase.__init__(self)
-        Tkinter.Label(self.root, text="Controls:", font=("Arial", 14, "bold")).grid(row=0, col=0, sticky=Tkinter.W)
+        Tkinter.Label(self.root, text="Controls:", font=("Arial", 14, "bold")).grid(row=0, column=0, sticky=Tkinter.W)
         Tkinter.Button(self.root, text="Settings...",
-                       command=lambda: VisConxBase.NNSettingsDialog(self.root, self.netStruct.network)).grid(row=1, col=0, sticky=Tkinter.W)
-        self.visualFrame.grid(row=2, col=0, sticky=Tkinter.NSEW)
-        Tkinter.Frame(self.root, height=2, bg="black").grid(row=3,col=0,sticky=Tkinter.NSEW)
-        self.inputFrame.grid(row=4,col=0, sticky=Tkinter.NSEW)
+                       command=lambda: VisConxBase.NNSettingsDialog(self.root, self.netStruct.network)).grid(row=1, column=0, sticky=Tkinter.W)
+        self.visualFrame.grid(row=2, column=0, sticky=Tkinter.NSEW)
+        Tkinter.Frame(self.root, height=2, bg="black").grid(row=3,column=0,sticky=Tkinter.NSEW)
+        self.inputFrame.grid(row=4,column=0, sticky=Tkinter.NSEW)
         self.propNum = 0
         
     def handleActivDiag(self):

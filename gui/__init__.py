@@ -242,9 +242,9 @@ class gui:
             self.engine.reset()
          else:
             self.inform("Need to load a brain first!")
-      elif retval[:7] == "unwatch":
+      elif retval[:8] == "unwatch ":
          self.watcher.unwatch(retval[7:].strip())
-      elif retval[:5] == "watch":
+      elif retval[:6] == "watch ":
          if self.engine.brain:
             self.environment["self"] = self.engine.brain
          else:
@@ -253,6 +253,8 @@ class gui:
          self.environment["robot"] = self.engine.robot
          self.environment["brain"] = self.engine.brain
          self.watch(retval[5:].strip())
+      elif retval[:7] == "browse ":
+         self.objectBrowser(retval[7:].strip())
       else:
          # elif len(retval) > 0 and retval[0] == "!":
          exp1 = """_retval = """ + string.strip(retval)
