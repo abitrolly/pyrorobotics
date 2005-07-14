@@ -11,7 +11,7 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 
-LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerpacket -lplayerc -ljpeg -lplayercclient -lplayerclient -lplayerqueue -L/usr/lib/python2.4/config/ -lpython2.4
+LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerpacket -lplayerc -ljpeg -lplayercclient -lplayerclient -lplayerqueue -L/usr/lib/python2.3/config/ -lpython2.3
 
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
