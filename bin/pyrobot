@@ -57,7 +57,8 @@ spare = ''
 path = os.environ["PYROBOT"] 
 while spare == '':
    (path,spare) = os.path.split(path) # peel off pyrobot dir
-sys.path.insert(0, path) # add PYROBOT to PYTHON search path
+sys.path.insert(0, path) # add PYROBOT to PYTHON and OS search path
+os.environ["PATH"] += ":%s/plugins/simulators" % path 
 # ------------------------------ All done with environment business!
 try:
     from pyrobot.system import share
