@@ -80,6 +80,7 @@ class PlayerDevice(Device):
         else:
             if self._dev.subscribe(mode) != 0:
                 raise playerc.playerc_error_str()
+        Device.startDevice(self)
         # robot.blobfinder.blobs[0].x, y, top, left, range, right, color,
         #   area, bottom,
         # color is a pointer
@@ -192,7 +193,7 @@ class PlayerSonarDevice(PlayerDevice):
     def updateWindow(self):
         if self.visible:
             for i in range(self.count):
-                self.window.updateWidget(str(i), "%.2f" % self.distance(i))
+                self.window.updateWidget(str(i), "%.2f" % self[i].value)
 
 class PlayerLaserDevice(PlayerDevice):
     def __init__(self, client):
@@ -252,7 +253,7 @@ class PlayerLaserDevice(PlayerDevice):
     def updateWindow(self):
         if self.visible:
             for i in range(0, self.count, 10):
-                self.window.updateWidget(str(i), "%.2f" % self.distance(i))
+                self.window.updateWidget(str(i), "%.2f" % self[i].value)
 
 class PlayerCommDevice(PlayerDevice):
     def __init__(self, client, name):

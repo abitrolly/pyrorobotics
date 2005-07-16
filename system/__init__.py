@@ -23,7 +23,8 @@ def usage():
     print "  -w WORLDFILE       name of simulator world to load"
     print "  -c CONFIGFILE      name of server config to load"
     print "  -d DEVICE[,...]    names of devices (files or names)"
-    print "  -e \"string\"        eval string of commands"
+    print "  -g tty|tk|simple   type of GUI to use"
+    print "  -e \"string\"        eval string of Pyro commands"
     print "                     that are ; separated"    
     print ""
 

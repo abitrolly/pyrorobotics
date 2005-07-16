@@ -174,7 +174,12 @@ class TKgui(Tkinter.Toplevel, gui):
       self.commandEntry.insert('end', self.makeExpression(full_id))
 
    def watchCallback(self, full_id):
-      self.processCommand("watch " + self.makeExpression(full_id))
+      if len(full_id) == 3 and (full_id[0] == "robot" and
+                                full_id[1] in self.engine.robot.devices and
+                                type(full_id[2]) == type(0)):
+         self.engine.robot.__dict__[ full_id[1] ][full_id[2]].makeWindow()
+      else:
+         self.processCommand("watch " + self.makeExpression(full_id))
 
    def makeExpression(self, full_id):
       thingStr = ""
@@ -638,14 +643,15 @@ class TKgui(Tkinter.Toplevel, gui):
       
    def run(self, command = []):
       self.done = 0
-      while len(command) > 0:
+      while len(command) > 0 and self.done == 0:
          print command[0],
          retval = command[0]
          if retval:
             self.processCommand(retval)
          command = command[1:]
-      self.after(self.update_interval,self.update)
-      self.mainloop()
+      if not self.done:
+         self.after(self.update_interval,self.update)
+         self.mainloop()
 
    def inform(self, message):
       self.write(message + "\n")

@@ -75,9 +75,9 @@ class gui:
       for line in self.history:
          if search:
             if search in line:
-               print cnt, line
+               print "%4d: %s" % (cnt, line)
          else:
-            print cnt, line
+            print "%4d: %s" % (cnt, line)
          cnt += 1
 
    def addCommandHistory(self, command):
@@ -99,7 +99,7 @@ class gui:
       print "Version " + version()
       print "========================================================="
       while done is not 1:
-         print "Pyrobot > ", 
+         print "pyrobot> ", 
          if len(command) > 0:
             print command[0],
             retval = command[0].strip()
@@ -244,7 +244,7 @@ class gui:
                self.processCommand(self.history[i - 1])
          else:
             val = retval[1:]
-            if val.isdigit():
+            if val.strip().isdigit():
                self.processCommand(self.history[int(val) - 1])
             else:
                self.listCommandHistory(val)               
@@ -388,7 +388,6 @@ class gui:
    def cleanup(self):
       if not self.alreadyCleanedUp:
          self.alreadyCleanedUp = 1
-         print "Cleaning up...",
          self.done = 1
          try:
             sys.stdout = self.sysstdout
