@@ -1264,6 +1264,8 @@ class Network:
     def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
         self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+        sys.stdout.flush()
+
     def reportPattern(self):
         pass
     def reportStart(self):
@@ -1748,6 +1750,7 @@ class Network:
         if sys.stdout.name == "<tkgui>":
             chr = "\n"
             print
+            sys.stdout.flush()
         else:
             chr = sys.stdin.readline()
         if len(chr) == 0:

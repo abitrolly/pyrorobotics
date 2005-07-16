@@ -58,7 +58,7 @@ path = os.environ["PYROBOT"]
 while spare == '':
    (path,spare) = os.path.split(path) # peel off pyrobot dir
 sys.path.insert(0, path) # add PYROBOT to PYTHON and OS search path
-os.environ["PATH"] += ":%s/plugins/simulators" % path 
+os.environ["PATH"] += ":%s/plugins/simulators" % os.environ["PYROBOT"]
 # ------------------------------ All done with environment business!
 try:
     from pyrobot.system import share
@@ -191,8 +191,11 @@ if pyrobot.startup_check():
     elif window == 'TK':
         from pyrobot.gui.TK import TKgui
         gui = TKgui(eng)
-    elif window == 'TTY':
+    elif window == 'SIMPLE':
         gui = pyrobot.gui.gui("tty gui", {}, eng)
+    elif window == 'TTY':
+        from pyrobot.gui.tty import TTYGui
+        gui = TTYGui(engine = eng)
     elif window == 'CURSES':
         from pyrobot.gui.Curses import Curses as Curses
         gui = Curses("curses gui", {}, eng)

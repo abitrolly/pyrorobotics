@@ -8,6 +8,26 @@ import string
 from pyrobot.system.version import version as version
 from pyrobot.system import help, usage, about, file_exists
 
+class TextWatcher:
+   def __init__(self):
+      self.list = []
+   def watch(self, exp):
+      self.list.append(exp)
+   def unwatch(self, exp):
+      self.list.remove(exp)
+   def update(self, locals = None):
+      if len(self.list) == 0: return
+      print ("=== Pyrobot Expression Watcher: " + ("=" * 65))[:65]
+      if locals == None:
+         locals = globals()
+      for exp in self.list:
+         try:
+            value = str(eval(exp, locals))
+         except:
+            value = "<Undefined>"
+         print "   ", exp, "=>", value
+      print "=" * 65
+
 class BrainStem:
    """
    A stub used in the Pyrobot command evaluator to define "self"
@@ -36,7 +56,7 @@ class gui:
       self.prevsighandler = signal.signal(signal.SIGINT, self.INThandler)
       self.history = []
       self.history_pointer = 0
-      self.MAXHISTORY = 50
+      self.MAXHISTORY = 1000
       self.environment = {}
       self.environment["gui"] = self
       self.lastDir = {}
@@ -46,10 +66,18 @@ class gui:
          fp.close()
          self.history_pointer = len(self.history)
 
-   def listCommandHistory(self):
+   def listCommandHistory(self, search = None):
       cnt = 1
+      if search:
+         print "Command history containing '%s':" % search
+      else:
+         print "Command history:"
       for line in self.history:
-         print cnt, line
+         if search:
+            if search in line:
+               print cnt, line
+         else:
+            print cnt, line
          cnt += 1
 
    def addCommandHistory(self, command):
@@ -86,8 +114,7 @@ class gui:
 
    def makeWatcher(self):
       """ Text-based watcher """
-      pass
-      #self.watcher = FIX: set a list to eval
+      self.watcher = TextWatcher()
       
    def watch(self, exp):
       if self.watcher == None:
@@ -163,10 +190,12 @@ class gui:
       print commandLine
 
    def processCommand(self, retval):
-      self.addCommandHistory(retval)
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
       retval = retval.strip()
+      if retval == "":
+         return
+      self.addCommandHistory(retval)
       # Macro-style substitutions here:
       if len(retval)>= 1 and retval[0] == ".":
          if len(retval) >= 2:
@@ -209,8 +238,16 @@ class gui:
             self.listCommandHistory()
          elif retval == "!!":
             self.processCommand(self.history[-2]) # -1 is !!
+         elif "-" in retval:
+            start, stop = map(int, retval[1:].split("-"))
+            for i in range(start, stop + 1):
+               self.processCommand(self.history[i - 1])
          else:
-            self.processCommand(self.history[int(retval[1:]) - 1])
+            val = retval[1:]
+            if val.isdigit():
+               self.processCommand(self.history[int(val) - 1])
+            else:
+               self.listCommandHistory(val)               
       elif retval == "about":
          about()
       elif retval == "reload":
@@ -219,9 +256,9 @@ class gui:
          self.loadRobot()
       elif retval == "load brain":
          self.loadBrain()
-      elif retval == "load simulator":
-         print "Enter path (i.e., plugins/simulators/AriaSimulator)"
-         self.loadSim(self.engine.worldfile)
+      elif retval == "load simulator" or retval == "load server":
+         print "Enter simulator or server (e.g., StageSimulator, PlayerServer)"
+         self.loadSim()
       elif retval == "stop":
          self.engine.pleaseStop()
          self.inform("Stopped!")
@@ -340,6 +377,8 @@ class gui:
 
    def fileloaddialog(self, type, skel, olddir = ''):
       """ Read a line from user """
+      if olddir:
+         print "Suggest:", olddir
       print "\n%s Filename: " % type,
       retval =  sys.stdin.readline()
       retval = retval.replace("\n", "")

@@ -709,7 +709,7 @@ class TKgui(Tkinter.Toplevel, gui):
             self.status.config(state='disabled')
             self.status.see('end')
    def flush(self):
-      pass
+      self.status.update()
 
    def makeMenu(self, bar, name, commands):
       """ Assumes self.menuButtons exists """
