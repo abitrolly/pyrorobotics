@@ -187,6 +187,86 @@ def rotate(vec, ang):#2d
     #print "rotate",vec, ang
     return pol2car(angle(vec) + ang, dot(vec, vec))
 
+class Segment:
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+    def midpoint(self):
+        return ((self.start[0] + self.end[0])/2.,
+                (self.start[1] + self.end[1])/2.)
+    def length(self):
+        return math.sqrt((self.start[0] - self.end[0])**2 +
+                         (self.start[1] - self.end[1])**2)
+    def vertical(self):
+        return self.start[0] == self.end[0]
+    # don't call this if the line is vertical
+    def slope(self):
+        return (self.end[1] - self.start[1])/(self.end[0] - self.start[0])
+    # or this
+    def yintercept(self):
+        return self.start[1] - self.start[0] * self.slope()
+    def parallel(self, other):
+        if self.vertical():
+            return other.vertical()
+        elif other.vertical():
+            return 0
+        else:
+            return self.slope() == other.slope()
+
+    # return the point at which two segments would intersect if they extended
+    # far enough
+    def intersection(self, other):
+        if self.parallel(other):
+            # the segments may intersect, but we don't care
+            return None
+        elif self.vertical():
+            return other.intersection(self)
+        elif other.vertical():
+            return (other.start[0],
+                    self.yintercept() + other.start[0] * self.slope())
+        else:
+            # m1x + b1 = m2x + b2; so
+            # (m1 - m2)x + b1 - b2 == 0
+            # (m1 - m2)x = b2 - b1
+            # x = (b2 - b1)/(m1 - m2)
+            x = ((other.yintercept() - self.yintercept()) /
+                 (self.slope() - other.slope()))
+            return (x, self.yintercept() + x * self.slope())
+
+    def in_bbox(self, point):
+        return ((point[0] <= self.start[0] and point[0] >= self.end[0] or
+                 point[0] <= self.end[0] and point[0] >= self.start[0]) and
+                (point[1] <= self.start[1] and point[1] >= self.end[1] or
+                 point[1] <= self.end[1] and point[1] >= self.start[1]))
+    # is a point collinear with this line segment?
+    def on_line(self, point):
+        if self.vertical():
+            return point[0] == self.start[0]
+        else:
+            return (point[0] * self.slope() + self.yintercept() == point[1])
+
+    def intersects(self, other):
+        if self.parallel(other):
+            # they can "intersect" if they are collinear and overlap
+            if not (self.in_bbox(other.start) or self.in_bbox(other.end)):
+                return None
+            elif self.vertical():
+                if self.start[0] == other.start[0]:
+                    return self.intersection(other)
+                else:
+                    return None
+            else:
+                if self.yintercept() == other.yintercept():
+                    return self.intersection(other)
+                else:
+                    return None
+        else:
+            i = self.intersection(other)
+            if self.in_bbox(i) and other.in_bbox(i):
+                return i
+            else:
+                return None
+
 if __name__ == '__main__':
     print math.sqrt(9)
     x1 = [1,0,0]
