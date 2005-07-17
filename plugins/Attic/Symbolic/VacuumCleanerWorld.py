@@ -35,7 +35,7 @@ class GUI(Tkinter.Toplevel):
         self.world = {"A": "dirty", "B": "clean"}
         self.location = "A"
     
-    def process(self, request):
+    def process(self, request, sockname):
         retval = "error"
         if request.count('connectionNum'):
             connectionNum, port = request.split(":")

@@ -96,7 +96,7 @@ class GUI(Tkinter.Toplevel):
                     self.world[x][y] = 'X'
         self.redraw()
 
-    def process(self, request):
+    def process(self, request, sockname):
         retval = "error"
         if request.count("remove"):
             request = request.replace(")", "")

@@ -1,7 +1,7 @@
 """
 A Pure Python 2D Robot Simulator
 """
-import Tkinter, time, math
+import Tkinter, time, math, pickle
 import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
@@ -15,6 +15,12 @@ class Simulator:
         self.scale = 10.0
         self.offset_x = 50.0
         self.offset_y = 700.0
+        # connections to pyrobot:
+        self.ports = []
+        self.assoc = {}
+        self.done = 0
+        self.quit = 0
+        self.properties = []
 
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
@@ -26,10 +32,13 @@ class Simulator:
         self.addWall( ulx, lry, lrx, lry)
         self.addWall( lrx, uly, lrx, lry)
 
-    def addRobot(self, name, x, y, a, geometry = None, color = "red"):
+    def addRobot(self, port, name, x, y, a, geometry = None, color = "red"):
         r = self.robotConstructor(name, x, y, a, geometry, color)
         self.robots.append(r)
         r.simulator = self
+        self.assoc[port] = r
+        self.ports.append(port)
+        print self.ports
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
@@ -78,6 +87,49 @@ class Simulator:
         else:
             return min(hits)
 
+    def process(self, request, sockname):
+        """
+        Process does all of the work.
+        request  - a string message
+        sockname - (IPNUMBER (str), SOCKETNUM (int)) from client
+        """
+        print "request", request
+        retval = 'error'
+        if request == 'reset':
+            retval = "ok"
+        elif request.count('connectionNum'):
+            connectionNum, port = request.split(":")
+            retval = self.ports.index( int(port) )
+        elif request == 'end' or request == 'exit':
+            retval = "ok"
+            self.done = 1
+        elif request == 'quit':
+            retval = "ok"
+            self.done = 1
+            self.quit = 1
+        elif request == 'properties':
+            retval = self.properties
+        elif request == 'forward':
+            self.assoc[sockname[1]].move(0.3, 0.0)
+            retval = "ok"
+        elif request == 'left':
+            self.assoc[sockname[1]].move(0.0, 0.3)
+            retval = "ok"
+        elif request == 'right':
+            self.assoc[sockname[1]].move(0.0, -0.3)
+            retval = "ok"
+        elif request == 'back':
+            self.assoc[sockname[1]].move(-0.3, 0.0)
+            retval = "ok"
+        else:
+            # assume a package
+            message = request.split(":")
+            if message[0] == "m":
+                self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+                retval = "ok"
+        print "returning:", retval
+        return pickle.dumps(retval)
+
 class TkSimulator(Simulator, Tkinter.Toplevel):
     def __init__(self, root = None):
         if root == None:
@@ -87,9 +139,10 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                 root = Tkinter.Tk()
                 root.withdraw()
         Tkinter.Toplevel.__init__(self, root)
+        Simulator.__init__(self)
+        self.root = root
         self.wm_title("Pyrobot Simulator")
         self.protocol('WM_DELETE_WINDOW',self.destroy)
-        Simulator.__init__(self)
         self.robotConstructor = TkSimRobot
         self.frame = Tkinter.Frame(self)
         self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
@@ -103,6 +156,11 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.canvas.bind("<B1-Motion>", self.click_b1_move)
         self.canvas.bind("<B3-Motion>", self.click_b3_move)
         self.after(100, self.step)
+
+    def destroy(self):
+        self.done = 1 # stop processing requests, if handling
+        self.quit = 1 # stop accept/bind toplevel
+        self.root.quit() # kill the gui
 
     def click_b1_down(self, event):
         self.click_start = event.x, event.y
@@ -184,6 +242,10 @@ class SimRobot:
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
         self.display = {"body": 1, "boundingBox": 0, "rays": 1}
         self.stall = 0
+
+    def move(self, vx, va):
+        self.vx = vx
+        self.va = va
 
     def updateDevices(self):
         # measure and draw the new range data:
@@ -303,8 +365,8 @@ def run(constructor):
     sim = constructor()
     sim.addWall(5, 10, 15, 10)
     sim.addBox(5, 20, 45, 40)
-    sim.addRobot("Test1", 10, 15, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)))
-    sim.addRobot("Test2", 5, 15, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue")
+    sim.addRobot(60000, "Test1", 10, 15, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)))
+    sim.addRobot(60001, "Test2", 5, 15, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue")
     sim.robots[0].addRanger(Ranger("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
                                                         ( 0.30, 0.40, 65 * PIOVER180),
                                                         ( 0.40, 0.30, 40 * PIOVER180),

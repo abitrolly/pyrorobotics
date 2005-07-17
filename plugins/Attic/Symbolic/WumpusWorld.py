@@ -124,7 +124,7 @@ class GUI(Tkinter.Toplevel):
     def sum(self, a, b):
         return a[0] + b[0], a[1] + b[1]
 
-    def process(self, request):
+    def process(self, request, sockname):
         # moves: 'forward', 'left', 'right', 'grab', 'shoot'
         dirs = {'up':0, 'right':1, 'down':2, 'left':3}
         pos  = {0:'up', 1:'right', 2:'down', 3:'left'}

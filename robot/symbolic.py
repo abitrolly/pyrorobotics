@@ -50,8 +50,14 @@ class TCPRobot(Robot):
 			self.move("right")
 		elif dir == 'F':
 			self.move("forward")
+		elif dir == 'B':
+			self.move("back")
 
 	def move(self, message, other = None):
+		print "move", message
+		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
+			message = "m:%.2f:%.2f" % (message, other)
+			other = None
 		exp = None
 		if self.socket == 0: return "not connected"
 		if other != None: return # rotate,translate command ignored

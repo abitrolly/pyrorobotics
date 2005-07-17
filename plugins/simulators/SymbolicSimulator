@@ -29,6 +29,7 @@ def INIT(filename):
 class Server(SocketServer.TCPServer):
     def __init__(self, connection, handler, gui):
         handler.gui = gui
+        handler.connection = connection
         SocketServer.TCPServer.__init__(self, connection, handler)
                 
 class Handler(SocketServer.BaseRequestHandler):
@@ -38,10 +39,11 @@ class Handler(SocketServer.BaseRequestHandler):
         while not self.gui.done:
             try:
                 request = self.request.recv(10240).strip()
+                sockname = self.request.getsockname()
             except:
                 time.sleep(.01)
                 continue
-            retval = self.gui.process(request)
+            retval = self.gui.process(request, sockname)
             try:
                 self.request.send(retval)
             except: # broken pipe, etc
