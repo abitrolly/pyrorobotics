@@ -23,13 +23,13 @@ class Simulator:
         self.addWall( ulx, lry, lrx, lry)
         self.addWall( lrx, uly, lrx, lry)
 
-    def addRobot(self, name, x, y, a, geometry = None):
-        r = self.robotConstructor(name, x, y, a, geometry)
+    def addRobot(self, name, x, y, a, geometry = None, color = "red"):
+        r = self.robotConstructor(name, x, y, a, geometry, color)
         self.robots.append(r)
         r.simulator = self
 
-    def scale_x(self, x): return (x * 12.0)
-    def scale_y(self, y): return 500 - (y * 12.0)
+    def scale_x(self, x): return 50 + (x * 20.0)
+    def scale_y(self, y): return 700 - (y * 20.0)
         
     def step(self, timeslice = 100):
         """
@@ -38,7 +38,6 @@ class Simulator:
         # might want to randomize this order so the same ones
         # don't always move first:
         self.time += (timeslice / 1000.0)
-        print "Time:", self.time
         for r in self.robots:
             r.step(timeslice)
     def drawLine(self, x1, y1, x2, y2, color = None):
@@ -78,6 +77,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.canvas.pack(expand="yes", fill="both", side="top", anchor="n")
         #self.scrollbar = Tkinter.Scrollbar(self.frame, orient="h", command=self.scroll)
         #self.scrollbar.pack(expand="no", fill="x", side="bottom", anchor="s")
+        self.after(100, self.step)
         
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
@@ -88,14 +88,19 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
     def drawLine(self, x1, y1, x2, y2, color):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="robot", fill=color)
 
+    def step(self, timeslice = 100):
+        self.canvas.delete('robot')
+        Simulator.step(self, timeslice)
+        self.after(100, self.step)
+
 class SimRobot:
-    def __init__(self, name, x, y, a, geometry = None):
+    def __init__(self, name, x, y, a, geometry = None, color = "red"):
         self.name = name
         self.x = x
         self.y = y
         self.a = a
-        self.radius = .75
         self.geometry = geometry
+        self.color = color
         self.rangeDevices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
@@ -134,34 +139,48 @@ class SimRobot:
 class Ranger:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
         self.name = name
-        # geometries = (x, y, a)
+        # geometry = (x, y, a) in meters and radians
         self.geometry = geometry
         self.arc = arc
         self.maxRange = maxRange
         self.noise = noise
-        self.scan = []
+        self.scan = [] # for data
 
 class TkSimRobot(SimRobot):
     def step(self, timeslice = 100):
-        self.simulator.canvas.delete('robot')
         SimRobot.step(self, timeslice)
         # FIX: Move it, rather than delete/recreate
-        self.simulator.canvas.create_oval(self.simulator.scale_x(self.x - self.radius),
-                                          self.simulator.scale_y(self.y - self.radius),
-                                          self.simulator.scale_x(self.x + self.radius),
-                                          self.simulator.scale_y(self.y + self.radius),
-                                          tag="robot", fill="red")
+        sx = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
+        sy = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
+        s_x = self.simulator.scale_x
+        s_y = self.simulator.scale_y
+        xy = map(lambda x, y: (s_x(self.x + x * math.cos(self.a) - y * math.sin(self.a)),
+                               s_y(self.y + x * math.sin(self.a) + y * math.cos(self.a))),
+                               sx, sy)
+        self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot", outline="black")
+        bx = [-.25, -.25, .25, .25]
+        by = [ .5, .25, .25, .5]
+        xy = map(lambda x, y: (s_x(self.x + x * math.cos(self.a) - y * math.sin(self.a)),
+                               s_y(self.y + x * math.sin(self.a) + y * math.cos(self.a))),
+                               bx, by)
+        self.simulator.canvas.create_polygon(xy, tag="robot", fill="black")
         
 if __name__ == "__main__":
-    for constructor in [Simulator, TkSimulator]:
+    for constructor in [TkSimulator]: # [Simulator, TkSimulator]:
         sim = constructor()
         sim.addWall(5, 10, 15, 10)
         sim.addBox(5, 20, 45, 40)
         sim.addRobot("Test1", 10, 15, 0.0)
-        sim.robots[0].addRanger(Ranger("sonar", geometry = (( 0.00,-0.75, -90 * PIOVER180),
-                                                            ( 0.75, 0.00,   0),
-                                                            ( 0.00, 0.75,  90 * PIOVER180),
-                                                            (-0.75, 0.00, 180 * PIOVER180),
+        sim.addRobot("Test2", 5, 15, 1.5, color="blue")
+        sim.robots[0].addRanger(Ranger("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
+                                                            ( 0.30, 0.40, 65 * PIOVER180),
+                                                            ( 0.40, 0.30, 40 * PIOVER180),
+                                                            ( 0.50, 0.20, 15 * PIOVER180),
+                                                            ( 0.50,-0.20,-15 * PIOVER180),
+                                                            ( 0.40,-0.30,-40 * PIOVER180),
+                                                            ( 0.30,-0.40,-65 * PIOVER180),
+                                                            ( 0.20,-0.50,-90 * PIOVER180),
+                                                            
                                                             ),
                                        arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0))
-        sim.step()
+        sim.mainloop()
