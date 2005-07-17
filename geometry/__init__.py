@@ -188,9 +188,10 @@ def rotate(vec, ang):#2d
     return pol2car(angle(vec) + ang, dot(vec, vec))
 
 class Segment:
-    def __init__(self, start, end):
+    def __init__(self, start, end, id = None):
         self.start = start
         self.end = end
+        self.id = id
     def midpoint(self):
         return ((self.start[0] + self.end[0])/2.,
                 (self.start[1] + self.end[1])/2.)
