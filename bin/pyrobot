@@ -58,6 +58,10 @@ path = os.environ["PYROBOT"]
 while spare == '':
    (path,spare) = os.path.split(path) # peel off pyrobot dir
 sys.path.insert(0, path) # add PYROBOT to PYTHON and OS search path
+if "PYTHONPATH" in os.environ:
+    os.environ["PYTHONPATH"] += ":" + path
+else:
+    os.environ["PYTHONPATH"] = path
 os.environ["PATH"] += ":%s/plugins/simulators" % os.environ["PYROBOT"]
 # ------------------------------ All done with environment business!
 try:

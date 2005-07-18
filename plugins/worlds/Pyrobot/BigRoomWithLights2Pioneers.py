@@ -1,10 +1,3 @@
-import os, sys
-path = os.environ["PYROBOT"]
-spare = ''
-while spare == '':
-   (path,spare) = os.path.split(path) # peel off pyrobot dir
-sys.path.insert(0, path) # add PYROBOT to PYTHON and OS search path
-os.environ["PATH"] += ":%s/plugins/simulators" % os.environ["PYROBOT"]
 from pyrobot.simulators.pysim import TkSimulator, TkPioneer, RangeSensor, LightSensor
 from pyrobot.geometry import PIOVER180
 
