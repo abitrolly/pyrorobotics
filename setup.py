@@ -103,8 +103,8 @@ setup(
         'pyrobot.plugins': [
             'simulators/*Simulator', 'simulators/PlayerServer',
             #'worlds/Aria/*', 'worlds/Gazebo/*', 'worlds/Khepera/*',
-            #'worlds/Robocup/*', 'worlds/Stage/*', 'worlds/Symbolic/*',
-            'worlds/*/*.world', 'worlds/Symbolic/*.py',
+            #'worlds/Robocup/*', 'worlds/Stage/*', 'worlds/Pyrobot/*',
+            'worlds/*/*.world', 'worlds/Pyrobot/*.py',
                         ]
         },
 

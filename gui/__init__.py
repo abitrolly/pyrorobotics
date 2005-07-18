@@ -481,7 +481,7 @@ class gui:
             else:
                # ends with "Simulator"
                simDirName = simulatorName[:-9]
-               if simulatorName == "SymbolicSimulator":
+               if simulatorName == "PyrobotSimulator":
                   worldfile = self.fileloaddialog("worlds","*.py",
                                                   self.lastDir.get("%s-world" % simulatorName,
                                                                    "%s/plugins/worlds/%s/" %

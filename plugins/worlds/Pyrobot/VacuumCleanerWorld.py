@@ -4,7 +4,7 @@ import Image, ImageTk, ImageDraw, ImageFont
 class GUI(Tkinter.Toplevel):
     """
     A simple world from Russell and Norvig's AIMA. This works
-    in tandom with SymbolicServer.
+    in tandom with PyrobotSimulator.
     """
     def __init__(self, root, width, height):
         Tkinter.Toplevel.__init__(self, root)
@@ -13,7 +13,7 @@ class GUI(Tkinter.Toplevel):
         self.root = root
         self.width = width
         self.height = height
-        self.title("SymbolicSimulator: VacuumCleanerWorld")
+        self.title("PyrobotSimulator: VacuumCleanerWorld")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)

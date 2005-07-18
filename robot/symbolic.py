@@ -30,7 +30,7 @@ class SimDevice(Device):
 				   )
 class TCPRobot(Robot):
 	"""
-	A simple TCP-based socket robot for talking to SymbolicSimulator.
+	A simple TCP-based socket robot for talking to PyrobotSimulator.
 	"""
 	BUFSIZE = 1024
 	def __init__(self, host, port):

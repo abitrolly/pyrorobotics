@@ -14,7 +14,7 @@ class GUI(Tkinter.Toplevel):
         self.height = height
         self.lastMove = (0,0)
         self.visible = 1
-        self.title("SymbolicSimulator: KonaneWorld")
+        self.title("PyrobotSimulator: KonaneWorld")
         self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
         self.mBar.pack(fill=Tkinter.X)
         #menubar = self.tk_menuBar(self.makeMenu(self.mBar,

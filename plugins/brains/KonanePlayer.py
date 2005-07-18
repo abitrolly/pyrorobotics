@@ -90,8 +90,8 @@ class KonanePlayer(Brain):
     """
     A simple Random Konane Player. Note that the rep of board is
     zero-based, but all other places is one's based.
-    For use with SymbolicSimulator and KonaneWorld.py and
-    SymbolicPlayer.py (a TCPRobot from pyrobot/robot/symbolic.py)
+    For use with PyrobotSimulator and KonaneWorld.py and
+    PyrobotRobot.py (a TCPRobot from pyrobot/robot/symbolic.py)
     """
     def setup(self):
         if self.robot.id == 0:
@@ -106,7 +106,7 @@ class KonanePlayer(Brain):
         print "Jumps must occur in a straight line."
         print "A human can play, or start two Pyrobot's up,"
         print "and connect onto two different ports using"
-        print "SymbolicPlayer60000 and SymbolicPlayer60001."
+        print "PyrobotRobot60000 and PyrobotRobot60001."
 
     def step(self):
         if self.robot.whosMove != self.robot.id:

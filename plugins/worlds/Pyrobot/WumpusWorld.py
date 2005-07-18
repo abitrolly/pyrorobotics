@@ -4,7 +4,7 @@ import Image, ImageTk, ImageDraw, ImageFont
 class GUI(Tkinter.Toplevel):
     """
     A simple world from Russell and Norvig's AIMA. This works
-    with SymbolicSimulator.
+    with PyrobotSimulator.
     """
     def __init__(self, root, width, height):
         Tkinter.Toplevel.__init__(self, root)
@@ -14,7 +14,7 @@ class GUI(Tkinter.Toplevel):
         self.width = width
         self.height = height
         self.visible = 1
-        self.title("SymbolicSimulator: WumpusWorld")
+        self.title("PyrobotSimulator: WumpusWorld")
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
