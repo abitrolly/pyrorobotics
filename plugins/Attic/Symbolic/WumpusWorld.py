@@ -220,6 +220,10 @@ class GUI(Tkinter.Toplevel):
                 self.add( self.location, (0, -1) )
             retval = self.checkMovement()
             self.redraw()
+        elif request == 'supportedFeatures':
+            retval = []
+        elif request == 'builtinDevices':
+            retval = []
         else:   # unknown command; returns "error"
             pass
         return pickle.dumps(retval)

@@ -206,6 +206,8 @@ class Segment:
     # or this
     def yintercept(self):
         return self.start[1] - self.start[0] * self.slope()
+    def angle(self):
+        return math.atan2(self.end[1] - self.start[1], self.end[0] - self.start[0])
     def parallel(self, other):
         if self.vertical():
             return other.vertical()
@@ -213,7 +215,6 @@ class Segment:
             return 0
         else:
             return self.slope() == other.slope()
-
     # return the point at which two segments would intersect if they extended
     # far enough
     def intersection(self, other):
@@ -233,7 +234,6 @@ class Segment:
             x = ((other.yintercept() - self.yintercept()) /
                  (self.slope() - other.slope()))
             return (x, self.yintercept() + x * self.slope())
-
     def in_bbox(self, point):
         return ((point[0] <= self.start[0] and point[0] >= self.end[0] or
                  point[0] <= self.end[0] and point[0] >= self.start[0]) and
@@ -245,7 +245,6 @@ class Segment:
             return point[0] == self.start[0]
         else:
             return (point[0] * self.slope() + self.yintercept() == point[1])
-
     def intersects(self, other):
         if self.parallel(other):
             # they can "intersect" if they are collinear and overlap

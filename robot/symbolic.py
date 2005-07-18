@@ -1,6 +1,33 @@
 import socket, pickle
 from pyrobot.robot import Robot
+from pyrobot.robot.device import Device, SensorValue
 
+class SimDevice(Device):
+	def __init__(self, name, index, robot, geometry, groups):
+		Device.__init__(self, name)
+		self.geometry = geometry
+		self.groups = groups
+		self.startDevice()
+		self._dev = robot
+		self.index = index
+		self.maxvalueraw = geometry[2]
+		self.rawunits = "M"
+		self.units = "ROBOTS"
+		self.radius = 1.50
+	def __len__(self):
+		return len(self.geometry)
+	def getSensorValue(self, pos):
+		try:
+			v = self._dev.__dict__["%s_%d" % (self.type, self.index)][pos]
+		except:
+			v = 0.0
+		return SensorValue(self, v, pos,
+				   (self.geometry[0][pos][0], # x in meters
+				    self.geometry[0][pos][1], # y
+				    0.03,                    # z
+				    self.geometry[0][pos][2], # arc rads
+				    self.geometry[1]),        # arc rads
+				   )
 class TCPRobot(Robot):
 	"""
 	A simple TCP-based socket robot for talking to SymbolicSimulator.
@@ -21,7 +48,13 @@ class TCPRobot(Robot):
 		self.socket.connect( self.addr )
 		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
 		self.properties = self.getItem("properties")
-		self.id   = self.getItem("connectionNum:%d" % self.port)
+		self.builtinDevices = self.getItem("builtinDevices")
+		self.supportedFeatures = self.getItem("supportedFeatures")
+		self.id   = self.connectionNum
+		for dev in self.builtinDevices:
+			d = self.startDevice(dev)
+			if dev in ["sonar", "laser"]:
+				self.range = d
 
 	def localize(self, x = 0, y = 0, th = 0):
 		pass
@@ -53,10 +86,16 @@ class TCPRobot(Robot):
 		elif dir == 'B':
 			self.move("back")
 
+	def startDeviceBuiltin(self, name, index = 0):
+		self.properties.append("%s_%d" % (name, index))
+		self.move("s_%s_%d" % (name, index))
+		geometry = self.move("g_%s_%d" % (name, index))
+		groups = self.move("r_%s_%d" % (name, index))
+		return {name: SimDevice(name, index, self, geometry, groups)}
+
 	def move(self, message, other = None):
-		print "move", message
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
-			message = "m:%.2f:%.2f" % (message, other)
+			message = "m_%.2f_%.2f" % (message, other)
 			other = None
 		exp = None
 		if self.socket == 0: return "not connected"

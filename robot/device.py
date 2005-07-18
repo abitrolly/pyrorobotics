@@ -35,9 +35,9 @@ class SensorValue:
         if self.geometry == None:
             return None
         if unit.lower() == "radians":
-            return self.geometry[3] * PIOVER180 # radians
+            return self.geometry[3] # radians
         elif unit.lower() == "degrees":
-            return self.geometry[3]
+            return self.geometry[3] / PIOVER180 # degrees
         else:
             raise AttributeError, "invalid unit = '%s'" % unit
     def position(self):

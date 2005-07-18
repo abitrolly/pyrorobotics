@@ -6,21 +6,22 @@ import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
 class Simulator:
-    def __init__(self):
+    def __init__(self, offset_x, offset_y, scale):
         self.robots = []
+        self.lights = []
         self.world = []
         self.time = 0.0
-        self.robotConstructor = SimRobot
         self.timeslice = 100
-        self.scale = 10.0
-        self.offset_x = 50.0
-        self.offset_y = 700.0
+        self.scale = scale
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         # connections to pyrobot:
         self.ports = []
         self.assoc = {}
         self.done = 0
         self.quit = 0
-        self.properties = []
+        self.properties = ["stall", "x", "y", "th", "thr"]
+        self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
 
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
@@ -32,13 +33,17 @@ class Simulator:
         self.addWall( ulx, lry, lrx, lry)
         self.addWall( lrx, uly, lrx, lry)
 
-    def addRobot(self, port, name, x, y, a, geometry = None, color = "red"):
-        r = self.robotConstructor(name, x, y, a, geometry, color)
+    def addLight(self, x, y, brightness):
+        self.lights.append((x, y, brightness))
+        self.redraw()
+
+    def redraw(self): pass
+
+    def addRobot(self, port, r):
         self.robots.append(r)
         r.simulator = self
         self.assoc[port] = r
         self.ports.append(port)
-        print self.ports
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
@@ -55,7 +60,7 @@ class Simulator:
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
-    def castRay(self, robot, x1, y1, a, maxRange):
+    def castRay(self, robot, x1, y1, a, maxRange, ignoreSelf = 1):
         hits = []
         x2, y2 = math.sin(a) * maxRange + x1, math.cos(a) * maxRange + y1
         seg = Segment((x1, y1), (x2, y2))
@@ -68,8 +73,8 @@ class Simulator:
                     hits.append( (dist, retval, w.id) ) # distance, hit, id
         # go down list of robots, and see if you hit one:
         for r in self.robots:
-            # but don't hit your own bounding box:
-            if r.name == robot.name: continue
+            # but don't hit your own bounding box if ignoreSelf:
+            if r.name == robot.name and ignoreSelf: continue
             a90 = r.a + 90 * PIOVER180
             xys = map(lambda x, y: (r.x + x * math.cos(a90) - y * math.sin(a90),
                                     r.y + x * math.sin(a90) + y * math.cos(a90)),
@@ -93,7 +98,6 @@ class Simulator:
         request  - a string message
         sockname - (IPNUMBER (str), SOCKETNUM (int)) from client
         """
-        print "request", request
         retval = 'error'
         if request == 'reset':
             retval = "ok"
@@ -109,6 +113,10 @@ class Simulator:
             self.quit = 1
         elif request == 'properties':
             retval = self.properties
+        elif request == 'supportedFeatures':
+            retval = self.supportedFeatures
+        elif request == 'builtinDevices':
+            retval = self.assoc[sockname[1]].builtinDevices
         elif request == 'forward':
             self.assoc[sockname[1]].move(0.3, 0.0)
             retval = "ok"
@@ -121,17 +129,56 @@ class Simulator:
         elif request == 'back':
             self.assoc[sockname[1]].move(-0.3, 0.0)
             retval = "ok"
+        elif request == 'x':
+            retval = self.assoc[sockname[1]].x
+        elif request == 'y':
+            retval = self.assoc[sockname[1]].y
+        elif request == 'stall':
+            retval = self.assoc[sockname[1]].stall
+        elif request == 'thr':
+            retval = self.assoc[sockname[1]].a
+        elif request == 'th':
+            retval = self.assoc[sockname[1]].a / PIOVER180
         else:
             # assume a package
-            message = request.split(":")
-            if message[0] == "m":
-                self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+            message = request.split("_")
+            if message[0] == "m": # "m_t_r" move:translate:rotate
+                retval = self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+            elif message[0] == "d": # "d_sonar" display:keyword
+                retval = self.assoc[sockname[1]].display[message[1]] = 1
+            elif message[0] == "g": # "g_sonar_0" geometry_sensor_id
+                index = 0
+                for d in self.assoc[sockname[1]].devices:
+                    if d.type == message[1]:
+                        if int(message[2]) == index:
+                            if message[1] in ["sonar", "laser", "light"]:
+                                retval = d.geometry, d.arc, d.maxRange
+                        index += 1
+            elif message[0] == "r": # "r_sonar_0" groups_sensor_id
+                index = 0
+                for d in self.assoc[sockname[1]].devices:
+                    if d.type == message[1]:
+                        if int(message[2]) == index:
+                            if message[1] in ["sonar", "laser", "light"]:
+                                retval = d.groups
+                        index += 1
+            elif message[0] == "s": # "s_sonar_0" subscribe
+                if self.assoc[sockname[1]].display[message[1]] != -1:
+                    self.assoc[sockname[1]].display[message[1]] = 1
+                self.properties.append("%s_%s" % (message[1], message[2]))
                 retval = "ok"
-        print "returning:", retval
+            elif message[0] in ["sonar", "laser", "light"]: # sonar_0, light_0
+                index = 0
+                for d in self.assoc[sockname[1]].devices:
+                    if d.type == message[0]:
+                        if int(message[1]) == index:
+                            if message[0] in ["sonar", "laser", "light"]:
+                                retval = d.scan
+                        index += 1
         return pickle.dumps(retval)
 
 class TkSimulator(Simulator, Tkinter.Toplevel):
-    def __init__(self, root = None):
+    def __init__(self, offset_x, offset_y, scale, root = None):
         if root == None:
             if share.gui:
                 root = share.gui
@@ -139,11 +186,10 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                 root = Tkinter.Tk()
                 root.withdraw()
         Tkinter.Toplevel.__init__(self, root)
-        Simulator.__init__(self)
+        Simulator.__init__(self, offset_x, offset_y, scale)
         self.root = root
         self.wm_title("Pyrobot Simulator")
         self.protocol('WM_DELETE_WINDOW',self.destroy)
-        self.robotConstructor = TkSimRobot
         self.frame = Tkinter.Frame(self)
         self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
                         fill = 'both')
@@ -209,11 +255,16 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
+        print "Offsets:", self.offset_x, self.offset_y, "Scale:", self.scale
         self.canvas.delete('all')
         for segment in self.world:
             (x1, y1), (x2, y2) = segment.start, segment.end
             id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
             segment.id = id
+        for light in self.lights:
+            x, y, brightness = light
+            self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
+                                    self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill="yellow", outline="yellow")
         
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
@@ -230,42 +281,70 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.after(self.timeslice, self.step)
 
 class SimRobot:
-    def __init__(self, name, x, y, a, geometry = None, color = "red"):
+    def __init__(self, name, x, y, a, boundingBox = None, color = "red"):
         self.name = name
         self.x = x
         self.y = y
         self.a = a
-        self.boundingBox = geometry # ((x1, x2), (y1, y2)) of bounding box
+        self.boundingBox = boundingBox # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
+        self.builtinDevices = []
         self.color = color
-        self.rangeDevices = []
+        self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.display = {"body": 1, "boundingBox": 0, "rays": 1}
+        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
         self.stall = 0
 
     def move(self, vx, va):
         self.vx = vx
         self.va = va
-
+        return "ok"
+    
     def updateDevices(self):
-        # measure and draw the new range data:
-        for d in self.rangeDevices:
-            d.scan = [0] * len(d.geometry)
-            i = 0
-            for x, y, a in d.geometry:
-                ga = (self.a + a)
-                a90 = self.a + 90 * PIOVER180
-                gx = self.x + (x * math.cos(a90) - y * math.sin(a90))
-                gy = self.y + (x * math.sin(a90) + y * math.cos(a90))
-                dist, hit, id = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
-                if hit:
-                    self.drawRay(gx, gy, hit[0], hit[1], "gray")
-                else:
-                    hx, hy = math.sin(-ga) * d.maxRange, math.cos(-ga) * d.maxRange
-                    dist = d.maxRange
-                    self.drawRay(gx, gy, gx + hx, gy + hy, "gray")
-                d.scan[i] = dist
-                i += 1
+        # measure and draw the new device data:
+        for d in self.devices:
+            if d.type == "sonar":
+                i = 0
+                for x, y, a in d.geometry:
+                    ga = (self.a + a)
+                    a90 = self.a + 90 * PIOVER180
+                    gx = self.x + (x * math.cos(a90) - y * math.sin(a90))
+                    gy = self.y + (x * math.sin(a90) + y * math.cos(a90))
+                    dist, hit, id = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
+                    if hit:
+                        self.drawRay("sonar", gx, gy, hit[0], hit[1], "gray")
+                    else:
+                        hx, hy = math.sin(-ga) * d.maxRange, math.cos(-ga) * d.maxRange
+                        dist = d.maxRange
+                        self.drawRay("sonar", gx, gy, gx + hx, gy + hy, "gray")
+                    d.scan[i] = dist
+                    i += 1
+            elif d.type == "light":
+                # for each light sensor:
+                i = 0
+                for (d_x, d_y, d_a) in d.geometry:
+                    # compute total light on sensor, falling off as square of distance
+                    # position of light sensor in global coords:
+                    a90 = self.a + 90 * PIOVER180
+                    gx = self.x + (d_x * math.cos(a90) - d_y * math.sin(a90))
+                    gy = self.y + (d_x * math.sin(a90) + d_y * math.cos(a90))
+                    sum = 0.0
+                    for light in self.simulator.lights:
+                        x, y, brightness = light
+                        seg = Segment((x,y), (gx, gy))
+                        a = -seg.angle() + 90 * PIOVER180
+                        # see if line between sensor and light is blocked by any boundaries (including own bb)
+                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1, ignoreSelf = 0)
+                        # compute distance of segment; value is sqrt of that?
+                        if not hit: # no hit means it has a clear shot:
+                            self.drawRay("light", x, y, gx, gy, "orange")
+                            sum += (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
+                        else:
+                            self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
+                    d.scan[i] = sum
+                    i += 1
+            else:
+                raise AttributeError, "unknown type of device: '%s'" % d.type
 
     def step(self, timeslice = 100):
         """
@@ -291,6 +370,7 @@ class SimRobot:
                 if bb.intersects(w):
                     self.stall = 1
                     self.updateDevices()
+                    self.draw()
                     return
             # check each segment of the robot's bounding box for other robots:
             for r in self.simulator.robots:
@@ -303,40 +383,53 @@ class SimRobot:
                     if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                         self.stall = 1
                         self.updateDevices()
+                        self.draw()
                         return
         # ok! move the robot
         self.stall = 0
         self.x = p_x
         self.y = p_y
-        self.a = p_a
+        self.a = p_a % (2 * math.pi) # keep in the positive range
         self.updateDevices()
-        
-    def drawRay(self, x1, y1, x2, y2, color):
-        pass
-    
-    def addRanger(self, ranger):
-        self.rangeDevices.append(ranger)
+        self.draw()
+    def draw(self): pass
+    def drawRay(self, type, x1, y1, x2, y2, color):
+        if self.display[type] == 1:
+            self.simulator.drawLine(x1, y1, x2, y2, color)
+    def addDevice(self, dev):
+        self.devices.append(dev)
+        if dev.type not in self.builtinDevices:
+            self.builtinDevices.append(dev.type)
 
-class Ranger:
+class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
-        self.name = name
+        self.type = name
         # geometry = (x, y, a) origin in meters and radians
         self.geometry = geometry
         self.arc = arc
         self.maxRange = maxRange
         self.noise = noise
-        self.scan = [] # for data
+        self.groups = {}
+        self.scan = [0] * len(geometry) # for data
 
-class TkSimRobot(SimRobot):
-    def step(self, timeslice = 100):
-        SimRobot.step(self, timeslice)
-        # FIX: Move it, rather than delete/recreate
+class LightSensor:
+    def __init__(self, geometry, noise = 0.0):
+        self.type = "light"
+        self.geometry = geometry
+        self.arc = None
+        self.maxRange = None
+        self.noise = noise
+        self.groups = {}
+        self.scan = [0] * len(geometry) # for data
+
+class TkPioneer(SimRobot):
+    def draw(self):
         sx = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
         sy = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
         s_x = self.simulator.scale_x
         s_y = self.simulator.scale_y
         a90 = self.a + 90 * PIOVER180 # angle is 90 degrees off for graphics
-        if self.display["body"]:
+        if self.display["body"] == 1:
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      sx, sy)
@@ -347,53 +440,70 @@ class TkSimRobot(SimRobot):
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      bx, by)
             self.simulator.canvas.create_polygon(xy, tag="robot", fill="black")
-        if self.display["boundingBox"]:
+        if self.display["boundingBox"] == 1:
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot", fill="", outline="purple")
 
-
-    def drawRay(self, x1, y1, x2, y2, color):
-        if self.display["rays"]:
-            self.simulator.drawLine(x1, y1, x2, y2, "gray")
-        
-def run(constructor):
-    """
-    run() takes either TkSimulator or Simulator
-    """
-    sim = constructor()
-    sim.addWall(5, 10, 15, 10)
-    sim.addBox(5, 20, 45, 40)
-    sim.addRobot(60000, "Test1", 10, 15, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)))
-    sim.addRobot(60001, "Test2", 5, 15, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue")
-    sim.robots[0].addRanger(Ranger("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
-                                                        ( 0.30, 0.40, 65 * PIOVER180),
-                                                        ( 0.40, 0.30, 40 * PIOVER180),
-                                                        ( 0.50, 0.20, 15 * PIOVER180),
-                                                        ( 0.50,-0.20,-15 * PIOVER180),
-                                                        ( 0.40,-0.30,-40 * PIOVER180),
-                                                        ( 0.30,-0.40,-65 * PIOVER180),
-                                                        ( 0.20,-0.50,-90 * PIOVER180),
-                                                        
-                                                        ),
-                                   arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0))
-    sim.robots[1].addRanger(Ranger("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
-                                                        ( 0.30, 0.40, 65 * PIOVER180),
-                                                        ( 0.40, 0.30, 40 * PIOVER180),
-                                                        ( 0.50, 0.20, 15 * PIOVER180),
-                                                        ( 0.50,-0.20,-15 * PIOVER180),
-                                                        ( 0.40,-0.30,-40 * PIOVER180),
-                                                        ( 0.30,-0.40,-65 * PIOVER180),
-                                                        ( 0.20,-0.50,-90 * PIOVER180),
-                                                        
-                                                        ),
-                                   arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0))
-    return sim
-
 def INIT():
-    return run(TkSimulator)
-
-if __name__ == "__main__":
-    sim = run(TkSimulator)
-    sim.mainloop()
+    sim = TkSimulator(30, 586, 13.7)
+    sim.addBox(0, 0, 40, 40)
+    sim.addLight(5, 5, 1)
+    sim.addLight(5, 30, 1)
+    sim.addWall(0, 20, 10, 10)
+    sim.addRobot(60000, TkPioneer("Pyrobot1", 15, 30, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5))))
+    sim.addRobot(60001, TkPioneer("Pyrobot2", 30, 35, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue"))
+    sonar = RangeSensor("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
+                                             ( 0.30, 0.40, 65 * PIOVER180),
+                                             ( 0.40, 0.30, 40 * PIOVER180),
+                                             ( 0.50, 0.20, 15 * PIOVER180),
+                                             ( 0.50,-0.20,-15 * PIOVER180),
+                                             ( 0.40,-0.30,-40 * PIOVER180),
+                                             ( 0.30,-0.40,-65 * PIOVER180),
+                                             ( 0.20,-0.50,-90 * PIOVER180)),
+                        arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+    sonar.groups = {'all': range(8),
+                    'front': (3, 4),
+                    'front-left' : (1,2,3),
+                    'front-right' : (4, 5, 6),
+                    'front-all' : (1,2, 3, 4, 5, 6),
+                    'left' : (0,), 
+                    'right' : (7,), 
+                    'left-front' : (0,), 
+                    'right-front' : (7, ),
+                    'left-back' : [],
+                    'right-back' : [],
+                    'back-right' : [],
+                    'back-left' : [], 
+                    'back' : [],
+                    'back-all' : []}
+    sim.robots[0].addDevice(sonar)
+    sonar = RangeSensor("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
+                                             ( 0.30, 0.40, 65 * PIOVER180),
+                                             ( 0.40, 0.30, 40 * PIOVER180),
+                                             ( 0.50, 0.20, 15 * PIOVER180),
+                                             ( 0.50,-0.20,-15 * PIOVER180),
+                                             ( 0.40,-0.30,-40 * PIOVER180),
+                                             ( 0.30,-0.40,-65 * PIOVER180),
+                                             ( 0.20,-0.50,-90 * PIOVER180)),
+                        arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+    sonar.groups = {'all': range(8),
+                    'front': (3, 4),
+                    'front-left' : (1,2,3),
+                    'front-right' : (4, 5, 6),
+                    'front-all' : (1,2, 3, 4, 5, 6),
+                    'left' : (0,), 
+                    'right' : (7,), 
+                    'left-front' : (0,), 
+                    'right-front' : (7, ),
+                    'left-back' : [],
+                    'right-back' : [],
+                    'back-right' : [],
+                    'back-left' : [], 
+                    'back' : [],
+                    'back-all' : []}
+    sim.robots[1].addDevice(sonar)
+    sim.robots[0].addDevice(LightSensor(((.75,  .5, 0), (.75, -.5, 0)))) # make sure outside of bb!
+    sim.robots[1].addDevice(LightSensor(((.75,  .5, 0), (.75, -.5, 0)))) # make sure outside of bb!
+    return sim

@@ -77,6 +77,10 @@ class GUI(Tkinter.Toplevel):
             retval = self.properties
         elif request == 'movements':
             retval = self.movements
+        elif request == 'supportedFeatures':
+            retval = []
+        elif request == 'builtinDevices':
+            retval = []
         else:   # unknown command; returns "error"
             pass
         return pickle.dumps(retval)

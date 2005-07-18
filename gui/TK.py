@@ -551,11 +551,14 @@ class TKgui(Tkinter.Toplevel, gui):
             bump = "[STALL!]"
          else:
             bump = ''
-         self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
-                                       % (self.engine.robot.x,
-                                          self.engine.robot.y,
-                                          self.engine.robot.th,
-                                          bump))
+         try:
+            self.textArea['Pose:'].config(text = "X: %4.2f Y: %4.2f Th: %4.0f  %s"\
+                                          % (self.engine.robot.x,
+                                             self.engine.robot.y,
+                                             self.engine.robot.th,
+                                             bump))
+         except:
+            pass
          for deviceType in self.engine.robot.getDevices():
             for device in self.engine.robot.__dict__[deviceType]:
                if device.getVisible():
