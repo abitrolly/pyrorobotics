@@ -13,7 +13,7 @@ class SimDevice(Device):
 		self.maxvalueraw = geometry[2]
 		self.rawunits = "M"
 		self.units = "ROBOTS"
-		self.radius = 1.50
+		self.radius = robot.radius
 	def __len__(self):
 		return len(self.geometry)
 	def getSensorValue(self, pos):
@@ -39,6 +39,8 @@ class TCPRobot(Robot):
 		self.host = host
 		self.port = port
 		self.addr = (host, port)
+		self.type = "Pyrobot"
+		self.radius = 1.50
 		# Create socket
 		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 		try:
@@ -92,6 +94,12 @@ class TCPRobot(Robot):
 		geometry = self.move("g_%s_%d" % (name, index))
 		groups = self.move("r_%s_%d" % (name, index))
 		return {name: SimDevice(name, index, self, geometry, groups)}
+
+	def translate(self, value):
+		self.move("t_%f" % value)
+
+	def rotate(self, value):
+		self.move("o_%f" % value)
 
 	def move(self, message, other = None):
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:

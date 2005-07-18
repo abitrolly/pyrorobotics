@@ -12,12 +12,12 @@ class Vehicle(Brain):
       self.robot.light[0].units = "SCALED"
 
    def step(self):
-      leftSpeed  = self.robot.light[0][1].value # left lights
-      rightSpeed = self.robot.light[0][4].value # right lights
+      leftSpeed  = self.robot.light[0]["left"][0].value # left lights
+      rightSpeed = self.robot.light[0]["right"][0].value # right lights
       self.motors(leftSpeed,  rightSpeed) # to the left
 
 def INIT(engine):
-   if engine.robot.type != 'K-Team':
+   if engine.robot.type not in ['K-Team', 'Pyrobot']:
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
    return Vehicle('Braitenberg2a', engine)

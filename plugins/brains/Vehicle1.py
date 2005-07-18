@@ -11,12 +11,12 @@ class Vehicle(Brain):
    def setup(self):
       self.maxvalue = self.robot.light[0].getMaxvalue()
    def step(self):
-      sensorValue = avg([s.distance() for s in self.light[0][2:4]]) # front lights
+      sensorValue = avg([s.distance() for s in self.robot.light[0]["front-all"]]) # front lights
       forward = (self.maxvalue - sensorValue) / self.maxvalue
       self.motors(forward,  forward) # to the left
 
 def INIT(engine):
-   if engine.robot.robot.type != 'K-Team':
+   if engine.robot.type not in ['K-Team', 'Pyrobot']:
       raise "Robot should have light sensors!"
    print "OK: robot has light sensors."
    return Vehicle('Braitenberg', engine)

@@ -59,6 +59,38 @@ def INIT():
                     'back' : [],
                     'back-all' : []}
     sim.robots[1].addDevice(sonar)
-    sim.robots[0].addDevice(LightSensor(((.75,  .5, 0), (.75, -.5, 0)))) # make sure outside of bb!
-    sim.robots[1].addDevice(LightSensor(((.75,  .5, 0), (.75, -.5, 0)))) # make sure outside of bb!
+    lights = LightSensor(((.75,  .5, 0), (.75, -.5, 0))) # make sure outside of bb!
+    lights.groups = {"front-all": (0, 1),
+                    "all": (0, 1),
+                    "front": (0, 1),
+                    "front-left": (0, ),
+                    "front-right": (1, ),
+                    'left' : (0,), 
+                    'right' : (1,), 
+                    'left-front' : (0,), 
+                    'right-front' : (1, ),
+                    'left-back' : [],
+                    'right-back' : [],
+                    'back-right' : [],
+                    'back-left' : [], 
+                    'back' : [],
+                    'back-all' : []}
+    sim.robots[0].addDevice(lights)
+    lights = LightSensor(((.75,  .5, 0), (.75, -.5, 0))) # make sure outside of bb!
+    lights.groups = {"front-all": (0, 1),
+                    "all": (0, 1),
+                    "front": (0, 1),
+                    "front-left": (0, ),
+                    "front-right": (1, ),
+                    'left' : (0,), 
+                    'right' : (1,), 
+                    'left-front' : (0,), 
+                    'right-front' : (1, ),
+                    'left-back' : [],
+                    'right-back' : [],
+                    'back-right' : [],
+                    'back-left' : [], 
+                    'back' : [],
+                    'back-all' : []}
+    sim.robots[1].addDevice(lights)
     return sim

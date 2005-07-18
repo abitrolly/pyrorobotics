@@ -144,6 +144,10 @@ class Simulator:
             message = request.split("_")
             if message[0] == "m": # "m_t_r" move:translate:rotate
                 retval = self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+            elif message[0] == "t": # "t_v" translate:value
+                retval = self.assoc[sockname[1]].translate(float(message[1]))
+            elif message[0] == "o": # "o_v" rotate:value
+                retval = self.assoc[sockname[1]].rotate(float(message[1]))
             elif message[0] == "d": # "d_sonar" display:keyword
                 retval = self.assoc[sockname[1]].display[message[1]] = 1
             elif message[0] == "g": # "g_sonar_0" geometry_sensor_id
@@ -299,7 +303,15 @@ class SimRobot:
         self.vx = vx
         self.va = va
         return "ok"
-    
+
+    def rotate(self, va):
+        self.va = va
+        return "ok"
+
+    def translate(self, vx):
+        self.vx = vx
+        return "ok"
+
     def updateDevices(self):
         # measure and draw the new device data:
         for d in self.devices:
@@ -417,7 +429,7 @@ class LightSensor:
         self.type = "light"
         self.geometry = geometry
         self.arc = None
-        self.maxRange = None
+        self.maxRange = 1000.0
         self.noise = noise
         self.groups = {}
         self.scan = [0] * len(geometry) # for data
