@@ -20,7 +20,7 @@ class Simulator:
         self.assoc = {}
         self.done = 0
         self.quit = 0
-        self.properties = ["stall", "x", "y", "th", "thr"]
+        self.properties = ["stall", "x", "y", "th", "thr", "energy"]
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
 
     def addWall(self, x1, y1, x2, y2):
@@ -33,8 +33,8 @@ class Simulator:
         self.addWall( ulx, lry, lrx, lry)
         self.addWall( lrx, uly, lrx, lry)
 
-    def addLight(self, x, y, brightness):
-        self.lights.append((x, y, brightness))
+    def addLight(self, x, y, brightness, color="yellow"):
+        self.lights.append(Light(x, y, brightness, color))
         self.redraw()
 
     def redraw(self): pass
@@ -44,6 +44,7 @@ class Simulator:
         r.simulator = self
         self.assoc[port] = r
         self.ports.append(port)
+        r._xya = r.x, r.y, r.a # save original position for later reset
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
@@ -100,6 +101,7 @@ class Simulator:
         """
         retval = 'error'
         if request == 'reset':
+            self.reset()
             retval = "ok"
         elif request.count('connectionNum'):
             connectionNum, port = request.split(":")
@@ -131,6 +133,8 @@ class Simulator:
             retval = "ok"
         elif request == 'x':
             retval = self.assoc[sockname[1]].x
+        elif request == 'energy':
+            retval = self.assoc[sockname[1]].energy
         elif request == 'y':
             retval = self.assoc[sockname[1]].y
         elif request == 'stall':
@@ -150,6 +154,10 @@ class Simulator:
                 retval = self.assoc[sockname[1]].rotate(float(message[1]))
             elif message[0] == "d": # "d_sonar" display:keyword
                 retval = self.assoc[sockname[1]].display[message[1]] = 1
+            elif message[0] == "e": # "e_amt" eat:keyword
+                retval = self.assoc[sockname[1]].eat(float(message[1]))
+            elif message[0] == "x": # "x_expression" expression
+                retval = eval(message[1])
             elif message[0] == "g": # "g_sonar_0" geometry_sensor_id
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
@@ -199,25 +207,66 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                         fill = 'both')
         self.canvas = Tkinter.Canvas(self.frame, bg="white", width=600, height=600)
         self.canvas.pack(expand="yes", fill="both", side="top", anchor="n")
-        self.canvas.bind("<ButtonRelease-1>", self.click_b1_up)
+        self.canvas.bind("<ButtonRelease-2>", self.click_b2_up)
         self.canvas.bind("<ButtonRelease-3>", self.click_b3_up)
-        self.canvas.bind("<Button-1>", self.click_b1_down)
+        self.canvas.bind("<Button-2>", self.click_b2_down)
         self.canvas.bind("<Button-3>", self.click_b3_down)
-        self.canvas.bind("<B1-Motion>", self.click_b1_move)
+        self.canvas.bind("<B2-Motion>", self.click_b2_move)
         self.canvas.bind("<B3-Motion>", self.click_b3_move)
+        self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
+        self.mBar.pack(fill=Tkinter.X)
+        self.menuButtons = {}
+        menu = [
+            ('File', [['Reset', self.reset],
+                      ['Exit', self.destroy]]),
+            ('View',[
+            ['body', lambda: self.toggle("body")],                     
+            ['boundingBox', lambda: self.toggle("boundingBox")],                     
+            ['sonar', lambda: self.toggle("sonar")],
+            ['light', lambda: self.toggle("light")],                     
+            ['lightBlocked', lambda: self.toggle("lightBlocked")],                     
+            ]
+             ),
+            ]
+        for entry in menu:
+            self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))        
         self.after(100, self.step)
-
+    def toggle(self, key):
+        for r in self.robots:
+            if r.display[key] == 1:
+                r.display[key] = 0
+            else:
+                r.display[key] = 1
+    def reset(self):
+        for r in self.robots:
+            r.x, r.y, r.a = r._xya
+            r.energy = 10000.0
+        for l in self.lights:
+            l.x, l.y, l.brightness = l._xyb
+        self.redraw()
+    def makeMenu(self, bar, name, commands):
+        """ Assumes self.menuButtons exists """
+        menu = Tkinter.Menubutton(bar,text=name,underline=0)
+        self.menuButtons[name] = menu
+        menu.pack(side=Tkinter.LEFT,padx="2m")
+        menu.filemenu = Tkinter.Menu(menu)
+        for cmd in commands:
+            if cmd:
+                menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+            else:
+                menu.filemenu.add_separator()
+        menu['menu'] = menu.filemenu
+        return menu
     def destroy(self):
         self.done = 1 # stop processing requests, if handling
         self.quit = 1 # stop accept/bind toplevel
         self.root.quit() # kill the gui
-
-    def click_b1_down(self, event):
+    def click_b2_down(self, event):
         self.click_start = event.x, event.y
     def click_b3_down(self, event):
         self.click_start = event.x, event.y
         self.click_b3_move(event)
-    def click_b1_up(self, event):
+    def click_b2_up(self, event):
         self.click_stop = event.x, event.y
         if self.click_stop == self.click_start:
             # center on this position:
@@ -244,7 +293,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.offset_x = (radius_stop/radius_start) * self.offset_x + (1 - (radius_stop/radius_start)) * center[0]
         self.offset_y = (radius_stop/radius_start) * self.offset_y + (1 - (radius_stop/radius_start)) * center[1]
         self.redraw()
-    def click_b1_move(self, event):
+    def click_b2_move(self, event):
         self.canvas.delete('arrow')
         self.click_stop = event.x, event.y
         x1, y1 = self.click_start
@@ -259,16 +308,16 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
-        print "Offsets:", self.offset_x, self.offset_y, "Scale:", self.scale
+        print "Offset: (%d, %d) Scale: %f" % (self.offset_x, self.offset_y, self.scale)
         self.canvas.delete('all')
         for segment in self.world:
             (x1, y1), (x2, y2) = segment.start, segment.end
             id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
             segment.id = id
         for light in self.lights:
-            x, y, brightness = light
+            x, y, brightness, color = light.x, light.y, light.brightness, light.color
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
-                                    self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill="yellow", outline="yellow")
+                                    self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill=color, outline="orange")
         
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
@@ -286,11 +335,14 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
 
 class SimRobot:
     def __init__(self, name, x, y, a, boundingBox = None, color = "red"):
+        if " " in name:
+            name = name.replace(" ", "_")
         self.name = name
         self.x = x
         self.y = y
         self.a = a
         self.boundingBox = boundingBox # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
+        self.radius = max(max(map(abs, boundingBox[0])), max(map(abs, boundingBox[1]))) # meters
         self.builtinDevices = []
         self.color = color
         self.devices = []
@@ -298,6 +350,10 @@ class SimRobot:
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
         self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
         self.stall = 0
+        self._mouse = 0
+        self._mouse_xy = (0, 0)
+        self.energy = 10000.0
+        self.maxEnergyCostPerStep = 1.0
 
     def move(self, vx, va):
         self.vx = vx
@@ -342,7 +398,7 @@ class SimRobot:
                     gy = self.y + (d_x * math.sin(a90) + d_y * math.cos(a90))
                     sum = 0.0
                     for light in self.simulator.lights:
-                        x, y, brightness = light
+                        x, y, brightness = light.x, light.y, light.brightness
                         seg = Segment((x,y), (gx, gy))
                         a = -seg.angle() + 90 * PIOVER180
                         # see if line between sensor and light is blocked by any boundaries (including own bb)
@@ -358,6 +414,17 @@ class SimRobot:
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
 
+    def eat(self, amt):
+        for light in self.simulator.lights:
+            dist = Segment((self.x, self.y), (light.x, light.y)).length()
+            radius = max(light.brightness, self.radius)
+            if dist <= radius and amt/1000.0 <= light.brightness:
+                light.brightness -= amt/1000.0
+                self.energy += amt
+                self.simulator.redraw()
+                return amt
+        return 0.0
+
     def step(self, timeslice = 100):
         """
         Move the robot self.velocity amount, if not blocked.
@@ -365,6 +432,7 @@ class SimRobot:
         vy = self.vx * math.cos(-self.a) - self.vy * math.sin(-self.a)
         vx = self.vx * math.sin(-self.a) + self.vy * math.cos(-self.a)
         va = self.va
+        self.energy -= self.maxEnergyCostPerStep
         # proposed positions:
         p_x = self.x + vx * (timeslice / 1000.0) # miliseconds
         p_y = self.y + vy * (timeslice / 1000.0) # miliseconds
@@ -423,7 +491,13 @@ class RangeSensor:
         self.noise = noise
         self.groups = {}
         self.scan = [0] * len(geometry) # for data
-
+class Light:
+    def __init__(self, x, y, brightness, color="yellow"):
+        self.x = x
+        self.y = y
+        self.brightness = brightness
+        self.color = color
+        self._xyb = x, y, brightness # original settings for reset
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"
@@ -435,7 +509,39 @@ class LightSensor:
         self.scan = [0] * len(geometry) # for data
 
 class TkPioneer(SimRobot):
+    def mouse_event(self, event, command, robot):
+        x, y = event.x, event.y
+        if command[:8] == "control-":
+            self._mouse_xy = x, y
+            cx, cy = self.simulator.scale_x(robot.x), self.simulator.scale_y(robot.y)
+            if command == "control-up":
+                self.simulator.canvas.delete('arrow')
+                self._mouse = 0
+                a = Segment((cx, cy), (x, y)).angle()
+                robot.a = (-a - 90 * PIOVER180) % (2 * math.pi)
+            elif command in ["control-down", "control-motion"]:
+                self._mouse = 1
+                self.simulator.canvas.delete('arrow')
+                self.simulator.canvas.create_line(cx, cy, x, y, tag="arrow", fill="purple")
+        else:
+            if command == "up":
+                self._mouse = 0
+            elif command == "down":
+                self._mouse_xy = event.x, event.y
+                self._mouse = 1
+            elif command == "motion":
+                self._mouse = 1
+                self.simulator.canvas.move("robot-%s" % robot.name, x - self._mouse_xy[0], y - self._mouse_xy[1])
+                self._mouse_xy = x, y
+            x -= self.simulator.offset_x
+            y -= self.simulator.offset_y
+            x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
+            robot.x, robot.y = x, y
+        return "break"
+        
     def draw(self):
+        if self._mouse: return
+        self.simulator.canvas.delete("robot-%s" % self.name)
         sx = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
         sy = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
         s_x = self.simulator.scale_x
@@ -445,16 +551,21 @@ class TkPioneer(SimRobot):
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      sx, sy)
-            self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot", outline="black")
+            self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
             bx = [ .5, .25, .25, .5] # front camera
             by = [-.25, -.25, .25, .25]
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      bx, by)
-            self.simulator.canvas.create_polygon(xy, tag="robot", fill="black")
+            self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black")
         if self.display["boundingBox"] == 1:
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot", fill="", outline="purple")
-
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>", func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>", func=lambda event,robot=self:self.mouse_event(event, "down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>", func=lambda event,robot=self:self.mouse_event(event, "up", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>", func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>", func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>", func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))

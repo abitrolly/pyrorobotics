@@ -15,7 +15,7 @@ class SimDevice(Device):
 		self.units = "ROBOTS"
 		self.radius = robot.radius
 	def __len__(self):
-		return len(self.geometry)
+		return len(self.geometry[0])
 	def getSensorValue(self, pos):
 		try:
 			v = self._dev.__dict__["%s_%d" % (self.type, self.index)][pos]
@@ -68,6 +68,9 @@ class TCPRobot(Robot):
 		
 	def getItem(self, item):
 		return self.move(item)
+
+	def eat(self, amt):
+		return self.move("e_%f" % (amt))
 
 	def play(self, item):
 		return self.move(item)

@@ -84,7 +84,8 @@ class TKgui(Tkinter.Toplevel, gui):
                        ['Devices...',self.loadDevice],
                        #['Built-in Devices', None],
                        ]),
-              ('Robot',[['Joystick...', self.joystick],
+              ('Robot',[['Joystick', self.joystick],
+                        ['View', self.makeRobotTree],                         
                         None,
                         ['Forward',self.stepForward],
                         ['Back',self.stepBack],
@@ -99,6 +100,9 @@ class TKgui(Tkinter.Toplevel, gui):
                         ['Unload brain', self.freeBrain],
                         None,
                         ['Update',self.update],
+                        ]),
+              ('Brain',[['Watch', self.openBrainWindow],
+                        ['View', self.makeBrainTree], 
                         ]),
               ('Help',[['Help',self.help],
                        ['About',self.about],
@@ -129,7 +133,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # Display:
       self.loadables = [ ('button', 'Server:', self.loadSim, self.editWorld, 0), # 0 = False
                          ('button', 'Robot:', self.loadRobot, self.editRobot, self.makeRobotTree),
-                         ('button', 'Brain:', self.loadBrain, self.editBrain, self.makeBrainTree), # self.openBrainWindow),
+                         ('button', 'Brain:', self.loadBrain, self.editBrain, self.makeBrainTree), 
                         ]
       self.buttonArea = {}
       self.textArea = {}
@@ -605,8 +609,6 @@ class TKgui(Tkinter.Toplevel, gui):
       if self.textArea["Robot:"]["text"]: # have a robot!
          if self.menuButtons['Robot']["state"] == 'disabled':
             self.menuButtons['Robot']["state"] = 'normal'
-         #if self.menuButtons['Load']["state"] == 'disabled':
-         #   self.menuButtons['Load']["state"] = 'normal'
          if self.buttonArea["Brain:"]["state"] == 'disabled':
             self.buttonArea["Brain:"]["state"] = 'normal'
          if self.goButtons['Reload Brain']["state"] == 'disabled':
@@ -620,7 +622,9 @@ class TKgui(Tkinter.Toplevel, gui):
             self.buttonArea["Brain:"]["state"] = 'disabled'
          if self.goButtons['Reload Brain']["state"] != 'disabled':
             self.goButtons['Reload Brain']["state"] = 'disabled'
-      if self.textArea["Brain:"]["text"]:
+      if self.textArea["Brain:"]["text"]: # have a brain!
+         if self.menuButtons['Brain']["state"] == 'disabled':
+            self.menuButtons['Brain']["state"] = 'normal'
          if self.goButtons['Run']["state"] == 'disabled':
             self.goButtons['Run']["state"] = 'normal'
          if self.goButtons['Step']["state"] == 'disabled':
@@ -632,6 +636,8 @@ class TKgui(Tkinter.Toplevel, gui):
          #if self.goButtons['View']["state"] == 'disabled':
          #   self.goButtons['View']["state"] = 'normal'
       else:
+         if self.menuButtons['Brain']["state"] != 'disabled':
+            self.menuButtons['Brain']["state"] = 'disabled'
          if self.goButtons['Run']["state"] != 'disabled':
             self.goButtons['Run']["state"] = 'disabled'
          if self.goButtons['Step']["state"] != 'disabled':

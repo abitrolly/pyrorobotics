@@ -8,11 +8,14 @@ from pyrobot.brain import Brain
 class Vehicle(Brain):
    # Only method you have to define for a brain is the step method:
 
+   def setup(self):
+      self.robot.light[0].units = "raw"
+
    def step(self):
       left = min([s.distance() for s in self.robot.light[0]["front-left"]])
       right = min([s.distance() for s in self.robot.light[0]["front-right"]])
       forward = .2
-      if left < right: # lower means more light
+      if left > right: # lower means less light
          self.move(forward,  0.3) # to the left
       else:
          self.move(forward, -0.3) # to the right

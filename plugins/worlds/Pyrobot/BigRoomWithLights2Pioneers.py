@@ -7,8 +7,8 @@ def INIT():
     sim.addLight(5, 5, 1)
     sim.addLight(5, 30, 1)
     sim.addWall(0, 20, 10, 10)
-    sim.addRobot(60000, TkPioneer("Red Pioneer", 15, 30, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5))))
-    sim.addRobot(60001, TkPioneer("Blue Pioneer", 30, 35, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue"))
+    sim.addRobot(60000, TkPioneer("RedPioneer", 15, 30, 0.0, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5))))
+    sim.addRobot(60001, TkPioneer("BluePioneer", 30, 35, 1.5, ((.75, .75, -.75, -.75), (.5, -.5, -.5, .5)), color="blue"))
     sonar = RangeSensor("sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
                                              ( 0.30, 0.40, 65 * PIOVER180),
                                              ( 0.40, 0.30, 40 * PIOVER180),
