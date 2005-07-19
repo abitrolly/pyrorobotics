@@ -308,7 +308,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
-        print "Offset: (%d, %d) Scale: %f" % (self.offset_x, self.offset_y, self.scale)
+        print "World: offset = (%d, %d) scale = %f" % (self.offset_x, self.offset_y, self.scale)
         self.canvas.delete('all')
         for segment in self.world:
             (x1, y1), (x2, y2) = segment.start, segment.end
@@ -318,6 +318,9 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             x, y, brightness, color = light.x, light.y, light.brightness, light.color
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
                                     self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill=color, outline="orange")
+        for robot in self.robots:
+            robot._last_pose = (-1, -1, -1)
+            print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot.x, robot.y, robot.a)
         
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
@@ -350,10 +353,19 @@ class SimRobot:
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
         self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
         self.stall = 0
-        self._mouse = 0
-        self._mouse_xy = (0, 0)
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
+        self._mouse = 0 # mouse down?
+        self._mouse_xy = (0, 0) # last mouse click
+        self._last_pose = (-1, -1, -1) # last robot pose drawn
+
+    def setPose(self, x = None, y = None, a = None):
+        if x != None:
+            self.x = x
+        if y != None:
+            self.y = y
+        if a != None:
+            self.a = a % (2 * math.pi) # keep in the positive range
 
     def move(self, vx, va):
         self.vx = vx
@@ -429,6 +441,7 @@ class SimRobot:
         """
         Move the robot self.velocity amount, if not blocked.
         """
+        if self._mouse: return # don't do any of this if mouse is down
         vy = self.vx * math.cos(-self.a) - self.vy * math.sin(-self.a)
         vx = self.vx * math.sin(-self.a) + self.vy * math.cos(-self.a)
         va = self.va
@@ -465,11 +478,9 @@ class SimRobot:
                         self.updateDevices()
                         self.draw()
                         return
-        # ok! move the robot
+        # ok! move the robot, if it wanted to move
         self.stall = 0
-        self.x = p_x
-        self.y = p_y
-        self.a = p_a % (2 * math.pi) # keep in the positive range
+        self.setPose(p_x, p_y, p_a)
         self.updateDevices()
         self.draw()
     def draw(self): pass
@@ -518,29 +529,41 @@ class TkPioneer(SimRobot):
                 self.simulator.canvas.delete('arrow')
                 self._mouse = 0
                 a = Segment((cx, cy), (x, y)).angle()
-                robot.a = (-a - 90 * PIOVER180) % (2 * math.pi)
+                robot.setPose(a = (-a - 90 * PIOVER180) % (2 * math.pi))
+                self.simulator.redraw()
             elif command in ["control-down", "control-motion"]:
                 self._mouse = 1
                 self.simulator.canvas.delete('arrow')
                 self.simulator.canvas.create_line(cx, cy, x, y, tag="arrow", fill="purple")
         else:
             if command == "up":
+                x -= self.simulator.offset_x
+                y -= self.simulator.offset_y
+                x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
+                robot.setPose(x, y)
                 self._mouse = 0
+                self.simulator.redraw()
             elif command == "down":
-                self._mouse_xy = event.x, event.y
                 self._mouse = 1
+                self._mouse_xy = x, y
+                self.simulator.canvas.move("robot-%s" % robot.name, x - self._mouse_xy[0], y - self._mouse_xy[1])
             elif command == "motion":
                 self._mouse = 1
                 self.simulator.canvas.move("robot-%s" % robot.name, x - self._mouse_xy[0], y - self._mouse_xy[1])
                 self._mouse_xy = x, y
-            x -= self.simulator.offset_x
-            y -= self.simulator.offset_y
-            x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
-            robot.x, robot.y = x, y
+                # now move it so others will see it it correct place as you drag it:
+                x -= self.simulator.offset_x
+                y -= self.simulator.offset_y
+                x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
+                robot.setPose(x, y)
         return "break"
         
     def draw(self):
-        if self._mouse: return
+        """
+        Draws the body of the robot. Not very efficient.
+        """
+        if  self._last_pose == (self.x, self.y, self.a): return # hasn't moved
+        self._last_pose = (self.x, self.y, self.a)
         self.simulator.canvas.delete("robot-%s" % self.name)
         sx = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
         sy = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
