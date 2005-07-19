@@ -1,7 +1,44 @@
 from __future__ import generators
 import pyrobot.robot
-import types, random, exceptions, math
+import types, random, exceptions, math, Tkinter
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
+
+class DeviceWindow(Tkinter.Toplevel):
+    def __init__(self, device, title = None):
+        import pyrobot.system.share as share
+        if not share.gui:
+            share.gui = Tkinter.Tk()
+            share.gui.withdraw()
+        Tkinter.Toplevel.__init__(self, share.gui)
+        self._dev = device
+        self.wm_title(title)
+        self.widgets = {}
+        if self._dev:
+            self._dev.visible = 1
+        self._dev.addWidgets(self)
+    def update(self):
+        pass
+    def addButton(self, name, text, command):
+        self.widgets[name] = Tkinter.Button(self, text=text, command=command)
+        self.widgets[name].pack(fill="both", expand="y")
+    def addLabel(self, name, text):
+        self.widgets[name] = Tkinter.Label(self, text=text)
+        self.widgets[name].pack(fill="both", expand="y")
+    def updateWidget(self, name, value):
+        self.widgets[name+".entry"].delete(0,'end')
+        self.widgets[name+".entry"].insert(0,value)        
+    def addData(self, name, text, value):
+        frame = Tkinter.Frame(self)
+        frame.pack(fill="both", expand="y")
+        self.widgets[name + ".label"] = Tkinter.Label(frame, text=text)
+        self.widgets[name + ".label"].pack(side="left")
+        self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
+        self.widgets[name + ".entry"].insert(0, value)
+        self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
+    def destroy(self):
+        if self._dev:
+            self._dev.visible = 0
+        self.withdraw()
 
 class WindowError(AttributeError):
     """ Device Window Error """
@@ -230,8 +267,6 @@ class Device:
     def stopDevice(self):
         self.state = "stopped"
         return "Ok"
-    def makeWindow(self):
-        pass
     def destroy(self):
         if self.window:
             self.window.destroy()
@@ -243,7 +278,12 @@ class Device:
         return self.state
     def updateDevice(self):
         pass
-    def postSet(self, keyword):
+    # gui methods
+    def addWidgets(self, window):
         pass
-    def preGet(self, pathList):
-        pass
+    def makeWindow(self):
+        if self.window:
+            self.window.deiconify()
+            self.visible = 1
+        else:
+            self.window = DeviceWindow(self, self.title)

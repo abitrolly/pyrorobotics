@@ -8,43 +8,6 @@ from pyrobot.robot.device import Device, DeviceError, SensorValue
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 import playerc
 
-class PlayerDeviceWindow(Tkinter.Toplevel):
-    def __init__(self, device, title = None):
-        import pyrobot.system.share as share
-        if not share.gui:
-            share.gui = Tkinter.Tk()
-            share.gui.withdraw()
-        Tkinter.Toplevel.__init__(self, share.gui)
-        self._dev = device
-        self.wm_title(title)
-        self.widgets = {}
-        if self._dev:
-            self._dev.visible = 1
-        self._dev.addWidgets(self)
-    def update(self):
-        pass
-    def addButton(self, name, text, command):
-        self.widgets[name] = Tkinter.Button(self, text=text, command=command)
-        self.widgets[name].pack(fill="both", expand="y")
-    def addLabel(self, name, text):
-        self.widgets[name] = Tkinter.Label(self, text=text)
-        self.widgets[name].pack(fill="both", expand="y")
-    def updateWidget(self, name, value):
-        self.widgets[name+".entry"].delete(0,'end')
-        self.widgets[name+".entry"].insert(0,value)        
-    def addData(self, name, text, value):
-        frame = Tkinter.Frame(self)
-        frame.pack(fill="both", expand="y")
-        self.widgets[name + ".label"] = Tkinter.Label(frame, text=text)
-        self.widgets[name + ".label"].pack(side="left")
-        self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
-        self.widgets[name + ".entry"].insert(0, value)
-        self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
-    def destroy(self):
-        if self._dev:
-            self._dev.visible = 0
-        self.withdraw()
-
 class PlayerDevice(Device):
     def __init__(self, client, type, groups = {},
                  mode=None, index=0, visible=0):
@@ -58,14 +21,6 @@ class PlayerDevice(Device):
         self.startDevice(mode)
         if "get_geom" in self._client.__dict__:
             self._client.get_geom() # reads it into handle.pose or poses
-    def addWidgets(self, window):
-        pass
-    def makeWindow(self):
-        if self.window:
-            self.window.deiconify()
-            self.visible = 1
-        else:
-            self.window = PlayerDeviceWindow(self, self.title)
     def startDevice(self, mode):
         exec("self._dev = playerc.playerc_%s(self._client, %d)" %
              (self.type, self.index))
@@ -116,7 +71,6 @@ class PlayerSimulationDevice(PlayerDevice):
             return x, y, (thr / PIOVER180)
         else:
             raise "simulation.getPose() failed"
-    def makeWindow(self): pass
 
 class PlayerFiducialDevice(PlayerDevice):
     def __init__(self, client):
@@ -671,9 +625,11 @@ class PlayerRobot(Robot):
         print "Pyrobot Player: hostname=", self.hostname, "port=", self.port
         # FIXME: arbitrary time! How can we know server is up and running?
         time.sleep(1)
+        print "Trying to connect..."
         self._client = playerc.playerc_client(None, self.hostname, self.port)
         retval = self._client.connect() 
         while retval == -1:
+            print "Trying to connect..."
             self._client = playerc.playerc_client(None, self.hostname, self.port)
             time.sleep(1)
             retval = self._client.connect()
@@ -683,13 +639,8 @@ class PlayerRobot(Robot):
         Robot.removeDevice(self, item)
         
 if __name__ == '__main__':
-    #myrobot = PlayerRobot()
-    #myrobot.update()
-    #myrobot.translate(.2)
-    #myrobot.translate(.0)
-    #myrobot.disconnect()
-    pdw = PlayerDeviceWindow(None, "Test")
-    pdw.addButton("one", "Press One", lambda: 0)
-    pdw.addButton("two", "Press Two", lambda: 0)
-    pdw.addLabel("three", "A label to add")
-    pdw.addData("four", "Data that can change", 12.34)
+    myrobot = PlayerRobot()
+    myrobot.update()
+    myrobot.translate(.2)
+    myrobot.translate(.0)
+    myrobot.disconnect()
