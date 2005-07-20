@@ -276,75 +276,29 @@ class PlayerPTZDevice(PlayerDevice):
             pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
         else:
             raise AttributeError, "setPose takes pan, tilt, and zoom"
-        return self._client.set_ptz(pan, tilt, zoom)
+        return self._client.set(pan, tilt, zoom)
 
-    def getPose(self):
-        return self._client.get_ptz()
+    #def getPose(self):
+    #    # FIX: how to get pose? This doesn't exist
+    #    return self._client.get_ptz()
 
     def pan(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(numDegrees, ptz[1], ptz[2])
-
-    def panRel(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0] + numDegrees, ptz[1], ptz[2])
+        return self._client.pan(numDegrees)
 
     def tilt(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0], numDegrees, ptz[2])
-
-    def tiltRel(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0], ptz[1] + numDegrees, ptz[2])
-
-    def panTilt(self, panDeg, tiltDeg):
-        ptz = self.getPose()
-        return self._client.set_ptz(panDeg, tiltDeg, ptz[2])
-
-    def panTiltRel(self, panDeg, tiltDeg):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0] + panDeg, ptz[1] + tiltDeg, ptz[2])
+        return self._client.tilt(numDegrees)
 
     def center(self):
-        return self.setPose( *self.origPose )
+        return self.setPose(self.origPose)
 
     def zoom(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0], ptz[1], numDegrees)
-
-    def zoomRel(self, numDegrees):
-        ptz = self.getPose()
-        return self._client.set_ptz(ptz[0], ptz[1], ptz[2] + numDegrees)
-
-    def getPan(self):
-        ptz = self.getPose()
-        return ptz[0]
-        
-    def getTilt(self):
-        ptz = self.getPose()
-        return ptz[1]
-        
-    def getZoom(self):
-        ptz = self.getPose()
-        return ptz[2]
-
-    def getRealPan(self):
-        ptz = self.getPose()
-        return ptz[0]
-        
-    def getRealTilt(self):
-        ptz = self.getPose()
-        return ptz[1]
-        
-    def getRealZoom(self):
-        ptz = self.getPose()
-        return ptz[2]
+        return self._client.zoom(numDegrees)
 
     def canGetRealPanTilt(self):
-        return 1
+        return 0
 
     def canGetRealZoom(self):
-        return 1
+        return 0
 
     def getMaxPosPan(self):
         return 100

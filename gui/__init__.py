@@ -387,9 +387,12 @@ class gui:
       retval =  sys.stdin.readline()
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
-      if file_exists(olddir +"/" + retval):
+      if file_exists(retval):
+         return retval
+      elif file_exists(olddir +"/" + retval):
          return olddir +"/" + retval
       else:
+         # hope this is in the path!
          return retval
 
    def cleanup(self):

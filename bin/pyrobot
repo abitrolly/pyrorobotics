@@ -48,7 +48,12 @@ else:
             os.environ['PYROBOT'] = pyropathguess
             os.putenv('PYROBOT', pyropathguess )
         else:
-            print "Can't find pyrobot/plugins directory!"
+            pyropathguess = "/usr/lib/python%s/site-packages/pyrobot" % sys.version[0:3]
+            if posixpath.exists(pyropathguess):
+                os.environ['PYROBOT'] = pyropathguess
+                os.putenv('PYROBOT', pyropathguess )
+            else:
+                raise "Can't find pyrobot directory! Put in python%s/site-packages/ OR run pyrobot directly from the installation directory" % sys.version[0:3]
 if not os.environ.has_key('HOSTNAME'):
     os.environ['HOSTNAME'] = 'computer'
     os.putenv('HOSTNAME', 'computer' )
