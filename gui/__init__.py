@@ -241,17 +241,17 @@ class gui:
          elif retval == "!!":
             self.processCommand(self.history[-2]) # -1 is !!
          elif "-" in retval:
-            start, stop = map(int, retval[1:].split("-"))
-            for i in range(start, stop + 1):
-               self.processCommand(self.history[i - 1])
+            start, stop = retval[1:].split("-")
+            start, stop = start.strip(), stop.strip()
+            if start == "": # neg number
+               self.processCommand(self.history[-int(stop) - 1])
+            else:  
+               for i in range(int(start), int(stop) + 1):
+                  self.processCommand(self.history[i - 1])
          else:
             val = retval[1:]
             if val.strip().isdigit():
-               v = int(val)
-               if v < 0: # from the back end
-                  self.processCommand(self.history[int(val)])
-               else: # starting with 0
-                  self.processCommand(self.history[int(val) - 1])
+               self.processCommand(self.history[int(val) - 1])
             else:
                self.listCommandHistory(val)               
       elif retval == "about":

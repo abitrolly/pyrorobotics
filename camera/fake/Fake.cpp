@@ -4,7 +4,7 @@ Fake::Fake(char filename[], int width, int height, int depth) {
   int limit, w, h, num, maxval, color;
   PyObject *buffer, *tuple;
   FILE* theFile;
-  if (width != 0 && height != 0 and depth != 0) { // no filename, just the mmap
+  if (width != 0 && height != 0 && depth != 0) { // no filename, just the mmap
     if (depth == 3) 
       initialize(width, height, 3, 0, 1, 2);
     else if (depth == 1)
