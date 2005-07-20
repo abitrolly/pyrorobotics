@@ -18,16 +18,16 @@ include "pioneer.inc"
 # defines 'map' object used for floorplans
 include "map.inc"
 
-window( size [ 830.000 556.000 ] center [-4.296 1.424] scale 0.014 )
+window( size [ 788.000 666.000 ] center [-0.116 0.374] scale 0.021 )
 
 map(
-  #size [15.5 11.4]
-  #bitmap "bitmaps/autolab.png"
+  size [15.5 11.4]
+  bitmap "bitmaps/autolab.png"
   #bitmap "bitmaps/sal2.png"
   #bitmap "bitmaps/cave.png"
-  bitmap "bitmaps/hospital_section.png"
+  #bitmap "bitmaps/hospital_section.png"
 
-  bitmap_resolution 0.03
+  #bitmap_resolution 0.03
   #boundary 0
 )
 
@@ -57,56 +57,56 @@ define laserpioneer pioneer2dx
 laserpioneer
 (
   name "p0"
-  pose [-8.608 2.067 -348.743]
+  pose [-6.564 4.727 -348.743]
 )
 
 laserpioneer
 (
   color "red"
   name "p1"
-  pose [-5.353 2.515 -162.098]
+  pose [6.267 -2.077 -162.098]
 )
 
 laserpioneer
 (
   color "blue"
   name "p2"
-  pose [-5.325 2.025 -194.220]
+  pose [-6.921 2.949 -194.220]
 )
 
 laserpioneer
 (
   color "green"
   name "p3"
-  pose [-5.707 1.599 -199.781]
+  pose [-4.587 -1.033 -199.781]
 )
 
 laserpioneer
 (
   color "cyan"
   name "p4"
-  pose [-6.795 3.223 -458.929]
+  pose [-1.559 4.539 -458.929]
 )
 
 laserpioneer
 (
   color "yellow"
   name "p5"
-  pose [-6.247 3.130 -110.414]
+  pose [2.321 4.250 -110.414]
 )
 
 laserpioneer
 (
   color "magenta"
   name "p6"
-  pose [-5.599 2.883 -135.449]
+  pose [2.297 1.371 -135.449]
 )
 
 # a silly object to look at
 position( 	
   name "invader" 
   size [0.3 0.3]
-  pose [-4.455 2.356 0.000] 
+  pose [-7.051 -1.984 0.000] 
   color "red"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/space_invader.png"
@@ -118,7 +118,7 @@ position(
 position( 	
   name "ghost" 
   size [0.3 0.3 ]
-  pose [-9.380 -1.178 0.000] 
+  pose [0.784 -5.274 0.000] 
   color "blue"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/ghost.png"
@@ -127,4 +127,4 @@ position(
   laser_return 2
 )
 
-amigobot( color "blue" name "blue" pose [-7.363 2.297 180.000] )
+amigobot( color "blue" name "blue" pose [-3.443 2.605 180.000] )
