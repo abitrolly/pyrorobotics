@@ -48,7 +48,7 @@ else:
             os.environ['PYROBOT'] = pyropathguess
             os.putenv('PYROBOT', pyropathguess )
         else:
-            pyropathguess = "/usr/lib/python%s/site-packages/pyrobot" % sys.version[0:3]
+            pyropathguess = "/usr/local/lib/python%s/site-packages/pyrobot" % sys.version[0:3]
             if posixpath.exists(pyropathguess):
                 os.environ['PYROBOT'] = pyropathguess
                 os.putenv('PYROBOT', pyropathguess )
