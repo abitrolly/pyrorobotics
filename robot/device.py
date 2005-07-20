@@ -183,12 +183,12 @@ class Device:
                 if pos in self.groups[key]:
                     retval.append( key )
         return retval
-    def setMaxvalue(self, maxvalue):
-        self.maxvalueraw = self.rawToUnits(maxvalue, units="UNRAW")
+    def setMaxvalue(self, value):
+        self.maxvalueraw = self.rawToUnits(value, units="UNRAW")
         return "Ok"
     def getMaxvalue(self):
         return self.rawToUnits(self.maxvalueraw)
-    maxvalue = property(getMaxvalue, setMaxvalue)
+
     def rawToUnits(self, raw, noise = 0.0, units=None):
         # what do you want the return value in?
         if units == None:

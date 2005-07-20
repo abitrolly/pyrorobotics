@@ -40,7 +40,6 @@ class TCPRobot(Robot):
 		self.port = port
 		self.addr = (host, port)
 		self.type = "Pyrobot"
-		self.radius = 1.50
 		# Create socket
 		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 		try:
@@ -49,6 +48,7 @@ class TCPRobot(Robot):
 			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
 		self.socket.connect( self.addr )
 		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
+		self.radius = self.getItem("radius")
 		self.properties = self.getItem("properties")
 		self.builtinDevices = self.getItem("builtinDevices")
 		self.supportedFeatures = self.getItem("supportedFeatures")
@@ -81,7 +81,7 @@ class TCPRobot(Robot):
 	def ask(self, item):
 		return self.move(item)
 
-	def moveDir(self, dir):
+	def _moveDir(self, dir):
 		if dir == 'L':
 			self.move("left")
 		elif dir == 'R':

@@ -432,22 +432,22 @@ class gui:
       self.inform("Stopped!")
 
    def stopTranslate(self):
-      self.engine.robot.moveDir('ST')
+      self.engine.robot._moveDir('ST')
 
    def stopRotate(self):
-      self.engine.robot.moveDir('SR')
+      self.engine.robot._moveDir('SR')
 
    def stepForward(self):
-      self.engine.robot.moveDir('F')
+      self.engine.robot._moveDir('F')
 
    def stepBack(self):
-      self.engine.robot.moveDir('B')
+      self.engine.robot._moveDir('B')
 
    def stepLeft(self):
-      self.engine.robot.moveDir('L')
+      self.engine.robot._moveDir('L')
 
    def stepRight(self):
-      self.engine.robot.moveDir('R')
+      self.engine.robot._moveDir('R')
 
    def resetEngine(self):
       self.engine.reset()
@@ -558,4 +558,7 @@ class gui:
       return retval
 
    def newBrain(self):
+      """
+      Tk gui overrides this method.
+      """
       pass

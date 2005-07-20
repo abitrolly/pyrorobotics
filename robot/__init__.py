@@ -65,7 +65,7 @@ class Robot:
         # user init:
         self.setup(**kwargs)
 
-    def getAll(self, thing = None, toplevel = "robot", indent = 0):
+    def printView(self, thing = None, toplevel = "robot", indent = 0):
         if thing == None: thing = self
         dictable = 0
         try:
@@ -104,12 +104,12 @@ class Robot:
         return "Ok"
     def displayDevice(self, device, indent = 0, count = 0):
         toplevel = "%s[%d]" % (device.type, count)
-        self.getAll(device, toplevel, indent)
+        self.printView(device, toplevel, indent)
 
     def localize(self, x = 0, y = 0, th = 0):
-        print "need to override LOCALIZE in robot"
+        pass
 
-    def moveDir(self, dir):
+    def _moveDir(self, dir):
         if dir == 'L':
             self.rotate(.2)
         elif dir == 'R':
@@ -156,43 +156,9 @@ class Robot:
     def translate(self, val): pass
     def rotate(self, val): pass
 
-    # -------------------- Angle and Distance functions:
-
-    def getAngleToAngle(self, phi): # phi is in radians
-        '''
-        Given an angle in radians (0 front, to left to PI), what is the
-        shortest way to turn there?  returns -PI to PI, neg to right,
-        to use with turning
-        '''
-        theta = self.thr
-        if (phi > theta):  # turn left
-            phi = phi - theta;
-        else: # // turn right
-            phi = (theta - phi) * -1.0;
-        if (phi > math.pi): # // oops, shorter to turn other direction
-            phi = (2 * math.pi - phi) * -1.0;
-        if (phi < -math.pi): #// oops, shorter to turn other direction
-            phi = (2 * math.pi + phi);
-        return min(max(phi / math.pi, -1.0), 1.0)
-
-    def getAngleToPoint(self, x, y):
-        return self.getAngleToPoints(x, y, self.x, self.y)
-                                     
-    def getAngleToPoints(self, x1, y1, x2, y2):
-        p = Polar()
-        p.setCartesian(x1 - x2, y1 - y2) # range pi to -pi
-        if (p.t < 0.0):
-            phi = p.t + 2 * math.pi # 0 to pi to left; 0 to -pi to right
-        else:
-            phi = p.t;
-        return self.getAngleToAngle(phi)
-
-    def getDistanceToPoint(self, x, y):
-        return distance(x, y, self.x, self.y)
-
     # ------------------------- Device functions:
 
-    def getNextDeviceNumber(self, devname):
+    def _getNextDeviceNumber(self, devname):
         """
         robot.sonar[0]
         """
@@ -218,7 +184,7 @@ class Robot:
             # this is the only one that does anything
             retval = []
             for dev in item.keys():
-                deviceNumber = self.getNextDeviceNumber(dev)
+                deviceNumber = self._getNextDeviceNumber(dev)
                 print "Loading device %s[%d]..." % (dev, deviceNumber)
                 self.__dict__[dev][deviceNumber] = item[dev]
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
@@ -325,14 +291,6 @@ class Robot:
         """
         for item in self.__dict__:
             self.removeDevice(item)
-
-    # Message interface:
-
-    def sendMessage(self, message):
-        raise AttributeError, "no send message interface"
-
-    def getMessages(self):
-        return []
 
     def setup(self, **kwargs):
         """

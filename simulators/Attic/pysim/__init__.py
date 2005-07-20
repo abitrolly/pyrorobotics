@@ -15,7 +15,7 @@ class Simulator:
         self.scale = scale
         self.offset_x = offset_x
         self.offset_y = offset_y
-        self._width, self.height = width, height
+        self._width, self._height = width, height
         # connections to pyrobot:
         self.ports = []
         self.assoc = {}
@@ -140,6 +140,8 @@ class Simulator:
             retval = self.assoc[sockname[1]].y
         elif request == 'stall':
             retval = self.assoc[sockname[1]].stall
+        elif request == 'radius':
+            retval = self.assoc[sockname[1]].radius
         elif request == 'thr':
             retval = self.assoc[sockname[1]].a
         elif request == 'th':

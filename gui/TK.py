@@ -97,12 +97,13 @@ class TKgui(Tkinter.Toplevel, gui):
                         ['Stop All',self.stopEngine],
                         None,
                         ['Unload robot', self.freeRobot],
-                        ['Unload brain', self.freeBrain],
                         None,
                         ['Update',self.update],
                         ]),
               ('Brain',[['Watch', self.openBrainWindow],
                         ['View', self.makeBrainTree], 
+                        None,
+                        ['Unload brain', self.freeBrain],
                         ]),
               ('Help',[['Help',self.help],
                        ['About',self.about],
@@ -422,9 +423,11 @@ class TKgui(Tkinter.Toplevel, gui):
          else:
             command = "self" + command
       # Process the tab:
+      # peel off the dot, if one:
       if len(command) > 0:
          if command[-1] == ".":
             command = command[:-1]
+      # now evaluate:
       if self.engine.brain:
          self.environment["self"] = self.engine.brain
       else:
@@ -432,52 +435,49 @@ class TKgui(Tkinter.Toplevel, gui):
       self.environment["engine"] = self.engine
       self.environment["robot"] = self.engine.robot
       self.environment["brain"] = self.engine.brain
+      try:
+         exec("_methods = %s.__doc__" % command) in self.environment
+         methods = "   " + self.environment["_methods"]
+      except:
+         methods = ""
+      if methods != '':
+         print "Help: ----------------------------------------------------"
+         print methods
       succeed = 0
       try:
-         exec("_methods = %s/help\")" % command) in self.environment
-         print "Help: ----------------------------------------------------"
-         print self.environment["_methods"]
-      except:
-         pass
-      try:
-         if '"' in command:
-            exec("_methods = %s\")" % command) in self.environment
-            succeed = 1
-         elif "'" in command:
-            exec("_methods = %s\')" % command) in self.environment
-            succeed = 1
+         exec("_methods = dir(%s)" % command) in self.environment
+         succeed = 1
       except:
          pass
       if succeed:
-         prettyMethods = self.environment["_methods"]
-         if (type(prettyMethods) != type([]) and
-             type(prettyMethods) != type((1,))):
-            prettyMethods = [prettyMethods]
-      else:
-         try:
-            exec("_methods = dir(%s)" % command) in self.environment
+         methods = self.environment["_methods"]
+         prettyMethods = []
+         for m in methods:
+            if m[0] == "_": continue
             succeed = 1
-         except:
-            pass
-         if succeed:
-            methods = self.environment["_methods"]
-            prettyMethods = [m for m in methods if m[0] != "_"]
-         else:
-            prettyMethods = ["Nothing appropriate"]
+            try: exec("_methods = type(%s.%s)" % (command, m)) in self.environment
+            except: succeed = 0
+            if succeed and self.environment["_methods"] == types.MethodType:
+               prettyMethods.append("%s()" % m)
+            else:
+               prettyMethods.append(m)
+      else:
+         prettyMethods = ["Nothing appropriate"]
       cnt = 1
       print "Completion data: -----------------------------------------"
       for item in prettyMethods:
          try:
-            print "%-20s " % item,
+            print "%-30s " % item,
          except:
             print item
-         if cnt % 3 == 0:
+         if cnt % 2 == 0:
             print
          cnt += 1
       self.commandEntry.focus()
-      if cnt % 3 != 1:
+      if cnt % 2 != 1:
          print
       print "----------------------------------------------------------"
+      if "_methods" in self.environment: del self.environment["_methods"]
       return "break" # drops the tab from propagating
 
    def CommandReturnKey(self, event):
