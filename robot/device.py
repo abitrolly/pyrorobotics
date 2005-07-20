@@ -122,6 +122,9 @@ class Device:
     def getHit(self):
         return [s.hit for s in self]
     rawValue = property(getHit)
+    def getNoise(self):
+        return [s.noise for s in self]
+    noise = property(getNoise)
     
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
