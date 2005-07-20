@@ -27,10 +27,14 @@ class PlayerDevice(Device):
         if mode == None: # auto
             # try all first:
             mode = playerc.PLAYERC_ALL_MODE
-            if self._dev.subscribe(mode) != 0:
+            try:    retval = self._dev.subscribe(mode)
+            except: retval = -1
+            if retval != 0:
                 # if that fails, try read:
                 mode = playerc.PLAYERC_READ_MODE
-                if self._dev.subscribe(mode) != 0:
+                try:    retval = self._dev.subscribe(mode)
+                except: retval = -1
+                if retval != 0:
                     raise playerc.playerc_error_str()
         else:
             if self._dev.subscribe(mode) != 0:

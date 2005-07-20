@@ -233,6 +233,8 @@ class gui:
             self.inform("Done!")
          else:
             self.inform("Define a robot first!")
+      elif len(retval) >= 1 and retval[0] == "$":
+         return os.system(retval[1:])
       elif len(retval) >= 1 and retval[0] == "!":
          if retval == "!":
             self.listCommandHistory()
@@ -245,7 +247,11 @@ class gui:
          else:
             val = retval[1:]
             if val.strip().isdigit():
-               self.processCommand(self.history[int(val) - 1])
+               v = int(val)
+               if v < 0: # from the back end
+                  self.processCommand(self.history[int(val)])
+               else: # starting with 0
+                  self.processCommand(self.history[int(val) - 1])
             else:
                self.listCommandHistory(val)               
       elif retval == "about":
@@ -377,13 +383,14 @@ class gui:
 
    def fileloaddialog(self, type, skel, olddir = ''):
       """ Read a line from user """
-      if olddir:
-         print "Suggest:", olddir
       print "\n%s Filename: " % type,
       retval =  sys.stdin.readline()
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
-      return retval
+      if file_exists(olddir +"/" + retval):
+         return olddir +"/" + retval
+      else:
+         return retval
 
    def cleanup(self):
       if not self.alreadyCleanedUp:

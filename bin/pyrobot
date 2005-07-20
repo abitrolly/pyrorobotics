@@ -68,7 +68,7 @@ try:
     from pyrobot.system import share
     from pyrobot.engine import *
 except ImportError:
-    raise "$PYTHONPATH needs to include dir ABOVE where $PYROBOT is installed"
+    raise "You need to run 'make' in %s" % (os.environ["PYROBOT"],)
 print "Using PYROBOT in '%s'..." % (os.environ["PYROBOT"],)
 robotfile = 0
 devices = 0
