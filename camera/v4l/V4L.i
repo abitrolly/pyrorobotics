@@ -4,4 +4,5 @@
 #include "V4L.h"
 %}
 
+%include Device.h
 %include V4L.h
