@@ -16,7 +16,7 @@ class PlayerDevice(Device):
         self._client = client
         self.index = index
         self.data = None
-        self.noise = 0.0
+        self._noise = 0.0
         # Required:
         self.startDevice(mode)
         if "get_geom" in self._client.__dict__:
@@ -128,7 +128,7 @@ class PlayerSonarDevice(PlayerDevice):
         self.radius = 0.750 # meters
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
-        self.noise = 0.05 # 5 percent
+        self._noise = 0.05 # 5 percent
         self.count = len(self)
         self.arc = 7.5 * PIOVER180
     def __len__(self):
@@ -140,7 +140,7 @@ class PlayerSonarDevice(PlayerDevice):
                             0.03,                    # z
                             self._dev.poses[pos][2], # rads
                             self.arc),               # rads
-                           noise=self.noise)
+                           noise=self._noise)
     def addWidgets(self, window):
         for i in range(self.count):
             window.addData(str(i), "[%d]:" % i, self._dev.scan[i])
@@ -181,7 +181,7 @@ class PlayerLaserDevice(PlayerDevice):
                        'back-all': []}
         self.units    = "ROBOTS"
         self.arc      = 1.0 * PIOVER180 # in radians
-        self.noise    = 0.01
+        self._noise    = 0.01
         # -------------------------------------------
         self.rawunits = "METERS"
         self.maxvalueraw = 8.0 # rawunits
@@ -200,7 +200,7 @@ class PlayerLaserDevice(PlayerDevice):
                             0.03,
                             (pos - 90) * PIOVER180,
                             self.arc),
-                           noise=self.noise)
+                           noise=self._noise)
     def addWidgets(self, window):
         for i in range(0, self.count, 10):
             window.addData(str(i), "[%d]:" % i, self._dev.scan[i][0])

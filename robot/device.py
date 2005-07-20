@@ -77,22 +77,20 @@ class SensorValue:
             return self.geometry[3] / PIOVER180 # degrees
         else:
             raise AttributeError, "invalid unit = '%s'" % unit
-    def position(self):
+    def _hit(self):
         if self.geometry == None: return (None, None, None)
-        return (self.geometry[0], self.geometry[1], self.geometry[2])
-    def hit(self):
-        if self.geometry == None: return (None, None, None)
-        return (self.hitX(), self.hitY(), self.hitZ())
-    def hitX(self):
+        return (self._hitX(), self._hitY(), self._hitZ())
+    def _hitX(self):
         thr = self.geometry[3] # theta in radians
         dist = self.distance(unit="M") + self._dev.radius
         return math.cos(thr) * dist
-    def hitY(self):
+    def _hitY(self):
         thr = self.geometry[3] # theta in radians
         dist = self.distance(unit="M") + self._dev.radius
         return math.sin(thr) * dist
-    def hitZ(self):
+    def _hitZ(self):
         return self.geometry[2]
+    hit = property(_hit)
 
 class Device:
     """ A basic device class """
@@ -108,6 +106,28 @@ class Device:
         self.setup()
         if visible:
             self.makeWindow()
+    # Properties to make getting all values easy:
+    def getValue(self):
+        return [s.value for s in self]
+    value = property(getValue)
+    def getPos(self):
+        return [s.pos for s in self]
+    pos = property(getPos)
+    def getGeometry(self):
+        return [s.geometry for s in self]
+    geometry = property(getGeometry)
+    def getRawValue(self):
+        return [s.rawValue for s in self]
+    rawValue = property(getRawValue)
+    def getHit(self):
+        return [s.hit for s in self]
+    rawValue = property(getHit)
+    
+    # Methods to make getting all values easy:
+    def distance(self, *args, **kwargs):
+        return [s.distance(*args, **kwargs) for s in self]
+    def angle(self, *args, **kwargs):
+        return [s.angle(*args, **kwargs) for s in self]
 
     def getSensorValue(self, pos):
         """
@@ -162,9 +182,10 @@ class Device:
         return retval
     def setMaxvalue(self, maxvalue):
         self.maxvalueraw = self.rawToUnits(maxvalue, units="UNRAW")
-        return self.maxvalueraw
+        return "Ok"
     def getMaxvalue(self):
         return self.rawToUnits(self.maxvalueraw)
+    maxvalue = property(getMaxvalue, setMaxvalue)
     def rawToUnits(self, raw, noise = 0.0, units=None):
         # what do you want the return value in?
         if units == None:

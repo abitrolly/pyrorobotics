@@ -1,7 +1,16 @@
 # Module for wrapping command-line business
 # Module pyrobot.tools
 
-import getopt, sys, string
+import getopt, sys, string, operator
+
+def avg(thing):
+    if type(thing[0]) in [type([]), type((1,))]: # dealing with list of tups
+        retval = []
+        for i in range(len(thing[0])):
+            retval.append(avg([item[i] for item in thing]))
+        return retval
+    else: # dealing with list of nums
+        return reduce(operator.add, thing)/ float(len(thing))
 
 class Option:
     def __init__(self, name, shortForm, argCount, evalFunc, defaultValue,

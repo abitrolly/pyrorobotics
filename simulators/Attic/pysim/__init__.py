@@ -6,7 +6,7 @@ import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
 class Simulator:
-    def __init__(self, offset_x, offset_y, scale):
+    def __init__(self, (width, height), (offset_x, offset_y), scale):
         self.robots = []
         self.lights = []
         self.world = []
@@ -15,6 +15,7 @@ class Simulator:
         self.scale = scale
         self.offset_x = offset_x
         self.offset_y = offset_y
+        self._width, self.height = width, height
         # connections to pyrobot:
         self.ports = []
         self.assoc = {}
@@ -205,7 +206,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.frame = Tkinter.Frame(self)
         self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
                         fill = 'both')
-        self.canvas = Tkinter.Canvas(self.frame, bg="white", width=600, height=600)
+        self.canvas = Tkinter.Canvas(self.frame, bg="white", width=self._width, height=self._height)
         self.canvas.pack(expand="yes", fill="both", side="top", anchor="n")
         self.canvas.bind("<ButtonRelease-2>", self.click_b2_up)
         self.canvas.bind("<ButtonRelease-3>", self.click_b3_up)
@@ -308,7 +309,8 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
-        print "World: offset = (%d, %d) scale = %f" % (self.offset_x, self.offset_y, self.scale)
+        print "Window: size=(%d,%d), offset=(%d,%d), scale=%f" % (self.winfo_width(), self.winfo_height(),
+                                                                  self.offset_x, self.offset_y, self.scale)
         self.canvas.delete('all')
         for segment in self.world:
             (x1, y1), (x2, y2) = segment.start, segment.end

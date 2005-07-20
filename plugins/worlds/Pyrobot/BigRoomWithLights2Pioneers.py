@@ -2,7 +2,7 @@ from pyrobot.simulators.pysim import TkSimulator, TkPioneer, RangeSensor, LightS
 from pyrobot.geometry import PIOVER180
 
 def INIT():
-    sim = TkSimulator(30, 586, 13.7) # x offset, y offset, scale
+    sim = TkSimulator((600,600), (30, 586), 13.7) # (width, height), (offset x, offset y), scale
     sim.addBox(0, 0, 40, 40)
     sim.addLight(5, 5, 1)
     sim.addLight(5, 30, 1)

@@ -5,7 +5,7 @@ from pyrobot.robot.device import Device, SensorValue
 class SimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):
 		Device.__init__(self, name)
-		self.geometry = geometry
+		self._geometry = geometry
 		self.groups = groups
 		self.startDevice()
 		self._dev = robot
@@ -15,18 +15,18 @@ class SimDevice(Device):
 		self.units = "ROBOTS"
 		self.radius = robot.radius
 	def __len__(self):
-		return len(self.geometry[0])
+		return len(self._geometry[0])
 	def getSensorValue(self, pos):
 		try:
 			v = self._dev.__dict__["%s_%d" % (self.type, self.index)][pos]
 		except:
 			v = 0.0
 		return SensorValue(self, v, pos,
-				   (self.geometry[0][pos][0], # x in meters
-				    self.geometry[0][pos][1], # y
+				   (self._geometry[0][pos][0], # x in meters
+				    self._geometry[0][pos][1], # y
 				    0.03,                    # z
-				    self.geometry[0][pos][2], # arc rads
-				    self.geometry[1]),        # arc rads
+				    self._geometry[0][pos][2], # arc rads
+				    self._geometry[1]),        # arc rads
 				   )
 class TCPRobot(Robot):
 	"""
