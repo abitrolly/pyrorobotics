@@ -8,12 +8,12 @@ class Avoid(Brain):
            
    # Give the front two sensors, decide the next move  
    def determineMove(self, front, left, right):  
-      if front < 1.5:   # about to hit soon, STOP  
+      if front < 1.0:   # about to hit soon, STOP  
          #print "collision imminent, stopped"  
          return(0, .3)  
-      elif left < 1.0:
+      elif left < 0.8:
          return(0.1, -.3)  
-      elif right < 1.0:  # detecting something, SLOWDOWN  
+      elif right < 0.8:  # detecting something, SLOWDOWN  
          #print "object detected"  
          return(0.1, .3)  
       else:  
