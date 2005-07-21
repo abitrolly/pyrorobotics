@@ -128,32 +128,24 @@ class gui:
          if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          config.put("simulator", "file", file)
       if self.engine.worldfile:
          file = self.engine.worldfile
          if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          config.put("world", "file", file)
       if self.engine.robotfile:
          file = self.engine.robotfile
          if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          config.put("robot", "file", file)
       if self.engine.brainfile:
          file = self.engine.brainfile
          if os.environ["PYROBOT"] + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          config.put("brain", "file", file)
       print "Ok"
 
@@ -163,29 +155,21 @@ class gui:
          file = self.engine.simfile
          if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          commandLine += "-s %s " % file
       if self.engine.worldfile:
          file = self.engine.worldfile
          if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          commandLine += "-w %s " % file
       if self.engine.robotfile:
          file = self.engine.robotfile
          if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          commandLine += "-r %s " % file
       if self.engine.brainfile:
          file = self.engine.brainfile
          if os.environ["PYROBOT"] + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
-         if file[-3:] == ".py":
-            file = file[:-3]
          commandLine += "-b %s " % file
       print commandLine
 

@@ -45,6 +45,7 @@ class Configuration:
     def save(self, file="pyrobot.ini"):
         fp = open(file, "w")
         for section in self.data:
+            if section == "config": continue # don't save config, that's what we're doing!
             print >> fp, "[%s]" % section
             for item in self.data[section]:
                 print >> fp, "%s=%s" % (item, self.data[section][item])
