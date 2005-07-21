@@ -178,6 +178,16 @@ class TKgui(Tkinter.Toplevel, gui):
    def pasteCallback(self, full_id):
       self.commandEntry.insert('end', self.makeExpression(full_id))
 
+   def execCallback(self, full_id):
+      exp = self.makeExpression(full_id)
+      if exp[-2:] == "()":
+         help_exp = "help(%s)" % exp[:-2]
+      elif exp[-2:] == "__":
+         help_exp = "help(%s)" % exp[:-2]
+      else:
+         help_exp = "help(%s.__class__)" % (exp,)
+      self.processCommand(help_exp)
+
    def watchCallback(self, full_id):
       if len(full_id) == 3 and (full_id[0] == "robot" and
                                 full_id[1] in self.engine.robot.devices and
@@ -221,9 +231,12 @@ class TKgui(Tkinter.Toplevel, gui):
             thing = thing[item]
          elif item == "methods": # methods
             for method in dir(thing):
-               if method[0] != "_" and method not in thing.__dict__:
+               if (method[0] != "_" or method[1] == "_") and method not in thing.__dict__:
                   object = eval("thing.%s" % method)
-                  if type(object) in [types.FloatType, types.IntType, types.BooleanType, types.LongType, types.DictType, types.ListType, types.TupleType]:
+                  if type(object) == type(""):
+                     tree.add_node("%s = '%s'" % (method,object.strip()), id=method, flag=0)
+                  elif type(object) in [types.FloatType, types.IntType, types.BooleanType,
+                                      types.LongType, types.DictType, types.ListType, types.TupleType]:
                      tree.add_node("%s = %s" % (method,object), id=method, flag=0)
                   else:
                      docString = eval("thing.%s.__doc__" % method)
@@ -287,7 +300,7 @@ class TKgui(Tkinter.Toplevel, gui):
 
    def objectBrowser(self, objectName):
       TreeWindow(share.gui, objectName, self.getTreeContents,
-                 self.watchCallback, self.pasteCallback)
+                 self.watchCallback, self.pasteCallback, self.execCallback)
 
    def makeRobotTree(self):
       if self.engine and self.engine.robot:
@@ -297,7 +310,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.robotTreeWindow.tree.root.expand()
          else:
             self.robotTreeWindow = TreeWindow(share.gui, "robot", self.getTreeContents,
-                                              self.watchCallback, self.pasteCallback)
+                                              self.watchCallback, self.pasteCallback,
+                                              self.execCallback)
             self.robotTreeWindow.tree.root.expand()
 
    def makeBrainTree(self):
@@ -308,7 +322,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.brainTreeWindow.tree.root.expand()
          else:
             self.brainTreeWindow = TreeWindow(share.gui, "brain", self.getTreeContents,
-                                              self.watchCallback, self.pasteCallback)
+                                              self.watchCallback, self.pasteCallback,
+                                              self.execCallback)
             self.brainTreeWindow.tree.root.expand()
 
    def makeWindows(self):

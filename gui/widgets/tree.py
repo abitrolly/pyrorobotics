@@ -799,16 +799,19 @@ class ClickNode(Node):
         menu=Menu(self.widget, tearoff=0)
         menu.add_command(label='Watch', command=self.watch)
         menu.add_command(label='Paste', command=self.paste)
+        menu.add_command(label='Help', command=self.help)
         menu.tk_popup(event.x_root, event.y_root)
 
     def watch(self):
         self.widget.watchCallback(self.full_id())
-
     def paste(self):
         self.widget.pasteCallback(self.full_id())
+    def help(self):
+        self.widget.helpCallback(self.full_id())
 
 class TreeWindow(Toplevel):
-    def __init__(self, root, item, contents_callback, watch_callback, paste_callback):
+    def __init__(self, root, item, contents_callback, watch_callback,
+                 paste_callback, help_callback):
         Toplevel.__init__(self, root)
         self.tree = Tree(master = self,
                          root_id=item,
@@ -820,6 +823,7 @@ class TreeWindow(Toplevel):
         self.title("Pyrobot Object Viewer: " + item)
         self.tree.watchCallback = watch_callback
         self.tree.pasteCallback = paste_callback
+        self.tree.helpCallback = help_callback
         self.tree.grid(row=0, column=0, sticky='nsew')
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)

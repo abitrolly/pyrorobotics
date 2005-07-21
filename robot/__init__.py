@@ -32,6 +32,12 @@ if not os.environ.has_key('PYROBOT'):
     raise AttributeError, "PYROBOT not defined: export PYROBOT=/usr/local/pyrobot"
 
 def commas(lyst):
+    """
+    Used to turn an enumeration into a comma-separated string of 'items'.
+    Example:
+    >>> commas([1, 2, 3, 4])
+    '1', '2', '3', '4'
+    """
     retval = ""
     for i in lyst:
         if retval:
@@ -42,7 +48,22 @@ def commas(lyst):
 
 class Robot:
     """
+    The object with which to interact with motors and sensors.
+    
     The base robot class. This class is the basis of all robots.
+
+    Primary actions:
+        robot.move(v1, v2)
+        robot.rotate(v)
+        robot.translate(v)
+        robot.motors(m1, m2)
+        robot.stop()
+
+    Primary properties:
+        robot.x
+        robot.y
+        robot.thr
+        robot.stall
     """
     def __init__(self, **kwargs):
         """
