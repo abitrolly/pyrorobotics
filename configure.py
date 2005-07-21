@@ -1,22 +1,38 @@
 #!/usr/bin/env python
 # Pyro configure.py script
 
+"""
+  --defaults       Use --prefix and default version
+     --prefix=        Set the prefix; used only with --default
+  --version=       Force default Python version to use
+  --locates        Defaults are determined by the locate command
+
+  If you want to make a Makefile.cfg with known paths:
+
+  python configure.py --prefix=/usr/local --version=2.1 --defaults
+"""
+
 import sys
 from posixpath import exists, isdir, isfile, islink
 from posix import popen
 import os
 
-print "Checking for versions of Python..."
-versions = [("python", "")]
-for i in range(22, 25):
-    pyver = "python%.1f" % (i / 10.0)
-    pipe = popen("which %s" % pyver )
-    which = pipe.readline().strip()
-    if " no %s in " % pyver in which:
-        pass
-    else:
-        versions.append((pyver, pyver[-3:]))
-pyverSuggest = versions[-1][1]
+if "--version" in map(lambda s: s[0:9], sys.argv):
+    for command in sys.argv:
+        if command[0:9] == "--version":
+            com, pyverSuggest = command.split("=", 2)
+else:
+    print "Checking for versions of Python..."
+    versions = [("python", "")]
+    for i in range(22, 25):
+        pyver = "python%.1f" % (i / 10.0)
+        pipe = popen("which %s" % pyver )
+        which = pipe.readline().strip()
+        if " no %s in " % pyver in which:
+            pass
+        else:
+            versions.append((pyver, pyver[-3:]))
+    pyverSuggest = versions[-1][1]
 
 prefix = "/usr"
 if "--prefix" in map(lambda s: s[0:8], sys.argv):
@@ -28,6 +44,12 @@ if "--defaults" in sys.argv:
     useDefaults = 1
 else:
     useDefaults = 0
+if "--locates" in sys.argv:
+    useLocates = 1
+    useDefaults = 0
+else:
+    useLocates = 0
+
 
 def file_exists(file_name, type = 'file'):
     if len(file_name) == 0:
@@ -60,11 +82,11 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    print "-------------------------------------------------------------------"
    while not done:
       print question
-      if locate and not useDefaults:
+      if (locate) and not useDefaults:
           pipe = popen("locate %s | head -1 " % locate )
           default = pipe.readline().strip()
       print 'Default = [' + default + ']: ',
-      if useDefaults:
+      if useDefaults or useLocates:
           retval = ""
       else:
           retval = raw_input()
@@ -74,7 +96,7 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
          done = 1
       elif not filecheck:
          done = 1
-      elif useDefaults or file_exists(retval, type):
+      elif useDefaults or useLocates or file_exists(retval, type):
          done = 1
       else:
          print "WARNING: '%s' does not exist, or wrong type (file or dir)!" % retval
