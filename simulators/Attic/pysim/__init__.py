@@ -1,5 +1,7 @@
 """
 A Pure Python 2D Robot Simulator
+
+(c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
 import Tkinter, time, math, pickle
 import pyrobot.system.share as share
@@ -240,6 +242,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                 r.display[key] = 0
             else:
                 r.display[key] = 1
+            r._last_pose = (-1, -1, -1)
     def reset(self):
         for r in self.robots:
             r.x, r.y, r.a = r._xya
@@ -496,33 +499,6 @@ class SimRobot:
         if dev.type not in self.builtinDevices:
             self.builtinDevices.append(dev.type)
 
-class RangeSensor:
-    def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
-        self.type = name
-        # geometry = (x, y, a) origin in meters and radians
-        self.geometry = geometry
-        self.arc = arc
-        self.maxRange = maxRange
-        self.noise = noise
-        self.groups = {}
-        self.scan = [0] * len(geometry) # for data
-class Light:
-    def __init__(self, x, y, brightness, color="yellow"):
-        self.x = x
-        self.y = y
-        self.brightness = brightness
-        self.color = color
-        self._xyb = x, y, brightness # original settings for reset
-class LightSensor:
-    def __init__(self, geometry, noise = 0.0):
-        self.type = "light"
-        self.geometry = geometry
-        self.arc = None
-        self.maxRange = 1000.0
-        self.noise = noise
-        self.groups = {}
-        self.scan = [0] * len(geometry) # for data
-
 class TkPioneer(SimRobot):
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
@@ -544,12 +520,17 @@ class TkPioneer(SimRobot):
                 x -= self.simulator.offset_x
                 y -= self.simulator.offset_y
                 x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
-                robot.setPose(x, y)
+                robot.setPose(x - self._mouse_offset_from_center[0],
+                              y - self._mouse_offset_from_center[1])
                 self._mouse = 0
                 self.simulator.redraw()
             elif command == "down":
                 self._mouse = 1
                 self._mouse_xy = x, y
+                cx = x - self.simulator.offset_x
+                cy = y - self.simulator.offset_y
+                cx, cy = map(lambda v: float(v) / self.simulator.scale, (cx, -cy))
+                self._mouse_offset_from_center = cx - self.x, cy - self.y
                 self.simulator.canvas.move("robot-%s" % robot.name, x - self._mouse_xy[0], y - self._mouse_xy[1])
             elif command == "motion":
                 self._mouse = 1
@@ -589,10 +570,90 @@ class TkPioneer(SimRobot):
             xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
-            self.simulator.canvas.create_polygon(xy, tag="robot", fill="", outline="purple")
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>", func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>", func=lambda event,robot=self:self.mouse_event(event, "down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>", func=lambda event,robot=self:self.mouse_event(event, "up", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>", func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>", func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>", func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+            self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "up", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+
+class RangeSensor:
+    def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
+        self.type = name
+        # geometry = (x, y, a) origin in meters and radians
+        self.geometry = geometry
+        self.arc = arc
+        self.maxRange = maxRange
+        self.noise = noise
+        self.groups = {}
+        self.scan = [0] * len(geometry) # for data
+class Light:
+    def __init__(self, x, y, brightness, color="yellow"):
+        self.x = x
+        self.y = y
+        self.brightness = brightness
+        self.color = color
+        self._xyb = x, y, brightness # original settings for reset
+class LightSensor:
+    def __init__(self, geometry, noise = 0.0):
+        self.type = "light"
+        self.geometry = geometry
+        self.arc = None
+        self.maxRange = 1000.0
+        self.noise = noise
+        self.groups = {}
+        self.scan = [0] * len(geometry) # for data
+
+class PioneerFrontSonars(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self, "sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
+                                                        ( 0.30, 0.40, 65 * PIOVER180),
+                                                        ( 0.40, 0.30, 40 * PIOVER180),
+                                                        ( 0.50, 0.20, 15 * PIOVER180),
+                                                        ( 0.50,-0.20,-15 * PIOVER180),
+                                                        ( 0.40,-0.30,-40 * PIOVER180),
+                                                        ( 0.30,-0.40,-65 * PIOVER180),
+                                                        ( 0.20,-0.50,-90 * PIOVER180)),
+                             arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+        self.groups = {'all': range(8),
+                       'front': (3, 4),
+                       'front-left' : (1,2,3),
+                       'front-right' : (4, 5, 6),
+                       'front-all' : (1,2, 3, 4, 5, 6),
+                       'left' : (0,), 
+                       'right' : (7,), 
+                       'left-front' : (1,2), 
+                       'right-front' : (5,6, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+        
+class PioneerFrontLightSensors(LightSensor):
+    def __init__(self):
+        LightSensor.__init__(self, ((.75,  .5, 0), (.75, -.5, 0))) # make sure outside of bb!
+        self.groups = {"front-all": (0, 1),
+                       "all": (0, 1),
+                       "front": (0, 1),
+                       "front-left": (0, ),
+                       "front-right": (1, ),
+                       'left' : (0,), 
+                       'right' : (1,), 
+                       'left-front' : (0,), 
+                       'right-front' : (1, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+    
