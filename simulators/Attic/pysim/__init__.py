@@ -7,6 +7,10 @@ import Tkinter, time, math, pickle
 import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
+def sgn(v):
+    if v >= 0: return +1
+    else:      return -1
+
 class Simulator:
     def __init__(self, (width, height), (offset_x, offset_y), scale):
         self.robots = []
@@ -47,7 +51,7 @@ class Simulator:
         r.simulator = self
         self.assoc[port] = r
         self.ports.append(port)
-        r._xya = r.x, r.y, r.a # save original position for later reset
+        r._xya = r._gx, r._gy, r._ga # save original position for later reset
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
@@ -79,9 +83,9 @@ class Simulator:
         for r in self.robots:
             # but don't hit your own bounding box if ignoreSelf:
             if r.name == robot.name and ignoreSelf: continue
-            a90 = r.a + 90 * PIOVER180
-            xys = map(lambda x, y: (r.x + x * math.cos(a90) - y * math.sin(a90),
-                                    r.y + x * math.sin(a90) + y * math.cos(a90)),
+            a90 = r._ga + 90 * PIOVER180
+            xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
+                                    r._gy + x * math.sin(a90) + y * math.cos(a90)),
                       r.boundingBox[0], r.boundingBox[1])
             # for each of the bounding box segments:
             for i in range(len(xys)):
@@ -245,7 +249,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             r._last_pose = (-1, -1, -1)
     def reset(self):
         for r in self.robots:
-            r.x, r.y, r.a = r._xya
+            r._gx, r._gy, r._ga = r._xya
             r.energy = 10000.0
         for l in self.lights:
             l.x, l.y, l.brightness = l._xyb
@@ -327,7 +331,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                     self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill=color, outline="orange")
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
-            print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot.x, robot.y, robot.a)
+            print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga)
         
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
@@ -348,9 +352,11 @@ class SimRobot:
         if " " in name:
             name = name.replace(" ", "_")
         self.name = name
-        self.x = x
-        self.y = y
-        self.a = a
+        # set them here manually: (afterwards, use setPose)
+        self._gx = x
+        self._gy = y
+        self._ga = a
+        self.x, self.y, self.a = (0.0, 0.0, 0.0) # localize
         self.boundingBox = boundingBox # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
         self.radius = max(max(map(abs, boundingBox[0])), max(map(abs, boundingBox[1]))) # meters
         self.builtinDevices = []
@@ -362,18 +368,42 @@ class SimRobot:
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
+        # FIXME
+        #self.noiseTranslate = 0.01 # percent of translational noise 
+        #self.noiseRotate    = 0.01 # percent of translational noise 
         self._mouse = 0 # mouse down?
         self._mouse_xy = (0, 0) # last mouse click
         self._last_pose = (-1, -1, -1) # last robot pose drawn
 
     def setPose(self, x = None, y = None, a = None):
-        if x != None:
-            self.x = x
-        if y != None:
-            self.y = y
+        if x != None: # we never send just x; always comes with y
+            if self._mouse != 1: # if the mouse isn't down:
+                # first, figure out how much we moved in the global coords:
+                a90 = -self._ga
+                dx =  (x - self._gx) * math.cos(a90) - (y - self._gy) * math.sin(a90)
+                dy =  (x - self._gx) * math.sin(a90) + (y - self._gy) * math.cos(a90)
+                # then, move that much in the local coords:
+                a90 = -self.a
+                self.y += dx * math.cos(a90) - dy * math.sin(a90) 
+                self.x += dx * math.sin(a90) + dy * math.cos(a90) 
+                # noise: --------------------------------------------------------------
+                # FIXME: should be based on the total distance moved:
+                # dist = Segment((x, y), (self._gx, self._gy)).length()
+                # but distributed over x and y components, gaussian?
+                # Velocity should maybe play a role, too
+            # just update the global position
+            self._gx = x
+            self._gy = y
         if a != None:
-            self.a = a % (2 * math.pi) # keep in the positive range
-
+            # if our angle changes, update localized position:
+            if self._mouse != 1: # if mouse isn't down
+                diff = a - self._ga
+                self.a += diff 
+                self.a = self.a % (2 * math.pi) # keep in the positive range
+            # just update the global position
+            self._ga = a % (2 * math.pi) # keep in the positive range
+            # noise: --------------------------------------------------------------
+            # FIXME: add gaussian(noiseRotate)
     def move(self, vx, va):
         self.vx = vx
         self.va = va
@@ -393,10 +423,10 @@ class SimRobot:
             if d.type == "sonar":
                 i = 0
                 for x, y, a in d.geometry:
-                    ga = (self.a + a)
-                    a90 = self.a + 90 * PIOVER180
-                    gx = self.x + (x * math.cos(a90) - y * math.sin(a90))
-                    gy = self.y + (x * math.sin(a90) + y * math.cos(a90))
+                    ga = (self._ga + a)
+                    a90 = self._ga + 90 * PIOVER180
+                    gx = self._gx + (x * math.cos(a90) - y * math.sin(a90))
+                    gy = self._gy + (x * math.sin(a90) + y * math.cos(a90))
                     dist, hit, id = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
                     if hit:
                         self.drawRay("sonar", gx, gy, hit[0], hit[1], "gray")
@@ -412,9 +442,9 @@ class SimRobot:
                 for (d_x, d_y, d_a) in d.geometry:
                     # compute total light on sensor, falling off as square of distance
                     # position of light sensor in global coords:
-                    a90 = self.a + 90 * PIOVER180
-                    gx = self.x + (d_x * math.cos(a90) - d_y * math.sin(a90))
-                    gy = self.y + (d_x * math.sin(a90) + d_y * math.cos(a90))
+                    a90 = self._ga + 90 * PIOVER180
+                    gx = self._gx + (d_x * math.cos(a90) - d_y * math.sin(a90))
+                    gy = self._gy + (d_x * math.sin(a90) + d_y * math.cos(a90))
                     sum = 0.0
                     for light in self.simulator.lights:
                         x, y, brightness = light.x, light.y, light.brightness
@@ -435,7 +465,7 @@ class SimRobot:
 
     def eat(self, amt):
         for light in self.simulator.lights:
-            dist = Segment((self.x, self.y), (light.x, light.y)).length()
+            dist = Segment((self._gx, self._gy), (light.x, light.y)).length()
             radius = max(light.brightness, self.radius)
             if dist <= radius and amt/1000.0 <= light.brightness:
                 light.brightness -= amt/1000.0
@@ -449,14 +479,14 @@ class SimRobot:
         Move the robot self.velocity amount, if not blocked.
         """
         if self._mouse: return # don't do any of this if mouse is down
-        vy = self.vx * math.cos(-self.a) - self.vy * math.sin(-self.a)
-        vx = self.vx * math.sin(-self.a) + self.vy * math.cos(-self.a)
+        vy = self.vx * math.cos(-self._ga) - self.vy * math.sin(-self._ga)
+        vx = self.vx * math.sin(-self._ga) + self.vy * math.cos(-self._ga)
         va = self.va
         self.energy -= self.maxEnergyCostPerStep
         # proposed positions:
-        p_x = self.x + vx * (timeslice / 1000.0) # miliseconds
-        p_y = self.y + vy * (timeslice / 1000.0) # miliseconds
-        p_a = self.a + va * (timeslice / 1000.0) # miliseconds
+        p_x = self._gx + vx * (timeslice / 1000.0) # miliseconds
+        p_y = self._gy + vy * (timeslice / 1000.0) # miliseconds
+        p_a = self._ga + va * (timeslice / 1000.0) # miliseconds
         # let's check if that movement would be ok:
         a90 = p_a + 90 * PIOVER180
         xys = map(lambda x, y: (p_x + x * math.cos(a90) - y * math.sin(a90),
@@ -475,9 +505,9 @@ class SimRobot:
             # check each segment of the robot's bounding box for other robots:
             for r in self.simulator.robots:
                 if r.name == self.name: continue # don't compare with your own!
-                r_a90 = r.a + 90 * PIOVER180
-                r_xys = map(lambda x, y: (r.x + x * math.cos(r_a90) - y * math.sin(r_a90),
-                                          r.y + x * math.sin(r_a90) + y * math.cos(r_a90)),
+                r_a90 = r._ga + 90 * PIOVER180
+                r_xys = map(lambda x, y: (r._gx + x * math.cos(r_a90) - y * math.sin(r_a90),
+                                          r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
                             r.boundingBox[0], r.boundingBox[1])
                 for j in range(len(r_xys)):
                     if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
@@ -504,12 +534,12 @@ class TkPioneer(SimRobot):
         x, y = event.x, event.y
         if command[:8] == "control-":
             self._mouse_xy = x, y
-            cx, cy = self.simulator.scale_x(robot.x), self.simulator.scale_y(robot.y)
+            cx, cy = self.simulator.scale_x(robot._gx), self.simulator.scale_y(robot._gy)
             if command == "control-up":
                 self.simulator.canvas.delete('arrow')
-                self._mouse = 0
                 a = Segment((cx, cy), (x, y)).angle()
                 robot.setPose(a = (-a - 90 * PIOVER180) % (2 * math.pi))
+                self._mouse = 0
                 self.simulator.redraw()
             elif command in ["control-down", "control-motion"]:
                 self._mouse = 1
@@ -530,7 +560,7 @@ class TkPioneer(SimRobot):
                 cx = x - self.simulator.offset_x
                 cy = y - self.simulator.offset_y
                 cx, cy = map(lambda v: float(v) / self.simulator.scale, (cx, -cy))
-                self._mouse_offset_from_center = cx - self.x, cy - self.y
+                self._mouse_offset_from_center = cx - self._gx, cy - self._gy
                 self.simulator.canvas.move("robot-%s" % robot.name, x - self._mouse_xy[0], y - self._mouse_xy[1])
             elif command == "motion":
                 self._mouse = 1
@@ -547,28 +577,28 @@ class TkPioneer(SimRobot):
         """
         Draws the body of the robot. Not very efficient.
         """
-        if  self._last_pose == (self.x, self.y, self.a): return # hasn't moved
-        self._last_pose = (self.x, self.y, self.a)
+        if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
+        self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.canvas.delete("robot-%s" % self.name)
         sx = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
         sy = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
         s_x = self.simulator.scale_x
         s_y = self.simulator.scale_y
-        a90 = self.a + 90 * PIOVER180 # angle is 90 degrees off for graphics
+        a90 = self._ga + 90 * PIOVER180 # angle is 90 degrees off for graphics
         if self.display["body"] == 1:
-            xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
+            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
+                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      sx, sy)
             self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
             bx = [ .5, .25, .25, .5] # front camera
             by = [-.25, -.25, .25, .25]
-            xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
+            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
+                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      bx, by)
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black")
         if self.display["boundingBox"] == 1:
-            xy = map(lambda x, y: (s_x(self.x + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self.y + x * math.sin(a90) + y * math.cos(a90))),
+            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
+                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
