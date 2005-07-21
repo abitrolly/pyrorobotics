@@ -6,6 +6,18 @@ from posixpath import exists, isdir, isfile, islink
 from posix import popen
 import os
 
+print "Checking for versions of Python..."
+versions = [("python", "")]
+for i in range(22, 25):
+    pyver = "python%.1f" % (i / 10.0)
+    pipe = popen("which %s" % pyver )
+    which = pipe.readline().strip()
+    if " no %s in " % pyver in which:
+        pass
+    else:
+        versions.append((pyver, pyver[-3:]))
+pyverSuggest = versions[-1][1]
+
 prefix = "/usr"
 if "--prefix" in map(lambda s: s[0:8], sys.argv):
     for command in sys.argv:
@@ -100,11 +112,9 @@ CONFIGDIRS = %s
 
 print """
 What version of Python do you want to build Pyro for?
-(Leave empty if your Python binary is just "python")
-If you need to type 'python2.2' to run Python, then
-enter "2.2".
 """
-python_script_name = ask("1. Python version number?", "2.3", 0)
+
+python_script_name = ask("1. Python version number?", pyverSuggest, 0)
 
 python_include_files = ask("2. Where are Python's include files?",
                            ("%s/include/python" + python_script_name) % prefix,
