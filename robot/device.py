@@ -125,7 +125,6 @@ class Device:
     def _getNoise(self):
         return [s.noise for s in self]
     noise = property(_getNoise)
-    
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
         return [s.distance(*args, **kwargs) for s in self]

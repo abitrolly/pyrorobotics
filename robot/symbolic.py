@@ -29,6 +29,8 @@ class SimDevice(Device):
 		self.rawunits = "M"
 		self.units = "ROBOTS"
 		self.radius = robot.radius
+		self.count = len(self)
+		
 	def __len__(self):
 		return len(self._geometry[0])
 	def getSensorValue(self, pos):

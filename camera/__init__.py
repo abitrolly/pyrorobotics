@@ -11,7 +11,7 @@ def display(item):
    print item
 
 def listFilter(allArgs):
-   retval = 'camera.apply("%s",' % allArgs[0]
+   retval = 'camera.addFilter("%s",' % allArgs[0]
    if len(allArgs) > 1:
       for a in allArgs[1]:
          retval += str(a) + ","
