@@ -1,22 +1,23 @@
-""" The main Pyrobot robot object, and support functions
+"""
+The main Pyrobot robot object, and support functions
 
 
- This file contains the class that represents a computer controlled
- physical agent (robot). A robot is a bunch of drivers that offer
- senses and controllers
- -----------------------------
- Main interfaces:
+This file contains the class that represents a computer controlled
+physical agent (robot). A robot is a bunch of drivers that offer
+senses and controllers
+-----------------------------
+Main interfaces:
  .get()             - interface to robot, sensors
  .move(), .translate(), .rotate(), .motors(), .stop() - controls
 
- Units of measure for sense, map, and motors:
- -------------------------------------------
- ROBOTS - unit is given interms of robot's diameter
- METERS - meters
- CM     - centimeters
- MM     - millimeters
- SCALED - scaled [-1,1]
- RAW    - right from the sensor
+Units of measure for sense, map, and motors:
+-------------------------------------------
+ 'ROBOTS' - unit is given in terms of the robot's diameter
+ 'METERS' - meters
+ 'CM'     - centimeters
+ 'MM'     - millimeters
+ 'SCALED' - scaled [-1,1]
+ 'RAW'    - right from the sensor
 """
 
 import pyrobot.system as system

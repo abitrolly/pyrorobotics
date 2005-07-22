@@ -143,8 +143,6 @@ class SerialSimulator:
         
     def writeline(self, msg, newline = "\n"):
         self.last_msg.append(ksim.sendMessage(self.p, msg))
-        sleep(.01)  # for some reason it seems as if python doesn't block
-		    # properly on the preceeding assignment unless this is here
 
     def readline(self): # 1 = block till we get something
         if len(self.last_msg): return self.last_msg.pop(0)
@@ -168,7 +166,7 @@ class KheperaRobot(Robot):
         Robot.__init__(self) # robot constructor
         self.buffer = ''
         self.debug = 0
-        self.pause = 0.1
+        self.pause = 0.1 # for hemisson to keep from swamping the wireless
         if simulator == 1:
             self.sc = SerialSimulator()
             port = "simulated"
@@ -287,10 +285,7 @@ class KheperaRobot(Robot):
         self.stop()
 
     def sendMsg(self, msg):
-        if self.debug: print "DEBUG: sendMsg:", msg
         self.sc.writeline(msg, self._newline)
-        if self.subtype == "Hemisson":
-            sleep(self.pause)
 
     def readData(self):
         if self.sc.inWaiting() == 0: return
@@ -363,6 +358,7 @@ class KheperaRobot(Robot):
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
         self.stall = self.isStall()
         self.deadReckon()
+        time.sleep(self.pause)
 
     def deadReckon(self):
         """

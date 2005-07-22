@@ -199,7 +199,7 @@ class Device:
         if units == "UNRAW": # go from default to raw
             meters = None
             if self.units.upper() == "ROBOTS":
-                meters = raw * self.radius
+                meters = raw * (self.radius * 2)
             elif self.units.upper() == "SCALED":
                 return raw * float(self.maxvalueraw)
             elif self.units.upper() == "RAW":
@@ -260,7 +260,7 @@ class Device:
             raise AttributeError, "device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.rawunits, units)
         # now, it is in meters. convert it to output units:
         if units == "ROBOTS":
-            return raw / self.radius # in meters
+            return raw / (self.radius * 2) # in meters
         elif units == "MM":
             return raw * 1000.0
         elif units == "CM":
