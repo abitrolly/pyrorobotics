@@ -53,4 +53,5 @@ plugins/simulators/KheperaSimulator: build/Khepera Makefile Makefile.cfg Makefil
 clean:: 
 	- $(RM) plugins/simulators/KheperaSimulator
 	- $(RM) system/version.py
+	- $(RM) bin/pyrobot
 
