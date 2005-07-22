@@ -24,11 +24,11 @@ if "--version" in map(lambda s: s[0:9], sys.argv):
 else:
     print "Checking for versions of Python..."
     versions = [("python", "")]
-    for i in range(22, 25):
+    for i in range(22, 41):
         pyver = "python%.1f" % (i / 10.0)
-        pipe = popen("which %s" % pyver )
+        pipe = popen("which %s 2> /dev/null" % pyver )
         which = pipe.readline().strip()
-        if " no %s in " % pyver in which:
+        if which == '':
             pass
         else:
             versions.append((pyver, pyver[-3:]))
