@@ -107,24 +107,24 @@ class Device:
         if visible:
             self.makeWindow()
     # Properties to make getting all values easy:
-    def getValue(self):
+    def _getValue(self):
         return [s.value for s in self]
-    value = property(getValue)
-    def getPos(self):
+    value = property(_getValue)
+    def _getPos(self):
         return [s.pos for s in self]
-    pos = property(getPos)
-    def getGeometry(self):
+    pos = property(_getPos)
+    def _getGeometry(self):
         return [s.geometry for s in self]
-    geometry = property(getGeometry)
-    def getRawValue(self):
+    geometry = property(_getGeometry)
+    def _getRawValue(self):
         return [s.rawValue for s in self]
-    rawValue = property(getRawValue)
-    def getHit(self):
+    rawValue = property(_getRawValue)
+    def _getHit(self):
         return [s.hit for s in self]
-    rawValue = property(getHit)
-    def getNoise(self):
+    rawValue = property(_getHit)
+    def _getNoise(self):
         return [s.noise for s in self]
-    noise = property(getNoise)
+    noise = property(_getNoise)
     
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
