@@ -1,6 +1,21 @@
+"""
+The client robot connection programs for the PyrobotSimulator
+non-symbolic robots.
+"""
+
 import socket, pickle
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
+
+class SimulationDevice(Device):
+	def __init__(self, robot):
+		Device.__init__(self, "simulation")
+		self._dev = robot
+		self.startDevice()
+	def setPose(self, name, x = 0, y = 0, thr = 0):
+		self._dev.move("a_%s_%f_%f_%f" % (name, x, y, thr))
+		self._dev.localize(0,0,0)
+		return "ok"
 
 class SimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):
@@ -51,7 +66,9 @@ class TCPRobot(Robot):
 		self.radius = self.getItem("radius")
 		self.properties = self.getItem("properties")
 		self.builtinDevices = self.getItem("builtinDevices")
+		self.builtinDevices.append("simulation")
 		self.supportedFeatures = self.getItem("supportedFeatures")
+		self.name = self.getItem("name")
 		self.id   = self.connectionNum
 		for dev in self.builtinDevices:
 			d = self.startDevice(dev)
@@ -90,13 +107,18 @@ class TCPRobot(Robot):
 			self.move("forward")
 		elif dir == 'B':
 			self.move("back")
+	def localize(self, x = 0, y = 0, thr = 0):
+		return self.move("b_%f_%f_%f" % (x, y, thr))
 
 	def startDeviceBuiltin(self, name, index = 0):
-		self.properties.append("%s_%d" % (name, index))
-		self.move("s_%s_%d" % (name, index))
-		geometry = self.move("g_%s_%d" % (name, index))
-		groups = self.move("r_%s_%d" % (name, index))
-		return {name: SimDevice(name, index, self, geometry, groups)}
+		if name == "simulation":
+			return {"simulation": SimulationDevice(self)}
+		else:
+			self.properties.append("%s_%d" % (name, index))
+			self.move("s_%s_%d" % (name, index))
+			geometry = self.move("g_%s_%d" % (name, index))
+			groups = self.move("r_%s_%d" % (name, index))
+			return {name: SimDevice(name, index, self, geometry, groups)}
 
 	def translate(self, value):
 		self.move("t_%f" % value)

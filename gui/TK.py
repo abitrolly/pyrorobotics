@@ -183,7 +183,7 @@ class TKgui(Tkinter.Toplevel, gui):
       if exp[-2:] == "()":
          help_exp = "help(%s)" % exp[:-2]
       elif exp[-2:] == "__":
-         help_exp = "help(%s)" % exp[:-2]
+         help_exp = "help(%s)" % exp
       else:
          help_exp = "help(%s.__class__)" % (exp,)
       self.processCommand(help_exp)

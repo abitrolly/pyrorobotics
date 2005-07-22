@@ -138,6 +138,8 @@ class Simulator:
         elif request == 'back':
             self.assoc[sockname[1]].move(-0.3, 0.0)
             retval = "ok"
+        elif request == 'name':
+            retval = self.assoc[sockname[1]].name
         elif request == 'x':
             retval = self.assoc[sockname[1]].x
         elif request == 'energy':
@@ -157,6 +159,17 @@ class Simulator:
             message = request.split("_")
             if message[0] == "m": # "m_t_r" move:translate:rotate
                 retval = self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+            elif message[0] == "a": # "a_name_x_y_th" simulation placement
+                simulation, name, x, y, thr = message
+                for r in self.robots:
+                    if r.name == name:
+                        r.setPose(float(x), float(y), float(thr), 1)#handofgod
+                        r.localize(0, 0, 0)
+                        return "ok"
+                return "error"
+            elif message[0] == "b": # "b_x_y_th" localize
+                localization, x, y, thr = message
+                retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "o": # "o_v" rotate:value
@@ -375,9 +388,12 @@ class SimRobot:
         self._mouse_xy = (0, 0) # last mouse click
         self._last_pose = (-1, -1, -1) # last robot pose drawn
 
-    def setPose(self, x = None, y = None, a = None):
+    def localize(self, x = 0, y = 0, th = 0):
+        self.x, self.y, self.a = (x, y, th)
+
+    def setPose(self, x = None, y = None, a = None, handOfGod = 0):
         if x != None: # we never send just x; always comes with y
-            if self._mouse != 1: # if the mouse isn't down:
+            if self._mouse != 1 and not handOfGod: # if the mouse isn't down:
                 # first, figure out how much we moved in the global coords:
                 a90 = -self._ga
                 dx =  (x - self._gx) * math.cos(a90) - (y - self._gy) * math.sin(a90)
@@ -396,7 +412,7 @@ class SimRobot:
             self._gy = y
         if a != None:
             # if our angle changes, update localized position:
-            if self._mouse != 1: # if mouse isn't down
+            if self._mouse != 1 and not handOfGod: # if mouse isn't down
                 diff = a - self._ga
                 self.a += diff 
                 self.a = self.a % (2 * math.pi) # keep in the positive range
