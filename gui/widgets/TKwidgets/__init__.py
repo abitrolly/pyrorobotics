@@ -639,7 +639,10 @@ class FileDialog(ModalDialog):
            import os
            filename = self.fileNameEntry.get()
            myfilename = os.getenv("HOME") + "/my" + filename.split("/")[-1]
-           os.system("cp -i %s %s" %(filename, myfilename))
+           if os.name in ['nt', 'dos', 'os2'] :
+              os.system("copy %s %s" %(filename, myfilename))              
+           else:
+              os.system("cp -i %s %s" %(filename, myfilename))
            self.fileNameEntry.delete(0, 'end')
            self.fileNameEntry.insert(0, myfilename)
            self.EditPressed(myfilename, 1)

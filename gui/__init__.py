@@ -255,9 +255,6 @@ class gui:
       elif retval == "quit" or retval == "exit" or retval == "bye":
          self.done = 1
          return 1
-      elif len(retval) > 2 and retval[0] == "%":
-         exp = string.strip(retval[1:])
-         os.system(exp)
       elif retval == "edit":
          if self.engine.brainfile != '':
             if os.getenv("EDITOR"): 
@@ -500,7 +497,9 @@ class gui:
          self.engine.simfile = f
          pyroPID = os.getpid()
          if os.name in ['nt', 'dos', 'os2'] :
-            os.system("start "+ (" %d " % pyroPID) + worldfile + " &")
+            # FIXME: this assumes program to run is a python program; how will we know?
+            # could leave out "python" and windows will ask
+            os.system("start python %s %d %s" % (f, pyroPID, worldfile))
          elif os.name in ['posix']:
             os.system(f + (" %d " % pyroPID) + worldfile + " &")
          else:

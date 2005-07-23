@@ -234,6 +234,9 @@ class TKgui(Tkinter.Toplevel, gui):
                if (method[0] != "_" or method[1] == "_") and method not in thing.__dict__:
                   object = eval("thing.%s" % method)
                   if type(object) == type(""):
+                     object = object.replace("\n", " ")
+                     if len(object) > 50:
+                        object = object[0:50].strip() + "..."
                      tree.add_node("%s = '%s'" % (method,object.strip()), id=method, flag=0)
                   elif type(object) in [types.FloatType, types.IntType, types.BooleanType,
                                       types.LongType, types.DictType, types.ListType, types.TupleType]:
