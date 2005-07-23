@@ -14,7 +14,7 @@ from pyrobot.robot.device import *
 import math, string, time, os, sys, types
 
 __authors__ = "Stephen McCaul, Douglas Blank"
-__version__ = "$ $"
+__version__ = "$Revision$"
 
 if float(sys.version[0:3]) < 2.4:
     False = 0
