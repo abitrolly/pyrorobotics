@@ -2,6 +2,8 @@
 Ioana Butoi and Doug Blank
 Aibo client commands for talking to the Tekkotsu servers
 from Python.
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
 from pyrobot.robot import Robot
