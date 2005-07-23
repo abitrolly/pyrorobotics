@@ -106,7 +106,7 @@ public:
   PyObject *getRGB();
   PyObject *setRGB(int r, int g, int b); 
 
-  PyObject *setImage(int newImage);
+  PyObject *mask(int channel);
   PyObject *backup();
   PyObject *restore();
   PyObject *motion(int threshold, int outChannel);
@@ -120,10 +120,8 @@ public:
   PyObject *hsv2rgb();
 
  protected:
-  unsigned char *Image; // current image (image, original, workspace)
+  unsigned char *Image; // current image (currently only image is available)
   unsigned char *image;
-  unsigned char *original;
-  unsigned char *workspace;
   unsigned char *motionArray[MAXMOTIONLEVELS];
   int motionCount;
   int copyMode;
@@ -144,7 +142,7 @@ public:
   int getBlobHeight( Blob *b );
   int getBlobArea( Blob *b );
   void sortBlobs(int sortMethod, Blob bloblist[], int indexes[], int size);
-  PyObject *copy(int);
+  PyObject *copy(int,int);
 };
 
 #endif

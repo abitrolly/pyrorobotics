@@ -56,20 +56,6 @@ PyObject *Vision::initialize(int wi, int he, int de, int r, int g, int b) {
   return PyInt_FromLong(0L);
 }
 
-PyObject *Vision::setImage(int newImage) {
-  if (newImage == ORIGINAL)
-    Image = original;
-  else if (newImage == IMAGE) 
-    Image = image;
-  else if (newImage == WORKSPACE)
-    Image = workspace;
-  else {
-    PyErr_SetString(PyExc_ValueError, "invalid image ID in setImage()");
-    return NULL;
-  }
-  return PyInt_FromLong(0L);
-}
-
 // set(): works on current image
 // sets the depth R, G, or B at (w, h) to val.
 // if d is RED, GREEN, or BLUE then set just that d; if
@@ -1147,11 +1133,11 @@ PyObject *Vision::applyFilterList() {
 }
 
 PyObject *Vision::backup() { 
-  return copy(0); // 0 backup, 1 restore
+  return copy(0, 0); // 0 backup, 1 restore
 }
 
 PyObject *Vision::restore() { 
-  return copy(1); // 0 backup, 1 restore
+  return copy(1, 0); // 0 backup, 1 restore
 }
 
 PyObject *Vision::motion(int threshold, int outChannel) { 
@@ -1292,12 +1278,26 @@ PyObject *Vision::yuv2rgb() {
   return PyInt_FromLong(0L);
 }
 
-PyObject *Vision::copy(int fromto) { // 0 backup, 1 restore
+PyObject *Vision::mask(int channel) { 
+  return copy(2, channel);
+}
+
+PyObject *Vision::copy(int fromto, int channel) { // 0 backup, 1 restore
   static unsigned char *backup = new unsigned char[width * height * depth];
   if (fromto == 0) { // backup
     memcpy(backup, Image, width * height * depth);
   } else if (fromto == 1) { // restore
     memcpy(Image, backup, width * height * depth);
+  } else if (fromto == 2) { // mask the backup, and restore
+    for (int w = 0; w < width; w++) {
+      for (int h = 0; h < height; h++) {
+	if (Image[(h * width + w) * depth + rgb[channel]] == 255) {
+	  for (int d = 0; d < depth; d++) {
+	    Image[(h * width + w) * depth + d] = backup[(h * width + w) * depth + d];
+	  }
+	}
+      }
+    }
   } else {
     PyErr_SetString(PyExc_TypeError, "Invalid argument to copy()");
     return NULL;
@@ -1421,6 +1421,7 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Rotate", "rotate"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "Swap planes", "swapPlanes", rgb[0], rgb[2]));
   PyList_Append(menu, Py_BuildValue("sssfi", "Misc", "Add noise", "addNoise", 0.05, 30));
+  PyList_Append(menu, Py_BuildValue("sssi", "Misc", "Apply mask to backup", "mask", 0));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "RGB -> YUV", "rgb2yuv"));
   PyList_Append(menu, Py_BuildValue("sss", "Misc", "YUV -> RGB", "yuv2rgb"));
   //PyList_Append(menu, Py_BuildValue("sss", "Misc", "RGB -> HSV", "rgb2hsv"));
@@ -1555,6 +1556,13 @@ PyObject *Vision::applyFilter(PyObject *filter) {
     retval = rgb2hsv();
   } else if (strcmp((char *)command, "hsv2rgb") == 0) {
     retval = hsv2rgb();
+  } else if (strcmp((char *)command, "mask") == 0) {
+    i1 = 0;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: mask");
+      return NULL;
+    }
+    retval = mask(i1);
   } else if (strcmp((char *)command, "backup") == 0) {
     retval = backup();
   } else if (strcmp((char *)command, "restore") == 0) {

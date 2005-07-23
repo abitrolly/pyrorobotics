@@ -11,7 +11,7 @@ def display(item):
    print item
 
 def listFilter(allArgs):
-   retval = 'camera.addFilter("%s",' % allArgs[0]
+   retval = 'self.robot.camera[0].addFilter("%s",' % allArgs[0]
    if len(allArgs) > 1:
       for a in allArgs[1]:
          retval += str(a) + ","
@@ -313,7 +313,7 @@ class Camera(PyrobotImage, Device):
    def addFilter(self, func, *args):
       """
       Add a filter to the filter list.
-      Example: cam.addFilter( "superColor", 3)
+      Example: self.robot.camera[0].addFilter( "superColor", 3)
       """
       import inspect
       if type(func) == type(""):
@@ -376,24 +376,24 @@ class Camera(PyrobotImage, Device):
       x, y = int(x * self.width), int(y * self.height)
       if (x == self.lastX and y == self.lastY):
          rgb = self.vision.get(int(x), int(y))
-         print 'camera.addFilter("match", %d, %d, %d)' % (rgb[0], rgb[1], rgb[2])
+         print 'self.robot.camera[0].addFilter("match", %d, %d, %d)' % (rgb[0], rgb[1], rgb[2])
          return self.addFilter("match", rgb[0], rgb[1], rgb[2])
       else:
-         print 'camera.addFilter("histogram", %d, %d, %d, %d, 8)' % (self.lastX, self.lastY, x, y)
+         print 'self.robot.camera[0].addFilter("histogram", %d, %d, %d, %d, 8)' % (self.lastX, self.lastY, x, y)
          return self.addFilter("histogram", self.lastX, self.lastY, x, y, 8)
 
    def processMiddleClick(self, event):
       x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
-      print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 1)
+      print 'self.robot.camera[0].addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 1)
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 1)
 
    def processRightClick(self, event):
       x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
-      print 'camera.addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 2)
+      print 'self.robot.camera[0].addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 2)
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 2)
 
    def hideWindow(self):
