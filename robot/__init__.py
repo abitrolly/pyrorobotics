@@ -1,29 +1,20 @@
 """
-The main Pyrobot robot object, and support functions
-
+The main Pyrobot robot package.
 
 This file contains the class that represents a computer controlled
-physical agent (robot). A robot is a bunch of drivers that offer
-senses and controllers
------------------------------
-Main interfaces:
- .get()             - interface to robot, sensors
- .move(), .translate(), .rotate(), .motors(), .stop() - controls
+physical agent (robot). A robot is a collection of interfaces to
+senses and controllers.
 
-Units of measure for sense, map, and motors:
--------------------------------------------
- 'ROBOTS' - unit is given in terms of the robot's diameter
- 'METERS' - meters
- 'CM'     - centimeters
- 'MM'     - millimeters
- 'SCALED' - scaled [-1,1]
- 'RAW'    - right from the sensor
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
 import pyrobot.system as system
 from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
 import math, string, time, os, sys, types
+
+__authors__ = "Stephen McCaul, Douglas Blank"
+__version__ = "$ $"
 
 if float(sys.version[0:3]) < 2.4:
     False = 0
@@ -53,25 +44,32 @@ class Robot:
     
     The base robot class. This class is the basis of all robots.
 
-    Primary actions:
-        robot.move(v1, v2)
-        robot.rotate(v)
-        robot.translate(v)
-        robot.motors(m1, m2)
-        robot.stop()
+    Primary attributes:
+        .x
+        .y
+        .thr
+        .stall
+        .brain = None
+        .timestamp = time.time()
+        .builtinDevices = [] # list of built-in devices
+        .supportedFeatures = [] # meta devices
+        .devices = []
 
-    Primary properties:
-        robot.x
-        robot.y
-        robot.thr
-        robot.stall
+    Units of measure for range sensors:
+        'ROBOTS' - unit is given in terms of the robot's diameter
+        'METERS' - meters
+        'CM'     - centimeters
+        'MM'     - millimeters
+        'SCALED' - scaled [-1,1]
+        'RAW'    - right from the sensor
     """
     def __init__(self, **kwargs):
+
         """
-        The main robot object. Access the last loaded devices here, plus all of
-        the robot-specific fields (such as x, y, and th). Use
-        robot.move(translate, rotate) to move the robot. If you need to
-        initialize things, put them in setup().
+        The main robot object. Access the last loaded devices here,
+        plus all of the robot-specific fields (such as x, y, and
+        th). Use robot.move(translate, rotate) to move the robot. If
+        you need to initialize things, put them in setup().
         """
         self.brain = None
         self.timestamp = time.time()
