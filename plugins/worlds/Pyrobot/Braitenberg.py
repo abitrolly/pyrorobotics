@@ -19,8 +19,8 @@ def INIT():
     # (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",
                                   1, 1, -0.86,
-                                  ((.75, .75, -.75, -.75),
-                                   (.5, -.5, -.5, .5))))
+                                  ((.38, .38, -.38, -.38),
+                                   (.25, -.25, -.25, .25))))
     # add some sensors:
     sim.robots[0].addDevice(PioneerFrontSonars())
     sim.robots[0].addDevice(PioneerFrontLightSensors())

@@ -197,43 +197,51 @@ class TKgui(Tkinter.Toplevel, gui):
          self.processCommand("watch " + self.makeExpression(full_id))
 
    def makeExpression(self, full_id):
-      thingStr = ""
-      thing = self.engine
-      i = 0
+      self._populateEnv()
+      thingStr = full_id[0]
+      thing = self.environment[full_id[0]]
+      i = 1
       while i < len(full_id):
          item = full_id[i]
-         if type(thing) == type([]): # list
-            thingStr += "[%s]" % item
-            thing = thing[item]
-         elif type(thing) == type({}): # dict
-            thingStr += "[%s]" % item
-            thing = thing[item]
+         if item == "[": # array position
+            pass
+         elif item == "]": # array position
+            thing = thing[full_id[i - 2]]
+            thingStr += "[%s]" % full_id[i - 2]
          elif item == "methods": # method
             if full_id[i+1][-2:] == "()": # method
                thingStr += ".%s%s" % (full_id[i+1][:-2], full_id[i+2:])
             else:
                thingStr += ".%s" % full_id[i+1]
             break
+         elif type(thing) == type([]): # list
+            thingStr += "[%s]" % item
+            thing = thing[item]
+         elif type(thing) == type({}): # dict
+            thingStr += "[%s]" % item
+            thing = thing[item]
          else:
             thingStr += ".%s" % item
             thing = thing.__dict__[item] # property
          i += 1
-      return thingStr[1:]
+      return thingStr
 
    def getTreeContents(self, node, tree):
+      self._populateEnv()
       currentName = node.full_id()[-1]
       # look up the object by path: ------------------------
-      thing = self.engine
-      for item in node.full_id():
-         if type(thing) == type([]): # list
-            thing = thing[item]
-         elif type(thing) == type({}): # dict
-            thing = thing[item]
-         elif item == "methods": # methods
+      thing = self.environment[node.full_id()[0]]
+      thingName = node.full_id()[0]
+      parent = None
+      position = 1
+      for item in node.full_id()[1:]:
+         if item == "methods": # methods
             for method in dir(thing):
                if (method[0] != "_" or method[1] == "_") and method not in thing.__dict__:
                   object = eval("thing.%s" % method)
-                  if type(object) == type(""):
+                  if object == None:
+                     tree.add_node("%s = None" % (method,), id=method, flag=0)
+                  elif type(object) == type(""):
                      object = object.replace("\n", " ")
                      if len(object) > 50:
                         object = object[0:50].strip() + "..."
@@ -250,14 +258,32 @@ class TKgui(Tkinter.Toplevel, gui):
                            docString = docString[0:50].strip() + "..."
                         tree.add_node("%s(): %s" % (method,docString), id="%s()" % method, flag=0)
                      else:
-                        tree.add_node("%s()" % (method,), id="%s()" % method, flag=0)
-                     
+                        tree.add_node("%s()" % (method,), id="%s()" % method, flag=0)                     
             return # no more things to show
+         elif type(thing) == type([]): # list
+            thing = thing[item]
+         elif type(thing) == type({}): # dict
+            thing = thing[item]
          else:
             if item in thing.__dict__:
                thing = thing.__dict__[item] # property
+               thingName = item
             else:
-               return
+               if item == "[":
+                  if position == len(node.full_id()) - 1:
+                     for i in range(len(thing)):
+                        tree.add_node("[%d] - SensorValue" % i, id="]", flag=1)
+                     return
+                  else:
+                     pass # no need to do anything
+               elif "]" == item:
+                  if position == len(node.full_id()) - 1:
+                     thing = thing[ int(node.full_id()[-3]) ]
+                  else:
+                     pass # no need?
+               else:
+                  return
+         position += 1
       # now that you have it, see what it is: --------------
       if type(thing) == type([]): # list:
          # if a list of objects, get them as nodes:
@@ -265,9 +291,13 @@ class TKgui(Tkinter.Toplevel, gui):
             tree.add_node("%s = %s" % (currentName, thing), id=thing, flag=0)
          else:
             for i in range(len(thing)):
-               tree.add_node("%s[%d]" % (currentName,i), id=i, flag=1)
+               tree.add_node("%s[%d] - Device" % (currentName,i), id=i, flag=1)
          # if just strings, numbers, list them:
       else: # a complex object with parts:
+         try:    iterLen = len(thing)
+         except: iterLen = None
+         if iterLen != None:
+            tree.add_node("List [0..%d]" % (iterLen-1), id="[", flag=1)
          # first, get all of the devices, if any:
          if "devices" in thing.__dict__: # robot
             for device in thing.devices:
@@ -446,13 +476,7 @@ class TKgui(Tkinter.Toplevel, gui):
          if command[-1] == ".":
             command = command[:-1]
       # now evaluate:
-      if self.engine.brain:
-         self.environment["self"] = self.engine.brain
-      else:
-         self.environment["self"] = BrainStem(self.engine.robot)
-      self.environment["engine"] = self.engine
-      self.environment["robot"] = self.engine.robot
-      self.environment["brain"] = self.engine.brain
+      self._populateEnv()
       try:
          exec("_methods = %s.__doc__" % command) in self.environment
          methods = "   " + self.environment["_methods"]

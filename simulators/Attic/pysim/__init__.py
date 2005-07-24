@@ -596,8 +596,9 @@ class TkPioneer(SimRobot):
         if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.canvas.delete("robot-%s" % self.name)
-        sx = [.75, .5, -.5, -.75, -.75, -.5, .5, .75]
-        sy = [.15, .5, .5, .15, -.15, -.5, -.5, -.15]
+        # Body Polygon, by x and y lists:
+        sx = [.38, .25, -.25, -.38, -.38, -.25, .25, .38]
+        sy = [.08, .25, .25, .08, -.08, -.25, -.25, -.08]
         s_x = self.simulator.scale_x
         s_y = self.simulator.scale_y
         a90 = self._ga + 90 * PIOVER180 # angle is 90 degrees off for graphics
@@ -606,8 +607,8 @@ class TkPioneer(SimRobot):
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      sx, sy)
             self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
-            bx = [ .5, .25, .25, .5] # front camera
-            by = [-.25, -.25, .25, .25]
+            bx = [ .24, .12, .12, .24] # front camera
+            by = [-.12, -.12, .12, .12]
             xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      bx, by)
@@ -659,15 +660,16 @@ class LightSensor:
 
 class PioneerFrontSonars(RangeSensor):
     def __init__(self):
-        RangeSensor.__init__(self, "sonar", geometry = (( 0.20, 0.50, 90 * PIOVER180),
-                                                        ( 0.30, 0.40, 65 * PIOVER180),
-                                                        ( 0.40, 0.30, 40 * PIOVER180),
-                                                        ( 0.50, 0.20, 15 * PIOVER180),
-                                                        ( 0.50,-0.20,-15 * PIOVER180),
-                                                        ( 0.40,-0.30,-40 * PIOVER180),
-                                                        ( 0.30,-0.40,-65 * PIOVER180),
-                                                        ( 0.20,-0.50,-90 * PIOVER180)),
-                             arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+        RangeSensor.__init__(self,
+            "sonar", geometry = (( 0.10, 0.25, 90 * PIOVER180),
+                                 ( 0.25, 0.20, 65 * PIOVER180),
+                                 ( 0.30, 0.10, 40 * PIOVER180),
+                                 ( 0.38, 0.05, 15 * PIOVER180),
+                                 ( 0.38,-0.05,-15 * PIOVER180),
+                                 ( 0.30,-0.10,-40 * PIOVER180),
+                                 ( 0.25,-0.20,-65 * PIOVER180),
+                                 ( 0.10,-0.25,-90 * PIOVER180)),
+            arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
         self.groups = {'all': range(8),
                        'front': (3, 4),
                        'front-left' : (1,2,3),
@@ -686,7 +688,7 @@ class PioneerFrontSonars(RangeSensor):
         
 class PioneerFrontLightSensors(LightSensor):
     def __init__(self):
-        LightSensor.__init__(self, ((.75,  .5, 0), (.75, -.5, 0))) # make sure outside of bb!
+        LightSensor.__init__(self, ((.38,  .25, 0), (.38, -.25, 0))) # make sure outside of bb!
         self.groups = {"front-all": (0, 1),
                        "all": (0, 1),
                        "front": (0, 1),

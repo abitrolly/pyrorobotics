@@ -193,8 +193,11 @@ if pyrobot.startup_check():
         # save it, in case we need it:
         import pyrobot.system.share as share
         if not share.gui:
-            share.gui = Tkinter.Tk()
-            share.gui.withdraw()
+            try:
+                share.gui = Tkinter.Tk()
+                share.gui.withdraw()
+            except:
+                window = 'TTY'
     eng = Engine(robotfile, brainfile, simulator,
                  pyroargs, c, worldfile, devices.split(",") )
     if window == 'GL':

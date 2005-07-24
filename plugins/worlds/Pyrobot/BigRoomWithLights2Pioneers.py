@@ -18,13 +18,13 @@ def INIT():
     # port, name, x, y, th, bounding Xs, bounding Ys, color (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",
                                   15, 30, 0.0,
-                                  ((.75, .75, -.75, -.75),
-                                   (.5, -.5, -.5, .5))))
+                                  ((.38, .38, -.38, -.38),
+                                   (.25, -.25, -.25, .25))))
     # port, name, x, y, th, bounding Xs, bounding Ys, color (optional TK color name):
     sim.addRobot(60001, TkPioneer("BluePioneer",
                                   30, 35, 1.5,
-                                  ((.75, .75, -.75, -.75),
-                                   (.5, -.5, -.5, .5)),
+                                  ((.38, .38, -.38, -.38),
+                                   (.25, -.25, -.25, .25)),
                                   color="blue"))
     # add some sensors
     sim.robots[0].addDevice(PioneerFrontSonars())

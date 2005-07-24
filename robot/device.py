@@ -162,10 +162,12 @@ class Device:
         elif type(item) == types.IntType:
             return self.getSensorValue(item)
         elif type(item) == types.SliceType:
+            if item.stop >= len(self): stop = len(self) - 1
+            else:                      stop = item.stop
             step = 1
             if item.step:
                 step = item.step
-            return [self.getSensorValue(p) for p in xrange(item.start, item.stop, step)]
+            return [self.getSensorValue(p) for p in xrange(item.start, stop, step)]
         else:
             raise AttributeError, "invalid device[%s]" % item
 

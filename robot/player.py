@@ -121,6 +121,22 @@ class PlayerSonarDevice(PlayerDevice):
                            'back-left' : (12, 13, 14), 
                            'back' : (11, 12),
                            'back-all' : ( 9, 10, 11, 12, 13, 14)}
+        elif len(self) == 32: # people bot says 32, but only 24
+            self.groups = {'all': range(24),
+                           'front': (3,4, 19,20),
+                           'front-left' : (1,2,3, 17,18,19),
+                           'front-right' : (4,5,6, 20,21,22),
+                           'front-all' : (1,2,3,4,5,6, 17,18,19,20,21,22),
+                           'left' : (0,15, 16), 
+                           'right' : (7,8, 23), 
+                           'left-front' : (0, 16), 
+                           'right-front' : (7, 23),
+                           'left-back' : (15, ),
+                           'right-back' : (8, ),
+                           'back-right' : (9, 10, 11),
+                           'back-left' : (12, 13, 14), 
+                           'back' : (11, 12),
+                           'back-all' : ( 9, 10, 11, 12, 13, 14)}
         else:
             self.groups= {'all': range(len(self))}
         self.units    = "ROBOTS"
@@ -129,7 +145,7 @@ class PlayerSonarDevice(PlayerDevice):
         self.rawunits = "METERS"
         self.maxvalueraw = 8.0 # meters
         # These are fixed in meters: DO NOT CONVERT ----------------
-        self.radius = 0.750 # meters
+        self.radius = 0.40 # meters
         # ----------------------------------------------------------
         # All of the rest of the measures are relative to units, given in rawunits:
         self._noise = 0.05 # 5 percent
@@ -138,10 +154,12 @@ class PlayerSonarDevice(PlayerDevice):
     def __len__(self):
         return self._dev.scan_count
     def getSensorValue(self, pos):
+        if pos < 16: z = 0.23
+        else:        z = 1.00
         return SensorValue(self, self._dev.scan[pos], pos,
                            (self._dev.poses[pos][0], # x in meters
                             self._dev.poses[pos][1], # y
-                            0.03,                    # z
+                            z,                    # z
                             self._dev.poses[pos][2], # rads
                             self.arc),               # rads
                            noise=self._noise)
@@ -191,7 +209,7 @@ class PlayerLaserDevice(PlayerDevice):
         self.maxvalueraw = 8.0 # rawunits
         # -------------------------------------------
         # These are fixed in meters: DO NOT CONVERT ----------------
-        self.radius = 0.750 # meters
+        self.radius = 0.40 # meters
         # -------------------------------------------
         self.count = count
     def __len__(self):
@@ -338,6 +356,8 @@ class PlayerGripperDevice(PlayerDevice):
         window.addData("4", ".isLiftMoving()", self.isLiftMoving())
 
     def updateWindow(self):
+        self.window.updateWidget("inner", self.getBreakBeam("inner"))
+        self.window.updateWidget("outer", self.getBreakBeam("outer"))
         self.window.updateWidget("1", self.isClosed())
         self.window.updateWidget("2", self.isOpened())
         self.window.updateWidget("3", self.isMoving())
@@ -487,7 +507,7 @@ class PlayerRobot(Robot):
         self.th = 0.0
         self.thr = 0.0
         # Can we get these from player?
-        self.radius = 0.75
+        self.radius = 0.40
         self.type = "Player"
         self.subtype = 0
         self.units = "METERS"

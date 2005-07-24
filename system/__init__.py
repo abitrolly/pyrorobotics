@@ -7,7 +7,7 @@ def about():
     print "Pyrobot - Python Robotics"
     print "Version:", version()
     print "See: http://PyroRobotics.org"
-    print "(c) 2005, D.S. Blank. Released under the GNU GPL"
+    print "(c) 2005, PyroRobotics.org. Released under the GNU GPL"
     print "-------------------------------------------------------------"
 
 def usage():
@@ -62,6 +62,7 @@ def help():
     print "  !!                          rerun last command from history"
     print "  watch EXP                   display EXP"
     print "  unwatch EXP                 remove display of EXP"
+    print "  view EXP                    object tree viewer of EXP"
     print ""
 
 def file_exists(file_name):

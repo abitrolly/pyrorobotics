@@ -173,6 +173,15 @@ class gui:
          commandLine += "-b %s " % file
       print commandLine
 
+   def _populateEnv(self):
+      if self.engine.brain:
+         self.environment["self"] = self.engine.brain
+      else:
+         self.environment["self"] = BrainStem(self.engine.robot)
+      self.environment["engine"] = self.engine
+      self.environment["robot"] = self.engine.robot
+      self.environment["brain"] = self.engine.brain
+
    def processCommand(self, retval):
       retval = retval.replace("\n", "")
       retval = retval.replace("\r", "")
@@ -268,14 +277,10 @@ class gui:
             self.inform("Need to load a brain first!")
       elif retval[:8] == "unwatch ":
          self.watcher.unwatch(retval[7:].strip())
+      elif retval[:5] == "view ":
+         self.objectBrowser(retval[5:])
       elif retval[:6] == "watch ":
-         if self.engine.brain:
-            self.environment["self"] = self.engine.brain
-         else:
-            self.environment["self"] = BrainStem(self.engine.robot)
-         self.environment["engine"] = self.engine
-         self.environment["robot"] = self.engine.robot
-         self.environment["brain"] = self.engine.brain
+         self._populateEnv()
          self.watch(retval[5:].strip())
       elif retval[:7] == "browse ":
          self.objectBrowser(retval[7:].strip())
@@ -285,13 +290,7 @@ class gui:
          _retval = "error"
          exp2 = string.strip(retval)
          # perhaps could do these once, but could change:
-         if self.engine.brain:
-            self.environment["self"] = self.engine.brain
-         else:
-            self.environment["self"] = BrainStem(self.engine.robot)
-         self.environment["engine"] = self.engine
-         self.environment["robot"] = self.engine.robot
-         self.environment["brain"] = self.engine.brain
+         self._populateEnv()
          print ">>> ",
          print retval
          try:
