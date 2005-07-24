@@ -1,5 +1,8 @@
 # a basic brain class
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 import threading, time, operator
 import pyrobot.gui.console
 

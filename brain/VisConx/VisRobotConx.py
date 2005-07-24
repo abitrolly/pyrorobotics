@@ -1,3 +1,6 @@
+__author__ = "Matt Fiedler"
+__version__ = "$Revision$"
+
 import Tkinter
 from pyrobot.brain.conx import *
 import pyrobot.brain.VisConx.ActivationsDiag as ActivationsDiag

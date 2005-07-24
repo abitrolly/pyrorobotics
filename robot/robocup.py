@@ -6,6 +6,10 @@ TODO: need localize that would triangulate from flags/landmarks OR
       need to make unique colors of lines and objects
       need to make laser sensor have more than single angle hits
 """
+
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from socket import *
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue

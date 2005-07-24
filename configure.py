@@ -17,6 +17,9 @@ from posixpath import exists, isdir, isfile, islink
 from posix import popen
 import os
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 if "--version" in map(lambda s: s[0:9], sys.argv):
     for command in sys.argv:
         if command[0:9] == "--version":

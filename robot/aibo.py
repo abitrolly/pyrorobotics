@@ -6,6 +6,9 @@ from Python.
 (c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
+__author__ = "Ioana Butoi, Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device
 from socket import *

@@ -1,3 +1,6 @@
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.brain.conx import *
 import random
 

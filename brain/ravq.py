@@ -1,7 +1,8 @@
 import Numeric, math, random, sys
 from pyrobot.tools.circularlist import CircularList
 
-version = '1.4'
+__author__ = "Jeremy Stober"
+__version__ = "$Revision$"
 
 class ModelList(CircularList):
     def __init__(self, bucketSize=5):

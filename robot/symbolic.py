@@ -3,6 +3,9 @@ The client robot connection programs for the PyrobotSimulator
 non-symbolic robots.
 """
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 import socket, pickle
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
@@ -30,6 +33,7 @@ class SimDevice(Device):
 		self.units = "ROBOTS"
 		self.radius = robot.radius
 		self.count = len(self)
+		self._noise = 0.05
 		
 	def __len__(self):
 		return len(self._geometry[0])
@@ -42,8 +46,9 @@ class SimDevice(Device):
 				   (self._geometry[0][pos][0], # x in meters
 				    self._geometry[0][pos][1], # y
 				    0.03,                    # z
-				    self._geometry[0][pos][2], # arc rads
+				    self._geometry[0][pos][2], # th
 				    self._geometry[1]),        # arc rads
+				   noise=self._noise
 				   )
 class TCPRobot(Robot):
 	"""

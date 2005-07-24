@@ -688,7 +688,9 @@ class PioneerFrontSonars(RangeSensor):
         
 class PioneerFrontLightSensors(LightSensor):
     def __init__(self):
-        LightSensor.__init__(self, ((.38,  .25, 0), (.38, -.25, 0))) # make sure outside of bb!
+        # make sure outside of bb!
+        LightSensor.__init__(self, ((.38,  .25, 0), (.38, -.25, 0)),
+                             noise=0.0) 
         self.groups = {"front-all": (0, 1),
                        "all": (0, 1),
                        "front": (0, 1),

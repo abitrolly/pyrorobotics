@@ -1,5 +1,8 @@
 # A Python Self-organizing Map
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 import RandomArray, random, math, sys
 
 class SOM:

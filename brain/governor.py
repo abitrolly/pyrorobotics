@@ -4,6 +4,9 @@ Governor code for self regulating networks.
 
 """
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.brain.conx import *
 from pyrobot.brain.ravq import ARAVQ, euclideanDistance
 

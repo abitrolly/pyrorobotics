@@ -1,3 +1,6 @@
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 import math, os
 
 class SOM:

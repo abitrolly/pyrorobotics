@@ -1,5 +1,8 @@
 # Test of Elman-style XOR in time. 
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.brain.conx import *
 
 def xor(a,b):

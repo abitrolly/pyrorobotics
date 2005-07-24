@@ -1,26 +1,9 @@
-# --------------------------------------------------------------------------
-# A simple Genetic Algorithm in Python
-# (See bottom for examples, and tests)
-# --------------------------------------------------------------------------
-# (c) D.S. Blank, Bryn Mawr College 2003
-#
-# Updated 4/29/03 by Lisa Meeden
-# There are a few key differences in this version.
-#
-# 1. There is no longer a GA parameter selectionRate.  The next generation
-#    of individuals is created by selecting two parents at a time from the
-#    current population.  The crossoverRate determines how often those two
-#    parents will be recombined to produce two new children.  For example,
-#    if the crossoverRate is 0.6 that means that 60% of the time the parents
-#    will be crossed and 40% of the time they will simply be copied.  The
-#    mutationRate determines how often each gene is likely to be modified.
-#    For example, if the mutationRate is 0.1 that means that 10% of the
-#    individual genes will be modified.  So in a genotype of length 50, 
-#    approximately five of the genes will be mutated.
-#
-# 2. We are now using a roulette wheel method of selection.  Therefore,
-#    the fitness function must return a non-negative value.  
-# --------------------------------------------------------------------------
+"""
+A simple Genetic Algorithm in Python
+"""
+
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, string
 from copy import deepcopy

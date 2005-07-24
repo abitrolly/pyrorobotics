@@ -3,6 +3,9 @@ Pyrobot Module for Genetic Program.
 Extension of GA (pyrobot/brain/ga.py)
 """
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.brain.ga import *
 import pyrobot.system.share as share
 from math import pi

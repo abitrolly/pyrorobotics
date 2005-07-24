@@ -1,6 +1,11 @@
-# Fuzzy Logic Base Class
-# E. Jucovy, 2005
-# based on fuzzy.py by D.S. Blank, 2001
+"""
+Fuzzy Logic Base Class
+E. Jucovy, 2005
+based on fuzzy.py by D.S. Blank, 2001
+"""
+
+__author__ = "E. Jucovy, Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
 
 from math import exp
   

@@ -1,19 +1,21 @@
-""" ----------------------------------------------------
-    An Artificial Neural Network System Implementing
-    Backprop. Part of the Pyrobot Robotics Project.
-    Provided under the GNU General Public License.
-    ----------------------------------------------------
-    (c) 2001-2005, Developmental Robotics Research Group
-    ----------------------------------------------------
+"""
+----------------------------------------------------
+An Artificial Neural Network System Implementing
+Backprop. Part of the Pyrobot Robotics Project.
+Provided under the GNU General Public License.
+----------------------------------------------------
+(c) 2001-2005, Developmental Robotics Research Group
+----------------------------------------------------
 
-    This file implements the major classes and functions for
-    making artificial neural networks in Python. Part of the
-    Pyrobot project.
+This file implements the major classes and functions for
+making artificial neural networks in Python. Part of the
+Pyrobot project.
 """
 
-import Numeric, math, random, time, sys, operator
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
 
-version = "7.2"
+import Numeric, math, random, time, sys, operator
 
 def loadNetworkFromFile(filename):
     """

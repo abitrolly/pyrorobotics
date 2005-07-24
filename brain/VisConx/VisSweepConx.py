@@ -1,3 +1,6 @@
+__author__ = "Matt Fiedler"
+__version__ = "$Revision$"
+
 from pyrobot.brain.conx import *
 import Tkinter
 import tkSimpleDialog

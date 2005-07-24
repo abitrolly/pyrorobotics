@@ -1,3 +1,6 @@
+__author__ = "Matt Fiedler"
+__version__ = "$Revision$"
+
 import Queue
 
 class Vertex:

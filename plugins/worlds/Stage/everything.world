@@ -15,10 +15,12 @@ interval_real 100 # real-time milliseconds per update step
 # defines Pioneer-like robots
 include "pioneer.inc"
 
+
 # defines 'map' object used for floorplans
 include "map.inc"
 
-window( size [ 788.000 666.000 ] center [-0.116 0.374] scale 0.021 )
+
+window( size [ 497.000 528.000 ] center [-0.116 0.374] scale 0.032 )
 
 map(
   size [15.5 11.4]
@@ -106,7 +108,7 @@ laserpioneer
 position( 	
   name "invader" 
   size [0.3 0.3]
-  pose [-7.051 -1.984 0.000] 
+  pose [-1.131 -1.984 0.000] 
   color "red"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/space_invader.png"
@@ -118,7 +120,7 @@ position(
 position( 	
   name "ghost" 
   size [0.3 0.3 ]
-  pose [0.784 -5.274 0.000] 
+  pose [0.784 0.646 0.000] 
   color "blue"  
   # loads a bitmap for the model's body
   bitmap "bitmaps/ghost.png"

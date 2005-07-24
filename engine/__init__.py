@@ -1,4 +1,22 @@
-# Engine class; main controller
+"""
+Engine class. This object binds together a robot, a simulator, and a brain.
+
+This class will find, load, and start all of the parts.
+
+Examples:
+
+{{{
+e = Engine(robotfile="Test")
+e = Engine(robotfile="Player6665", simfile="StageSimulator",
+           worldfile="everything.cfg", devices=['Test', 'BlobCamera'])
+e = Engine()
+r = Robot()
+e.setRobot(r)
+}}}
+"""
+
+__author__ = "Douglas Blank <dblank@cs.brynmawr.edu>"
+__version__= "$Revision$"
 
 import time, sys, os
 import pyrobot.gui.console as console

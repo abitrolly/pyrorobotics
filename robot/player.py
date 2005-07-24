@@ -1,5 +1,8 @@
 # Defines PlayerRobot, a subclass of robot
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.robot import *
 from math import pi, cos, sin
 import threading, time, Tkinter

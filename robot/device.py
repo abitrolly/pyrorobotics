@@ -3,6 +3,9 @@ import pyrobot.robot
 import types, random, exceptions, math, Tkinter
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 class DeviceWindow(Tkinter.Toplevel):
     def __init__(self, device, title = None):
         import pyrobot.system.share as share

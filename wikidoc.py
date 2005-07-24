@@ -4,6 +4,9 @@ from pyrobot.system import file_exists
 from pyrobot.tools import OptionHandler, Option
 import os, operator, sys, string, inspect, types
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 # Handle options -------------------------------------------------
 opts = OptionHandler("wikidoc")
 opts.options = [ #Option("trials",       "t",  1 , int, "0", "Number of trials"),

@@ -1,5 +1,8 @@
 # Defines KheperaRobot, a subclass of robot
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.system.share import config
 from pyrobot.robot import *
 from pyrobot.robot.device import *

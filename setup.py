@@ -34,6 +34,9 @@ from extradistutils import AutoIncludeExtension, \
 
 PYROBOT_VERSION = "4.0.0"
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 try:
     # write version file
     f = open("system/version.py", "w")

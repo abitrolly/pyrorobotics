@@ -1,3 +1,6 @@
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 from pyrobot.brain.conx import *
 from pyrobot.brain.governor import *
 import sys

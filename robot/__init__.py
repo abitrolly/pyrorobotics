@@ -1,5 +1,5 @@
 """
-The main Pyrobot robot package.
+The main Pyrobot robot class and associated functions.
 
 This file contains the class that represents a computer controlled
 physical agent (robot). A robot is a collection of interfaces to
@@ -13,7 +13,7 @@ from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
 import math, string, time, os, sys, types
 
-__authors__ = "Stephen McCaul, Douglas Blank"
+__author__ = "Stephen McCaul, Douglas Blank"
 __version__ = "$Revision$"
 
 if float(sys.version[0:3]) < 2.4:

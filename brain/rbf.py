@@ -4,6 +4,9 @@
 #    radius - radius of the function
 #    weight - weighting of this node
 
+__author__ = "Douglas Blank <dblank@brynmawr.edu>"
+__version__ = "$Revision$"
+
 import Numeric, math, random
 
 # Typical activation functions are:
