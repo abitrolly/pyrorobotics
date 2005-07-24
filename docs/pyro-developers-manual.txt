@@ -1,5 +1,0 @@
-Pyro Robotics Control System
-Developers' Manual
-
-Getting Started
-
