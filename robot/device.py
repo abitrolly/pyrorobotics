@@ -6,6 +6,7 @@ from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
+
 class DeviceWindow(Tkinter.Toplevel):
     def __init__(self, device, title = None):
         import pyrobot.system.share as share
@@ -28,16 +29,20 @@ class DeviceWindow(Tkinter.Toplevel):
         self.widgets[name] = Tkinter.Label(self, text=text)
         self.widgets[name].pack(fill="both", expand="y")
     def updateWidget(self, name, value):
-        self.widgets[name+".entry"].delete(0,'end')
-        self.widgets[name+".entry"].insert(0,value)        
+        try:
+            self.widgets[name+".entry"].delete(0,'end')
+            self.widgets[name+".entry"].insert(0,value)
+        except: pass
     def addData(self, name, text, value):
         frame = Tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
-        self.widgets[name + ".label"] = Tkinter.Label(frame, text=text)
-        self.widgets[name + ".label"].pack(side="left")
-        self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
-        self.widgets[name + ".entry"].insert(0, value)
-        self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
+        try:
+            self.widgets[name + ".label"] = Tkinter.Label(frame, text=text)
+            self.widgets[name + ".label"].pack(side="left")
+            self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
+            self.widgets[name + ".entry"].insert(0, value)
+            self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
+        except: pass
     def destroy(self):
         if self._dev:
             self._dev.visible = 0
@@ -298,8 +303,6 @@ class Device:
     def destroy(self):
         if self.window:
             self.window.destroy()
-    def updateWindow(self):
-        pass
     def getDeviceData(self):
         return {}
     def getDeviceState(self):
@@ -308,7 +311,29 @@ class Device:
         pass
     # gui methods
     def addWidgets(self, window):
-        pass
+        self._rangeData = 0
+        try:
+            len(self)
+            self._rangeData = 1
+        except: pass
+        if self._rangeData:
+            for i in range(min(self.count, 24)):
+                window.addData(str(i), "[%d]:" % i, self[i].value)
+        else:
+            for d in self.__dict__:
+                if d[0] != "_":
+                    window.addData(d, d, self.__dict__[d])
+                
+    def updateWindow(self):
+        if self.visible:
+            if self._rangeData:
+                for i in range(min(self.count, 24)):
+                    self.window.updateWidget(str(i), "%.2f" % self[i].value)
+            else:
+                for d in self.__dict__:
+                    if d[0] != "_":
+                        self.window.updateWidget(d, self.__dict__[d])
+                
     def makeWindow(self):
         if self.window:
             self.window.deiconify()

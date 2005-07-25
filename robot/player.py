@@ -166,13 +166,6 @@ class PlayerSonarDevice(PlayerDevice):
                             self._dev.poses[pos][2], # rads
                             self.arc),               # rads
                            noise=self._noise)
-    def addWidgets(self, window):
-        for i in range(self.count):
-            window.addData(str(i), "[%d]:" % i, self._dev.scan[i])
-    def updateWindow(self):
-        if self.visible:
-            for i in range(self.count):
-                self.window.updateWidget(str(i), "%.2f" % self[i].value)
 
 class PlayerLaserDevice(PlayerDevice):
     def __init__(self, client):
