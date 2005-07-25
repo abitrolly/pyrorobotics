@@ -11,14 +11,20 @@ import threading, time, operator
 import pyrobot.gui.console
 
 def avg(list):
+    """Simple avg function that works on sequences of numbers."""
     sum = reduce(operator.add, list)
     return sum / float(len(list))
 
 class Brain(threading.Thread):
     """
-    This is the main thread for running a robot controler (ie, a brain).
+    The Brain is the basis for all brains.
     """
     def __init__(self, name = 'brain', engine = 0, **kwargs):
+        """
+        Constructor for Brain class.
+
+        You should set the engine, if nothing else.
+        """
         threading.Thread.__init__(self)
         self.debug = 0
         self.stack = [] # used in brains with states (BehaviorBasedBrain and FSMBrain)
@@ -45,37 +51,56 @@ class Brain(threading.Thread):
 
     # wrappers here to talk to default robot:
     def move(self, *args):
+        """Short-cut to call the robot's move method."""
         return self.robot.move(*args)
     def translate(self, *args):
+        """Short-cut to call the robot's translate method."""
         return self.robot.translate(*args)
     def rotate(self, *args):
+        """Short-cut to call the robot's rotate method."""
         return self.robot.rotate(*args)
     def stop(self):
+        """Short-cut to call the robot's stop method."""
         return self.robot.stop()
     def startDevice(self, *args, **keywords):
+        """Short-cut to call the robot's startDevice method."""
         return self.robot.startDevice(*args, **keywords)
     def removeDevice(self, *args, **keywords):
+        """Short-cut to call the robot's removeDevice method."""
         return self.robot.removeDevice(*args, **keywords)
     def update(self):
+        """Short-cut to call the robot's update method."""
         return self.robot.update()
     def motors(self, *args):
+        """Short-cut to call the robot's motors method."""
         return self.robot.motors(*args)
     def getDevice(self, *args):
+        """Short-cut to call the robot's getDevice method."""
         return self.robot.getDevice(*args)
     def hasA(self, *args):
+        """Short-cut to call the robot's hasA method."""
         return self.robot.hasA(*args)
     def requires(self, *args):
+        """Short-cut to call the robot's requires method."""
         return self.robot.requires(*args)
     def _draw(self, options, renderer):
+        """Internal draw method."""
         pass
     def getEngine(self):
+        """Returns the engine property."""
         return self.engine
     def quit(self):
+        """Signals the thread that we need to stop running."""
         self.needToStop = 0
         self.needToQuit = 1
         if self.engine and self.engine.gui:
             self.engine.gui.done = 1
     def run(self):
+        """
+        Runs the brain/thread.
+
+        self.pauseTime determines how many times a second it is called.
+        """
         self.couldBeMoving = 0
         while self.needToQuit is not 1 and self.isAlive():
             #print "Acquire ----------------------------"
@@ -128,9 +153,11 @@ class Brain(threading.Thread):
         #print "End of run!"
             
     def pleaseQuit(self):
+        """Signals the thread that we need to stop running."""
         self.needToQuit = 1
         
     def pleaseStep(self):
+        """Signals the thread to make a step."""
         count = 0
         while self.isAlive() and self.condition.acquire(0) == 0:
             count += 1
@@ -142,9 +169,11 @@ class Brain(threading.Thread):
         self.pleaseRun()
         
     def pleaseStop(self):
+        """Signals the thread that we need to stop stepping the robot."""
         self.needToStop = 1
         
     def pleaseRun(self, callback = 0):
+        """Signals the thread that we need to start stepping."""
         if not self.isAlive():
             pyrobot.gui.console.log(pyrobot.gui.console.WARNING,"Brain thread is not alive but request to run was made.");
         self.needToStop = 0
@@ -152,15 +181,17 @@ class Brain(threading.Thread):
             callback()
 		
     def step(self):
+        """This is the method that does all of the work."""
         print "need to override pyrobot.brain.Brain.step()."
 
     def setup(self, **kwargs):
         """
-        User init method
+        User init method. Call this instead of overloading __init__.
         """
         pass
 
     def makeWindow(self):
+        """Method that creates a window; seen under Brain -> Watch."""
         import Tkinter
         self.window = Tkinter.Toplevel()
         self.window.wm_title("Brain View")
@@ -168,11 +199,12 @@ class Brain(threading.Thread):
         self.canvas.pack()
 
     def redraw(self):
+        """Redraws the brain watch window."""
         self.canvas.create_text(100,130, tags='pie',fill='black', text = "This Brain needs a redraw method!")
 
     def destroy(self):
         """
-        Method to override of you create objects.
+        Method to override if you create objects (such as devices).
         """
         pass
 

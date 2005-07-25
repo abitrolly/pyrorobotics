@@ -5,14 +5,12 @@ This class will find, load, and start all of the parts.
 
 Examples:
 
-{{{
-e = Engine(robotfile="Test")
-e = Engine(robotfile="Player6665", simfile="StageSimulator",
-           worldfile="everything.cfg", devices=['Test', 'BlobCamera'])
-e = Engine()
-r = Robot()
-e.setRobot(r)
-}}}
+>>> e = Engine(robotfile="Test")
+>>> e = Engine(robotfile="Player6665", simfile="StageSimulator",
+               worldfile="everything.cfg", devices=['Test', 'BlobCamera'])
+>>> e = Engine()
+>>> r = Robot()
+>>> e.setRobot(r)
 """
 
 __author__ = "Douglas Blank <dblank@cs.brynmawr.edu>"
@@ -24,8 +22,10 @@ import pyrobot.system as system
 import pyrobot.system.share as share
 
 class Engine:
+   """Finds, loads, and creates the needed simulators, robots, devices, etc."""
    def __init__(self, robotfile = None, brainfile = None, simfile = None,
                 pyroargs=[], config = {}, worldfile = None, devices = ['']):
+      """Constructor for the Engine class."""
       self.robot = 0
       self.brain = 0
       self.gui = None
@@ -60,6 +60,7 @@ class Engine:
          #time.sleep(2)
 
    def reset(self):
+      """Shuts down the brain, and reloads it."""
       self.pleaseStop()
       time.sleep(.1) # give it time to stop
       if self.brain is not 0:
@@ -77,6 +78,7 @@ class Engine:
          self.brain = system.loadINIT(self.brainfile, self, 1)
 
    def resetFirstAttempts(self):
+      """Test method."""
       self.pleaseStop()
       if self.robotfile:
          file = self.robotfile[0:-3] # strip off .py
@@ -97,6 +99,7 @@ class Engine:
          #reload(self.brainfile)
 
    def loadSimulator(self, file, worldfile):
+      """Finds and loads the simulator."""
       import string
       options = string.split(file)
       guiflag = ''
@@ -152,6 +155,7 @@ class Engine:
       sys.stdout.flush()
 
    def loadRobot(self,file):
+      """Finds and loads the robot."""
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
@@ -166,12 +170,15 @@ class Engine:
          raise 'Robot file not found: ' + file
 
    def setRobot(self,robot):
+      """Sets the robot, after the creation of the engine."""
       self.robot = robot
 
    def setBrain(self,brain):
+      """Sets the brain, after the creation of the engine."""
       self.brain = brain
 
    def loadBrain(self,file):
+      """Finds and loads the brain file."""
       if self.robot is 0:
          raise 'No robot loaded when loading brain'
       if file[-3:] != '.py':
@@ -204,43 +211,52 @@ class Engine:
          raise 'File not found: ' + file
 
    def freeBrain(self):
+      """Kills the brain."""
       if self.brain != 0:
          self.brain.pleaseQuit()
       
    def freeRobot(self):
+      """Kills the robot."""
       self.freeBrain()
       if self.robot != 0:
          self.robot.disconnect()
          self.robot = 0
 
    def shutdown(self):
+      """Shuts everything down."""
       self.freeRobot()
          
    def tryToConnect(self):
+      """Tests to see if you have a brain and robot."""
       if (self.robot is 0) or (self.brain is 0):
          print "Need to have a robot and brain connected!"
          return #no go, not enough parts to make frankie go
 
    def pleaseRun(self, callback = 0):
+      """Request to run the brain, followed by a callback."""
       if self.brain is not 0:
          self.brain.pleaseRun(callback)
 
    def pleaseStep(self):
+      """Attempt to step the brain."""
       if self.brain is not 0:
          self.brain.pleaseStep()
          time.sleep(.5) # arbitrary time to allow it to do something
          self.robot.move(0, 0)
 
    def pleaseStop(self):
+      """Attempt to stop the brain."""
       if self.brain is not 0:
          self.brain.pleaseStop()
       if self.robot is not 0:
          self.robot.stop()
 
    def _draw(self,options,renderer):
-	pass # overload, if you want to draw it
+      """Method to draw the engine. Not used, currently."""
+      pass # overload, if you want to draw it
       
    def destroyBrain(self):
+      """Method to destroy the brain, if one."""
       if self.brain is not 0:
          try:
             self.brain.destroy()
@@ -248,4 +264,5 @@ class Engine:
             print "I was unable to properly destroy the brain"
 
    def getGUI(self):
+      """Returns the gui object."""
       return self.gui
