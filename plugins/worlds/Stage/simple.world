@@ -6,8 +6,10 @@
 include "pioneer.inc"
 
 
+
 # defines 'map' object used for floorplans
 include "map.inc"
+
 
 
 # set the size of a pixel in meters
@@ -36,15 +38,7 @@ map
 pioneer2dx
 (
   name "robot"
-  pose [2.000 1.000 0.000]
+  pose [1.824 4.520 0.000]
   laser()
 )
 
-# create a robot
-pioneer2dx
-(
-  laser_return 0
-  name "robotb"
-  pose [3.000 1.000 0.000]
-  laser()
-)
