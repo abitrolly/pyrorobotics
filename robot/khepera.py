@@ -293,6 +293,7 @@ class KheperaRobot(Robot):
 
     def sendMsg(self, msg):
         self.sc.writeline(msg, self._newline)
+        time.sleep(.05) # NEEDED, or not enough time to send data
 
     def readData(self):
         if self.sc.inWaiting() == 0: return
