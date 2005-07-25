@@ -1,4 +1,12 @@
 from __future__ import generators
+
+"""
+The device module. All devices (sonar, laser, position, etc) derive
+from these.
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
+"""
+
 import pyrobot.robot
 import types, random, exceptions, math, Tkinter
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
@@ -8,7 +16,11 @@ __version__ = "$Revision$"
 
 
 class DeviceWindow(Tkinter.Toplevel):
+    """
+    An object responsible for showing device data.
+    """
     def __init__(self, device, title = None):
+        """Constructor for the DeviceWindow class."""
         import pyrobot.system.share as share
         if not share.gui:
             share.gui = Tkinter.Tk()
@@ -21,19 +33,24 @@ class DeviceWindow(Tkinter.Toplevel):
             self._dev.visible = 1
         self._dev.addWidgets(self)
     def update(self):
+        """Method called to update a device."""
         pass
     def addButton(self, name, text, command):
+        """Adds a button to the device view window."""
         self.widgets[name] = Tkinter.Button(self, text=text, command=command)
         self.widgets[name].pack(fill="both", expand="y")
     def addLabel(self, name, text):
+        """Adds a label to the device view window."""
         self.widgets[name] = Tkinter.Label(self, text=text)
         self.widgets[name].pack(fill="both", expand="y")
     def updateWidget(self, name, value):
+        """Updates the device view window."""
         try:
             self.widgets[name+".entry"].delete(0,'end')
             self.widgets[name+".entry"].insert(0,value)
         except: pass
     def addData(self, name, text, value):
+        """Adds a data field to the device view window."""
         frame = Tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
         try:
@@ -44,6 +61,7 @@ class DeviceWindow(Tkinter.Toplevel):
             self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
         except: pass
     def destroy(self):
+        """Hides the device view window."""
         if self._dev:
             self._dev.visible = 0
         self.withdraw()
@@ -59,11 +77,25 @@ class SensorValue:
     def __init__(self, device, value, pos=None,
                  geometry=None, noise=0.0):
         """
-        device - an object with rawToUnits, hitX, hitY, hitZ methods
-        value - the rawvalue of the device
-        pos - the ID of this sensor
-        geometry - (origin x, origin y, origin z, th, arc in degrees) of ray
-        noise - percentage of noise to add to reading
+        Constructor for the SensorValue object.
+
+        A SensorValue is created for each range device reading.
+
+        >>> robot.sonar[0][3]
+        <SensorValue>
+        >>> robot.sonar[0][3].value
+        2.354
+        
+        Methods:
+           display()    - same as .value, but can change units
+           angle()      - same as .geometry[3], but can change units 
+
+        Properties:
+           value    - the rawvalue of the device
+           pos      - the ID of this sensor
+           geometry - (origin x, origin y, origin z, th, arc in radians) of ray
+           noise    - percentage of noise to add to reading
+           hit      - the (x,y,z) of the position of the hit
         """
         self._dev = device
         self.rawValue = self._dev.rawToUnits(value, noise, "RAW") # raw noisy value
@@ -72,11 +104,13 @@ class SensorValue:
         self.geometry = geometry
         self.noise = noise
     def distance(self, unit=None): # defaults to current unit of device
+        """Method to compute distance to the hit."""
         # uses raw value; this will change if noise > 0
         return self._dev.rawToUnits(self.rawValue,
                                       0.0,
                                       unit)
     def angle(self, unit="degrees"):
+        """Method to return the angle. Can change the units of return angle."""
         if self.geometry == None:
             return None
         if unit.lower() == "radians":
@@ -86,24 +120,29 @@ class SensorValue:
         else:
             raise AttributeError, "invalid unit = '%s'" % unit
     def _hit(self):
+        """Internal get for the .hit property."""
         if self.geometry == None: return (None, None, None)
         return (self._hitX(), self._hitY(), self._hitZ())
     def _hitX(self):
+        """Internal get for the .hit property."""
         thr = self.geometry[3] # theta in radians
         dist = self.distance(unit="M") + self._dev.radius
         return math.cos(thr) * dist
     def _hitY(self):
+        """Internal get for the .hit property."""
         thr = self.geometry[3] # theta in radians
         dist = self.distance(unit="M") + self._dev.radius
         return math.sin(thr) * dist
     def _hitZ(self):
+        """Internal get for the .hit property."""
         return self.geometry[2]
     hit = property(_hit)
 
 class Device:
-    """ A basic device class """
+    """ A basic device class. All device derive from this."""
 
     def __init__(self, deviceType = 'unspecified', visible = 0):
+        """Constructor for the device class."""
         self.window = 0
         self.groups = {}
         self.active = 1
@@ -116,38 +155,57 @@ class Device:
             self.makeWindow()
     # Properties to make getting all values easy:
     def _getValue(self):
+        """Internal get for all of the .value properties."""
         return [s.value for s in self]
     value = property(_getValue)
     def _getPos(self):
+        """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
     pos = property(_getPos)
     def _getGeometry(self):
+        """Internal get for all of the .geometry properties."""
         return [s.geometry for s in self]
     geometry = property(_getGeometry)
     def _getRawValue(self):
+        """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
     rawValue = property(_getRawValue)
     def _getHit(self):
+        """Internal get for all of the .hit properties."""
         return [s.hit for s in self]
     rawValue = property(_getHit)
     def _getNoise(self):
+        """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
     noise = property(_getNoise)
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
+        """
+        Device-level method to get all of the distances.
+        
+        >>> robot.sonar[0].angle(unit="radians")
+        [2.34, 1.34, .545]
+        >>> robot.sonar[0]["left"].angle(unit="degrees")
+        [90, 45, 180]
+        """
         return [s.distance(*args, **kwargs) for s in self]
     def angle(self, *args, **kwargs):
+        """
+        Device-level method to get all of the angles. Can translate units.
+
+        >>> robot.sonar[0][3].angle(unit="radians")
+        >>> [s.angle(units="degrees") for s in robot.sonar[0]["left"]]
+        """
         return [s.angle(*args, **kwargs) for s in self]
 
     def getSensorValue(self, pos):
         """
-        Should be overloaded by device implementations to return a
-        SensorValue object.
+        Returns a specific SensorValue from the range device.
         """
         return None
 
     def __iter__(self):
-        """ Used to iterate through values of device """
+        """ Used to iterate through SensorValues of device. """
         length = 0
         try: length = len(self)
         except: pass
@@ -156,6 +214,7 @@ class Device:
         raise exceptions.StopIteration
 
     def __getitem__(self, item):
+        """Get a SensorValue, a range, or a set."""
         if type(item) == types.StringType:
             if "groups" in self.__dict__ and item in self.__dict__["groups"]:
                 positions = self.__dict__["groups"][item]
@@ -180,12 +239,15 @@ class Device:
             raise AttributeError, "invalid device[%s]" % item
 
     def setTitle(self, title):
+        """Sets the title of the device."""
         self.title = title
 
     def setup(self):
+        """Use this to put setup code in (instead of in __init__)."""
         pass
     
     def getGroupNames(self, pos):
+        """Return all of the groups a pos is in."""
         retval = []
         for key in self.groups:
             if self.groups[key] != None:
@@ -193,12 +255,15 @@ class Device:
                     retval.append( key )
         return retval
     def setMaxvalue(self, value):
+        """Set the maxvalue of the sensor."""
         self.maxvalueraw = self.rawToUnits(value, units="UNRAW")
         return "Ok"
     def getMaxvalue(self):
+        """Get the maxvalue of the sensor."""
         return self.rawToUnits(self.maxvalueraw)
 
     def rawToUnits(self, raw, noise = 0.0, units=None):
+        """Convert the sensor units into default units."""
         # what do you want the return value in?
         if units == None:
             units = self.units.upper()
@@ -280,8 +345,10 @@ class Device:
             raise TypeError, "Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units
 
     def getVisible(self):
+        """Returns the .visible of the sensor."""
         return self.visible
     def setVisible(self, value):
+        """Sets the .visible attribute, and hides/shows window."""
         self.visible = value
         if self.window:
             if value:
@@ -290,27 +357,36 @@ class Device:
                 self.window.withdraw()
         return "Ok"
     def getActive(self):
+        """Returns the value of .active."""
         return self.active
     def setActive(self, value):
+        """Sets the .active property."""
         self.active = value
         return "Ok"
     def startDevice(self):
+        """Starts the device (sets the .state)."""
         self.state = "started"
         return self
     def stopDevice(self):
+        """Stops the device (sets the .state)."""
         self.state = "stopped"
         return "Ok"
     def destroy(self):
+        """Hides the window."""
         if self.window:
             self.window.destroy()
     def getDeviceData(self):
+        """Returns the device data, whatever it might be."""
         return {}
     def getDeviceState(self):
+        """Returns the .state."""
         return self.state
     def updateDevice(self):
+        """Method called to update the device properties."""
         pass
     # gui methods
     def addWidgets(self, window):
+        """Method to addWidgets to the device window."""
         self._rangeData = 0
         try:
             len(self)
@@ -325,6 +401,7 @@ class Device:
                     window.addData(d, d, self.__dict__[d])
                 
     def updateWindow(self):
+        """Method to update the device window."""
         if self.visible:
             if self._rangeData:
                 for i in range(min(self.count, 24)):
@@ -335,6 +412,7 @@ class Device:
                         self.window.updateWidget(d, self.__dict__[d])
                 
     def makeWindow(self):
+        """Method to make and show the device window."""
         if self.window:
             self.window.deiconify()
             self.visible = 1

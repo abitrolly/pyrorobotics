@@ -1,4 +1,8 @@
-# Defines KheperaRobot, a subclass of robot
+"""
+Defines KheperaRobot, a subclass of robot.
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
+"""
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"

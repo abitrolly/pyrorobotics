@@ -1,4 +1,8 @@
-# Defines PlayerRobot, a subclass of robot
+"""
+Defines PlayerRobot, a subclass of robot
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
+"""
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
@@ -609,7 +613,7 @@ class PlayerRobot(Robot):
             retval = self._client.connect()
 
     def removeDevice(self, item, number = 0):
-        self.__dict__[item][number].unsubscribe()
+        self.__dict__[item][number]._dev.unsubscribe()
         Robot.removeDevice(self, item)
         
 if __name__ == '__main__':

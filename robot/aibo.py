@@ -1,5 +1,4 @@
 """
-Ioana Butoi and Doug Blank
 Aibo client commands for talking to the Tekkotsu servers
 from Python.
 

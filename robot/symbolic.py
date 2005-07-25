@@ -1,6 +1,8 @@
 """
 The client robot connection programs for the PyrobotSimulator
 non-symbolic robots.
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"

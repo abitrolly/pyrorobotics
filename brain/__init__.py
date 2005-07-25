@@ -1,4 +1,8 @@
-# a basic brain class
+"""
+The basic brain class. All brains derive from these classes.
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
+"""
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"

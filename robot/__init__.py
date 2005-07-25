@@ -45,18 +45,18 @@ class Robot:
     The base robot class. This class is the basis of all robots.
 
     Primary attributes:
-        .x
-        .y
-        .thr
-        .stall
-        .brain = None
-        .timestamp = time.time()
-        .builtinDevices = [] # list of built-in devices
-        .supportedFeatures = [] # meta devices
-        .devices = []
+        .x                   robot's computed global position
+        .y                   robot's computed global position
+        .thr                 theta, in radians
+        .stall               true, if the robot is bumping into something
+        .brain               a reference to the brain, if loaded
+        .timestamp           time of last update
+        .builtinDevices      list of built-in devices
+        .supportedFeatures   features that this robot requires
+        .devices             devices that are currently loaded
 
     Units of measure for range sensors:
-        'ROBOTS' - unit is given in terms of the robot's diameter
+        'ROBOTS' - in terms of the robot's diameter
         'METERS' - meters
         'CM'     - centimeters
         'MM'     - millimeters
@@ -66,10 +66,13 @@ class Robot:
     def __init__(self, **kwargs):
 
         """
-        The main robot object. Access the last loaded devices here,
-        plus all of the robot-specific fields (such as x, y, and
-        th). Use robot.move(translate, rotate) to move the robot. If
-        you need to initialize things, put them in setup().
+        Robot object holds the devices and moves the actual robot.
+        
+        The main robot object. Access the devices here, plus all of
+        the robot-specific fields (such as x, y, and th). Use
+        robot.move(translate, rotate) to move the robot. If you need
+        to initialize things, put them in setup().
+
         """
         self.brain = None
         self.timestamp = time.time()
@@ -86,6 +89,7 @@ class Robot:
         self.setup(**kwargs)
 
     def printView(self, thing = None, toplevel = "robot", indent = 0):
+        """A printable representation of the robot's attribute tree. """
         if thing == None: thing = self
         dictable = 0
         try:
@@ -108,7 +112,7 @@ class Robot:
                     if item in self.devices:
                         count = 0
                         for i in thing.__dict__[item]:
-                            self.displayDevice(i, indent + 3, count)
+                            self._displayDevice(i, indent + 3, count)
                             count += 1
                     elif type(thing.__dict__[item]) == type({}): # dict
                         print "%s%-15s = {%s}" % (" " * (indent + 3), "." + item, commas(thing.__dict__[item].keys()))
@@ -122,14 +126,17 @@ class Robot:
             else:
                 print "%s%-15s = %s" % (" " * indent, "." + toplevel, thing)
         return "Ok"
-    def displayDevice(self, device, indent = 0, count = 0):
+    def _displayDevice(self, device, indent = 0, count = 0):
+        """Used in print device."""
         toplevel = "%s[%d]" % (device.type, count)
         self.printView(device, toplevel, indent)
 
-    def localize(self, x = 0, y = 0, th = 0):
+    def localize(self, x = 0, y = 0, thr = 0):
+        """Set the x,y,thr pose of where the robot thinks it is."""
         pass
 
     def _moveDir(self, dir):
+        """Internal method to move the robot in directions."""
         if dir == 'L':
             self.rotate(.2)
         elif dir == 'R':
@@ -153,12 +160,15 @@ class Robot:
         self.move(trans, rotate)
         
     def stop(self):
+        """ Short for robot.move(0,0). Stop the robot's movement."""
         self.move(0, 0)
 
     def update(self):
+        """Updates the robot. """
         self.updateDevices()
 
     def updateDevices(self):
+        """Updates all of the robot's devices. """
         self.timestamp = time.time()
         for deviceType in self.devices:
             if deviceType in self.__dict__:
@@ -170,17 +180,45 @@ class Robot:
 
     # Need to define these in subclassed robots:
 
-    def connect(self): pass
-    def disconnect(self): pass
-    def move(self, translate, rotate): pass
-    def translate(self, val): pass
-    def rotate(self, val): pass
+    def connect(self):
+        """Connects the robot object to the server or simulator. """
+        pass
+    def disconnect(self):
+        """Disconnects the robot object from the server or simulator. """
+        pass
+    def move(self, translate, rotate):
+        """
+        Moves the robot by sending an amount of power.
+
+        translate - value between -1 and 1; -1 is reverse
+        rotate    - value between -1 and 1; -1 is to the right
+        """
+        pass
+    def translate(self, val):
+        """
+        Moves the robot forward or backwards.
+
+        val - value between -1 and 1; -1 is reverse
+        """
+        pass
+    def rotate(self, val):
+        """
+        Moves the robot to the left or right.
+
+        val - value between -1 and 1; -1 is to the right.
+        """
+        pass
 
     # ------------------------- Device functions:
 
     def _getNextDeviceNumber(self, devname):
         """
-        robot.sonar[0]
+        Gets the next device number of a particular type.
+
+        >>> robot._getNextDeviceNumber("sonar")
+        0
+        >>> robot._getNextDeviceNumber("sonar")
+        1
         """
         if devname not in self.__dict__:
             self.devices.append( devname ) # keep track of all of the loaded types
@@ -191,6 +229,19 @@ class Robot:
             return len(self.__dict__[devname]) - 1
 
     def startDevice(self, item, **args):
+        """
+        Loads and starts a device.
+
+        item - can be a builtin or a filename. Filenames should start
+               with an uppercase letter.
+
+        Returns a pointer to the device object.
+
+        >>> robot.startDevice("camera")
+        <Object>
+        >>> robot.startDevice("FilenameDevice")
+        <Object>
+        """
         dev = self.startDevices(item, **args)
         if len(dev) < 1:
             raise AttributeError, ("unknown device: '%s'" % item)
@@ -198,7 +249,7 @@ class Robot:
             return dev[0]
         
     def startDevices(self, item, override = False, **args):
-        """ Load devices: dict, list, builtin name, or filename """
+        """Load devices can take a dict, list, builtin name, or filename """
         # Item can be: dict, list, or string. string can be name or filename
         if type(item) == type({}):
             # this is the only one that does anything
@@ -238,28 +289,44 @@ class Robot:
                 return []
 
     def startDeviceBuiltin(self, item):
-        """ This method should be overloaded """
+        """Calls back to a subclass to start a device from there. """
         raise AttributeError, "no such builtin device '%s'" % item
 
     def stopDevice(self, item):
+        """Stop a device from updating."""
         self.__dict__[item].stopDevice()
 
     def getDevice(self, item):
+        """Returns the first device of a type. """
         if item in self.__dict__:
             return self.__dict__[item][0]
         else:
             raise AttributeError, "unknown device '%s'" % item
 
     def getDevices(self):
+        """Returns the list of device types that have ben loaded."""
         return self.devices
 
     def getSupportedDevices(self):
+        """Returns the list of builtin device types."""
         return self.builtinDevices
 
     def supports(self, feature):
+        """
+        See if this robot interface supports a particular feature.
+
+        Some robot interfaces/simulators don't support continuous-movement,
+        for example.
+        """
         return (feature in self.supportedFeatures)
 
     def requires(self, feature):
+        """
+        Takes a list/feature name and raises and exception if not supported.
+
+        >>> robot.requires(["continuous-movement", "odometry", "range-sensor"])
+        1 or raises ImportError exception
+        """
         if isinstance(feature, (list, tuple)):
             if len(feature) == 0:
                 return 1
@@ -275,7 +342,7 @@ class Robot:
 
     def hasA(self, dtype):
         """
-        Returns 1 if robot has a dtype, else 0.
+        Returns 1 if robot has a device of type dtype, else 0.
         """
         if dtype in self.devices:
             return 1
@@ -283,6 +350,14 @@ class Robot:
             return 0
 
     def removeDevice(self, item, number = None):
+        """
+        Removes a device (or all of them) of a particular type.
+
+        >>> robot.removedDevice("sonar")
+        Removes all of of the sonar devices.
+        >>> robot.removedDevice("sonar", 0)
+        Removes the first sonar device.
+        """
         if number == None: # remove all
             print "removing all", item, "devices..."
             if item in self.__dict__:

@@ -5,6 +5,8 @@ TODO: need localize that would triangulate from flags/landmarks OR
       need someother way of dead reckoning (for x, y, th)
       need to make unique colors of lines and objects
       need to make laser sensor have more than single angle hits
+
+(c) 2005, PyrobRobotics.org. Licenced under the GNU GPL.
 """
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
