@@ -1604,338 +1604,339 @@ if(__name__ == '__main__'):
     # The training/map counters are saved to test1.<train/map>_counter.
     print "test 1: som from file, data from file, train from dataset"
     print "---------------------------------------------------------"
-    mysom = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
-    mydataset = dataset(file=getenv("PYROBOT") + '/brain/psom/ex.dat')
-    mysom.init_training(0.02,4.0,5000)
-    mysom.timing_start()
-    # test train_from_dataset
-    mysom.train_from_dataset(mydataset)
-    #mysom.train_from_dataset(mydataset)
-    mysom.timing_stop()
-    ttime = mysom.get_training_time()
-    mysom.save_to_file("test1.cod")
-    print "training session completed in", ttime, "seconds"
-    print "output written to file \"test1.cod\""
-    print "for verification, compare to test_csom.py output \"test1.cod\""
-    print "  and to test_devrobs output \"test1_verify.cod\""
-    print "test 1 successfully completed"
+    if 0:
+        mysom = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
+        mydataset = dataset(file=getenv("PYROBOT") + '/brain/psom/ex.dat')
+        mysom.init_training(0.02,4.0,5000)
+        mysom.timing_start()
+        # test train_from_dataset
+        mysom.train_from_dataset(mydataset)
+        #mysom.train_from_dataset(mydataset)
+        mysom.timing_stop()
+        ttime = mysom.get_training_time()
+        mysom.save_to_file("test1.cod")
+        print "training session completed in", ttime, "seconds"
+        print "output written to file \"test1.cod\""
+        print "for verification, compare to test_csom.py output \"test1.cod\""
+        print "  and to test_devrobs output \"test1_verify.cod\""
+        print "test 1 successfully completed"
 
-    # test train counters
-    test1t_fd = open("test1.train_counter", "w")
-    test1t_fd.write("*** Train Counter ***\n")
-    for i in range(mysom.xdim):
-        for j in range(mysom.ydim):
-            pt = point(i,j)
-            tcounter = mysom.get_reg_counter(pt, 'train')
-            test1t_fd.write("point: %s\tcounter: %s\n" % \
-                            (pt.__str__(), tcounter))
-    test1t_fd.write("*** End Train Counter ***\n")
+        # test train counters
+        test1t_fd = open("test1.train_counter", "w")
+        test1t_fd.write("*** Train Counter ***\n")
+        for i in range(mysom.xdim):
+            for j in range(mysom.ydim):
+                pt = point(i,j)
+                tcounter = mysom.get_reg_counter(pt, 'train')
+                test1t_fd.write("point: %s\tcounter: %s\n" % \
+                                (pt.__str__(), tcounter))
+        test1t_fd.write("*** End Train Counter ***\n")
 
-    test1t_fd.write("*** Consec Train Counter ***\n")
-    for i in range(mysom.xdim):
-        for j in range(mysom.ydim):
-            pt = point(i,j)
-            consec_tcounter = mysom.get_consec_counter(pt, 'train')
-            test1t_fd.write("point: %s\tconsec_counter: %s\n" % \
-                            (pt.__str__(), consec_tcounter))
-    test1t_fd.write("*** End Consec Train Counter\n")
-    
-    test1t_fd.write("*** Max Consec Train Counter ***\n")
-    for i in range(mysom.xdim):
-        for j in range(mysom.ydim):
-            pt = point(i,j)
-            maxconsec_tcounter = mysom.get_maxconsec_counter(pt, 'train')
-            test1t_fd.write("point: %s\tmax_consec_counter: %s\n" % \
-                            (pt.__str__(), maxconsec_tcounter))
-    test1t_fd.write("*** End Max Consec Train Counter ***\n")
-    test1t_fd.close()
-    print "==> Test 1: Train counters written to: %s\n" % \
-          'test1.train_counter'
+        test1t_fd.write("*** Consec Train Counter ***\n")
+        for i in range(mysom.xdim):
+            for j in range(mysom.ydim):
+                pt = point(i,j)
+                consec_tcounter = mysom.get_consec_counter(pt, 'train')
+                test1t_fd.write("point: %s\tconsec_counter: %s\n" % \
+                                (pt.__str__(), consec_tcounter))
+        test1t_fd.write("*** End Consec Train Counter\n")
 
-    # test map_from_dataset
-    print "Testing map from dataset"
-    mysom1a = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
-    mysom1a.timing_start()
-    mysom1a.map_from_dataset(mydataset)
-    #mysom1a.map_from_dataset(mydataset)
-    mysom1a.timing_stop()
-    ttime = mysom1a.get_training_time()
-    print "Mapping took", ttime, "seconds"
+        test1t_fd.write("*** Max Consec Train Counter ***\n")
+        for i in range(mysom.xdim):
+            for j in range(mysom.ydim):
+                pt = point(i,j)
+                maxconsec_tcounter = mysom.get_maxconsec_counter(pt, 'train')
+                test1t_fd.write("point: %s\tmax_consec_counter: %s\n" % \
+                                (pt.__str__(), maxconsec_tcounter))
+        test1t_fd.write("*** End Max Consec Train Counter ***\n")
+        test1t_fd.close()
+        print "==> Test 1: Train counters written to: %s\n" % \
+              'test1.train_counter'
 
-    # test map counters
-    test1m_fd = open("test1.map_counter", "w")
-    test1m_fd.write("*** Map Counter ***\n")
-    for i in range(mysom1a.xdim):
-        for j in range(mysom1a.ydim):
-            pt = point(i,j)
-            mcounter = mysom1a.get_reg_counter(pt, 'map')
-            test1m_fd.write("point: %s\tcounter: %s\n" % \
-                            (pt.__str__(), mcounter))
-    test1m_fd.write("*** End Map Counter ***\n")
+        # test map_from_dataset
+        print "Testing map from dataset"
+        mysom1a = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
+        mysom1a.timing_start()
+        mysom1a.map_from_dataset(mydataset)
+        #mysom1a.map_from_dataset(mydataset)
+        mysom1a.timing_stop()
+        ttime = mysom1a.get_training_time()
+        print "Mapping took", ttime, "seconds"
 
-    test1m_fd.write("*** Consec Map Counter ***\n")
-    for i in range(mysom1a.xdim):
-        for j in range(mysom1a.ydim):
-            pt = point(i,j)
-            consec_mcounter = mysom1a.get_consec_counter(pt, 'map')
-            test1m_fd.write("point: %s\tconsec_counter: %s\n" % \
-                            (pt.__str__(), consec_mcounter))
-    test1m_fd.write("*** End Consec Map Counter ***\n")
+        # test map counters
+        test1m_fd = open("test1.map_counter", "w")
+        test1m_fd.write("*** Map Counter ***\n")
+        for i in range(mysom1a.xdim):
+            for j in range(mysom1a.ydim):
+                pt = point(i,j)
+                mcounter = mysom1a.get_reg_counter(pt, 'map')
+                test1m_fd.write("point: %s\tcounter: %s\n" % \
+                                (pt.__str__(), mcounter))
+        test1m_fd.write("*** End Map Counter ***\n")
 
-    test1m_fd.write("*** Max Consec Map Counter ***\n")
-    for i in range(mysom1a.xdim):
-        for j in range(mysom1a.ydim):
-            pt = point(i,j)
-            maxconsec_mcounter = mysom1a.get_maxconsec_counter(pt, 'map')
-            test1m_fd.write("point: %s\tmax_consec_counter: %s\n" % \
-                            (pt.__str__(), maxconsec_mcounter))
-    test1m_fd.write("*** End Max Consec Counter ***\n")
-    test1m_fd.close()
-    print "==> Test 1: Map counters written to: %s\n" % 'test1.map_counter'
-    
-    
-    # test 2:
-    # SOM is randomly initialized using dataset created from ex.dat.  SOM is
-    # then trained using the same dataset.  After training, model vectors
-    # are saved to test2.cod.
-    print "test 2: dataset from file, som randinit from data, train from dataset"
-    print "---------------------------------------------------------------------"
-    mysom2 = psom(12,8,data=mydataset)
-    mysom2.init_training(0.02,4.0,5000)
-    mysom2.timing_start()
-    mysom2.train_from_dataset(mydataset)
-    mysom2.timing_stop()
-    ttime = mysom2.get_training_time()
-    mysom2.save_to_file("test2.cod")
-    print "training session completed in", ttime, "seconds"
-    print "last vector produces the following gaussian SRN activations:"
-    myact = mysom2.get_activations('gaussian',2.0)
-    mysom2.display_activations(myact)
-    print "last vector produces the following error-based SRN activations:"
-    myact = mysom2.get_activations('error')
-    mysom2.display_activations(myact)
-    print "output written to file \"test2.cod\""
-    print "test 2 successfully completed\n"
+        test1m_fd.write("*** Consec Map Counter ***\n")
+        for i in range(mysom1a.xdim):
+            for j in range(mysom1a.ydim):
+                pt = point(i,j)
+                consec_mcounter = mysom1a.get_consec_counter(pt, 'map')
+                test1m_fd.write("point: %s\tconsec_counter: %s\n" % \
+                                (pt.__str__(), consec_mcounter))
+        test1m_fd.write("*** End Consec Map Counter ***\n")
 
-    # test 3:
-    # SOM is randomly initialized to values between 0 and 10.  The initial model
-    # vectors (before training) are saved to test3a.cod.  SOM is then trained
-    # using the dataset created from ex.dat, and the model vectors (after training)
-    # are saved to test3b.cod.
-    print "test 3: dataset from file, som pure randinit, train from dataset"
-    print "----------------------------------------------------------------"
-    mysom3 = psom(12,8,dim=5,rmin=0.0,rmax=10.0)
-    mysom3.save_to_file("test3a.cod")
-    print "initial som written to file \"test3a.cod\""
-    mysom3.init_training(0.02,4.0,5000)
-    mysom3.timing_start()
-    mysom3.train_from_dataset(mydataset)
-    mysom3.timing_stop()
-    ttime = mysom3.get_training_time()
-    mysom3.save_to_file("test3b.cod")
-    print "training session completed in", ttime, "seconds"
-    print "last vector produces the following gaussian SRN activations:"
-    myact = mysom3.get_activations('gaussian',2.0)
-    mysom3.display_activations(myact)
-    print "last vector produces the following error-based SRN activations:"
-    myact = mysom3.get_activations('error')
-    mysom3.display_activations(myact)
-    print "output written to file \"test3b.cod\""
-    print "test 3 successfully completed\n"
+        test1m_fd.write("*** Max Consec Map Counter ***\n")
+        for i in range(mysom1a.xdim):
+            for j in range(mysom1a.ydim):
+                pt = point(i,j)
+                maxconsec_mcounter = mysom1a.get_maxconsec_counter(pt, 'map')
+                test1m_fd.write("point: %s\tmax_consec_counter: %s\n" % \
+                                (pt.__str__(), maxconsec_mcounter))
+        test1m_fd.write("*** End Max Consec Counter ***\n")
+        test1m_fd.close()
+        print "==> Test 1: Map counters written to: %s\n" % 'test1.map_counter'
 
-    # test 4:
-    # SOM's model vectors are read in from ex.cod.  SOM is then trained on
-    # 4 manually created training vectors.  SOM's model vectors are saved to
-    # test4.cod after training.
-    print "test 4: data/training dynamic, view SRN levels"
-    print "----------------------------------------------"
-    mysom4 = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
-    mysom4.init_training(0.02,8,6)
-    vecs = []
-    vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))
-    vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
-    vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21],
-                       weight=3, mask=[1,0,0,1,0],
-                       label=['X', 13, 'ab', 'C4']))
-    vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
-    vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
-    vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
-    
-    mydataset = dataset(vecs[0])
 
-    print "Adding vectors to dataset, displaying mask and labels"
-    for i in range(1,5):
-        vecs[i].display()
-        mydataset.addvec(vecs[i])
-        print "\n-->Prev label: %s" % vecs[i].get_label_asString()
-        vecs[i].add_label([i])
-        print "-->New Label : %s" % vecs[i].get_label_asString()
-        if(i==3):
-            vecs[i].clear_label()
-            print "Label at vecs[%s] cleared" % i
+        # test 2:
+        # SOM is randomly initialized using dataset created from ex.dat.  SOM is
+        # then trained using the same dataset.  After training, model vectors
+        # are saved to test2.cod.
+        print "test 2: dataset from file, som randinit from data, train from dataset"
+        print "---------------------------------------------------------------------"
+        mysom2 = psom(12,8,data=mydataset)
+        mysom2.init_training(0.02,4.0,5000)
+        mysom2.timing_start()
+        mysom2.train_from_dataset(mydataset)
+        mysom2.timing_stop()
+        ttime = mysom2.get_training_time()
+        mysom2.save_to_file("test2.cod")
+        print "training session completed in", ttime, "seconds"
+        print "last vector produces the following gaussian SRN activations:"
+        myact = mysom2.get_activations('gaussian',2.0)
+        mysom2.display_activations(myact)
+        print "last vector produces the following error-based SRN activations:"
+        myact = mysom2.get_activations('error')
+        mysom2.display_activations(myact)
+        print "output written to file \"test2.cod\""
+        print "test 2 successfully completed\n"
+
+        # test 3:
+        # SOM is randomly initialized to values between 0 and 10.  The initial model
+        # vectors (before training) are saved to test3a.cod.  SOM is then trained
+        # using the dataset created from ex.dat, and the model vectors (after training)
+        # are saved to test3b.cod.
+        print "test 3: dataset from file, som pure randinit, train from dataset"
+        print "----------------------------------------------------------------"
+        mysom3 = psom(12,8,dim=5,rmin=0.0,rmax=10.0)
+        mysom3.save_to_file("test3a.cod")
+        print "initial som written to file \"test3a.cod\""
+        mysom3.init_training(0.02,4.0,5000)
+        mysom3.timing_start()
+        mysom3.train_from_dataset(mydataset)
+        mysom3.timing_stop()
+        ttime = mysom3.get_training_time()
+        mysom3.save_to_file("test3b.cod")
+        print "training session completed in", ttime, "seconds"
+        print "last vector produces the following gaussian SRN activations:"
+        myact = mysom3.get_activations('gaussian',2.0)
+        mysom3.display_activations(myact)
+        print "last vector produces the following error-based SRN activations:"
+        myact = mysom3.get_activations('error')
+        mysom3.display_activations(myact)
+        print "output written to file \"test3b.cod\""
+        print "test 3 successfully completed\n"
+
+        # test 4:
+        # SOM's model vectors are read in from ex.cod.  SOM is then trained on
+        # 4 manually created training vectors.  SOM's model vectors are saved to
+        # test4.cod after training.
+        print "test 4: data/training dynamic, view SRN levels"
+        print "----------------------------------------------"
+        mysom4 = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
+        mysom4.init_training(0.02,8,6)
+        vecs = []
+        vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))
+        vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
+        vecs.append(vector([29.36, 38.69, -1.10, -0.87, 405.21],
+                           weight=3, mask=[1,0,0,1,0],
+                           label=['X', 13, 'ab', 'C4']))
+        vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
+        vecs.append(vector([19.82, 27.08, -2.35, -3.70, 404.86]))
+        vecs.append(vector([19.58, 13.08, -1.17, -0.84, 400.03]))
+
+        mydataset = dataset(vecs[0])
+
+        print "Adding vectors to dataset, displaying mask and labels"
+        for i in range(1,5):
+            vecs[i].display()
+            mydataset.addvec(vecs[i])
+            print "\n-->Prev label: %s" % vecs[i].get_label_asString()
+            vecs[i].add_label([i])
+            print "-->New Label : %s" % vecs[i].get_label_asString()
+            if(i==3):
+                vecs[i].clear_label()
+                print "Label at vecs[%s] cleared" % i
+            print "\n"
+        print "Displaying dataset..."
+        mydataset.display()
         print "\n"
-    print "Displaying dataset..."
-    mydataset.display()
-    print "\n"
 
-    mysom4.logging_set(type="file", prefix="psomtest", mode="train")
-    mysom4.logging_clear()
-    mysom4.logging_on()
+        mysom4.logging_set(type="file", prefix="psomtest", mode="train")
+        mysom4.logging_clear()
+        mysom4.logging_on()
 
-    # Make sure model vectors were updated during training
-    # Compare this output with the ones printed under
-    # "AFTER TRAINING"
-    """
-    print "****** BEFORE TRAINING *******"
-    print "Model vector at point:"
-    print "(0,4): ", mysom4.get_model_vector(point(0,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "(7,4): ", mysom4.get_model_vector(point(7,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "******************************"
-    """
-    # Training
-    i=0
-    for v in vecs:
-        print "\nTraining vector #%s" % i
-        i += 1
-        m = mysom4.train(v)
-        print "input vector",
-        v.display()
-        print "maps to model vector",
-        m.display()
-        print "at point",
-        m.point.display()
-    mysom4.logging_off()
+        # Make sure model vectors were updated during training
+        # Compare this output with the ones printed under
+        # "AFTER TRAINING"
+        """
+        print "****** BEFORE TRAINING *******"
+        print "Model vector at point:"
+        print "(0,4): ", mysom4.get_model_vector(point(0,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "(7,4): ", mysom4.get_model_vector(point(7,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "******************************"
+        """
+        # Training
+        i=0
+        for v in vecs:
+            print "\nTraining vector #%s" % i
+            i += 1
+            m = mysom4.train(v)
+            print "input vector",
+            v.display()
+            print "maps to model vector",
+            m.display()
+            print "at point",
+            m.point.display()
+        mysom4.logging_off()
 
-    # Make sure model vectors were updated during training
-    # Compare this output with the ones printed under
-    # "BEFORE TRAINING"
-    """
-    print "\n****** AFTER TRAINING *******"
-    print "Model vector at point:"
-    print "(0,4): ", mysom4.get_model_vector(point(0,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "(7,4): ", mysom4.get_model_vector(point(7,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "******************************\n"
-    """
-    print "\nlast mapping produces the following bubble srn activations:"
-    myact = mysom4.get_activations()
-    mysom4.display_activations(myact)
-    print "last mapping produces the following gaussian srn activations:"
-    myact = mysom4.get_activations('gaussian',2.0)
-    mysom4.display_activations(myact)
-    print "error-based srn activations, tolerance 1.0:"
-    myact = mysom4.get_activations('error')
-    mysom4.display_activations(myact)
-    print "error-based srn activations, tolerance 0.5:"
-    myact = mysom4.get_activations('error', 0.5)
-    mysom4.display_activations(myact)
-    
-    mysom4.save_to_file("test4.cod")
-    print "output written to \"test4.cod\""
-    print "log written to \"psomtest.log\""
+        # Make sure model vectors were updated during training
+        # Compare this output with the ones printed under
+        # "BEFORE TRAINING"
+        """
+        print "\n****** AFTER TRAINING *******"
+        print "Model vector at point:"
+        print "(0,4): ", mysom4.get_model_vector(point(0,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "(7,4): ", mysom4.get_model_vector(point(7,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "******************************\n"
+        """
+        print "\nlast mapping produces the following bubble srn activations:"
+        myact = mysom4.get_activations()
+        mysom4.display_activations(myact)
+        print "last mapping produces the following gaussian srn activations:"
+        myact = mysom4.get_activations('gaussian',2.0)
+        mysom4.display_activations(myact)
+        print "error-based srn activations, tolerance 1.0:"
+        myact = mysom4.get_activations('error')
+        mysom4.display_activations(myact)
+        print "error-based srn activations, tolerance 0.5:"
+        myact = mysom4.get_activations('error', 0.5)
+        mysom4.display_activations(myact)
 
-    test4t_fd = open("test4.train_counter", "w")    
-    test4t_fd.write("*** Train Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            tcounter = mysom4.get_reg_counter(pt, 'train')
-            test4t_fd.write("point: %s\tcounter: %s\n" % \
-                         (pt.__str__(), tcounter))
-    test4t_fd.write("*** End Train Counter ***\n")
-    
-    test4t_fd.write("*** Consec Train Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            consec_tcounter = mysom4.get_consec_counter(pt, 'train')
-            test4t_fd.write("point: %s\tconsec_counter: %s\n" % \
-                         (pt.__str__(), consec_tcounter)) 
-    test4t_fd.write("*** End Consec Train Counter ***\n")
+        mysom4.save_to_file("test4.cod")
+        print "output written to \"test4.cod\""
+        print "log written to \"psomtest.log\""
 
-    test4t_fd.write("*** Max Consec Train Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            maxconsec_tcounter = mysom4.get_maxconsec_counter(pt, 'train')
-            test4t_fd.write("point: %s\tmax_consec_counter: %s\n" % \
-                            (pt.__str__(), maxconsec_tcounter))
-    test4t_fd.write("*** End Max Consec Train Counter ***\n")
-    test4t_fd.close()
-    print "==> Test 4: Train counters written to: %s\n" % \
-          'test4.train_counter'
+        test4t_fd = open("test4.train_counter", "w")    
+        test4t_fd.write("*** Train Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                tcounter = mysom4.get_reg_counter(pt, 'train')
+                test4t_fd.write("point: %s\tcounter: %s\n" % \
+                             (pt.__str__(), tcounter))
+        test4t_fd.write("*** End Train Counter ***\n")
 
-    # Make sure model vectors were not updated during mapping
-    # Compare with "AFTER MAPPING"
-    """
-    print "\n******* BEFORE MAPPING ********"
-    print "Model vector at point:"
-    print "(0,4): ", mysom4.get_model_vector(point(0,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "(7,4): ", mysom4.get_model_vector(point(7,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "*******************************"
-    """
-    # Mapping
+        test4t_fd.write("*** Consec Train Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                consec_tcounter = mysom4.get_consec_counter(pt, 'train')
+                test4t_fd.write("point: %s\tconsec_counter: %s\n" % \
+                             (pt.__str__(), consec_tcounter)) 
+        test4t_fd.write("*** End Consec Train Counter ***\n")
 
-    i=0
-    for v in vecs:
-        print "\nMapping vector #%s" % i
-        i += 1
-        m = mysom4.map(v)
-        print "input vector",
-        v.display()
-        print "maps to model vector",
-        m.display()
-        print "at point",
-        m.point.display()
+        test4t_fd.write("*** Max Consec Train Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                maxconsec_tcounter = mysom4.get_maxconsec_counter(pt, 'train')
+                test4t_fd.write("point: %s\tmax_consec_counter: %s\n" % \
+                                (pt.__str__(), maxconsec_tcounter))
+        test4t_fd.write("*** End Max Consec Train Counter ***\n")
+        test4t_fd.close()
+        print "==> Test 4: Train counters written to: %s\n" % \
+              'test4.train_counter'
 
-    """
-    print "\n******* AFTER MAPPING ********"
-    print "Model vector at point:"
-    print "(0,4): ", mysom4.get_model_vector(point(0,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "(7,4): ", mysom4.get_model_vector(point(7,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(3,4): ", mysom4.get_model_vector(point(3,4))
-    print "(0,6): ", mysom4.get_model_vector(point(0,6))
-    print "********************************\n"
-    """
-    test4m_fd = open("test4.map_counter", "w")    
-    test4m_fd.write("*** Map Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            mcounter = mysom4.get_reg_counter(pt, 'map')
-            test4m_fd.write("point: %s\tcounter: %s\n" % \
-                         (pt.__str__(), mcounter))
-    test4m_fd.write("*** End Map Counter ***\n")
-    
-    test4m_fd.write("*** Consec Map Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            consec_mcounter = mysom4.get_consec_counter(pt, 'map')
-            test4m_fd.write("point: %s\tconsec_counter: %s\n" % \
-                         (pt.__str__(), consec_mcounter)) 
-    test4m_fd.write("*** End Consec Map Counter ***\n")
+        # Make sure model vectors were not updated during mapping
+        # Compare with "AFTER MAPPING"
+        """
+        print "\n******* BEFORE MAPPING ********"
+        print "Model vector at point:"
+        print "(0,4): ", mysom4.get_model_vector(point(0,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "(7,4): ", mysom4.get_model_vector(point(7,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "*******************************"
+        """
+        # Mapping
 
-    test4m_fd.write("*** Max Consec Map Counter ***\n")
-    for i in range(mysom4.xdim):
-        for j in range(mysom4.ydim):
-            pt = point(i,j)
-            maxconsec_mcounter = mysom4.get_maxconsec_counter(pt, 'map')
-            test4m_fd.write("point: %s\tmax_consec_counter: %s\n" % \
-                            (pt.__str__(), maxconsec_mcounter))
-    test4m_fd.write("*** End Max Consec Map Counter ***\n")
-    test4m_fd.close()
-    print "==> Test 4: Map counters written to: %s\n" % 'test4.map_counter'
+        i=0
+        for v in vecs:
+            print "\nMapping vector #%s" % i
+            i += 1
+            m = mysom4.map(v)
+            print "input vector",
+            v.display()
+            print "maps to model vector",
+            m.display()
+            print "at point",
+            m.point.display()
+
+        """
+        print "\n******* AFTER MAPPING ********"
+        print "Model vector at point:"
+        print "(0,4): ", mysom4.get_model_vector(point(0,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "(7,4): ", mysom4.get_model_vector(point(7,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(3,4): ", mysom4.get_model_vector(point(3,4))
+        print "(0,6): ", mysom4.get_model_vector(point(0,6))
+        print "********************************\n"
+        """
+        test4m_fd = open("test4.map_counter", "w")    
+        test4m_fd.write("*** Map Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                mcounter = mysom4.get_reg_counter(pt, 'map')
+                test4m_fd.write("point: %s\tcounter: %s\n" % \
+                             (pt.__str__(), mcounter))
+        test4m_fd.write("*** End Map Counter ***\n")
+
+        test4m_fd.write("*** Consec Map Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                consec_mcounter = mysom4.get_consec_counter(pt, 'map')
+                test4m_fd.write("point: %s\tconsec_counter: %s\n" % \
+                             (pt.__str__(), consec_mcounter)) 
+        test4m_fd.write("*** End Consec Map Counter ***\n")
+
+        test4m_fd.write("*** Max Consec Map Counter ***\n")
+        for i in range(mysom4.xdim):
+            for j in range(mysom4.ydim):
+                pt = point(i,j)
+                maxconsec_mcounter = mysom4.get_maxconsec_counter(pt, 'map')
+                test4m_fd.write("point: %s\tmax_consec_counter: %s\n" % \
+                                (pt.__str__(), maxconsec_mcounter))
+        test4m_fd.write("*** End Max Consec Map Counter ***\n")
+        test4m_fd.close()
+        print "==> Test 4: Map counters written to: %s\n" % 'test4.map_counter'
