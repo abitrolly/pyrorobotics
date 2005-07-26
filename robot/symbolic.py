@@ -56,7 +56,7 @@ class TCPRobot(Robot):
 	"""
 	A simple TCP-based socket robot for talking to PyrobotSimulator.
 	"""
-	BUFSIZE = 1024
+	BUFSIZE = 2048 # 1024
 	def __init__(self, host, port):
 		Robot.__init__(self)
 		# Set the socket parameters
