@@ -1,15 +1,14 @@
-#unit_length "m" # All units are in meters
+unit_length "m"  # All units are in meters
 resolution 0.02
 
 include "pioneer.inc"
-
 
 #GUI settings
 window
 (
   size [485.000 364.000]
   center [0.034 0.051]
-  scale 0.018		# 1 pixel = 0.01 meters
+  scale 0.018    # 1 pixel = 0.01 meters
 )
 
 model 
