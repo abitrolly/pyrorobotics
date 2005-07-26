@@ -3,12 +3,13 @@ resolution 0.02
 
 include "pioneer.inc"
 
+
 #GUI settings
 window
 (
-  size [357.000 489.000]
-  center [0.0 0.0]
-  scale 0.017		# 1 pixel = 0.01 meters
+  size [485.000 364.000]
+  center [0.034 0.051]
+  scale 0.018		# 1 pixel = 0.01 meters
 )
 
 model 
@@ -16,31 +17,27 @@ model
   size [5.0 5.0]
   color "white"
   pose [0.000 0.000 0.000]
-
 )
 
 model 
 (
   size [1.0 1.0]
   color "blue"
-  pose [-2.0 2.0 0.000]
-
+  pose [-2.000 2.000 0.000]
 )
 
 model 
 (
   size [0.1 2.5]
   color "green"
-  pose [0.0 -1.25 0.000]
-
+  pose [0.000 -1.250 0.000]
 )
 
-model 
+model
 (
   size [0.1 1.4]
   color "green"
-  pose [0.7 0.0 90.000]
-
+  pose [0.65 0.0 90.000]
 )
 
 pioneer2dx
