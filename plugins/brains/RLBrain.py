@@ -1,7 +1,7 @@
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 from time import sleep
 from random import *
-from pyro.brain.fuzzy import *
+from pyrobot.brain.fuzzy import *
 
 
 class SimpleBrain(Brain):
@@ -13,7 +13,7 @@ class SimpleBrain(Brain):
    
    # just calls find_successor
    def find_path( self ):
-      loc = self.robot.ask('/location')
+      loc = self.robot.ask('location')
 
       # make sure we got a tuple
       if type(loc) != type( () ):
@@ -136,31 +136,32 @@ class SimpleBrain(Brain):
    def setup(self, **args):
       # set reinforcement value
       alpha = self.REINFORCEMENT_VALUE
-
       # set the learning rate
       self.robot.tell('alpha=%f' % (alpha))
+      # initialize the number of iterations to zero
+      self.count = 0
 
    # run once every iteration
    def step(self):
       # if the goal has not been reached, continue to find a path
       if self.robot.ask('complete') == 0:
          direction = self.find_path()
-         self.robot.ask( direction )
+         self.robot.move( direction )
 
       # if the goal has been reached, display the current path
       else:
          path = self.robot.ask('path')
-         self.count = self.robot.ask('count')
+         self.count += 1
 
          # show the path
          print "PATH: ", path
 
          # adjust the utility values of the map
          print "Computing TDs: #", self.count, " length: ", len(path)
-         self.robot.ask('td')
+         self.robot.tell('td')
 
          # start a new run
-         self.robot.ask('start')
+         self.robot.tell('start')
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.
