@@ -101,7 +101,6 @@ class SimpleBrain(Brain):
    def valid_move ( self, move, loc ):
       (locX, locY) = loc
       visited = self.robot.ask('visited')
-      print visited
       
       if move == "up":
          new_state = (locX  , locY - 1)
