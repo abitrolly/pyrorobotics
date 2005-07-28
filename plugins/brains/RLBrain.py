@@ -1,12 +1,12 @@
 from pyrobot.brain import Brain
 from time import sleep
 from random import *
-from pyrobot.brain.fuzzy import *
-
+from pyrobot.brain.td import *
 
 class SimpleBrain(Brain):
 
-   random_percent = 40
+   random_percent = 20
+   reset = 0
 
    # reinforcement value for temporal differencing
    REINFORCEMENT_VALUE = .2
@@ -100,8 +100,9 @@ class SimpleBrain(Brain):
    #checks to make sure that a move is valid
    def valid_move ( self, move, loc ):
       (locX, locY) = loc
-      path = self.robot.ask('path')
-
+      visited = self.robot.ask('visited')
+      print visited
+      
       if move == "up":
          new_state = (locX  , locY - 1)
       elif move == "right":
@@ -112,12 +113,12 @@ class SimpleBrain(Brain):
          new_state = (locX-1, locY)
 
       # if the new state is onto an obstacle, return 0
-      if new_state in self.robot.ask("obstacles"):
+      if new_state in self.obstacles:
          return 0
       # if the new state is off the map, return 0
       elif min(new_state) < 0 or max(new_state) > 14:
          return 0
-      elif new_state in self.robot.ask('visited'):
+      elif new_state in visited:
          return 0
       else:
          return new_state
@@ -130,19 +131,28 @@ class SimpleBrain(Brain):
       if locX < 0 or locX > 14 or locY < 0 or locY > 14:
          return -99
       else:
-         return self.robot.ask("utility%2d%2d"% (loc[0], loc[1]))
+         return self.td.get_utility(locX, locY)
      
    # gets called before first run
    def setup(self, **args):
       # set reinforcement value
       alpha = self.REINFORCEMENT_VALUE
-      # set the learning rate
-      self.robot.tell('alpha=%f' % (alpha))
+      # get td instance
+      self.td = Temporal_Difference( 15, 15, self.robot.ask('goal'), self.robot.ask('pits'), alpha )
+
+      self.obstacles = self.robot.ask("obstacles")
+
       # initialize the number of iterations to zero
       self.count = 0
 
    # run once every iteration
    def step(self):
+      if self.reset == 1:
+         self.robot.tell("reset")
+         self.robot.tell("start")
+         self.setup()
+         self.reset = 0
+
       # if the goal has not been reached, continue to find a path
       if self.robot.ask('complete') == 0:
          direction = self.find_path()
@@ -158,10 +168,18 @@ class SimpleBrain(Brain):
 
          # adjust the utility values of the map
          print "Computing TDs: #", self.count, " length: ", len(path)
-         self.robot.tell('td')
+         self.td.do_td( path )
 
          # start a new run
          self.robot.tell('start')
+         for e in path:
+            # sends the robot a formatted string including the x,y coordinates, and a color
+            self.robot.tell( self.td.get_utility_color(e[0], e[1]));
+
+         alpha = self.td.get_alpha()
+         if( (self.count % 15) == 0 and alpha > 0 ):
+             self.td.set_alpha( alpha - 0.01 )
+             self.random_percent -= 5
 
 # -------------------------------------------------------
 # This is the interface for calling from the gui engine.

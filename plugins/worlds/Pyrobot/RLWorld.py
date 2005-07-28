@@ -42,26 +42,19 @@ class GUI(Tkinter.Toplevel):
         self.num_squares_x = 15
         self.num_squares_y = 15
 
-        self.utility     = resize( 0.0,(self.num_squares_x,self.num_squares_y)); 
-        self.reward      = resize( 0.0,(self.num_squares_x,self.num_squares_y)); 
         self.squares     = resize(   0,(self.num_squares_x,self.num_squares_y)); 
-        self.frequencies = resize(   0,(self.num_squares_x,self.num_squares_y));
 
         # various object members
         self.done    = 0
         self.quit    = 0
-        self.moves   = 0
         self.root    = root
         self.width   = width
         self.height  = height
         self.complete = 0
-        self.alpha = 0.2
-        self.count = 1
-
 
         # various tk objects
         self.title("SymbolicSimulator: RLWorld")
-        self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
+        self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="black")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
 
@@ -90,42 +83,18 @@ class GUI(Tkinter.Toplevel):
         # initialize the world
         self.initWorld()
         self.resetStates()
-        self.resetUtils()
         
         # used by simulator
         self.properties = ["location", "obstacles", "goal", "home", \
-                           "final", "visited", "complete", "alpha", \
-                           "pits", "count", "path"]
+                           "final", "visited", "complete", \
+                           "pits", "path"]
 
-        self.movements = ["up", "right", "down", "left", "td"]
+        self.movements = ["up", "right", "down", "left"]
         self.ports = [60000]
 
         # start things off
         self.redraw()
         self.drawInaccessible()
-
-    def resetUtils(self):
-#        self.utility = resize(array(0.0),(self.num_squares_x,self.num_squares_y)); 
- 	for i in range(0, self.num_squares_x):
-          for j in range(0, self.num_squares_y):
-             self.utility[i][j] = 0.0       
-
-        for e in self.inaccessible:
-            self.utility[e] = -1.0
-        for e in self.pits:
-            self.utility[e] = -1.0
-        e = self.goal
-        self.utility[e] = 1.0
-
-        # used for Temporal Differencing
-#        self.reward = resize(array(-5.0),(self.num_squares_x,self.num_squares_y))
- 	for i in range(0, self.num_squares_x):
-          for j in range(0, self.num_squares_y):
-             self.reward[i][j] = 0.0       
-
-        self.reward[self.goal] = 100
-        for e in self.pits:
-            self.reward[e] = -50
             
     def resetStates(self):
         # various states
@@ -134,8 +103,13 @@ class GUI(Tkinter.Toplevel):
        
         num_pits = random.randrange(5) + 1
 
-#        self.pits = []
         del self.pits[0:]
+
+	for i in range(0, self.num_squares_x):
+	  for j in range(0, self.num_squares_y):
+              if not( (i,j) in self.inaccessible ):
+                  self.canvas.itemconfigure( self.squares[i][j], fill=self.background_color )
+        
 
         for i in range(num_pits):
             self.pits.append( (random.randrange(self.num_squares_x), random.randrange(self.num_squares_y)) )
@@ -156,44 +130,9 @@ class GUI(Tkinter.Toplevel):
 
         del self.path[0:]
         del self.visited[0:]
-#        self.path    = []
-#        self.visited = []
-
-
-    def change_Alpha( new_val ):
-        self.alpha = new_val
-        
-    def running_average( self, util, reward, freq ):
-        return ((util * (freq - 1) + reward) / freq)
-   
-    def Temporal_Difference( self, U, p, frequencies ):
-        final_state = self.final_states
-
-        # we want to traverse in reverse!
-        p.reverse();
-        next_state = p[0]
-        # start from end, go until start
-        for curr_state in p:
-            # update the frequencies of all states in the path
-            frequencies[curr_state] = frequencies[curr_state] + 1
-            
-            if( curr_state in self.final_states ):
-                rew = self.reward[curr_state] - (len(p) * 0) # 2)
-                U[curr_state] = round( self.running_average( U[curr_state],
-                                                            self.reward[curr_state],
-                                                            frequencies[curr_state] ), 10) ;
-            else:
-                temp = U[next_state]-U[curr_state];
-                U[curr_state] = round(U[curr_state] + self.alpha*(self.reward[curr_state] + temp), 10);
-                
-            # since we're iterating backwards
-            next_state = curr_state;
-
-
-#        return U;
 
     # checks the current motion, if it is valid the location will be changed, otherwise no change
-    def add(self, loc, dir):
+    def moveInDirection( self, loc, dir):
         x = 0
 
         if (loc[0] + dir[0],loc[1] + dir[1]) in self.inaccessible:
@@ -251,10 +190,16 @@ class GUI(Tkinter.Toplevel):
         elif path[len(path)-1] == el:
             return
 
+        if( not( el in self.visited ) ):
+            self.canvas.itemconfigure( self.squares[el],
+                                       tags=self.canvas.itemcget( self.squares[el], "fill" ) )
+            self.visited.append( el )
+
         if el in path:
             path = self.removeAfter( el, path )
-            # self.erasePath( self.getDifferences( self.path, path ) )
+            self.erasePath( self.getDifferences( self.path, path ) )
             self.redrawVisited()
+        
         path.append(el)
 
 
@@ -263,8 +208,6 @@ class GUI(Tkinter.Toplevel):
         else:
             self.complete = 0
 
-        if( not( el in self.visited ) ):
-            self.visited.append( el )
         self.path = path
 
     # process incoming requests
@@ -273,48 +216,33 @@ class GUI(Tkinter.Toplevel):
             request = 'location'
         elif request != 'moves' and 'moves' in request:
             request = 'moves'
-        # moves: 'up', 'right', 'down', 'left'
+
         retval = "error"
 
         if request.count('connectionNum'):
             connectionNum, port = request.split(":")
             retval = self.ports.index( int(port) )
-        elif request[0:6] == "alpha=" :
-            self.alpha = atof(request[6:10])
-            retval = self.alpha
-        elif request[0:7] == "utility" :
-            temp= (atoi(request[7:9]), atoi(request[9:11]))
-            retval = self.utility[temp]
+
+
+        elif request[0:2] == "c_" :
+            position= (atoi(request[2:4]), atoi(request[4:6]))
+            color = request[7:]
+            self.updateColor( position, color )
+            retval = color
+
         elif request == 'location':
             self.addToPath(self.location)
             retval = self.location[0], self.location[1]
         elif request == 'complete':
             retval = self.complete
-        elif request == 'count':
-            retval = self.count
         elif request == 'path':
             retval = self.path
-        elif request == 'alpha':
-            retval = self.alpha
         elif request == 'final':
             retval = self.final_states
         elif request == 'obstacles':
             retval = self.inaccessible
-
         elif request == 'visited':
             retval = self.visited
-
-        elif request == 'incAlpha':
-            self.alpha += .1
-            retval = (self.alpha)
-        elif request == 'td':
-            self.addToPath(self.location)
-
-            self.Temporal_Difference(self.utility, self.path, self.frequencies)
-            self.initWorld()
-            self.redrawUtilities()
-            self.count = self.count + 1
-            retval = "okTD"
         elif request == 'goal':
             retval = (self.goal)
         elif request == 'pits':
@@ -323,12 +251,11 @@ class GUI(Tkinter.Toplevel):
             retval = (self.home)
         elif request == 'reset':
             print "RESET!!"
+            self.erasePath(self.visited)
             self.initWorld()
             self.resetStates()
-            self.resetUtils()
             retval = "reset complete"
             self.redraw()
-            self.drawInaccessible()
         elif request == 'end' or request == 'exit':
             retval = "exiting"
             self.done = 1
@@ -341,27 +268,23 @@ class GUI(Tkinter.Toplevel):
         elif request == 'movements':
             retval = self.movements
         elif request == 'up':
+            self.moveInDirection( self.location, (0, -1) )
             self.addToPath(self.location)
-            self.moves += 1
-            self.add( self.location, (0, -1) )
             retval = self.checkMovement()
             self.redrawPath()
         elif request == 'right':
+            self.moveInDirection( self.location, (1, 0) )
             self.addToPath(self.location)
-            self.moves += 1
-            self.add( self.location, (1, 0) )
             retval = self.checkMovement()
             self.redrawPath()
         elif request == 'left':
+            self.moveInDirection( self.location, (-1, 0) )
             self.addToPath(self.location)
-            self.moves += 1
-            self.add( self.location, (-1, 0) )
             retval = self.checkMovement()
             self.redrawPath()
         elif request == 'down':
+            self.moveInDirection( self.location, (0, 1) )
             self.addToPath(self.location)
-            self.moves += 1
-            self.add( self.location, (0, 1) )
             retval = self.checkMovement()
             self.redrawPath()
         elif request == 'supportedFeatures':
@@ -370,9 +293,9 @@ class GUI(Tkinter.Toplevel):
             retval = []
         elif request == 'start':
             self.complete = 0
+            self.erasePath(self.visited)
             self.initWorld()
             retval = self.location
-            self.redrawPath()
         else:   # unknown command; returns "error"
             pass
 
@@ -381,21 +304,19 @@ class GUI(Tkinter.Toplevel):
     def redrawPath(self):
         for (x,y) in self.path:
            self.canvas.itemconfig( self.squares[x][y], fill=self.path_color )
-        self.redrawLocation()
+        self.redrawLocation();
 
     def redrawVisited(self):
         for (x,y) in self.visited:
            self.canvas.itemconfig( self.squares[x][y], fill = self.visited_color )
-        self.redrawLocation()
 
     def redrawLocation(self):
         self.canvas.itemconfig( self.squares[self.location], fill = self.current_pos_color )
 
     def erasePath(self, p):
         for (x,y) in p:
-            strcolor = self.getUtilRGB( self.utility[x][y] )
+            strcolor = self.canvas.itemcget( self.squares[x][y], "tags" )
             self.canvas.itemconfig( self.squares[x][y], fill = strcolor )
-        self.redrawLocation()
 
     def drawGoal(self):
         (x,y) = self.goal
@@ -418,87 +339,23 @@ class GUI(Tkinter.Toplevel):
         for (x,y) in self.inaccessible:
             self.canvas.itemconfig( self.squares[x][y], fill = self.inaccessible_color )
 
-    # returns an RGB string for a given utility value
-    def getUtilRGB(self, util):
-        if util < 0:
-            neg = 1
-            util *= -1
-        else:
-            neg = 0
-
-        # make values (v) range from 0-255
-        v = int(util * 5.12)
-
-
-        if v > 512:
-            r = v - 512;
-        else:
-            r = 0;
-        if v > 256:
-            g = v - 256;
-        else:
-            g = 0
-        b = v;
-            
-        if r > 255:
-            r = 255
-        if g > 255:
-            g = 255
-        if b > 255:
-            b = 255
-
-        if r < 0:
-            r = 0
-        if g < 0:
-            g = 0
-        if b < 0:
-            b = 0
-
-        r = 255 - r
-        g = 255 - g
-        b = 255 - b
-
-        if neg:
-            tmp = b
-            b = r
-            r = tmp
-
-        strr = hex(r)[2:]
-        while len(strr) < 2:
-            strr = "0" + strr;
-        strg = hex(g)[2:]
-        while len(strg) < 2:
-            strg = "0" + strg;
-        strb = hex(b)[2:]
-        while len(strb) < 2:
-            strb = "0" + strb;
-
-        return( "#" + strr + strg + strb )
-
-    def redrawUtilities(self):
-        for x in range(self.num_squares_x):
-            for y in range(self.num_squares_y ):
-                if not (x, y) in self.inaccessible : 
-                    strv = self.getUtilRGB(self.utility[x][y])
-                    self.canvas.itemconfig( self.squares[x][y], fill = strv )
+    def updateColor(self, loc, color):
+        self.canvas.itemconfig( self.squares[loc], fill=color, tag=color )
 
     def createGridlines(self):
         # grid-lines
         for x in range(self.num_squares_x):
-            self.canvas.create_line(  0, x*self.square_height, self.width, x*self.square_height,
-                                      width = 2, fill = gridline_color, tag = "gridline")
             self.canvas.create_line(  x*self.square_height, 0, x*self.square_height, self.height,
+                                      width = 2, fill = gridline_color, tag = "gridline")
+        for y in range(self.num_squares_y):
+            self.canvas.create_line(  0, y*self.square_width, self.width, y*self.square_width,
                                       width = 2, fill = gridline_color, tag = "gridline")
     
 
     def redraw(self):
 	self.drawGoal()
 	self.drawPits()
-
-        self.redrawUtilities()
         self.redrawVisited()
-        self.redrawPath()
-        self.redrawLocation()
 
             
     # ------------------------------------------------------------------------        
