@@ -7,15 +7,15 @@ class Avoid(Brain):
    # Give the front two sensors, decide the next move  
    def determineMove(self, front, left, right):  
       if front < 0.5:   # about to hit soon, STOP  
-         #print "collision imminent, stopped"  
+         #print "obstacle ahead, hard turn"  
          return(0, .3)  
       elif left < 0.8:
          return(0.1, -.3)  
-      elif right < 0.8:  # detecting something, SLOWDOWN  
-         #print "object detected"  
+      elif right < 0.8: # detecting something, SLOWDOWN  
+         #print "object detected, slow turn" 
          return(0.1, .3)  
       else:  
-         #print "clear"      # all clear, FORWARD  
+         #print "clear"  # all clear, FORWARD  
          return(0.5, 0.0) 
       
    def step(self):  

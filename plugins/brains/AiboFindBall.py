@@ -23,12 +23,12 @@ matchGoal = 40
 class RobotVsRobotSoccer(FSMBrain):
     def setup(self):
         if self.hasA("camera"):
-            self.cam = self.camera[0]
+            self.cam = self.robot.camera[0]
         else:
             raise AttributeError, "requires a camera"
         camera = self.cam # local variable
         if self.hasA("ptz"):
-            self.ptz = self.ptz[0]
+            self.ptz = self.robot.ptz[0]
         else:
             raise AttributeError, "requires a ptz"
         # goal filter
