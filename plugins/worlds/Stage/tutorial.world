@@ -44,5 +44,6 @@ pioneer2dx
   name "Pioneer"
   port 6665
   pose [-2.000 0.000 90.000]
+  blobfinder()
 )
 

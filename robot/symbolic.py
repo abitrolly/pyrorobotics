@@ -8,7 +8,7 @@ non-symbolic robots.
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import socket, pickle
+import socket, pickle, threading
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
 
@@ -59,6 +59,7 @@ class TCPRobot(Robot):
 	BUFSIZE = 4096 # 2048 # 1024
 	def __init__(self, host, port):
 		Robot.__init__(self)
+		self.lock = threading.Lock()
 		# Set the socket parameters
 		self.host = host
 		self.port = port
@@ -136,6 +137,7 @@ class TCPRobot(Robot):
 		self.move("o_%f" % value)
 
 	def move(self, message, other = None):
+		self.lock.acquire()
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
 			message = "m_%.2f_%.2f" % (message, other)
 			other = None
@@ -147,6 +149,7 @@ class TCPRobot(Robot):
 				self.socket.sendto(message, self.addr)
 			self.socket.close()
 			self.socket = 0
+			self.lock.release()
 			return "ok"
 		else:
 			self.socket.sendto(message, self.addr)
@@ -159,6 +162,7 @@ class TCPRobot(Robot):
 				exp = pickle.loads( retval )
 			except:
 				exp = retval
+		self.lock.release()
 		return exp
 
 	def disconnect(self):
