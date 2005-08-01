@@ -199,15 +199,16 @@ class TKgui(Tkinter.Toplevel, gui):
    def makeExpression(self, full_id):
       self._populateEnv()
       thingStr = full_id[0]
-      thing = self.environment[full_id[0]]
+      thing = eval(full_id[0], self.environment)
       i = 1
       while i < len(full_id):
          item = full_id[i]
          if item == "[": # array position
             pass
-         elif item == "]": # array position
-            thing = thing[full_id[i - 2]]
-            thingStr += "[%s]" % full_id[i - 2]
+         elif type(item) == type("") and item[-1] == "]": # array position
+            index = int(item[:-1])
+            thing = thing[index]
+            thingStr += "[%d]" % index
          elif item == "methods": # method
             if full_id[i+1][-2:] == "()": # method
                thingStr += ".%s%s" % (full_id[i+1][:-2], full_id[i+2:])
@@ -230,7 +231,7 @@ class TKgui(Tkinter.Toplevel, gui):
       self._populateEnv()
       currentName = node.full_id()[-1]
       # look up the object by path: ------------------------
-      thing = self.environment[node.full_id()[0]]
+      thing = eval(node.full_id()[0], self.environment)
       thingName = node.full_id()[0]
       parent = None
       position = 1
@@ -272,13 +273,14 @@ class TKgui(Tkinter.Toplevel, gui):
                if item == "[":
                   if position == len(node.full_id()) - 1:
                      for i in range(len(thing)):
-                        tree.add_node("[%d] - SensorValue" % i, id="]", flag=1)
+                        tree.add_node("[%d] - SensorValue" % i, id="%d]" % i, flag=1)
                      return
                   else:
                      pass # no need to do anything
-               elif "]" == item:
+               elif type(item) == type("") and  item[-1] == "]":
                   if position == len(node.full_id()) - 1:
-                     thing = thing[ int(node.full_id()[-3]) ]
+                     index = int(item[:-1])
+                     thing = thing[index]
                   else:
                      pass # no need?
                else:
