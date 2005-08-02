@@ -570,10 +570,12 @@ class PlayerRobot(Robot):
         tv = translate_velocity * self.scale
         self.last_translate = tv
         self.position[0]._dev.set_cmd_vel(tv, 0, self.last_rotate, 1)
+        time.sleep(.1)
     def rotate(self, rotate_velocity):
         rv = rotate_velocity * self.scale
         self.last_rotate = rv
         self.position[0]._dev.set_cmd_vel(self.last_translate, 0, rv, 1)
+        time.sleep(.1)
     def move(self, translate_velocity, rotate_velocity):
         rv, tv = rotate_velocity * self.scale, translate_velocity * self.scale
         self.last_rotate = rv
