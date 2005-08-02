@@ -3,8 +3,8 @@ from pyrobot.brain import Brain
 class TrackBall(Brain):
 
     def setup(self):
-        self.cam = self.camera[0]
-        self.ptz = self.ptz[0]
+        self.cam = self.robot.camera[0]
+        self.ptz = self.robot.ptz[0]
         self.ptz.setPose(0, 0, 0)
         #self.cam.addFilter("matchList", 229, 68, 164, 234, 18, 129, 0)
         self.cam.addFilter("match", 229, 68, 164)
