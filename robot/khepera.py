@@ -13,7 +13,7 @@ from pyrobot.robot.device import *
 from pyrobot.system.serial import *
 import pyrobot.gui.console as console
 import string, array, math 
-from time import sleep
+import threading
 from pyrobot.simulators.khepera.CNTRL import _ksim as ksim
 from pyrobot.geometry import PITIMES180, PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
@@ -171,6 +171,7 @@ class KheperaRobot(Robot):
                  subtype = "Khepera"):
         # simulator = 0 makes it real
         Robot.__init__(self) # robot constructor
+        self.lock = threading.Lock()
         self.buffer = ''
         self.debug = 0
         self.pause = 0.1 # for hemisson to keep from swamping the wireless
@@ -212,7 +213,7 @@ class KheperaRobot(Robot):
         self.currSpeed = [0, 0]
         # This could go as high as 127, but I am keeping it small
         # to be on the same scale as larger robots. -DSB
-        self.translateFactor = 30
+        self.translateFactor = 12
         self.rotateFactor = 12
         self.dataTypes = {'n': 'ir',
                           'h' : 'position',
@@ -235,11 +236,11 @@ class KheperaRobot(Robot):
         self.rawData['stall'] = [0] * 6
         self.subtype = subtype
         if subtype == "Hemisson":
-            self.radius = 120.0 / 1000.0 # universally in meters
+            self.radius = .06 #meters
             self.builtinDevices = ['ir', 'light', 'audio']
             self._newline = "\r"
         elif subtype == "Khepera":
-            self.radius = 55.0 / 1000.0 # universally in meters
+            self.radius = .03 #meters
             self.builtinDevices = ['ir', 'light', 'gripper']
             self._newline = "\n"
         else:
@@ -292,8 +293,9 @@ class KheperaRobot(Robot):
         self.stop()
 
     def sendMsg(self, msg):
+        self.lock.acquire()
         self.sc.writeline(msg, self._newline)
-        time.sleep(.05) # NEEDED, or not enough time to send data
+        self.lock.release()
 
     def readData(self):
         if self.sc.inWaiting() == 0: return
@@ -366,8 +368,7 @@ class KheperaRobot(Robot):
         self.stallHistoryPos = (self.stallHistoryPos + 1) % self.stallHistorySize
         self.stall = self.isStall()
         self.deadReckon()
-        time.sleep(self.pause)
-
+        
     def deadReckon(self):
         """
         Called after each little update in position.
