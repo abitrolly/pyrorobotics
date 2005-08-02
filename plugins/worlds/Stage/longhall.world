@@ -1,0 +1,49 @@
+unit_length "m"  # All units are in meters
+
+include "pioneer.inc"
+
+#GUI settings
+window
+(
+  size [340.000 780.000]
+  center [0.000 0.000]
+  scale 0.01    # 1 pixel = 0.01 meters
+)
+
+model 
+(
+  size [3.0 7.0]
+  color "white"
+  pose [0.000 0.000 0.000]
+)
+
+model 
+(
+  size [1.0 2.5]
+  color "black"
+  pose [-1.000 -2.250 0.000]
+)
+
+model 
+(
+  size [0.5 1.5]
+  color "black"
+  pose [1.250 -0.750 0.000]
+)
+
+model
+(
+  size [1.0 3.5]
+  color "black"
+  pose [1.000 1.750 0.000]
+)
+
+pioneer2dx
+(
+  color "red"
+  name "Pioneer"
+  port 6665
+  pose [0.500 -3.000 45.000]
+  blobfinder()
+)
+
