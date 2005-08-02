@@ -430,7 +430,7 @@ class PlayerUpdater(threading.Thread):
         """
         self.runable = runable
         self._stopevent = threading.Event()
-        self._sleepperiod = 0.0001
+        self._sleepperiod = 0.001
         # We have to read it this fast to keep up!
         threading.Thread.__init__(self, name="PlayerUpdater")
         
@@ -454,6 +454,7 @@ class PlayerRobot(Robot):
     def __init__(self, name = "Player", port = 6665, hostname = 'localhost',
                  startDevices = 1):
         Robot.__init__(self) # robot constructor
+        self.scale = 0.5
         self.last_rotate = 0.0
         self.last_translate = 0.0
         self.simulated = 1 # FIX: how can you tell?
@@ -566,18 +567,19 @@ class PlayerRobot(Robot):
         return {item: PlayerDevice(self._client, item, index=index)}
     
     def translate(self, translate_velocity):
-        self.last_translate = translate_velocity
-        self.position[0]._dev.set_cmd_vel(translate_velocity, 0,
-                                         self.last_rotate, 1)
+        tv = translate_velocity * self.scale
+        self.last_translate = tv
+        self.position[0]._dev.set_cmd_vel(tv, 0, self.last_rotate, 1)
     def rotate(self, rotate_velocity):
-        self.last_rotate = rotate_velocity
-        self.position[0]._dev.set_cmd_vel(self.last_translate, 0,
-                                         rotate_velocity, 1)
+        rv = rotate_velocity * self.scale
+        self.last_rotate = rv
+        self.position[0]._dev.set_cmd_vel(self.last_translate, 0, rv, 1)
     def move(self, translate_velocity, rotate_velocity):
-        self.last_rotate = rotate_velocity
-        self.last_translate = translate_velocity
-        self.position[0]._dev.set_cmd_vel(translate_velocity, 0,
-                                         rotate_velocity, 1)
+        rv, tv = rotate_velocity * self.scale, translate_velocity * self.scale
+        self.last_rotate = rv
+        self.last_translate = tv
+        self.position[0]._dev.set_cmd_vel(tv, 0, rv, 1)
+        time.sleep(.1)
     def update(self):
         if self.hasA("position"):
             self.x = self.position[0]._dev.px
