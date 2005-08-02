@@ -328,6 +328,7 @@ class KheperaRobot(Robot):
                             if self.debug: print "K-Team packet error:", rawdata
 
     def update(self):
+        Robot.update(self)
         if self.subtype == "Khepera":
             self.sendMsg('N') #, 'ir')     # proximity
             self.sendMsg('O') #, 'light')  # ambient light
