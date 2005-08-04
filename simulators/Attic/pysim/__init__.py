@@ -468,6 +468,7 @@ class SimRobot:
                     gx = self._gx + (d_x * math.cos(a90) - d_y * math.sin(a90))
                     gy = self._gy + (d_x * math.sin(a90) + d_y * math.cos(a90))
                     sum = 0.0
+                    rgb = [0, 0, 0]
                     for light in self.simulator.lights:
                         x, y, brightness = light.x, light.y, light.brightness
                         seg = Segment((x,y), (gx, gy))
@@ -479,9 +480,13 @@ class SimRobot:
                             self.drawRay("light", x, y, gx, gy, "orange")
                             intensity = (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
                             sum += intensity
+                            for c in [0, 1, 2]:
+                                rgb[c] += intensity * light.rgb[c]
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
                     d.scan[i] = min(sum, light.maxvalue)
+                    for c in [0, 1, 2]:
+                        d.rgb[i][c] = min(rgb[c], 255)
                     i += 1
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
@@ -656,6 +661,7 @@ class Light:
         self.color = color
         self._xyb = x, y, brightness # original settings for reset
         self.maxvalue = 1000.0
+        self.rgb = [255, 0, 0]
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"
@@ -665,6 +671,7 @@ class LightSensor:
         self.noise = noise
         self.groups = {}
         self.scan = [0] * len(geometry) # for data
+        self.rgb = [[0,0,0] for g in geometry]
 
 class PioneerFrontSonars(RangeSensor):
     def __init__(self):

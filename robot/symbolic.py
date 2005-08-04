@@ -8,7 +8,7 @@ non-symbolic robots.
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import socket, pickle, threading
+import socket, pickle, threading, random
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
 
@@ -25,7 +25,7 @@ class SimulationDevice(Device):
 		retval = self._dev.move("c_%s" % (name, ))
 		return retval
 
-class SimDevice(Device):
+class RangeSimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):
 		Device.__init__(self, name)
 		self._geometry = geometry
@@ -35,10 +35,7 @@ class SimDevice(Device):
 		self.index = index
 		self.maxvalueraw = geometry[2]
 		self.rawunits = "M"
-		if name == "light":
-			self.units = "SCALED"
-		else:
-			self.units = "ROBOTS"
+		self.units = "ROBOTS"
 		self.radius = robot.radius
 		self.count = len(self)
 		self._noise = 0.05
@@ -58,6 +55,15 @@ class SimDevice(Device):
 				    self._geometry[1]),        # arc rads
 				   noise=self._noise
 				   )
+
+class LightSimDevice(RangeSimDevice):
+	def __init__(self, *args, **kwargs):
+		RangeSimDevice.__init__(self, *args, **kwargs)
+		self.units = "SCALED"
+		self.rgb = (0, 0, 0)
+	def update(self):
+		self.rgb = (random.random(), random.random(), random.random())
+
 class TCPRobot(Robot):
 	"""
 	A simple TCP-based socket robot for talking to PyrobotSimulator.
@@ -129,12 +135,18 @@ class TCPRobot(Robot):
 	def startDeviceBuiltin(self, name, index = 0):
 		if name == "simulation":
 			return {"simulation": SimulationDevice(self)}
+		elif name == "light":
+			self.properties.append("%s_%d" % (name, index))
+			self.move("s_%s_%d" % (name, index))
+			geometry = self.move("g_%s_%d" % (name, index))
+			groups = self.move("r_%s_%d" % (name, index))
+			return {name: LightSimDevice(name, index, self, geometry, groups)}
 		else:
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))
 			geometry = self.move("g_%s_%d" % (name, index))
 			groups = self.move("r_%s_%d" % (name, index))
-			return {name: SimDevice(name, index, self, geometry, groups)}
+			return {name: RangeSimDevice(name, index, self, geometry, groups)}
 
 	def translate(self, value):
 		self.move("t_%f" % value)
