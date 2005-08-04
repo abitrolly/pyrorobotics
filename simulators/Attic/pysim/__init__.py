@@ -170,9 +170,12 @@ class Simulator:
             elif message[0] == "b": # "b_x_y_th" localize
                 localization, x, y, thr = message
                 retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
-            elif message[0] == "c": # "c_x_y_th" getPose
-                localization, x, y, thr = message
-                retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
+            elif message[0] == "c": # "c_name" getpose
+                simulation, name = message
+                retval = "error"
+                for r in self.robots:
+                    if r.name == name:
+                        retval = (r._gx, r._gy, r._ga)
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "o": # "o_v" rotate:value
@@ -474,7 +477,8 @@ class SimRobot:
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
-                            sum += (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
+                            intensity = (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
+                            sum += intensity
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
                     d.scan[i] = min(sum, light.maxvalue)

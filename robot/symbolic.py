@@ -22,7 +22,7 @@ class SimulationDevice(Device):
 		self._dev.localize(0,0,0)
 		return "ok"
 	def getPose(self, name, x = 0, y = 0, thr = 0):
-		retval = self._dev.move("a_%s_%f_%f_%f" % (name, x, y, thr))
+		retval = self._dev.move("c_%s" % (name, ))
 		return retval
 
 class SimDevice(Device):
