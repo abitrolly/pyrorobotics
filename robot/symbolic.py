@@ -21,6 +21,9 @@ class SimulationDevice(Device):
 		self._dev.move("a_%s_%f_%f_%f" % (name, x, y, thr))
 		self._dev.localize(0,0,0)
 		return "ok"
+	def getPose(self, name, x = 0, y = 0, thr = 0):
+		retval = self._dev.move("a_%s_%f_%f_%f" % (name, x, y, thr))
+		return retval
 
 class SimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):
@@ -32,7 +35,10 @@ class SimDevice(Device):
 		self.index = index
 		self.maxvalueraw = geometry[2]
 		self.rawunits = "M"
-		self.units = "ROBOTS"
+		if name == "light":
+			self.units = "SCALED"
+		else:
+			self.units = "ROBOTS"
 		self.radius = robot.radius
 		self.count = len(self)
 		self._noise = 0.05

@@ -132,15 +132,15 @@ class LightSensor(IRSensor):
     def __init__(self, dev):
         IRSensor.__init__(self, dev, "light")
         # now, just overwrite those differences
-        self.units = "RAW"
+        self.units = "SCALED"
         self.rawunits = "RAW"
-        self.maxvalueraw = 511.0
+        self.maxvalueraw = 511
         self.arc = 0 # no meaning for light sensor
     def _getVal(self, pos):
         try:
-            data = self._dev.rawData['light'][pos]
+            data = int(self.maxvalueraw - self._dev.rawData['light'][pos])
         except:
-            return 0.0
+            data = 0
         return data
 
 class SerialSimulator:
@@ -150,18 +150,24 @@ class SerialSimulator:
         
     def writeline(self, msg, newline = "\n"):
         self.last_msg.append(ksim.sendMessage(self.p, msg))
+        time.sleep(.05)
 
     def readline(self): # 1 = block till we get something
-        if len(self.last_msg): return self.last_msg.pop(0)
-        return ''
+        if len(self.last_msg):
+            retval = self.last_msg.pop(0)
+            return retval
+        else:
+            return ''
 
     def readlines(self):
         retval = []
-        while len(self.last_msg) > 0: retval.append(self.last_msg.pop(0))
+        while len(self.last_msg) > 0:
+            retval.append(self.last_msg.pop(0))
         return retval
 
     def inWaiting(self):
-        return len(self.last_msg)
+        retval = len(self.last_msg)
+        return retval
     
 class KheperaRobot(Robot):
     def __init__(self,
@@ -335,13 +341,12 @@ class KheperaRobot(Robot):
             self.sendMsg('H') #, 'position')
             self.sendMsg('E') #, 'speed')
             self.sendMsg('K') #, 'stall')  # motor status, used by isStall
-            gripperID = self.hasA('gripper')
-            if gripperID:
+            gripper = self.hasA('gripper')
+            if gripper:
                 #self.sendMsg('T,1,H,0')  # gripper state
                 #self.sendMsg('T,1,H,1')  # arm position
                 self.sendMsg('T,1,G')    # gripper beam state
-                self.sendMsg('T,1,F')    # gripper resistivity
-                
+                self.sendMsg('T,1,F')    # gripper resistivity                
         elif self.subtype == "Hemisson":
             self.sendMsg('N') #, 'ir')     # proximity
             self.sendMsg('O') #, 'light')  # ambient light

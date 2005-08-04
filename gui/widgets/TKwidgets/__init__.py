@@ -1,4 +1,17 @@
-import Tkinter
+import Tkinter, string
+
+def roundStr(item, places=3):
+   """If item is a float, rounds to N places; otherwise just makes item a string."""
+   values = []
+   if type(item) == list:
+      for v in item:
+         if type(v) == float:
+            values.append(('%%.%df'% places) % v)
+         else:
+            values.append(str(v))
+      return '[%s]' % string.join(values, ", ")
+   else:
+      return str(item)
 
 class StatusBar(Tkinter.Frame):
    def __init__(self, master):
@@ -266,7 +279,7 @@ class Watcher(Tkinter.Toplevel):
          locals = globals()
       for exp, frame in self.data:
          try:
-            value = str(eval(exp, locals))
+            value = roundStr(eval(exp, locals))
          except:
             value = "<Undefined>"
          frame.textbox.delete(0, 'end')
@@ -548,8 +561,8 @@ class FileDialog(ModalDialog):
                    cmdOutput = pipe.read()
                    pipe.close()
                 elif os.name in ['posix']:
-                   cmd = "/bin/ls " + os.path.join(cwd, filter) + \
-                         " | /bin/grep -v __init__.py"
+                   cmd = "ls " + os.path.join(cwd, filter) + \
+                         " | grep -v __init__.py"
                    cmdOutput = getoutput(cmd)
                 else:
                    raise AttributeError, "your OS (%s) is not supported" % os.name

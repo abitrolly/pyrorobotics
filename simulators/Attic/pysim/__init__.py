@@ -170,6 +170,9 @@ class Simulator:
             elif message[0] == "b": # "b_x_y_th" localize
                 localization, x, y, thr = message
                 retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
+            elif message[0] == "c": # "c_x_y_th" getPose
+                localization, x, y, thr = message
+                retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "o": # "o_v" rotate:value
@@ -474,7 +477,7 @@ class SimRobot:
                             sum += (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
-                    d.scan[i] = sum
+                    d.scan[i] = min(sum, light.maxvalue)
                     i += 1
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
@@ -648,6 +651,7 @@ class Light:
         self.brightness = brightness
         self.color = color
         self._xyb = x, y, brightness # original settings for reset
+        self.maxvalue = 1000.0
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"
