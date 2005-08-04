@@ -1251,8 +1251,8 @@ PyObject *Vision::rgb2yuv() {
       int G = Image[(h * width + w) * depth + rgb[1]];
       int B = Image[(h * width + w) * depth + rgb[2]];
       int Y = int(0.299 * R + 0.587 * G + 0.114 * B);
-      int U = int(-0.147 * R - 0.289 * G + 0.436 * B);
-      int V = int(0.615 * R - 0.515 * G - 0.100 * B);
+      int U = int(-0.169 * R - 0.332 * G + 0.500 * B + 128);
+      int V = int( 0.500 * R - 0.419 * G - 0.0813 * B + 128);
       Image[(h * width + w) * depth + rgb[0]] = MAX(MIN(Y,255),0);
       Image[(h * width + w) * depth + rgb[1]] = MAX(MIN(U,255),0);
       Image[(h * width + w) * depth + rgb[2]] = MAX(MIN(V,255),0);
@@ -1267,9 +1267,10 @@ PyObject *Vision::yuv2rgb() {
       int Y = Image[(h * width + w) * depth + rgb[0]];
       int U = Image[(h * width + w) * depth + rgb[1]];
       int V = Image[(h * width + w) * depth + rgb[2]];
-      int R = int(Y + 1.140 * V);
-      int G = int(Y - 0.395 * U - 0.581 * V);
-      int B = int(Y + 2.032 * U);
+
+      int R = int(Y + (1.4075 * (V - 128)));
+      int G = int(Y - (0.3455 * (U - 128)) - (0.7169 * (V - 128)));
+      int B = int(Y + (1.7790 * (U - 128)));
       Image[(h * width + w) * depth + rgb[0]] = MAX(MIN(R,255),0);
       Image[(h * width + w) * depth + rgb[1]] = MAX(MIN(G,255),0);
       Image[(h * width + w) * depth + rgb[2]] = MAX(MIN(B,255),0);
