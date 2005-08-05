@@ -50,7 +50,7 @@
 
   <model:Pioneer2AT>
     <id>robot2</id>
-    <xyz>0.512 -0.505 3.140</xyz>
+    <xyz>0.512 -0.505 0.000</xyz>
     <model:SickLMS200>
       <id>laser2</id>
       <xyz>0.100 0.000 0.30</xyz>
