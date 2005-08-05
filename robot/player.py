@@ -162,7 +162,7 @@ class PlayerSonarDevice(PlayerDevice):
         return self._dev.scan_count
     def getSensorValue(self, pos):
         if pos < 16: z = 0.23
-        else:        z = 1.00
+        else:        z = 1.1
         return SensorValue(self, self._dev.scan[pos], pos,
                            (self._dev.poses[pos][0], # x in meters
                             self._dev.poses[pos][1], # y

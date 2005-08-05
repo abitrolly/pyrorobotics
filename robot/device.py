@@ -138,7 +138,7 @@ class SensorValue:
         return self.geometry[2]
     hit = property(_hit)
 
-class Device:
+class Device(object):
     """ A basic device class. All device derive from this."""
 
     def __init__(self, deviceType = 'unspecified', visible = 0):
@@ -154,30 +154,33 @@ class Device:
         if visible:
             self.makeWindow()
     # Properties to make getting all values easy:
+    def _setDisabled(self, ignore):
+        raise AttributeError, "This attribute is read-only"
+
     def _getValue(self):
         """Internal get for all of the .value properties."""
         return [s.value for s in self]
-    value = property(_getValue)
+    value = property(_getValue, _setDisabled)
     def _getPos(self):
         """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
-    pos = property(_getPos)
+    pos = property(_getPos, _setDisabled)
     def _getGeometry(self):
         """Internal get for all of the .geometry properties."""
         return [s.geometry for s in self]
-    geometry = property(_getGeometry)
+    geometry = property(_getGeometry, _setDisabled)
     def _getRawValue(self):
         """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
-    rawValue = property(_getRawValue)
+    rawValue = property(_getRawValue, _setDisabled)
     def _getHit(self):
         """Internal get for all of the .hit properties."""
         return [s.hit for s in self]
-    rawValue = property(_getHit)
+    rawValue = property(_getHit, _setDisabled)
     def _getNoise(self):
         """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
-    noise = property(_getNoise)
+    noise = property(_getNoise, _setDisabled)
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
         """
@@ -204,11 +207,13 @@ class Device:
         """
         return None
 
+    def __len__(self):
+        # devices should overload this method if they are iterable
+        return 0
+
     def __iter__(self):
         """ Used to iterate through SensorValues of device. """
-        length = 0
-        try: length = len(self)
-        except: pass
+        length = len(self)
         for pos in range(length):
             yield self.getSensorValue(pos)
         raise exceptions.StopIteration
