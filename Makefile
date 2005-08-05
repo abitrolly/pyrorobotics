@@ -29,7 +29,7 @@ compile:
 pyrobot-$(PYROBOT_VERSION).tgz: Makefile
 	mkdir download || true
 	mv *.tgz download/ || true
-	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz pyrobot --exclude wikiparser.php --exclude fedora --exclude stylesheet.css --exclude knoppix --exclude pyrobot/plugins/simulators/KheperaSimulator --exclude CVS --exclude tars --exclude download --exclude test --exclude examples --exclude som2 --exclude htmlsom --exclude experiments --exclude data --exclude kRobotClass --exclude simulator --exclude SIM --exclude stuff --exclude misc --exclude Makefile.cfg; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz download
+	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz pyrobot --exclude fedora --exclude stylesheet.css --exclude knoppix --exclude CVS --exclude tars --exclude download --exclude Makefile.cfg; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz download
 	$(RM) -f download/pyrobot-latest.tgz
 	cd download; ln -s pyrobot-$(PYROBOT_VERSION).tgz pyrobot-latest.tgz
 

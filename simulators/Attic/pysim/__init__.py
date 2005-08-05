@@ -176,6 +176,11 @@ class Simulator:
                 for r in self.robots:
                     if r.name == name:
                         retval = (r._gx, r._gy, r._ga)
+            elif message[0] == "f": # "f_i_v" rgb[i][v]
+                index, pos = int(message[1]), int(message[2])
+                device = self.assoc[sockname[1]].getIndex("light", index)
+                if device:
+                    retval = device.rgb[pos]
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "o": # "o_v" rotate:value
@@ -191,7 +196,7 @@ class Simulator:
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[1]:
                         if int(message[2]) == index:
-                            if message[1] in ["sonar", "laser", "light"]:
+                            if message[1] in ["sonar", "laser", "light", "bulb"]:
                                 retval = d.geometry, d.arc, d.maxRange
                         index += 1
             elif message[0] == "r": # "r_sonar_0" groups_sensor_id
@@ -207,13 +212,12 @@ class Simulator:
                     self.assoc[sockname[1]].display[message[1]] = 1
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light"]: # sonar_0, light_0
+            elif message[0] in ["sonar", "laser", "light", "bulb"]: # sonar_0, light_0
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
                         if int(message[1]) == index:
-                            if message[0] in ["sonar", "laser", "light"]:
-                                retval = d.scan
+                            retval = d.scan
                         index += 1
         return pickle.dumps(retval)
 
@@ -250,6 +254,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ('View',[
             ['body', lambda: self.toggle("body")],                     
             ['boundingBox', lambda: self.toggle("boundingBox")],                     
+            ['bulb', lambda: self.toggle("bulb")],
             ['sonar', lambda: self.toggle("sonar")],
             ['light', lambda: self.toggle("light")],                     
             ['lightBlocked', lambda: self.toggle("lightBlocked")],                     
@@ -383,7 +388,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
+        self.display = {"body": 1, "boundingBox": 0, "bulb": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -439,6 +444,15 @@ class SimRobot:
         self.vx = vx
         return "ok"
 
+    def getIndex(self, dtype, i):
+        index = 0
+        for d in self.devices:
+            if d.type == dtype:
+                if i == index:
+                    return d
+                index += 1
+        return None
+
     def updateDevices(self):
         # measure and draw the new device data:
         for d in self.devices:
@@ -458,6 +472,8 @@ class SimRobot:
                         self.drawRay("sonar", gx, gy, gx + hx, gy + hy, "gray")
                     d.scan[i] = dist
                     i += 1
+            elif d.type == "bulb":
+                pass # nothing to update... it is not a sensor
             elif d.type == "light":
                 # for each light sensor:
                 i = 0
@@ -478,15 +494,15 @@ class SimRobot:
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
-                            intensity = (1.0 / (seg.length() * seg.length())) * brightness * 1000.0
-                            sum += intensity
+                            intensity = (1.0 / (seg.length() * seg.length())) 
+                            sum += intensity * brightness * 1000.0
                             for c in [0, 1, 2]:
-                                rgb[c] += intensity * light.rgb[c]
+                                rgb[c] += light.rgb[c] * (1.0/ seg.length())
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
-                    d.scan[i] = min(sum, light.maxvalue)
+                    d.scan[i] = min(sum, d.maxRange)
                     for c in [0, 1, 2]:
-                        d.rgb[i][c] = min(rgb[c], 255)
+                        d.rgb[i][c] = min(int(rgb[c]), 255)
                     i += 1
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
@@ -556,6 +572,9 @@ class SimRobot:
         self.devices.append(dev)
         if dev.type not in self.builtinDevices:
             self.builtinDevices.append(dev.type)
+        if dev.type == "bulb":
+            self.simulator.lights.append( dev )
+            dev.robot = self
 
 class TkPioneer(SimRobot):
     def mouse_event(self, event, command, robot):
@@ -630,6 +649,9 @@ class TkPioneer(SimRobot):
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+        if self.display["bulb"] == 1:
+            pass
+        ### Mouse methods:
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
                                        func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
@@ -642,6 +664,21 @@ class TkPioneer(SimRobot):
                                        func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
                                        func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+
+
+colorMap = {"red": (255, 0,0),
+            "green": (0, 255,0),
+            "blue": (0, 0,255),
+            "white": (255, 255, 255),
+            "black": (0, 0, 0),
+            "cyan": (0, 255, 255),
+            "yellow": (255, 255, 0),
+            "brown": (165, 42, 42),
+            "orange": (255, 165, 0),
+            "pink": (255, 192, 203),
+            "violet": (238, 130, 238),
+            "purple": (160, 32, 240),
+            }
 
 class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
@@ -660,8 +697,13 @@ class Light:
         self.brightness = brightness
         self.color = color
         self._xyb = x, y, brightness # original settings for reset
-        self.maxvalue = 1000.0
-        self.rgb = [255, 0, 0]
+        self.rgb = colorMap[color]
+        self.type = "fixed"
+class BulbDevice(Light):
+    def __init__(self, color):
+        Light.__init__(self, 0, 0, 1.0, color=color)
+        self.type = "bulb"
+        self.geometry = (0, 0, 0)
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"

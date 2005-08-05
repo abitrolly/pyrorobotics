@@ -60,9 +60,22 @@ class LightSimDevice(RangeSimDevice):
 	def __init__(self, *args, **kwargs):
 		RangeSimDevice.__init__(self, *args, **kwargs)
 		self.units = "SCALED"
-		self.rgb = (0, 0, 0)
-	def update(self):
-		self.rgb = (random.random(), random.random(), random.random())
+	def _getRgb(self):
+		retval = []
+		for i in range(len(self)):
+			retval.append( self.getSensorValue(i).rgb )
+		return retval
+	def getSensorValue(self, pos):
+		retval = RangeSimDevice.getSensorValue(self, pos)
+		retval.rgb = self._dev.move("f_%d_%d" % (self.index, pos)) # rgb
+		return retval
+	rgb = property(_getRgb)
+
+class BulbSimDevice(Device):
+	def __init__(self):
+		Device.__init__(self)
+		self.type = "bulb"
+	
 
 class TCPRobot(Robot):
 	"""
@@ -135,6 +148,9 @@ class TCPRobot(Robot):
 	def startDeviceBuiltin(self, name, index = 0):
 		if name == "simulation":
 			return {"simulation": SimulationDevice(self)}
+		elif name == "bulb":
+			self.move("s_%s_%d" % (name, index))
+			return {name: BulbSimDevice()}
 		elif name == "light":
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))
