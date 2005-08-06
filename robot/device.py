@@ -161,26 +161,38 @@ class Device(object):
         """Internal get for all of the .value properties."""
         return [s.value for s in self]
     value = property(_getValue, _setDisabled)
+    def values(self, subset = "all"):
+        return [s.value for s in self[subset]]
     def _getPos(self):
         """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
     pos = property(_getPos, _setDisabled)
+    def poses(self, subset = "pos"):
+        return [s.pos for s in self[subset]]
     def _getGeometry(self):
         """Internal get for all of the .geometry properties."""
         return [s.geometry for s in self]
     geometry = property(_getGeometry, _setDisabled)
+    def geometries(self, subset = "all"):
+        return [s.geometries for s in self[subset]]
     def _getRawValue(self):
         """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
     rawValue = property(_getRawValue, _setDisabled)
+    def rawValues(self, subset = "all"):
+        return [s.rawValue for s in self[subset]]
     def _getHit(self):
         """Internal get for all of the .hit properties."""
         return [s.hit for s in self]
-    rawValue = property(_getHit, _setDisabled)
+    hit = property(_getHit, _setDisabled)
+    def hits(self, subset = "all"):
+        return [s.hit for s in self[subset]]
     def _getNoise(self):
         """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
     noise = property(_getNoise, _setDisabled)
+    def noises(self, subset = "all"):
+        return [s.noise for s in self[subset]]
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
         """
@@ -192,6 +204,8 @@ class Device(object):
         [90, 45, 180]
         """
         return [s.distance(*args, **kwargs) for s in self]
+    def distances(self, subset = "all", *args, **kwargs):
+        return [s.distances(*args, **kwargs) for s in self[subset]]
     def angle(self, *args, **kwargs):
         """
         Device-level method to get all of the angles. Can translate units.
@@ -200,13 +214,13 @@ class Device(object):
         >>> [s.angle(units="degrees") for s in robot.sonar[0]["left"]]
         """
         return [s.angle(*args, **kwargs) for s in self]
-
+    def angles(self, subset = "all", *args, **kwargs):
+        return [s.angle(*args, **kwargs) for s in self[subset]]
     def getSensorValue(self, pos):
         """
         Returns a specific SensorValue from the range device.
         """
         return None
-
     def __len__(self):
         # devices should overload this method if they are iterable
         return 0

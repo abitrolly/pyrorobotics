@@ -4,6 +4,7 @@ import pyrobot.gui.widgets.TKwidgets as TKwidgets
 from pyrobot.system.version import *
 from pyrobot.engine import *
 from pyrobot.gui.widgets.tree import TreeWindow
+from pyrobot.robot.device import Device
 import pyrobot.system as system
 import pyrobot.system.share as share
 from posixpath import exists
@@ -288,8 +289,8 @@ class TKgui(Tkinter.Toplevel, gui):
          position += 1
       # now that you have it, see what it is: --------------
       if type(thing) == type([]): # list:
-         # if a list of objects, get them as nodes:
-         if len(thing) == 0 or (len(thing) > 0 and type(thing[0]) != types.InstanceType):
+         # if a list of Devices, get them as nodes, else just as "name = value":
+         if len(thing) == 0 or (len(thing) > 0 and not issubclass(type(thing[0]), Device)):
             tree.add_node("%s = %s" % (currentName, thing), id=thing, flag=0)
          else:
             for i in range(len(thing)):
