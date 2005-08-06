@@ -164,7 +164,7 @@ class Device(object):
         """Internal get for all of the .value properties."""
         return [s.value for s in self]
     value = property(_getValue, _setDisabled)
-    def values(self, subset="set"):
+    def values(self, subset="all"):
         if type(subset) == int:
             return self[subset].value
         else:
@@ -173,7 +173,7 @@ class Device(object):
         """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
     pos = property(_getPos, _setDisabled)
-    def poses(self, subset = "pos"):
+    def poses(self, subset = "all"):
         if type(subset) == int:
             return self[subset].pos
         else:
