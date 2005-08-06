@@ -186,7 +186,7 @@ class Device(object):
         if type(subset) == int:
             return self[subset].geometry
         else:
-            return [s.geometries for s in self[subset]]
+            return [s.geometry for s in self[subset]]
     def _getRawValue(self):
         """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
@@ -226,7 +226,10 @@ class Device(object):
         """
         return [s.distance(*args, **kwargs) for s in self]
     def distances(self, subset = "all", *args, **kwargs):
-        return [s.distances(*args, **kwargs) for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].distance(*args, **kwargs)
+        else:
+            return [s.distance(*args, **kwargs) for s in self[subset]]
     def angle(self, *args, **kwargs):
         """
         Device-level method to get all of the angles. Can translate units.
@@ -236,7 +239,10 @@ class Device(object):
         """
         return [s.angle(*args, **kwargs) for s in self]
     def angles(self, subset = "all", *args, **kwargs):
-        return [s.angle(*args, **kwargs) for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].angle(*args, **kwargs)
+        else:
+            return [s.angle(*args, **kwargs) for s in self[subset]]
     def getSensorValue(self, pos):
         """
         Returns a specific SensorValue from the range device.
