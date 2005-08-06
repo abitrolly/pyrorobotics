@@ -165,37 +165,55 @@ class Device(object):
         return [s.value for s in self]
     value = property(_getValue, _setDisabled)
     def values(self, subset="set"):
-        return [s.value for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].value
+        else:
+            return [s.value for s in self[subset]]
     def _getPos(self):
         """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
     pos = property(_getPos, _setDisabled)
     def poses(self, subset = "pos"):
-        return [s.pos for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].pos
+        else:
+            return [s.pos for s in self[subset]]
     def _getGeometry(self):
         """Internal get for all of the .geometry properties."""
         return [s.geometry for s in self]
     geometry = property(_getGeometry, _setDisabled)
     def geometries(self, subset = "all"):
-        return [s.geometries for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].geometry
+        else:
+            return [s.geometries for s in self[subset]]
     def _getRawValue(self):
         """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
     rawValue = property(_getRawValue, _setDisabled)
     def rawValues(self, subset = "all"):
-        return [s.rawValue for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].rawValue
+        else:
+            return [s.rawValue for s in self[subset]]
     def _getHit(self):
         """Internal get for all of the .hit properties."""
         return [s.hit for s in self]
     hit = property(_getHit, _setDisabled)
     def hits(self, subset = "all"):
-        return [s.hit for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].hit
+        else:
+            return [s.hit for s in self[subset]]
     def _getNoise(self):
         """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
     noise = property(_getNoise, _setDisabled)
     def noises(self, subset = "all"):
-        return [s.noise for s in self[subset]]
+        if type(subset) == int:
+            return self[subset].noise
+        else:
+            return [s.noise for s in self[subset]]
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
         """
