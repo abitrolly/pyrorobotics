@@ -139,7 +139,10 @@ class SensorValue:
     hit = property(_hit)
 
 class Device(object):
-    """ A basic device class. All device derive from this."""
+    """ A basic device class. All devices derive from this."""
+
+    ### Note: Pyro5 will standardize this interface.
+    ### 
 
     def __init__(self, deviceType = 'unspecified', visible = 0):
         """Constructor for the device class."""
@@ -161,7 +164,7 @@ class Device(object):
         """Internal get for all of the .value properties."""
         return [s.value for s in self]
     value = property(_getValue, _setDisabled)
-    def values(self, subset = "all"):
+    def values(self, subset="set"):
         return [s.value for s in self[subset]]
     def _getPos(self):
         """Internal get for all of the .pos properties."""
