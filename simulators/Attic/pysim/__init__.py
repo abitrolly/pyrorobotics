@@ -34,7 +34,7 @@ class Simulator:
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
         self.world.append(seg)
 
-    def addBox(self, ulx, uly, lrx, lry):
+    def addBox(self, ulx, uly, lrx, lry, color="white"):
         self.addWall( ulx, uly, ulx, lry)
         self.addWall( ulx, uly, lrx, uly)
         self.addWall( ulx, lry, lrx, lry)
@@ -262,7 +262,8 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
              ),
             ]
         for entry in menu:
-            self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))        
+            self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
+        self.shapes = []
         self.after(100, self.step)
     def toggle(self, key):
         for r in self.robots:
@@ -345,18 +346,31 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         print "Window: size=(%d,%d), offset=(%d,%d), scale=%f" % (self.winfo_width(), self.winfo_height(),
                                                                   self.offset_x, self.offset_y, self.scale)
         self.canvas.delete('all')
+        for shape in self.shapes:
+            if shape[0] == "box":
+                name, ulx, uly, lrx, lry, color = shape
+                self.canvas.create_rectangle(self.scale_x(ulx), self.scale_y(uly),
+                                             self.scale_x(lrx), self.scale_y(lry),
+                                             tag="line", fill=color, outline="black")
         for segment in self.world:
             (x1, y1), (x2, y2) = segment.start, segment.end
-            id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
+            id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1),
+                                         self.scale_x(x2), self.scale_y(y2),
+                                         tag="line")
             segment.id = id
         for light in self.lights:
             x, y, brightness, color = light.x, light.y, light.brightness, light.color
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
-                                    self.scale_x(x + brightness), self.scale_y(y + brightness), tag="line", fill=color, outline="orange")
+                                    self.scale_x(x + brightness), self.scale_y(y + brightness),
+                                    tag="line", fill=color, outline="orange")
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
             print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga)
         
+    def addBox(self, ulx, uly, lrx, lry, color="white"):
+        Simulator.addBox(self, ulx, uly, lrx, lry, color)
+        self.shapes.append( ("box", ulx, uly, lrx, lry, color) )
+        self.redraw()
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2))
         id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")

@@ -13,9 +13,9 @@ def INIT():
     sim = TkSimulator((600, 600), (50, 550), 100)  
     # x1, y1, x2, y2 in meters:
     sim.addBox(0, 0, 5, 5)
-    sim.addBox(0, 4, 1, 5)
-    sim.addBox(2.5, 0, 2.6, 2.5)
-    sim.addBox(2.5, 2.5, 3.5, 2.6)
+    sim.addBox(0, 4, 1, 5, "blue")
+    sim.addBox(2.5, 0, 2.6, 2.5, "green")
+    sim.addBox(2.5, 2.5, 3.5, 2.6, "green")
     # port, name, x, y, th, bounding Xs, bounding Ys, color
     # (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",

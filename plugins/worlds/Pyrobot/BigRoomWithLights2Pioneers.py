@@ -11,10 +11,14 @@ from pyrobot.simulators.pysim import TkSimulator, TkPioneer, \
 def INIT():
     # (width, height) pixels, (offset x, offset y) pixels, scale:
     sim = TkSimulator((600,600), (30, 586), 13.7) 
-    sim.addBox(0, 0, 40, 40) # x1, y1, x2, y2 in meters
-    sim.addLight(5, 5, 1) # (x, y) meters, brightness usually 1 (1 meter radius)
-    sim.addLight(5, 30, 1) # (x, y) meters, brightness usually 1 (1 meter radius)
-    sim.addWall(0, 20, 10, 10)  # x, y in meters
+    # x1, y1, x2, y2 in meters:
+    sim.addBox(0, 0, 40, 40)
+    # (x, y) meters, brightness usually 1 (1 meter radius), color (default "yellow")":
+    sim.addLight(5, 5, 1, "blue")
+    # (x, y) meters, brightness usually 1 (1 meter radius):
+    sim.addLight(5, 30, 1)
+    # x1, y1, x2, y2 in meters:
+    sim.addWall(0, 20, 10, 10)  
     # port, name, x, y, th, bounding Xs, bounding Ys, color (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",
                                   15, 30, 0.0,
