@@ -7,6 +7,20 @@ import Tkinter, time, math, pickle
 import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
+colorMap = {"red": (255, 0,0),
+            "green": (0, 255,0),
+            "blue": (0, 0,255),
+            "white": (255, 255, 255),
+            "black": (0, 0, 0),
+            "cyan": (0, 255, 255),
+            "yellow": (255, 255, 0),
+            "brown": (165, 42, 42),
+            "orange": (255, 165, 0),
+            "pink": (255, 192, 203),
+            "violet": (238, 130, 238),
+            "purple": (160, 32, 240),
+            }
+
 def sgn(v):
     if v >= 0: return +1
     else:      return -1
@@ -208,7 +222,7 @@ class Simulator:
                                 retval = d.groups
                         index += 1
             elif message[0] == "s": # "s_sonar_0" subscribe
-                if self.assoc[sockname[1]].display[message[1]] != -1:
+                if message[1] in self.assoc[sockname[1]].display and self.assoc[sockname[1]].display[message[1]] != -1:
                     self.assoc[sockname[1]].display[message[1]] = 1
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 retval = "ok"
@@ -254,7 +268,6 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ('View',[
             ['body', lambda: self.toggle("body")],                     
             ['boundingBox', lambda: self.toggle("boundingBox")],                     
-            ['bulb', lambda: self.toggle("bulb")],
             ['sonar', lambda: self.toggle("sonar")],
             ['light', lambda: self.toggle("light")],                     
             ['lightBlocked', lambda: self.toggle("lightBlocked")],                     
@@ -359,13 +372,14 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                          tag="line")
             segment.id = id
         for light in self.lights:
+            if light.type != "fixed": continue
             x, y, brightness, color = light.x, light.y, light.brightness, light.color
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
                                     self.scale_x(x + brightness), self.scale_y(y + brightness),
                                     tag="line", fill=color, outline="orange")
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
-            print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga)
+            print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga % (2 * math.pi))
         
     def addBox(self, ulx, uly, lrx, lry, color="white"):
         Simulator.addBox(self, ulx, uly, lrx, lry, color)
@@ -402,7 +416,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.display = {"body": 1, "boundingBox": 0, "bulb": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
+        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -499,8 +513,20 @@ class SimRobot:
                     gy = self._gy + (d_x * math.sin(a90) + d_y * math.cos(a90))
                     sum = 0.0
                     rgb = [0, 0, 0]
-                    for light in self.simulator.lights:
-                        x, y, brightness = light.x, light.y, light.brightness
+                    for light in self.simulator.lights: # for each light source:
+                        # these can be type == "fixed" and type == "bulb"
+                        if light.type == "fixed": 
+                            x, y, brightness, light_rgb = light.x, light.y, light.brightness, light.rgb
+                        else: # get position from robot:
+                            if light.robot == self: continue # don't read the bulb if it is on self
+                            ogx, ogy, oga, brightness, color = (light.robot._gx,
+                                                                light.robot._gy,
+                                                                light.robot._ga,
+                                                                light.brightness, light.robot.color)
+                            oa90 = oga + 90 * PIOVER180
+                            x = ogx + (light.x * math.cos(oa90) - light.y * math.sin(oa90))
+                            y = ogy + (light.x * math.sin(oa90) + light.y * math.cos(oa90))
+                            light_rgb = colorMap[color]
                         seg = Segment((x,y), (gx, gy))
                         a = -seg.angle() + 90 * PIOVER180
                         # see if line between sensor and light is blocked by any boundaries (including own bb)
@@ -511,7 +537,7 @@ class SimRobot:
                             intensity = (1.0 / (seg.length() * seg.length())) 
                             sum += intensity * brightness * 1000.0
                             for c in [0, 1, 2]:
-                                rgb[c] += light.rgb[c] * (1.0/ seg.length())
+                                rgb[c] += light_rgb[c] * (1.0/ seg.length())
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
                     d.scan[i] = min(sum, d.maxRange)
@@ -523,6 +549,7 @@ class SimRobot:
 
     def eat(self, amt):
         for light in self.simulator.lights:
+            if light != "fixed": continue
             dist = Segment((self._gx, self._gy), (light.x, light.y)).length()
             radius = max(light.brightness, self.radius)
             if dist <= radius and amt/1000.0 <= light.brightness:
@@ -663,8 +690,6 @@ class TkPioneer(SimRobot):
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
-        if self.display["bulb"] == 1:
-            pass
         ### Mouse methods:
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
                                        func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
@@ -678,21 +703,6 @@ class TkPioneer(SimRobot):
                                        func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
                                        func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
-
-
-colorMap = {"red": (255, 0,0),
-            "green": (0, 255,0),
-            "blue": (0, 0,255),
-            "white": (255, 255, 255),
-            "black": (0, 0, 0),
-            "cyan": (0, 255, 255),
-            "yellow": (255, 255, 0),
-            "brown": (165, 42, 42),
-            "orange": (255, 165, 0),
-            "pink": (255, 192, 203),
-            "violet": (238, 130, 238),
-            "purple": (160, 32, 240),
-            }
 
 class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
@@ -714,8 +724,11 @@ class Light:
         self.rgb = colorMap[color]
         self.type = "fixed"
 class BulbDevice(Light):
-    def __init__(self, color):
-        Light.__init__(self, 0, 0, 1.0, color=color)
+    """
+    Bulb will have color of robot.
+    """
+    def __init__(self, x, y):
+        Light.__init__(self, x, y, 1.0)
         self.type = "bulb"
         self.geometry = (0, 0, 0)
 class LightSensor:
