@@ -8,7 +8,7 @@ non-symbolic robots.
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import socket, pickle, threading, random
+import socket, pickle, threading, random, time
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
 
@@ -96,7 +96,14 @@ class TCPRobot(Robot):
 			self.socket.settimeout(1)
 		except:
 			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
-		self.socket.connect( self.addr )
+		done = 0
+		while not done:
+			try:
+				self.socket.connect( self.addr )
+				done = 1
+			except:
+				print "Waiting on PyrobotSimulator..."
+				time.sleep(1)
 		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
 		self.radius = self.getItem("radius")
 		self.properties = self.getItem("properties")
