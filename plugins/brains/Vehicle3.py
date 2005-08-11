@@ -6,19 +6,17 @@ D.S. Blank
 from pyrobot.brain import Brain
 
 class Vehicle(Brain):
-   # Only method you have to define for a brain is the step method:
-
    def setup(self):
-      self.robot.light[0].units = "raw"
+      self.forwardAmount = 0.2
+      self.turnAmount    = 0.3
 
    def step(self):
       left = min([s.distance() for s in self.robot.light[0]["front-left"]])
       right = min([s.distance() for s in self.robot.light[0]["front-right"]])
-      forward = .2
       if left > right: # lower means less light
-         self.move(forward,  0.3) # to the left
+         self.move(self.forwardAmount,  self.turnAmount)
       else:
-         self.move(forward, -0.3) # to the right
+         self.move(self.forwardAmount, -self.turnAmount)
 
 def INIT(engine):
    if engine.robot.type not in ['K-Team', 'Pyrobot']:

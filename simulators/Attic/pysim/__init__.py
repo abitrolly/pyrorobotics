@@ -29,9 +29,12 @@ class Simulator:
     def __init__(self, (width, height), (offset_x, offset_y), scale):
         self.robots = []
         self.lights = []
+        self.trail = []
+        self.maxTrailSize = 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
+        self.trailStart = 0
         self.world = []
         self.time = 0.0
-        self.timeslice = 100
+        self.timeslice = 100 # in milliseconds
         self.scale = scale
         self.offset_x = offset_x
         self.offset_y = offset_y
@@ -43,6 +46,7 @@ class Simulator:
         self.quit = 0
         self.properties = ["stall", "x", "y", "th", "thr", "energy"]
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
+        self.stepCount = 0
 
     def addWall(self, x1, y1, x2, y2):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
@@ -62,6 +66,7 @@ class Simulator:
 
     def addRobot(self, port, r):
         self.robots.append(r)
+        self.trail.append([None] * self.maxTrailSize)
         r.simulator = self
         self.assoc[port] = r
         self.ports.append(port)
@@ -69,6 +74,9 @@ class Simulator:
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
+
+    def addTrail(self, pos, index, robot):
+        self.trail[pos][index] = robot._gx, robot._gy, robot._ga
         
     def step(self):
         """
@@ -77,8 +85,14 @@ class Simulator:
         # might want to randomize this order so the same ones
         # don't always move first:
         self.time += (self.timeslice / 1000.0)
+        i = 0
         for r in self.robots:
             r.step(self.timeslice)
+            self.addTrail(i, self.stepCount % self.maxTrailSize, r)
+            i += 1
+        if self.stepCount > self.maxTrailSize:
+            self.trailStart = ((self.stepCount + 1) % self.maxTrailSize)
+        self.stepCount += 1
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
@@ -266,11 +280,12 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ('File', [['Reset', self.reset],
                       ['Exit', self.destroy]]),
             ('View',[
-            ['body', lambda: self.toggle("body")],                     
-            ['boundingBox', lambda: self.toggle("boundingBox")],                     
+            ['trail', lambda: self.toggle("trail")],                     
+            ['body', lambda: self.toggle("body")],                 
+            ['boundingBox', lambda: self.toggle("boundingBox")],
             ['sonar', lambda: self.toggle("sonar")],
             ['light', lambda: self.toggle("light")],                     
-            ['lightBlocked', lambda: self.toggle("lightBlocked")],                     
+            ['lightBlocked', lambda: self.toggle("lightBlocked")], 
             ]
              ),
             ]
@@ -377,6 +392,20 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
                                     self.scale_x(x + brightness), self.scale_y(y + brightness),
                                     tag="line", fill=color, outline="orange")
+        i = 0
+        for path in self.trail:
+            if self.robots[i].display["trail"] == 1:
+                if path[self.trailStart] != None:
+                    lastX, lastY, lastA = path[self.trailStart]
+                    lastX, lastY = self.scale_x(lastX), self.scale_y(lastY)
+                    color = self.robots[i].color
+                    for p in range(self.trailStart, self.trailStart + self.maxTrailSize):
+                        xya = path[p % self.maxTrailSize]
+                        if xya == None: break
+                        x, y = self.scale_x(xya[0]), self.scale_y(xya[1])
+                        self.canvas.create_line(lastX, lastY, x, y, fill=color)
+                        lastX, lastY = x, y
+            i += 1
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
             print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga % (2 * math.pi))
@@ -399,6 +428,15 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         Simulator.step(self)
         self.after(self.timeslice, self.step)
 
+    def addTrail(self, pos, index, robot):
+        Simulator.addTrail(self, pos, index, robot)
+        if robot.display["trail"] == 1:
+            xya = self.trail[pos][(index - 1) % self.maxTrailSize]
+            if xya != None:
+                x1, y1 = self.scale_x(xya[0]), self.scale_y(xya[1])
+                x2, y2 = self.scale_x(robot._gx), self.scale_y(robot._gy)
+                self.canvas.create_line(x1, y1, x2, y2, fill=robot.color)
+
 class SimRobot:
     def __init__(self, name, x, y, a, boundingBox = None, color = "red"):
         if " " in name:
@@ -416,7 +454,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0} # -1: don't automatically turn on
+        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -618,6 +656,9 @@ class SimRobot:
             dev.robot = self
 
 class TkPioneer(SimRobot):
+    def __init__(self, *args, **kwargs):
+        SimRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.4
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
         if command[:8] == "control-":
