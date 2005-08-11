@@ -239,8 +239,9 @@ class Simulator:
                 if message[1] in self.assoc[sockname[1]].display and self.assoc[sockname[1]].display[message[1]] != -1:
                     self.assoc[sockname[1]].display[message[1]] = 1
                 self.properties.append("%s_%s" % (message[1], message[2]))
+                self.assoc[sockname[1]].subscribed = 1
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light", "bulb"]: # sonar_0, light_0
+            elif message[0] in ["sonar", "laser", "light"]: # sonar_0, light_0
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
@@ -295,6 +296,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.after(100, self.step)
     def toggle(self, key):
         for r in self.robots:
+            if r.subscribed == 0: continue
             if r.display[key] == 1:
                 r.display[key] = 0
             else:
@@ -394,7 +396,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                     tag="line", fill=color, outline="orange")
         i = 0
         for path in self.trail:
-            if self.robots[i].display["trail"] == 1:
+            if self.robots[i].subscribed and self.robots[i].display["trail"] == 1:
                 if path[self.trailStart] != None:
                     lastX, lastY, lastA = path[self.trailStart]
                     lastX, lastY = self.scale_x(lastX), self.scale_y(lastY)
@@ -446,6 +448,7 @@ class SimRobot:
         self._gx = x
         self._gy = y
         self._ga = a
+        self.subscribed = 0
         self.x, self.y, self.a = (0.0, 0.0, 0.0) # localize
         self.boundingBox = boundingBox # ((x1, x2), (y1, y2)) NOTE: Xs then Ys of bounding box
         self.radius = max(max(map(abs, boundingBox[0])), max(map(abs, boundingBox[1]))) # meters
@@ -521,6 +524,7 @@ class SimRobot:
 
     def updateDevices(self):
         # measure and draw the new device data:
+        if self.subscribed == 0: return
         for d in self.devices:
             if d.type == "sonar":
                 i = 0
@@ -602,42 +606,44 @@ class SimRobot:
         Move the robot self.velocity amount, if not blocked.
         """
         if self._mouse: return # don't do any of this if mouse is down
-        vy = self.vx * math.cos(-self._ga) - self.vy * math.sin(-self._ga)
         vx = self.vx * math.sin(-self._ga) + self.vy * math.cos(-self._ga)
+        vy = self.vx * math.cos(-self._ga) - self.vy * math.sin(-self._ga)
         va = self.va
-        self.energy -= self.maxEnergyCostPerStep
         # proposed positions:
         p_x = self._gx + vx * (timeslice / 1000.0) # miliseconds
         p_y = self._gy + vy * (timeslice / 1000.0) # miliseconds
         p_a = self._ga + va * (timeslice / 1000.0) # miliseconds
-        # let's check if that movement would be ok:
-        a90 = p_a + 90 * PIOVER180
-        xys = map(lambda x, y: (p_x + x * math.cos(a90) - y * math.sin(a90),
-                                p_y + x * math.sin(a90) + y * math.cos(a90)),
-                  self.boundingBox[0], self.boundingBox[1])
         # for each of the robot's bounding box segments:
-        for i in range(len(xys)):
-            bb = Segment( xys[i], xys[i - 1])
-            # check each segment of the robot's bounding box for wall obstacles:
-            for w in self.simulator.world:
-                if bb.intersects(w):
-                    self.stall = 1
-                    self.updateDevices()
-                    self.draw()
-                    return
-            # check each segment of the robot's bounding box for other robots:
-            for r in self.simulator.robots:
-                if r.name == self.name: continue # don't compare with your own!
-                r_a90 = r._ga + 90 * PIOVER180
-                r_xys = map(lambda x, y: (r._gx + x * math.cos(r_a90) - y * math.sin(r_a90),
-                                          r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
-                            r.boundingBox[0], r.boundingBox[1])
-                for j in range(len(r_xys)):
-                    if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
+        if self.subscribed:
+            if vx != 0 or vy != 0 or va != 0:
+                self.energy -= self.maxEnergyCostPerStep
+            # let's check if that movement would be ok:
+            a90 = p_a + 90 * PIOVER180
+            xys = map(lambda x, y: (p_x + x * math.cos(a90) - y * math.sin(a90),
+                                    p_y + x * math.sin(a90) + y * math.cos(a90)),
+                      self.boundingBox[0], self.boundingBox[1])
+            for i in range(len(xys)):
+                bb = Segment( xys[i], xys[i - 1])
+                # check each segment of the robot's bounding box for wall obstacles:
+                for w in self.simulator.world:
+                    if bb.intersects(w):
                         self.stall = 1
                         self.updateDevices()
                         self.draw()
                         return
+                # check each segment of the robot's bounding box for other robots:
+                for r in self.simulator.robots:
+                    if r.name == self.name: continue # don't compare with your own!
+                    r_a90 = r._ga + 90 * PIOVER180
+                    r_xys = map(lambda x, y: (r._gx + x * math.cos(r_a90) - y * math.sin(r_a90),
+                                              r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
+                                r.boundingBox[0], r.boundingBox[1])
+                    for j in range(len(r_xys)):
+                        if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
+                            self.stall = 1
+                            self.updateDevices()
+                            self.draw()
+                            return
         # ok! move the robot, if it wanted to move
         self.stall = 0
         self.setPose(p_x, p_y, p_a)
