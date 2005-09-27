@@ -1092,9 +1092,9 @@ class Network:
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
     def getDataCrossValidation(self, pos):
-        set = {"input": self.inputs[i]}
+        set = {"input": self.inputs[pos]}
         if self.targets:
-            set["output"] = self.targets[i]
+            set["output"] = self.targets[pos]
         return set
     def getData(self, pos):
         """
