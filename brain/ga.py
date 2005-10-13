@@ -578,3 +578,69 @@ if __name__ == '__main__':
                       maxGeneration=0)
         ga.evolve()
 
+    print "Do you want to play mastermind? ",
+    if sys.stdin.readline().lower()[0] == 'y':
+        # composed of N colors, M places (usually 6 and 4)
+        # feedback is # in correct place, # of correct color
+        phrase = "abcdefghijklmnopqrstuvwxyz"
+        size = len(phrase)
+        primer = 0
+        print
+        class MasterMindGA(GA):
+            def fitnessFunction(self, i):
+                sumPosition = 0
+                sumColor = 0
+                guessed = []
+                correct = []
+                for c in range(len(self.pop.individuals[i].genotype)):
+                    if self.pop.individuals[i].genotype[c] == phrase[c]:
+                        sumPosition += 1
+                    else:
+                        guessed.append(self.pop.individuals[i].genotype[c])
+                        correct.append(phrase[c])
+                for g in guessed:
+                    if g in correct:
+                        correct.remove(g)
+                        sumColor += 1
+                if primer:
+                    if (sumColor + sumPosition > size/2):
+                        goodPosition = 10
+                        goodColor    =  1
+                    else:
+                        goodPosition = 0
+                        goodColor    = 1
+                else:
+                    goodPosition = 100
+                    goodColor    =   1
+                return sumColor * goodColor + sumPosition * goodPosition
+            def isDone(self):
+                print "Best:",
+                self.pop.bestMember.display()
+                return (phrase == string.join(self.pop.bestMember.genotype, ""))
+
+        ga = MasterMindGA(Population(300, Gene, size=size, mode='char',
+                                 verbose=1, elitePercent = .1,
+                                 crossoverPoints = 2),
+                      mutationRate=0.06, crossoverRate=0.6, verbose=1,
+                      maxGeneration=0)
+        ga.evolve()
+
+# 26 ** 26  = 6,156,119,580,207,157,310,796,674,288,400,203,776 6x10^36
+#  60 * 300 = 18,000
+# 224 * 300 = 67200
+
+# generations
+# 224 
+# 171 
+#  60 
+# 167
+# 404
+
+# With priming
+#  73
+# 126
+# 260
+
+# no overlap
+#  98
+# 158
