@@ -18,7 +18,7 @@ def INIT():
     # port, name, x, y, th, bounding Xs, bounding Ys, color
     # (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",
-                                  1, 1, -0.86,
+                                  3, 3, -0.86,
                                   ((.225, .225, -.225, -.225),
                                    (.175, -.175, -.175, .175))))
     # add some sensors:
