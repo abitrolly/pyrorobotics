@@ -7,13 +7,31 @@ The basic brain class. All brains derive from these classes.
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import threading, time, operator
+import threading, time, operator, copy
 import pyrobot.gui.console
 
-def avg(list):
-    """Simple avg function that works on sequences of numbers."""
-    sum = reduce(operator.add, list)
-    return sum / float(len(list))
+def avg(myList):
+    """Returns the arithemetic average of a sequences of numbers."""
+    if len(myList) < 1:
+        raise ValueError, "avg() arg is an empty sequence"
+    sum = reduce(operator.add, myList)
+    return sum / float(len(myList))
+
+def middle(myList):
+    """Returns the middle (len/2) value of a sequences of numbers."""
+    # If len == even, then next one
+    if len(myList) < 1:
+        raise ValueError, "middle() arg is an empty sequence"
+    return myList[len(myList)/2]
+
+def median(myList):
+    """Returns the middle (len/s) value of a sorted copy of a sequence."""
+    # If len == even, then next one
+    if len(myList) < 1:
+        raise ValueError, "median() arg is an empty sequence"
+    tmpList = copy.copy(myList)
+    tmpList.sort()
+    return tmpList[len(tmpList)/2]
 
 class Brain(threading.Thread):
     """
