@@ -11,8 +11,8 @@ class Vehicle(Brain):
    def setup(self):
       self.robot.light[0].units = "SCALED"
    def step(self):
-      leftSpeed  = self.robot.light[0]["left"][0].value  
-      rightSpeed = self.robot.light[0]["right"][0].value
+      leftSpeed  = max([s.value for s in self.robot.light[0]["left"]])
+      rightSpeed = max([s.value for s in self.robot.light[0]["right"]])
       print "leftSpeed, rightSpeed:", leftSpeed, rightSpeed
       self.motors(leftSpeed,  rightSpeed) 
 

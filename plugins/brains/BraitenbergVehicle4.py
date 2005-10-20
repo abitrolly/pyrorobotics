@@ -3,7 +3,7 @@ Braitenberg Vehicle4
 The motors' dependency on the sensors can be some non-linear function,
 such as a gaussian or a step function.  When two light sources are
 present and the step function is used, this vehicle will circle the
-the lights, slowing down when it approaches them. 
+the two lights, slowing down when it approaches them. 
 """
 
 from pyrobot.brain import Brain
@@ -30,10 +30,8 @@ class Vehicle(Brain):
    def setup(self):
       self.robot.light[0].units = "SCALED"
    def step(self):
-      left = self.robot.light[0]["right"][0].value
-      right = self.robot.light[0]["left"][0].value
-      leftSpeed = step(left)
-      rightSpeed = step(right)
+      leftSpeed = step(max([s.value for s in self.robot.light[0]["right"]]))
+      rightSpeed = step(max([s.value for s in self.robot.light[0]["left"]]))
       print "leftSpeed, rightSpeed:", leftSpeed, rightSpeed
       self.motors(leftSpeed,  rightSpeed) 
 
