@@ -185,9 +185,8 @@ class TCPRobot(Robot):
 		exp = None
 		if self.socket == 0: return "not connected"
 		if other != None: return # rotate,translate command ignored
-		if message == "quit" or message == "exit" or message == "end":
-			if self.connectionNum == 0: # the main one, let's close up!
-				self.socket.sendto(message, self.addr)
+		if message == "quit" or message == "exit" or message == "end" or message == "disconnect":
+			self.socket.sendto(message, self.addr)
 			self.socket.close()
 			self.socket = 0
 			self.lock.release()
@@ -207,6 +206,9 @@ class TCPRobot(Robot):
 		return exp
 
 	def disconnect(self):
-		# Close socket
-		self.getItem("quit")
+		if self.connectionNum == 0: # the main one, let's close up!
+			# Close socket
+			self.getItem("quit")
+		else:
+			self.getItem("disconnect")
 

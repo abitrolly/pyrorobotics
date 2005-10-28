@@ -44,6 +44,8 @@ class Handler(SocketServer.BaseRequestHandler):
                 time.sleep(.01)
                 continue
             retval = self.gui.process(request, sockname)
+            if request == "disconnect":
+                break
             try:
                 self.request.send(retval)
             except: # broken pipe, etc

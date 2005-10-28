@@ -148,6 +148,8 @@ class Simulator:
             retval = "ok"
             self.done = 1
             self.quit = 1
+        elif request == "disconnect":
+            retval = "ok"
         elif request == 'properties':
             retval = self.properties
         elif request == 'supportedFeatures':
