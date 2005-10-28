@@ -96,7 +96,7 @@ class Simulator:
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
-    def castRay(self, robot, x1, y1, a, maxRange, ignoreSelf = 1):
+    def castRay(self, robot, x1, y1, a, maxRange, ignore = "self"): # ignore: all, self, other
         hits = []
         x2, y2 = math.sin(a) * maxRange + x1, math.cos(a) * maxRange + y1
         seg = Segment((x1, y1), (x2, y2))
@@ -108,21 +108,24 @@ class Simulator:
                 if dist <= maxRange:
                     hits.append( (dist, retval, w.id) ) # distance, hit, id
         # go down list of robots, and see if you hit one:
-        for r in self.robots:
-            # but don't hit your own bounding box if ignoreSelf:
-            if r.name == robot.name and ignoreSelf: continue
-            a90 = r._ga + 90 * PIOVER180
-            xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
-                                    r._gy + x * math.sin(a90) + y * math.cos(a90)),
-                      r.boundingBox[0], r.boundingBox[1])
-            # for each of the bounding box segments:
-            for i in range(len(xys)):
-                w = Segment( xys[i], xys[i - 1])
-                retval = w.intersects(seg)
-                if retval:
-                    dist = Segment(retval, (x1, y1)).length()
-                    if dist <= maxRange:
-                        hits.append( (dist, retval, w.id) ) # distance, hit, id
+        if ignore != "all":
+            for r in self.robots:
+                # don't hit your own bounding box if ignore == "self":
+                if r.name == robot.name and ignore == "self": continue
+                # don't hit other's bounding box if ignore == "other":
+                if r.name != robot.name and ignore == "other": continue
+                a90 = r._ga + 90 * PIOVER180
+                xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
+                                        r._gy + x * math.sin(a90) + y * math.cos(a90)),
+                          r.boundingBox[0], r.boundingBox[1])
+                # for each of the bounding box segments:
+                for i in range(len(xys)):
+                    w = Segment( xys[i], xys[i - 1])
+                    retval = w.intersects(seg)
+                    if retval:
+                        dist = Segment(retval, (x1, y1)).length()
+                        if dist <= maxRange:
+                            hits.append( (dist, retval, w.id) ) # distance, hit, id
         if len(hits) == 0:
             return (None, None, None)
         else:
@@ -213,6 +216,7 @@ class Simulator:
                     retval = device.rgb[pos]
             elif message[0] == "h": # "h_v" bulb:value
                 self.assoc[sockname[1]].bulb.brightness = float(message[1])
+                self.redraw()
                 return "ok"
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
@@ -394,7 +398,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                          tag="line")
             segment.id = id
         for light in self.lights:
-            if light.type != "fixed": continue
+            if light.type != "fixed": continue 
             x, y, brightness, color = light.x, light.y, light.brightness, light.color
             self.canvas.create_oval(self.scale_x(x - brightness), self.scale_y(y - brightness),
                                     self.scale_x(x + brightness), self.scale_y(y + brightness),
@@ -576,8 +580,8 @@ class SimRobot:
                             light_rgb = colorMap[color]
                         seg = Segment((x,y), (gx, gy))
                         a = -seg.angle() + 90 * PIOVER180
-                        # see if line between sensor and light is blocked by any boundaries (including own bb)
-                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1, ignoreSelf = 0)
+                        # see if line between sensor and light is blocked by any boundaries (ignore other bb)
+                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1, ignore = "other")
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
@@ -671,6 +675,7 @@ class TkPioneer(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
         self.radius = 0.4
+        self.bulb = None
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
         if command[:8] == "control-":
@@ -738,6 +743,16 @@ class TkPioneer(SimRobot):
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      bx, by)
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black")
+            if self.bulb:
+                radius = .05 * self.simulator.scale
+                x = s_x(self._gx + self.bulb.x * math.cos(a90) - self.bulb.y * math.sin(a90))
+                y = s_y(self._gy + self.bulb.x * math.sin(a90) + self.bulb.y * math.cos(a90))
+                # color based on robot, or value?
+                color = "#%02x%02x%02x" % (min(max(self.bulb.brightness * 255,0),255),
+                                           min(max(self.bulb.brightness * 255,0),255), 0) # amount of yellow
+                # need to scale this bulb:
+                self.simulator.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
+                                                  tag="robot-%s" % self.name, fill=color, outline="black")
         if self.display["boundingBox"] == 1:
             xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
