@@ -147,6 +147,7 @@ class Device(object):
     def __init__(self, deviceType = 'unspecified', visible = 0):
         """Constructor for the device class."""
         self.window = 0
+        self.count = 0
         self.groups = {}
         self.active = 1
         self.visible = visible
