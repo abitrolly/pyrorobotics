@@ -211,6 +211,9 @@ class Simulator:
                 device = self.assoc[sockname[1]].getIndex("light", index)
                 if device:
                     retval = device.rgb[pos]
+            elif message[0] == "h": # "h_v" bulb:value
+                self.assoc[sockname[1]].bulb.brightness = float(message[1])
+                return "ok"
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "o": # "o_v" rotate:value
@@ -662,6 +665,7 @@ class SimRobot:
         if dev.type == "bulb":
             self.simulator.lights.append( dev )
             dev.robot = self
+            self.bulb = dev
 
 class TkPioneer(SimRobot):
     def __init__(self, *args, **kwargs):

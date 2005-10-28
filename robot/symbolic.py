@@ -72,10 +72,12 @@ class LightSimDevice(RangeSimDevice):
 	rgb = property(_getRgb)
 
 class BulbSimDevice(Device):
-	def __init__(self):
+	def __init__(self, robot):
 		Device.__init__(self)
 		self.type = "bulb"
-	
+		self._dev = robot
+	def setBrightness(self, value):
+		return self._dev.move("h_%f" % value)
 
 class TCPRobot(Robot):
 	"""
@@ -157,7 +159,7 @@ class TCPRobot(Robot):
 			return {"simulation": SimulationDevice(self)}
 		elif name == "bulb":
 			self.move("s_%s_%d" % (name, index))
-			return {name: BulbSimDevice()}
+			return {name: BulbSimDevice(self)}
 		elif name == "light":
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))
