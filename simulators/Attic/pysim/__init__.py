@@ -96,24 +96,26 @@ class Simulator:
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
-    def castRay(self, robot, x1, y1, a, maxRange, ignore = "self"): # ignore: all, self, other
+    def castRay(self, robot, x1, y1, a, maxRange, ignoreRobot = "self", ignoreWall = 0):
+        # ignoreRobot: all, self, other; 
         hits = []
         x2, y2 = math.sin(a) * maxRange + x1, math.cos(a) * maxRange + y1
         seg = Segment((x1, y1), (x2, y2))
         # go down list of walls, and see if it hit anything:
-        for w in self.world:
-            retval = w.intersects(seg)
-            if retval:
-                dist = Segment(retval, (x1, y1)).length()
-                if dist <= maxRange:
-                    hits.append( (dist, retval, w.id) ) # distance, hit, id
+        if not ignoreWall:
+            for w in self.world:
+                retval = w.intersects(seg)
+                if retval:
+                    dist = Segment(retval, (x1, y1)).length()
+                    if dist <= maxRange:
+                        hits.append( (dist, retval, w.id) ) # distance, hit, id
         # go down list of robots, and see if you hit one:
-        if ignore != "all":
+        if ignoreRobot != "all":
             for r in self.robots:
-                # don't hit your own bounding box if ignore == "self":
-                if r.name == robot.name and ignore == "self": continue
-                # don't hit other's bounding box if ignore == "other":
-                if r.name != robot.name and ignore == "other": continue
+                # don't hit your own bounding box if ignoreRobot == "self":
+                if r.name == robot.name and ignoreRobot == "self": continue
+                # don't hit other's bounding box if ignoreRobot == "other":
+                if r.name != robot.name and ignoreRobot == "other": continue
                 a90 = r._ga + 90 * PIOVER180
                 xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
                                         r._gy + x * math.sin(a90) + y * math.cos(a90)),
@@ -581,7 +583,8 @@ class SimRobot:
                         seg = Segment((x,y), (gx, gy))
                         a = -seg.angle() + 90 * PIOVER180
                         # see if line between sensor and light is blocked by any boundaries (ignore other bb)
-                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1, ignore = "other")
+                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1,
+                                                               ignoreRobot = "other", ignoreWall = 0)
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
