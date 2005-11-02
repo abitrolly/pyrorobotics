@@ -236,7 +236,7 @@ class Device(object):
         Device-level method to get all of the angles. Can translate units.
 
         >>> robot.sonar[0][3].angle(unit="radians")
-        >>> [s.angle(units="degrees") for s in robot.sonar[0]["left"]]
+        >>> [s.angle(unit="degrees") for s in robot.sonar[0]["left"]]
         """
         return [s.angle(*args, **kwargs) for s in self]
     def angles(self, subset = "all", *args, **kwargs):
@@ -244,6 +244,33 @@ class Device(object):
             return self[subset].angle(*args, **kwargs)
         else:
             return [s.angle(*args, **kwargs) for s in self[subset]]
+    def span(self, start, stop, units="degrees", subset="all"):
+        """
+        Device-level method to get sensor readings between two angles (inclusive).
+
+        >>> robot.sonar[0].span(90, -90)
+        >>> robot.range.span(10, -10)
+        >>> robot.range.span(1.57, -1.57, "radians")
+        >>> robot.range.span(90, -90, subset="left")
+        """
+        def between(val):
+            if start >= 0 and stop >= 0:
+                if start <= stop:
+                    return start <= val <= stop
+                else:
+                    return stop <= val <= start
+            elif start <= 0 and stop <= 0:
+                if start <= stop:
+                    return start <= val <= stop
+                else:
+                    return stop <= val <= start
+            else: # different sides
+                if start > 0:
+                    return 0 <= val <= start or stop <= val <= 0
+                else:
+                    return start <= val <= -180 or stop <= val <= 180
+            
+        return [s for s in self[subset] if between(s.angle(unit=units))]
     def getSensorValue(self, pos):
         """
         Returns a specific SensorValue from the range device.

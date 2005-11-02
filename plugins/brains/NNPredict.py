@@ -38,14 +38,12 @@ class NNPredict(Brain):
       target_trans  = 1.0
       target_rotate = 0.5
       # left and right and front:
-      self.min = min([s.distance() for s in self.robot.range["front"]])
-      left = min([s.distance() for s in self.robot.range["front-left"]])
-      right = min([s.distance() for s in self.robot.range["front-right"]])
+      self.min = min([s.distance() for s in self.robot.range.span(45, -45)])
+      left = min([s.distance() for s in self.robot.range.span(45, -45)])
+      right = min([s.distance() for s in self.robot.range.span(45, -45)])
       if left < 1.5 or right < 1.5:
          target_trans = 0.5
-      elif left < 1.8:
-         target_trans = 0.75
-      elif right < 1.8:
+      elif left < 3.5 or right < 3.5:
          target_trans = 0.75
       return [target_trans, target_rotate]
 

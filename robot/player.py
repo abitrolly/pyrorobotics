@@ -118,6 +118,8 @@ class PlayerSonarDevice(PlayerDevice):
                            'front-left' : (1,2,3),
                            'front-right' : (4, 5, 6),
                            'front-all' : (1,2, 3, 4, 5, 6),
+                           'front-to-back-left': (3, 2, 1, 0, 15, 14, 13, 12), # in order
+                           'front-to-back-right': (4, 5, 6, 7, 8, 9, 10, 11), # in order
                            'left' : (0, 15), 
                            'right' : (7, 8), 
                            'left-front' : (0,), 

@@ -222,6 +222,9 @@ class Simulator:
                 return "ok"
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
+            elif message[0] == "v": # "v_v" global step scalar:value
+                self.assoc[sockname[1]].stepScalar = float(message[1])
+                retval = "ok"
             elif message[0] == "o": # "o_v" rotate:value
                 retval = self.assoc[sockname[1]].rotate(float(message[1]))
             elif message[0] == "d": # "d_sonar" display:keyword
@@ -456,6 +459,7 @@ class SimRobot:
             name = name.replace(" ", "_")
         self.name = name
         # set them here manually: (afterwards, use setPose)
+        self.stepScalar = 1.0 # normally = 1.0
         self._gx = x
         self._gy = y
         self._ga = a
@@ -618,8 +622,10 @@ class SimRobot:
         Move the robot self.velocity amount, if not blocked.
         """
         if self._mouse: return # don't do any of this if mouse is down
-        vx = self.vx * math.sin(-self._ga) + self.vy * math.cos(-self._ga)
-        vy = self.vx * math.cos(-self._ga) - self.vy * math.sin(-self._ga)
+        gvx = self.vx * self.stepScalar
+        gvy = self.vy * self.stepScalar
+        vx = gvx * math.sin(-self._ga) + gvy * math.cos(-self._ga)
+        vy = gvx * math.cos(-self._ga) - gvy * math.sin(-self._ga)
         va = self.va
         # proposed positions:
         p_x = self._gx + vx * (timeslice / 1000.0) # miliseconds
@@ -840,6 +846,42 @@ class PioneerFrontSonars(RangeSensor):
                        'back-left' : [], 
                        'back' : [],
                        'back-all' : []}
+        
+class Pioneer16Sonars(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self,
+            "sonar", geometry = (( 0.10, 0.175, 90 * PIOVER180),
+                                 ( 0.17, 0.15, 65 * PIOVER180),
+                                 ( 0.20, 0.11, 40 * PIOVER180),
+                                 ( 0.225, 0.05, 15 * PIOVER180),
+                                 ( 0.225,-0.05,-15 * PIOVER180),
+                                 ( 0.20,-0.11,-40 * PIOVER180),
+                                 ( 0.17,-0.15,-65 * PIOVER180),
+                                 ( 0.10,-0.175,-90 * PIOVER180),
+                                 ( -0.10,-0.175,-90 * PIOVER180),
+                                 ( -0.17,-0.15, (180 + 65) * PIOVER180),
+                                 ( -0.20,-0.11, (180 + 40) * PIOVER180),
+                                 ( -0.225,-0.05,(180 + 15) * PIOVER180),
+                                 ( -0.225, 0.05,(180 - 15) * PIOVER180),
+                                 ( -0.20, 0.11, (180 - 40) * PIOVER180),
+                                 ( -0.17, 0.15, (180 - 65) * PIOVER180),
+                                 ( -0.10, 0.175,(180 - 90) * PIOVER180)),
+            arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+        self.groups = {'all': range(16),
+                       'front': (3, 4),
+                       'front-left' : (1,2,3),
+                       'front-right' : (4, 5, 6),
+                       'front-all' : (1,2, 3, 4, 5, 6),
+                       'left' : (0, 15), 
+                       'right' : (7, 8), 
+                       'left-front' : (0,), 
+                       'right-front' : (7, ),
+                       'left-back' : (15, ),
+                       'right-back' : (8, ),
+                       'back-right' : (9, 10, 11),
+                       'back-left' : (12, 13, 14), 
+                       'back' : (11, 12),
+                       'back-all' : ( 9, 10, 11, 12, 13, 14)}
         
 class PioneerFrontLightSensors(LightSensor):
     def __init__(self):
