@@ -98,6 +98,12 @@ class Engine:
          #reload(file)
          #reload(self.brainfile)
 
+   def osRunPython(self, command):
+      if os.name in ['nt', 'dos', 'os2']:
+         os.system("start python " + command)
+      else:
+         os.system(command)
+
    def loadSimulator(self, file, worldfile):
       """Finds and loads the simulator."""
       import string
