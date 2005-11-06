@@ -26,16 +26,36 @@ class Art:
             unit = labeled_unit[1]
             if comparison <= lensq/dimension: break
             if inner(unit, input)/lensq >= vigilance:
-                print "accept", labeled_unit[0], fmt(labeled_unit[1])
+                print "\naccept", labeled_unit[0], fmt(labeled_unit[1])
                 print "   for", label, fmt(input)
                 new_weights = [x * y for (x, y) in zip(unit, input)]
                 labeled_unit[1] = new_weights
                 labeled_unit[0] += label
-                print "become", labeled_unit[0], fmt(labeled_unit[1])
+                print "\nbecome", labeled_unit[0], fmt(labeled_unit[1])
                 return
-        print "add", label, fmt(input)
+        print "\nadd", label, fmt(input)
         self.labeled_units.append( [label, input])
                 
+    def test(self, labels, inputs):
+        print "total category vectors:", len(self.labeled_units)
+        for (label, input) in zip(labels, inputs):
+            result = self.test1(label, input)
+            print "\nmatch", label, fmt(input)
+            print "to", result[0], fmt(result[1])
+
+    def test1(self, label, input):
+        bestUnit = None
+        bestValue = -1
+        for u in self.labeled_units:
+            unit = u[1]
+            comparison = inner(unit, input)/inner(unit, unit)
+            #print 'comparison is', comparison
+            if comparison >= bestValue:
+                bestUnit = u
+                bestValue = comparison
+        return bestUnit
+
+
 if __name__ == "__main__":
     vigilance = .5
     f = open("letters.50.in")
@@ -47,5 +67,5 @@ if __name__ == "__main__":
         inputs.append([int(v) for v in line[1:]])
     f.close()
     network = Art()
-    network.train(labels, inputs, vigilance)
-    
+    network.train(labels[:26], inputs[:26], vigilance)
+    network.test(labels[26:], inputs[26:])
