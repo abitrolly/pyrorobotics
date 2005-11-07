@@ -315,11 +315,19 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ['lightBlocked', lambda: self.toggle("lightBlocked")], 
             ]
              ),
+            ('Options', [['lights visible above walls',
+                          lambda: self.toggleOption("lightAboveWalls")]]),
             ]
         for entry in menu:
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
         self.shapes = []
         self.after(100, self.step)
+    def toggleOption(self, key):
+        if key == "lightAboveWalls":
+            self.lightAboveWalls = not self.lightAboveWalls
+        else:
+            raise AttributeError, "invalid key: '%s'" % key
+        self.redraw()
     def toggle(self, key):
         for r in self.robots:
             if r.subscribed == 0: continue
@@ -328,6 +336,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             else:
                 r.display[key] = 1
             r._last_pose = (-1, -1, -1)
+        self.redraw()
     def reset(self):
         for r in self.robots:
             r._gx, r._gy, r._ga = r._xya
