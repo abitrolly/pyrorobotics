@@ -24,6 +24,9 @@ class SimulationDevice(Device):
 	def getPose(self, name, x = 0, y = 0, thr = 0):
 		retval = self._dev.move("c_%s" % (name, ))
 		return retval
+	def eval(self, command):
+		retval = self._dev.move("!%s" % (command,))
+		return retval
 
 class RangeSimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):

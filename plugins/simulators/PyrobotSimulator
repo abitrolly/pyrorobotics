@@ -5,7 +5,7 @@ A simple symbloic simulator for symbolic worlds
 like the VacuumCleanerWorld (after Russell and Norvig).
 """
  
-import SocketServer, sys, threading, time, string
+import SocketServer, socket, sys, threading, time, string
 
 def INIT(filename):
     path = filename.split("/")
@@ -59,6 +59,7 @@ class Thread(threading.Thread):
         self.server = Server(('', port),  Handler, gui)
         try:
             self.server.socket.settimeout(1) # checks to see if need to quit
+            #self.server.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         except:
             print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
 

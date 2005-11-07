@@ -39,6 +39,7 @@ class Simulator:
         self.offset_x = offset_x
         self.offset_y = offset_y
         self._width, self._height = width, height
+        self.lightAboveWalls = 0
         # connections to pyrobot:
         self.ports = []
         self.assoc = {}
@@ -96,13 +97,15 @@ class Simulator:
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
-    def castRay(self, robot, x1, y1, a, maxRange, ignoreRobot = "self", ignoreWall = 0):
+    def castRay(self, robot, x1, y1, a, maxRange, ignoreRobot = "self",
+                rayType = "range"):
         # ignoreRobot: all, self, other; 
         hits = []
         x2, y2 = math.sin(a) * maxRange + x1, math.cos(a) * maxRange + y1
         seg = Segment((x1, y1), (x2, y2))
         # go down list of walls, and see if it hit anything:
-        if not ignoreWall:
+        # check if it is not a light ray, or if it is, and not above walls:
+        if (rayType != "light") or (rayType == "light" and not self.lightAboveWalls):
             for w in self.world:
                 retval = w.intersects(seg)
                 if retval:
@@ -189,6 +192,15 @@ class Simulator:
             retval = self.assoc[sockname[1]].a
         elif request == 'th':
             retval = self.assoc[sockname[1]].a / PIOVER180
+        elif len(request) > 1 and request[0] == '!': # eval
+            try:
+                retval = eval(request[1:])
+            except:
+                try:
+                    exec request[1:]
+                    retval = "ok"
+                except:
+                    retval = "error"
         else:
             # assume a package
             message = request.split("_")
@@ -588,7 +600,7 @@ class SimRobot:
                         a = -seg.angle() + 90 * PIOVER180
                         # see if line between sensor and light is blocked by any boundaries (ignore other bb)
                         dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1,
-                                                               ignoreRobot = "other", ignoreWall = 0)
+                                                               ignoreRobot = "other", rayType = "light")
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
