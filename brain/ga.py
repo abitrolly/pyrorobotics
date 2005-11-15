@@ -275,6 +275,8 @@ class GA:
     Class which defines everything needed to run a GA.
     """
     def __init__(self, population, **args):
+        self.averageLog = None
+        self.bestLog = None
         self.mutationRate = 0.1
         self.crossoverRate = 0.6
         self.maxGeneration = 0
@@ -311,7 +313,13 @@ class GA:
             print "Initial population"
         self.pop.statistics()
         if self.verbose > 1:
-            self.display()        
+            self.display()
+
+    def logAverageFitness(self, filename="GAAvgFitness"):
+        self.averageLog = open(filename, 'w')
+
+    def logBestFitness(self, filename="GABestFitness"):
+        self.bestLog = open(filename, 'w')
 
     def isDone(self):
         # Override this
@@ -374,6 +382,14 @@ class GA:
             self.generate()
             self.applyFitnessFunction()
             self.pop.statistics()
+            if self.bestLog != None:
+                self.bestLog.write("%d %5.2f\n" %
+                                          (self.generation,
+                                           self.pop.bestMember.fitness))
+            if self.averageLog != None:
+                self.averageLog.write("%d %5.2f\n" %
+                                         (self.generation,
+                                          self.pop.avgFitness))
             if self.verbose > 1:
                 self.display()
             if self.isDone():
