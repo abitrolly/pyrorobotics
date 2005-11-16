@@ -370,4 +370,5 @@ if __name__ == "__main__":
   outputs, errors = a.testAll(testSet)
   a.displayConfusionMatrix(outputs, testSet)
   print 'Errors: %1.2f%%' % (errors*100.0/len(testSet))
+  print a
   #################################################################
