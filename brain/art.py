@@ -13,9 +13,6 @@ def complementCode(data):
     r.append(n)
     r.append(1 - n)
   return r
-def format(list, dec = 1):
-  """ Formats a list for display. dec is decimal places """
-  return "[" + ", ".join([("%."+("%d"%dec)+"f") % num for num in list]) + "]"
 def inner(a, b):
   import operator
   return float(reduce(operator.add, [x * y for (x, y) in zip(a, b)]))    
@@ -30,6 +27,29 @@ def fuzzyAnd(a, b):
     return 0.0
   else:
     return match/total
+def format(list, dec = 1):
+  """ Formats a list for display. dec is decimal places """
+  return "[" + ", ".join([("%."+("%d"%dec)+"f") % num for num in list]) + "]"
+def mformat(matrix, dec = 1, width = 5, missing = '.'):
+  retval = "  " + (" " * width)
+  for col in range(len(matrix[0])):
+    retval += ("%" + ("%d" % width) + "d") % (col, )
+  retval += "\n"
+  retval += (" " * width) + " +"
+  for col in range(len(matrix[0])):
+    retval += "-" * width
+  retval += "\n"
+  r = 0
+  for row in matrix:
+    retval += ("%" + ("%d" % width) + "d |") % r
+    for num in row:
+      if num == None: 
+        retval += ("%" + ("%d" % width) + "s") % missing
+      else:
+        retval += ("%" + ("%d" % width) + "d") % (num, )
+    retval += "\n"
+    r += 1
+  return retval
 
 class ART:
   """ Adaptive Resonance Theory, Fuzzy ART class """
@@ -63,14 +83,14 @@ class ART:
       i += 1
     return retval
 
-  def train(self, data, verbose = 0):
+  def train(self, data, label = None, verbose = 0):
     """ Train all patterns. """
     if verbose: print "Training..."
-    retval = [self.step(pattern, verbose) for pattern in data]
+    retval = [self.step(pattern, label, verbose) for pattern in data]
     if verbose: print "Training done!"
     return retval
 
-  def step(self, currentData, verbose = 0):
+  def step(self, currentData, label = None, verbose = 0):
     """ Train one pattern. Returns category number. """
     if self.complementCode: currentData = complementCode(currentData)
     print "Input:", format(currentData)
@@ -164,6 +184,9 @@ class ART:
           else:
             currentSortedIndex += 1
 
+  def categorizeAll(self, input, verbose = 0):
+    return [self.categorize(x, verbose) for x in input]
+    
   def displayConfusionMatrix(self, outputs, testSet):
     # calculate and print confusion matrix
     size = max(outputs) + 1
@@ -243,7 +266,7 @@ class ARTMap(ART):
       else:
         if self.mapField[currentCategory]==supervisor:
           change=self.updateWeights(data,self.weight[currentCategory])
-          if verbose: print "Update:", change
+          if verbose: print "Update:", currentCategory
           return change
         else:
           v=match+0.000001
@@ -290,13 +313,20 @@ class ARTMap(ART):
   def classifyAll(self, input):
     return [self.classifyOne(x) for x in input]
     
+  def classifyRange(self):
+    retval = [[0 for i in range(10)] for j in range(10)]
+    for row in range(10):
+      for col in range(10):
+        retval[col][row] = self.classifyOne((col/10., row/10.))
+    return retval
+    
   def testAll(self, patterns):
     output=[]
     error=0
     for data,supervisor in patterns:
       guess=self.classifyOne(data)
       output.append(guess)
-      if guess!=supervisor:
+      if guess != supervisor:
         error+=1
     return output, error
 
@@ -327,6 +357,19 @@ if __name__ == "__main__":
   print net.train(input, verbose = 1)
   print "net.categorize((0.2, 0.4)) =>", net.categorize((0.2,0.4))
   print net
+  #################################################################
+  # Test ART:
+  f = open("letters.50.in")
+  labels = []
+  inputs = []
+  for line in f.readlines():
+    line = line.split()
+    labels.append(line[0])
+    inputs.append([int(v) for v in line[1:]])
+  f.close()
+  network = ART(35, vigilance=.5)
+  network.train(inputs[:26], verbose = 1)
+  network.categorizeAll(inputs[26:])
   #################################################################
   # Test ARTMap:
   # some of this should become part of the class:
@@ -372,3 +415,9 @@ if __name__ == "__main__":
   print 'Errors: %1.2f%%' % (errors*100.0/len(testSet))
   print a
   #################################################################
+  # XOR ARTMap:
+  net = ARTMap(2, 2, complementCode = 1)
+  patterns = [([1,1], 0), ([1,0], 1), ([0,1], 1), ([0,0], 0)]
+  net.train(patterns, verbose = 1)
+  print mformat(net.classifyRange(), width=2)
+  print net
