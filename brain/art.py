@@ -5,6 +5,10 @@ at http://www.carleton.ca/ics/courses/cgsc5001/index_old.html
 
 Author: D.S. Blank <dblank@cs.brynmawr.edu>
 """
+## Current limitations:
+#  - ARTMap supervisor is a symbol, whether a string, number, or list
+#  - not certain about this fuzzyAnd business
+
 # useful functions
 def complementCode(data):
   """ Constructs complement code pairs [n, 1 - n, ...] for n in data """
@@ -50,7 +54,24 @@ def mformat(matrix, dec = 1, width = 5, missing = '.'):
     retval += "\n"
     r += 1
   return retval
-
+def makePattern(dict, symbol, size, localist = 0):
+  import random
+  if symbol in dict:
+    return dict[symbol]
+  else:
+    if localist:
+      pattern = [0] * size
+      pattern[random.randint(0, size - 1)] = 1
+    else:
+      pattern = [random.randint(0, 1) for i in range(size)]
+    while pattern in dict.values():
+      if localist:
+        pattern = [0] * size
+        pattern[random.randint(0, size - 1)] = 1
+      else:
+        pattern = [random.randint(0, 1) for i in range(size)]
+    dict[symbol] = pattern
+    return pattern
 class ART:
   """ Adaptive Resonance Theory, Fuzzy ART class """
   def __init__(self, numFeatures, maxNumCategories=None, vigilance=0.75,
@@ -215,7 +236,7 @@ class ART:
 
 class ARTMap(ART):
   """ ARTMap extends ART. """
-  def __init__(self, numFeatures, numClasses, maxNumCategories=None,
+  def __init__(self, numFeatures, maxNumCategories=None,
                vigilance=0.75, bias=0.000001, learningRate=1.0,
                complementCode=0):
     self.weight=[]
@@ -225,7 +246,7 @@ class ARTMap(ART):
     self.numFeatures=numFeatures
     self.numCategories=0
     self.maxNumCategories=maxNumCategories
-    self.numClasses=numClasses
+    #self.numClasses=numClasses
     self.vigilance=vigilance
     self.bias=bias
     self.learningRate=learningRate
@@ -233,7 +254,7 @@ class ARTMap(ART):
   def train(self, patterns, verbose = 1):
     changes=0
     if verbose: print "Training..."
-    for data,supervisor in patterns:
+    for data, supervisor in patterns:
       if self.complementCode: data=complementCode(data)
       changes += self.step(data, supervisor, verbose)
     if verbose: print "Training done!"
@@ -320,13 +341,14 @@ class ARTMap(ART):
         retval[col][row] = self.classifyOne((col/10., row/10.))
     return retval
     
-  def testAll(self, patterns):
+  def testAll(self, patterns, verbose=0):
     output=[]
     error=0
     for data,supervisor in patterns:
       guess=self.classifyOne(data)
       output.append(guess)
       if guess != supervisor:
+        if verbose: print "ERROR:",data,"guess:",guess,"answer:",supervisor
         error+=1
     return output, error
 
@@ -408,7 +430,7 @@ if __name__ == "__main__":
   #  if you use a bigger test set...)
   testSet = patterns[trainingSetCount:trainingSetCount+testSetCount]
   # make the network and train it
-  a = ARTMap(features, classes)
+  a = ARTMap(features) #, classes)
   a.train(trainSet, verbose = 1)
   outputs, errors = a.testAll(testSet)
   a.displayConfusionMatrix(outputs, testSet)
@@ -416,8 +438,23 @@ if __name__ == "__main__":
   print a
   #################################################################
   # XOR ARTMap:
-  net = ARTMap(2, 2, complementCode = 1)
+  net = ARTMap(2, complementCode = 1)
   patterns = [([1,1], 0), ([1,0], 1), ([0,1], 1), ([0,0], 0)]
   net.train(patterns, verbose = 1)
   print mformat(net.classifyRange(), width=2)
   print net
+  #################################################################
+  # letter identification
+  net = ARTMap(35, complementCode = 0)
+  fp = open("letters.50.in")
+  pats = []
+  catpat = {}
+  for line in fp:
+    category = line[0]
+    pattern = [int(num) for num in line[2:].split()]
+    pats.append((pattern, makePattern(catpat, category, 26, localist = 1)))
+  net.train(pats[:26], verbose = 1)
+  print net
+  outputs, errors = net.testAll(pats[27:], verbose = 1)
+  #net.displayConfusionMatrix(outputs, pats[27:])
+  print 'Errors: %1.2f%%' % (errors*100.0/len(pats[27:]))
