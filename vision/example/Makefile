@@ -1,14 +1,14 @@
 
-ifeq ($(PYRO),)
-$(warning You do not have a PYRO environment variable set.)
-$(warning Try:    export PYRO=/usr/local/pyro)
+ifeq ($(PYROBOT),)
+$(warning You do not have a PYROBOT environment variable set.)
+$(warning Try:    export PYROBOT=/usr/local/pyro)
 $(error )
 endif
 
-include $(PYRO)/Makefile.cfg
+include $(PYROBOT)/Makefile.cfg
 
 OBJS = _myvision.so
-INCLUDE = -I$(PYRO)/camera/device/
+INCLUDE = -I$(PYROBOT)/camera/device/
 CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 	-D_POSIX_THREAD_SAFE_FUNCTIONS \
 	-D_REENTRANT -DPOSIX \
@@ -17,7 +17,7 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 LIBS= -lstdc++ -ldl -lpthread 
 
-_myvision.so: myvision.o myVision.o $(PYRO)/camera/device/Device.o
+_myvision.so: myvision.o myVision.o $(PYROBOT)/camera/device/Device.o
 	$(CC) $(CPPFLAGS) -shared $^ -o $@ $(LIBS)
 
 myVision.o:: myVision.cpp
