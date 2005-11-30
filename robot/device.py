@@ -353,14 +353,14 @@ class Device(object):
             elif self.units.upper() == "RAW":
                 return raw
             elif (self.units.upper() == "METERS" or
-                  self.units.upper() == "METERS"):
+                  self.units.upper() == "M"):
                 meters = raw
             elif self.units.upper() == "CM":
                 meters = raw / 100.0
             elif self.units.upper() == "MM":
                 meters = raw / 1000.0
             else:
-                raise AttributeError, "can't convert from units"
+                raise AttributeError, ("can't convert from units '%s'" % self.units)
             # now, have it in meters, want to go to rawunits:
             if (self.rawunits.upper() == "METERS" or
                 self.rawunits.upper() == "M"):
@@ -370,7 +370,7 @@ class Device(object):
             elif self.rawunits.upper() == "MM":
                 return meters * 1000.0
             else:
-                raise AttributeError, "can't convert to rawunits"
+                raise AttributeError, ("can't convert to rawunits '%s'" % self.rawunits)
         # next, add noise, if you want:
         if noise > 0:
             if random.random() > .5:
@@ -405,7 +405,7 @@ class Device(object):
                 return raw
             # else, no conversion necessary
         else:
-            raise AttributeError, "device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.rawunits, units)
+            raise AttributeError, ("device can't convert '%s' to '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % (self.rawunits, units))
         # now, it is in meters. convert it to output units:
         if units == "ROBOTS":
             return raw / (self.radius * 2) # in meters
@@ -416,7 +416,7 @@ class Device(object):
         elif units == "METERS" or units == "M":
             return raw 
         else:
-            raise TypeError, "Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units
+            raise TypeError, ("Units are set to invalid type '%s': use M, CM, MM, ROBOTS, SCALED, or RAW" % units)
 
     def getVisible(self):
         """Returns the .visible of the sensor."""
