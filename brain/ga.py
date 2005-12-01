@@ -39,6 +39,8 @@ class Gene:
         self.bias = 0.5
         self.min = -1 # inclusive
         self.max = 1 # inclusive
+        self.imin = -1 # inclusive, initial
+        self.imax = 1 # inclusive, initial
         self.maxStep = 1
         self.args = args
         self.alphabet = "abcdefghijklmnopqrstuvwxyz "
@@ -46,8 +48,14 @@ class Gene:
             self.verbose = args['verbose']
         if args.has_key('min'):
             self.min = args['min']
+            self.imin = args['min']
         if args.has_key('max'):
             self.max = args['max']
+            self.imax = args['max']
+        if args.has_key('imin'):
+            self.imin = args['imin']
+        if args.has_key('imax'):
+            self.imax = args['imax']
         if args.has_key('maxStep'):
             self.maxStep = args['maxStep']
         if args.has_key('crossoverPoints'):
@@ -61,9 +69,9 @@ class Gene:
                 self.genotype.append( random.random() < self.bias)
             elif self.mode == 'integer':
                 self.genotype.append( math.floor(random.random() *
-                                                 (self.max - self.min + 1)) + self.min)
+                                                 (self.imax - self.imin + 1)) + self.imin)
             elif self.mode == 'float':
-                self.genotype.append( (random.random() * (self.max - self.min)) + self.min)
+                self.genotype.append( (random.random() * (self.imax - self.imin)) + self.imin)
             elif self.mode == 'char':
                 self.genotype.append( self.alphabet[int(random.random() * len(self.alphabet)) ] )
             else:
@@ -546,7 +554,8 @@ if __name__ == '__main__':
             self.network = n
             GA.__init__(self,
                         Population(cnt, Gene, size=len(g), verbose=1,
-                                   min=-1, max=1, maxStep = 1,
+                                   min=-10, max=10, maxStep = 1,
+                                   imin=-10, imax=10, 
                                    elitePercent = .01),
                         mutationRate=0.05, crossoverRate=0.6,
                         maxGeneration=400, verbose=1)
