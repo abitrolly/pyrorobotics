@@ -4,6 +4,7 @@ import pyrobot.gui.widgets.TKwidgets as TKwidgets
 from pyrobot.system.version import *
 from pyrobot.engine import *
 from pyrobot.gui.widgets.tree import TreeWindow
+from pyrobot.gui.widgets.TKwidgets.Picklist import Picklist
 from pyrobot.robot.device import Device
 import pyrobot.system as system
 import pyrobot.system.share as share
@@ -81,8 +82,8 @@ class TKgui(Tkinter.Toplevel, gui):
                           ]),
               ('Load',[['Server...', self.loadSim],
                        ['Robot...',self.loadRobot],
-                       ['Brain...',self.loadBrain],
                        ['Devices...',self.loadDevice],
+                       ['Brain...',self.loadBrain],
                        #['Built-in Devices', None],
                        ]),
               ('Robot',[['Joystick', self.joystick],
@@ -111,6 +112,7 @@ class TKgui(Tkinter.Toplevel, gui):
                        ])
               ]
       
+      self.var = Tkinter.StringVar()
       button1 = [('Step',self.stepEngine),
                  ('Run',self.runEngine),
                  ('Stop',self.stopEngine),
@@ -135,6 +137,7 @@ class TKgui(Tkinter.Toplevel, gui):
       # Display:
       self.loadables = [ ('button', 'Server:', self.loadSim, self.editWorld, 0), # 0 = False
                          ('button', 'Robot:', self.loadRobot, self.editRobot, self.makeRobotTree),
+                         ('picklist', 'Devices:', self.loadDevice, self.editDevice, self.viewDevice), 
                          ('button', 'Brain:', self.loadBrain, self.editBrain, self.makeBrainTree), 
                         ]
       self.buttonArea = {}
@@ -175,6 +178,45 @@ class TKgui(Tkinter.Toplevel, gui):
       #self.tk_focusFollowsMouse()
       self.commandEntry.focus_force()
       self.inform("Pyrobot Version " + version() + ": Ready...")
+      self.updateDeviceList()
+
+   def freeRobot(self):
+      self.updateDeviceList(clear = 1)
+      gui.freeRobot(self)
+
+   def loadDevice(self):
+      gui.loadDevice(self)
+      self.updateDeviceList()
+
+   def loadRobot(self):
+      gui.loadRobot(self)
+      self.updateDeviceList()
+
+   def updateDeviceList(self, clear = 0):
+      devices = []
+      selDevice = None
+      if not clear:
+         if self.engine and self.engine.robot:
+            for devType in self.engine.robot.getDevices():
+               for serv in self.engine.robot.__dict__[devType]:
+                  devices.append(serv.title)
+            if devices != []:
+               selDevice = devices[-1]
+      else:
+         devices = [""]
+         selDevice = ""
+      self.textArea["Devices:"].setMenu(devices, selDevice)
+
+   def editDevice(self, deviceName):
+      pass # this is just selecting it from the menu
+
+   def viewDevice(self, deviceName = None):
+      deviceExp = "self.engine.robot." + self.var.get()
+      try:
+         dev = eval(deviceExp)
+         dev.makeWindow()
+      except:
+         pass
 
    def pasteCallback(self, full_id):
       self.commandEntry.insert('end', self.makeExpression(full_id))
@@ -407,6 +449,16 @@ class TKgui(Tkinter.Toplevel, gui):
       elif type == 'status':
          self.buttonArea[load] = Tkinter.Label(tempframe, width = 10, text = load )
          self.textArea[load] = Tkinter.Label(tempframe, justify="left")
+      elif type == 'picklist':
+         self.buttonArea[load] = Tkinter.Button(tempframe, text = load,
+                                                 width = 10, command = loadit,
+                                                 state='disabled')
+         self.textArea[load] = Picklist(tempframe, self.var, "", command=editit)
+         if viewit:
+            self.buttonArea["View " + load] = Tkinter.Button(tempframe, text = "View",
+                                                 width = 10, command = viewit,
+                                                 state='disabled')
+            self.buttonArea["View " + load].pack(side=Tkinter.RIGHT, fill = "none", expand = "no", anchor="n")
       self.buttonArea[load].pack(side=Tkinter.LEFT, fill = "none", expand = "no", anchor="n")
       self.textArea[load].pack(side=Tkinter.RIGHT, fill="x", expand = "yes", anchor="n")
       tempframe.pack(side = "top", anchor = "s", fill = "x")
@@ -645,11 +697,15 @@ class TKgui(Tkinter.Toplevel, gui):
             self.textArea["Robot:"]["state"] = 'normal'
          if self.buttonArea['View Robot:']["state"] == 'disabled':
             self.buttonArea['View Robot:']["state"] = 'normal'
+         if self.textArea["Devices:"]["state"] == 'disabled':
+            self.textArea["Devices:"]["state"] = 'normal'
       else:
          if self.textArea["Robot:"]["state"] != 'disabled':
             self.textArea["Robot:"]["state"] = 'disabled'
          if self.buttonArea['View Robot:']["state"] != 'disabled':
             self.buttonArea['View Robot:']["state"] = 'disable'
+         if self.textArea["Devices:"]["state"] != 'disabled':
+            self.textArea["Devices:"]["state"] = 'disabled'
       # Buttons?
       if self.textArea["Robot:"]["text"]: # have a robot!
          if self.menuButtons['Robot']["state"] == 'disabled':
@@ -658,6 +714,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.buttonArea["Brain:"]["state"] = 'normal'
          if self.goButtons['Reload Brain']["state"] == 'disabled':
             self.goButtons['Reload Brain']["state"] = 'normal'
+         if self.buttonArea['Devices:']["state"] == 'disabled':
+            self.buttonArea['Devices:']["state"] = 'normal'
       else:
          if self.menuButtons['Robot']["state"] != 'disabled':
             self.menuButtons['Robot']["state"] = 'disabled'
@@ -667,6 +725,8 @@ class TKgui(Tkinter.Toplevel, gui):
             self.buttonArea["Brain:"]["state"] = 'disabled'
          if self.goButtons['Reload Brain']["state"] != 'disabled':
             self.goButtons['Reload Brain']["state"] = 'disabled'
+         if self.buttonArea["Devices:"]["state"] != 'disabled':
+            self.buttonArea["Devices:"]["state"] = 'disabled'
       if self.textArea["Brain:"]["text"]: # have a brain!
          if self.menuButtons['Brain']["state"] == 'disabled':
             self.menuButtons['Brain']["state"] = 'normal'
@@ -693,6 +753,12 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Reload Brain']["state"] = 'disabled'
          #if self.goButtons['View']["state"] != 'disabled':
          #   self.goButtons['View']["state"] = 'disabled'
+      if self.var.get() == None:
+         if self.buttonArea['View Devices:']["state"] != 'disabled':
+            self.buttonArea['View Devices:']["state"] = 'disabled'
+      else:
+         if self.buttonArea['View Devices:']["state"] == 'disabled':
+            self.buttonArea['View Devices:']["state"] = 'normal'
       self.after(self.update_interval,self.update)
       
    def run(self, command = []):

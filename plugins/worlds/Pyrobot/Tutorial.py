@@ -10,7 +10,7 @@ from pyrobot.simulators.pysim import TkSimulator, TkPioneer, \
 
 def INIT():
     # (width, height), (offset x, offset y), scale:
-    sim = TkSimulator((600, 600), (50, 550), 100)  
+    sim = TkSimulator((446,491),(21,451),80.517190)
     # x1, y1, x2, y2 in meters:
     sim.addBox(0, 0, 5, 5)
     sim.addBox(0, 4, 1, 5, "blue")

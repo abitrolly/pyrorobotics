@@ -66,6 +66,9 @@ class gui:
          fp.close()
          self.history_pointer = len(self.history)
 
+   def updateDeviceList(self):
+      pass
+   
    def listCommandHistory(self, search = None):
       cnt = 1
       if search:
@@ -309,6 +312,7 @@ class gui:
                print "Ok"
          else:
             print _retval
+      self.updateDeviceList()
       return 0
 
    def formatExceptionInfo(self, maxTBlevel=10):

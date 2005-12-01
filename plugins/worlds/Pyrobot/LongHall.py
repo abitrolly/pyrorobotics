@@ -10,7 +10,7 @@ import math
 
 def INIT():
     # (width, height), (offset x, offset y), scale:
-    sim = TkSimulator((400, 800), (50, 750), 100)  
+    sim = TkSimulator((273,544),(38,521),70.977619)
     # x1, y1, x2, y2 in meters:
     sim.addBox(0, 0, 3, 7)
     sim.addBox(0, 0, 1, 2.5, "black")
