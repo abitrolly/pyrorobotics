@@ -756,7 +756,7 @@ class TKgui(Tkinter.Toplevel, gui):
             self.goButtons['Reload Brain']["state"] = 'disabled'
          #if self.goButtons['View']["state"] != 'disabled':
          #   self.goButtons['View']["state"] = 'disabled'
-      if self.var.get() == None:
+      if self.var.get() == "":
          if self.buttonArea['View Devices:']["state"] != 'disabled':
             self.buttonArea['View Devices:']["state"] = 'disabled'
       else:
