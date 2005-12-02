@@ -145,7 +145,14 @@ class Gene:
             child1 = [0] * geneLength
             child2 = [0] * geneLength
             # go through and pick the crossoverpoints:
-            if self.crossoverPoints < 0:
+            if self.crossoverPoints == -3:
+                # one right in middle
+                crossPoints = [0] * geneLength
+                crossPoints[int(geneLength/2)] = 1
+            elif self.crossoverPoints == -2:
+                # no crossoverpoints; I know, this should be zero
+                crossPoints = [0] * geneLength
+            elif self.crossoverPoints == -1:
                 # shuffle: every other one
                 crossPoints = [1] * geneLength
             elif self.crossoverPoints > 0:
