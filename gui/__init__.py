@@ -66,7 +66,7 @@ class gui:
          fp.close()
          self.history_pointer = len(self.history)
 
-   def updateDeviceList(self):
+   def updateDeviceList(self, clear = 0, select = -1):
       pass
    
    def listCommandHistory(self, search = None):
