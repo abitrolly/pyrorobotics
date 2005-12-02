@@ -26,12 +26,27 @@ class DeviceWindow(Tkinter.Toplevel):
             share.gui = Tkinter.Tk()
             share.gui.withdraw()
         Tkinter.Toplevel.__init__(self, share.gui)
+        self.visibleData = 0
         self._dev = device
         self.wm_title(title)
-        self.widgets = {}
-        if self._dev:
-            self._dev.visible = 1
-        self._dev.addWidgets(self)
+        self.widgets = {}   # Tkinter widget, keyed by a name
+        self.variables = {} # Tkvar -> pythonvar, keyed by python object's fieldname
+        if self._dev != None:
+            self._dev.addWidgets(self) # self is window, add widgets to it
+            if self.visibleData: # are any of those widgets data?
+                v = self.makeVariable(self._dev, "visible", 1)
+                self.addCheckbox("visible.checkbox", "Update window", v,
+                                 command = self.updateVariables)
+    def makeVariable(self, obj, name, val):
+        """ Make a Tkvar and set the value """
+        v = Tkinter.BooleanVar()
+        v.set(val)
+        self.variables[name] = v
+        obj.__dict__[name] = val
+        return v
+    def updateVariables(self):
+        for v in self.variables.keys():
+            self._dev.__dict__[v] = self.variables[v].get()
     def update(self):
         """Method called to update a device."""
         pass
@@ -39,6 +54,10 @@ class DeviceWindow(Tkinter.Toplevel):
         """Adds a button to the device view window."""
         self.widgets[name] = Tkinter.Button(self, text=text, command=command)
         self.widgets[name].pack(fill="both", expand="y")
+    def addCheckbox(self, name, text, variable, command):
+        """Adds a checkbox to the device view window."""
+        self.widgets[name] = Tkinter.Checkbutton(self, text=text, variable=variable, command=command)
+        self.widgets[name].pack(anchor="w")
     def addLabel(self, name, text):
         """Adds a label to the device view window."""
         self.widgets[name] = Tkinter.Label(self, text=text)
@@ -51,6 +70,7 @@ class DeviceWindow(Tkinter.Toplevel):
         except: pass
     def addData(self, name, text, value):
         """Adds a data field to the device view window."""
+        self.visibleData = 1
         frame = Tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
         try:

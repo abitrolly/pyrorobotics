@@ -113,6 +113,7 @@ class TKgui(Tkinter.Toplevel, gui):
               ]
       
       self.var = Tkinter.StringVar()
+      self.currentDeviceList = []      
       button1 = [('Step',self.stepEngine),
                  ('Run',self.runEngine),
                  ('Stop',self.stopEngine),
@@ -178,7 +179,7 @@ class TKgui(Tkinter.Toplevel, gui):
       #self.tk_focusFollowsMouse()
       self.commandEntry.focus_force()
       self.inform("Pyrobot Version " + version() + ": Ready...")
-      self.updateDeviceList()
+      self.updateDeviceList(select=0)
 
    def freeRobot(self):
       self.updateDeviceList(clear = 1)
@@ -192,7 +193,7 @@ class TKgui(Tkinter.Toplevel, gui):
       gui.loadRobot(self)
       self.updateDeviceList()
 
-   def updateDeviceList(self, clear = 0):
+   def updateDeviceList(self, clear = 0, select = -1):
       devices = []
       selDevice = None
       if not clear:
@@ -201,11 +202,13 @@ class TKgui(Tkinter.Toplevel, gui):
                for serv in self.engine.robot.__dict__[devType]:
                   devices.append(serv.title)
             if devices != []:
-               selDevice = devices[-1]
+               selDevice = devices[select]
       else:
          devices = [""]
          selDevice = ""
-      self.textArea["Devices:"].setMenu(devices, selDevice)
+      if self.currentDeviceList != devices:
+         self.currentDeviceList = devices
+         self.textArea["Devices:"].setMenu(devices, selDevice)
 
    def editDevice(self, deviceName):
       pass # this is just selecting it from the menu
