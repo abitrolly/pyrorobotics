@@ -271,7 +271,9 @@ class Simulator:
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
-                        if int(message[1]) == index:
+                        try:    i = int(message[1])
+                        except: i = -1
+                        if i == index:
                             retval = d.scan
                         index += 1
         return pickle.dumps(retval)
