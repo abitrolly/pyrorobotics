@@ -58,6 +58,16 @@ class ManualFakeCamera(Camera):
             for d in range(self.depth):
                self.vision.setVal(w, h, d, array[h * self.width + w + d])
 
+   def setRGB3Image(self, array):
+      """
+      Will set the RGB camera image from a RGB array (depth 3)
+      assuming column major order.
+      """
+      for w in range(self.width):
+         for h in range(self.height):
+            for d in range(self.depth):
+               self.vision.setVal(w, h, d, array[w][h][d])
+
 
 class FakeCamera(Camera):
    """

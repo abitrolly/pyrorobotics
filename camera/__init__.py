@@ -66,7 +66,7 @@ class Camera(PyrobotImage, Device):
    """
    A base class for Camera
    """
-   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None, visible = 1):
+   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None, visible = 0):
       """
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself

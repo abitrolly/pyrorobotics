@@ -7,6 +7,7 @@ import Tkinter, time, math, pickle
 import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
+MAXRAYLENGTH = 1000.0 # some large measurement in meters
 colorMap = {"red": (255, 0,0),
             "green": (0, 255,0),
             "blue": (0, 0,255),
@@ -49,15 +50,16 @@ class Simulator:
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
 
-    def addWall(self, x1, y1, x2, y2):
+    def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
+        seg.color = color
         self.world.append(seg)
 
-    def addBox(self, ulx, uly, lrx, lry, color="white"):
-        self.addWall( ulx, uly, ulx, lry)
-        self.addWall( ulx, uly, lrx, uly)
-        self.addWall( ulx, lry, lrx, lry)
-        self.addWall( lrx, uly, lrx, lry)
+    def addBox(self, ulx, uly, lrx, lry, color="white", wallcolor="black"):
+        self.addWall( ulx, uly, ulx, lry, wallcolor)
+        self.addWall( ulx, uly, lrx, uly, wallcolor)
+        self.addWall( ulx, lry, lrx, lry, wallcolor)
+        self.addWall( lrx, uly, lrx, lry, wallcolor)
 
     def addLight(self, x, y, brightness, color="yellow"):
         self.lights.append(Light(x, y, brightness, color))
@@ -97,7 +99,8 @@ class Simulator:
     def drawLine(self, x1, y1, x2, y2, color = None):
         pass
         
-    def castRay(self, robot, x1, y1, a, maxRange, ignoreRobot = "self",
+    def castRay(self, robot, x1, y1, a, maxRange = MAXRAYLENGTH,
+                ignoreRobot = "self",
                 rayType = "range"):
         # ignoreRobot: all, self, other; 
         hits = []
@@ -111,7 +114,7 @@ class Simulator:
                 if retval:
                     dist = Segment(retval, (x1, y1)).length()
                     if dist <= maxRange:
-                        hits.append( (dist, retval, w.id) ) # distance, hit, id
+                        hits.append( (dist, retval, w) ) # distance, hit, obj
         # go down list of robots, and see if you hit one:
         if ignoreRobot != "all":
             for r in self.robots:
@@ -126,11 +129,12 @@ class Simulator:
                 # for each of the bounding box segments:
                 for i in range(len(xys)):
                     w = Segment( xys[i], xys[i - 1])
+                    w.color = r.color
                     retval = w.intersects(seg)
                     if retval:
                         dist = Segment(retval, (x1, y1)).length()
                         if dist <= maxRange:
-                            hits.append( (dist, retval, w.id) ) # distance, hit, id
+                            hits.append( (dist, retval, w) ) # distance,hit,obj
         if len(hits) == 0:
             return (None, None, None)
         else:
@@ -252,6 +256,8 @@ class Simulator:
                         if int(message[2]) == index:
                             if message[1] in ["sonar", "laser", "light", "bulb"]:
                                 retval = d.geometry, d.arc, d.maxRange
+                            elif message[1] == "camera":
+                                retval = d.width, d.height
                         index += 1
             elif message[0] == "r": # "r_sonar_0" groups_sensor_id
                 index = 0
@@ -267,7 +273,7 @@ class Simulator:
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 self.assoc[sockname[1]].subscribed = 1
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light"]: # sonar_0, light_0
+            elif message[0] in ["sonar", "laser", "light", "camera"]: # sonar_0, light_0
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
@@ -312,6 +318,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ['trail', lambda: self.toggle("trail")],                     
             ['body', lambda: self.toggle("body")],                 
             ['boundingBox', lambda: self.toggle("boundingBox")],
+            ['camera', lambda: self.toggle("camera")],
             ['sonar', lambda: self.toggle("sonar")],
             ['light', lambda: self.toggle("light")],                     
             ['lightBlocked', lambda: self.toggle("lightBlocked")], 
@@ -449,12 +456,13 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             robot._last_pose = (-1, -1, -1)
             print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga % (2 * math.pi))
         
-    def addBox(self, ulx, uly, lrx, lry, color="white"):
-        Simulator.addBox(self, ulx, uly, lrx, lry, color)
+    def addBox(self, ulx, uly, lrx, lry, color="white", wallcolor="black"):
+        Simulator.addBox(self, ulx, uly, lrx, lry, color, wallcolor)
         self.shapes.append( ("box", ulx, uly, lrx, lry, color) )
         self.redraw()
-    def addWall(self, x1, y1, x2, y2):
+    def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2))
+        seg.color = color
         id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
         seg.id = id
         self.world.append( seg )
@@ -495,7 +503,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.display = {"body": 1, "boundingBox": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
+        self.display = {"body": 1, "boundingBox": 0, "camera": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -571,7 +579,7 @@ class SimRobot:
                     a90 = self._ga + 90 * PIOVER180
                     gx = self._gx + (x * math.cos(a90) - y * math.sin(a90))
                     gy = self._gy + (x * math.sin(a90) + y * math.cos(a90))
-                    dist, hit, id = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
+                    dist, hit, obj = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
                     if hit:
                         self.drawRay("sonar", gx, gy, hit[0], hit[1], "gray")
                     else:
@@ -610,7 +618,7 @@ class SimRobot:
                         seg = Segment((x,y), (gx, gy))
                         a = -seg.angle() + 90 * PIOVER180
                         # see if line between sensor and light is blocked by any boundaries (ignore other bb)
-                        dist, hit, id = self.simulator.castRay(self, x, y, a, seg.length() - .1,
+                        dist,hit,obj = self.simulator.castRay(self, x, y, a, seg.length() - .1,
                                                                ignoreRobot = "other", rayType = "light")
                         # compute distance of segment; value is sqrt of that?
                         if not hit: # no hit means it has a clear shot:
@@ -625,6 +633,22 @@ class SimRobot:
                     for c in [0, 1, 2]:
                         d.rgb[i][c] = min(int(rgb[c]), 255)
                     i += 1
+            elif d.type == "camera":
+                # FIX: make work with any start/stop:
+                x, y = self._gx, self._gy
+                stepAngle = (abs(d.startAngle) + abs(d.stopAngle)) / float(d.width - 1)
+                a = d.startAngle
+                d.scan = []
+                for i in range(d.width):
+                    # FIX: move camera to d.pose; this assumes robot center
+                    ga = (self._ga + a) 
+                    dist,hit,obj = self.simulator.castRay(self, x, y, -ga,
+                                                           ignoreRobot="self",
+                                                           rayType = "camera")
+                    if i in [0, d.width - 1]:
+                        self.drawRay("camera", x, y, hit[0], hit[1], "yellow")
+                    d.scan.append((obj.color, dist))
+                    a -= stepAngle
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
 
@@ -702,6 +726,8 @@ class SimRobot:
             self.simulator.lights.append( dev )
             dev.robot = self
             self.bulb = dev
+        elif dev.type == "camera":
+            dev.robot = self
 
 class TkPioneer(SimRobot):
     def __init__(self, *args, **kwargs):
@@ -841,6 +867,17 @@ class LightSensor:
         self.groups = {}
         self.scan = [0] * len(geometry) # for data
         self.rgb = [[0,0,0] for g in geometry]
+
+class Camera:
+    def __init__(self, width, height, startAngle, stopAngle, x, y, thr):
+        self.type = "camera"
+        self.width = width
+        self.height = height
+        self.startAngle = startAngle
+        self.stopAngle = stopAngle
+        self.pose = (x, y, thr)
+        self.color = [[0,0,0] for i in range(self.width)]
+        self.range = [0 for i in range(self.width)]
 
 class PioneerFrontSonars(RangeSensor):
     def __init__(self):

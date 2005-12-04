@@ -11,6 +11,21 @@ __version__ = "$Revision$"
 import socket, pickle, threading, random, time
 from pyrobot.robot import Robot
 from pyrobot.robot.device import Device, SensorValue
+from pyrobot.camera.fake import ManualFakeCamera
+
+colorMap = {"red": (255, 0,0),
+            "green": (0, 255,0),
+            "blue": (0, 0,255),
+            "white": (255, 255, 255),
+            "black": (0, 0, 0),
+            "cyan": (0, 255, 255),
+            "yellow": (255, 255, 0),
+            "brown": (165, 42, 42),
+            "orange": (255, 165, 0),
+            "pink": (255, 192, 203),
+            "violet": (238, 130, 238),
+            "purple": (160, 32, 240),
+            }
 
 class SimulationDevice(Device):
 	def __init__(self, robot):
@@ -85,6 +100,28 @@ class BulbSimDevice(Device):
 		self._dev = robot
 	def setBrightness(self, value):
 		return self._dev.move("h_%f" % value)
+
+class CameraSimDevice(ManualFakeCamera):
+	def __init__(self, robot):
+		self.lock = threading.Lock()
+		self.robot = robot
+		# fix: how to know what index?
+		self.width, self.height = robot.move("g_%s_%d" % ("camera", 0))
+		ManualFakeCamera.__init__(self, self.width, self.height, 3)
+	def update(self):
+		self.lock.acquire()
+		self.rawImage = [[[0, 0, 0] for h in range(self.height)] for w in range(self.width)]
+		self.data = self.robot.move("camera_%d" % 0)
+		if len(self.data) == self.width:
+			for w in range(self.width):
+				(color, distance) = self.data[w]
+				height = max((5 - distance)/5.0 * self.height/2.0,1)
+				for h in range(int(height)):
+					self.rawImage[w][self.height/2 - h] = colorMap[color]
+					self.rawImage[w][self.height/2 + h] = colorMap[color]
+			self.setRGB3Image(self.rawImage)
+			self.processAll()
+		self.lock.release()
 
 class TCPRobot(Robot):
 	"""
@@ -167,6 +204,9 @@ class TCPRobot(Robot):
 		elif name == "bulb":
 			self.move("s_%s_%d" % (name, index))
 			return {name: BulbSimDevice(self)}
+		elif name == "camera":
+			self.move("s_%s_%d" % (name, index))
+			return {name: CameraSimDevice(self)}
 		elif name == "light":
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))
