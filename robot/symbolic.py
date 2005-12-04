@@ -110,13 +110,14 @@ class CameraSimDevice(ManualFakeCamera):
 		ManualFakeCamera.__init__(self, self.width, self.height, 3)
 	def update(self):
 		self.lock.acquire()
-		self.rawImage = [[[0, 0, 0] for h in range(self.height)] for w in range(self.width)]
+		self.rawImage = [[[128, 128, 128] for h in range(self.height)] for w in range(self.width)]
 		self.data = self.robot.move("camera_%d" % 0)
 		if len(self.data) == self.width:
 			for w in range(self.width):
 				(color, distance) = self.data[w]
-				height = max((5 - distance)/5.0 * self.height/2.0,1)
-				for h in range(int(height)):
+				dist = (10 - distance)/10.0 
+				height = min(max((dist ** 2) * self.height/2.0, 1), self.height/2)
+				for h in range(int(round(height))):
 					self.rawImage[w][self.height/2 - h] = colorMap[color]
 					self.rawImage[w][self.height/2 + h] = colorMap[color]
 			self.setRGB3Image(self.rawImage)
