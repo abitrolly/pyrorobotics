@@ -71,9 +71,10 @@ class Simulator:
         self.robots.append(r)
         self.trail.append([None] * self.maxTrailSize)
         r.simulator = self
-        self.assoc[port] = r
-        self.ports.append(port)
         r._xya = r._gx, r._gy, r._ga # save original position for later reset
+        if port != None:
+            self.assoc[port] = r
+            self.ports.append(port)
 
     def scale_x(self, x): return self.offset_x + (x * self.scale)
     def scale_y(self, y): return self.offset_y - (y * self.scale)
@@ -503,6 +504,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
+        self.friction = 1.0 # 0.95 is good for a puck
         self.display = {"body": 1, "boundingBox": 0, "camera": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
@@ -710,6 +712,10 @@ class SimRobot:
                             self.draw()
                             return
         # ok! move the robot, if it wanted to move
+        self.vx *= self.friction
+        self.vy *= self.friction
+        if self.vx < 0.1: self.vx = 0.0
+        if self.vy < 0.1: self.vy = 0.0
         self.stall = 0
         self.setPose(p_x, p_y, p_a)
         self.updateDevices()
@@ -871,6 +877,7 @@ class LightSensor:
 class Camera:
     def __init__(self, width, height, startAngle, stopAngle, x, y, thr):
         self.type = "camera"
+        self.scan = []
         self.width = width
         self.height = height
         self.startAngle = startAngle

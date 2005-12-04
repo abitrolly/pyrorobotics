@@ -41,4 +41,7 @@ def INIT():
         # x, y relative to body center (beyond bounding box):
         sim.robots[i].addDevice(BulbDevice(0.226, 0))
         sim.robots[i].addDevice(Camera(60, 40, 60 * math.pi/180, -60 * math.pi/180, 0, 0, 0))
+
+    #sim.addRobot(None, TkPioneer("Puck1", 5, 5, 0, ((.1, .1, -.1, -.1), (.1, -.1, -.1, .1)), "purple"))
+        
     return sim
