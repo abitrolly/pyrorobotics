@@ -490,6 +490,7 @@ class SimRobot:
         if " " in name:
             name = name.replace(" ", "_")
         self.name = name
+        self.type = "robot"
         # set them here manually: (afterwards, use setPose)
         self.stepScalar = 1.0 # normally = 1.0
         self._gx = x
@@ -504,7 +505,7 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.friction = 1.0 # 0.95 is good for a puck
+        self.friction = 1.0 
         self.display = {"body": 1, "boundingBox": 0, "camera": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
         self.stall = 0
         self.energy = 10000.0
@@ -636,20 +637,23 @@ class SimRobot:
                         d.rgb[i][c] = min(int(rgb[c]), 255)
                     i += 1
             elif d.type == "camera":
-                # FIX: make work with any start/stop:
+                # FIX: make work with any start/stop angle:
                 x, y = self._gx, self._gy
                 stepAngle = (abs(d.startAngle) + abs(d.stopAngle)) / float(d.width - 1)
                 a = d.startAngle
                 d.scan = []
                 for i in range(d.width):
-                    # FIX: move camera to d.pose; this assumes robot center
+                    # FIX: move camera to d.pose; currently assumes robot center
                     ga = (self._ga + a) 
                     dist,hit,obj = self.simulator.castRay(self, x, y, -ga,
                                                            ignoreRobot="self",
                                                            rayType = "camera")
-                    if i in [0, d.width - 1]:
-                        self.drawRay("camera", x, y, hit[0], hit[1], "yellow")
-                    d.scan.append((obj.color, dist))
+                    if obj != None:
+                        if i in [0, d.width - 1]:
+                            self.drawRay("camera", x, y, hit[0], hit[1], "purple")
+                        d.scan.append((obj.color, dist))
+                    else:
+                        d.scan.append((None, None))
                     a -= stepAngle
             else:
                 raise AttributeError, "unknown type of device: '%s'" % d.type
@@ -681,7 +685,7 @@ class SimRobot:
         p_y = self._gy + vy * (timeslice / 1000.0) # miliseconds
         p_a = self._ga + va * (timeslice / 1000.0) # miliseconds
         # for each of the robot's bounding box segments:
-        if self.subscribed:
+        if self.subscribed or self.type == "puck":
             if vx != 0 or vy != 0 or va != 0:
                 self.energy -= self.maxEnergyCostPerStep
             # let's check if that movement would be ok:
@@ -706,7 +710,12 @@ class SimRobot:
                                               r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
                                 r.boundingBox[0], r.boundingBox[1])
                     for j in range(len(r_xys)):
-                        if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
+                        if r.type == "puck":
+                            if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
+                                # transfer some energy to puck
+                                r._ga = self._ga
+                                r.vx = self.vx
+                        elif bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                             self.stall = 1
                             self.updateDevices()
                             self.draw()
@@ -738,10 +747,9 @@ class SimRobot:
         elif dev.type == "camera":
             dev.robot = self
 
-class TkPioneer(SimRobot):
+class TkRobot(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
-        self.radius = 0.4
         self.bulb = None
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
@@ -785,7 +793,60 @@ class TkPioneer(SimRobot):
                 x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
                 robot.setPose(x, y)
         return "break"
-        
+    def addMouseBindings(self):
+        ### Mouse methods:
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "up", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
+        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
+                                       func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+
+class Puck(SimRobot):
+    def __init__(self, *args, **kwargs):
+        SimRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.05
+        self.friction = 0.95
+        self.type = "puck"
+
+class TkPuck(TkRobot):
+    def __init__(self, *args, **kwargs):
+        TkRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.05
+        self.friction = 0.95
+        self.type = "puck"
+    def draw(self):
+        """
+        Draws the body of the robot. Not very efficient.
+        """
+        if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
+        self._last_pose = (self._gx, self._gy, self._ga)
+        self.simulator.canvas.delete("robot-%s" % self.name)
+        s_x = self.simulator.scale_x
+        s_y = self.simulator.scale_y
+        if self.display["body"] == 1:
+            x1, y1, x2, y2 = s_x(self._gx - self.radius), s_y(self._gy - self.radius), s_x(self._gx + self.radius), s_y(self._gy + self.radius)
+            self.simulator.canvas.create_oval(x1, y1, x2, y2, fill=self.color, tag="robot-%s" % self.name, outline="black")
+        if self.display["boundingBox"] == 1:
+            # Body Polygon, by x and y lists:
+            a90 = self._ga + 90 * PIOVER180 # angle is 90 degrees off for graphics
+            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
+                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                     self.boundingBox[0], self.boundingBox[1])
+            self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+        self.addMouseBindings()
+
+class TkPioneer(TkRobot):
+    def __init__(self, *args, **kwargs):
+        TkRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.4
+
     def draw(self):
         """
         Draws the body of the robot. Not very efficient.
@@ -825,19 +886,8 @@ class TkPioneer(SimRobot):
                                    s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
-        ### Mouse methods:
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "up", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+        self.addMouseBindings()
+
 
 class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):

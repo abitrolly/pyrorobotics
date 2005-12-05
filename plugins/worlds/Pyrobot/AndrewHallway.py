@@ -21,9 +21,9 @@ def INIT():
     sim.addBox(0, 21.34, 5, 25.7, "black")
     sim.addBox(5, 23.88, 6.39, 24.26, "black")
     # chair
-    sim.addBox(10.2, 2.7, 11.1, 3.6, "blue")
+    sim.addBox(10.2, 2.7, 11.1, 3.6, "blue", wallcolor="blue")
     # sofa
-    sim.addBox(11.42, 3.55, 13, 4.45, "blue")
+    sim.addBox(11.42, 3.55, 13, 4.45, "blue", wallcolor="blue")
     # port, name, x, y, th, bounding Xs, bounding Ys, color
     # (optional TK color name):
     sim.addRobot(60000, TkPioneer("RedPioneer",

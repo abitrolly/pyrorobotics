@@ -115,6 +115,7 @@ class CameraSimDevice(ManualFakeCamera):
 		if len(self.data) == self.width:
 			for w in range(self.width):
 				(color, distance) = self.data[w]
+				if color == None or distance == None: continue
 				dist = (10 - distance)/10.0 
 				height = min(max((dist ** 2) * self.height/2.0, 1), self.height/2)
 				for h in range(int(round(height))):
