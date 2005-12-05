@@ -43,7 +43,10 @@ class Handler(SocketServer.BaseRequestHandler):
             except:
                 time.sleep(.01)
                 continue
-            retval = self.gui.process(request, sockname)
+            try:
+                retval = self.gui.process(request, sockname)
+            except:
+                continue
             if request == "disconnect":
                 break
             try:

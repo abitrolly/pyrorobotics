@@ -79,7 +79,14 @@ class RangeSimDevice(Device):
 					    noise=self._noise
 					    )
 		except:
-			value = -1
+			value = SensorValue(self, 0, 0,
+					    (self._geometry[0][pos][0], # x in meters
+					     self._geometry[0][pos][1], # y
+					     0.03,                    # z
+					     self._geometry[0][pos][2], # th
+					     self._geometry[1]),        # arc rads
+					    noise=self._noise
+					    )
 		return value
 
 class LightSimDevice(RangeSimDevice):
@@ -93,7 +100,8 @@ class LightSimDevice(RangeSimDevice):
 		return retval
 	def getSensorValue(self, pos):
 		retval = RangeSimDevice.getSensorValue(self, pos)
-		retval.rgb = self._dev.move("f_%d_%d" % (self.index, pos)) # rgb
+		if retval != None:
+			retval.rgb = self._dev.move("f_%d_%d" % (self.index, pos)) # rgb
 		return retval
 	rgb = property(_getRgb)
 
