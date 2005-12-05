@@ -23,6 +23,7 @@ def INIT():
     # x, y relative to body center (beyond bounding box):
     sim.robots[0].addDevice(PioneerFrontSonars())
     sim.robots[0].addDevice(Camera(60, 40, 60 * math.pi/180, -60 * math.pi/180, 0, 0, 0))
+    #sim.robots[0].addDevice(Gripper(((.225, .5, .225, .5), (.20, .20, -.20, .20))))
 
     sim.addRobot(None, TkPuck("Puck1", 6.28, 6.34, 0, ((.05, .05, -.05, -.05), (.05, -.05, -.05, .05)), "purple"))
     sim.addRobot(None, TkPuck("Puck2", 6.47, 6.47, 0, ((.05, .05, -.05, -.05), (.05, -.05, -.05, .05)), "blue"))
