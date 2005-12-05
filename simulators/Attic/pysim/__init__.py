@@ -713,8 +713,8 @@ class SimRobot:
                         if r.type == "puck":
                             if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                                 # transfer some energy to puck
-                                r._ga = self._ga
-                                r.vx = self.vx
+                                r._ga = self._ga + ((random.random() - .5) * .1)
+                                r.vx = self.vx * .95
                         elif bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                             self.stall = 1
                             self.updateDevices()
