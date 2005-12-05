@@ -9,7 +9,7 @@ from pyrobot.simulators.pysim import *
 
 def INIT():
     # (width, height), (offset x, offset y), scale:
-    sim = TkSimulator((441,434), (22,420), 40.357554)  
+    sim = TkSimulator((441,434),(22,420), 40.357554)  
     # x1, y1, x2, y2 in meters:
     sim.addBox(0, 0, 10, 10)
     # port, name, x, y, th, bounding Xs, bounding Ys, color
@@ -40,7 +40,8 @@ def INIT():
         sim.robots[i].addDevice(PioneerFrontLightSensors())
         # x, y relative to body center (beyond bounding box):
         sim.robots[i].addDevice(BulbDevice(0.226, 0))
-        sim.robots[i].addDevice(Camera(60, 40, 60 * math.pi/180, -60 * math.pi/180, 0, 0, 0))
+
+    sim.robots[0].addDevice(Camera(60, 40, 60 * math.pi/180, -60 * math.pi/180, 0, 0, 0))
 
     #sim.addRobot(None, TkPioneer("Puck1", 5, 5, 0, ((.1, .1, -.1, -.1), (.1, -.1, -.1, .1)), "purple"))
         

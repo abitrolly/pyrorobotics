@@ -712,10 +712,13 @@ class SimRobot:
                             self.draw()
                             return
         # ok! move the robot, if it wanted to move
-        self.vx *= self.friction
-        self.vy *= self.friction
-        if self.vx < 0.1: self.vx = 0.0
-        if self.vy < 0.1: self.vy = 0.0
+        if self.friction != 1.0:
+            self.vx *= self.friction
+            self.vy *= self.friction
+            if 0.0 < self.vx < 0.1: self.vx = 0.0
+            if 0.0 < self.vy < 0.1: self.vy = 0.0
+            if 0.0 > self.vx > -0.1: self.vx = 0.0
+            if 0.0 > self.vy > -0.1: self.vy = 0.0
         self.stall = 0
         self.setPose(p_x, p_y, p_a)
         self.updateDevices()
