@@ -69,14 +69,18 @@ class RangeSimDevice(Device):
 			v = self._dev.__dict__["%s_%d" % (self.type, self.index)][pos]
 		except:
 			v = 0.0
-		return SensorValue(self, v, pos,
-				   (self._geometry[0][pos][0], # x in meters
-				    self._geometry[0][pos][1], # y
-				    0.03,                    # z
-				    self._geometry[0][pos][2], # th
-				    self._geometry[1]),        # arc rads
-				   noise=self._noise
-				   )
+		try:
+			value = SensorValue(self, v, pos,
+					    (self._geometry[0][pos][0], # x in meters
+					     self._geometry[0][pos][1], # y
+					     0.03,                    # z
+					     self._geometry[0][pos][2], # th
+					     self._geometry[1]),        # arc rads
+					    noise=self._noise
+					    )
+		except:
+			value = -1
+		return value
 
 class LightSimDevice(RangeSimDevice):
 	def __init__(self, *args, **kwargs):
