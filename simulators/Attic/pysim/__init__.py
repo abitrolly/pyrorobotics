@@ -3,7 +3,7 @@ A Pure Python 2D Robot Simulator
 
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
-import Tkinter, time, math, pickle
+import Tkinter, time, math, pickle, random
 import pyrobot.system.share as share
 from pyrobot.geometry import PIOVER180, Segment
 
@@ -713,8 +713,8 @@ class SimRobot:
                         if r.type == "puck":
                             if bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                                 # transfer some energy to puck
-                                r._ga = self._ga + ((random.random() - .5) * .1)
-                                r.vx = self.vx * .95
+                                r._ga = self._ga + ((random.random() - .5) * 0.4) # send in random direction, 22 degree
+                                r.vx = self.vx * 1.0 # knock it away
                         elif bb.intersects(Segment(r_xys[j], r_xys[j - 1])):
                             self.stall = 1
                             self.updateDevices()
@@ -812,14 +812,14 @@ class Puck(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
         self.radius = 0.05
-        self.friction = 0.95
+        self.friction = 0.90
         self.type = "puck"
 
 class TkPuck(TkRobot):
     def __init__(self, *args, **kwargs):
         TkRobot.__init__(self, *args, **kwargs)
         self.radius = 0.05
-        self.friction = 0.95
+        self.friction = 0.90
         self.type = "puck"
     def draw(self):
         """
