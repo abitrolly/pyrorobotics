@@ -31,6 +31,7 @@ class Simulator:
         self.robots = []
         self.lights = []
         self.trail = []
+        self.needToMove = [] # list of robots that need to move (see step)
         self.maxTrailSize = 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
         self.trailStart = 0
         self.world = []
@@ -88,12 +89,15 @@ class Simulator:
         """
         # might want to randomize this order so the same ones
         # don't always move first:
+        self.needToMove = []
         self.time += (self.timeslice / 1000.0)
         i = 0
         for r in self.robots:
             r.step(self.timeslice)
             self.addTrail(i, self.stepCount % self.maxTrailSize, r)
             i += 1
+        for r in self.needToMove:
+            r.step(self.timeslice, movePucks = 0)
         if self.stepCount > self.maxTrailSize:
             self.trailStart = ((self.stepCount + 1) % self.maxTrailSize)
         self.stepCount += 1
@@ -699,7 +703,7 @@ class SimRobot:
                 return amt
         return 0.0
 
-    def step(self, timeslice = 100):
+    def step(self, timeslice = 100, movePucks = 1):
         """
         Move the robot self.velocity amount, if not blocked.
         """
@@ -713,6 +717,7 @@ class SimRobot:
         p_x = self._gx + vx * (timeslice / 1000.0) # miliseconds
         p_y = self._gy + vy * (timeslice / 1000.0) # miliseconds
         p_a = self._ga + va * (timeslice / 1000.0) # miliseconds
+        pushedAPuck = 0
         # for each of the robot's bounding box segments:
         if self.subscribed or self.type == "puck":
             if vx != 0 or vy != 0 or va != 0:
@@ -766,13 +771,30 @@ class SimRobot:
                         if r.type == "puck": # other robot is a puck
                             if bbintersect:
                                 # transfer some energy to puck
-                                r._ga = self._ga + ((random.random() - .5) * 0.4) # send in random direction, 22 degree
-                                r.vx = self.vx * 1.0 # knock it away
+                                if movePucks:
+                                    r._ga = self._ga + ((random.random() - .5) * 0.4) # send in random direction, 22 degree
+                                    r.vx = self.vx * 0.9 # knock it away
+                                    if r not in self.simulator.needToMove:
+                                        self.simulator.needToMove.append(r)
+                                    if self.type == "puck":
+                                        self.vx = self.vx * 0.9 # loose some
+                                pushedAPuck = 1
                         elif bbintersect:
+                            if self.type == "puck":
+                                self.vx = 0.0
+                                self.vy = 0.0
                             self.stall = 1
                             self.updateDevices()
                             self.draw()
                             return
+        if pushedAPuck:
+            if movePucks and r not in self.simulator.needToMove:
+                self.simulator.needToMove.append( self )
+            else:
+                self.stall = 1
+                self.updateDevices()
+                self.draw()
+            return
         # ok! move the robot, if it wanted to move
         if self.friction != 1.0:
             self.vx *= self.friction
