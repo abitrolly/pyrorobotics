@@ -113,6 +113,24 @@ class BulbSimDevice(Device):
 	def setBrightness(self, value):
 		return self._dev.move("h_%f" % value)
 
+class GripperSimDevice(Device):
+	def __init__(self, robot):
+		Device.__init__(self)
+		self.type = "gripper"
+		self._dev = robot
+		self.data = [0, 0]
+		self.startDevice()
+	def updateDevice(self):
+		self.data = self._dev.move("gripper_%d" % 0)
+	def close(self):
+		return self._dev.move("z_gripper_0_close")
+	def addWidgets(self, window):
+		window.addData("breakbeam0", "Break Beam 0", self.data[0])
+		window.addData("breakbeam1", "Break Beam 1", self.data[1])
+	def updateWindow(self):
+		self.window.updateWidget("breakbeam0", self.data[0])
+		self.window.updateWidget("breakbeam1", self.data[1])
+
 class CameraSimDevice(ManualFakeCamera):
 	def __init__(self, robot):
 		self.lock = threading.Lock()
@@ -221,6 +239,9 @@ class TCPRobot(Robot):
 		elif name == "camera":
 			self.move("s_%s_%d" % (name, index))
 			return {name: CameraSimDevice(self)}
+		elif name == "gripper":
+			self.move("s_%s_%d" % (name, index))
+			return {name: GripperSimDevice(self)}
 		elif name == "light":
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))

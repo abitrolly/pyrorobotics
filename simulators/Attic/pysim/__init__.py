@@ -137,6 +137,7 @@ class Simulator:
                     for i in range(len(xys)):
                         w = Segment( xys[i], xys[i - 1]) # using the previous one completes the polygon
                         w.color = r.color
+                        w.robot = r
                         segments.append(w)
                 if r.boundingSeg != []:
                     # bounding segments
@@ -147,6 +148,7 @@ class Simulator:
                     for i in range(0, len(xys), 2):
                         w = Segment( xys[i], xys[i + 1]) # assume that they come in pairs
                         w.color = r.color
+                        w.robot = r
                         segments.append(w)
                 for w in segments:
                     retval = w.intersects(seg)
@@ -268,6 +270,13 @@ class Simulator:
                 retval = self.assoc[sockname[1]].eat(float(message[1]))
             elif message[0] == "x": # "x_expression" expression
                 retval = eval(message[1])
+            elif message[0] == "z": # "z_gripper_0_command" command
+                type = message[1]
+                index = int(message[2])
+                command = message[3]
+                device = self.assoc[sockname[1]].getIndex(type, index)
+                if device:
+                    retval = device.__class__.__dict__[command](device)
             elif message[0] == "g": # "g_sonar_0" geometry_sensor_id
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
@@ -292,7 +301,7 @@ class Simulator:
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 self.assoc[sockname[1]].subscribed = 1
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light", "camera"]: # sonar_0, light_0
+            elif message[0] in ["sonar", "laser", "light", "camera", "gripper"]: # sonar_0, light_0...
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
@@ -337,6 +346,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ['trail', lambda: self.toggle("trail")],                     
             ['body', lambda: self.toggle("body")],                 
             ['boundingBox', lambda: self.toggle("boundingBox")],
+            ['gripper', lambda: self.toggle("gripper")],
             ['camera', lambda: self.toggle("camera")],
             ['sonar', lambda: self.toggle("sonar")],
             ['light', lambda: self.toggle("light")],                     
@@ -527,8 +537,10 @@ class SimRobot:
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
-        self.friction = 1.0 
-        self.display = {"body": 1, "boundingBox": 0, "camera": 0, "sonar": 0, "light": -1, "lightBlocked": 0, "trail": -1} # -1: don't automatically turn on
+        self.friction = 1.0
+        # -1: don't automatically turn display on when subscribing:
+        self.display = {"body": 1, "boundingBox": 0, "gripper": -1, "camera": 0, "sonar": 0,
+                        "light": -1, "lightBlocked": 0, "trail": -1} 
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -668,7 +680,28 @@ class SimRobot:
                         d.rgb[i][c] = min(int(rgb[c]), 255)
                     i += 1
             elif d.type == "gripper":
-                pass
+                # cast a ray in two places, set scan = 1 if it is "broken"
+                a90 = self._ga + 90 * PIOVER180
+                # FIX: make this based on gripper details:
+                x = 0.3
+                y = 0.12
+                d.scan = [0] * 2
+                d.objs = []
+                for i in range(2):
+                    gx = self._gx + (x * math.cos(a90) - y * math.sin(a90))
+                    gy = self._gy + (x * math.sin(a90) + y * math.cos(a90))
+                    ogx = self._gx + (x * math.cos(a90) + y * math.sin(a90))
+                    ogy = self._gy + (x * math.sin(a90) - y * math.cos(a90))
+                    dist,hit,obj = self.simulator.castRay(self, gx, gy, -self._ga + (90 * PIOVER180), 2 * y,
+                                                          rayType = "breakBeam")
+                    if hit: 
+                        d.scan[i] = 1
+                        d.objs.append(obj) # for gripping
+                        if self.display["gripper"] == 1:
+                            self.drawRay("gripper", gx, gy, ogx, ogy, "orange")
+                    elif self.display["gripper"] == 1:
+                        self.drawRay("gripper", gx, gy, ogx, ogy, "purple")
+                    x += .07
             elif d.type == "camera":
                 # FIX: make work with any start/stop angle:
                 x, y = self._gx, self._gy
@@ -823,12 +856,14 @@ class SimRobot:
             dev.robot = self
         elif dev.type == "gripper":
             dev.robot = self
+            self.gripper = dev
             dev.robot.addBoundingSeg(dev.boundingSeg)
 
 class TkRobot(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
         self.bulb = None
+        self.gripper = None
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
         if command[:8] == "control-":
@@ -959,6 +994,19 @@ class TkPioneer(TkRobot):
                 # need to scale this bulb:
                 self.simulator.canvas.create_oval(x - radius, y - radius, x + radius, y + radius,
                                                   tag="robot-%s" % self.name, fill=color, outline="black")
+            if self.gripper:
+                # build a polygon around gripper line:
+                xs = []
+                ys = []
+                for i in range(0, len(self.gripper.boundingSeg[0]), 2):
+                    xs.append(self.gripper.boundingSeg[0][i]);     ys.append(self.gripper.boundingSeg[1][i] + .01)
+                    xs.append(self.gripper.boundingSeg[0][i + 1]); ys.append(self.gripper.boundingSeg[1][i + 1] + .01)
+                    xs.append(self.gripper.boundingSeg[0][i + 1]); ys.append(self.gripper.boundingSeg[1][i + 1] - .01)
+                    xs.append(self.gripper.boundingSeg[0][i]);     ys.append(self.gripper.boundingSeg[1][i] - .01)
+                xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
+                                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                         xs, ys)
+                self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
         if self.display["boundingBox"] == 1:
             if self.boundingBox != []:
                 xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
@@ -970,7 +1018,8 @@ class TkPioneer(TkRobot):
                                        s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
                          self.boundingSeg[0], self.boundingSeg[1])
                 for i in range(0, len(xy), 2):
-                    self.simulator.canvas.create_line(xy[i][0], xy[i][1], xy[i + 1][0], xy[i + 1][1],
+                    self.simulator.canvas.create_line(xy[i][0], xy[i][1],
+                                                      xy[i + 1][0], xy[i + 1][1],
                                                       tag="robot-%s" % self.name, fill="purple")
         self.addMouseBindings()
 
@@ -1016,9 +1065,15 @@ class Gripper:
     def __init__(self, boundingSeg, breakBeam = []):
         self.type = "gripper"
         self.scan = []
+        self.objs = []
         self.state = "open"
         self.boundingSeg = boundingSeg
         self.breakBeam = breakBeam
+    def close(self):
+        for segment in self.objs:
+            segment.robot.setPose(-1000.0, -1000.0, 0.0)
+        self.objs = []
+        return "ok"
 
 class Camera:
     def __init__(self, width, height, startAngle, stopAngle, x, y, thr):
