@@ -341,6 +341,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.menuButtons = {}
         menu = [
             ('File', [['Reset', self.reset],
+                      ['Display world details', self.printDetails],
                       ['Exit', self.destroy]]),
             ('View',[
             ['trail', lambda: self.toggle("trail")],                     
@@ -446,8 +447,6 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
-        print "Window: size=(%d,%d), offset=(%d,%d), scale=%f" % (self.winfo_width(), self.winfo_height(),
-                                                                  self.offset_x, self.offset_y, self.scale)
         self.canvas.delete('all')
         for shape in self.shapes:
             if shape[0] == "box":
@@ -483,6 +482,10 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             i += 1
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
+
+    def printDetails(self):
+        print "Window: size=(%d,%d), offset=(%d,%d), scale=%f" % (self.winfo_width(), self.winfo_height(), self.offset_x, self.offset_y, self.scale)
+        for robot in self.robots:
             print "   %s: pose = (%.2f, %.2f, %.2f)" % (robot.name, robot._gx, robot._gy, robot._ga % (2 * math.pi))
         
     def addBox(self, ulx, uly, lrx, lry, color="white", wallcolor="black"):
