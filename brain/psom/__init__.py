@@ -66,14 +66,14 @@ def _ptrset(myarr, item, i):
     into the array at position indexed by i.
     NOTE: Users should not ever use this function.
     """
-    print "FIXME:", myarr, item, i
-    if myarr[-5:] == 'float':
+    #print "FIXME:", repr(myarr), item, i
+    if 'float' in repr(myarr):
         csom.floatarray_setitem(myarr, i, item)
-    elif myarr[-5:] == 'short':
+    elif 'short' in repr(myarr):
         csom.shortarray_setitem(myarr, i, item)
-    elif myarr[-3:] == 'int':
+    elif 'int' in repr(myarr):
         csom.intarray_setitem(myarr, i, item)
-    elif myarr[-4:] == 'char':
+    elif 'char' in rep(myarr):
         csom.charstararray_setitem(myarr, i, item) # array of character pointers
     else:
         raise TypeError, myarr		
@@ -84,13 +84,13 @@ def _ptrvalue(myarr, i):
     at index position i.
     NOTE: Users should not ever use this function.
     """
-    if myarr[-5:] == 'float':
+    if 'float' in repr(myarr):
         return csom.floatarray_getitem(myarr, i)
-    elif myarr[-5:] == 'short':
+    elif 'short' in repr(myarr):
         return csom.shortarray_getitem(myarr, i)
-    elif myarr[-3:] == 'int':
+    elif 'int' in repr(myarr):
         return csom.intarray_getitem(myarr, i)
-    elif myarr[-4:] == 'char':
+    elif 'char' in repr(myarr):
         return csom.charstararray_getitem(myarr, i) # array of character pointers
     else:
         raise TypeError, myarr
@@ -1074,6 +1074,8 @@ class vector:
                         raise VectorError, \
                               "Invalid mask: %s.  Mask must be a binary list" % mask
                 c_mask = list_to_arr(mask, "short") # convert mask list into a c array of shorts
+            else:
+                c_mask = list_to_arr([], "short")
 
             # label
             #c_str_label = 'NULL' # Warning: c_str_label must be initialized to NULL first.
@@ -1083,6 +1085,7 @@ class vector:
                 # storing it in str_label, a new python list of strings.
                 #str_label = []
                 for item in label:
+                    print str(item)
                     str_label.append(str(item))
                     
                 # Null-terminate the list of strings. this is needed to determine
@@ -1095,7 +1098,8 @@ class vector:
                 #c_str_label = list_to_arr(str_label, "char") 
                 
             # create a data entry struct (see som_devrobs.c for more info)
-            entry = csom.make_data_entry_weighted_masked(points, weight, c_mask, dim,
+            entry = csom.make_data_entry_weighted_masked(points, weight,
+                                                         c_mask, dim,
                                                          str_label)
         # data members of vector object (separated from code for clarity)
         self.dim   = dim
@@ -1120,8 +1124,6 @@ class vector:
         """
         mylist = self.get_elts()
         if isinstance(key, types.SliceType):
-            print key.start
-            print key.stop
             #WKV 2003-07-28
             
             if key.stop > len(self):
@@ -1604,7 +1606,7 @@ if(__name__ == '__main__'):
     # The training/map counters are saved to test1.<train/map>_counter.
     print "test 1: som from file, data from file, train from dataset"
     print "---------------------------------------------------------"
-    if 0:
+    if 1:
         mysom = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
         mydataset = dataset(file=getenv("PYROBOT") + '/brain/psom/ex.dat')
         mysom.init_training(0.02,4.0,5000)
