@@ -512,3 +512,31 @@ class Device(object):
             self.visible = 1
         else:
             self.window = DeviceWindow(self, self.title)
+
+class GripperDevice(Device):
+    def addWidgets(self, window):
+        window.addButton("open", ".open()", self.open)
+        window.addButton("close", ".close()", self.close)
+        window.addButton("up", ".up()", self.up)
+        window.addButton("down", ".down()", self.down)
+        window.addButton("down", ".stop()", self.stop)
+        window.addButton("down", ".store()", self.store)
+        window.addButton("down", ".deploy()", self.deploy)
+        window.addButton("down", ".halt()", self.halt)
+        window.addData("inner", ".getBreakBeam('inner')",
+                       self.getBreakBeam("inner"))
+        window.addData("outer", ".getBreakBeam('outer')",
+                       self.getBreakBeam("outer"))
+        window.addData("1", ".isClosed()", self.isClosed())
+        window.addData("2", ".isOpened()", self.isOpened())
+        window.addData("3", ".isMoving()", self.isMoving())
+        window.addData("4", ".isLiftMoving()", self.isLiftMoving())
+
+    def updateWindow(self):
+        self.window.updateWidget("inner", self.getBreakBeam("inner"))
+        self.window.updateWidget("outer", self.getBreakBeam("outer"))
+        self.window.updateWidget("1", self.isClosed())
+        self.window.updateWidget("2", self.isOpened())
+        self.window.updateWidget("3", self.isMoving())
+        self.window.updateWidget("4", self.isLiftMoving())
+            

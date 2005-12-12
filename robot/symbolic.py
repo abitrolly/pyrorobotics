@@ -10,7 +10,7 @@ __version__ = "$Revision$"
 
 import socket, pickle, threading, random, time
 from pyrobot.robot import Robot
-from pyrobot.robot.device import Device, SensorValue
+from pyrobot.robot.device import *
 from pyrobot.camera.fake import ManualFakeCamera
 
 colorMap = {"red": (255, 0,0),
@@ -113,7 +113,7 @@ class BulbSimDevice(Device):
 	def setBrightness(self, value):
 		return self._dev.move("h_%f" % value)
 
-class GripperSimDevice(Device):
+class GripperSimDevice(GripperDevice):
 	def __init__(self, robot):
 		Device.__init__(self)
 		self.type = "gripper"
@@ -124,13 +124,26 @@ class GripperSimDevice(Device):
 		self.data = self._dev.move("gripper_%d" % 0)
 	def close(self):
 		return self._dev.move("z_gripper_0_close")
-	def addWidgets(self, window):
-		window.addData("breakbeam0", "Break Beam 0", self.data[0])
-		window.addData("breakbeam1", "Break Beam 1", self.data[1])
-	def updateWindow(self):
-		self.window.updateWidget("breakbeam0", self.data[0])
-		self.window.updateWidget("breakbeam1", self.data[1])
-
+	def open(self): pass
+	def up(self): pass
+	def down(self): pass
+	def stop(self): pass
+	def store(self): return self.close()
+	def deploy(self): pass
+	def halt(self): pass
+	# accessor values
+	def getBreakBeam(self, which):
+		if which == 'inner':
+			return self.data[0]
+		elif which == 'outer':
+			return self.data[1]
+		else:
+			raise AttributeError, "invalid breakBeam: '%s'" % which
+	def isClosed(self): return -1
+	def isOpened(self): return -1
+	def isMoving(self): return -1
+	def isLiftMoving(self): return -1
+	
 class CameraSimDevice(ManualFakeCamera):
 	def __init__(self, robot):
 		self.lock = threading.Lock()
