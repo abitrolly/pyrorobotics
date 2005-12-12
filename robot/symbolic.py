@@ -168,34 +168,13 @@ class CameraSimDevice(ManualFakeCamera):
 			self.processAll()
 		self.lock.release()
 
-class TCPRobot(Robot):
-	"""
-	A simple TCP-based socket robot for talking to PyrobotSimulator.
-	"""
-	BUFSIZE = 4096 # 2048 # 1024
-	def __init__(self, host, port):
-		Robot.__init__(self)
-		self.lock = threading.Lock()
-		# Set the socket parameters
-		self.host = host
+class Simbot(Robot):
+	def __init__(self, simulator, port, connectionNum):
+		self.simulator = simulator
+		self.connectionNum = connectionNum
 		self.port = port
-		self.addr = (host, port)
-		self.type = "Pyrobot"
-		# Create socket
-		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-		try:
-			self.socket.settimeout(1)
-		except:
-			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
-		done = 0
-		while not done:
-			try:
-				self.socket.connect( self.addr )
-				done = 1
-			except:
-				print "Waiting on PyrobotSimulator..."
-				time.sleep(1)
-		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
+		self.init()
+	def init(self):
 		self.radius = self.getItem("radius")
 		self.properties = self.getItem("properties")
 		self.builtinDevices = self.getItem("builtinDevices")
@@ -207,30 +186,35 @@ class TCPRobot(Robot):
 			d = self.startDevice(dev)
 			if dev in ["sonar", "laser"]:
 				self.range = d
-
+	def move(self, message, other = None):
+		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
+			message = "m_%.2f_%.2f" % (message, other)
+			other = None
+		retval = None
+		if other != None: return # rotate,translate command ignored
+		if message == "quit" or message == "exit" or message == "end" or message == "disconnect":
+			self.simulator.process(message, self.port, 0)
+			return "ok"
+		else:
+			retval = self.simulator.process(message, self.port, 0)
+		return retval
+	def disconnect(self): pass
 	def localize(self, x = 0, y = 0, th = 0):
 		pass
-
 	def update(self):
 		for i in self.properties:
 			self.__dict__[i] = self.getItem(i)
 		self.updateDevices()
-		
 	def getItem(self, item):
 		return self.move(item)
-
 	def eat(self, amt):
 		return self.move("e_%f" % (amt))
-
 	def play(self, item):
 		return self.move(item)
-
 	def tell(self, item):
 		return self.move(item)
-
 	def ask(self, item):
 		return self.move(item)
-
 	def _moveDir(self, dir):
 		if dir == 'L':
 			self.move("left")
@@ -274,6 +258,36 @@ class TCPRobot(Robot):
 	def rotate(self, value):
 		self.move("o_%f" % value)
 
+class TCPRobot(Simbot):
+	"""
+	A simple TCP-based socket robot for talking to PyrobotSimulator.
+	"""
+	BUFSIZE = 4096 # 2048 # 1024
+	def __init__(self, host, port):
+		Robot.__init__(self)
+		self.lock = threading.Lock()
+		# Set the socket parameters
+		self.host = host
+		self.port = port
+		self.addr = (host, port)
+		self.type = "Pyrobot"
+		# Create socket
+		self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+		try:
+			self.socket.settimeout(1)
+		except:
+			print "WARN: entering deadlock zone; upgrade to Python 2.3 to avoid"
+		done = 0
+		while not done:
+			try:
+				self.socket.connect( self.addr )
+				done = 1
+			except:
+				print "Waiting on PyrobotSimulator..."
+				time.sleep(1)
+		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
+		self.init()
+
 	def move(self, message, other = None):
 		self.lock.acquire()
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
@@ -308,4 +322,5 @@ class TCPRobot(Robot):
 			self.getItem("quit")
 		else:
 			self.getItem("disconnect")
+
 

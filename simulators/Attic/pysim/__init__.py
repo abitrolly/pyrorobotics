@@ -161,7 +161,7 @@ class Simulator:
         else:
             return min(hits)
 
-    def process(self, request, sockname):
+    def process(self, request, sockname, pickleIt = 1):
         """
         Process does all of the work.
         request  - a string message
@@ -310,7 +310,10 @@ class Simulator:
                         if i == index:
                             retval = d.scan
                         index += 1
-        return pickle.dumps(retval)
+        if pickleIt:
+            return pickle.dumps(retval)
+        else:
+            return retval
 
 class TkSimulator(Simulator, Tkinter.Toplevel):
     def __init__(self, offset_x, offset_y, scale, root = None):
