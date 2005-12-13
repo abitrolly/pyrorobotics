@@ -27,7 +27,7 @@ def sgn(v):
     else:      return -1
 
 class Simulator:
-    def __init__(self, (width, height), (offset_x, offset_y), scale):
+    def __init__(self, (width, height), (offset_x, offset_y), scale, run=1):
         self.robots = []
         self.lights = []
         self.trail = []
@@ -50,7 +50,8 @@ class Simulator:
         self.properties = ["stall", "x", "y", "th", "thr", "energy"]
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
-
+    def update(self):
+        pass
     def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
         seg.color = color
@@ -83,7 +84,7 @@ class Simulator:
     def addTrail(self, pos, index, robot):
         self.trail[pos][index] = robot._gx, robot._gy, robot._ga
         
-    def step(self):
+    def step(self, run = 1):
         """
         Advance the world by timeslice milliseconds.
         """
@@ -316,7 +317,7 @@ class Simulator:
             return retval
 
 class TkSimulator(Simulator, Tkinter.Toplevel):
-    def __init__(self, offset_x, offset_y, scale, root = None):
+    def __init__(self, offset_x, offset_y, scale, root = None, run = 1):
         if root == None:
             if share.gui:
                 root = share.gui
@@ -363,7 +364,8 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         for entry in menu:
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
         self.shapes = []
-        self.after(100, self.step)
+        if run:
+            self.after(100, self.step)
     def toggleOption(self, key):
         if key == "lightAboveWalls":
             self.lightAboveWalls = not self.lightAboveWalls
@@ -505,10 +507,11 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
     def drawLine(self, x1, y1, x2, y2, color):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="robot", fill=color)
 
-    def step(self):
+    def step(self, run = 1):
         self.canvas.delete('robot')
-        Simulator.step(self)
-        self.after(self.timeslice, self.step)
+        Simulator.step(self, run)
+        if run:
+            self.after(self.timeslice, self.step)
 
     def addTrail(self, pos, index, robot):
         Simulator.addTrail(self, pos, index, robot)
@@ -518,6 +521,8 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                 x1, y1 = self.scale_x(xya[0]), self.scale_y(xya[1])
                 x2, y2 = self.scale_x(robot._gx), self.scale_y(robot._gy)
                 self.canvas.create_line(x1, y1, x2, y2, fill=robot.color)
+    def update(self):
+        self.update_idletasks()
 
 class SimRobot:
     def __init__(self, name, x, y, a, boundingBox = [], color = "red"):
@@ -960,6 +965,8 @@ class TkPuck(TkRobot):
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
         self.addMouseBindings()
+
+Pioneer = SimRobot
 
 class TkPioneer(TkRobot):
     def __init__(self, *args, **kwargs):
