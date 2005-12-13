@@ -170,6 +170,7 @@ class CameraSimDevice(ManualFakeCamera):
 
 class Simbot(Robot):
 	def __init__(self, simulator, port, connectionNum):
+		Robot.__init__(self)
 		self.simulator = simulator
 		self.connectionNum = connectionNum
 		self.port = port
