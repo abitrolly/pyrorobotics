@@ -11,7 +11,10 @@ __version__ = "$Revision$"
 import socket, pickle, threading, random, time
 from pyrobot.robot import Robot
 from pyrobot.robot.device import *
-from pyrobot.camera.fake import ManualFakeCamera
+try:
+	from pyrobot.camera.fake import ManualFakeCamera
+except:
+	class ManualFakeCamera: pass  # camera C++ code not built
 
 colorMap = {"red": (255, 0,0),
             "green": (0, 255,0),
@@ -236,7 +239,13 @@ class Simbot(Robot):
 			return {name: BulbSimDevice(self)}
 		elif name == "camera":
 			self.move("s_%s_%d" % (name, index))
-			return {name: CameraSimDevice(self)}
+			try:
+				retval = {name: CameraSimDevice(self)}
+			except:
+				print "Camera device creation failed!"
+				# probably no C++ ManualFakeCamera
+				retval = None
+			return retval
 		elif name == "gripper":
 			self.move("s_%s_%d" % (name, index))
 			return {name: GripperSimDevice(self)}
