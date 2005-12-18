@@ -107,6 +107,14 @@ class LightSimDevice(RangeSimDevice):
 			retval.rgb = self._dev.move("f_%d_%d" % (self.index, pos)) # rgb
 		return retval
 	rgb = property(_getRgb)
+	def addWidgets(self, window):
+		for i in range(min(self.count, 24)):
+			window.addData("%d.value" % i, "[%d].value:" % i, self[i].value)
+			window.addData("%d.rgb" % i, "[%d].rgb:" % i, self[i].rgb)
+	def updateWindow(self):
+		for i in range(min(self.count, 24)):
+			self.window.updateWidget("%d.value" % i, self[i].value)
+			self.window.updateWidget("%d.rgb" % i, self[i].rgb)
 
 class BulbSimDevice(Device):
 	def __init__(self, robot):
@@ -160,10 +168,8 @@ class CameraSimDevice(ManualFakeCamera):
 		self.data = self.robot.move("camera_%d" % 0)
 		if len(self.data) == self.width:
 			for w in range(self.width):
-				(color, distance) = self.data[w]
-				if color == None or distance == None: continue
-				dist = (10 - distance)/10.0 
-				height = min(max((dist ** 2) * self.height/2.0, 1), self.height/2)
+				(color, height) = self.data[w]
+				if color == None or height == None: continue
 				for h in range(int(round(height))):
 					self.rawImage[w][self.height/2 - h] = colorMap[color]
 					self.rawImage[w][self.height/2 + h] = colorMap[color]

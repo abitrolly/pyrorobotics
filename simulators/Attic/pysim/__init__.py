@@ -55,6 +55,7 @@ class Simulator:
     def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
         seg.color = color
+        seg.type = "wall"
         self.world.append(seg)
 
     def addBox(self, ulx, uly, lrx, lry, color="white", wallcolor="black"):
@@ -138,6 +139,7 @@ class Simulator:
                     for i in range(len(xys)):
                         w = Segment( xys[i], xys[i - 1]) # using the previous one completes the polygon
                         w.color = r.color
+                        w.type = r.type
                         w.robot = r
                         segments.append(w)
                 if r.boundingSeg != []:
@@ -149,6 +151,7 @@ class Simulator:
                     for i in range(0, len(xys), 2):
                         w = Segment( xys[i], xys[i + 1]) # assume that they come in pairs
                         w.color = r.color
+                        w.type = r.type
                         w.robot = r
                         segments.append(w)
                 for w in segments:
@@ -500,6 +503,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
     def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2))
         seg.color = color
+        seg.type = "wall"
         id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
         seg.id = id
         self.world.append( seg )
@@ -728,7 +732,12 @@ class SimRobot:
                     if obj != None:
                         if i in [0, d.width - 1]:
                             self.drawRay("camera", x, y, hit[0], hit[1], "purple")
-                        d.scan.append((obj.color, dist))
+                        dist = (10 - dist)/10.0 # 10 meter range
+                        if obj.type == "wall":
+                            height = min(max((dist ** 2) * d.height/2.0, 1), d.height/2)
+                        else:
+                            height = min(max((dist ** 2) * d.height/4.0, 1), d.height/4)
+                        d.scan.append((obj.color, height))
                     else:
                         d.scan.append((None, None))
                     a -= stepAngle
