@@ -1351,13 +1351,13 @@ class Network:
         for key in args:
             layer = self.getLayer(key)
             if layer.type == 'Input':
-                layer.copyActivations(args[key])
+                self.copyActivations(layer, args[key])
             elif layer.type == 'Output':
-                layer.copyTargets(args[key])
+                self.copyTargets(layer, args[key])
             elif layer.type == 'Context':
-                layer.copyActivations(args[key])
+                self.copyActivations(layer, args[key])
             else:
-                raise LayerError,  ('Unkown or incorrect layer type in step() method.', layer.name)
+                raise LayerError,  ('Unknown or incorrect layer type in step() method.', layer.name)
         # Propagate activation through network:
         self.propagate()
         # Next, take care of any Auto-association, and copy
