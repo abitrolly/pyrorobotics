@@ -53,7 +53,7 @@ class NNPredict(Brain):
       self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       # results
       if self.net.learning:
-         e, c, t = self.net.step(input=old, output=target)
+         e, c, t, p = self.net.step(input=old, output=target)
          if self.counter % 10 == 0:
             print "error = %.2f" % e
          self.trans, self.rotate = target
