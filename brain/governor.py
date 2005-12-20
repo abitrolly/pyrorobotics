@@ -449,7 +449,7 @@ if __name__ == '__main__':
     net.setTargets( targets )
     net.setInputs( inputs )
     net.governing = 0
-    tss, correct, total = net.sweep()
+    tss, correct, total, pcorrect = net.sweep()
     print "TSS: %.4f Percent: %.4f" % (tss, correct / float(total))
     # run with -i to see net
     

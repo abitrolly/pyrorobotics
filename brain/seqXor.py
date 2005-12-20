@@ -25,7 +25,7 @@ def sequentialXor(n, limit):
         n.getLayer('input').copyActivations([current])
         next = randomBit()
         n.getLayer('output').copyTargets([next])
-        (error, correct, total) = n.step()
+        (error, correct, total, pcorrect) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err1 = error
         if n.interactive:
@@ -33,7 +33,7 @@ def sequentialXor(n, limit):
         n.getLayer('input').copyActivations([next])
         result = xor(current,next)
         n.getLayer('output').copyTargets([result])
-        (error, correct, count) = n.step()
+        (error, correct, count, pcorrect) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err2 = error
         if n.interactive:
@@ -41,7 +41,7 @@ def sequentialXor(n, limit):
         n.getLayer('input').copyActivations([result])
         current = randomBit()
         n.getLayer('output').copyTargets([current])
-        (error, correct, count) = n.step()
+        (error, correct, count, pcorrect) = n.step()
         n.getLayer('context').copyActivations(n.getLayer('hidden').activation)
         err3 = error
         totalErr1 = totalErr1 + err1

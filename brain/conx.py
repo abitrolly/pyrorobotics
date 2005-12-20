@@ -1263,19 +1263,26 @@ class Network:
             self.log.write(msg + "\n")
         else:
             print msg
-    def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
-        self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                   (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+    def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = None):
+        if not self.patterned:
+            self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                       (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+        else:
+            self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | Pattern Correct = %d | RMS Error: %.4f" % \
+                       (epoch, tssErr, totalCorrect * 1.0 / totalCount, pcorrect, rmsErr))
         sys.stdout.flush()
-
     def reportPattern(self):
         pass
     def reportStart(self):
         pass
-    def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr):
-        self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                   (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
-        
+    def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = None):
+        if not self.patterned:
+            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                       (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+        else:
+            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | Pattern Correct = %d | RMS Error: %.4f" % \
+                       (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, pcorrect, rmsErr))        
+        sys.stdout.flush()
     # train and sweep methods
     def train(self, cont=0):
         """
@@ -1285,7 +1292,7 @@ class Network:
 
         # check architecture
         self.verifyArchitecture()
-        tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1;
+        tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = 0
         if not cont:
             self.epoch = 0
             self.reportStart()
@@ -1293,15 +1300,15 @@ class Network:
             self.epoch = 1
             self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
-            (tssErr, totalCorrect, totalCount) = self.sweep()
+            (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
             else:
                 self.Print("Warning: sweep didn't do anything!")
             if self.epoch % self.reportRate == 0:
-                self.reportEpoch(self.epoch, tssErr, totalCorrect, totalCount, rmsErr)
+                self.reportEpoch(self.epoch, tssErr, totalCorrect, totalCount, rmsErr, totalPCorrect)
                 if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
-                    (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
+                    (tssCVErr, totalCVCorrect, totalCVCount, totalCVPCorrect) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                     self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                                (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
@@ -1320,14 +1327,14 @@ class Network:
                 self.resetCount += 1
                 self.Print("RESET! resetEpoch reached; starting over...")
                 self.initialize()
-                tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0
+                tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalPCorrect = 0
                 continue
             self.epoch += 1
         print "----------------------------------------------------"
         if totalCount > 0:
-            self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr)
+            self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr, totalPCorrect)
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
-                (tssCVErr, totalCVCorrect, totalCVCount) = self.sweepCrossValidation()
+                (tssCVErr, totalCVCorrect, totalCVCount, totalCVPCorrect) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
                 self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
                            (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
@@ -1378,13 +1385,13 @@ class Network:
             if self.interactive:
                 self.prompt()
         # Compute error, and back prop it:
-        (error, correct, total) = self.backprop() # compute_error()
+        (error, correct, total, pcorrect) = self.backprop() # compute_error()
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
         self.postStep()
         self.reportPattern()
-        return (error, correct, total)
+        return (error, correct, total, pcorrect)
     def preStep(self):
         pass
     def postStep(self):
@@ -1396,7 +1403,7 @@ class Network:
     def sweep(self):
         """
         Runs through entire dataset. 
-        Returns TSS error, total correct, and total count.
+        Returns TSS error, total correct, total count, and pattern correct
         """
         self.preSweep()
         if self.loadOrder == []:
@@ -1406,7 +1413,7 @@ class Network:
         if self.verbosity >= 1: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = 0
         cnt = 0
         if self.saveResults:
             self.results = [(0,0,0) for x in self.loadOrder]
@@ -1419,13 +1426,14 @@ class Network:
             else:
                 self.currentSweepCount = None
             self._sweeping = 1
-            (error, correct, total) = self.step( **datum )
+            (error, correct, total, pcorrect) = self.step( **datum )
             self._sweeping = 0
             if self.saveResults:
-                self.results[i] = (error, correct, total)
+                self.results[i] = (error, correct, total, pcorrect)
             tssError += error
             totalCorrect += correct
             totalCount += total
+            totalPCorrect += pcorrect
             if (cnt + 1) % self.sweepReportRate == 0:
                 print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
                       (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
@@ -1435,7 +1443,7 @@ class Network:
         if self.learning and self.batch:
             self.change_weights() # batch mode, otherwise change weights in step
         self.postSweep()
-        return (tssError, totalCorrect, totalCount)
+        return (tssError, totalCorrect, totalCount, totalPCorrect)
     def sweepCrossValidation(self):
         """
         sweepCrossValidation() will go through each of the crossvalidation input/targets.
@@ -1446,32 +1454,34 @@ class Network:
         # get learning value and then turn it off
         oldLearning = self.learning
         self.learning = 0
-        tssError = 0.0; totalCorrect = 0; totalCount = 0;
+        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = 0
         self._cv = True # in cross validation
         if self.autoCrossValidation:
             for i in range(len(self.inputs)):
                 set = self.getDataCrossValidation(i)
                 self._sweeping = 1
-                (error, correct, total) = self.step( **set )
+                (error, correct, total, pcorrect) = self.step( **set )
                 self._sweeping = 0
                 if self.crossValidationReportLayers != []:
-                    (error, correct, total) = self.getError( *self.crossValidationReportLayers )
+                    (error, correct, total, pcorrect) = self.getError( *self.crossValidationReportLayers )
                 tssError += error
                 totalCorrect += correct
                 totalCount += total
+                totalPCorrect += pcorrect
         else:
             for set in self.crossValidationCorpus:
                 self._sweeping = 1
-                (error, correct, total) = self.step( **set )
+                (error, correct, total, pcorrect) = self.step( **set )
                 self._sweeping = 0
                 if self.crossValidationReportLayers != []:
-                    (error, correct, total) = self.getError( *self.crossValidationReportLayers )
+                    (error, correct, total, pcorrect) = self.getError( *self.crossValidationReportLayers )
                 tssError += error
                 totalCorrect += correct
                 totalCount += total
+                totalPCorrect += pcorrect
         self.learning = oldLearning
         self._cv = False
-        return (tssError, totalCorrect, totalCount)
+        return (tssError, totalCorrect, totalCount, totalPCorrect)
     def saveNetworkForCrossValidation(self, filename, mode = 'a'):
         fp = open(filename, mode)
         # for each layer, if type is Input or Output, save it with name
@@ -1678,7 +1688,7 @@ class Network:
         Initializes error computation. Calculates error for output
         layers and initializes hidden layer error to zero.
         """
-        retval = 0.0; correct = 0; totalCount = 0
+        retval = 0.0; correct = 0; totalCount = 0; pcorrect = 0
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
@@ -1686,23 +1696,32 @@ class Network:
                     totalCount += layer.size
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                    if self.patterned:
+                        if self.compare(layer.target, layer.activation): # the same!
+                            if self.getWord(layer.target) != None: # it is a codeword; slow
+                                pcorrect += 1
                 elif (layer.type == 'Hidden'):
                     for i in range(layer.size):
                         layer.error[i] = 0.0
-        return (retval, correct, totalCount)
+        return (retval, correct, totalCount, pcorrect)
     def getError(self, *layerNames):
-        totalSquaredError, totalSize, totalCorrect = 0.0, 0, 0
+        totalSquaredError, totalSize, totalCorrect, totalPCorrect = 0.0, 0, 0, 0
         for layerName in layerNames:
             totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, self.layersByName[layerName].error ))
             totalSize += len(self.layersByName[layerName].error)
             totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, self.layersByName[layerName].error))
-        return (totalSquaredError, totalCorrect, totalSize)
+            if self.layersByName[layerName].type == 'Output':
+                # FIXME: This isn't quite right, because it just checks to see if target is same as output.
+                # For example, an output context layer might match here, and count as a pattern match
+                # Need to check to see if a pattern was actually used here.
+                totalPCorrect += self.compare(self.layersByName[layerName].target, self.layersByName[layerName].activation)
+        return (totalSquaredError, totalCorrect, totalSize, totalPCorrect)
     def compute_error(self):
         """
         Computes error for all non-output layers backwards through all
         projections.
         """
-        error, correct, total = self.ce_init()
+        error, correct, total, pcorrect = self.ce_init()
         # go backwards through each proj but don't redo output errors!
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
@@ -1710,7 +1729,7 @@ class Network:
                 connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
-        return (error, correct, total)
+        return (error, correct, total, pcorrect)
     def compute_wed(self):
         """
         Computes weight error derivative for all connections in
@@ -2468,7 +2487,7 @@ class SRN(Network):
         sequenceLength = len(args["input"]) / self["input"].size
         patternLength = self["input"].size
         learning = self.learning
-        totalRetvals = (0.0, 0, 0) # error, correct, total
+        totalRetvals = (0.0, 0, 0, 0) # error, correct, total, pattern correct
         for step in range(sequenceLength):
             if self.verbosity >= 1 or self.interactive:
                 print "-----------------------------------Step #", step + 1
@@ -2664,7 +2683,7 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.setReportRate(100)
         n.train()
-        print "getError('output') = (tss, correct, total):", n.getError("output")
+        print "getError('output') = (tss, correct, total, pattern correct):", n.getError("output")
         print "getError('output', 'output') :", n.getError("output", "output")
         # test crossvalidation ---------------------------------
         print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
@@ -3138,7 +3157,7 @@ if __name__ == '__main__':
         n.addSRNLayers(3,3,3)
         n.setInputs([[1,1,1]])
         n.predict('hidden','output')
-        n.setSequenceType("ordered-continous")
+        n.setSequenceType("ordered-continuous")
         print "Attempting to predict hidden and output layers..."
         try:
             n.step()

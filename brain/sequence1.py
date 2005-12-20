@@ -16,6 +16,7 @@ net.setInputs( [["a", "b", "b", "b", "a", "d", "b"],
                 ["a", "c", "c", "c", "a", "d", "c"]] )
 #net.setInputs( [["a", "b", "a", "d", "b"],
 #                ["a", "c", "a", "d", "c"]] )
+net.setSequenceType("ordered-segmented")
 net.predict("input", "output")
 net.setInitContext(0)
 net.setTolerance(.3)

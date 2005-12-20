@@ -568,11 +568,11 @@ if __name__ == '__main__':
                         maxGeneration=400, verbose=1)
         def fitnessFunction(self, genePos):
             self.network.unArrayify(self.pop.individuals[genePos].genotype)
-            error, correct, count = self.network.sweep()
+            error, correct, count, pcorrect = self.network.sweep()
             return 4 - error
         def isDone(self):
             self.network.unArrayify(self.pop.bestMember.genotype)
-            error, correct, count = self.network.sweep()
+            error, correct, count, pcorrect = self.network.sweep()
             print "Correct:", correct
             return correct == 4
 

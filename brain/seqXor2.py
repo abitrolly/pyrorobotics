@@ -37,7 +37,7 @@ def sequentialXorSweeps(n, runLength, maxtimes = 1000):
             last = current
         n.setInputs( ins )
         n.setOutputs( outs )
-        (tssError, totalCorrect, totalCount) = n.sweep()
+        (tssError, totalCorrect, totalCount, totalPCorrect) = n.sweep()
         totalError += tssError
         if step % n.reportRate == 0:
             print " Step: #%6d, Error = %.4f Correct = %d" % (step, tssError, totalCorrect)

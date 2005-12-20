@@ -7,7 +7,7 @@ import sys
 
 # goal is to remember first input given in several sequences
 
-print "command line expects: {srn | gov | both} pause"
+print "command line expects: {srn | gov | both} pauseInteger # for inter-stimulus wait"
 
 mode = sys.argv[1] # srn, gov, or both
 pause = int(sys.argv[2])
@@ -21,7 +21,7 @@ net.setInputs( [[0.0] + [0.0] * pause + [0.0],
 net.setOutputs( [[0.0] + [0.0] * pause + [0.0],
                  [0.5] + [0.0] * pause + [0.5],
                  [1.0] + [0.0] * pause + [1.0]] )
-net.setSequenceType("pattern")
+net.setSequenceType("ordered-segmented")
 
 net.crossValidationCorpus = (
     {"input" : [0.0] + [0.0] * pause + [0.0],
