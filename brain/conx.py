@@ -2719,6 +2719,9 @@ if __name__ == '__main__':
         print "getError('output', 'output') :", n.getError("output", "output")
         # test crossvalidation ---------------------------------
         print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
+        import posix, posixpath
+        if posixpath.exists("sample.cv"):
+            posix.unlink("sample.cv")
         n.learning = 0
         n.crossValidationSampleRate = 1
         #saves in "sample.cv"
