@@ -8,14 +8,19 @@ Provided under the GNU General Public License.
 ----------------------------------------------------
 
 This file implements the major classes and functions for
-making artificial neural networks in Python. Part of the
-Pyrobot project.
+making artificial neural networks in Python.
 """
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
+
+def sumMerge(dict1, dict2):
+    """ Adds two dictionaries together, and merges into the first, dict1. """
+    for key in dict2:
+        dict1[key] = map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key])
+    return dict1 # and also returns it, in case you want to do something to it
 
 def loadNetworkFromFile(filename):
     """
@@ -112,6 +117,8 @@ class Layer:
         self.warningIssued = 0
         if size <= 0:
             raise LayerError, ('Layer was initialized with size zero.' , size)
+        self.patternReport = 0 # flag to determine if layer should be in report
+        # patternReport is set to 1 automatically for output layers (in .connect())
         self.name = name
         self.size = size
         self.displayWidth = size
@@ -711,16 +718,19 @@ class Network:
             raise NetworkError, ('Layers out of order.', (fromLayer.name, toLayer.name))
         if (fromLayer.type == 'Output'):
             fromLayer.type = 'Hidden'
+            fromLayer.patternReport = 0 # automatically turned off for hidden layers
             if fromLayer.kind == 'Output':
                 fromLayer.kind = 'Hidden'
         elif (fromLayer.type == 'Undefined'):
             fromLayer.type = 'Input'
+            fromLayer.patternReport = 0 # automatically turned off for input layers
             if fromLayer.kind == 'Undefined':
                 fromLayer.kind = 'Input'
         if (toLayer.type == 'Input'):
             raise NetworkError, ('Connections out of order', (fromLayer.name, toLayer.name))
         elif (toLayer.type == 'Undefined'):
             toLayer.type = 'Output'
+            toLayer.patternReport = 1 # automatically turned on for output layers
             if toLayer.kind == 'Undefined':
                 toLayer.kind = 'Output'
         self.connections.append(Connection(fromLayer, toLayer))
@@ -1263,25 +1273,29 @@ class Network:
             self.log.write(msg + "\n")
         else:
             print msg
-    def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = None):
-        if not self.patterned:
-            self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                       (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
-        else:
-            self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | Pattern Correct = %d | RMS Error: %.4f" % \
-                       (epoch, tssErr, totalCorrect * 1.0 / totalCount, pcorrect, rmsErr))
+    def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = {}):
+        # pcorrect is a dict of layer error/correct data:
+        #   {layerName: [correct, total, pattern correct, pattern total]...}
+        self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                   (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+        for layerName in pcorrect:
+            self.Print("   Epoch #%6d, Layer = %-12s | Correct = %.4f | Patterns Correct: %.4f" % \
+                       (epoch, "'" + layerName + "'",
+                        float(pcorrect[layerName][0]) / pcorrect[layerName][1],
+                        float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
-    def reportPattern(self):
-        pass
-    def reportStart(self):
-        pass
-    def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = None):
-        if not self.patterned:
-            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
-                       (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
-        else:
-            self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | Pattern Correct = %d | RMS Error: %.4f" % \
-                       (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, pcorrect, rmsErr))        
+    def reportPattern(self): pass
+    def reportStart(self): pass
+    def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = {}):
+        # pcorrect is a dict of layer error/correct data:
+        #   {layerName: [correct, total, pattern correct, pattern total]...}
+        self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                   (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
+        for layerName in pcorrect:
+            self.Print("   Final #%6d, Layer = %-12s | Correct = %.4f | Patterns Correct: %.4f" % \
+                       (epoch-1, "'" + layerName + "'",
+                        float(pcorrect[layerName][0]) / pcorrect[layerName][1],
+                        float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     # train and sweep methods
     def train(self, cont=0):
@@ -1292,7 +1306,7 @@ class Network:
 
         # check architecture
         self.verifyArchitecture()
-        tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = 0
+        tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = {}
         if not cont:
             self.epoch = 0
             self.reportStart()
@@ -1327,7 +1341,7 @@ class Network:
                 self.resetCount += 1
                 self.Print("RESET! resetEpoch reached; starting over...")
                 self.initialize()
-                tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalPCorrect = 0
+                tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalPCorrect = {}
                 continue
             self.epoch += 1
         print "----------------------------------------------------"
@@ -1403,7 +1417,7 @@ class Network:
     def sweep(self):
         """
         Runs through entire dataset. 
-        Returns TSS error, total correct, total count, and pattern correct
+        Returns TSS error, total correct, total count, pcorrect (a dict of layer data)
         """
         self.preSweep()
         if self.loadOrder == []:
@@ -1413,7 +1427,7 @@ class Network:
         if self.verbosity >= 1: print "Epoch #", self.epoch, "Cycle..."
         if not self.orderedInputs:
             self.randomizeOrder()
-        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = 0
+        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = {}
         cnt = 0
         if self.saveResults:
             self.results = [(0,0,0) for x in self.loadOrder]
@@ -1433,7 +1447,7 @@ class Network:
             tssError += error
             totalCorrect += correct
             totalCount += total
-            totalPCorrect += pcorrect
+            sumMerge(totalPCorrect, pcorrect)
             if (cnt + 1) % self.sweepReportRate == 0:
                 print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
                       (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
@@ -1454,7 +1468,7 @@ class Network:
         # get learning value and then turn it off
         oldLearning = self.learning
         self.learning = 0
-        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = 0
+        tssError = 0.0; totalCorrect = 0; totalCount = 0; totalPCorrect = {}
         self._cv = True # in cross validation
         if self.autoCrossValidation:
             for i in range(len(self.inputs)):
@@ -1467,7 +1481,7 @@ class Network:
                 tssError += error
                 totalCorrect += correct
                 totalCount += total
-                totalPCorrect += pcorrect
+                sumMerge(totalPCorrect, pcorrect)
         else:
             for set in self.crossValidationCorpus:
                 self._sweeping = 1
@@ -1478,7 +1492,7 @@ class Network:
                 tssError += error
                 totalCorrect += correct
                 totalCount += total
-                totalPCorrect += pcorrect
+                sumMerge(totalPCorrect, pcorrect)
         self.learning = oldLearning
         self._cv = False
         return (tssError, totalCorrect, totalCount, totalPCorrect)
@@ -1688,7 +1702,7 @@ class Network:
         Initializes error computation. Calculates error for output
         layers and initializes hidden layer error to zero.
         """
-        retval = 0.0; correct = 0; totalCount = 0; pcorrect = 0
+        retval = 0.0; correct = 0; totalCount = 0
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
@@ -1696,32 +1710,17 @@ class Network:
                     totalCount += layer.size
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
-                    if self.patterned:
-                        if self.compare(layer.target, layer.activation): # the same!
-                            if self.getWord(layer.target) != None: # it is a codeword; slow
-                                pcorrect += 1
                 elif (layer.type == 'Hidden'):
                     for i in range(layer.size):
                         layer.error[i] = 0.0
-        return (retval, correct, totalCount, pcorrect)
-    def getError(self, *layerNames):
-        totalSquaredError, totalSize, totalCorrect, totalPCorrect = 0.0, 0, 0, 0
-        for layerName in layerNames:
-            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, self.layersByName[layerName].error ))
-            totalSize += len(self.layersByName[layerName].error)
-            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, self.layersByName[layerName].error))
-            if self.layersByName[layerName].type == 'Output':
-                # FIXME: This isn't quite right, because it just checks to see if target is same as output.
-                # For example, an output context layer might match here, and count as a pattern match
-                # Need to check to see if a pattern was actually used here.
-                totalPCorrect += self.compare(self.layersByName[layerName].target, self.layersByName[layerName].activation)
-        return (totalSquaredError, totalCorrect, totalSize, totalPCorrect)
+        return (retval, correct, totalCount)
     def compute_error(self):
         """
         Computes error for all non-output layers backwards through all
         projections.
         """
-        error, correct, total, pcorrect = self.ce_init()
+        error, correct, total = self.ce_init()
+        pcorrect = {}
         # go backwards through each proj but don't redo output errors!
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
@@ -1729,7 +1728,37 @@ class Network:
                 connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
+        # now all errors are set on all layers!
+        pcorrect = self.getLayerErrors()
         return (error, correct, total, pcorrect)
+    def getError(self, *layerNames):
+        totalSquaredError, totalSize, totalCorrect, pcorrect = 0.0, 0, 0, {}
+        for layerName in layerNames:
+            layer = self.layersByName[layerName]
+            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, layer.error ))
+            totalSize += len(layer.error)
+            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, layer.error))
+            if layer.patternReport: 
+                lyst = [0,0,0,0]  # correct, total, pcorrect, ptotal
+                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                lyst[1] = layer.size
+                if self.compare(layer.target, layer.activation): # if the same
+                    lyst[2] += 1 # correct
+                lyst[3] += 1 # ptotal
+                pcorrect[layer.name] = lyst
+        return (totalSquaredError, totalCorrect, totalSize, pcorrect)
+    def getLayerErrors(self):
+        pcorrect = {}
+        for layer in self.layers:
+            if layer.patternReport: 
+                lyst = [0,0,0,0]  # correct, total, pcorrect, ptotal
+                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                lyst[1] = layer.size
+                if self.compare(layer.target, layer.activation): # if the same
+                    lyst[2] += 1 # correct
+                lyst[3] += 1 # ptotal
+                pcorrect[layer.name] = lyst
+        return pcorrect
     def compute_wed(self):
         """
         Computes weight error derivative for all connections in
@@ -2487,7 +2516,8 @@ class SRN(Network):
         sequenceLength = len(args["input"]) / self["input"].size
         patternLength = self["input"].size
         learning = self.learning
-        totalRetvals = (0.0, 0, 0, 0) # error, correct, total, pattern correct
+        totalRetvals = (0.0, 0, 0) # error, correct, total
+        totalPCorrect = {}
         for step in range(sequenceLength):
             if self.verbosity >= 1 or self.interactive:
                 print "-----------------------------------Step #", step + 1
@@ -2532,7 +2562,9 @@ class SRN(Network):
                     self.learning = 0
             retvals = self.networkStep(**dict)
             self.learning = learning # in case we turned it off
-            totalRetvals = map(lambda x,y: x+y, totalRetvals, retvals)
+            totalRetvals = map(lambda x,y: x+y, totalRetvals[:3], retvals[:3])
+            sumMerge(totalPCorrect, retvals[3])
+            totalRetvals.append( totalPCorrect)
         return totalRetvals
     def networkStep(self, **args):
         """
@@ -2683,7 +2715,7 @@ if __name__ == '__main__':
         n.setMomentum(.975)
         n.setReportRate(100)
         n.train()
-        print "getError('output') = (tss, correct, total, pattern correct):", n.getError("output")
+        print "getError('output') = (tss, correct, total):", n.getError("output")
         print "getError('output', 'output') :", n.getError("output", "output")
         # test crossvalidation ---------------------------------
         print "Testing crossvalidation.. saving network sweep in 'sample.cv'..."
