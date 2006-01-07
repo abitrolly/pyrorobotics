@@ -103,6 +103,18 @@ class SRNError(NetworkError):
     Used to indicate that SRN specific attributes are improper.
     """
 
+class Node:
+    """ A temp place to hold values for reference. """
+    def __init__(self, **keywords):
+        self._attributes = keywords.keys()
+        for key in keywords:
+            self.__dict__[key] = keywords[key]
+    def __str__(self):
+        retval = "Node:"
+        for key in self._attributes:
+            retval += "\n   %s = %s" % (key, self.__dict__[key])
+        return retval
+
 class Layer:
     """
     Class which contains arrays of node elements (ie, activation,
@@ -167,7 +179,16 @@ class Layer:
         return self.size
     def __str__(self):
         return self.toString()
-
+    def __getitem__(self, i):
+        """ Return a temp object with some properties set """
+        if type(i) == int:
+            return Node(activation = self.activation[i],
+                        error = self.error[i],
+                        target = self.target[i],
+                        netinput = self.netinput[i],
+                        )
+        else:
+            raise AttributeError, "expected integer instead of '%s'" % i
     # layer methods
     def setEpsilon(self, value):
         self.epsilon = Numeric.ones(self.size, "f") * value
@@ -677,11 +698,18 @@ class Network:
         Returns string representation of network.
         """
         return self.toString()
+    def __iter__(self):
+        for layer in self.layers:
+            yield layer
     def __getitem__(self, name):
         """
         Returns the layer specified by name.
         """
-        return self.layersByName[name]
+        if type(name) == str:
+            return self.layersByName[name]
+        else:
+            fromName, toName = name
+            return self.getWeights(fromName, toName)
     def __len__(self):
         """
         Returns the number of layers in the network.
@@ -696,18 +724,21 @@ class Network:
             if layer == self.layers[i]: # shallow cmp
                 return i
         return -1 # not in list
-    def addLayer(self, name, size, verbosity = 0):
+    def addLayer(self, name, size, verbosity = 0, position = None):
         layer = Layer(name, size)
-        Network.add(self, layer, verbosity)
+        Network.add(self, layer, verbosity, position)
     # methods for constructing and modifying a network
-    def add(self, layer, verbosity = 0):
+    def add(self, layer, verbosity = 0, position = None):
         """
         Adds a layer. Layer verbosity is optional (default 0).
         """
         layer.verbosity = verbosity
-        self.layers.append(layer)
+        if position == None:
+            self.layers.append(layer)
+        else:
+            self.layers.insert(position, layer)
         self.layersByName[layer.name] = layer
-    def connect(self, fromName, toName):
+    def connect(self, fromName, toName, position = None):
         """
         Connects two layers by instantiating an instance of Connection
         class.
@@ -733,7 +764,10 @@ class Network:
             toLayer.patternReport = 1 # automatically turned on for output layers
             if toLayer.kind == 'Undefined':
                 toLayer.kind = 'Output'
-        self.connections.append(Connection(fromLayer, toLayer))
+        if position == None:
+            self.connections.append(Connection(fromLayer, toLayer))
+        else:
+            self.connections.insert(position, Connection(fromLayer, toLayer))
     def addThreeLayers(self, inc, hidc, outc):
         """
         Creates a three layer network with 'input', 'hidden', and
@@ -744,6 +778,43 @@ class Network:
         self.addLayer('output', outc)
         self.connect('input', 'hidden')
         self.connect('hidden', 'output')
+    def addLayers(self, *arg, **kw):
+        """
+        Creates an N layer network with 'input', 'hidden1', 'hidden2',...
+        and 'output' layers. Keyword type indicates "parallel" or
+        "serial". If only one hidden layer, it is called "hidden".
+        """
+        netType = "parallel"
+        if "type" in kw:
+            netType = kw["type"]
+        self.addLayer('input', arg[0])
+        hiddens = []
+        if len(arg) > 3:
+            hcount = 0
+            for hidc in arg[1:-1]:
+                name = 'hidden%d' % hcount
+                self.addLayer(name, hidc)
+                hiddens.append(name)
+                hcount += 1
+        elif len(arg) == 3:
+                name = 'hidden'
+                self.addLayer(name, arg[1])
+                hiddens.append(name)
+        elif len(arg) == 2:
+            pass
+        else:
+            raise AttributeError, "not enough layers! need >= 2"
+        self.addLayer('output', arg[-1])
+        lastName = "input"
+        for name in hiddens:
+            if netType == "parallel":
+                self.connect('input', name)
+                self.connect(name, 'output')
+            else: # serial
+                self.connect(lastName, name)
+                lastName = name
+        if netType == "serial" or lastName == "input":
+            self.connect(lastName, "output")
     def setLayerVerification(self, value):
         for layer in self.layers:
             layer.verify = value
@@ -1371,11 +1442,11 @@ class Network:
         self.preStep()
         for key in args:
             layer = self.getLayer(key)
-            if layer.type == 'Input':
+            if layer.kind == 'Input':
                 self.copyActivations(layer, args[key])
-            elif layer.type == 'Output':
+            elif layer.kind == 'Output':
                 self.copyTargets(layer, args[key])
-            elif layer.type == 'Context':
+            elif layer.kind == 'Context':
                 self.copyActivations(layer, args[key])
             else:
                 raise LayerError,  ('Unknown or incorrect layer type in step() method.', layer.name)
@@ -1809,6 +1880,10 @@ class Network:
             self.interactive = 0
         elif chr[0] == 'q':
             sys.exit(1)
+    def displayConnections(self):
+        print "Connections:"
+        for c in self.connections:
+            print "   '%s' => '%s'" % (c.fromLayer.name, c.toLayer.name)
     def display(self):
         """
         Displays the network to the screen.
@@ -2342,6 +2417,83 @@ class Network:
                     for l2 in range(len(network.layers)):
                         if network.layers[l2].name == toLayerName:
                             self.layers[l1].bias = network.layers[l2].bias
+
+class CascadeNetwork(Network):
+    """
+    A cascade network might have a candidate layer. If it does, then it is
+    trained so that the outputs are correlated with the error of the
+    output layers. Otherwise, it is trained normally (although, the layout
+    is a bit unusual.)
+    """
+    def preSweep(self):
+        """ Setup training for candidate layer nodes """
+        self["candidate"].correlatedError = Numeric.zeros(self["candidate"].size, 'f')
+        
+    def getDataTemp(self, i):
+        """
+        In a Cascade Correlation Network, we see how each candidate
+        node varies with each output. We can also use that value to
+        set a target for the candidate node for training.
+        """
+        data = {} # targets and inputs
+        data["input"] = self.inputs[i]
+        targets = self.targets[i]
+        self.propagate(**data)
+        for i in range(self["candidate"].size): # each cand node
+            for layer in self:
+                if layer.type == "Output":
+                    errVector = layer.activation - targets
+        
+    def addCandidateLayer(self, size=8):
+        """
+        Adds a candidate layer for recruiting the new hidden layer cascade
+        node. Connect it up to all layers except outputs.
+        """
+        self.addLayer("candidate", size, position = -1)
+        for layer in self:
+            if layer.type != "Output":
+                self.connect(layer.name, "candidate", -1)
+
+    def recruitCandidate(self, i):
+        """
+        Grab the Ith candidate node and all incoming weights and make it
+        a layer unto itself.
+        """
+        # first, add the new layer:
+        hcount = 0
+        for layer in self:
+            if layer.type == "Hidden": 
+                hcount += 1
+        hname = "hidden%d" % hcount
+        hsize = 1 # wonder what would happen if we added more than 1?
+        self.addLayer(hname, hsize, position = -1)
+        # first input
+        for layer in self: 
+            if layer.type == "Input" and layer.name != hname: # includes context
+                self.connect(layer.name, hname, position = 1)
+        # next add hidden
+        for layer in self: 
+            if layer.type == "Hidden" and layer.name != hname: 
+                self.connect(layer.name, hname, position = -1)
+        # and then output
+        for layer in self: 
+            if layer.type == "Output" and layer.name not in ["candidate", hname]: 
+                self.connect(hname, layer.name, position = -1)
+        # now, let's copy the weights:
+        for c in self.connections:
+            if c.toLayer.name == "candidate":
+                for i in range(hsize):
+                    for j in range(c.fromLayer.size):
+                        self.setWeight(c.fromLayer.name, j,
+                                       hname,i,
+                                       self[c.fromLayer.name, "candidate"][j][i])
+            elif c.fromLayer.name == "candidate":
+                for i in range(c.toLayer.size):
+                    for j in range(hsize):
+                        self.setWeight(hname, j,
+                                       c.toLayer.name, i,
+                                       self["candidate", c.toLayer.name][j][i])
+
 
 class SRN(Network):
     """
