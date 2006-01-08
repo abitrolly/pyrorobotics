@@ -155,22 +155,23 @@ class Layer:
         layer (target, error, activation, dbias, delta, netinput, bed).
         """
         self.randomize()
+        self.dbias = Numeric.zeros(self.size, 'f')
+        self.delta = Numeric.zeros(self.size, 'f')
+        self.bed = Numeric.zeros(self.size, 'f')
+        self.epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
-        self.dbias = Numeric.zeros(self.size, 'f')
-        self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
-        self.bed = Numeric.zeros(self.size, 'f')
         # default epsilon value for all units
-        self.epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.targetSet = 0
         self.activationSet = 0
     def randomize(self):
         """
         Initialize node biases to random values in the range [-max, max].
         """
-        self.bias = randomArray(self.size, self.maxRandom)
+        if not self.frozen:
+            self.bias = randomArray(self.size, self.maxRandom)
 
     # general methods
     def __len__(self):
@@ -481,6 +482,7 @@ class Connection:
         Constructor for Connection class. Takes instances of source and
         destination layers as arguments.
         """
+        self.active = 1 # propagates and backrops if active
         self.frozen = 0 # freezes weights
         self.fromLayer = fromLayer
         self.toLayer = toLayer
@@ -500,10 +502,10 @@ class Connection:
         """
         Sets weights to initial random values in the range [-max, max].
         """
-        self.weight = randomArray((self.fromLayer.size, \
-                                   self.toLayer.size),
-                                  self.toLayer.maxRandom)
-
+        if not self.frozen:
+            self.weight = randomArray((self.fromLayer.size, \
+                                       self.toLayer.size),
+                                      self.toLayer.maxRandom)
     def __str__(self):
         return self.toString()
     
@@ -642,7 +644,7 @@ class Network:
         self.momentum = 0.9
         self.resetEpoch = 5000
         self.resetCount = 1
-        self.resetLimit = 5
+        self.resetLimit = 1
         self.batch = 0
         self.epoch = 0
         self.count = 0 # number of times propagate is called
@@ -745,6 +747,13 @@ class Network:
         else:
             self.layers.insert(position, layer)
         self.layersByName[layer.name] = layer
+    def isConnected(self, fromName, toName):
+        """ Are these two layers connected this way? """
+        for c in self.connections:
+            if (c.fromLayer.name == fromName and
+                c.toLayer.name == toName):
+                return 1
+        return 0
     def connect(self, fromName, toName, position = None):
         """
         Connects two layers by instantiating an instance of Connection
@@ -1376,12 +1385,11 @@ class Network:
                         float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     # train and sweep methods
-    def train(self, cont=0):
+    def train(self, sweeps=None, cont=0):
         """
         Trains the network on the dataset till a stopping condition is
         met. This stopping condition can be a limiting epoch or a percentage correct requirement.
         """
-
         # check architecture
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = {}
@@ -1391,6 +1399,12 @@ class Network:
             self.resetCount = 1
             self.epoch = 1
             self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
+            if sweeps != None:
+                self.resetEpoch = sweeps
+        else:
+            if sweeps != None:
+                self.resetEpoch += sweeps
+        self.complete = 1
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             if totalCount != 0:
@@ -1415,6 +1429,7 @@ class Network:
                 if self.resetCount == self.resetLimit:
                     self.Print("Reset limit reached; ending without reaching goal")
                     self.epoch += 1
+                    self.complete = 0
                     break
                 self.resetCount += 1
                 self.Print("RESET! resetEpoch reached; starting over...")
@@ -1488,18 +1503,15 @@ class Network:
         self.postStep()
         self.reportPattern()
         return (error, correct, total, pcorrect)
-    def preBackprop(self): pass
-    def postBackprop(self): pass
-    def prePropagate(self): pass
+    # Hooks for adding bits without having to breakup step(), train(), and sweep()
+    def preBackprop(self):   pass
+    def postBackprop(self):  pass
+    def prePropagate(self):  pass
     def postPropagate(self): pass
-    def preStep(self):
-        pass
-    def postStep(self):
-        pass
-    def preSweep(self):
-        pass
-    def postSweep(self):
-        pass
+    def preStep(self):       pass
+    def postStep(self):      pass
+    def preSweep(self):      pass
+    def postSweep(self):     pass
     def sweep(self):
         """
         Runs through entire dataset. 
@@ -1632,7 +1644,7 @@ class Network:
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
-                    if connection.toLayer.name == layer.name:
+                    if connection.active and connection.toLayer.name == layer.name:
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
@@ -1669,7 +1681,8 @@ class Network:
             if layer.active:
                 for connection in self.connections:
                     if (connection.toLayer.name == layer.name
-                        and connection.fromLayer.active):
+                        and connection.fromLayer.active
+                        and connection.active):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
@@ -1722,7 +1735,7 @@ class Network:
             if not started: continue
             if layer.active:
                 for connection in self.connections:
-                    if connection.toLayer.name == layer.name and connection.fromLayer.active:
+                    if connection.active and connection.toLayer.name == layer.name and connection.fromLayer.active:
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
@@ -1772,7 +1785,8 @@ class Network:
                     dw_count += len(layer.dbias)
                     dw_sum += Numeric.add.reduce(abs(layer.dbias))
         for connection in self.connections:
-            if (connection.fromLayer.active
+            if (connection.active
+                and connection.fromLayer.active
                 and connection.toLayer.active
                 and not connection.frozen):
                 toLayer = connection.toLayer
@@ -1814,7 +1828,7 @@ class Network:
         # go backwards through each proj but don't redo output errors!
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            if connect.toLayer.active and connect.fromLayer.active:
+            if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
@@ -1856,7 +1870,7 @@ class Network:
         """
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
-            if connect.fromLayer.active and connect.toLayer.active:
+            if connect.active and connect.fromLayer.active and connect.toLayer.active:
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
                 #connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
         for layer in self.layers:
@@ -1900,9 +1914,10 @@ class Network:
         elif chr[0] == 'q':
             sys.exit(1)
     def displayConnections(self):
-        print "Connections:"
+        print "Active Connections:"
         for c in self.connections:
-            print "   '%s' => '%s' (Frozen: %d)" % (c.fromLayer.name, c.toLayer.name, c.frozen)
+            if c.fromLayer.active and c.toLayer.active:
+                print "   '%s' => '%s' (Frozen: %d)" % (c.fromLayer.name, c.toLayer.name, c.frozen)
     def display(self):
         """
         Displays the network to the screen.
@@ -2439,24 +2454,36 @@ class Network:
 
 class IncrementalNetwork(Network):
     """
-    A cascade correlation network has a candidate layer. It is
-    trained so that the candidate outputs are correlated with the error of the
-    output layers. Otherwise, it is trained normally (although, the layout
-    is a bit unusual.)
+
+    This network has a candidate layer from which it incremental draws
+    new nodes as hidden layers (or part of a hidden layer).  As new
+    candidate units are recruited, their weights are frozen. New
+    hidden units can be put into the network in two ways: cascade, or
+    parallel. Cascading hiddens have the output of one going into all
+    later hiddens. Parallel hiddens appear all on one level.
+
+    Here, candidate nodes are trained using standard backprop on
+    error. This is not cascade correlation in which hiddens are
+    trained to maximize error variance.
+
     """
+    def __init__(self, incrType = "cascade", name = 'Incremental Network', verbosity = 0):
+        Network.__init__(self, name, verbosity)
+        self.incrType = incrType # "cascade" or "parallel"
     def prePropagate(self):
-        self["candidate"].active = 1 # to get activations on candidate
-        self.propagate()
-        self["candidate"].active = 0
-        self["input"].activationSet = 1
+        self["candidate", "output"].active = 0
     def preBackprop(self):
-        self["candidate"].active = 1 # to get weights to change
+        self["candidate", "output"].active = 1
+    def postBackprop(self):
+        for i in range(self["candidate"].size):
+            self["candidate"].totalError[i] += self["candidate"].error[i]
+    def preSweep(self):
+        self["candidate"].totalError = [0.0 for i in range(self["candidate"].size)]
     def addCandidateLayer(self, size=8):
         """
         Adds a candidate layer for recruiting the new hidden layer cascade
         node. Connect it up to all layers except outputs.
         """
-        self.incrType = "cascade" # or parallel
         self.addLayer("candidate", size, position = -1)
         for layer in self:
             if layer.type != "Output" and layer.name != "candidate":
@@ -2464,11 +2491,18 @@ class IncrementalNetwork(Network):
         for layer in self: # ghost connection
             if layer.type == "Output" and layer.name != "candidate":
                 self.connect("candidate", layer.name, -1)
+    def recruitBest(self):
+        bestScore, best = 1000000, 0
+        for i in range(self["candidate"].size):
+            if self["candidate"].totalError[i] < bestScore:
+                bestScore, best = self["candidate"].totalError[i], i
+        self.recruit(best)
     def recruit(self, n):
         """
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
+        print "Recruiting:", n
         # first, add the new layer:
         hcount = 0
         for layer in self:
@@ -2499,19 +2533,22 @@ class IncrementalNetwork(Network):
         for layer in self: 
             if layer.type == "Output" and layer.name not in ["candidate", hname]: 
                 self.connect(hname, layer.name, position = -1)
-                # not frozen! Can change these to the output
+                # not frozen! Can change these hidden to the output
         # now, let's copy the weights, and randomize the old ones:
         for c in self.connections:
             if c.toLayer.name == "candidate":
                 for i in range(hsize):
                     for j in range(c.fromLayer.size):
-                        self[c.fromLayer.name, hname][j][i] = self[c.fromLayer.name, "candidate"][j][i + n]
-                        self[c.fromLayer.name, "candidate"][j][i + n] = random.random()
+                        if self.isConnected(c.fromLayer.name, hname):
+                            self[c.fromLayer.name, hname][j][i] = self[c.fromLayer.name, "candidate"][j][i + n]
+                            self[c.fromLayer.name, "candidate"][j][i + n] = random.random()
             elif c.fromLayer.name == "candidate":
                 for i in range(c.toLayer.size):
                     for j in range(hsize):
-                        self[hname, c.toLayer.name][j][i] = self["candidate", c.toLayer.name][j + n][i]
-                        self["candidate", c.toLayer.name][j + n][i] = random.random()
+                        if self.isConnected(hname, c.toLayer.name):
+                            self[hname, c.toLayer.name][j][i] = self["candidate", c.toLayer.name][j + n][i]
+                            self["candidate", c.toLayer.name][j + n][i] = (
+                                random.random() * 2.0 * self["candidate"].maxRandom) - self["candidate"].maxRandom
         # finally, connect new hidden to candidate
         self.connect(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
@@ -2887,6 +2924,7 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(100)
+        n.tolerance = .1
         n.train()
         print "getError('output') = (tss, correct, total):", n.getError("output")
         print "getError('output', 'output') :", n.getError("output", "output")
@@ -2922,6 +2960,7 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(100)
+        n.tolerance = .1
         n.train()
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
@@ -2931,6 +2970,7 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(10)
+        n.tolerance = .1        
         n.train()
         if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with cross validation?"):
             print "XOR Backprop non-batch mode: .........................."
