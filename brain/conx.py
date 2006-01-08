@@ -140,7 +140,8 @@ class Layer:
         self.log = 0
         self.logFile = ''
         self._logPtr = 0
-        self.active = 1
+        self.active = 1 # takes layer out of the processing
+        self.frozen = 0 # freezes weights (dbiases), if layer still active
         self.maxRandom = 0.1
         self.initialize(0.1)
         self.minActivation = 0
@@ -331,7 +332,8 @@ class Layer:
         """
         Returns a string representation of Layer instance.
         """
-        string = "Layer " + self.name + ": (Type " + self.kind + ") (Size " + str(self.size) + ")\n"
+        string = "Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)\n" % (
+            self.name, self.kind, self.size, self.active, self.frozen) 
         if (self.type == 'Output'):
             string += toStringArray('Target    ', self.target, self.displayWidth)
         string += toStringArray('Activation', self.activation, self.displayWidth)
@@ -349,7 +351,8 @@ class Layer:
         Displays the Layer instance to the screen.
         """
         print "============================="
-        print "Display Layer '" + self.name + "' (kind " + self.kind + "):"
+        print "Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)" % (
+            self.name, self.kind, self.size, self.active, self.frozen) 
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
@@ -361,6 +364,7 @@ class Layer:
             print "    ", ; displayArray('delta', self.delta)
             print "    ", ; displayArray('netinput', self.netinput)
             print "    ", ; displayArray('bed', self.bed)
+        
 
     # activation methods
     def getActivationsList(self):
@@ -477,9 +481,12 @@ class Connection:
         Constructor for Connection class. Takes instances of source and
         destination layers as arguments.
         """
+        self.frozen = 0 # freezes weights
         self.fromLayer = fromLayer
         self.toLayer = toLayer
         self.initialize()
+    def __getitem__(self, i):
+        return self.weight[i]
     def initialize(self):
         """
         Initializes self.dweight and self.wed to zero matrices.
@@ -709,7 +716,7 @@ class Network:
             return self.layersByName[name]
         else:
             fromName, toName = name
-            return self.getWeights(fromName, toName)
+            return self.getConnection(fromName, toName)
     def __len__(self):
         """
         Returns the number of layers in the network.
@@ -1451,7 +1458,9 @@ class Network:
             else:
                 raise LayerError,  ('Unknown or incorrect layer type in step() method.', layer.name)
         # Propagate activation through network:
+        self.prePropagate()
         self.propagate()
+        self.postPropagate()
         # Next, take care of any Auto-association, and copy
         # activations to targets
         for aa in self.association:
@@ -1470,13 +1479,19 @@ class Network:
             if self.interactive:
                 self.prompt()
         # Compute error, and back prop it:
+        self.preBackprop()
         (error, correct, total, pcorrect) = self.backprop() # compute_error()
+        self.postBackprop()
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
         self.postStep()
         self.reportPattern()
         return (error, correct, total, pcorrect)
+    def preBackprop(self): pass
+    def postBackprop(self): pass
+    def prePropagate(self): pass
+    def postPropagate(self): pass
     def preStep(self):
         pass
     def postStep(self):
@@ -1653,7 +1668,8 @@ class Network:
         for layer in self.layers:
             if layer.active:
                 for connection in self.connections:
-                    if connection.toLayer.name == layer.name and connection.fromLayer.active:
+                    if (connection.toLayer.name == layer.name
+                        and connection.fromLayer.active):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
@@ -1749,13 +1765,16 @@ class Network:
         dw_count, dw_sum = 0, 0.0
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
-                layer.dbias = layer.epsilon * layer.bed + self.momentum * layer.dbias
-                layer.bias += layer.dbias
-                layer.bed = layer.bed * 0.0
-                dw_count += len(layer.dbias)
-                dw_sum += Numeric.add.reduce(abs(layer.dbias))
+                if not layer.frozen:
+                    layer.dbias = layer.epsilon * layer.bed + self.momentum * layer.dbias
+                    layer.bias += layer.dbias
+                    layer.bed = layer.bed * 0.0
+                    dw_count += len(layer.dbias)
+                    dw_sum += Numeric.add.reduce(abs(layer.dbias))
         for connection in self.connections:
-            if connection.fromLayer.active and connection.toLayer.active:
+            if (connection.fromLayer.active
+                and connection.toLayer.active
+                and not connection.frozen):
                 toLayer = connection.toLayer
                 connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
                 connection.weight += connection.dweight
@@ -1883,7 +1902,7 @@ class Network:
     def displayConnections(self):
         print "Connections:"
         for c in self.connections:
-            print "   '%s' => '%s'" % (c.fromLayer.name, c.toLayer.name)
+            print "   '%s' => '%s' (Frozen: %d)" % (c.fromLayer.name, c.toLayer.name, c.frozen)
     def display(self):
         """
         Displays the network to the screen.
@@ -2418,46 +2437,37 @@ class Network:
                         if network.layers[l2].name == toLayerName:
                             self.layers[l1].bias = network.layers[l2].bias
 
-class CascadeNetwork(Network):
+class IncrementalNetwork(Network):
     """
-    A cascade network might have a candidate layer. If it does, then it is
-    trained so that the outputs are correlated with the error of the
+    A cascade correlation network has a candidate layer. It is
+    trained so that the candidate outputs are correlated with the error of the
     output layers. Otherwise, it is trained normally (although, the layout
     is a bit unusual.)
     """
-    def preSweep(self):
-        """ Setup training for candidate layer nodes """
-        self["candidate"].correlatedError = Numeric.zeros(self["candidate"].size, 'f')
-        
-    def getDataTemp(self, i):
-        """
-        In a Cascade Correlation Network, we see how each candidate
-        node varies with each output. We can also use that value to
-        set a target for the candidate node for training.
-        """
-        data = {} # targets and inputs
-        data["input"] = self.inputs[i]
-        targets = self.targets[i]
-        self.propagate(**data)
-        for i in range(self["candidate"].size): # each cand node
-            for layer in self:
-                if layer.type == "Output":
-                    errVector = layer.activation - targets
-        
+    def prePropagate(self):
+        self["candidate"].active = 1 # to get activations on candidate
+        self.propagate()
+        self["candidate"].active = 0
+        self["input"].activationSet = 1
+    def preBackprop(self):
+        self["candidate"].active = 1 # to get weights to change
     def addCandidateLayer(self, size=8):
         """
         Adds a candidate layer for recruiting the new hidden layer cascade
         node. Connect it up to all layers except outputs.
         """
+        self.incrType = "cascade" # or parallel
         self.addLayer("candidate", size, position = -1)
         for layer in self:
-            if layer.type != "Output":
+            if layer.type != "Output" and layer.name != "candidate":
                 self.connect(layer.name, "candidate", -1)
-
-    def recruitCandidate(self, i):
+        for layer in self: # ghost connection
+            if layer.type == "Output" and layer.name != "candidate":
+                self.connect("candidate", layer.name, -1)
+    def recruit(self, n):
         """
-        Grab the Ith candidate node and all incoming weights and make it
-        a layer unto itself.
+        Grab the Nth candidate node and all incoming weights and make it
+        a layer unto itself. New layer is a frozen layer.
         """
         # first, add the new layer:
         hcount = 0
@@ -2466,34 +2476,45 @@ class CascadeNetwork(Network):
                 hcount += 1
         hname = "hidden%d" % hcount
         hsize = 1 # wonder what would happen if we added more than 1?
-        self.addLayer(hname, hsize, position = -1)
-        # first input
+        self.addLayer(hname, hsize, position = -2)
+        # copy all of the relevant data:
+        for i in range(hsize):
+            self[hname].dbias[i] = self["candidate"].dbias[i + n]
+            self[hname].bias[i] = self["candidate"].bias[i + n]
+            self[hname].bed[i] = self["candidate"].bed[i + n]
+            self[hname].epsilon[i] = self["candidate"].epsilon[i + n]
+        self[hname].frozen = 1 # don't change these weights/biases
+        # first, connect up input
         for layer in self: 
-            if layer.type == "Input" and layer.name != hname: # includes context
+            if layer.type == "Input" and layer.name != hname: # includes contexts
                 self.connect(layer.name, hname, position = 1)
-        # next add hidden
-        for layer in self: 
-            if layer.type == "Hidden" and layer.name != hname: 
-                self.connect(layer.name, hname, position = -1)
-        # and then output
+                self[layer.name, hname].frozen = 1 # don't change incoming weights
+        # next add hidden connections
+        if self.incrType == "cascade": # or parallel
+            for layer in self: 
+                if layer.type == "Hidden" and layer.name not in [hname, "candidate"]: 
+                    self.connect(layer.name, hname, position = -1)
+                    self[layer.name, hname].frozen = 1 # don't change incoming weights
+        # and then output connections
         for layer in self: 
             if layer.type == "Output" and layer.name not in ["candidate", hname]: 
                 self.connect(hname, layer.name, position = -1)
-        # now, let's copy the weights:
+                # not frozen! Can change these to the output
+        # now, let's copy the weights, and randomize the old ones:
         for c in self.connections:
             if c.toLayer.name == "candidate":
                 for i in range(hsize):
                     for j in range(c.fromLayer.size):
-                        self.setWeight(c.fromLayer.name, j,
-                                       hname,i,
-                                       self[c.fromLayer.name, "candidate"][j][i])
+                        self[c.fromLayer.name, hname][j][i] = self[c.fromLayer.name, "candidate"][j][i + n]
+                        self[c.fromLayer.name, "candidate"][j][i + n] = random.random()
             elif c.fromLayer.name == "candidate":
                 for i in range(c.toLayer.size):
                     for j in range(hsize):
-                        self.setWeight(hname, j,
-                                       c.toLayer.name, i,
-                                       self["candidate", c.toLayer.name][j][i])
-
+                        self[hname, c.toLayer.name][j][i] = self["candidate", c.toLayer.name][j + n][i]
+                        self["candidate", c.toLayer.name][j + n][i] = random.random()
+        # finally, connect new hidden to candidate
+        self.connect(hname, "candidate", position = -1)
+        self[hname, "candidate"].frozen = 1 # don't change weights
 
 class SRN(Network):
     """
