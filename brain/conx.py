@@ -166,11 +166,11 @@ class Layer:
         # default epsilon value for all units
         self.targetSet = 0
         self.activationSet = 0
-    def randomize(self):
+    def randomize(self, force = 0):
         """
         Initialize node biases to random values in the range [-max, max].
         """
-        if not self.frozen:
+        if force or not self.frozen:
             self.bias = randomArray(self.size, self.maxRandom)
 
     # general methods
@@ -498,11 +498,11 @@ class Connection:
                                       self.toLayer.size), 'f')
         self.wed = Numeric.zeros((self.fromLayer.size, \
                                   self.toLayer.size), 'f')
-    def randomize(self):
+    def randomize(self, force = 0):
         """
         Sets weights to initial random values in the range [-max, max].
         """
-        if not self.frozen:
+        if force or not self.frozen:
             self.weight = randomArray((self.fromLayer.size, \
                                        self.toLayer.size),
                                       self.toLayer.maxRandom)
@@ -628,6 +628,7 @@ class Network:
         verbosity arguments.
         """
         x = random.random() * 100000 + time.time()
+        self.complete = 0
         self.setSeed(x)
         self.name = name
         self.layers = []
@@ -2541,14 +2542,16 @@ class IncrementalNetwork(Network):
                     for j in range(c.fromLayer.size):
                         if self.isConnected(c.fromLayer.name, hname):
                             self[c.fromLayer.name, hname][j][i] = self[c.fromLayer.name, "candidate"][j][i + n]
-                            self[c.fromLayer.name, "candidate"][j][i + n] = random.random()
+                if self.isConnected(c.fromLayer.name, hname):
+                    self[c.fromLayer.name, "candidate"].randomize(1)
             elif c.fromLayer.name == "candidate":
                 for i in range(c.toLayer.size):
                     for j in range(hsize):
                         if self.isConnected(hname, c.toLayer.name):
                             self[hname, c.toLayer.name][j][i] = self["candidate", c.toLayer.name][j + n][i]
-                            self["candidate", c.toLayer.name][j + n][i] = (
-                                random.random() * 2.0 * self["candidate"].maxRandom) - self["candidate"].maxRandom
+                if self.isConnected(hname, c.toLayer.name):
+                    self["candidate", c.toLayer.name].randomize(1)
+        self["candidate"].randomize(1)
         # finally, connect new hidden to candidate
         self.connect(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
