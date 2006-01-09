@@ -9,7 +9,12 @@ def test(net, resolution = 30):
         for y in range(resolution):
             input = (x/float(resolution), y/float(resolution))
             results = net.propagate(input = input)
-            row += "%d" % int(round(results[0]))
+            c = round(results[0], 1)
+            if c == 1.0:
+                c = "#"
+            else:
+                c = str(c * 10)[0]
+            row += "%s" % c
         print row
     if "candidate" in [layer.name for layer in net.layers]:
         net["candidate"].active = 1
@@ -53,10 +58,10 @@ net3.addLayers(2, 10, 10, 1)
 net3.setInputs( inputs )
 net3.setTargets( targets)
 net3.tolerance = 0.4
-net3.reportRate = 1
+net3.reportRate = 10
 
 cont = 0
 while not net3.complete:
-    net3.train(100, cont=cont)
+    net3.train(50, cont=cont)
     test(net3)
     cont = 1

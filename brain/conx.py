@@ -801,7 +801,7 @@ class Network:
         and 'output' layers. Keyword type indicates "parallel" or
         "serial". If only one hidden layer, it is called "hidden".
         """
-        netType = "parallel"
+        netType = "serial"
         if "type" in kw:
             netType = kw["type"]
         self.addLayer('input', arg[0])
