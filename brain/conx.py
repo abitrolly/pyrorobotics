@@ -861,6 +861,7 @@ class Network:
         Initializes network by calling Connection.initialize() and
         Layer.initialize(). self.count is set to zero.
         """
+        print >> sys.stderr, "Initializing '%s' weights..." % self.name
         if self.sharedWeights:
             raise AttributeError, "shared weights broken"
         self.count = 0
@@ -1364,10 +1365,10 @@ class Network:
     def reportEpoch(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = {}):
         # pcorrect is a dict of layer error/correct data:
         #   {layerName: [correct, total, pattern correct, pattern total]...}
-        self.Print("Epoch #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+        self.Print("Epoch #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            self.Print("   Epoch #%6d, Layer = %-12s | Correct = %.4f | Patterns Correct: %.4f" % \
+            self.Print("   Epoch #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
                        (epoch, "'" + layerName + "'",
                         float(pcorrect[layerName][0]) / pcorrect[layerName][1],
                         float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
@@ -1377,10 +1378,10 @@ class Network:
     def reportFinal(self, epoch, tssErr, totalCorrect, totalCount, rmsErr, pcorrect = {}):
         # pcorrect is a dict of layer error/correct data:
         #   {layerName: [correct, total, pattern correct, pattern total]...}
-        self.Print("Final #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+        self.Print("Final #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            self.Print("   Final #%6d, Layer = %-12s | Correct = %.4f | Patterns Correct: %.4f" % \
+            self.Print("   Final #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
                        (epoch-1, "'" + layerName + "'",
                         float(pcorrect[layerName][0]) / pcorrect[layerName][1],
                         float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
@@ -1394,7 +1395,8 @@ class Network:
         # check architecture
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = {}
-        if not cont:
+        if not cont: # starting afresh
+            self.resetFlags()
             self.epoch = 0
             self.reportStart()
             self.resetCount = 1
@@ -1404,7 +1406,7 @@ class Network:
                 self.resetEpoch = sweeps
         else:
             if sweeps != None:
-                self.resetEpoch += sweeps
+                self.resetEpoch = self.epoch + sweeps - 1
         self.complete = 1
         while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
@@ -1417,7 +1419,7 @@ class Network:
                 if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                     (tssCVErr, totalCVCorrect, totalCVCount, totalCVPCorrect) = self.sweepCrossValidation()
                     rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
-                    self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                    self.Print("CV    #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                                (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                         self.lastLowestTSSError = tssCVErr
@@ -1444,7 +1446,7 @@ class Network:
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
                 (tssCVErr, totalCVCorrect, totalCVCount, totalCVPCorrect) = self.sweepCrossValidation()
                 rmsCVErr = math.sqrt(tssCVErr / totalCVCount)
-                self.Print("CV    #%6d | TSS Error: %.4f | Correct = %.4f | RMS Error: %.4f" % \
+                self.Print("CV    #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                            (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                     self.lastLowestTSSError = tssCVErr
@@ -1548,7 +1550,7 @@ class Network:
             totalCount += total
             sumMerge(totalPCorrect, pcorrect)
             if (cnt + 1) % self.sweepReportRate == 0:
-                print "   Step # %6d | TSS Error: %.4f | Correct = %.4f" % \
+                print "   Step # %6d | TSS Error: %.4f | Correct: %.4f" % \
                       (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
             if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
                 self.saveNetworkForCrossValidation(self.crossValidationSampleFile)
