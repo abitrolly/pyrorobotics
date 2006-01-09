@@ -14,6 +14,20 @@ class Governor:
     """
     An RAVQ vitual baseclass for combination with Network. 
     """
+    def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
+                 historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
+        self.governing = 1
+        self.decay = 1
+        self.learning = 1
+        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
+        self.ravq.setAddModels(1)
+        self.setVerbosity(verbosity)
+        self.histogram = {}
+        self.decayHistogram = {}
+        self.reportHistograms = 0
+        if mask != []: 
+            self.ravq.setMask(mask)
+            
     def incompatibility(self):
         """
         For each model, how different is it from each of the buffer items? Returns list of
@@ -137,6 +151,22 @@ class Governor:
         if self.verbosity:
             print "mask:", self.ravq.mask
  
+    def decayModelVectors(self):
+        good = []
+        goodNames = []
+        for name in self.decayHistogram.keys():
+            pos = self.ravq.models.names.index(name)
+            good.append( self.ravq.models.contents[pos] )
+            goodNames.append( self.ravq.models.names[pos] )
+        self.decayHistogram = {}
+        self.ravq.models.contents = good
+        self.ravq.models.names = goodNames
+        if len(self.ravq.models.contents):
+            self.ravq.models.next = self.ravq.models.next % \
+                                    len(self.ravq.models.contents)
+        else:
+            self.ravq.models.next = 0
+
 class GovernorNetwork(Governor, Network):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
                  historySize = 5, alpha = 0.02, mask = [], verbosity = 0):
@@ -144,32 +174,62 @@ class GovernorNetwork(Governor, Network):
         Network.__init__(self, name = "Governed Network",
                          verbosity = verbosity)
         # ravq
-        self.governing = 1
-        self.learning = 1
-        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
-        self.ravq.setAddModels(1)
-        self.setVerbosity(verbosity)
-        self.histogram = {}
-        self.decayHistogram = {}
-        self.reportHistograms = 0
-        if not mask == []: 
-            self.ravq.setMask(mask)
+        Governor.__init__(self, bufferSize, epsilon, delta,
+                          historySize, alpha, mask, verbosity)
 
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
 
-    def addThreeLayers(self, i, h, o):
-        Network.addThreeLayers(self, i, h, o)
-        if not self.ravq.mask:
-            self.setBalancedMask()
-
-    def networkStep(self, **args):
-        raise AttributeError, "This method has not yet been written"
-
     def setLearning(self, value):
         self.learning = value
         self.ravq.setAddModels(value)
+
+    def step(self, **args):
+        if self.governing and not self._cv:
+            # when layers are added one by one, ensure that mask
+            # is in place
+            if not self.ravq.mask:
+                self.setBalancedMask()
+            argLayerNames = args.keys()
+            argLayerNames.sort()
+            # map the ravq input and target
+            netLayerNames = [layer.name for layer in self.layers]
+            netLayerNames.sort()
+            # get all of the input layer's values
+            # and all of the ouput layer's targets mentioned in args:
+            inputValues = []
+            targetValues = []
+            for layerName in argLayerNames:
+                if self[layerName].kind == 'Input':
+                    inputValues += list(args[layerName])
+                elif self[layerName].kind == 'Output':
+                    targetValues += list(args[layerName])
+            vectorIn = inputValues + targetValues
+            if self.verbosity: print "in:", vectorIn
+            self.map(vectorIn)
+            # get the next
+            vectorOut = self.nextItem()
+            if self.verbosity: print "out:", vectorOut
+            if vectorOut == None:
+                vectorOut = vectorIn
+            # get the pieces out of vectorOut:
+            govNet = {}
+            current = 0
+            for layerName in argLayerNames: # from args
+                if self[layerName].kind == 'Input':
+                    length = self[layerName].size
+                    govNet[layerName] = vectorOut[current:current+length]
+                    current += length
+            for layerName in args:          # from args
+                if self[layerName].kind == 'Output':
+                    length = self[layerName].size
+                    govNet[layerName] = vectorOut[current:current+length]
+                    current += length
+            return Network.step(self, **govNet)
+        else:
+            # just do it:
+            return Network.step(self, **args)
 
 class GovernorSRN(Governor, SRN): 
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
@@ -179,28 +239,21 @@ class GovernorSRN(Governor, SRN):
                      verbosity = verbosity)
         self.trainingNetwork = SRN(name = "Governed Training SRN",
                                    verbosity = verbosity)
+        # ravq:
+        Governor.__init__(self)
+        # misc:
         self.trainingNetwork.setInitContext(0)
         self.setInitContext(0)
         self.learning = 0
         self.trainingNetwork.learning = 1
-        # ravq:
-        self.governing = 1
-        self.decay = 1
-        self.ravq = ARAVQ(bufferSize, epsilon, delta, historySize, alpha) 
-        self.ravq.setAddModels(1)
-        self.setVerbosity(verbosity)
-        self.histogram = {}
-        self.decayHistogram = {}
-        self.reportHistograms = 0
-        if not mask == []: 
-            self.ravq.setMask(mask)
 
     def setVerbosity(self, val):
         Network.setVerbosity(self, val)
         self.ravq.setVerbosity(val)
 
     def add(self, layer, verbosity=0):
-        raise AttributeError, "Use method addLayer with GovernorSRN"
+        SRN.add(self, layer, verbosity)
+        self.trainingNetwork.addLayer(layer.name, layer.size, verbosity)
 
     def addLayer(self, name, size, verbosity=0):
         SRN.addLayer(self, name, size, verbosity)
@@ -221,22 +274,6 @@ class GovernorSRN(Governor, SRN):
         if not self.ravq.mask:
             self.setBalancedMask()
                 
-    def decayModelVectors(self):
-        good = []
-        goodNames = []
-        for name in self.decayHistogram.keys():
-            pos = self.ravq.models.names.index(name)
-            good.append( self.ravq.models.contents[pos] )
-            goodNames.append( self.ravq.models.names[pos] )
-        self.decayHistogram = {}
-        self.ravq.models.contents = good
-        self.ravq.models.names = goodNames
-        if len(self.ravq.models.contents):
-            self.ravq.models.next = self.ravq.models.next % \
-                                    len(self.ravq.models.contents)
-        else:
-            self.ravq.models.next = 0
-
     def report(self, hist=1):
         if hist:
             print "Model vectors: %d Histogram: %s" %( len(self.ravq.models), self.histogram)
