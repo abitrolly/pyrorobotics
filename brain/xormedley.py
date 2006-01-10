@@ -41,13 +41,8 @@ def train(net, sweeps = 100, recruit = 0):
         test(net)
         cont = 1
 
-fp = open("two-spiral.dat", "r")
-inputs = []
-targets = []
-for line in fp:
-    data = map(float, line.split())
-    inputs.append( data[:2] )
-    targets.append( data[2:] )
+inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
+targets= [[0], [1], [1], [0]]
 
 net0 = IncrementalNetwork()
 net0.addLayers(2, 1)
@@ -66,8 +61,8 @@ net2.setTargets( targets)
 net2.tolerance = 0.4
 net2.reportRate = 100
 net2.doWhile = lambda a, b: 1
-train(net2)
-print net2.ravq
+#train(net2)
+#print net2.ravq
 
 net3 = Network()
 net3.addLayers(2, 10, 10, 1)
