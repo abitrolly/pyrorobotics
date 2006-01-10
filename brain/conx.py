@@ -337,7 +337,7 @@ class Layer:
             self.name, self.kind, self.size, self.active, self.frozen) 
         if (self.type == 'Output'):
             string += toStringArray('Target    ', self.target, self.displayWidth)
-        string += toStringArray('Activation', self.activation, self.displayWidth)
+        string += toStringArray('Activation', self.activation, self.displayWidth) 
         if (self.type != 'Input' and self.verbosity > 1):
             string += toStringArray('Error     ', self.error, self.displayWidth)
         if (self.verbosity > 4 and self.type != 'Input'):
@@ -353,7 +353,7 @@ class Layer:
         """
         print "============================="
         print "Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)" % (
-            self.name, self.kind, self.size, self.active, self.frozen) 
+            self.name, self.kind, self.size, self.active, self.frozen)
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
@@ -1387,6 +1387,8 @@ class Network:
                         float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     # train and sweep methods
+    def doWhile(self, totalCount):
+        return totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop)
     def train(self, sweeps=None, cont=0):
         """
         Trains the network on the dataset till a stopping condition is
@@ -1408,7 +1410,7 @@ class Network:
             if sweeps != None:
                 self.resetEpoch = self.epoch + sweeps - 1
         self.complete = 1
-        while totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop):
+        while self.doWhile(totalCount):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
