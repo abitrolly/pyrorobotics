@@ -23,7 +23,7 @@ class SigmaNetwork(Network):
         else:
             data["output"] = [(1 - n) for n in vector]
         return data
-    def doWhile(self, totalCount):
+    def doWhile(self, totalCount, totalCorrect):
         return self.sumCorrect != 4
 
 inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]

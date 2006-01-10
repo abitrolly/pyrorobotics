@@ -1387,7 +1387,7 @@ class Network:
                         float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     # train and sweep methods
-    def doWhile(self, totalCount):
+    def doWhile(self, totalCount, totalCorrect):
         return totalCount != 0 and ((totalCorrect * 1.0 / totalCount < self.stopPercent) or self.useCrossValidationToStop)
     def train(self, sweeps=None, cont=0):
         """
@@ -1410,7 +1410,7 @@ class Network:
             if sweeps != None:
                 self.resetEpoch = self.epoch + sweeps - 1
         self.complete = 1
-        while self.doWhile(totalCount):
+        while self.doWhile(totalCount, totalCorrect):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
