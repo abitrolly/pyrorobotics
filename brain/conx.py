@@ -126,7 +126,6 @@ class Layer:
         Constructor for Layer class. A name and the number of nodes
         for the instance are passed as arguments.
         """
-        self.warningIssued = 0
         if size <= 0:
             raise LayerError, ('Layer was initialized with size zero.' , size)
         self.patternReport = 0 # flag to determine if layer should be in report
@@ -149,6 +148,9 @@ class Layer:
         self.minTarget = 0
         self.maxTarget = 1
         self.verify = 1
+        self.pcorrect = 0
+        self.ptotal = 0
+        self.correct = 0
     def initialize(self, epsilon):
         """
         Initializes important node values to zero for each node in the
@@ -423,12 +425,13 @@ class Layer:
         """
         Sets all targets the the value of the argument. This value must be in the range [0,1].
         """
-        if self.verify and not self.targetSet == 0:
-            if not self.warningIssued:
-                print 'Warning! Targets have already been set and no intervening backprop() was called.', \
-                      (self.name, self.targetSet)
-                print "(Warning will not be issued again)"
-                self.warningIssued = 1
+        # Removed this because both propagate and backprop (via compute_error) set targets
+        #if self.verify and not self.targetSet == 0:
+        #    if not self.warningIssued:
+        #        print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+        #              (self.name, self.targetSet)
+        #        print "(Warning will not be issued again)"
+        #        self.warningIssued = 1
         if value > self.maxActivation or value < self.minActivation:
             raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
@@ -442,12 +445,13 @@ class Layer:
             raise LayerError, \
                   ('Mismatched target size and layer size in call to copyTargets()', \
                    (len(array), self.size))
-        if self.verify and not self.targetSet == 0:
-            if not self.warningIssued:
-                print 'Warning! Targets have already been set and no intervening backprop() was called.', \
-                      (self.name, self.targetSet)
-                print "(Warning will not be issued again)"
-                self.warningIssued = 1
+        # Removed this because both propagate and backprop (via compute_error) set targets
+        #if self.verify and not self.targetSet == 0:
+        #    if not self.warningIssued:
+        #        print 'Warning! Targets have already been set and no intervening backprop() was called.', \
+        #              (self.name, self.targetSet)
+        #        print "(Warning will not be issued again)"
+        #        self.warningIssued = 1
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
             raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
         self.target = array
@@ -1478,21 +1482,11 @@ class Network:
         
         """
         # First, copy the values into either activations or targets:
-        self.preStep()
-        for key in args:
-            layer = self.getLayer(key)
-            if layer.kind == 'Input':
-                self.copyActivations(layer, args[key])
-            elif layer.kind == 'Output':
-                self.copyTargets(layer, args[key])
-            elif layer.kind == 'Context':
-                self.copyActivations(layer, args[key])
-            else:
-                raise LayerError,  ('Unknown or incorrect layer type in step() method.', layer.name)
+        args = self.preStep(**args)
         # Propagate activation through network:
-        self.prePropagate()
-        self.propagate()
-        self.postPropagate()
+        args = self.prePropagate(**args)
+        self.propagate(**args)
+        args = self.postPropagate(**args)
         # Next, take care of any Auto-association, and copy
         # activations to targets
         for aa in self.association:
@@ -1506,29 +1500,29 @@ class Network:
                 raise LayerError, ('Associated output layer not type \'Output\'.', \
                                    outLayer.type)
             outLayer.copyTargets(inLayer.activation)
+        # Compute error, and back prop it:
+        args = self.preBackprop(**args)
+        (error, correct, total, pcorrect) = self.backprop(**args) # compute_error()
+        args = self.postBackprop(**args)
         if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
                 self.prompt()
-        # Compute error, and back prop it:
-        self.preBackprop()
-        (error, correct, total, pcorrect) = self.backprop() # compute_error()
-        self.postBackprop()
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
-        self.postStep()
+        args = self.postStep(**args)
         self.reportPattern()
         return (error, correct, total, pcorrect)
     # Hooks for adding bits without having to breakup step(), train(), and sweep()
-    def preBackprop(self):   pass
-    def postBackprop(self):  pass
-    def prePropagate(self):  pass
-    def postPropagate(self): pass
-    def preStep(self):       pass
-    def postStep(self):      pass
-    def preSweep(self):      pass
-    def postSweep(self):     pass
+    def preBackprop(self, **args):   return args
+    def postBackprop(self, **args):  return args
+    def prePropagate(self, **args):  return args
+    def postPropagate(self, **args): return args
+    def preStep(self, **args):       return args
+    def postStep(self, **args):      return args
+    def preSweep(self, **args):      pass
+    def postSweep(self, **args):     pass
     def sweep(self):
         """
         Runs through entire dataset. 
@@ -1683,10 +1677,16 @@ class Network:
         {"output": [0.345]}
         
         """
-        for layerName in args:
-            if self[layerName].type != "Input" and self[layerName].verify:
-                raise AttributeError, "attempt to set activations on a non-input layer"
-            self[layerName].copyActivations(args[layerName])
+        for key in args:
+            layer = self.getLayer(key)
+            if layer.kind == 'Input':
+                if not self[key].verify:
+                    raise AttributeError, "attempt to set activations on input layer '%s' without reset" % key
+                self.copyActivations(layer, args[key])
+            elif layer.kind == 'Context':
+                self.copyActivations(layer, args[key])
+            elif layer.kind == 'Output' and len(args[key]) == layer.size: # in case you expect propagate to handle the outputs
+                self.copyTargets(layer, args[key])
         self.verifyInputs() # better have inputs set
         if self.verbosity > 2: print "Propagate Network '" + self.name + "':"
         # initialize netinput:
@@ -1778,12 +1778,11 @@ class Network:
         return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
         
     # backpropagation
-    def backprop(self):
+    def backprop(self, **args):
         """
         Computes error and wed for back propagation of error.
         """
-        self.verifyTargets() # better have targets set
-        retval = self.compute_error()
+        retval = self.compute_error(**args)
         if self.learning:
             self.compute_wed()
         return retval
@@ -1832,14 +1831,22 @@ class Network:
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
                 elif (layer.type == 'Hidden'):
-                    for i in range(layer.size):
+                    for i in range(layer.size): # do it this way so you don't break reference links
                         layer.error[i] = 0.0
+                self.pcorrect = 0
+                self.ptotal = 0
+                self.correct = 0
         return (retval, correct, totalCount)
-    def compute_error(self):
+    def compute_error(self, **args):
         """
         Computes error for all non-output layers backwards through all
         projections.
         """
+        for key in args:
+            layer = self.getLayer(key)
+            if layer.kind == 'Output':
+                self.copyTargets(layer, args[key])
+        self.verifyTargets() # better have targets set
         error, correct, total = self.ce_init()
         pcorrect = {}
         # go backwards through each proj but don't redo output errors!
@@ -1849,6 +1856,10 @@ class Network:
                 connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
+                layer = connect.toLayer
+                layer.pcorrect += self.compare(layer.target, layer.activation)
+                layer.ptotal += 1
+                layer.correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
         # now all errors are set on all layers!
         pcorrect = self.getLayerErrors()
         return (error, correct, total, pcorrect)
@@ -2475,46 +2486,28 @@ class SigmaNetwork(Network):
     """
     def setup(self):
         """ Assumes the output name of "output"; overload to change or add more output layers.  """
-        self.mapTarget("output", 0) # name of layer, position of answer n in self.targets[i][n]
         self.sigmaCorrect = 0
+        self.times = 0
     def preSweep(self):
         self.sigmaCorrect = 0
-    def getDataMap(self, intype, i, name, offset):
-        # this overrides normal mapping function
-        # assumes correct answer is in target[offset]
+    def preBackprop(self, **dict):
         # could use a probabilistic version of round:
-        def prob(v):
-            return round(v)
-            #return int(random.random() > v)
-        def confidence(v):
-            if (v > (1 - self.tolerance)):
-                return 1
-            elif (v < self.tolerance):
-                return 0
-            else:
-                return .5
-        vector = map(prob, self[name].activation)
-        confidences = map(confidence, self[name].activation)
-        ones = confidences.count(1) 
-        zeros = confidences.count(0)
-        correct = 0
-        if self.targets[i][offset] == 1.0:
-            if ones > zeros:
-                correct = 1
-            if ones/float(self[name].size) > 0.5:
-                self.sigmaCorrect += 1
-        elif self.targets[i][offset] == 0.0:
-            if ones < zeros:
-                correct = 1                
-            if zeros/float(self[name].size) > 0.5:
-                self.sigmaCorrect += 1
-        if correct:
-            vector = [n for n in vector]
+        # for each in dict where dict type is output:
+        def prob(v): return int(random.random() < v)
+        def mutate(v, p):
+            for i in range(int(round(len(v) * p))):
+                g = int(len(v) * random.random())
+                v[g] = not v[g]
+            return v
+        vector = map(round, self["output"].activation)
+        score = abs(sum(vector)/float(self["output"].size) - dict["output"][0])
+        if score > self.tolerance:
+            vector = mutate(vector, score)
         else:
-            vector = [(1 - n) for n in vector]
-        return vector
-    def doWhile(self, *args):
-        return self.sigmaCorrect != len(self.inputs)
+            self.sigmaCorrect += 1
+        dict["output"] = vector
+        return dict
+
 class IncrementalNetwork(Network):
     """
 
@@ -2533,13 +2526,16 @@ class IncrementalNetwork(Network):
     def __init__(self, incrType = "cascade", name = 'Incremental Network', verbosity = 0):
         Network.__init__(self, name, verbosity)
         self.incrType = incrType # "cascade" or "parallel"
-    def prePropagate(self):
+    def prePropagate(self, **args):
         self["candidate", "output"].active = 0
-    def preBackprop(self):
+        return args
+    def preBackprop(self, **args):
         self["candidate", "output"].active = 1
-    def postBackprop(self):
+        return args
+    def postBackprop(self, **args):
         for i in range(self["candidate"].size):
             self["candidate"].totalError[i] += self["candidate"].error[i]
+        return args
     def preSweep(self):
         self["candidate"].totalError = [0.0 for i in range(self["candidate"].size)]
     def addCandidateLayer(self, size=8):
@@ -2746,12 +2742,12 @@ class SRN(Network):
                 if layer.kind == "Context":
                     layer.activationSet = 1
         return Network.propagate(self, **args)
-    def backprop(self):
+    def backprop(self, **args):
         """
         Extends backprop() from Network to automatically deal with context
         layers. Copies the contexts, if contextCopying is true.
         """
-        retval = Network.backprop(self)
+        retval = Network.backprop(self, **args)
         if self.contextCopying:
             self.copyHiddenToContext() # must go after error computation
         return retval
@@ -2881,7 +2877,7 @@ if __name__ == '__main__':
 
     if ask("Do you want to test the CRBP SigmaNetwork?"):
         net = SigmaNetwork()
-        net.addLayers(2, 10, 21)
+        net.addLayers(2, 10, 5)
         net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         net.setTargets( [[0], [1], [1], [0]] )
         net.train()
