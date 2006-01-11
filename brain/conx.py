@@ -1195,6 +1195,18 @@ class Network:
         if self.targets:
             set["output"] = self.targets[pos]
         return set
+    def getDataMap(self, intype, pos, name, offset = 0):
+        """
+        Hook defined to lookup a name, and get it from a vector.
+        Can be overloaded to get it from somewhere else.
+        """
+        if intype == "input":
+            vector = self.inputs
+        elif intype == "target":
+            vector = self.targets
+        else:
+            raise AttributeError, "invalid map type '%s'" % intype
+        return vector[pos][offset:offset+self[name].size]
     def getData(self, pos):
         """
         Returns dictionary with input and target given pos. 
@@ -1208,7 +1220,7 @@ class Network:
         else: # mapInput set manually
             for vals in self.inputMap:
                 (name, offset) = vals
-                retval[name] = self.inputs[pos][offset:offset+self[name].size]
+                retval[name] = self.getDataMap("input", pos, name, offset)
         if self.verbosity > 1: print "Loading target", pos, "..."
         if len(self.targets) == 0:
             pass # ok, no targets
@@ -1217,7 +1229,7 @@ class Network:
         else: # set manually
             for vals in self.targetMap:
                 (name, offset) = vals
-                retval[name] = self.targets[pos]
+                retval[name] = self.getDataMap("target", pos, name, offset)
         return retval
 
     # input, architecture, and target verification
@@ -2457,6 +2469,52 @@ class Network:
                         if network.layers[l2].name == toLayerName:
                             self.layers[l1].bias = network.layers[l2].bias
 
+class SigmaNetwork(Network):
+    """
+    Uses CRBP to train a population encoded summation on output layers. 
+    """
+    def setup(self):
+        """ Assumes the output name of "output"; overload to change or add more output layers.  """
+        self.mapTarget("output", 0) # name of layer, position of answer n in self.targets[i][n]
+        self.sigmaCorrect = 0
+    def preSweep(self):
+        self.sigmaCorrect = 0
+    def getDataMap(self, intype, i, name, offset):
+        # this overrides normal mapping function
+        # assumes correct answer is in target[offset]
+        # could use a probabilistic version of round:
+        def prob(v):
+            return round(v)
+            #return int(random.random() > v)
+        def confidence(v):
+            if (v > (1 - self.tolerance)):
+                return 1
+            elif (v < self.tolerance):
+                return 0
+            else:
+                return .5
+        vector = map(prob, self[name].activation)
+        confidences = map(confidence, self[name].activation)
+        ones = confidences.count(1) 
+        zeros = confidences.count(0)
+        correct = 0
+        if self.targets[i][offset] == 1.0:
+            if ones > zeros:
+                correct = 1
+            if ones/float(self[name].size) > 0.5:
+                self.sigmaCorrect += 1
+        elif self.targets[i][offset] == 0.0:
+            if ones < zeros:
+                correct = 1                
+            if zeros/float(self[name].size) > 0.5:
+                self.sigmaCorrect += 1
+        if correct:
+            vector = [n for n in vector]
+        else:
+            vector = [(1 - n) for n in vector]
+        return vector
+    def doWhile(self, *args):
+        return self.sigmaCorrect != len(self.inputs)
 class IncrementalNetwork(Network):
     """
 
@@ -2821,6 +2879,16 @@ if __name__ == '__main__':
                   ])
     n.setReportRate(10)
 
+    if ask("Do you want to test the CRBP SigmaNetwork?"):
+        net = SigmaNetwork()
+        net.addLayers(2, 10, 21)
+        net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
+        net.setTargets( [[0], [1], [1], [0]] )
+        net.train()
+        net.interactive = 1
+        net.learning = 0
+        net.sweep()
+        
     if ask("Do you want to test the pattern replacement utility?"):
         net = Network()
         net.addThreeLayers(3, 2, 3)
@@ -2931,7 +2999,6 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(100)
-        n.tolerance = .1
         n.train()
         print "getError('output') = (tss, correct, total):", n.getError("output")
         print "getError('output', 'output') :", n.getError("output", "output")
@@ -2967,7 +3034,6 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(100)
-        n.tolerance = .1
         n.train()
 
     if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
@@ -2977,7 +3043,6 @@ if __name__ == '__main__':
         n.setEpsilon(0.5)
         n.setMomentum(.975)
         n.setReportRate(10)
-        n.tolerance = .1        
         n.train()
         if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with cross validation?"):
             print "XOR Backprop non-batch mode: .........................."
@@ -3504,34 +3569,34 @@ if __name__ == '__main__':
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "ERROR: Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "Good! Didn't catch exception."
         print "Giving two layers the same name..."
         n.getLayer('hidden').name = 'input'
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
         print "Creating 3-3-3 architecture with context layer..."
         n = SRN()
         n.addSRNLayers(3,3,3)
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "ERROR: Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "Good! Didn't catch exception."
         print "Connecting context to hidden layer again..."
         n.connect('context','hidden')
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
         print "Creating an architecture with a cycle..."
         try:
             n = Network()
@@ -3547,9 +3612,9 @@ if __name__ == '__main__':
             n.connect('4','5')
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
         print "Creating an architecture with an unconnected layer..."
         n = Network()
         n.add(Layer('1',1))
@@ -3559,9 +3624,9 @@ if __name__ == '__main__':
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
         print "Creating an architecture with two unconnected subarchitectures..."
         n = Network()
         n.add(Layer('1',1))
@@ -3573,9 +3638,9 @@ if __name__ == '__main__':
         try:
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
         print "Creating an architecture with a connection between a layer and itself."
         n = Network()
         try:
@@ -3585,10 +3650,32 @@ if __name__ == '__main__':
             n.connect('2','2')
             n.verifyArchitecture()
         except Exception, err:
-            print "Caught exception. ", err
+            print "Good! Caught exception. ", err
         else:
-            print "Didn't catch exception."
+            print "ERROR: Didn't catch exception."
 
+    if ask("Test the mapping input/target system?"):
+            n = Network()
+            n.add(Layer('input',2))
+            n.add(Layer('hidden',2))
+            n.add(Layer('output',1))
+            n.connect('input','hidden')
+            n.connect('hidden','output')
+            n.verifyArchitecture()
+            n.initialize()
+            n.setEpsilon(0.5)
+            n.setMomentum(.975)
+            n.mapInput('input',0)
+            n.mapTarget('output',0)
+            n.setInputs([[0.0, 0.0],
+                         [0.0, 1.0],
+                         [1.0, 0.0],
+                         [1.0, 1.0]])
+            n.setTargets([[0.0],
+                          [1.0],
+                          [1.0],
+                          [0.0]])
+            n.train()
     if ask("Test the new step() method?"):
         print "Creating 2-2-1 network..."
         n = Network()
@@ -3658,7 +3745,7 @@ if __name__ == '__main__':
             n.setMomentum(.975)
             n.train()
         except Exception, err:
-            print err
+            print "Good!", err
         try:
             n = Network()
             n.add(Layer('input',2))
@@ -3683,4 +3770,4 @@ if __name__ == '__main__':
                           [0.0]])
             n.train()
         except Exception, err:
-            print err
+            print "Good!", err
