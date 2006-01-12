@@ -1,7 +1,11 @@
 from pyrobot.brain.conx import *
 from pyrobot.brain.governor import *
 
+ep = 0.5
+mo = 0.975
+
 def test(net, resolution = 30, sum = 0):
+    print "Testing:", net.name
     if "candidate" in [layer.name for layer in net.layers]:
         net["candidate"].active = 0
     for x in range(resolution):
@@ -29,20 +33,26 @@ def test(net, resolution = 30, sum = 0):
     if "candidate" in [layer.name for layer in net.layers]:
         net["candidate"].active = 1
 
-def train(net, sweeps = 100, recruit = 0):
+def train(net, sweeps = 100, recruit = 0, resolution = 30):
+    print "*" * 65
+    print net.name
     if "candidate" in [layer.name for layer in net.layers]:
         net["candidate"].active = 1
     cont = 0
-    test(net)
+    test(net, resolution)
     while not net.complete:
         net.train(sweeps, cont=cont)
         if recruit:
             net.recruitBest()
-        test(net)
+        print net.name, net.complete
+        test(net, resolution)
         cont = 1
+    return net.name, net.epoch
 
 inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
 targets= [[0], [1], [1], [0]]
+
+results = []
 
 net0 = IncrementalNetwork()
 net0.addLayers(2, 1)
@@ -51,7 +61,15 @@ net0.setTargets( targets)
 net0.tolerance = 0.4
 net0.addCandidateLayer(4)
 net0.reportRate = 100
-#train(net0, 500, recruit=1)
+results.append(train(net0, 750, recruit=1))
+
+net1 = SigmaNetwork()
+net1.addLayers(2, 5, 5)
+net1.setInputs( inputs )
+net1.setTargets( targets)
+net1.tolerance = 0.4
+net1.reportRate = 100
+results.append(train(net1, 500, resolution=10))
 
 net2 = GovernorNetwork(5, 2.1, 0.01, 5, 0.2) # 5, 2.1, 0.3, 5, 0.2
 net2.reportHistograms = 1
@@ -60,17 +78,32 @@ net2.setInputs( inputs )
 net2.setTargets( targets)
 net2.tolerance = 0.4
 net2.reportRate = 100
-net2.doWhile = lambda a, b: 1
-#train(net2)
-#print net2.ravq
+
+def notAllDone(a, b):
+    net2.learning = 0
+    net2.governing = 0
+    correct = 0
+    for i in range(4):
+        results = net2.propagate(input = inputs[i])
+        if abs(results[0] - targets[i][0]) < net2.tolerance:
+            correct += 1
+    net2.learning = 1
+    net2.governing = 1
+    return correct != 4
+
+net2.doWhile = notAllDone
+results.append(train(net2))
+print net2.ravq
 
 net3 = Network()
-net3.addLayers(2, 10, 10, 1)
+net3.addLayers(2, 2, 1)
 net3.setInputs( inputs )
 net3.setTargets( targets)
 net3.tolerance = 0.4
-net3.reportRate = 100
-#train(net3)
+net3.reportRate = 500
+net3.setEpsilon(ep)
+net3.setMomentum(mo)
+results.append(train(net3))
 
 class MyNetwork(Network):
     def getData(self, i):
@@ -81,9 +114,15 @@ class MyNetwork(Network):
         return data
 
 net4 = MyNetwork()
-net4.addLayers(2, 10, 10, 2)
+net4.addLayers(2, 2, 2)
 net4.setInputs( inputs )
 net4.setTargets( targets)
 net4.tolerance = 0.4
-net4.reportRate = 100
-#train(net4, 100)
+net4.reportRate = 500
+net4.setEpsilon(ep)
+net4.setMomentum(mo)
+results.append(train(net4, 500))
+
+for (name, epoch) in results:
+    print name, epoch
+

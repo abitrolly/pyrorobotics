@@ -1411,6 +1411,7 @@ class Network:
         met. This stopping condition can be a limiting epoch or a percentage correct requirement.
         """
         # check architecture
+        self.complete = 0
         self.verifyArchitecture()
         tssErr = 0.0; rmsErr = 0.0; totalCorrect = 0; totalCount = 1; totalPCorrect = {}
         if not cont: # starting afresh
@@ -1425,7 +1426,6 @@ class Network:
         else:
             if sweeps != None:
                 self.resetEpoch = self.epoch + sweeps - 1
-        self.complete = 1
         while self.doWhile(totalCount, totalCorrect):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             if totalCount != 0:
@@ -1482,11 +1482,14 @@ class Network:
         
         """
         # First, copy the values into either activations or targets:
-        args = self.preStep(**args)
+        retargs = self.preStep(**args)
+        if retargs: args = retargs # replace the args
         # Propagate activation through network:
-        args = self.prePropagate(**args)
+        retargs = self.prePropagate(**args)
+        if retargs: args = retargs # replace the args
         self.propagate(**args)
-        args = self.postPropagate(**args)
+        retargs = self.postPropagate(**args)
+        if retargs: args = retargs # replace the args
         # Next, take care of any Auto-association, and copy
         # activations to targets
         for aa in self.association:
@@ -1501,9 +1504,11 @@ class Network:
                                    outLayer.type)
             outLayer.copyTargets(inLayer.activation)
         # Compute error, and back prop it:
-        args = self.preBackprop(**args)
+        retargs = self.preBackprop(**args)
+        if retargs: args = retargs # replace the args
         (error, correct, total, pcorrect) = self.backprop(**args) # compute_error()
-        args = self.postBackprop(**args)
+        retargs = self.postBackprop(**args)
+        if retargs: args = retargs # replace the args
         if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
@@ -1511,16 +1516,17 @@ class Network:
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
-        args = self.postStep(**args)
+        retargs = self.postStep(**args)
+        if retargs: args = retargs # replace the args
         self.reportPattern()
         return (error, correct, total, pcorrect)
     # Hooks for adding bits without having to breakup step(), train(), and sweep()
-    def preBackprop(self, **args):   return args
-    def postBackprop(self, **args):  return args
-    def prePropagate(self, **args):  return args
-    def postPropagate(self, **args): return args
-    def preStep(self, **args):       return args
-    def postStep(self, **args):      return args
+    def preBackprop(self, **args):   return None
+    def postBackprop(self, **args):  return None
+    def prePropagate(self, **args):  return None
+    def postPropagate(self, **args): return None
+    def preStep(self, **args):       return None
+    def postStep(self, **args):      return None
     def preSweep(self, **args):      pass
     def postSweep(self, **args):     pass
     def sweep(self):
@@ -2484,29 +2490,41 @@ class SigmaNetwork(Network):
     """
     Uses CRBP to train a population encoded summation on output layers. 
     """
-    def setup(self):
-        """ Assumes the output name of "output"; overload to change or add more output layers.  """
-        self.sigmaCorrect = 0
+    def __init__(self, name = 'Sigma Network', verbosity = 0):
+        Network.__init__(self, name, verbosity)
         self.times = 0
+        self.outputLayers = None
+    def initialize(self):
+        Network.initialize(self)
+        self.sigmaCorrect = 0        
     def preSweep(self):
         self.sigmaCorrect = 0
     def preBackprop(self, **dict):
         # could use a probabilistic version of round:
-        # for each in dict where dict type is output:
-        def prob(v): return int(random.random() < v)
+        # def prob(v): return int(random.random() < v)
         def mutate(v, p):
             for i in range(int(round(len(v) * p))):
                 g = int(len(v) * random.random())
                 v[g] = not v[g]
             return v
-        vector = map(round, self["output"].activation)
-        score = abs(sum(vector)/float(self["output"].size) - dict["output"][0])
-        if score > self.tolerance:
-            vector = mutate(vector, score)
-        else:
-            self.sigmaCorrect += 1
-        dict["output"] = vector
+        for name in dict:
+            layer = self[name]
+            if layer.kind == "Output":
+                vector = map(round, self[name].activation)
+                score = abs(sum(vector)/float(self[name].size) - dict[name][0])
+                if score > self.tolerance:
+                    vector = mutate(vector, score)
+                else:
+                    self.sigmaCorrect += 1
+                dict[name] = vector
         return dict
+    def doWhile(self, *args):
+        if self.outputLayers == None:
+            self.outputLayers = 0
+            for layer in self.layers:
+                if layer.kind == "Output":
+                    self.outputLayers += len(self.inputs)
+        return self.sigmaCorrect != self.outputLayers
 
 class IncrementalNetwork(Network):
     """
@@ -2528,14 +2546,14 @@ class IncrementalNetwork(Network):
         self.incrType = incrType # "cascade" or "parallel"
     def prePropagate(self, **args):
         self["candidate", "output"].active = 0
-        return args
+        return None
     def preBackprop(self, **args):
         self["candidate", "output"].active = 1
-        return args
+        return None
     def postBackprop(self, **args):
         for i in range(self["candidate"].size):
             self["candidate"].totalError[i] += self["candidate"].error[i]
-        return args
+        return None
     def preSweep(self):
         self["candidate"].totalError = [0.0 for i in range(self["candidate"].size)]
     def addCandidateLayer(self, size=8):
@@ -2877,7 +2895,8 @@ if __name__ == '__main__':
 
     if ask("Do you want to test the CRBP SigmaNetwork?"):
         net = SigmaNetwork()
-        net.addLayers(2, 10, 5)
+        net.setSeed(457646.23)
+        net.addLayers(2, 5, 11)
         net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         net.setTargets( [[0], [1], [1], [0]] )
         net.train()
@@ -3717,7 +3736,7 @@ if __name__ == '__main__':
         except Exception, err:
             print err
         else:
-            print "No exception caught."
+            print "Ok, No exception caught. (changed setTargets)"
         try:
             n = Network()
             n.add(Layer('1',2))
