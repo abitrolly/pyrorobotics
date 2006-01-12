@@ -1428,6 +1428,7 @@ class Network:
                 self.resetEpoch = self.epoch + sweeps - 1
         while self.doWhile(totalCount, totalCorrect):
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
+            self.complete = 1
             if totalCount != 0:
                 rmsErr = math.sqrt(tssErr / totalCount)
             else:
@@ -2494,6 +2495,7 @@ class SigmaNetwork(Network):
         Network.__init__(self, name, verbosity)
         self.times = 0
         self.outputLayers = None
+        self.sigmaCorrect = 0        
     def initialize(self):
         Network.initialize(self)
         self.sigmaCorrect = 0        
@@ -2545,10 +2547,10 @@ class IncrementalNetwork(Network):
         Network.__init__(self, name, verbosity)
         self.incrType = incrType # "cascade" or "parallel"
     def prePropagate(self, **args):
-        self["candidate", "output"].active = 0
+        self["candidate", "output"].active = 0 # don't affect outputs
         return None
     def preBackprop(self, **args):
-        self["candidate", "output"].active = 1
+        self["candidate", "output"].active = 1 # do change the weights
         return None
     def postBackprop(self, **args):
         for i in range(self["candidate"].size):

@@ -114,7 +114,7 @@ class MyNetwork(Network):
         return data
 
 net4 = MyNetwork()
-net4.addLayers(2, 2, 2)
+net4.addLayers(2, 10, 2)
 net4.setInputs( inputs )
 net4.setTargets( targets)
 net4.tolerance = 0.4
