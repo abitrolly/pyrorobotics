@@ -10,9 +10,8 @@ try:
 except:
     # else, define a new one:
     share = None
-
 PIOVER180 = math.pi / 180.0
-
+PIOVER2   = math.pi /2
 class Segment:
     def __init__(self, start, end, id = None, partOf = None):
         self.start = start
@@ -216,11 +215,13 @@ class Simulator:
                 if r.name == robot.name and ignoreRobot == "self": continue
                 # don't hit other's bounding box if ignoreRobot == "other":
                 if r.name != robot.name and ignoreRobot == "other": continue
-                a90 = r._ga + 90 * PIOVER180
+                a90 = r._ga + PIOVER2
+                cos_a90 = math.cos(a90)
+                sin_a90 = math.sin(a90)
                 segments = []
                 if r.boundingBox != []:
-                    xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
-                                            r._gy + x * math.sin(a90) + y * math.cos(a90)),
+                    xys = map(lambda x, y: (r._gx + x * cos_a90 - y * sin_a90,
+                                            r._gy + x * sin_a90 + y * cos_a90),
                               r.boundingBox[0], r.boundingBox[1])
                     # for each of the bounding box segments:
                     for i in range(len(xys)):
@@ -231,8 +232,8 @@ class Simulator:
                         segments.append(w)
                 if r.boundingSeg != []:
                     # bounding segments
-                    xys = map(lambda x, y: (r._gx + x * math.cos(a90) - y * math.sin(a90),
-                                            r._gy + x * math.sin(a90) + y * math.cos(a90)),
+                    xys = map(lambda x, y: (r._gx + x * cos_a90 - y * sin_a90,
+                                            r._gy + x * sin_a90 + y * cos_a90),
                               r.boundingSeg[0], r.boundingSeg[1])
                     # for each of the bounding segments:
                     for i in range(0, len(xys), 2):
@@ -241,7 +242,8 @@ class Simulator:
                         w.type = r.type
                         w.robot = r
                         segments.append(w)
-                for s in r.additionalSegments(r._gx, r._gy, a90, color = r.color, type = r.type, robot = r):
+                for s in r.additionalSegments(r._gx, r._gy, cos_a90, sin_a90,
+                                              color = r.color, type = r.type, robot = r):
                     segments.append(s)
                 for w in segments:
                     retval = w.intersects(seg)
@@ -658,18 +660,18 @@ class SimRobot:
         self.bulb = None
         self.gripper = None
 
-    def additionalSegments(self, x, y, a90, **dict):
+    def additionalSegments(self, x, y, cos_a90, sin_a90, **dict):
         # dynamic segments
         retval = []
         if self.gripper:
             g = self.gripper
-            x1, x2, x3, x4 = g.baseX, g.baseX + g.armLength, g.baseX, g.baseX + g.armLength
+            x1, x2, x3, x4 = g.pose[0], g.pose[0] + g.armLength, g.pose[0], g.pose[0] + g.armLength
             y1, y2, y3, y4 = g.armPosition, g.armPosition, -g.armPosition,  -g.armPosition
             if g.robot.proposePosition and g.velocity != 0.0:
                 armPosition, armVelocity = g.moveWhere()
                 y1, y2, y3, y4 = armPosition, armPosition, -armPosition,  -armPosition
-            xys = map(lambda nx, ny: (x + nx * math.cos(a90) - ny * math.sin(a90),
-                                      y + nx * math.sin(a90) + ny * math.cos(a90)),
+            xys = map(lambda nx, ny: (x + nx * cos_a90 - ny * sin_a90,
+                                      y + nx * sin_a90 + ny * cos_a90),
                       (x1, x2, x3, x4), (y1, y2, y3, y4))
             w = [Segment(xys[0], xys[1], partOf="gripper"),
                  Segment(xys[2], xys[3], partOf="gripper")]
@@ -696,12 +698,14 @@ class SimRobot:
             if self._mouse != 1 and not handOfGod: # if the mouse isn't down:
                 # first, figure out how much we moved in the global coords:
                 a90 = -self._ga
-                dx =  (x - self._gx) * math.cos(a90) - (y - self._gy) * math.sin(a90)
-                dy =  (x - self._gx) * math.sin(a90) + (y - self._gy) * math.cos(a90)
+                cos_a90 = math.cos(a90)
+                sin_a90 = math.sin(a90)
+                dx =  (x - self._gx) * cos_a90 - (y - self._gy) * sin_a90
+                dy =  (x - self._gx) * sin_a90 + (y - self._gy) * cos_a90
                 # then, move that much in the local coords:
                 a90 = -self.a
-                self.y += dx * math.cos(a90) - dy * math.sin(a90) 
-                self.x += dx * math.sin(a90) + dy * math.cos(a90) 
+                self.y += dx * cos_a90 - dy * sin_a90
+                self.x += dx * sin_a90 + dy * cos_a90 
                 # noise: --------------------------------------------------------------
                 # FIXME: should be based on the total distance moved:
                 # dist = Segment((x, y), (self._gx, self._gy)).length()
@@ -745,14 +749,17 @@ class SimRobot:
     def updateDevices(self):
         # measure and draw the new device data:
         if self.subscribed == 0: return
+        # do some computations and save for speed
+        a90 = self._ga + PIOVER2
+        cos_a90 = math.cos(a90)
+        sin_a90 = math.sin(a90)
         for d in self.devices:
             if d.type == "sonar":
                 i = 0
                 for x, y, a in d.geometry:
                     ga = (self._ga + a)
-                    a90 = self._ga + 90 * PIOVER180
-                    gx = self._gx + (x * math.cos(a90) - y * math.sin(a90))
-                    gy = self._gy + (x * math.sin(a90) + y * math.cos(a90))
+                    gx = self._gx + (x * cos_a90 - y * sin_a90)
+                    gy = self._gy + (x * sin_a90 + y * cos_a90)
                     dist, hit, obj = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
                     if hit:
                         self.drawRay("sonar", gx, gy, hit[0], hit[1], "gray")
@@ -770,9 +777,8 @@ class SimRobot:
                 for (d_x, d_y, d_a) in d.geometry:
                     # compute total light on sensor, falling off as square of distance
                     # position of light sensor in global coords:
-                    a90 = self._ga + 90 * PIOVER180
-                    gx = self._gx + (d_x * math.cos(a90) - d_y * math.sin(a90))
-                    gy = self._gy + (d_x * math.sin(a90) + d_y * math.cos(a90))
+                    gx = self._gx + (d_x * cos_a90 - d_y * sin_a90)
+                    gy = self._gy + (d_x * sin_a90 + d_y * cos_a90)
                     sum = 0.0
                     rgb = [0, 0, 0]
                     for light in self.simulator.lights: # for each light source:
@@ -785,12 +791,12 @@ class SimRobot:
                                                                 light.robot._gy,
                                                                 light.robot._ga,
                                                                 light.brightness, light.robot.color)
-                            oa90 = oga + 90 * PIOVER180
+                            oa90 = oga + PIOVER2
                             x = ogx + (light.x * math.cos(oa90) - light.y * math.sin(oa90))
                             y = ogy + (light.x * math.sin(oa90) + light.y * math.cos(oa90))
                             light_rgb = colorMap[color]
                         seg = Segment((x,y), (gx, gy))
-                        a = -seg.angle() + 90 * PIOVER180
+                        a = -seg.angle() + PIOVER2
                         # see if line between sensor and light is blocked by any boundaries (ignore other bb)
                         dist,hit,obj = self.simulator.castRay(self, x, y, a, seg.length() - .1,
                                                                ignoreRobot = "other", rayType = "light")
@@ -809,17 +815,16 @@ class SimRobot:
                     i += 1
             elif d.type == "gripper":
                 # cast a ray in two places, set scan = 1 if it is "broken"
-                a90 = self._ga + 90 * PIOVER180
-                x = d.baseX + .07 # first beam distance from center of robot
+                x = d.pose[0] + .07 # first beam distance from center of robot
                 y = d.armPosition # distance between arms
                 d.scan = [0] * 2 # two beams
                 d.objs = []
                 for i in range(2): # two beams
-                    gx = self._gx + (x * math.cos(a90) - y * math.sin(a90))
-                    gy = self._gy + (x * math.sin(a90) + y * math.cos(a90))
-                    ogx = self._gx + (x * math.cos(a90) + y * math.sin(a90))
-                    ogy = self._gy + (x * math.sin(a90) - y * math.cos(a90))
-                    dist,hit,obj = self.simulator.castRay(self, gx, gy, -self._ga + (90 * PIOVER180), 2 * y,
+                    gx = self._gx + (x * cos_a90 - y * sin_a90)
+                    gy = self._gy + (x * sin_a90 + y * cos_a90)
+                    ogx = self._gx + (x * cos_a90 + y * sin_a90)
+                    ogy = self._gy + (x * sin_a90 - y * cos_a90)
+                    dist,hit,obj = self.simulator.castRay(self, gx, gy, -self._ga + PIOVER2, 2 * y,
                                                           rayType = "breakBeam")
                     if hit: 
                         d.scan[i] = 1
@@ -885,27 +890,29 @@ class SimRobot:
         p_a = self._ga + va * (timeslice / 1000.0) # miliseconds
         pushedAPuck = 0
         # for each of the robot's bounding box segments:
+        a90 = p_a + PIOVER2
+        cos_a90 = math.cos(a90)
+        sin_a90 = math.sin(a90)
         if self.subscribed or self.type == "puck":
             if vx != 0 or vy != 0 or va != 0:
                 self.energy -= self.maxEnergyCostPerStep
             # let's check if that movement would be ok:
-            a90 = p_a + 90 * PIOVER180
             segments = []
             if self.boundingBox != []:
-                xys = map(lambda x, y: (p_x + x * math.cos(a90) - y * math.sin(a90),
-                                        p_y + x * math.sin(a90) + y * math.cos(a90)),
+                xys = map(lambda x, y: (p_x + x * cos_a90 - y * sin_a90,
+                                        p_y + x * sin_a90 + y * cos_a90),
                           self.boundingBox[0], self.boundingBox[1])
                 for i in range(len(xys)):
                     bb = Segment( xys[i], xys[i - 1])
                     segments.append(bb)
             if self.boundingSeg != []:
-                xys = map(lambda x, y: (p_x + x * math.cos(a90) - y * math.sin(a90),
-                                        p_y + x * math.sin(a90) + y * math.cos(a90)),
+                xys = map(lambda x, y: (p_x + x * cos_a90 - y * sin_a90,
+                                        p_y + x * sin_a90 + y * cos_a90),
                           self.boundingSeg[0], self.boundingSeg[1])
                 for i in range(0, len(xys), 2):
                     bb = Segment( xys[i], xys[i + 1])
                     segments.append(bb)
-            for s in self.additionalSegments(p_x, p_y, a90):
+            for s in self.additionalSegments(p_x, p_y, cos_a90, sin_a90):
                 segments.append(s)
             for bb in segments:
                 # check each segment of the robot's bounding segs for wall obstacles:
@@ -923,23 +930,25 @@ class SimRobot:
                 # check each segment of the robot's bounding box for other robots:
                 for r in self.simulator.robots:
                     if r.name == self.name: continue # don't compare with your own!
-                    r_a90 = r._ga + 90 * PIOVER180
+                    r_a90 = r._ga + PIOVER2
+                    cos_r_a90 = math.cos(r_a90)
+                    sin_r_a90 = math.sin(r_a90)
                     r_segments = []
                     if r.boundingBox != []:
-                        r_xys = map(lambda x, y: (r._gx + x * math.cos(r_a90) - y * math.sin(r_a90),
-                                                  r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
+                        r_xys = map(lambda x, y: (r._gx + x * cos_r_a90 - y * sin_r_a90,
+                                                  r._gy + x * sin_r_a90 + y * cos_r_a90),
                                     r.boundingBox[0], r.boundingBox[1])
                         for j in range(len(r_xys)):
                             r_seg = Segment(r_xys[j], r_xys[j - 1])
                             r_segments.append(r_seg)
                     if r.boundingSeg != []:
-                        r_xys = map(lambda x, y: (r._gx + x * math.cos(r_a90) - y * math.sin(r_a90),
-                                                  r._gy + x * math.sin(r_a90) + y * math.cos(r_a90)),
+                        r_xys = map(lambda x, y: (r._gx + x * cos_r_a90 - y * sin_r_a90,
+                                                  r._gy + x * sin_r_a90 + y * cos_r_a90),
                                     r.boundingSeg[0], r.boundingSeg[1])
                         for j in range(0, len(r_xys), 2):
                             r_seg = Segment(r_xys[j], r_xys[j + 1])
                             r_segments.append(r_seg)
-                    for s in r.additionalSegments(r._gx, r._gy, r_a90):
+                    for s in r.additionalSegments(r._gx, r._gy, cos_r_a90, sin_r_a90):
                         r_segments.append(s)
                     for r_seg in r_segments:
                         bbintersect = bb.intersects(r_seg)
@@ -988,11 +997,10 @@ class SimRobot:
             d.armPosition, d.armVelocity = d.moveWhere()
             if d.armPosition == d.openPosition:
                 if d.storage != [] and d.state == "deploy":
-                    x = d.baseX + d.armLength/2
+                    x = d.pose[0] + d.armLength/2
                     y = 0
-                    a90 = p_a + 90 * PIOVER180
-                    rx, ry = (p_x + x * math.cos(a90) - y * math.sin(a90),
-                              p_y + x * math.sin(a90) + y * math.cos(a90))
+                    rx, ry = (p_x + x * cos_a90 - y * sin_a90,
+                              p_y + x * sin_a90 + y * cos_a90)
                     r = d.storage.pop()
                     r.setPose(rx, ry, 0.0)
                     d.state = "open"
@@ -1036,7 +1044,7 @@ class TkRobot(SimRobot):
             if command == "control-up":
                 self.simulator.canvas.delete('arrow')
                 a = Segment((cx, cy), (x, y)).angle()
-                robot.setPose(a = (-a - 90 * PIOVER180) % (2 * math.pi))
+                robot.setPose(a = (-a - PIOVER2) % (2 * math.pi))
                 self._mouse = 0
                 self.simulator.redraw()
             elif command in ["control-down", "control-motion"]:
@@ -1112,9 +1120,11 @@ class TkPuck(TkRobot):
             self.simulator.canvas.create_oval(x1, y1, x2, y2, fill=self.color, tag="robot-%s" % self.name, outline="black")
         if self.display["boundingBox"] == 1 and self.boundingBox != []:
             # Body Polygon, by x and y lists:
-            a90 = self._ga + 90 * PIOVER180 # angle is 90 degrees off for graphics
-            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+            a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
+            cos_a90 = math.cos(a90)
+            sin_a90 = math.sin(a90)
+            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
         self.addMouseBindings()
@@ -1139,22 +1149,24 @@ class TkPioneer(TkRobot):
         sy = [.08, .175, .175, .08, -.08, -.175, -.175, -.08]
         s_x = self.simulator.scale_x
         s_y = self.simulator.scale_y
-        a90 = self._ga + 90 * PIOVER180 # angle is 90 degrees off for graphics
+        a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
+        cos_a90 = math.cos(a90)
+        sin_a90 = math.sin(a90)
         if self.display["body"] == 1:
-            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
                      sx, sy)
             self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
             bx = [ .14, .06, .06, .14] # front camera
             by = [-.06, -.06, .06, .06]
-            xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                   s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
                      bx, by)
             self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black")
             if self.bulb:
                 radius = .05 * self.simulator.scale
-                x = s_x(self._gx + self.bulb.x * math.cos(a90) - self.bulb.y * math.sin(a90))
-                y = s_y(self._gy + self.bulb.x * math.sin(a90) + self.bulb.y * math.cos(a90))
+                x = s_x(self._gx + self.bulb.x * cos_a90 - self.bulb.y * sin_a90)
+                y = s_y(self._gy + self.bulb.x * sin_a90 + self.bulb.y * cos_a90)
                 # color based on robot, or value?
                 color = "#%02x%02x%02x" % (min(max(self.bulb.brightness * 255,0),255),
                                            min(max(self.bulb.brightness * 255,0),255), 0) # amount of yellow
@@ -1164,49 +1176,49 @@ class TkPioneer(TkRobot):
             if self.gripper:
                 # draw grippers:
                 # base:
-                xy = [(s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))) for (x,y) in
-                      ((self.gripper.baseX, self.gripper.openPosition),
-                       (self.gripper.baseX, -self.gripper.openPosition))]
+                xy = [(s_x(self._gx + x * cos_a90 - y * sin_a90),
+                       s_y(self._gy + x * sin_a90 + y * cos_a90)) for (x,y) in
+                      ((self.gripper.pose[0], self.gripper.openPosition),
+                       (self.gripper.pose[0], -self.gripper.openPosition))]
                 self.simulator.canvas.create_line(xy[0][0], xy[0][1], xy[1][0], xy[1][1],
                                                   tag="robot-%s" % self.name, fill="black")
                 # left arm:
                 xs = []
                 ys = []
-                xs.append(self.gripper.baseX);     ys.append(self.gripper.armPosition + 0.01)
-                xs.append(self.gripper.baseX + self.gripper.armLength); ys.append(self.gripper.armPosition + 0.01)
-                xs.append(self.gripper.baseX + self.gripper.armLength); ys.append(self.gripper.armPosition - 0.01)
-                xs.append(self.gripper.baseX);     ys.append(self.gripper.armPosition - 0.01)
-                xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                xs.append(self.gripper.pose[0]);     ys.append(self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition - 0.01)
+                xs.append(self.gripper.pose[0]);     ys.append(self.gripper.armPosition - 0.01)
+                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
                          xs, ys)
                 self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
                 # right arm:
                 xs = []
                 ys = []
-                xs.append(self.gripper.baseX);     ys.append(-self.gripper.armPosition + 0.01)
-                xs.append(self.gripper.baseX + self.gripper.armLength); ys.append(-self.gripper.armPosition + 0.01)
-                xs.append(self.gripper.baseX + self.gripper.armLength); ys.append(-self.gripper.armPosition - 0.01)
-                xs.append(self.gripper.baseX);     ys.append(-self.gripper.armPosition - 0.01)
-                xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                xs.append(self.gripper.pose[0]);     ys.append(-self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition - 0.01)
+                xs.append(self.gripper.pose[0]);     ys.append(-self.gripper.armPosition - 0.01)
+                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
                          xs, ys)
                 self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
         if self.display["boundingBox"] == 1:
             if self.boundingBox != []:
-                xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
                          self.boundingBox[0], self.boundingBox[1])
                 self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
             if self.boundingSeg != []:
-                xy = map(lambda x, y: (s_x(self._gx + x * math.cos(a90) - y * math.sin(a90)),
-                                       s_y(self._gy + x * math.sin(a90) + y * math.cos(a90))),
+                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
+                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
                          self.boundingSeg[0], self.boundingSeg[1])
                 for i in range(0, len(xy), 2):
                     self.simulator.canvas.create_line(xy[i][0], xy[i][1],
                                                       xy[i + 1][0], xy[i + 1][1],
                                                       tag="robot-%s" % self.name, fill="purple")
-            additionalSegments = self.additionalSegments(self._gx, self._gy, a90)
+            additionalSegments = self.additionalSegments(self._gx, self._gy, cos_a90, sin_a90)
             if additionalSegments != []:
                 for s in additionalSegments:
                     self.simulator.canvas.create_line(s_x(s.start[0]), s_y(s.start[1]),
@@ -1257,12 +1269,11 @@ class Gripper:
         self.type = "gripper"
         self.scan = []
         self.objs = []
-        self.consume = 0 # eat the puck?
         self.armLength  = 0.225 # length of the paddles
         self.velocity   = 0.0   # moving?
         self.openPosition  = 0.12
         self.closePosition = 0.0
-        self.baseX = 0.225 # start of base of gripper
+        self.pose = (0.225, 0, 0) # position of gripper on robot
         self.state = "open"
         self.armPosition   = self.openPosition
         self.breakBeam = []
@@ -1280,9 +1291,8 @@ class Gripper:
         self.velocity = -0.01
         for segment in self.objs:
             segment.robot.setPose(-1000.0, -1000.0, 0.0)
-            if not self.consume:
-                if segment.robot not in self.storage:
-                    self.storage.append( segment.robot )
+            if segment.robot not in self.storage:
+                self.storage.append( segment.robot )
     def open(self):
         self.state = "open"
         self.velocity = 0.01
