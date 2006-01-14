@@ -4,7 +4,7 @@ A Pure Python 2D Robot Simulator
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
 import Tkinter, time, math, pickle, random
-# try to share a tk interpreter, if one:
+# try to share a tk interpreter, if one is available:
 try:
     import pyrobot.system.share as share
 except:
@@ -115,6 +115,7 @@ def sgn(v):
 class Simulator:
     def __init__(self, (width, height), (offset_x, offset_y), scale, run=1):
         self.robots = []
+        self.robotsByName = {}
         self.lights = []
         self.trail = []
         self.needToMove = [] # list of robots that need to move (see step)
@@ -136,6 +137,11 @@ class Simulator:
         self.properties = ["stall", "x", "y", "th", "thr", "energy"]
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
+    def __getitem__(self, name):
+        if name in self.robotsByName:
+            return self.robotsByName[name]
+        else:
+            return None
     def update(self):
         pass
     def addWall(self, x1, y1, x2, y2, color="black"):
@@ -158,6 +164,7 @@ class Simulator:
 
     def addRobot(self, port, r):
         self.robots.append(r)
+        self.robotsByName[r.name] = r
         self.trail.append([None] * self.maxTrailSize)
         r.simulator = self
         r._xya = r._gx, r._gy, r._ga # save original position for later reset
@@ -328,21 +335,21 @@ class Simulator:
                 retval = self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
             elif message[0] == "a": # "a_name_x_y_th" simulation placement
                 simulation, name, x, y, thr = message
-                for r in self.robots:
-                    if r.name == name:
-                        r.setPose(float(x), float(y), float(thr), 1)#handofgod
-                        r.localize(0, 0, 0)
-                        return "ok"
-                return "error"
+                if name in self.robotsByName:
+                    r = self.robotsByName[name]
+                    r.setPose(float(x), float(y), float(thr), 1)#handofgod
+                    r.localize(0, 0, 0)
+                    return "ok"
+                return "error: no such robot named '%s'" % name
             elif message[0] == "b": # "b_x_y_th" localize
                 localization, x, y, thr = message
                 retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
             elif message[0] == "c": # "c_name" getpose
                 simulation, name = message
                 retval = "error"
-                for r in self.robots:
-                    if r.name == name:
-                        retval = (r._gx, r._gy, r._ga)
+                if name in self.robotsByName:
+                    r = self.robotsByName[name]
+                    retval = (r._gx, r._gy, r._ga)
             elif message[0] == "f": # "f_i_v" rgb[i][v]
                 index, pos = int(message[1]), int(message[2])
                 device = self.assoc[sockname[1]].getIndex("light", index)
@@ -668,7 +675,7 @@ class SimRobot:
             x1, x2, x3, x4 = g.pose[0], g.pose[0] + g.armLength, g.pose[0], g.pose[0] + g.armLength
             y1, y2, y3, y4 = g.armPosition, g.armPosition, -g.armPosition,  -g.armPosition
             if g.robot.proposePosition and g.velocity != 0.0:
-                armPosition, armVelocity = g.moveWhere()
+                armPosition, velocity = g.moveWhere()
                 y1, y2, y3, y4 = armPosition, armPosition, -armPosition,  -armPosition
             xys = map(lambda nx, ny: (x + nx * cos_a90 - ny * sin_a90,
                                       y + nx * sin_a90 + ny * cos_a90),
@@ -817,7 +824,7 @@ class SimRobot:
                 # cast a ray in two places, set scan = 1 if it is "broken"
                 x = d.pose[0] + .07 # first beam distance from center of robot
                 y = d.armPosition # distance between arms
-                d.scan = [0] * 2 # two beams
+                d.scan = [0] * (2 + 3) # two beams, 3 sensors (no lift)
                 d.objs = []
                 for i in range(2): # two beams
                     gx = self._gx + (x * cos_a90 - y * sin_a90)
@@ -834,6 +841,9 @@ class SimRobot:
                     elif self.display["gripper"] == 1:
                         self.drawRay("gripper", gx, gy, ogx, ogy, "purple")
                     x += .07  # distance between beams
+                d.scan[2] = d.isClosed()
+                d.scan[3] = d.isOpened()
+                d.scan[4] = d.isMoving()
             elif d.type == "camera":
                 # FIX: make work with any start/stop angle:
                 x, y = self._gx, self._gy
@@ -994,7 +1004,7 @@ class SimRobot:
         if self.gripper and self.gripper.velocity != 0:
             # handle moving paddles
             d = self.gripper
-            d.armPosition, d.armVelocity = d.moveWhere()
+            d.armPosition, d.velocity = d.moveWhere()
             if d.armPosition == d.openPosition:
                 if d.storage != [] and d.state == "deploy":
                     x = d.pose[0] + d.armLength/2
@@ -1269,7 +1279,7 @@ class Gripper:
         self.type = "gripper"
         self.scan = []
         self.objs = []
-        self.armLength  = 0.225 # length of the paddles
+        self.armLength  = 0.200 # length of the paddles
         self.velocity   = 0.0   # moving?
         self.openPosition  = 0.12
         self.closePosition = 0.0
@@ -1315,6 +1325,12 @@ class Gripper:
                 armPosition = self.closePosition
                 velocity = 0.0
         return armPosition, velocity
+    def isClosed(self):
+        return self.velocity == 0 and self.armPosition == self.closePosition
+    def isOpened(self):
+        return self.velocity == 0 and self.armPosition == self.openPosition
+    def isMoving(self):
+        return self.velocity != 0
 
 class Camera:
     def __init__(self, width, height, startAngle, stopAngle, x, y, thr):

@@ -129,10 +129,12 @@ class GripperSimDevice(GripperDevice):
 		Device.__init__(self)
 		self.type = "gripper"
 		self._dev = robot
-		self.data = [0, 0]
+		self.data = [0, 0, 0, 0, 0]
 		self.startDevice()
 	def updateDevice(self):
-		self.data = self._dev.move("gripper_%d" % 0)
+		newData = self._dev.move("gripper_%d" % 0)
+		for i in range(len(newData)):
+			self.data[i] = newData[i]
 	def close(self):  return self._dev.move("z_gripper_0_close")
 	def open(self):   return self._dev.move("z_gripper_0_open")
 	def up(self):     pass
@@ -149,10 +151,10 @@ class GripperSimDevice(GripperDevice):
 			return self.data[1]
 		else:
 			raise AttributeError, "invalid breakBeam: '%s'" % which
-	def isClosed(self): return -1
-	def isOpened(self): return -1
-	def isMoving(self): return -1
-	def isLiftMoving(self): return -1
+	def isClosed(self): return self.data[2]
+	def isOpened(self): return self.data[3]
+	def isMoving(self): return self.data[4]
+	def isLiftMoving(self): return 0
 	
 class CameraSimDevice(ManualFakeCamera):
 	def __init__(self, robot):
