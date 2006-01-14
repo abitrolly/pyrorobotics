@@ -107,6 +107,19 @@ colorMap = {"red": (255, 0,0),
             "violet": (238, 130, 238),
             "purple": (160, 32, 240),
             }
+colorCode = {"red":     1,
+             "green":   2,
+             "blue":    3,
+             "white":   4,
+             "black":   5,
+             "cyan":    6,
+             "yellow":  7,
+             "brown":   8,
+             "orange":  9,
+             "pink":   10,
+             "violet": 11,
+             "purple": 12
+             }
 
 def sgn(v):
     if v >= 0: return +1
@@ -861,10 +874,10 @@ class SimRobot:
                             self.drawRay("camera", x, y, hit[0], hit[1], "purple")
                         dist = (10 - dist)/10.0 # 10 meter range
                         if obj.type == "wall":
-                            height = min(max((dist ** 2) * d.height/2.0, 1), d.height/2)
+                            height = int(min(max((dist ** 2) * d.height/2.0, 1), d.height/2))
                         else:
-                            height = min(max((dist ** 2) * d.height/4.0, 1), d.height/4)
-                        d.scan.append((obj.color, height))
+                            height = int(min(max((dist ** 2) * d.height/4.0, 1), d.height/4))
+                        d.scan.append((colorCode[obj.color], height))
                     else:
                         d.scan.append((None, None))
                     a -= stepAngle

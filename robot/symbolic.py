@@ -29,6 +29,19 @@ colorMap = {"red": (255, 0,0),
             "violet": (238, 130, 238),
             "purple": (160, 32, 240),
             }
+colorUnCode = {1: colorMap["red"],
+	       2: colorMap["green"],
+	       3: colorMap["blue"],
+	       4: colorMap["white"],
+	       5: colorMap["black"],
+	       6: colorMap["cyan"],
+	       7: colorMap["yellow"],
+	       8: colorMap["brown"],
+	       9: colorMap["orange"],
+	       10: colorMap["pink"],
+	       11: colorMap["violet"],
+	       12: colorMap["purple"],
+	       }
 
 class SimulationDevice(Device):
 	def __init__(self, robot):
@@ -172,20 +185,20 @@ class CameraSimDevice(ManualFakeCamera):
 				(color, height) = self.data[w]
 				if color == None or height == None: continue
 				for h in range(int(round(height))):
-					self.rawImage[w][self.height/2 - h] = colorMap[color]
-					self.rawImage[w][self.height/2 + h] = colorMap[color]
+					self.rawImage[w][self.height/2 - h] = colorUnCode[color]
+					self.rawImage[w][self.height/2 + h] = colorUnCode[color]
 			self.setRGB3Image(self.rawImage)
 			self.processAll()
 		self.lock.release()
 
 class Simbot(Robot):
-	def __init__(self, simulator, port, connectionNum):
+	def __init__(self, simulator, port, connectionNum, startDevices=1):
 		Robot.__init__(self)
 		self.simulator = simulator
 		self.connectionNum = connectionNum
 		self.port = port
-		self.init()
-	def init(self):
+		self.init(startDevices)
+	def init(self, startDevices=1):
 		self.radius = self.getItem("radius")
 		self.properties = self.getItem("properties")
 		self.builtinDevices = self.getItem("builtinDevices")
@@ -193,10 +206,11 @@ class Simbot(Robot):
 		self.supportedFeatures = self.getItem("supportedFeatures")
 		self.name = self.getItem("name")
 		self.id   = self.connectionNum
-		for dev in self.builtinDevices:
-			d = self.startDevice(dev)
-			if dev in ["sonar", "laser"]:
-				self.range = d
+		if startDevices:
+			for dev in self.builtinDevices:
+				d = self.startDevice(dev)
+				if dev in ["sonar", "laser"]:
+					self.range = d
 	def move(self, message, other = None):
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
 			message = "m_%.2f_%.2f" % (message, other)
@@ -280,7 +294,7 @@ class TCPRobot(Simbot):
 	A simple TCP-based socket robot for talking to PyrobotSimulator.
 	"""
 	BUFSIZE = 4096 # 2048 # 1024
-	def __init__(self, host, port):
+	def __init__(self, host, port, startDevices=1):
 		Robot.__init__(self)
 		self.lock = threading.Lock()
 		# Set the socket parameters
@@ -303,7 +317,7 @@ class TCPRobot(Simbot):
 				print "Waiting on PyrobotSimulator..."
 				time.sleep(1)
 		self.connectionNum = self.getItem("connectionNum:%d" % self.port)
-		self.init()
+		self.init(startDevices)
 
 	def move(self, message, other = None):
 		self.lock.acquire()
