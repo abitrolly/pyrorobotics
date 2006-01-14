@@ -4,8 +4,95 @@ A Pure Python 2D Robot Simulator
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
 import Tkinter, time, math, pickle, random
-import pyrobot.system.share as share
-from pyrobot.geometry import PIOVER180, Segment
+# try to share a tk interpreter, if one:
+try:
+    import pyrobot.system.share as share
+except:
+    # else, define a new one:
+    share = None
+
+PIOVER180 = math.pi / 180.0
+
+class Segment:
+    def __init__(self, start, end, id = None, partOf = None):
+        self.start = start
+        self.end = end
+        self.id = id
+        self.partOf = partOf
+    def midpoint(self):
+        return ((self.start[0] + self.end[0])/2.,
+                (self.start[1] + self.end[1])/2.)
+    def length(self):
+        return math.sqrt((self.start[0] - self.end[0])**2 +
+                         (self.start[1] - self.end[1])**2)
+    def vertical(self):
+        return self.start[0] == self.end[0]
+    # don't call this if the line is vertical
+    def slope(self):
+        return (self.end[1] - self.start[1])/(self.end[0] - self.start[0])
+    # or this
+    def yintercept(self):
+        return self.start[1] - self.start[0] * self.slope()
+    def angle(self):
+        return math.atan2(self.end[1] - self.start[1], self.end[0] - self.start[0])
+    def parallel(self, other):
+        if self.vertical():
+            return other.vertical()
+        elif other.vertical():
+            return 0
+        else:
+            return self.slope() == other.slope()
+    # return the point at which two segments would intersect if they extended
+    # far enough
+    def intersection(self, other):
+        if self.parallel(other):
+            # the segments may intersect, but we don't care
+            return None
+        elif self.vertical():
+            return other.intersection(self)
+        elif other.vertical():
+            return (other.start[0],
+                    self.yintercept() + other.start[0] * self.slope())
+        else:
+            # m1x + b1 = m2x + b2; so
+            # (m1 - m2)x + b1 - b2 == 0
+            # (m1 - m2)x = b2 - b1
+            # x = (b2 - b1)/(m1 - m2)
+            x = ((other.yintercept() - self.yintercept()) /
+                 (self.slope() - other.slope()))
+            return (x, self.yintercept() + x * self.slope())
+    def in_bbox(self, point):
+        return ((point[0] <= self.start[0] and point[0] >= self.end[0] or
+                 point[0] <= self.end[0] and point[0] >= self.start[0]) and
+                (point[1] <= self.start[1] and point[1] >= self.end[1] or
+                 point[1] <= self.end[1] and point[1] >= self.start[1]))
+    # is a point collinear with this line segment?
+    def on_line(self, point):
+        if self.vertical():
+            return point[0] == self.start[0]
+        else:
+            return (point[0] * self.slope() + self.yintercept() == point[1])
+    def intersects(self, other):
+        if self.parallel(other):
+            # they can "intersect" if they are collinear and overlap
+            if not (self.in_bbox(other.start) or self.in_bbox(other.end)):
+                return None
+            elif self.vertical():
+                if self.start[0] == other.start[0]:
+                    return self.intersection(other)
+                else:
+                    return None
+            else:
+                if self.yintercept() == other.yintercept():
+                    return self.intersection(other)
+                else:
+                    return None
+        else:
+            i = self.intersection(other)
+            if self.in_bbox(i) and other.in_bbox(i):
+                return i
+            else:
+                return None
 
 MAXRAYLENGTH = 1000.0 # some large measurement in meters
 colorMap = {"red": (255, 0,0),
@@ -53,7 +140,7 @@ class Simulator:
     def update(self):
         pass
     def addWall(self, x1, y1, x2, y2, color="black"):
-        seg = Segment((x1, y1), (x2, y2), len(self.world) + 1)
+        seg = Segment((x1, y1), (x2, y2), len(self.world) + 1, "wall")
         seg.color = color
         seg.type = "wall"
         self.world.append(seg)
@@ -324,7 +411,7 @@ class Simulator:
 class TkSimulator(Simulator, Tkinter.Toplevel):
     def __init__(self, offset_x, offset_y, scale, root = None, run = 1):
         if root == None:
-            if share.gui:
+            if share and share.gui:
                 root = share.gui
             else:
                 root = Tkinter.Tk()
@@ -503,7 +590,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.shapes.append( ("box", ulx, uly, lrx, lry, color) )
         self.redraw()
     def addWall(self, x1, y1, x2, y2, color="black"):
-        seg = Segment((x1, y1), (x2, y2))
+        seg = Segment((x1, y1), (x2, y2), partOf="wall")
         seg.color = color
         seg.type = "wall"
         id = self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="line")
@@ -537,6 +624,7 @@ class SimRobot:
         self.name = name
         self.type = "robot"
         # set them here manually: (afterwards, use setPose)
+        self.proposePosition = 0 # used to check for obstacles before moving
         self.stepScalar = 1.0 # normally = 1.0
         self._gx = x
         self._gy = y
@@ -561,7 +649,7 @@ class SimRobot:
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
-        # FIXME
+        # FIXME: add some noise to movement
         #self.noiseTranslate = 0.01 # percent of translational noise 
         #self.noiseRotate    = 0.01 # percent of translational noise 
         self._mouse = 0 # mouse down?
@@ -575,12 +663,16 @@ class SimRobot:
         retval = []
         if self.gripper:
             g = self.gripper
+            x1, x2, x3, x4 = g.baseX, g.baseX + g.armLength, g.baseX, g.baseX + g.armLength
+            y1, y2, y3, y4 = g.armPosition, g.armPosition, -g.armPosition,  -g.armPosition
+            if g.robot.proposePosition and g.velocity != 0.0:
+                armPosition, armVelocity = g.moveWhere()
+                y1, y2, y3, y4 = armPosition, armPosition, -armPosition,  -armPosition
             xys = map(lambda nx, ny: (x + nx * math.cos(a90) - ny * math.sin(a90),
                                       y + nx * math.sin(a90) + ny * math.cos(a90)),
-                      (g.baseX, g.baseX + g.armLength, g.baseX, g.baseX + g.armLength),
-                      (g.armPosition, g.armPosition, -g.armPosition,  -g.armPosition))
-            w = [Segment(xys[0], xys[1]),
-                 Segment(xys[2], xys[3])]
+                      (x1, x2, x3, x4), (y1, y2, y3, y4))
+            w = [Segment(xys[0], xys[1], partOf="gripper"),
+                 Segment(xys[2], xys[3], partOf="gripper")]
             for s in w:
                 for key in dict:
                     s.__dict__[key] = dict[key]
@@ -781,6 +873,7 @@ class SimRobot:
         Move the robot self.velocity amount, if not blocked.
         """
         if self._mouse: return # don't do any of this if mouse is down
+        self.proposePosition = 1
         gvx = self.vx * self.stepScalar
         gvy = self.vy * self.stepScalar
         vx = gvx * math.sin(-self._ga) + gvy * math.cos(-self._ga)
@@ -818,7 +911,12 @@ class SimRobot:
                 # check each segment of the robot's bounding segs for wall obstacles:
                 for w in self.simulator.world:
                     if bb.intersects(w):
-                        self.stall = 1
+                        self.proposePosition = 0
+                        if self.gripper and self.gripper.velocity != 0:
+                            self.gripper.state = "stop"
+                            self.gripper.velocity = 0
+                        if self.vx != 0 or self.vy != 0 or self.va != 0:
+                            self.stall = 1
                         self.updateDevices()
                         self.draw()
                         return
@@ -860,7 +958,12 @@ class SimRobot:
                             if self.type == "puck":
                                 self.vx = 0.0
                                 self.vy = 0.0
-                            self.stall = 1
+                            self.proposePosition = 0
+                            if self.gripper and self.gripper.velocity != 0:
+                                self.gripper.state = "stop"
+                                self.gripper.velocity = 0
+                            if self.vx != 0 or self.vy != 0 or self.va != 0:
+                                self.stall = 1
                             self.updateDevices()
                             self.draw()
                             return
@@ -869,24 +972,30 @@ class SimRobot:
             if movePucks and r not in self.simulator.needToMove:
                 self.simulator.needToMove.append( self )
             else:
-                self.stall = 1
+                if self.gripper and self.gripper.velocity != 0:
+                    self.gripper.state = "stop"
+                    self.gripper.velocity = 0
+                if self.vx != 0 or self.vy != 0 or self.va != 0:
+                    self.stall = 1
                 self.updateDevices()
                 self.draw()
             return
+        self.proposePosition = 0
         # ok! move the robot, if it wanted to move
-        if self.gripper:
+        if self.gripper and self.gripper.velocity != 0:
             # handle moving paddles
             d = self.gripper
-            if d.velocity > 0: # opening +
-                d.armPosition += d.velocity
-                if d.armPosition >= d.openPosition:
-                    d.armPosition = d.openPosition
-                    d.velocity = 0.0
-            elif d.velocity < 0: # closing - 
-                d.armPosition += d.velocity
-                if d.armPosition <= 0:
-                    d.armPosition = d.closePosition
-                    d.velocity = 0.0
+            d.armPosition, d.armVelocity = d.moveWhere()
+            if d.armPosition == d.openPosition:
+                if d.storage != [] and d.state == "deploy":
+                    x = d.baseX + d.armLength/2
+                    y = 0
+                    a90 = p_a + 90 * PIOVER180
+                    rx, ry = (p_x + x * math.cos(a90) - y * math.sin(a90),
+                              p_y + x * math.sin(a90) + y * math.cos(a90))
+                    r = d.storage.pop()
+                    r.setPose(rx, ry, 0.0)
+                    d.state = "open"
         if self.friction != 1.0:
             self.vx *= self.friction
             self.vy *= self.friction
@@ -1148,7 +1257,7 @@ class Gripper:
         self.type = "gripper"
         self.scan = []
         self.objs = []
-        self.consume = 1 # eat the puck?
+        self.consume = 0 # eat the puck?
         self.armLength  = 0.225 # length of the paddles
         self.velocity   = 0.0   # moving?
         self.openPosition  = 0.12
@@ -1157,19 +1266,45 @@ class Gripper:
         self.state = "open"
         self.armPosition   = self.openPosition
         self.breakBeam = []
+        self.storage = []
     def close(self):
+        self.state = "close"
+        self.velocity = -0.01
+        return "ok"
+    def deploy(self):
+        self.state = "deploy"
+        self.velocity = 0.01
+        return "ok"
+    def store(self):
+        self.state = "store"
         self.velocity = -0.01
         for segment in self.objs:
-            if self.consume:
-                segment.robot.setPose(-1000.0, -1000.0, 0.0)
-        self.objs = []
-        return "ok"
+            segment.robot.setPose(-1000.0, -1000.0, 0.0)
+            if not self.consume:
+                if segment.robot not in self.storage:
+                    self.storage.append( segment.robot )
     def open(self):
+        self.state = "open"
         self.velocity = 0.01
         return "ok"
     def stop(self):
+        self.state = "stop"
         self.velocity = 0.0
         return "ok"
+    def moveWhere(self):
+        armPosition = self.armPosition
+        velocity = self.velocity
+        if velocity > 0: # opening +
+            armPosition += velocity
+            if armPosition >= self.openPosition:
+                armPosition = self.openPosition
+                velocity = 0.0
+        elif velocity < 0: # closing - 
+            armPosition += velocity
+            if armPosition <= self.closePosition:
+                armPosition = self.closePosition
+                velocity = 0.0
+        return armPosition, velocity
 
 class Camera:
     def __init__(self, width, height, startAngle, stopAngle, x, y, thr):

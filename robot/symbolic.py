@@ -133,16 +133,14 @@ class GripperSimDevice(GripperDevice):
 		self.startDevice()
 	def updateDevice(self):
 		self.data = self._dev.move("gripper_%d" % 0)
-	def close(self):
-		return self._dev.move("z_gripper_0_close")
-	def open(self):
-		return self._dev.move("z_gripper_0_open")
-	def up(self): pass
-	def down(self): pass
-	def stop(self): return self._dev.move("z_gripper_0_stop")
-	def store(self): return self.close()
-	def deploy(self): return self.open()
-	def halt(self): return self.stop()
+	def close(self):  return self._dev.move("z_gripper_0_close")
+	def open(self):   return self._dev.move("z_gripper_0_open")
+	def up(self):     pass
+	def down(self):   pass
+	def stop(self):   return self._dev.move("z_gripper_0_stop")
+	def store(self):  return self._dev.move("z_gripper_0_store")
+	def deploy(self): return self._dev.move("z_gripper_0_deploy")
+	def halt(self):   return self.stop()
 	# accessor values
 	def getBreakBeam(self, which):
 		if which == 'inner':
