@@ -125,9 +125,10 @@ class LightSimDevice(RangeSimDevice):
 			window.addData("%d.value" % i, "[%d].value:" % i, self[i].value)
 			window.addData("%d.rgb" % i, "[%d].rgb:" % i, self[i].rgb)
 	def updateWindow(self):
-		for i in range(min(self.count, 24)):
-			self.window.updateWidget("%d.value" % i, self[i].value)
-			self.window.updateWidget("%d.rgb" % i, self[i].rgb)
+		if self.visible:
+			for i in range(min(self.count, 24)):
+				self.window.updateWidget("%d.value" % i, self[i].value)
+				self.window.updateWidget("%d.rgb" % i, self[i].rgb)
 
 class BulbSimDevice(Device):
 	def __init__(self, robot):
@@ -145,6 +146,7 @@ class GripperSimDevice(GripperDevice):
 		self.data = [0, 0, 0, 0, 0]
 		self.startDevice()
 	def updateDevice(self):
+		if self.active == 0: return
 		newData = self._dev.move("gripper_%d" % 0)
 		for i in range(len(newData)):
 			self.data[i] = newData[i]
@@ -176,7 +178,11 @@ class CameraSimDevice(ManualFakeCamera):
 		# fix: how to know what index?
 		self.width, self.height = robot.move("g_%s_%d" % ("camera", 0))
 		ManualFakeCamera.__init__(self, self.width, self.height, 3)
+	def setActive(self, val):
+		self.active = val
+		return self.robot.move("i_%s_%d_active_%d" % ("camera", self.index, val))
 	def update(self):
+		if self.active == 0: return
 		self.lock.acquire()
 		self.rawImage = [[[128, 128, 128] for h in range(self.height)] for w in range(self.width)]
 		self.data = self.robot.move("camera_%d" % 0)

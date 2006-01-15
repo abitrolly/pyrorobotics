@@ -372,6 +372,17 @@ class Simulator:
                 self.assoc[sockname[1]].bulb.brightness = float(message[1])
                 self.redraw()
                 return "ok"
+            elif message[0] == "i": # "i_name_index_property_val"
+                code, dtype, index, property, val = message
+                device = self.assoc[sockname[1]].getIndex(dtype, int(index))
+                oldval = device.__dict__[property]
+                if type(oldval) == str:
+                    device.__dict__[property] = val
+                elif type(oldval) == int:
+                    device.__dict__[property] = int(val)
+                elif type(oldval) == float:
+                    device.__dict__[property] = float(val)
+                return "ok"
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "v": # "v_v" global step scalar:value
@@ -386,10 +397,10 @@ class Simulator:
             elif message[0] == "x": # "x_expression" expression
                 retval = eval(message[1])
             elif message[0] == "z": # "z_gripper_0_command" command
-                type = message[1]
+                dtype = message[1]
                 index = int(message[2])
                 command = message[3]
-                device = self.assoc[sockname[1]].getIndex(type, index)
+                device = self.assoc[sockname[1]].getIndex(dtype, index)
                 if device:
                     retval = device.__class__.__dict__[command](device)
             elif message[0] == "g": # "g_sonar_0" geometry_sensor_id
@@ -774,6 +785,7 @@ class SimRobot:
         cos_a90 = math.cos(a90)
         sin_a90 = math.sin(a90)
         for d in self.devices:
+            if not d.active: continue
             if d.type == "sonar":
                 i = 0
                 for x, y, a in d.geometry:
@@ -1039,8 +1051,8 @@ class SimRobot:
         self.updateDevices()
         self.draw()
     def draw(self): pass
-    def drawRay(self, type, x1, y1, x2, y2, color):
-        if self.display[type] == 1:
+    def drawRay(self, dtype, x1, y1, x2, y2, color):
+        if self.display[dtype] == 1:
             self.simulator.drawLine(x1, y1, x2, y2, color)
     def addDevice(self, dev):
         self.devices.append(dev)
@@ -1252,6 +1264,7 @@ class TkPioneer(TkRobot):
 class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
         self.type = name
+        self.active = 1
         # geometry = (x, y, a) origin in meters and radians
         self.geometry = geometry
         self.arc = arc
@@ -1261,6 +1274,7 @@ class RangeSensor:
         self.scan = [0] * len(geometry) # for data
 class Light:
     def __init__(self, x, y, brightness, color="yellow"):
+        self.active = 1
         self.x = x
         self.y = y
         self.brightness = brightness
@@ -1275,10 +1289,12 @@ class BulbDevice(Light):
     def __init__(self, x, y):
         Light.__init__(self, x, y, 1.0)
         self.type = "bulb"
+        self.active = 1
         self.geometry = (0, 0, 0)
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"
+        self.active = 1
         self.geometry = geometry
         self.arc = None
         self.maxRange = 1000.0
@@ -1290,6 +1306,7 @@ class LightSensor:
 class Gripper:
     def __init__(self):
         self.type = "gripper"
+        self.active = 1
         self.scan = []
         self.objs = []
         self.armLength  = 0.200 # length of the paddles
@@ -1348,6 +1365,7 @@ class Gripper:
 class Camera:
     def __init__(self, width, height, startAngle, stopAngle, x, y, thr):
         self.type = "camera"
+        self.active = 1
         self.scan = []
         self.width = width
         self.height = height

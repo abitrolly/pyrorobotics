@@ -259,6 +259,7 @@ class Robot:
                 print "Loading device %s[%d]..." % (dev, deviceNumber)
                 self.__dict__[dev][deviceNumber] = item[dev]
                 item[dev].setTitle( dev + "[" + str(deviceNumber) + "]" )
+                item[dev].index = deviceNumber
                 retval.append(item[dev]) # return object
             return retval
         elif item in self.builtinDevices: # built-in name
