@@ -167,7 +167,6 @@ included_packages = ask_yn("\n5. Options:", [
     ('brain/psom brain/psom/csom_src/som_pak-dev',
      "Self-organizing Map (SOM)"),
     ('tools/cluster', "Cluster Analysis Tool"),
-    ('simulators/khepera', "Khepera Simulator"),
     ])
 
 fp = open("Makefile.cfg", "w")
