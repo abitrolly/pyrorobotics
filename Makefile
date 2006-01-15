@@ -10,8 +10,7 @@ include Makefile.cfg
 
 SUBDIRS =  $(CONFIGDIRS) 
 
-everything: system/version.py all plugins/simulators/KheperaSimulator compile \
-	bin/pyrobot
+everything: system/version.py all compile bin/pyrobot
 
 include Makefile.src
 
@@ -44,14 +43,7 @@ bin/pyrobot: Makefile.cfg Makefile Makefile.src build/pyrobot system/version.py
 	cat build/pyrobot >> bin/pyrobot
 	chmod a+x bin/pyrobot
 
-plugins/simulators/KheperaSimulator: build/Khepera Makefile Makefile.cfg Makefile.src
-	echo -e "#!/bin/sh" > plugins/simulators/KheperaSimulator
-	echo -e "SIM_DIR=$(PWD)/simulators/khepera" >> plugins/simulators/KheperaSimulator
-	cat build/Khepera >> plugins/simulators/KheperaSimulator
-	chmod a+x plugins/simulators/KheperaSimulator
-
 clean:: 
-	- $(RM) plugins/simulators/KheperaSimulator
 	- $(RM) system/version.py
 	- $(RM) bin/pyrobot
 
