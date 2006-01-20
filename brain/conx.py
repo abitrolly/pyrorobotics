@@ -1529,8 +1529,8 @@ class Network:
     def postPropagate(self, **args): return None
     def preStep(self, **args):       return None
     def postStep(self, **args):      return None
-    def preSweep(self, **args):      pass
-    def postSweep(self, **args):     pass
+    def preSweep(self):      pass
+    def postSweep(self):     pass
     def sweep(self):
         """
         Runs through entire dataset. 
