@@ -190,6 +190,7 @@ class Layer:
                         error = self.error[i],
                         target = self.target[i],
                         netinput = self.netinput[i],
+                        bias = self.bias[i]
                         )
         else:
             raise AttributeError, "expected integer instead of '%s'" % i
