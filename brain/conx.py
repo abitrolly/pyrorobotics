@@ -2581,7 +2581,7 @@ class IncrementalNetwork(Network):
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting:", n
+        print "Recruiting candidate number %d" % n
         # first, add the new layer:
         hcount = 0
         for layer in self:
