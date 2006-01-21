@@ -139,7 +139,7 @@ class Layer:
         self.displayWidth = size
         self.type = 'Undefined' # determined later by connectivity
         self.kind = 'Undefined' # mirrors self.type but will include 'Context'
-        self.verbosity = 0
+        self._verbosity = 0
         self.log = 0
         self.logFile = ''
         self._logPtr = 0
@@ -161,16 +161,15 @@ class Layer:
         layer (target, error, activation, dbias, delta, netinput, bed).
         """
         self.randomize()
-        self.dbias = Numeric.zeros(self.size, 'f')
+        self.dweight = Numeric.zeros(self.size, 'f')
         self.delta = Numeric.zeros(self.size, 'f')
-        self.bed = Numeric.zeros(self.size, 'f')
-        self.bedLast = Numeric.zeros(self.size, 'f')
-        self.epsilon = Numeric.ones(self.size, "f") * epsilon 
+        self.wed = Numeric.zeros(self.size, 'f')
+        self.wedLast = Numeric.zeros(self.size, 'f')
+        self._epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
-        # default epsilon value for all units
         self.targetSet = 0
         self.activationSet = 0
     def randomize(self, force = 0):
@@ -178,7 +177,7 @@ class Layer:
         Initialize node biases to random values in the range [-max, max].
         """
         if force or not self.frozen:
-            self.bias = randomArray(self.size, self.maxRandom)
+            self.weight = randomArray(self.size, self.maxRandom)
 
     # general methods
     def __len__(self):
@@ -195,21 +194,21 @@ class Layer:
                         error = self.error[i],
                         target = self.target[i],
                         netinput = self.netinput[i],
-                        bias = self.bias[i]
+                        bias = self.weight[i]
                         )
         else:
             raise AttributeError, "expected integer instead of '%s'" % i
     # layer methods
     def setEpsilon(self, value):
-        self.epsilon = Numeric.ones(self.size, "f") * value
+        self._epsilon = Numeric.ones(self.size, "f") * value
     def setEpsilons(self, values):
-        self.epsilon = values
+        self._epsilon = values
     def setEpsilonAt(self, value, pos):
-        self.epsilon[pos] = value
+        self._epsilon[pos] = value
     def getEpsilons(self):
-        return self.epsilon
+        return self._epsilon
     def getEpsilonAt(self, pos):
-        return self.epsilon[pos]
+        return self._epsilon[pos]
 
     def setActive(self, value):
         """
@@ -231,8 +230,8 @@ class Layer:
             raise LayerError, ('Layer size changed to zero.', newsize)
         minSize = min(self.size, newsize)
         bias = randomArray(newsize, self.maxRandom)
-        Numeric.put(bias, Numeric.arange(minSize), self.bias)
-        self.bias = bias
+        Numeric.put(bias, Numeric.arange(minSize), self.weight)
+        self.weight = bias
         self.size = newsize
         self.displayWidth = newsize
         self.targetSet = 0
@@ -240,11 +239,11 @@ class Layer:
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
-        self.dbias = Numeric.zeros(self.size, 'f')
+        self.dweight = Numeric.zeros(self.size, 'f')
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
-        self.bed = Numeric.zeros(self.size, 'f')
-        self.bedLast = Numeric.zeros(self.size, 'f')
+        self.wed = Numeric.zeros(self.size, 'f')
+        self.wedLast = Numeric.zeros(self.size, 'f')
 
     # error and report methods
     def TSSError(self):
@@ -347,14 +346,14 @@ class Layer:
         if (self.type == 'Output'):
             string += toStringArray('Target    ', self.target, self.displayWidth)
         string += toStringArray('Activation', self.activation, self.displayWidth) 
-        if (self.type != 'Input' and self.verbosity > 1):
+        if (self.type != 'Input' and self._verbosity > 1):
             string += toStringArray('Error     ', self.error, self.displayWidth)
-        if (self.verbosity > 4 and self.type != 'Input'):
-            string +=  toStringArray('bias      ', self.bias, self.displayWidth)
-            string +=  toStringArray('dbias     ', self.dbias, self.displayWidth)
+        if (self._verbosity > 4 and self.type != 'Input'):
+            string +=  toStringArray('weight    ', self.weight, self.displayWidth)
+            string +=  toStringArray('dweight   ', self.dweight, self.displayWidth)
             string +=  toStringArray('delta     ', self.delta, self.displayWidth)
             string +=  toStringArray('netinput  ', self.netinput, self.displayWidth)
-            string +=  toStringArray('bed       ', self.bed, self.displayWidth)
+            string +=  toStringArray('wed       ', self.wed, self.displayWidth)
         return string 
     def display(self):
         """
@@ -366,14 +365,14 @@ class Layer:
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
-        if (self.type != 'Input' and self.verbosity > 1):
+        if (self.type != 'Input' and self._verbosity > 1):
             displayArray('Error     ', self.error, self.displayWidth)
-        if (self.verbosity > 4 and self.type != 'Input'):
-            print "    ", ; displayArray('bias', self.bias)
-            print "    ", ; displayArray('dbias', self.dbias)
+        if (self._verbosity > 4 and self.type != 'Input'):
+            print "    ", ; displayArray('weight', self.weight)
+            print "    ", ; displayArray('dweight', self.dweight)
             print "    ", ; displayArray('delta', self.delta)
             print "    ", ; displayArray('netinput', self.netinput)
-            print "    ", ; displayArray('bed', self.bed)
+            print "    ", ; displayArray('wed', self.wed)
         
 
     # activation methods
@@ -556,7 +555,7 @@ class Connection:
         """
         Displays connection information to the screen.
         """
-        if self.toLayer.verbosity > 4:
+        if self.toLayer._verbosity > 4:
             print "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
             for j in range(self.toLayer.size):
                 print self.toLayer.name, "[", j, "]",
@@ -577,7 +576,7 @@ class Connection:
                     print self.dweight[i][j],
                 print ''
             print ''
-        if self.toLayer.verbosity > 2:
+        if self.toLayer._verbosity > 2:
             print "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'"
             print "             ",
             for j in range(self.toLayer.size):
@@ -595,7 +594,7 @@ class Connection:
         Connection information as a string.
         """
         string = ""
-        if self.toLayer.verbosity > 4:
+        if self.toLayer._verbosity > 4:
             string += "wed: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n" 
             string += "            "
             for j in range(self.toLayer.size):
@@ -618,7 +617,7 @@ class Connection:
                     string +=  "              " + str(self.dweight[i][j])
                 string += '\n'
             string += '\n'
-        if self.toLayer.verbosity > 2:
+        if self.toLayer._verbosity > 2:
             string += "Weights: from '" + self.fromLayer.name + "' to '" + self.toLayer.name +"'\n"
             string += "            "
             for j in range(self.toLayer.size):
@@ -760,7 +759,7 @@ class Network:
         """
         Adds a layer. Layer verbosity is optional (default 0).
         """
-        layer.verbosity = verbosity
+        layer._verbosity = verbosity
         if position == None:
             self.layers.append(layer)
         else:
@@ -995,11 +994,12 @@ class Network:
         raise NetworkError, ('Connection was not found.', (lfrom, lto))
     def setVerbosity(self, value):
         """
-        Sets self.verbosity and each layer verbosity to value.
+        Sets network self._verbosity and each layer._verbosity to value.
         """
-        self.verbosity = value
+        self._verbosity = value
         for layer in self.layers:
-            layer.verbosity = value
+            layer._verbosity = value
+    def getVerbosity(self): return self._verbosity
     def setStopPercent(self, value):
         """
         Sets self.stopPercent to value. train() will stop if the percent
@@ -1042,16 +1042,17 @@ class Network:
         """
         Returns the epsilon for the Network instance.
         """
-        return self.epsilon
+        return self._epsilon
     def setEpsilon(self, value):
         """
         Sets epsilon value for the network.
         """
-        self.epsilon = value
+        self._epsilon = value
         if len(self.layers) == 0:
             raise "attempt to set epsilon before layers have been created"
         for layer in self.layers:
             layer.setEpsilon(value)
+    def getEpsilon(self): return self._epsilon
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
@@ -1672,7 +1673,7 @@ class Network:
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                layer.netinput = layer.bias.tolist() # is [:] safe here?
+                layer.netinput = layer.weight.tolist() # is [:] safe here?
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
@@ -1713,7 +1714,7 @@ class Network:
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                layer.netinput = layer.bias.tolist() # was slice [:]; is that safe here?
+                layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
@@ -1763,7 +1764,7 @@ class Network:
                 continue # don't set this one
             if not started: continue
             if layer.type != 'Input' and layer.active:
-                layer.netinput = layer.bias.tolist() # was slice [:]; is that safe here?
+                layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
         # for each connection, in order:
         started = 0
         for layer in self.layers:
@@ -1807,23 +1808,43 @@ class Network:
         if self.learning:
             self.compute_wed()
         return retval
-    def deltaWeight(self, e, wed, m, dweightLast, wedLast):
+    def deltaWeight(self, e, wed, m, dweightLast, wedLast, w):
         """
         e - learning rate
         wed - weight error delta
         m - momentum
         dweightLast - previous dweight
         wedLast - only used in quickprop; last weight error delta
+        w - weight
         """
+        shrinkFactor = self.mu / (1.0 + self.mu)
         if self.quickprop:
-            newDweight = Numeric.zeros(len(dweightLast), 'f')
+            nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
-                if wed[i] == 0.0 or wedLast[i] == wed[i]:
-                    newDweight[i] = e * wed[i] + m * dweightLast[i] # gradient descent
+                s = wed[i] + .01 * w[i]
+                d = dweightLast[i]
+                p = wedLast[i]
+                if (d < 0.0):
+                    if (s > 0.0):
+                        nextStep[i] -= e[i] * s
+                    if  ( s >= ( shrinkFactor * p ) ):
+                        nextStep[i] += self.mu * d
+                    elif p == s:
+                        nextStep[i] -= e[i] * s # gradient descent
+                    else:
+                        nextStep[i] += d * s / (p - s)
+                elif (d > 0.0):
+                    if (s < 0.0):
+                        nextStep[i] -= e[i] * s
+                    if (s <= ( shrinkFactor * p)):
+                        nextStep[i] += self.mu * d
+                    elif p == s:
+                        nextStep[i] -= e[i] * s # gradient descent
+                    else:
+                        nextStep[i] += d * s / (p - s)
                 else:
-                    newDweight[i] = (wed[i] / (wedLast[i] - wed[i])) * dweightLast[i]
-                    if newDweight[i] > self.mu * dweightLast[i]:
-                        newDweight[i] = self.mu * dweightLast[i]
+                    nextStep[i] -= e[i] * s        ##  Last step was zero, so only use linear   ##
+            newDweight = nextStep
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
         return newDweight
@@ -1836,25 +1857,37 @@ class Network:
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
-                    layer.dbias = self.deltaWeight(layer.epsilon, layer.bed, self.momentum,
-                                                   layer.dbias, layer.bedLast)
-                    layer.bias += layer.dbias
-                    layer.bed = layer.bed * 0.0 # keep same numeric type, just zero it
-                    dw_count += len(layer.dbias)
-                    dw_sum += Numeric.add.reduce(abs(layer.dbias))
+                    layer.dweight = self.deltaWeight(layer._epsilon,
+                                                     layer.wed,
+                                                     self.momentum,
+                                                     layer.dweight,
+                                                     layer.wedLast,
+                                                     layer.weight)
+                    layer.weight += layer.dweight
+                    # ---------------------------- added because of quickprop
+                    layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
+                    layer.wed = layer.wed * 0.0 # keep same numeric type, just zero it
+                    dw_count += len(layer.dweight)
+                    dw_sum += Numeric.add.reduce(abs(layer.dweight))
         for connection in self.connections:
             if (connection.active
                 and connection.fromLayer.active
                 and connection.toLayer.active
                 and not connection.frozen):
                 toLayer = connection.toLayer
+                # doing it one vector at a time, to match layer bias training (a quickprop abstraction)
                 for i in range(len(connection.dweight)):
-                    Numeric.put(connection.dweight[i], Numeric.arange(len(connection.dweight[i])),
-                                self.deltaWeight(toLayer.epsilon[i], connection.wed[i],
+                    Numeric.put(connection.dweight[i],
+                                Numeric.arange(len(connection.dweight[i])),
+                                self.deltaWeight(toLayer._epsilon,
+                                                 connection.wed[i],
                                                  self.momentum,
                                                  connection.dweight[i],
-                                                 connection.wedLast[i]))
+                                                 connection.wedLast[i],
+                                                 connection.weight[i]))
                 connection.weight += connection.dweight
+                # ---------------------------- added because of quickprop
+                connection.weight = Numeric.minimum(Numeric.maximum( connection.weight, -1e10), 1e10)
                 connection.wed = connection.wed * 0.0 # keeps the same Numeric type, but makes it zero
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
@@ -1958,12 +1991,13 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.active and connect.fromLayer.active and connect.toLayer.active:
-                connect.wedLast = connect.wed
-                connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
+                connect.wedLast = connect.wed # + 0.01 * connect.weight # quickprop
+                connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation,
+                                                                 connect.toLayer.delta)
         for layer in self.layers:
             if layer.active:
-                layer.bedLast = layer.bed 
-                layer.bed = layer.bed + layer.delta
+                layer.wedLast = layer.wed 
+                layer.wed = layer.wed + layer.delta
     def ACTPRIME(self, act):
         """
         Used in compute_error.
@@ -2046,7 +2080,7 @@ class Network:
         for layer in self.layers:
             if layer.type != 'Input':
                 for i in range(layer.size):
-                    gene.append( layer.bias[i] )
+                    gene.append( layer.weight[i] )
         for connection in self.connections:
             for i in range(connection.fromLayer.size):
                 for j in range(connection.toLayer.size):
@@ -2062,7 +2096,7 @@ class Network:
         for layer in self.layers:
             if layer.type != 'Input':
                 for i in range(layer.size):
-                    layer.bias[i] = float( gene[g])
+                    layer.weight[i] = float( gene[g])
                     g += 1
         for connection in self.connections:
             for i in range(connection.fromLayer.size):
@@ -2108,7 +2142,7 @@ class Network:
                 if layer.type != 'Input':
                     fp.write("# Layer: " + layer.name + "\n")
                     for i in range(layer.size):
-                        fp.write("%f " % layer.bias[i] )
+                        fp.write("%f " % layer.weight[i] )
                     fp.write("\n")
             fp.write("# Weights\n")
             for connection in self.connections:
@@ -2129,7 +2163,7 @@ class Network:
                 if lto.type != 'Input':
                     for j in range(lto.size):
                         fp.write("# TO NODE %d\n" % cnt)
-                        fp.write("%f\n" % lto.bias[j] )
+                        fp.write("%f\n" % lto.weight[j] )
                         for lfrom in self.layers:
                             try:
                                 connection = self.getConnection(lfrom.name,lto.name)
@@ -2176,7 +2210,7 @@ class Network:
                 if lto.type != 'Input':
                     for j in range(lto.size):
                         fp.readline() # TO NODE %d
-                        lto.bias[j] = float(fp.readline())
+                        lto.weight[j] = float(fp.readline())
                         for lfrom in self.layers:
                             try:
                                 connection = self.getConnection(lfrom.name, lto.name)
@@ -2538,7 +2572,7 @@ class Network:
                 if self.layers[l1].name == toLayerName:
                     for l2 in range(len(network.layers)):
                         if network.layers[l2].name == toLayerName:
-                            self.layers[l1].bias = network.layers[l2].bias
+                            self.layers[l1].weight = network.layers[l2].weight
 
     def testGeneralization(self, incr = .1, start = 0, stop = 1, inputLayer = "input",
                            inputs = [0, 1], outputLayer = "output", outputs = None, sum = 0):
@@ -2574,6 +2608,9 @@ class Network:
                     row += "   "
                 retString += row + "\n"
         return retString
+    # --------------------------------------- Network Properties
+    epsilon = property(setEpsilon, getEpsilon)
+    verbosity = property(setVerbosity, getVerbosity)
 
 class SigmaNetwork(Network):
     """
@@ -2680,11 +2717,11 @@ class IncrementalNetwork(Network):
         self.addLayer(hname, hsize, position = -2)
         # copy all of the relevant data:
         for i in range(hsize):
-            self[hname].dbias[i] = self["candidate"].dbias[i + n]
-            self[hname].bias[i] = self["candidate"].bias[i + n]
-            self[hname].bed[i] = self["candidate"].bed[i + n]
-            self[hname].bedLast[i] = self["candidate"].bedLast[i + n]
-            self[hname].epsilon[i] = self["candidate"].epsilon[i + n]
+            self[hname].dweight[i] = self["candidate"].dweight[i + n]
+            self[hname].weight[i] = self["candidate"].weight[i + n]
+            self[hname].wed[i] = self["candidate"].wed[i + n]
+            self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
+            self[hname]._epsilon[i] = self["candidate"]._epsilon[i + n]
         self[hname].frozen = 1 # don't change these weights/biases
         # first, connect up input
         for layer in self: 
