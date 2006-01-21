@@ -16,10 +16,11 @@ __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
 
-def sign(n):
-    if n < 0: return -1
-    else:     return +1
-
+def makesym(vec):
+    for pattern in vec:
+        for i in range(len(pattern)):
+            pattern[i] = pattern[i] - 0.5
+    return vec
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
     for key in dict2:
@@ -146,16 +147,20 @@ class Layer:
         self.active = 1 # takes layer out of the processing
         self.frozen = 0 # freezes weights (dbiases), if layer still active
         self.maxRandom = 0.1
-        self.initialize(0.1)
-        self.minActivation = 0
-        self.maxActivation = 1
-        self.minTarget = 0
-        self.maxTarget = 1
+        self.initialize()
         self.verify = 1
         self.pcorrect = 0
         self.ptotal = 0
         self.correct = 0
-    def initialize(self, epsilon):
+        self.minTarget = 0.0
+        self.maxTarget = 1.0
+        self.minActivation = 0.0
+        self.maxActivation = 1.0
+        #self.minTarget = -0.5
+        #self.maxTarget = 0.5
+        #self.minActivation = -0.5
+        #self.maxActivation = 0.5
+    def initialize(self):
         """
         Initializes important node values to zero for each node in the
         layer (target, error, activation, dbias, delta, netinput, bed).
@@ -165,7 +170,6 @@ class Layer:
         self.delta = Numeric.zeros(self.size, 'f')
         self.wed = Numeric.zeros(self.size, 'f')
         self.wedLast = Numeric.zeros(self.size, 'f')
-        self._epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
         self.activation = Numeric.zeros(self.size, 'f')
@@ -199,17 +203,6 @@ class Layer:
         else:
             raise AttributeError, "expected integer instead of '%s'" % i
     # layer methods
-    def setEpsilon(self, value):
-        self._epsilon = Numeric.ones(self.size, "f") * value
-    def setEpsilons(self, values):
-        self._epsilon = values
-    def setEpsilonAt(self, value, pos):
-        self._epsilon[pos] = value
-    def getEpsilons(self):
-        return self._epsilon
-    def getEpsilonAt(self, pos):
-        return self._epsilon[pos]
-
     def setActive(self, value):
         """
         Sets layer to active or inactive. Layers must be active to propagate activations.
@@ -394,7 +387,7 @@ class Layer:
         #    raise LayerError, \
         #          ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
         if (value < self.minActivation or value > self.maxActivation) and self.kind == 'Input':
-            print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, value) 
+            print "Warning! Activations set to value outside of the proper interval. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
     def copyActivations(self, arr):
@@ -412,7 +405,7 @@ class Layer:
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet) 
         if (Numeric.add.reduce(array < self.minActivation) or Numeric.add.reduce(array > self.maxActivation)) and self.kind == 'Input':
-            print "Warning! Activations set to value outside of the interval [0, 1]. ", (self.name, array) 
+            print "Warning! Activations set to value outside of the proper interval. ", (self.name, array) 
         self.activation = array
         self.activationSet = 1
 
@@ -429,7 +422,7 @@ class Layer:
         return self.target
     def setTargets(self, value):
         """
-        Sets all targets the the value of the argument. This value must be in the range [0,1].
+        Sets all targets the the value of the argument. This value must be in the range [min,max].
         """
         # Removed this because both propagate and backprop (via compute_error) set targets
         #if self.verify and not self.targetSet == 0:
@@ -439,7 +432,7 @@ class Layer:
         #        print "(Warning will not be issued again)"
         #        self.warningIssued = 1
         if value > self.maxActivation or value < self.minActivation:
-            raise LayerError, ('Targets for this layer are out of the interval [0,1].', (self.name, value))
+            raise LayerError, ('Targets for this layer are out of the proper interval.', (self.name, value))
         Numeric.put(self.target, Numeric.arange(len(self.target)), value)
         self.targetSet = 1
     def copyTargets(self, arr):
@@ -690,8 +683,12 @@ class Network:
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
+        # Quickprop settings:
         self.quickprop = 0
         self.mu = 1.75 # maximum growth factor
+        self.splitEpsilon = 0
+        self.symmetricOffset = 0.0 # 0.5
+        self.autoSymmetric = 1
         self.setup()
     def setup(self):
         pass
@@ -885,7 +882,7 @@ class Network:
         for connection in self.connections:
             connection.initialize()
         for layer in self.layers:
-            layer.initialize(self.epsilon)
+            layer.initialize()
     def resetFlags(self):
         """
         Resets layer flags for activation and target.
@@ -922,6 +919,7 @@ class Network:
         Sets the network to use patterns for inputs and targets.
         """
         self.patterned = value
+    def setEpsilon(self, value): self.epsilon = value
     def setInteractive(self, value):
         """
         Sets interactive to value. Specifies if an interactive prompt
@@ -1038,21 +1036,6 @@ class Network:
         """
         for layer in self.layers:
             layer.maxRandom = value
-    def getEpsilon(self):
-        """
-        Returns the epsilon for the Network instance.
-        """
-        return self._epsilon
-    def setEpsilon(self, value):
-        """
-        Sets epsilon value for the network.
-        """
-        self._epsilon = value
-        if len(self.layers) == 0:
-            raise "attempt to set epsilon before layers have been created"
-        for layer in self.layers:
-            layer.setEpsilon(value)
-    def getEpsilon(self): return self._epsilon
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
@@ -1101,6 +1084,9 @@ class Network:
         """
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
+        if self.autoSymmetric and self.symmetricOffset != 0.0:
+            inputs = makesym(inputs)
+        print inputs
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1117,6 +1103,9 @@ class Network:
         """
         if not self.verifyArguments(targets) and not self.patterned:
             raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
+        if self.autoSymmetric and self.symmetricOffset != 0.0:
+            targets = makesym(targets)
+        print targets
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1797,7 +1786,8 @@ class Network:
         """
         Determine the activation of a node based on that nodes net input.
         """
-        return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
+        return ((1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
+                - self.symmetricOffset)
         
     # backpropagation
     def backprop(self, **args):
@@ -1808,7 +1798,7 @@ class Network:
         if self.learning:
             self.compute_wed()
         return retval
-    def deltaWeight(self, e, wed, m, dweightLast, wedLast, w):
+    def deltaWeight(self, e, wed, m, dweightLast, wedLast, w, n):
         """
         e - learning rate
         wed - weight error delta
@@ -1818,36 +1808,34 @@ class Network:
         w - weight
         """
         shrinkFactor = self.mu / (1.0 + self.mu)
+        if self.splitEpsilon:
+            e /= float(n)
         if self.quickprop:
             nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
                 s = wed[i] # + .01 * w[i]  # decay
                 d = dweightLast[i]
                 p = wedLast[i]
-                #if (d < 0.0):
-                #    if (s > 0.0):
-                #        nextStep[i] -= e[i] * s
-                #    if  ( s >= ( shrinkFactor * p ) ):
-                #        nextStep[i] += self.mu * d
-                #    elif p == s:
-                #        nextStep[i] -= e[i] * s # gradient descent
-                #    else:
-                #        nextStep[i] += d * s / (p - s)
-                #elif (d > 0.0):
-                #    if (s < 0.0):
-                #        nextStep[i] -= e[i] * s
-                #    if (s <= ( shrinkFactor * p)):
-                #        nextStep[i] += self.mu * d
-                #    elif p == s:
-                #        nextStep[i] -= e[i] * s # gradient descent
-                #    else:
-                #        nextStep[i] += d * s / (p - s)
-                #else:
-                #    nextStep[i] -= e[i] * s        ##  Last step was zero, so only use linear   ##
-                if sign(d) != sign(wed[i]):
-                    nextStep[i] = d * s / (p - s)
+                if (d > 0.0):
+                    if (s > 0.0):
+                        nextStep[i] += e * s
+                    if (s > (shrinkFactor * p)):
+                        nextStep[i] += self.mu * d
+                    elif p == s:
+                        nextStep[i] += self.mu * d
+                    else:
+                        nextStep[i] += d * s / (p - s)
+                elif (d < 0.0):
+                    if (s < 0.0):
+                        nextStep[i] += e * s
+                    if (s < (shrinkFactor * p)):
+                        nextStep[i] += self.mu * d
+                    elif p == s:
+                        nextStep[i] += self.mu * d
+                    else:
+                        nextStep[i] += d * s / (p - s)
                 else:
-                    nextStep[i] = (d * s / (p - s)) + (e[i] * wed[i])
+                    nextStep[i] -= e * s        ##  Last step was zero, so only use linear   ##
             newDweight = nextStep
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
@@ -1861,12 +1849,13 @@ class Network:
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
-                    layer.dweight = self.deltaWeight(layer._epsilon,
+                    layer.dweight = self.deltaWeight(self.epsilon,
                                                      layer.wed,
                                                      self.momentum,
                                                      layer.dweight,
                                                      layer.wedLast,
-                                                     layer.weight)
+                                                     layer.weight,
+                                                     1)
                     layer.weight += layer.dweight
                     # ---------------------------- added because of quickprop
                     layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
@@ -1883,12 +1872,13 @@ class Network:
                 for i in range(len(connection.dweight)):
                     Numeric.put(connection.dweight[i],
                                 Numeric.arange(len(connection.dweight[i])),
-                                self.deltaWeight(toLayer._epsilon,
+                                self.deltaWeight(self.epsilon,
                                                  connection.wed[i],
                                                  self.momentum,
                                                  connection.dweight[i],
                                                  connection.wedLast[i],
-                                                 connection.weight[i]))
+                                                 connection.weight[i],
+                                                 connection.fromLayer.size))
                 connection.weight += connection.dweight
                 # ---------------------------- added because of quickprop
                 connection.weight = Numeric.minimum(Numeric.maximum( connection.weight, -1e10), 1e10)
@@ -1901,18 +1891,19 @@ class Network:
                 self.display()
         return (dw_count, dw_sum)
 
-    def errorFunction(self, x):
+    def errorFunction(self, v):
         """
         Using a hyperbolic arctan on the error slightly exaggerates
         the actual error non-linearly. Return x to just use the difference.
         """
-        if x > .9999999:
-            return 17.0
-        elif x < -.9999999:
-            return -17.0
-        else:
-            return Numeric.arctanh(x)
-
+        for i in range(len(v)):
+            if v[i] > .9999999:
+                v[i] = 17.0
+            elif v[i] < -.9999999:
+                v[i] = -17.0
+            else:
+                v[i] = Numeric.arctanh(v[i])
+        return v
     def ce_init(self):
         """
         Initializes error computation. Calculates error for output
@@ -1922,7 +1913,7 @@ class Network:
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
-                    layer.error = self.errorFunction(layer.target - layer.activation)
+                    layer.error = self.errorFunction(layer.target - layer.activation) 
                     totalCount += layer.size
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
@@ -1949,7 +1940,8 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
-                connect.toLayer.delta = connect.toLayer.error * self.ACTPRIME(connect.toLayer.activation)
+                connect.toLayer.delta = (connect.toLayer.error *
+                                         self.ACTPRIME(connect.toLayer.activation + self.symmetricOffset))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
                 layer = connect.toLayer
@@ -2613,7 +2605,6 @@ class Network:
                 retString += row + "\n"
         return retString
     # --------------------------------------- Network Properties
-    epsilon = property(setEpsilon, getEpsilon)
     verbosity = property(setVerbosity, getVerbosity)
 
 class SigmaNetwork(Network):
@@ -2725,7 +2716,6 @@ class IncrementalNetwork(Network):
             self[hname].weight[i] = self["candidate"].weight[i + n]
             self[hname].wed[i] = self["candidate"].wed[i + n]
             self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
-            self[hname]._epsilon[i] = self["candidate"]._epsilon[i + n]
         self[hname].frozen = 1 # don't change these weights/biases
         # first, connect up input
         for layer in self: 
@@ -3032,8 +3022,8 @@ if __name__ == '__main__':
         net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         net.setTargets( [[0], [1], [1], [0]] )
         net.train()
-        net.interactive = 1
-        net.learning = 0
+        #net.interactive = 1
+        #net.learning = 0
         net.sweep()
         
     if ask("Do you want to test the pattern replacement utility?"):
@@ -3142,6 +3132,8 @@ if __name__ == '__main__':
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
         print "XOR Backprop batch mode: .............................."
         n.setBatch(1)
+        #n.interactive = 1
+        #n.verbosity = 1
         n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
