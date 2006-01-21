@@ -1825,6 +1825,18 @@ class Network:
                 self.display()
         return (dw_count, dw_sum)
 
+    def errorFunction(self, x):
+        """
+        Using a hyperbolic arctan on the error slightly exaggerates
+        the actual error non-linearly. Return x to just use the difference.
+        """
+        if x > .9999999:
+            return 17.0
+        elif x < -.9999999:
+            return -17.0
+        else:
+            return Numeric.arctanh(x)
+
     def ce_init(self):
         """
         Initializes error computation. Calculates error for output
@@ -1834,7 +1846,7 @@ class Network:
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
-                    layer.error = layer.target - layer.activation
+                    layer.error = self.errorFunction(layer.target - layer.activation)
                     totalCount += layer.size
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
