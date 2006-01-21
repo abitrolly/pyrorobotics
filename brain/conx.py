@@ -1821,29 +1821,33 @@ class Network:
         if self.quickprop:
             nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
-                s = wed[i] + .01 * w[i]
+                s = wed[i] # + .01 * w[i]  # decay
                 d = dweightLast[i]
                 p = wedLast[i]
-                if (d < 0.0):
-                    if (s > 0.0):
-                        nextStep[i] -= e[i] * s
-                    if  ( s >= ( shrinkFactor * p ) ):
-                        nextStep[i] += self.mu * d
-                    elif p == s:
-                        nextStep[i] -= e[i] * s # gradient descent
-                    else:
-                        nextStep[i] += d * s / (p - s)
-                elif (d > 0.0):
-                    if (s < 0.0):
-                        nextStep[i] -= e[i] * s
-                    if (s <= ( shrinkFactor * p)):
-                        nextStep[i] += self.mu * d
-                    elif p == s:
-                        nextStep[i] -= e[i] * s # gradient descent
-                    else:
-                        nextStep[i] += d * s / (p - s)
+                #if (d < 0.0):
+                #    if (s > 0.0):
+                #        nextStep[i] -= e[i] * s
+                #    if  ( s >= ( shrinkFactor * p ) ):
+                #        nextStep[i] += self.mu * d
+                #    elif p == s:
+                #        nextStep[i] -= e[i] * s # gradient descent
+                #    else:
+                #        nextStep[i] += d * s / (p - s)
+                #elif (d > 0.0):
+                #    if (s < 0.0):
+                #        nextStep[i] -= e[i] * s
+                #    if (s <= ( shrinkFactor * p)):
+                #        nextStep[i] += self.mu * d
+                #    elif p == s:
+                #        nextStep[i] -= e[i] * s # gradient descent
+                #    else:
+                #        nextStep[i] += d * s / (p - s)
+                #else:
+                #    nextStep[i] -= e[i] * s        ##  Last step was zero, so only use linear   ##
+                if sign(d) != sign(wed[i]):
+                    nextStep[i] = d * s / (p - s)
                 else:
-                    nextStep[i] -= e[i] * s        ##  Last step was zero, so only use linear   ##
+                    nextStep[i] = (d * s / (p - s)) + (e[i] * wed[i])
             newDweight = nextStep
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
@@ -1991,7 +1995,7 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.active and connect.fromLayer.active and connect.toLayer.active:
-                connect.wedLast = connect.wed # + 0.01 * connect.weight # quickprop
+                connect.wedLast = connect.wed # + 0.01 * connect.weight # quickprop decay
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation,
                                                                  connect.toLayer.delta)
         for layer in self.layers:
