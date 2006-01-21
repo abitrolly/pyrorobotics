@@ -16,6 +16,10 @@ __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
 
+def sign(n):
+    if n < 0: return -1
+    else:     return +1
+
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
     for key in dict2:
@@ -160,6 +164,7 @@ class Layer:
         self.dbias = Numeric.zeros(self.size, 'f')
         self.delta = Numeric.zeros(self.size, 'f')
         self.bed = Numeric.zeros(self.size, 'f')
+        self.bedLast = Numeric.zeros(self.size, 'f')
         self.epsilon = Numeric.ones(self.size, "f") * epsilon 
         self.target = Numeric.zeros(self.size, 'f')
         self.error = Numeric.zeros(self.size, 'f')
@@ -239,6 +244,7 @@ class Layer:
         self.delta = Numeric.zeros(self.size, 'f')
         self.netinput = Numeric.zeros(self.size, 'f')
         self.bed = Numeric.zeros(self.size, 'f')
+        self.bedLast = Numeric.zeros(self.size, 'f')
 
     # error and report methods
     def TSSError(self):
@@ -503,6 +509,8 @@ class Connection:
                                       self.toLayer.size), 'f')
         self.wed = Numeric.zeros((self.fromLayer.size, \
                                   self.toLayer.size), 'f')
+        self.wedLast = Numeric.zeros((self.fromLayer.size, \
+                                      self.toLayer.size), 'f')
     def randomize(self, force = 0):
         """
         Sets weights to initial random values in the range [-max, max].
@@ -526,6 +534,7 @@ class Connection:
                                (fromLayerSize, toLayerSize))
         dweight = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
         wed = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
+        wedLast = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
         weight = randomArray((fromLayerSize, toLayerSize),
                              self.toLayer.maxRandom)
         # copy from old to new, considering one is smaller
@@ -534,10 +543,12 @@ class Connection:
         for i in range(minFromLayerSize):
             for j in range(minToLayerSize):
                 wed[i][j] = self.wed[i][j]
+                wedLast[i][j] = self.wedLast[i][j]
                 dweight[i][j] = self.dweight[i][j]
                 weight[i][j] = self.weight[i][j]
         self.dweight = dweight
         self.wed = wed
+        self.wedLast = wedLast
         self.weight = weight
 
     # display methods
@@ -680,6 +691,8 @@ class Network:
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
+        self.quickprop = 0
+        self.mu = 1.75 # maximum growth factor
         self.setup()
     def setup(self):
         pass
@@ -1794,6 +1807,26 @@ class Network:
         if self.learning:
             self.compute_wed()
         return retval
+    def deltaWeight(self, e, wed, m, dweightLast, wedLast):
+        """
+        e - learning rate
+        wed - weight error delta
+        m - momentum
+        dweightLast - previous dweight
+        wedLast - only used in quickprop; last weight error delta
+        """
+        if self.quickprop:
+            newDweight = Numeric.zeros(len(dweightLast), 'f')
+            for i in range(len(dweightLast)):
+                if wed[i] == 0.0 or wedLast[i] == wed[i]:
+                    newDweight[i] = e * wed[i] + m * dweightLast[i] # gradient descent
+                else:
+                    newDweight[i] = (wed[i] / (wedLast[i] - wed[i])) * dweightLast[i]
+                    if newDweight[i] > self.mu * dweightLast[i]:
+                        newDweight[i] = self.mu * dweightLast[i]
+        else: # backprop
+            newDweight = e * wed + m * dweightLast # gradient descent
+        return newDweight
     def change_weights(self):
         """
         Changes the weights according to the error values calculated
@@ -1803,9 +1836,10 @@ class Network:
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
-                    layer.dbias = layer.epsilon * layer.bed + self.momentum * layer.dbias
+                    layer.dbias = self.deltaWeight(layer.epsilon, layer.bed, self.momentum,
+                                                   layer.dbias, layer.bedLast)
                     layer.bias += layer.dbias
-                    layer.bed = layer.bed * 0.0
+                    layer.bed = layer.bed * 0.0 # keep same numeric type, just zero it
                     dw_count += len(layer.dbias)
                     dw_sum += Numeric.add.reduce(abs(layer.dbias))
         for connection in self.connections:
@@ -1814,9 +1848,14 @@ class Network:
                 and connection.toLayer.active
                 and not connection.frozen):
                 toLayer = connection.toLayer
-                connection.dweight = toLayer.epsilon * connection.wed + self.momentum * connection.dweight
+                for i in range(len(connection.dweight)):
+                    Numeric.put(connection.dweight[i], Numeric.arange(len(connection.dweight[i])),
+                                self.deltaWeight(toLayer.epsilon[i], connection.wed[i],
+                                                 self.momentum,
+                                                 connection.dweight[i],
+                                                 connection.wedLast[i]))
                 connection.weight += connection.dweight
-                connection.wed = connection.wed * 0.0
+                connection.wed = connection.wed * 0.0 # keeps the same Numeric type, but makes it zero
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
         if self.verbosity >= 1:
@@ -1919,10 +1958,11 @@ class Network:
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.active and connect.fromLayer.active and connect.toLayer.active:
+                connect.wedLast = connect.wed
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation, connect.toLayer.delta)
-                #connect.toLayer.bed = connect.toLayer.bed + connect.toLayer.delta
         for layer in self.layers:
             if layer.active:
+                layer.bedLast = layer.bed 
                 layer.bed = layer.bed + layer.delta
     def ACTPRIME(self, act):
         """
@@ -2643,6 +2683,7 @@ class IncrementalNetwork(Network):
             self[hname].dbias[i] = self["candidate"].dbias[i + n]
             self[hname].bias[i] = self["candidate"].bias[i + n]
             self[hname].bed[i] = self["candidate"].bed[i + n]
+            self[hname].bedLast[i] = self["candidate"].bedLast[i + n]
             self[hname].epsilon[i] = self["candidate"].epsilon[i + n]
         self[hname].frozen = 1 # don't change these weights/biases
         # first, connect up input
