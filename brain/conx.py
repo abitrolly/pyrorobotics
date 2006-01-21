@@ -2488,6 +2488,41 @@ class Network:
                         if network.layers[l2].name == toLayerName:
                             self.layers[l1].bias = network.layers[l2].bias
 
+    def testGeneralization(self, incr = .1, start = 0, stop = 1, inputLayer = "input",
+                           inputs = [0, 1], outputLayer = "output", outputs = None, sum = 0):
+        """
+        sum - use for SigmaNetworks
+        FIXME: currently just works with one output layer
+        """
+        print "Testing Generalization:", self.name
+        resolution = int((stop - start) / incr)
+        retString = ""
+        for x in range(resolution):
+            row = ""
+            if sum:
+                size = 1
+            else:
+                size = self[outputLayer].size
+                for i in range(size):
+                    for y in range(resolution):
+                        input = (x/float(resolution), y/float(resolution))
+                        results = self.propagate(input = input)
+                        if sum:
+                            retval = reduce(operator.add, self[outputLayer].activation) / self[outputLayer].size
+                        else:
+                            retval = results[i]
+                        c = round(retval, 1)
+                        if c > 0.95:
+                            c = "#"
+                        elif c < 0.05:
+                            c = "."
+                        else:
+                            c = str(c * 10)[0]
+                        row += "%s" % c
+                    row += "   "
+                retString += row + "\n"
+        return retString
+
 class SigmaNetwork(Network):
     """
     Uses CRBP to train a population encoded summation on output layers. 
