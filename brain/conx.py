@@ -16,11 +16,9 @@ __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
 
-def makesym(vec):
-    for pattern in vec:
-        for i in range(len(pattern)):
-            pattern[i] = pattern[i] - 0.5
-    return vec
+def makesym(patterns):
+    return [[v - 0.5 for v in vec] for vec in patterns]
+
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
     for key in dict2:
@@ -156,10 +154,6 @@ class Layer:
         self.maxTarget = 1.0
         self.minActivation = 0.0
         self.maxActivation = 1.0
-        #self.minTarget = -0.5
-        #self.maxTarget = 0.5
-        #self.minActivation = -0.5
-        #self.maxActivation = 0.5
     def initialize(self):
         """
         Initializes important node values to zero for each node in the
@@ -624,7 +618,7 @@ class Connection:
             string += '\n'
         return string
     
-class Network:
+class Network(object):
     """
     Class which contains all of the parameters and methods needed to
     run a neural network.
@@ -684,12 +678,44 @@ class Network:
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
         # Quickprop settings:
-        self.quickprop = 0
+        self._quickprop = 0
         self.mu = 1.75 # maximum growth factor
         self.splitEpsilon = 0
-        self.symmetricOffset = 0.0 # 0.5
+        self._symmetricOffset = 0.0 
         self.autoSymmetric = 1
+        self.decay = 0.0000
         self.setup()
+    def getSymmetricOffset(self):
+        print "Hi"
+        return self._symmetricOffset
+    def setSymmetricOffset(self, value):
+        if value != 0.0:
+            self._symmetricOffset = value
+            for layer in self.layers:
+                layer.minTarget = -0.5
+                layer.maxTarget = 0.5
+                layer.minActivation = -0.5
+                layer.maxActivation = 0.5
+        else:
+            self._symmetricOffset = 0.0
+            for layer in self.layers:
+                layer.minTarget = 0.0
+                layer.maxTarget = 1.0
+                layer.minActivation = 0.0
+                layer.maxActivation = 1.0
+    def setQuickprop(self, value):
+        if value:
+            self._quickprop = 1
+            self.mu = 1.75 # maximum growth factor
+            self.splitEpsilon = 1
+            self.decay = 0.0000
+            self.epsilon *= 10.0
+        else:
+            self._quickprop = 0
+            self.splitEpsilon = 0
+            self.decay = 0.0000
+            self.epsilon /= 10.0
+    def getQuickprop(self): return self._quickprop
     def setup(self):
         pass
     # general methods
@@ -1084,9 +1110,8 @@ class Network:
         """
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
-        if self.autoSymmetric and self.symmetricOffset != 0.0:
+        if self.autoSymmetric and self._symmetricOffset != 0.0:
             inputs = makesym(inputs)
-        print inputs
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1103,9 +1128,8 @@ class Network:
         """
         if not self.verifyArguments(targets) and not self.patterned:
             raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
-        if self.autoSymmetric and self.symmetricOffset != 0.0:
+        if self.autoSymmetric and self._symmetricOffset != 0.0:
             targets = makesym(targets)
-        print targets
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1388,10 +1412,11 @@ class Network:
         self.Print("Epoch #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            self.Print("   Epoch #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
-                       (epoch, "'" + layerName + "'",
-                        float(pcorrect[layerName][0]) / pcorrect[layerName][1],
-                        float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
+            if self[layerName].size > 1:
+                self.Print("   Epoch #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
+                           (epoch, "'" + layerName + "'",
+                            float(pcorrect[layerName][0]) / pcorrect[layerName][1],
+                            float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     def reportPattern(self): pass
     def reportStart(self): pass
@@ -1401,10 +1426,11 @@ class Network:
         self.Print("Final #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            self.Print("   Final #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
-                       (epoch-1, "'" + layerName + "'",
-                        float(pcorrect[layerName][0]) / pcorrect[layerName][1],
-                        float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
+            if self[layerName].size > 1:
+                self.Print("   Final #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
+                           (epoch-1, "'" + layerName + "'",
+                            float(pcorrect[layerName][0]) / pcorrect[layerName][1],
+                            float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
         sys.stdout.flush()
     # train and sweep methods
     def doWhile(self, totalCount, totalCorrect):
@@ -1670,7 +1696,7 @@ class Network:
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
-                layer.activation = self.activationFunction(layer.netinput)
+                layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in propagateLayers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1715,7 +1741,7 @@ class Network:
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
                 if layer.type != 'Input':
-                    layer.activation = self.activationFunction(layer.netinput)
+                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1768,7 +1794,7 @@ class Network:
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
                 if layer.type != 'Input':
-                    layer.activation = self.activationFunction(layer.netinput)
+                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1786,8 +1812,7 @@ class Network:
         """
         Determine the activation of a node based on that nodes net input.
         """
-        return ((1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
-                - self.symmetricOffset)
+        return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
         
     # backpropagation
     def backprop(self, **args):
@@ -1806,14 +1831,15 @@ class Network:
         dweightLast - previous dweight
         wedLast - only used in quickprop; last weight error delta
         w - weight
+        n - fan-in, number of connections coming in (should be total)
         """
         shrinkFactor = self.mu / (1.0 + self.mu)
         if self.splitEpsilon:
             e /= float(n)
-        if self.quickprop:
+        if self._quickprop:
             nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
-                s = wed[i] # + .01 * w[i]  # decay
+                s = wed[i] 
                 d = dweightLast[i]
                 p = wedLast[i]
                 if (d > 0.0):
@@ -1835,7 +1861,7 @@ class Network:
                     else:
                         nextStep[i] += d * s / (p - s)
                 else:
-                    nextStep[i] -= e * s        ##  Last step was zero, so only use linear   ##
+                    nextStep[i] += e * s        ##  Last step was zero, so only use linear   ##
             newDweight = nextStep
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
@@ -1849,6 +1875,7 @@ class Network:
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
+                    print "layer dweight", layer.dweight
                     layer.dweight = self.deltaWeight(self.epsilon,
                                                      layer.wed,
                                                      self.momentum,
@@ -1856,10 +1883,11 @@ class Network:
                                                      layer.wedLast,
                                                      layer.weight,
                                                      1)
+                    print "layer dweight", layer.dweight
                     layer.weight += layer.dweight
                     # ---------------------------- added because of quickprop
                     layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
-                    layer.wed = layer.wed * 0.0 # keep same numeric type, just zero it
+                    layer.wed = layer.weight * self.decay # keep same numeric type, just zero it
                     dw_count += len(layer.dweight)
                     dw_sum += Numeric.add.reduce(abs(layer.dweight))
         for connection in self.connections:
@@ -1869,6 +1897,7 @@ class Network:
                 and not connection.frozen):
                 toLayer = connection.toLayer
                 # doing it one vector at a time, to match layer bias training (a quickprop abstraction)
+                print "connection dweight", connection.dweight
                 for i in range(len(connection.dweight)):
                     Numeric.put(connection.dweight[i],
                                 Numeric.arange(len(connection.dweight[i])),
@@ -1879,6 +1908,7 @@ class Network:
                                                  connection.wedLast[i],
                                                  connection.weight[i],
                                                  connection.fromLayer.size))
+                print "connection dweight", connection.dweight
                 connection.weight += connection.dweight
                 # ---------------------------- added because of quickprop
                 connection.weight = Numeric.minimum(Numeric.maximum( connection.weight, -1e10), 1e10)
@@ -1941,7 +1971,7 @@ class Network:
             connect = self.connections[c]
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = (connect.toLayer.error *
-                                         self.ACTPRIME(connect.toLayer.activation + self.symmetricOffset))
+                                         (self.ACTPRIME(connect.toLayer.activation + self._symmetricOffset)))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
                 layer = connect.toLayer
@@ -2605,7 +2635,9 @@ class Network:
                 retString += row + "\n"
         return retString
     # --------------------------------------- Network Properties
-    verbosity = property(setVerbosity, getVerbosity)
+    verbosity = property(getVerbosity, setVerbosity)
+    quickprop = property(getQuickprop, setQuickprop)
+    symmetricOffset = property(getSymmetricOffset, setSymmetricOffset)
 
 class SigmaNetwork(Network):
     """
@@ -2624,15 +2656,24 @@ class SigmaNetwork(Network):
     def preBackprop(self, **dict):
         # could use a probabilistic version of round:
         # def prob(v): return int(random.random() < v)
+        def myround(v):
+            retval = round(v)
+            if self._symmetricOffset:
+                return retval - 0.5
+            return retval
         def mutate(v, p):
             for i in range(int(round(len(v) * p))):
                 g = int(len(v) * random.random())
-                v[g] = not v[g]
+                if self._symmetricOffset:
+                    symbols = [-0.5, 0.5]
+                else:
+                    symbols = [0.0, 1.0]
+                v[g] = symbols[(symbols.index(v[g]) + 1) % 2]
             return v
         for name in dict:
             layer = self[name]
             if layer.kind == "Output":
-                vector = map(round, self[name].activation)
+                vector = map(myround, self[name].activation)
                 score = abs(sum(vector)/float(self[name].size) - dict[name][0])
                 if score > self.tolerance:
                     vector = mutate(vector, score)
