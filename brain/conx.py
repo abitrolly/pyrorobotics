@@ -147,9 +147,11 @@ class Layer:
         self.maxRandom = 0.1
         self.initialize()
         self.verify = 1
+        # layer report of stats:
         self.pcorrect = 0
         self.ptotal = 0
         self.correct = 0
+        # misc:
         self.numConnects = 0 # number of incoming weights
         self.minTarget = 0.0
         self.maxTarget = 1.0
@@ -1420,6 +1422,9 @@ class Network(object):
                            (epoch, "'" + layerName + "'",
                             float(pcorrect[layerName][0]) / pcorrect[layerName][1],
                             float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
+            self[layerName].pcorrect = pcorrect[layerName][2]
+            self[layerName].ptotal = pcorrect[layerName][3]
+            self[layerName].correct = float(pcorrect[layerName][2]) / pcorrect[layerName][3]
         sys.stdout.flush()
     def reportPattern(self): pass
     def reportStart(self): pass
@@ -1434,6 +1439,9 @@ class Network(object):
                            (epoch-1, "'" + layerName + "'",
                             float(pcorrect[layerName][0]) / pcorrect[layerName][1],
                             float(pcorrect[layerName][2]) / pcorrect[layerName][3]))
+            self[layerName].pcorrect = pcorrect[layerName][2]
+            self[layerName].ptotal = pcorrect[layerName][3]
+            self[layerName].correct = float(pcorrect[layerName][2]) / pcorrect[layerName][3]
         sys.stdout.flush()
     # train and sweep methods
     def doWhile(self, totalCount, totalCorrect):
@@ -1968,9 +1976,6 @@ class Network(object):
                 elif (layer.type == 'Hidden'):
                     for i in range(layer.size): # do it this way so you don't break reference links
                         layer.error[i] = 0.0
-                self.pcorrect = 0
-                self.ptotal = 0
-                self.correct = 0
         return (retval, correct, totalCount)
     def compute_error(self, **args):
         """
@@ -1992,10 +1997,6 @@ class Network(object):
                                          (self.ACTPRIME(connect.toLayer.activation)))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
-                layer = connect.toLayer
-                layer.pcorrect += self.compare(layer.target, layer.activation)
-                layer.ptotal += 1
-                layer.correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
         # now all errors are set on all layers!
         pcorrect = self.getLayerErrors()
         return (error, correct, total, pcorrect)
@@ -3411,6 +3412,10 @@ if __name__ == '__main__':
         raam.setStopPercent(1.0)
         raam.setResetEpoch(5000)
         raam.setResetLimit(0)
+        # this can be pickled, lambda's can't:
+        # but don't do this... not enough training
+        #def testDone(c, t): return raam["output"].correct != 1.0
+        #raam.doWhile = testDone
         # train:
         temp = time.time()
         raam.train()
