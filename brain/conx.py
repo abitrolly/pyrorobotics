@@ -3077,7 +3077,7 @@ if __name__ == '__main__':
                   ])
     n.setReportRate(10)
 
-    if ask("Do you want to test the CRBP SigmaNetwork?"):
+    if ask("Do you want to test the SigmaNetwork?"):
         net = SigmaNetwork()
         net.setSeed(457646.23)
         net.addLayers(2, 5, 11)
@@ -3195,16 +3195,12 @@ if __name__ == '__main__':
         print "XOR Quickprop mode: .............................."
         n = Network()
         n.addLayers(2, 2, 1)
-        n.quickprop = 1
+        n.quickprop = 1 # this line needs to be right here, for now
         n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         n.setTargets( [[0], [1], [1], [0]] )
         n.setBatch(1)
-        #n.interactive = 1
-        #n.verbosity = 1
         n.reset()
-        #n.setEpsilon(0.5)
-        #n.setMomentum(.975)
-        n.setReportRate(1)
+        n.setReportRate(5)
         n.resetEpoch = 100
         n.resetLimit = 5
         n.train()
