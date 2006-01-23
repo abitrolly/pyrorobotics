@@ -682,16 +682,15 @@ class Network(object):
         self._quickprop = 0
         self.mu = 1.75 # maximum growth factor
         self.splitEpsilon = 0
-        self._symmetricOffset = 0.0 
         self.autoSymmetric = 1
+        self._symmetricOffset = 0.0
         self.decay = 0.0000
         self.setup()
     def getSymmetricOffset(self):
-        print "Hi"
         return self._symmetricOffset
     def setSymmetricOffset(self, value):
         if value != 0.0:
-            self._symmetricOffset = value
+            self._symmetricOffset = 0.5
             for layer in self.layers:
                 layer.minTarget = -0.5
                 layer.maxTarget = 0.5
@@ -1702,7 +1701,7 @@ class Network(object):
                                                                              connection.weight) # propagate!
                         connection.toLayer.numConnects += connection.fromLayer.size                        
                 if layer.type != 'Input':
-                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
+                    layer.activation = self.activationFunction(layer.netinput)
         for layer in propagateLayers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1749,7 +1748,7 @@ class Network(object):
                                                                              connection.weight) # propagate!
                         connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
-                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
+                    layer.activation = self.activationFunction(layer.netinput)
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1804,7 +1803,7 @@ class Network(object):
                                                                              connection.weight) # propagate!
                         connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
-                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
+                    layer.activation = self.activationFunction(layer.netinput)
         for layer in self.layers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1822,7 +1821,12 @@ class Network(object):
         """
         Determine the activation of a node based on that nodes net input.
         """
-        return (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
+        if self.symmetricOffset:
+            x += self._symmetricOffset
+        retval = (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
+        if self.symmetricOffset:
+            retval -= self._symmetricOffset
+        return retval
         
     # backpropagation
     def backprop(self, **args):
@@ -1890,7 +1894,7 @@ class Network(object):
                                                      layer.numConnects)
                     layer.weight += layer.dweight
                     # ---------------------------- added because of quickprop
-                    layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
+                    #layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
                     if self._quickprop:
                         layer.wedLast = layer.wed
                         layer.wed = layer.weight * self.decay # reset to last weight, with decay
@@ -1984,7 +1988,7 @@ class Network(object):
             connect = self.connections[c]
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = (connect.toLayer.error *
-                                         (self.ACTPRIME(connect.toLayer.activation + self._symmetricOffset)))
+                                         (self.ACTPRIME(connect.toLayer.activation)))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
                 layer = connect.toLayer
@@ -2039,7 +2043,13 @@ class Network(object):
         """
         Used in compute_error.
         """
-        return ((act * (1.0 - act)) + self.sigmoid_prime_offset)
+        if self.symmetricOffset:
+            act += self._symmetricOffset
+        retval = ((act * (1.0 - act)) + self.sigmoid_prime_offset)
+        if self.symmetricOffset:
+            act -= self._symmetricOffset
+        return retval
+    
     def diff(self, value):
         """
         Returns value to within 0.001. Then returns 0.0.
