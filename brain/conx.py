@@ -150,6 +150,7 @@ class Layer:
         self.pcorrect = 0
         self.ptotal = 0
         self.correct = 0
+        self.numConnects = 0 # number of incoming weights
         self.minTarget = 0.0
         self.maxTarget = 1.0
         self.minActivation = 0.0
@@ -706,15 +707,17 @@ class Network(object):
     def setQuickprop(self, value):
         if value:
             self._quickprop = 1
-            self.mu = 1.75 # maximum growth factor
+            self.mu = 2.25 # maximum growth factor
             self.splitEpsilon = 1
-            self.decay = 0.0000
-            self.epsilon *= 10.0
+            self.decay = -0.0001
+            self.epsilon = 4.0
+            self.symmetricOffset = 1
         else:
             self._quickprop = 0
             self.splitEpsilon = 0
             self.decay = 0.0000
-            self.epsilon /= 10.0
+            self.epsilon = 0.1
+            self.symmetricOffset = 0
     def getQuickprop(self): return self._quickprop
     def setup(self):
         pass
@@ -1689,6 +1692,7 @@ class Network(object):
         for layer in propagateLayers:
             if layer.active: 
                 layer.netinput = layer.weight.tolist() # is [:] safe here?
+                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
@@ -1696,7 +1700,9 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
-                layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
+                        connection.toLayer.numConnects += connection.fromLayer.size                        
+                if layer.type != 'Input':
+                    layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in propagateLayers:
             if layer.log and layer.active:
                 layer.writeLog()
@@ -1730,6 +1736,7 @@ class Network(object):
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
                 layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
+                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
@@ -1740,6 +1747,7 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
+                        connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
                     layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in self.layers:
@@ -1780,6 +1788,7 @@ class Network(object):
             if not started: continue
             if layer.type != 'Input' and layer.active:
                 layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
+                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         started = 0
         for layer in self.layers:
@@ -1793,6 +1802,7 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
+                        connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
                     layer.activation = self.activationFunction(layer.netinput) - self._symmetricOffset
         for layer in self.layers:
@@ -1826,12 +1836,12 @@ class Network(object):
     def deltaWeight(self, e, wed, m, dweightLast, wedLast, w, n):
         """
         e - learning rate
-        wed - weight error delta
+        wed - weight error delta vector (slope)
         m - momentum
-        dweightLast - previous dweight
-        wedLast - only used in quickprop; last weight error delta
-        w - weight
-        n - fan-in, number of connections coming in (should be total)
+        dweightLast - previous dweight vector (slope)
+        wedLast - only used in quickprop; last weight error delta vector
+        w - weight vector
+        n - fan-in, number of connections coming in (counts bias, too)
         """
         shrinkFactor = self.mu / (1.0 + self.mu)
         if self.splitEpsilon:
@@ -1847,16 +1857,12 @@ class Network(object):
                         nextStep[i] += e * s
                     if (s > (shrinkFactor * p)):
                         nextStep[i] += self.mu * d
-                    elif p == s:
-                        nextStep[i] += self.mu * d
                     else:
                         nextStep[i] += d * s / (p - s)
                 elif (d < 0.0):
                     if (s < 0.0):
                         nextStep[i] += e * s
                     if (s < (shrinkFactor * p)):
-                        nextStep[i] += self.mu * d
-                    elif p == s:
                         nextStep[i] += self.mu * d
                     else:
                         nextStep[i] += d * s / (p - s)
@@ -1875,19 +1881,21 @@ class Network(object):
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
-                    print "layer dweight", layer.dweight
                     layer.dweight = self.deltaWeight(self.epsilon,
                                                      layer.wed,
                                                      self.momentum,
                                                      layer.dweight,
                                                      layer.wedLast,
                                                      layer.weight,
-                                                     1)
-                    print "layer dweight", layer.dweight
+                                                     layer.numConnects)
                     layer.weight += layer.dweight
                     # ---------------------------- added because of quickprop
                     layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
-                    layer.wed = layer.weight * self.decay # keep same numeric type, just zero it
+                    if self._quickprop:
+                        layer.wedLast = layer.wed
+                        layer.wed = layer.weight * self.decay # reset to last weight, with decay
+                    else:
+                        layer.wed = layer.wed * 0.0 # keep same numeric type, just zero it
                     dw_count += len(layer.dweight)
                     dw_sum += Numeric.add.reduce(abs(layer.dweight))
         for connection in self.connections:
@@ -1897,7 +1905,6 @@ class Network(object):
                 and not connection.frozen):
                 toLayer = connection.toLayer
                 # doing it one vector at a time, to match layer bias training (a quickprop abstraction)
-                print "connection dweight", connection.dweight
                 for i in range(len(connection.dweight)):
                     Numeric.put(connection.dweight[i],
                                 Numeric.arange(len(connection.dweight[i])),
@@ -1907,12 +1914,18 @@ class Network(object):
                                                  connection.dweight[i],
                                                  connection.wedLast[i],
                                                  connection.weight[i],
-                                                 connection.fromLayer.size))
-                print "connection dweight", connection.dweight
+                                                 connection.toLayer.numConnects))
                 connection.weight += connection.dweight
                 # ---------------------------- added because of quickprop
+                # limit the size:
                 connection.weight = Numeric.minimum(Numeric.maximum( connection.weight, -1e10), 1e10)
-                connection.wed = connection.wed * 0.0 # keeps the same Numeric type, but makes it zero
+                # reset values:
+                if self._quickprop:
+                    connection.wedLast = connection.wed
+                    connection.wed = connection.weight * self.decay 
+                else:
+                    connection.wed = connection.wed * 0.0 # keeps the same Numeric type, but makes it zero
+                # get some stats
                 dw_count += Numeric.multiply.reduce(connection.dweight.shape)
                 dw_sum += Numeric.add.reduce(Numeric.add.reduce(abs(connection.dweight)))
         if self.verbosity >= 1:
@@ -2017,12 +2030,10 @@ class Network(object):
         for c in range(len(self.connections) - 1, -1, -1):
             connect = self.connections[c]
             if connect.active and connect.fromLayer.active and connect.toLayer.active:
-                connect.wedLast = connect.wed # + 0.01 * connect.weight # quickprop decay
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation,
                                                                  connect.toLayer.delta)
         for layer in self.layers:
             if layer.active:
-                layer.wedLast = layer.wed 
                 layer.wed = layer.wed + layer.delta
     def ACTPRIME(self, act):
         """
@@ -3170,15 +3181,22 @@ if __name__ == '__main__':
         print 'Output TSS Error:', n.TSSError("output")
         print 'Output Correct:', n.getCorrect('output')
 
-    if ask("Do you want to run an XOR BACKPROP network in BATCH mode?"):
-        print "XOR Backprop batch mode: .............................."
+    if ask("Do you want to run an XOR BACKPROP network in QUICKPROP mode?"):
+        print "XOR Quickprop mode: .............................."
+        n = Network()
+        n.addLayers(2, 2, 1)
+        n.quickprop = 1
+        n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
+        n.setTargets( [[0], [1], [1], [0]] )
         n.setBatch(1)
         #n.interactive = 1
         #n.verbosity = 1
         n.reset()
-        n.setEpsilon(0.5)
-        n.setMomentum(.975)
-        n.setReportRate(100)
+        #n.setEpsilon(0.5)
+        #n.setMomentum(.975)
+        n.setReportRate(1)
+        n.resetEpoch = 100
+        n.resetLimit = 5
         n.train()
         print "getError('output') = (tss, correct, total):", n.getError("output")
         print "getError('output', 'output') :", n.getError("output", "output")
@@ -3196,6 +3214,11 @@ if __name__ == '__main__':
         print "Loading crossvalidation from 'sample.cv'..."
         n.loadCrossValidation("sample.cv")
         print "Corpus:", n.crossValidationCorpus
+        # reset to something normal
+        n = Network()
+        n.addLayers(2, 2, 1)
+        n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
+        n.setTargets( [[0], [1], [1], [0]] )
 
     if ask("Do you want to run an XOR BACKPROP network in BATCH mode with cross validation?"):
         print "XOR Backprop batch mode: .............................."
