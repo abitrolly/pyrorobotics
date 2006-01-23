@@ -17,6 +17,8 @@ def test(net, resolution = 30, sum = 0):
         for i in range(size):
             for y in range(resolution):
                 input = (x/float(resolution), y/float(resolution))
+                if net.symmetricOffset:
+                    input = map(lambda x: x - 0.5, input)
                 results = net.propagate(input = input)
                 if sum:
                     retval = reduce(operator.add, net["output"].activation) / net["output"].size
@@ -53,6 +55,16 @@ inputs = [[0, 0], [0, 1], [1, 0], [1, 1]]
 targets= [[0], [1], [1], [0]]
 
 results = []
+
+net5 = Network()
+net5.addLayers(2, 2, 1)
+net5.quickprop = 1    # this line needs to be right here, for now
+net5.setInputs( inputs )
+net5.setTargets( targets)
+net5.tolerance = 0.4
+net5.reportRate = 5
+net5.setBatch(1)
+results.append(train(net5))
 
 net0 = IncrementalNetwork()
 net0.addLayers(2, 1)
