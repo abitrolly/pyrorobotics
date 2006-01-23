@@ -705,6 +705,7 @@ class Network(object):
                 layer.maxActivation = 1.0
     def setQuickprop(self, value):
         if value:
+            self.batch = 1
             self._quickprop = 1
             self.mu = 2.25 # maximum growth factor
             self.splitEpsilon = 1
