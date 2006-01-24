@@ -86,7 +86,7 @@ def binaryStringToDecimal(str):
 class Matrix:
     def randomize(self, bias = .5):
         for i in range(self.size):
-            self.data[0][i] = random() < bias
+            self.data[0][i] = int(random() < bias)
     def display(self, rows = -1):
         if rows == -1:
             for i in range(self.height):
@@ -118,7 +118,7 @@ class Matrix:
             if (len(str) != self.size):
                 raise "ImproperLength", str
             for i in range(len(str)):
-                self.data[0][i] = (str[i] == '1' or str[i] == 'X')
+                self.data[0][i] = int(str[i] == '1' or str[i] == 'X')
         else:
             self.init(decimalToBinaryString(str, self.size))
 
@@ -131,14 +131,23 @@ class Rules(Matrix):
         self.data = [0]
         self.data[0] = [0] * self.size
         self.randomize(bias)
-    def watch(self, lat):
+    def watch(self, lat, gui = 1):
         self.width = lat.size 
         length = lat.height - 1
-        self.gui = GUI("Pyrobot CA", lat.size, lat.height - 1)
+        if gui:
+            try:
+                self.gui = GUI("Pyrobot CA", lat.size, lat.height - 1)
+            except:
+                self.gui = None
+        else:
+            self.gui = None
         for c in range( length):
             self.apply(lat, c)
-        self.gui.draw(lat, length)
-        self.gui.win.mainloop()
+        if self.gui:
+            self.gui.draw(lat, length)
+            self.gui.win.mainloop()
+        else:
+            lat.display()
 
     def apply(self, lat, c):
         for i in range(lat.size):
