@@ -124,7 +124,7 @@ class Layer:
     error, bias, etc).
     """
     # constructor
-    def __init__(self, name, size):
+    def __init__(self, name, size, maxRandom = 0.1):
         """
         Constructor for Layer class. A name and the number of nodes
         for the instance are passed as arguments.
@@ -144,7 +144,7 @@ class Layer:
         self._logPtr = 0
         self.active = 1 # takes layer out of the processing
         self.frozen = 0 # freezes weights (dbiases), if layer still active
-        self.maxRandom = 0.1
+        self._maxRandom = maxRandom
         self.initialize()
         self.verify = 1
         # layer report of stats:
@@ -178,7 +178,7 @@ class Layer:
         Initialize node biases to random values in the range [-max, max].
         """
         if force or not self.frozen:
-            self.weight = randomArray(self.size, self.maxRandom)
+            self.weight = randomArray(self.size, self._maxRandom)
 
     # general methods
     def __len__(self):
@@ -219,7 +219,7 @@ class Layer:
         if newsize <= 0:
             raise LayerError, ('Layer size changed to zero.', newsize)
         minSize = min(self.size, newsize)
-        bias = randomArray(newsize, self.maxRandom)
+        bias = randomArray(newsize, self._maxRandom)
         Numeric.put(bias, Numeric.arange(minSize), self.weight)
         self.weight = bias
         self.size = newsize
@@ -507,7 +507,7 @@ class Connection:
         if force or not self.frozen:
             self.weight = randomArray((self.fromLayer.size, \
                                        self.toLayer.size),
-                                      self.toLayer.maxRandom)
+                                      self.toLayer._maxRandom)
     def __str__(self):
         return self.toString()
     
@@ -525,7 +525,7 @@ class Connection:
         wed = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
         wedLast = Numeric.zeros((fromLayerSize, toLayerSize), 'f')
         weight = randomArray((fromLayerSize, toLayerSize),
-                             self.toLayer.maxRandom)
+                             self.toLayer._maxRandom)
         # copy from old to new, considering one is smaller
         minFromLayerSize = min( fromLayerSize, self.fromLayer.size)
         minToLayerSize = min( toLayerSize, self.toLayer.size)
@@ -677,6 +677,7 @@ class Network(object):
         self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
         self._sweeping = 0 # flag set when sweeping through corpus (as apposed to just stepping)
+        self._maxRandom = 0.1
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
@@ -691,20 +692,12 @@ class Network(object):
     def getSymmetricOffset(self):
         return self._symmetricOffset
     def setSymmetricOffset(self, value):
-        if value != 0.0:
-            self._symmetricOffset = 0.5
-            for layer in self.layers:
-                layer.minTarget = -0.5
-                layer.maxTarget = 0.5
-                layer.minActivation = -0.5
-                layer.maxActivation = 0.5
-        else:
-            self._symmetricOffset = 0.0
-            for layer in self.layers:
-                layer.minTarget = 0.0
-                layer.maxTarget = 1.0
-                layer.minActivation = 0.0
-                layer.maxActivation = 1.0
+        self._symmetricOffset = value
+        for layer in self.layers:
+            layer.minTarget = 0.0 - value
+            layer.maxTarget = 1.0 - value
+            layer.minActivation = 0.0 - value
+            layer.maxActivation = 1.0 - value
     def setQuickprop(self, value):
         if value:
             self.batch = 1
@@ -713,13 +706,14 @@ class Network(object):
             self.splitEpsilon = 1
             self.decay = -0.0001
             self.epsilon = 4.0
-            self.symmetricOffset = 1
+            self.symmetricOffset = 0.5
+            self.name = "Quickprop Network"
         else:
             self._quickprop = 0
             self.splitEpsilon = 0
             self.decay = 0.0000
             self.epsilon = 0.1
-            self.symmetricOffset = 0
+            self.symmetricOffset = 0.0
     def getQuickprop(self): return self._quickprop
     def setup(self):
         pass
@@ -780,7 +774,7 @@ class Network(object):
                 return i
         return -1 # not in list
     def addLayer(self, name, size, verbosity = 0, position = None):
-        layer = Layer(name, size)
+        layer = Layer(name, size, maxRandom=self._maxRandom)
         Network.add(self, layer, verbosity, position)
     # methods for constructing and modifying a network
     def add(self, layer, verbosity = 0, position = None):
@@ -788,6 +782,11 @@ class Network(object):
         Adds a layer. Layer verbosity is optional (default 0).
         """
         layer._verbosity = verbosity
+        layer._maxRandom = self._maxRandom
+        layer.minTarget = 0.0 - self._symmetricOffset
+        layer.maxTarget = 1.0 - self._symmetricOffset
+        layer.minActivation = 0.0 - self._symmetricOffset
+        layer.maxActivation = 1.0 - self._symmetricOffset
         if position == None:
             self.layers.append(layer)
         else:
@@ -1060,13 +1059,15 @@ class Network(object):
         validation data set.
         """
         self.sweepReportRate = value
+    def getMaxRandom(self): return self._maxRandom
     def setMaxRandom(self, value):
         """
         Sets the maxRandom Layer attribute for each layer to value.Specifies
         the global range for randomly initialized values, [-max, max].
         """
+        self._maxRandom = value
         for layer in self.layers:
-            layer.maxRandom = value
+            layer._maxRandom = value
     def getWeights(self, fromName, toName):
         """
         Gets the weights of the connection between two layers (argument strings).
@@ -1830,13 +1831,8 @@ class Network(object):
         """
         Determine the activation of a node based on that nodes net input.
         """
-        if self.symmetricOffset:
-            x += self._symmetricOffset
-        retval = (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15))))
-        if self.symmetricOffset:
-            retval -= self._symmetricOffset
+        retval = (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15)))) - self._symmetricOffset
         return retval
-        
     # backpropagation
     def backprop(self, **args):
         """
@@ -1902,10 +1898,8 @@ class Network(object):
                                                      layer.weight,
                                                      layer.numConnects)
                     layer.weight += layer.dweight
-                    # ---------------------------- added because of quickprop
-                    #layer.weight = Numeric.minimum(Numeric.maximum(layer.weight, -1e10), 1e10)
+                    layer.wedLast = layer.wed
                     if self._quickprop:
-                        layer.wedLast = layer.wed
                         layer.wed = layer.weight * self.decay # reset to last weight, with decay
                     else:
                         layer.wed = layer.wed * 0.0 # keep same numeric type, just zero it
@@ -1929,12 +1923,9 @@ class Network(object):
                                                  connection.weight[i],
                                                  connection.toLayer.numConnects))
                 connection.weight += connection.dweight
-                # ---------------------------- added because of quickprop
-                # limit the size:
-                connection.weight = Numeric.minimum(Numeric.maximum( connection.weight, -1e10), 1e10)
                 # reset values:
+                connection.wedLast = connection.wed
                 if self._quickprop:
-                    connection.wedLast = connection.wed
                     connection.wed = connection.weight * self.decay 
                 else:
                     connection.wed = connection.wed * 0.0 # keeps the same Numeric type, but makes it zero
@@ -1994,7 +1985,7 @@ class Network(object):
             connect = self.connections[c]
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = (connect.toLayer.error *
-                                         (self.ACTPRIME(connect.toLayer.activation)))
+                                         (self.ACTPRIME(connect.toLayer.activation + self._symmetricOffset)))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
         # now all errors are set on all layers!
@@ -2045,13 +2036,8 @@ class Network(object):
         """
         Used in compute_error.
         """
-        if self.symmetricOffset:
-            act += self._symmetricOffset
-        retval = ((act * (1.0 - act)) + self.sigmoid_prime_offset)
-        if self.symmetricOffset:
-            act -= self._symmetricOffset
+        retval = (act * (1.0 - act)) + self.sigmoid_prime_offset
         return retval
-    
     def diff(self, value):
         """
         Returns value to within 0.001. Then returns 0.0.
@@ -2658,6 +2644,7 @@ class Network(object):
                 retString += row + "\n"
         return retString
     # --------------------------------------- Network Properties
+    maxRandom = property(getMaxRandom, setMaxRandom)
     verbosity = property(getVerbosity, setVerbosity)
     quickprop = property(getQuickprop, setQuickprop)
     symmetricOffset = property(getSymmetricOffset, setSymmetricOffset)
@@ -2681,16 +2668,12 @@ class SigmaNetwork(Network):
         # def prob(v): return int(random.random() < v)
         def myround(v):
             retval = round(v)
-            if self._symmetricOffset:
-                return retval - 0.5
-            return retval
+            return retval - self._symmetricOffset
         def mutate(v, p):
             for i in range(int(round(len(v) * p))):
                 g = int(len(v) * random.random())
-                if self._symmetricOffset:
-                    symbols = [-0.5, 0.5]
-                else:
-                    symbols = [0.0, 1.0]
+                symbols = [0.0 - self._symmetricOffset,
+                           1.0 - self._symmetricOffset]
                 v[g] = symbols[(symbols.index(v[g]) + 1) % 2]
             return v
         for name in dict:
@@ -3197,10 +3180,9 @@ if __name__ == '__main__':
         print "XOR Quickprop mode: .............................."
         n = Network()
         n.addLayers(2, 2, 1)
-        n.quickprop = 1 # this line needs to be right here, for now
+        n.quickprop = 1 
         n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         n.setTargets( [[0], [1], [1], [0]] )
-        n.setBatch(1)
         n.reset()
         n.setReportRate(5)
         n.resetEpoch = 100
