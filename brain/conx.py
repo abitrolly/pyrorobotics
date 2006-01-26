@@ -1938,19 +1938,15 @@ class Network(object):
                 self.display()
         return (dw_count, dw_sum)
 
-    def errorFunction(self, v):
+    def errorFunction(self, t, a):
         """
         Using a hyperbolic arctan on the error slightly exaggerates
-        the actual error non-linearly. Return x to just use the difference.
+        the actual error non-linearly. Return t - a to just use the difference.
+        t - target vector
+        a - activation vector
         """
-        for i in range(len(v)):
-            if v[i] > .9999999:
-                v[i] = 17.0
-            elif v[i] < -.9999999:
-                v[i] = -17.0
-            else:
-                v[i] = Numeric.arctanh(v[i])
-        return v
+        return Numeric.arctanh(Numeric.maximum(Numeric.minimum(t - a, 17.0), -17.0))
+
     def ce_init(self):
         """
         Initializes error computation. Calculates error for output
@@ -1960,7 +1956,7 @@ class Network(object):
         for layer in self.layers:
             if layer.active:
                 if layer.type == 'Output':
-                    layer.error = self.errorFunction(layer.target - layer.activation) 
+                    layer.error = self.errorFunction(layer.target, layer.activation) 
                     totalCount += layer.size
                     retval += Numeric.add.reduce(layer.error ** 2)
                     correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
