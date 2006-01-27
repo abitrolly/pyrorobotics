@@ -1898,7 +1898,7 @@ class Network(object):
                                                      layer.weight,
                                                      layer.numConnects)
                     layer.weight += layer.dweight
-                    layer.wedLast = layer.wed
+                    layer.wedLast = Numeric.array(layer.wed) # make copy
                     if self._quickprop:
                         layer.wed = layer.weight * self.decay # reset to last weight, with decay
                     else:
@@ -1924,7 +1924,7 @@ class Network(object):
                                                  connection.toLayer.numConnects))
                 connection.weight += connection.dweight
                 # reset values:
-                connection.wedLast = connection.wed
+                connection.wedLast = Numeric.array(connection.wed) # make copy
                 if self._quickprop:
                     connection.wed = connection.weight * self.decay 
                 else:
