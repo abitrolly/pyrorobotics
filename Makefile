@@ -28,7 +28,7 @@ compile:
 pyrobot-$(PYROBOT_VERSION).tgz: Makefile
 	mkdir download || true
 	mv *.tgz download/ || true
-	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz pyrobot --exclude fedora --exclude stylesheet.css --exclude knoppix --exclude CVS --exclude tars --exclude download --exclude Makefile.cfg; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz download
+	make clean; cd ..; tar cfz pyrobot-$(PYROBOT_VERSION).tgz --exclude fedora --exclude stylesheet.css --exclude knoppix --exclude CVS --exclude tars --exclude download --exclude Makefile.cfg pyrobot; mv pyrobot-$(PYROBOT_VERSION).tgz pyrobot; cd -; mv *.tgz download
 	$(RM) -f download/pyrobot-latest.tgz
 	cd download; ln -s pyrobot-$(PYROBOT_VERSION).tgz pyrobot-latest.tgz
 
