@@ -1864,14 +1864,14 @@ class Network(object):
                 if (d > 0.0):
                     if (s > 0.0):
                         nextStep[i] += e * s
-                    if (s > (shrinkFactor * p)):
+                    if (s >= (shrinkFactor * p)):
                         nextStep[i] += self.mu * d
                     else:
                         nextStep[i] += d * s / (p - s)
                 elif (d < 0.0):
                     if (s < 0.0):
                         nextStep[i] += e * s
-                    if (s < (shrinkFactor * p)):
+                    if (s <= (shrinkFactor * p)):
                         nextStep[i] += self.mu * d
                     else:
                         nextStep[i] += d * s / (p - s)
@@ -3176,7 +3176,10 @@ if __name__ == '__main__':
         print "XOR Quickprop mode: .............................."
         n = Network()
         n.addLayers(2, 2, 1)
-        n.quickprop = 1 
+        n.quickprop = 1
+        n.mu = 2.25
+        n.epsilon = 4.0
+        n.maxRandom = 1.0
         n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
         n.setTargets( [[0], [1], [1], [0]] )
         n.reset()
