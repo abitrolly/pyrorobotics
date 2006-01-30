@@ -195,7 +195,7 @@ class Layer:
                         error = self.error[i],
                         target = self.target[i],
                         netinput = self.netinput[i],
-                        bias = self.weight[i]
+                        weight = self.weight[i]
                         )
         else:
             raise AttributeError, "expected integer instead of '%s'" % i
@@ -1701,7 +1701,7 @@ class Network(object):
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                layer.netinput = layer.weight.tolist() # is [:] safe here?
+                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         for layer in propagateLayers:
             if layer.active:
@@ -1745,7 +1745,7 @@ class Network(object):
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
+                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         for layer in self.layers:
@@ -1797,7 +1797,7 @@ class Network(object):
                 continue # don't set this one
             if not started: continue
             if layer.type != 'Input' and layer.active:
-                layer.netinput = layer.weight.tolist() # was slice [:]; is that safe here?
+                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         started = 0
@@ -2040,7 +2040,7 @@ class Network(object):
                                                                  connect.toLayer.delta)
         for layer in self.layers:
             if layer.active:
-                layer.wed = layer.wed + layer.delta
+                layer.wed = layer.wed + ((1.0 - self._symmetricOffset) * layer.delta)
     def ACTPRIME(self, act):
         """
         Used in compute_error.

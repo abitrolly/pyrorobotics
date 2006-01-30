@@ -64,18 +64,19 @@ net2.addThreeLayers(2, 10, 1)
 net2.setInputs( inputs )
 net2.setTargets( targets)
 net2.tolerance = 0.4
-net2.reportRate = 100
+net2.reportRate = 5
 net2.doWhile = lambda a, b: 1
-train(net2)
-print net2.ravq
+#train(net2)
+#print net2.ravq
 
 net3 = Network()
 net3.addLayers(2, 10, 10, 1)
 net3.setInputs( inputs )
 net3.setTargets( targets)
 net3.tolerance = 0.4
-net3.reportRate = 100
-#train(net3)
+net3.batch = 1
+net3.reportRate = 10
+train(net3)
 
 class MyNetwork(Network):
     def getData(self, i):
