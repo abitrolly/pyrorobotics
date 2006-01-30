@@ -1858,7 +1858,7 @@ class Network(object):
         """
         shrinkFactor = self.mu / (1.0 + self.mu)
         if self.splitEpsilon:
-            e /= float(n)
+            e /= float(n - 1)
         if self._quickprop:
             nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
