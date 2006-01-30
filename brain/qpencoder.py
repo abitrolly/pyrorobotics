@@ -44,20 +44,27 @@ sum = 0
 total = 0
 minEpoch = 10000000
 maxEpoch =-10000000
+result = []
 while total < trials:
     net.initialize()
     net.train()
     if net.complete:
         total += 1
         sum += net.epoch
+        result.append( net.epoch)
         maxEpoch = max(net.epoch, maxEpoch)
         minEpoch = min(net.epoch, minEpoch)
     else:
         resetCount += 1
 print "ARGS: input=%d, hidden=%d, trials=%d, e=%f, mu=%f, r=%f, epoch limit=%d, symmetric offset=%f, splitEp=%d" % (
-    inputSize, hiddenSize, trials, e, mu, r, limit, symmetric, splitEp)    
-print "Total:", total
-print "Max:", maxEpoch
-print "Min:", minEpoch
-print "Average:", sum / float(total)
-print "Resets:", resetCount
+    inputSize, hiddenSize, trials, e, mu, r, limit, symmetric, splitEp)
+avg = sum / float(total)
+print "Total  : %d" % total
+print "Resets : %d" % resetCount
+print "Max    : %d" % maxEpoch
+print "Min    : %d" % minEpoch
+print "Average: %.2f" % avg
+sum = 0.0
+for val in result:
+    sum += (val - avg) ** 2
+print "Std dev: %.2f" % math.sqrt(sum / (total - 1))

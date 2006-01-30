@@ -240,7 +240,7 @@ class Layer:
         """
         Returns Total Sum Squared Error for this layer's pattern.
         """
-        return Numeric.add.reduce(self.error ** 2)
+        return Numeric.add.reduce((layer.target - layer.activation) ** 2)
     def RMSError(self):
         """
         Returns Root Mean Squared Error for this layer's pattern.
@@ -681,6 +681,7 @@ class Network(object):
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
+        self.hyperbolicError = 1
         # Quickprop settings:
         self._quickprop = 0
         self.mu = 1.75 # maximum growth factor
@@ -1831,8 +1832,11 @@ class Network(object):
         """
         Determine the activation of a node based on that nodes net input.
         """
-        retval = (1.0 / (1.0 + Numeric.exp(-Numeric.maximum(Numeric.minimum(x, 15), -15)))) - self._symmetricOffset
-        return retval
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v))
+        return Numeric.array(map(act, x), 'f') - self._symmetricOffset
     # backpropagation
     def backprop(self, **args):
         """
@@ -1945,7 +1949,16 @@ class Network(object):
         t - target vector
         a - activation vector
         """
-        return Numeric.arctanh(Numeric.maximum(Numeric.minimum(t - a, 17.0), -17.0))
+        def difference(v):
+            if not self.hyperbolicError:
+                if -0.1 < v < 0.1: return 0.0
+                else: return v
+            else:
+                if   v < -0.9999999: return -17.0
+                elif v >  0.9999999: return  17.0
+                else: return math.log( (1.0 + v) / (1.0 - v) )
+                #else: return Numeric.arctanh(v) # half that above
+        return map(difference, t - a)
 
     def ce_init(self):
         """
@@ -1958,8 +1971,8 @@ class Network(object):
                 if layer.type == 'Output':
                     layer.error = self.errorFunction(layer.target, layer.activation) 
                     totalCount += layer.size
-                    retval += Numeric.add.reduce(layer.error ** 2)
-                    correct += Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                    retval += Numeric.add.reduce((layer.target - layer.activation) ** 2)
+                    correct += Numeric.add.reduce(Numeric.fabs(layer.target - layer.activation) < self.tolerance)
                 elif (layer.type == 'Hidden'):
                     for i in range(layer.size): # do it this way so you don't break reference links
                         layer.error[i] = 0.0
@@ -1991,12 +2004,12 @@ class Network(object):
         totalSquaredError, totalSize, totalCorrect, pcorrect = 0.0, 0, 0, {}
         for layerName in layerNames:
             layer = self.layersByName[layerName]
-            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, layer.error ))
+            totalSquaredError += reduce(operator.add, map( lambda v: v ** 2, (layer.target - layer.activation) ))
             totalSize += len(layer.error)
-            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, layer.error))
+            totalCorrect += reduce(operator.add, map(lambda d: abs(d) < self.tolerance, layer.target - layer.activation))
             if layer.patternReport: 
                 lyst = [0,0,0,0]  # correct, total, pcorrect, ptotal
-                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.target - layer.activation) < self.tolerance)
                 lyst[1] = layer.size
                 if self.compare(layer.target, layer.activation): # if the same
                     lyst[2] += 1 # correct
@@ -2008,7 +2021,7 @@ class Network(object):
         for layer in self.layers:
             if layer.patternReport: 
                 lyst = [0,0,0,0]  # correct, total, pcorrect, ptotal
-                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.error) < self.tolerance)
+                lyst[0] = Numeric.add.reduce(Numeric.fabs(layer.target - layer.activation) < self.tolerance)
                 lyst[1] = layer.size
                 if self.compare(layer.target, layer.activation): # if the same
                     lyst[2] += 1 # correct
@@ -3228,9 +3241,10 @@ if __name__ == '__main__':
         n.setReportRate(100)
         n.train()
 
-    if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode?"):
-        print "XOR Backprop non-batch mode: .........................."
+    if ask("Do you want to run an XOR BACKPROP network in NON-BATCH mode with NON-HYPERBOLIC ERROR?"):
+        print "XOR Backprop non-batch mode non-hyperbloc error..........."
         n.setBatch(0)
+        n.hyperbolicError = 0
         n.reset()
         n.setEpsilon(0.5)
         n.setMomentum(.975)
