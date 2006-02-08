@@ -143,9 +143,10 @@ class Camera(PyrobotImage, Device):
             data[(x + y * self.width) * self.depth + 2] = rgb[self.rgb[2]]
       return data
 
-   def saveImage(self):
-      import tkFileDialog
-      filename = tkFileDialog.asksaveasfilename()
+   def saveImage(self, filename = None):
+      if filename == None:
+         import tkFileDialog
+         filename = tkFileDialog.asksaveasfilename()
       # faster than saveToFile, as it is in C
       print "saving image to '%s'..." % filename,
       self.vision.saveImage(filename);
