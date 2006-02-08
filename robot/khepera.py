@@ -14,7 +14,6 @@ from pyrobot.system.serial import *
 import pyrobot.gui.console as console
 import string, array, math 
 import threading
-from pyrobot.simulators.khepera.CNTRL import _ksim as ksim
 from pyrobot.geometry import PITIMES180, PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 class IRSensor(Device):
@@ -143,32 +142,6 @@ class LightSensor(IRSensor):
             data = 0
         return data
 
-class SerialSimulator:
-    def __init__(self):
-        self.p = ksim.initControl()
-        self.last_msg = []
-        
-    def writeline(self, msg, newline = "\n"):
-        self.last_msg.append(ksim.sendMessage(self.p, msg))
-        time.sleep(.05)
-
-    def readline(self): # 1 = block till we get something
-        if len(self.last_msg):
-            retval = self.last_msg.pop(0)
-            return retval
-        else:
-            return ''
-
-    def readlines(self):
-        retval = []
-        while len(self.last_msg) > 0:
-            retval.append(self.last_msg.pop(0))
-        return retval
-
-    def inWaiting(self):
-        retval = len(self.last_msg)
-        return retval
-    
 class KheperaRobot(Robot):
     def __init__(self,
                  port = None,
@@ -182,9 +155,7 @@ class KheperaRobot(Robot):
         self.debug = 0
         self.pause = 0.1 # for hemisson to keep from swamping the wireless
         if simulator == 1:
-            self.sc = SerialSimulator()
-            port = "simulated"
-            print "K-Team opening simulation..."
+            raise AttributeError, "simulator no longer supported"
         else:
             if subtype == "Khepera":
                 if port == None:
