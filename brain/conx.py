@@ -2285,38 +2285,43 @@ class Network(object):
                 self.connect("input", "hidden%d" % i)
             self.connect("input", "output")
             # connect all hiddens to all later hiddens:
-            for i in range(hiddens):
-                for j in range(hiddens):
+            for i in range(hiddens - 1):
+                for j in range(i + 1, hiddens):
                     if j != i:
                         self.connect("hidden%d" % i, "hidden%d" % j )
             # connect all hiddens to outputs:
             for i in range(hiddens):
                 self.connect("hidden%d" % i, "output")
             # now, let's set the weights:
-            while line[:9] != "# Output:":
-                line = fp.readline()
-            line = fp.readline() # $
-            line = fp.readline() # bias, input to output, hidden to output?
-            weights = map(float, line.split())
-            self["output"].weight[0] = weights[0] # bias
-            next = 1
-            for i in range(self["input"].size):
-                for j in range(self["output"].size):
-                    self["input", "output"].weight[i][j] = weights[next]
+            outcount = 0
+            for o in range(outputs):
+                while line[:9] != "# Output:":
+                    line = fp.readline()
+                line = fp.readline() # $
+                line = fp.readline() # bias, input to output, hidden to output?
+                data = ""
+                while line and line[0] != "#":
+                    data += " " + line.strip()
+                    line = fp.readline()
+                weights = map(float, data.split())
+                self["output"].weight[outcount] = weights[0] # bias
+                next = 1
+                for i in range(self["input"].size):
+                    self["input", "output"].weight[i][outcount] = weights[next]
                     next += 1
-            for h in range(hiddens):
-                for i in range(self["hidden%d" % h].size): # normally just 1
-                    for j in range(self["output"].size):
-                        self["hidden%d" % h, "output"].weight[i][j] = weights[next]
+                for h in range(hiddens):
+                    for i in range(self["hidden%d" % h].size): # normally just 1
+                        self["hidden%d" % h, "output"].weight[i][outcount] = weights[next]
                         next += 1
+                outcount += 1
             # now, for each hidden "layer":
             hidcount = 0
             while line and line[0] != "$":
                 line = fp.readline()
             line = fp.readline()
-            while line:
+            while hidcount < hiddens:
                 weights = []
-                while line and line[0] != "$": # next line is a weight line
+                while line and line[0] != "$" and line[0] != "#": # next line is a weight line
                     weights.extend( map(float, line.split())) # bias, input to hidden, hidden to hidden?
                     line = fp.readline() 
                 self[("hidden%d" % hidcount)].weight[0] = weights[0] # bias first
@@ -2331,7 +2336,8 @@ class Network(object):
                             self[("hidden%d" % h), ("hidden%d" % hidcount)].weight[i][j] = weights[next]
                             next += 1
                 hidcount += 1
-                line = fp.readline() # next line
+                line = fp.readline() # $
+                line = fp.readline() # beginning of weights
         else:
             raise ValueError, ('Unknown mode in loadWeightFromFile()', mode)
     def saveNetworkToFile(self, filename, makeWrapper = 1):
