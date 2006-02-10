@@ -2274,7 +2274,8 @@ class Network(object):
                 line = fp.readline()
             itxt, inputs, ttxt, total, otxt, outputs = line.split()
             inputs, total, outputs = int(inputs), int(total), int(outputs)
-            hiddens = total - inputs - outputs
+            # cascor's total value is the bias + inputs + hiddens
+            hiddens = total - inputs - 1
             # create the layers:
             self.addLayer("input", inputs)
             for i in range(hiddens):
