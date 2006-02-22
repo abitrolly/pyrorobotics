@@ -184,16 +184,18 @@ class CameraSimDevice(ManualFakeCamera):
 	def update(self):
 		if self.active == 0: return
 		self.lock.acquire()
-		self.rawImage = [[[128, 128, 128] for h in range(self.height)] for w in range(self.width)]
-		self.data = self.robot.move("camera_%d" % 0)
-		if len(self.data) == self.width:
+		self.data = [128 for i in range(self.height * self.width * 3)]
+		self._data = self.robot.move("camera_%d" % 0)
+		if len(self._data) == self.width:
 			for w in range(self.width):
-				(color, height) = self.data[w]
+				(color, height) = self._data[w]
 				if color == None or height == None: continue
+				ccode = colorUnCode[color]
 				for h in range(int(round(height))):
-					self.rawImage[w][self.height/2 - h] = colorUnCode[color]
-					self.rawImage[w][self.height/2 + h] = colorUnCode[color]
-			self.setRGB3Image(self.rawImage)
+					for d in range(self.depth):
+						self.data[(self.height/2 - h) * self.width + w + d] = ccode[d]
+						self.data[(self.height/2 + h) * self.width + w + d] = ccode[d]						
+			self.setRGBImage(self.data)
 			self.processAll()
 		self.lock.release()
 
