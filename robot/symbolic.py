@@ -14,7 +14,9 @@ from pyrobot.robot.device import *
 try:
 	from pyrobot.camera.fake import ManualFakeCamera
 except:
-	class ManualFakeCamera: pass  # camera C++ code not built
+	class ManualFakeCamera: pass
+	# camera C++ code not built (or PIL not installed)
+	print "ManualFakeCamera not loaded! Won't be able to use camera."
 
 colorMap = {"red": (255, 0,0),
             "green": (0, 255,0),
@@ -193,8 +195,8 @@ class CameraSimDevice(ManualFakeCamera):
 				ccode = colorUnCode[color]
 				for h in range(int(round(height))):
 					for d in range(self.depth):
-						self.data[(self.height/2 - h) * self.width + w + d] = ccode[d]
-						self.data[(self.height/2 + h) * self.width + w + d] = ccode[d]						
+						self.data[(w + (self.height/2 - h) * self.width) * self.depth + d] = ccode[d]
+						self.data[(w + (self.height/2 + h) * self.width) * self.depth + d] = ccode[d]
 			self.setRGBImage(self.data)
 			self.processAll()
 		self.lock.release()

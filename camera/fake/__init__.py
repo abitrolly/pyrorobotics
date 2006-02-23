@@ -56,7 +56,7 @@ class ManualFakeCamera(Camera):
       for w in range(self.width):
          for h in range(self.height):
             for d in range(self.depth):
-               self.vision.setVal(w, h, d, array[h * self.width + w + d])
+               self.vision.setVal(w, h, d, array[(w + h * self.width) * self.depth + d])
 
    def setRGB3Image(self, array):
       """
