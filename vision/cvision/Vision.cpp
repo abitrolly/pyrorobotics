@@ -102,6 +102,23 @@ PyObject *Vision::setVal(int w, int h, int d, int value) {
   return Py_BuildValue("i", value);
 }
 
+PyObject *Vision::setImage(PyObject *array) {
+  if (PyList_Size(array) != width * height * depth) {
+    PyErr_SetString(PyExc_ValueError, "wrong size of array in setImage()");
+    return NULL;
+  } else {
+    for (int i = 0; i < PyList_Size(array); i++) {
+      PyObject* value = PyList_GetItem(array, i);
+      if (!PyInt_Check(value)) {
+	PyErr_SetString(PyExc_ValueError, "all array items should be integers in setImage()");
+	return NULL;
+      }
+      Image[i] = (unsigned char) PyInt_AsLong(value);
+    }
+  }
+  return PyInt_FromLong(0L);
+}
+
 // same as set(), but for the entire color plane (depth)
 
 PyObject *Vision::setPlane(int d, int value) {

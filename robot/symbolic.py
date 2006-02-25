@@ -8,9 +8,13 @@ non-symbolic robots.
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import socket, pickle, threading, random, time
+import socket, threading, random, time
 from pyrobot.robot import Robot
 from pyrobot.robot.device import *
+try:
+	import cPickle as pickle
+except:
+	import pickle
 try:
 	from pyrobot.camera.fake import ManualFakeCamera
 except:
@@ -197,7 +201,8 @@ class CameraSimDevice(ManualFakeCamera):
 					for d in range(self.depth):
 						self.data[(w + (self.height/2 - h) * self.width) * self.depth + d] = ccode[d]
 						self.data[(w + (self.height/2 + h) * self.width) * self.depth + d] = ccode[d]
-			self.setRGBImage(self.data)
+			#self.setRGBImage(self.data)
+			self.vision.setImage(self.data)
 			self.processAll()
 		self.lock.release()
 

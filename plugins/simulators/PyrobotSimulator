@@ -86,3 +86,5 @@ if __name__ == "__main__":
         thread = Thread(gui, port)
         thread.start()
     gui.mainloop()
+    #import profile
+    #profile.run('gui.mainloop()', 'pyrobotsim.profile')
