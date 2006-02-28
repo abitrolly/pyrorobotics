@@ -65,9 +65,9 @@ class SimulationDevice(Device):
 		retval = self._dev.move("!%s" % (command,))
 		return retval
 	def addWidgets(self, window):
-		# add entries for changing pose for each robot
-		window.addLabel("robot1", "Simulation pose: X, Y, Theta")
-		window.addLabel("robot2", "Simulation pose: X, Y, Theta")
+		window.addCommand("eval", "Evaluate exp", "self.", self.onCommand)
+	def onCommand(self, command):
+		return self.eval(command)
 
 class RangeSimDevice(Device):
 	def __init__(self, name, index, robot, geometry, groups):

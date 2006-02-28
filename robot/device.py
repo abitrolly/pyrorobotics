@@ -80,6 +80,21 @@ class DeviceWindow(Tkinter.Toplevel):
             self.widgets[name + ".entry"].insert(0, value)
             self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
         except: pass
+    def addCommand(self, name, text, value, procedure):
+        """Adds a command field to the device view window."""
+        self.visibleData = 0
+        frame = Tkinter.Frame(self)
+        frame.pack(fill="both", expand="y")
+        try:
+            self.widgets[name + ".button"] = Tkinter.Button(frame, text=text, command=lambda name=name, proc=procedure: self.onButton(name, proc))
+            self.widgets[name + ".button"].pack(side="left")
+            self.widgets[name + ".entry"] = Tkinter.Entry(frame, bg="white")
+            self.widgets[name + ".entry"].insert(0, value)
+            self.widgets[name + ".entry"].pack(side="right", fill="both", expand="y")
+        except: pass
+    def onButton(self, name, proc):
+        command = self.widgets[name + ".entry"].get().strip()
+        print proc(command)
     def destroy(self):
         """Hides the device view window."""
         if self._dev:
