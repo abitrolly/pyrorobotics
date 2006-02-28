@@ -1,6 +1,6 @@
 # A Pyro bare brain template
 
-from pyro.brain import Brain
+from pyrobot.brain import Brain
 
 class MyBrain(Brain):
    def setup(self):

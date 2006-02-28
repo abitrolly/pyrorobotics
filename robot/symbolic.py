@@ -82,7 +82,7 @@ class RangeSimDevice(Device):
 		self.units = "ROBOTS"
 		self.radius = robot.radius
 		self.count = len(self)
-		self._noise = 0.05
+		self._noise = [0.05] * self.count
 		
 	def __len__(self):
 		return len(self._geometry[0])
@@ -98,7 +98,7 @@ class RangeSimDevice(Device):
 					     0.03,                    # z
 					     self._geometry[0][pos][2], # th
 					     self._geometry[1]),        # arc rads
-					    noise=self._noise
+					    noise=self._noise[pos]
 					    )
 		except:
 			value = SensorValue(self, 0, 0,
@@ -107,7 +107,7 @@ class RangeSimDevice(Device):
 					     0.03,                    # z
 					     self._geometry[0][pos][2], # th
 					     self._geometry[1]),        # arc rads
-					    noise=self._noise
+					    noise=self._noise[pos]
 					    )
 		return value
 

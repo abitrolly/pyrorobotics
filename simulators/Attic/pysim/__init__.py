@@ -1456,4 +1456,30 @@ class PioneerFrontLightSensors(LightSensor):
                        'back-left' : [], 
                        'back' : [],
                        'back-all' : []}
-    
+
+class Pioneer4FrontLightSensors(LightSensor):
+    def __init__(self):
+        # make sure outside of bb!
+        LightSensor.__init__(self, (
+            (.225,  .175, 0),
+            (.225,  .0875, 0),
+            (.225, -.0875, 0),
+            (.225, -.175, 0),
+            ),
+                             noise=0.0) 
+        self.groups = {"front-all": (0, 1, 2, 3),
+                       "all": (0, 1, 2, 3),
+                       "front": (1, 2),
+                       "front-left": (0, ),
+                       "front-right": (3, ),
+                       'left' : (0, 1), 
+                       'right' : (2, 3), 
+                       'left-front' : (0,), 
+                       'right-front' : (3, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+
