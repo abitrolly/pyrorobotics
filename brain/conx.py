@@ -240,7 +240,7 @@ class Layer:
         """
         Returns Total Sum Squared Error for this layer's pattern.
         """
-        return Numeric.add.reduce((layer.target - layer.activation) ** 2)
+        return Numeric.add.reduce((self.target - self.activation) ** 2)
     def RMSError(self):
         """
         Returns Root Mean Squared Error for this layer's pattern.
