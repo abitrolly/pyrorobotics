@@ -5,8 +5,7 @@ two lights.
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
 
-from pyrobot.simulators.pysim import TkSimulator, TkPioneer, \
-     PioneerFrontSonars, PioneerFrontLightSensors
+from pyrobot.simulators.pysim3d import *
 
 def INIT():
     # (width, height), (offset x, offset y), scale:

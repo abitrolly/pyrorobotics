@@ -206,7 +206,7 @@ class Simulator:
         if self.stepCount > self.maxTrailSize:
             self.trailStart = ((self.stepCount + 1) % self.maxTrailSize)
         self.stepCount += 1
-    def drawLine(self, x1, y1, x2, y2, color = None):
+    def drawLine(self, x1, y1, x2, y2, color = None, tag = None):
         pass
         
     def castRay(self, robot, x1, y1, a, maxRange = MAXRAYLENGTH,
@@ -627,8 +627,14 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         seg.id = id
         self.world.append( seg )
 
-    def drawLine(self, x1, y1, x2, y2, color):
-        return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag="robot", fill=color)
+    def drawPolygon(self, points, color="", outline="black", tag="robot", **args):
+        s_x = self.scale_x
+        s_y = self.scale_y
+        xy = map(lambda pt: (s_x(pt[0]), s_y(pt[1])), points)
+        return self.canvas.create_polygon(xy, tag=tag, fill=color, outline=outline)
+
+    def drawLine(self, x1, y1, x2, y2, color, tag):
+        return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=color)
 
     def step(self, run = 1):
         self.canvas.delete('robot')
@@ -641,9 +647,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         if robot.display["trail"] == 1:
             xya = self.trail[pos][(index - 1) % self.maxTrailSize]
             if xya != None:
-                x1, y1 = self.scale_x(xya[0]), self.scale_y(xya[1])
-                x2, y2 = self.scale_x(robot._gx), self.scale_y(robot._gy)
-                self.canvas.create_line(x1, y1, x2, y2, fill=robot.color)
+                self.drawLine(xya[0], xya[1], robot._gx, robot._gy, robot.color, "trail")
     def update(self):
         self.update_idletasks()
 
@@ -1050,7 +1054,7 @@ class SimRobot:
     def draw(self): pass
     def drawRay(self, dtype, x1, y1, x2, y2, color):
         if self.display[dtype] == 1:
-            self.simulator.drawLine(x1, y1, x2, y2, color)
+            self.simulator.drawLine(x1, y1, x2, y2, color, "robot")
     def addDevice(self, dev):
         self.devices.append(dev)
         if dev.type not in self.builtinDevices:
@@ -1145,8 +1149,6 @@ class TkPuck(TkRobot):
         if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.canvas.delete("robot-%s" % self.name)
-        s_x = self.simulator.scale_x
-        s_y = self.simulator.scale_y
         if self.display["body"] == 1:
             x1, y1, x2, y2 = s_x(self._gx - self.radius), s_y(self._gy - self.radius), s_x(self._gx + self.radius), s_y(self._gy + self.radius)
             self.simulator.canvas.create_oval(x1, y1, x2, y2, fill=self.color, tag="robot-%s" % self.name, outline="black")
@@ -1155,10 +1157,10 @@ class TkPuck(TkRobot):
             a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
             cos_a90 = math.cos(a90)
             sin_a90 = math.sin(a90)
-            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
+            xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                   self._gy + x * sin_a90 + y * cos_a90),
                      self.boundingBox[0], self.boundingBox[1])
-            self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+            self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, color="", outline="purple")
         self.addMouseBindings()
 
 Pioneer = SimRobot
@@ -1185,16 +1187,16 @@ class TkPioneer(TkRobot):
         cos_a90 = math.cos(a90)
         sin_a90 = math.sin(a90)
         if self.display["body"] == 1:
-            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
+            xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                   self._gy + x * sin_a90 + y * cos_a90),
                      sx, sy)
-            self.simulator.canvas.create_polygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
+            self.simulator.drawPolygon(xy, color=self.color, tag="robot-%s" % self.name, outline="black")
             bx = [ .14, .06, .06, .14] # front camera
             by = [-.06, -.06, .06, .06]
-            xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                   s_y(self._gy + x * sin_a90 + y * cos_a90)),
+            xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                   self._gy + x * sin_a90 + y * cos_a90),
                      bx, by)
-            self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black")
+            self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, color="black")
             if self.bulb:
                 radius = .05 * self.simulator.scale
                 x = s_x(self._gx + self.bulb.x * cos_a90 - self.bulb.y * sin_a90)
@@ -1221,10 +1223,10 @@ class TkPioneer(TkRobot):
                 xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition + 0.01)
                 xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition - 0.01)
                 xs.append(self.gripper.pose[0]);     ys.append(self.gripper.armPosition - 0.01)
-                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
                          xs, ys)
-                self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, color="black", outline="black")
                 # right arm:
                 xs = []
                 ys = []
@@ -1232,16 +1234,16 @@ class TkPioneer(TkRobot):
                 xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition + 0.01)
                 xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition - 0.01)
                 xs.append(self.gripper.pose[0]);     ys.append(-self.gripper.armPosition - 0.01)
-                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
                          xs, ys)
-                self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, color="black", outline="black")
         if self.display["boundingBox"] == 1:
             if self.boundingBox != []:
-                xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
-                                       s_y(self._gy + x * sin_a90 + y * cos_a90)),
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
                          self.boundingBox[0], self.boundingBox[1])
-                self.simulator.canvas.create_polygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, color="", outline="purple")
             if self.boundingSeg != []:
                 xy = map(lambda x, y: (s_x(self._gx + x * cos_a90 - y * sin_a90),
                                        s_y(self._gy + x * sin_a90 + y * cos_a90)),
