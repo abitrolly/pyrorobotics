@@ -439,7 +439,7 @@ class Simulator:
             return retval
 
 class TkSimulator(Simulator, Tkinter.Toplevel):
-    def __init__(self, offset_x, offset_y, scale, root = None, run = 1):
+    def __init__(self, dimensions, offsets, scale, root = None, run = 1):
         if root == None:
             if share and share.gui:
                 root = share.gui
@@ -447,7 +447,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                 root = Tkinter.Tk()
                 root.withdraw()
         Tkinter.Toplevel.__init__(self, root)
-        Simulator.__init__(self, offset_x, offset_y, scale)
+        Simulator.__init__(self, dimensions, offsets, scale)
         self.root = root
         self.wm_title("Pyrobot Simulator")
         self.protocol('WM_DELETE_WINDOW',self.destroy)
