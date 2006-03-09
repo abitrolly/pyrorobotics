@@ -10,13 +10,15 @@ from pyrobot.simulators.pysim import *
 ## FIX: translateZ doesn't work? or maybe perspective is off?
 
 class Tk3DSimulator(TkSimulator):
-    def __init__(self, dimensions, offsets, scale, root = None, run = 1):
-        TkSimulator.__init__(self, dimensions, offsets, scale, root, run)
+    def __init__(self, dimensions, offsets, s, root = None, run = 1):
+        TkSimulator.__init__(self, dimensions, offsets, s, root, run)
         self.scale3D = 5.0/2.0 # FIX?
         self.centerx = self._width/2
         self.centery = self._height/2
         self.rotateMatrixWorld = translate(-self.centerx + self.offset_x,
                                            -self.centery, 0) * rotateYDeg(15) * rotateZDeg(15) * rotateXDeg(-60)
+        self.matrix = Matrix() * scale(self.scale,self.scale,self.scale)
+
     def click_b2_up(self, event):
         self.click_stop = event.x, event.y
         if self.click_stop == self.click_start:
@@ -32,8 +34,12 @@ class Tk3DSimulator(TkSimulator):
         self.rotateMatrixWorld *= translate(-x_diff, y_diff, 0) 
         self.redraw()
 
-    def drawLine(self, x0, y0, x1, y1, color, tag):
-        return self.drawLine3D(x0, y0, 0, x1, y1, 0, fill = color, tag = tag)
+    def drawOval(self, x1, y1, x2, y2, **args):
+        x1, y1 = self.getPoint3D(x1, y1, 0)
+        x2, y2 = self.getPoint3D(x2, y2, 0)
+        return self.canvas.create_oval(x1, y1, x2, y2, **args)
+    def drawLine(self, x0, y0, x1, y1, fill, tag):
+        return self.drawLine3D(x0, y0, 0, x1, y1, 0, fill = fill, tag = tag)
 
     def drawLine3D(self, x0, y0, z0, x1, y1, z1, **args):
         VertsIn = [0, 0]
@@ -95,9 +101,9 @@ class Tk3DSimulator(TkSimulator):
         addPerspective(VertsIn, self.scale3D);
         return self.centerx + VertsIn.data[0], self.centery - VertsIn.data[1]
 
-    def drawPolygon(self, points, color="", outline="black", tag = None, **args):
+    def drawPolygon(self, points, fill="", outline="black", tag = None, **args):
         xy = map(lambda pt: self.getPoint3D(pt[0],pt[1],0), points)
-        return self.drawPolygon3D(xy, tag=tag, fill=color, outline=outline, **args)
+        return self.drawPolygon3D(xy, tag=tag, fill=fill, outline=outline, **args)
     def drawPolygon3D(self, points, **args):
         return self.canvas.create_polygon(points, **args)
     def rotateWorld(self, x, y, z):
