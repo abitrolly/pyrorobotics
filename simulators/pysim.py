@@ -152,6 +152,8 @@ class Simulator:
             return self.robotsByName[name]
         else:
             return None
+    def remove(self, thing):
+        pass
     def update(self):
         pass
     def addWall(self, x1, y1, x2, y2, color="black"):
@@ -561,13 +563,13 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.offset_y = (radius_stop/radius_start) * self.offset_y + (1 - (radius_stop/radius_start)) * center[1]
         self.redraw()
     def click_b2_move(self, event):
-        self.canvas.delete('arrow')
+        self.remove('arrow')
         self.click_stop = event.x, event.y
         x1, y1 = self.click_start
         x2, y2 = self.click_stop
         self.canvas.create_line(x1, y1, x2, y2, tag="arrow", fill="purple")
     def click_b3_move(self, event):
-        self.canvas.delete('arrow')
+        self.remove('arrow')
         stop = event.x, event.y
         center = self.canvas.winfo_width()/2, self.canvas.winfo_height()/2
         radius = Segment(center, stop).length()
@@ -575,7 +577,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
     def redraw(self):
-        self.canvas.delete('all')
+        self.remove('all')
         for shape in self.shapes:
             if shape[0] == "box":
                 name, ulx, uly, lrx, lry, color = shape
@@ -634,8 +636,10 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
     def drawPolygon(self, points, fill="", outline="black", tag="robot", **args):
         xy = map(lambda pt: (self.scale_x(pt[0]), self.scale_y(pt[1])), points)
         return self.canvas.create_polygon(xy, tag=tag, fill=fill, outline=outline)
+    def remove(self, thing):
+        self.canvas.delete(thing)
     def step(self, run = 1):
-        self.canvas.delete('robot')
+        self.remove('robot')
         Simulator.step(self, run)
         if run:
             self.after(self.timeslice, self.step)
@@ -1076,14 +1080,14 @@ class TkRobot(SimRobot):
             self._mouse_xy = x, y
             cx, cy = self.simulator.scale_x(robot._gx), self.simulator.scale_y(robot._gy)
             if command == "control-up":
-                self.simulator.canvas.delete('arrow')
+                self.simulator.remove('arrow')
                 a = Segment((cx, cy), (x, y)).angle()
                 robot.setPose(a = (-a - PIOVER2) % (2 * math.pi))
                 self._mouse = 0
                 self.simulator.redraw()
             elif command in ["control-down", "control-motion"]:
                 self._mouse = 1
-                self.simulator.canvas.delete('arrow')
+                self.simulator.remove('arrow')
                 self.simulator.canvas.create_line(cx, cy, x, y, tag="arrow", fill="purple")
         else:
             if command == "up":
@@ -1146,7 +1150,7 @@ class TkPuck(TkRobot):
         """
         if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
-        self.simulator.canvas.delete("robot-%s" % self.name)
+        self.simulator.remove("robot-%s" % self.name)
         if self.display["body"] == 1:
             x1, y1, x2, y2 = (self._gx - self.radius), (self._gy - self.radius), (self._gx + self.radius), (self._gy + self.radius)
             self.simulator.drawOval(x1, y1, x2, y2, fill=self.color, tag="robot-%s" % self.name, outline="black")
@@ -1175,7 +1179,7 @@ class TkPioneer(TkRobot):
         if self._last_pose == (self._gx, self._gy, self._ga) and (
             (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
-        self.simulator.canvas.delete("robot-%s" % self.name)
+        self.simulator.remove("robot-%s" % self.name)
         # Body Polygon, by x and y lists:
         sx = [.225, .15, -.15, -.225, -.225, -.15, .15, .225]
         sy = [.08, .175, .175, .08, -.08, -.175, -.175, -.08]
