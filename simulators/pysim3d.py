@@ -7,20 +7,16 @@ import Tkinter, time, math, random
 from pyrobot.geometry.matrix import *
 from pyrobot.simulators.pysim import *
 
-## FIX: translateZ doesn't work? or maybe perspective is off?
-
 class Tk3DSimulator(TkSimulator):
     def __init__(self, dimensions, offsets, s, root = None, run = 1):
         TkSimulator.__init__(self, dimensions, offsets, s, root, run)
-        self.scale3D = 5.0/2.0 # FIX?
         self.centerx = self._width/2
         self.centery = self._height/2
         self.rotateMatrixWorld = translate(-self.centerx + self.offset_x,
                                            -self.centery, 0) * rotateYDeg(15) * rotateZDeg(15) * rotateXDeg(-60)
         self.matrix = Matrix() * scale(self.scale,self.scale,self.scale)
         self.primitives = []
-        self.wireframe = 1
-
+        self.maxTrailSize = 40
     def click_b2_up(self, event):
         self.click_stop = event.x, event.y
         if self.click_stop == self.click_start:
@@ -37,78 +33,49 @@ class Tk3DSimulator(TkSimulator):
         self.redraw()
 
     def drawOval(self, x1, y1, x2, y2, **args):
-        x1, y1 = self.getPoint3D(x1, y1, 0)
-        x2, y2 = self.getPoint3D(x2, y2, 0)
-        self.primitives.append(("oval", x1, y1, x2, y2, args))
+        x1, y1, z1 = self.getPoint3D(x1, y1, 0)
+        x2, y2, z2 = self.getPoint3D(x2, y2, 0)
+        self.primitives.append(("oval", (z1 + z2)/2.0, x1, y1, x2, y2, args))
         return 0
+
     def drawLine(self, x0, y0, x1, y1, fill, tag):
         return self.drawLine3D(x0, y0, 0, x1, y1, 0, fill = fill, tag = tag)
 
     def drawLine3D(self, x0, y0, z0, x1, y1, z1, **args):
         VertsIn = [0, 0]
         VertsIn[0] = (self.matrix *
-                      #translate(-__Robot->getActualX(),
-                      #          -__Robot->getActualY(),0) *
                       Vertex3D(x0, y0, z0 ))
         VertsIn[1] = (self.matrix *
-                      #Matrix::Translate(-__Robot->getActualX(),
-                      #                  -__Robot->getActualY(),0) *
                       Vertex3D(x1, y1, z1 ))
-        #ClipFace(VertsIn,2,VertsOut,lVertCount);
-        #if (!lVertCount):
-        #    break;
-        ##################### VertsOut only beyond this point
-        addPerspective(VertsIn[0], self.scale3D);
-        addPerspective(VertsIn[1], self.scale3D);
-        self.primitives.append( ("line", self.centerx + VertsIn[0].data[0],
-                                        self.centery - VertsIn[0].data[1],
-                                        self.centerx + VertsIn[1].data[0],
-                                        self.centery - VertsIn[1].data[1],
-                                        args))
+        self.primitives.append( ("line", (VertsIn[0].data[2]+VertsIn[1].data[2])/2.0,
+                                 self.centerx + VertsIn[0].data[0],
+                                 self.centery - VertsIn[0].data[1],
+                                 self.centerx + VertsIn[1].data[0],
+                                 self.centery - VertsIn[1].data[1],
+                                 args))
         return 0
 
-    def drawBox3D(self, x0, y0, z0, x1, y1, z1, **args):
-        VertsIn = [0, 0]
-        VertsIn[0] = (self.matrix *
-                      #translate(-__Robot->getActualX(),
-                      #          -__Robot->getActualY(),0) *
-                      Vertex3D(x0, y0, z0 ))
-        VertsIn[1] = (self.matrix *
-                      #Matrix::Translate(-__Robot->getActualX(),
-                      #                  -__Robot->getActualY(),0) *
-                      Vertex3D(x1, y1, z1 ))
-        #ClipFace(VertsIn,2,VertsOut,lVertCount);
-        #if (!lVertCount):
-        #    break;
-        ##################### VertsOut only beyond this point
-        addPerspective(VertsIn[0], self.scale3D);
-        addPerspective(VertsIn[1], self.scale3D);
-        if "outline" in args:
-            del args["outline"]
-        self.primitives.append( ("line", self.centerx + VertsIn[0].data[0],
-                                        self.centery - VertsIn[0].data[1],
-                                        self.centerx + VertsIn[1].data[0],
-                                        self.centery - VertsIn[1].data[1],
-                                        args))
-        return 0
-
+    def getPoint3Dxy(self, x, y, z):
+        return self.getPoint3D(x, y, z)[0:2]
+    def getPoint3Dz(self, x, y, z):
+        return self.getPoint3D(x, y, z)[2]
     def getPoint3D(self, x, y, z):
         VertsIn = (self.matrix *
-                   #translate(-__Robot->getActualX(),
-                   #          -__Robot->getActualY(),0) *
                    Vertex3D(x, y, z ))
-        #ClipFace(VertsIn,2,VertsOut,lVertCount);
-        #if (!lVertCount):
-        #    break;
-        ##################### VertsOut only beyond this point
-        addPerspective(VertsIn, self.scale3D);
-        return self.centerx + VertsIn.data[0], self.centery - VertsIn.data[1]
+        return self.centerx + VertsIn.data[0], self.centery - VertsIn.data[1], VertsIn.data[2]
 
     def drawPolygon(self, points, fill="", outline="black", tag = None, **args):
-        xy = map(lambda pt: self.getPoint3D(pt[0],pt[1],0), points)
-        return self.drawPolygon3D(xy, tag=tag, fill=fill, outline=outline, **args)
-    def drawPolygon3D(self, points, **args):
-        self.primitives.append( ("polygon", points, args))
+        if len(points[0]) == 3:
+            all = map(lambda pt: self.getPoint3D(pt[0],pt[1],pt[2]), points)
+        elif len(points[0]) == 2:
+            all = map(lambda pt: self.getPoint3D(pt[0],pt[1],0), points)            
+        xy = map(lambda pt: (pt[0], pt[1]), all)
+        zs = map(lambda pt: pt[2], all)
+        z = max(zs)
+        args["fill"] = fill
+        args["outline"] = outline
+        args["tag"] = tag
+        self.primitives.append( ("polygon", z, xy, args))
         return 0
     def rotateWorld(self, x, y, z):
         self.rotateMatrixWorld *= rotate(x, y, z)
@@ -119,20 +86,25 @@ class Tk3DSimulator(TkSimulator):
     def step(self, run = 1):
         self.primitives = []
         TkSimulator.step(self, run)
+        if not self.display["wireframe"]:
+            self.redraw()
         self.drawObjects()
 
     def drawObjects(self):
         # sort them, based on Z buffer
+        if not self.display["wireframe"]:
+            self.primitives.sort(lambda x,y: cmp(x[1], y[1])) # 1st item is Z
+            self.canvas.delete('all')
         for p in self.primitives:
             if p[0] == "oval":
-                name, x1, y1, x2, y2, args = p
+                name, z, x1, y1, x2, y2, args = p
                 self.canvas.create_oval(x1, y1, x2, y2, **args)
             elif p[0] == "line":
-                name, x1, y1, x2, y2, args = p
+                name, z, x1, y1, x2, y2, args = p
                 self.canvas.create_line(x1, y1, x2, y2, **args)
             elif p[0] == "polygon":
-                name, points, args = p
-                if self.wireframe:
+                name, z, points, args = p
+                if self.display["wireframe"]:
                     if "fill" in args:
                         if args["fill"] != "white":
                             args["outline"] = args["fill"]
@@ -141,34 +113,15 @@ class Tk3DSimulator(TkSimulator):
                     args["fill"] = ""
                 self.canvas.create_polygon(points, **args)
             else:
-                print "need renderer", p[0]
+                print "need renderer for type:", p[0]
         
     def redraw(self):
-        self.canvas.delete('all')
-        self.primitives = []
+        if self.display["wireframe"]:
+            self.primitives = []
         matrix = (
-            ## get the robot away from the screen
-            #translate(0,0,0) *
-            ## do the screen rotate
             self.rotateMatrixWorld *
-            ## This will point 0 angle of world, up
-            #rotateXRad(math.pi/2) *
-            ## tip down a bit:
-            #rotateYDeg(45) *
-            ## scale it
             scale(self.scale,self.scale,self.scale)
             )
-        # rotate the world around robot's dir:
-        #matrix = (
-        #    ## get the robot away from the screen
-        #    Matrix::Translate(0,0,-75.0) *
-        #    ## do the screen rotate
-        #    rotateMatrixRobot *
-        #    ## this will let the robot rotate the world
-        #    RotateZRad(-__Robot->getActualRadth()) *
-        #    ## scale it
-        #    Matrix::Scale(30,30,30)
-        #    )        
         self.matrix = matrix
         
         for segment in self.world:
@@ -181,41 +134,32 @@ class Tk3DSimulator(TkSimulator):
                 name, ulx, uly, lrx, lry, color = shape
                 # wall 3:
                 points = []
-                points.append(self.getPoint3D(lrx, lry, 0))
-                points.append(self.getPoint3D(lrx, uly, 0))
-                points.append(self.getPoint3D(lrx, uly, 1))
-                points.append(self.getPoint3D(lrx, lry, 1))
-                self.drawPolygon3D(points, tag="line", fill=color, outline="black")
+                points.append((lrx, lry, 0))
+                points.append((lrx, uly, 0))
+                points.append((lrx, uly, 1))
+                points.append((lrx, lry, 1))
+                self.drawPolygon(points, tag="line", fill=color, outline="black")
                 # wall 4:
                 points = []
-                points.append(self.getPoint3D(lrx, lry, 0))
-                points.append(self.getPoint3D(ulx, lry, 0))
-                points.append(self.getPoint3D(ulx, lry, 1))
-                points.append(self.getPoint3D(lrx, lry, 1))
-                self.drawPolygon3D(points, tag="line", fill=color, outline="black")
+                points.append((lrx, lry, 0))
+                points.append((ulx, lry, 0))
+                points.append((ulx, lry, 1))
+                points.append((lrx, lry, 1))
+                self.drawPolygon(points, tag="line", fill=color, outline="black")
                 # wall 2:
                 points = []
-                points.append(self.getPoint3D(ulx, uly, 0))
-                points.append(self.getPoint3D(lrx, uly, 0))
-                points.append(self.getPoint3D(lrx, uly, 1))
-                points.append(self.getPoint3D(ulx, uly, 1))
-                self.drawPolygon3D(points, tag="line", fill=color, outline="black")
+                points.append((ulx, uly, 0))
+                points.append((lrx, uly, 0))
+                points.append((lrx, uly, 1))
+                points.append((ulx, uly, 1))
+                self.drawPolygon(points, tag="line", fill=color, outline="black")
                 # wall 1:
                 points = []
-                points.append(self.getPoint3D(ulx, uly, 0))
-                points.append(self.getPoint3D(ulx, lry, 0))
-                points.append(self.getPoint3D(ulx, lry, 1))
-                points.append(self.getPoint3D(ulx, uly, 1))
-                self.drawPolygon3D(points, tag="line", fill=color, outline="black")
-                # top:
-                if 0:
-                    points = []
-                    points.append(self.getPoint3D(ulx, uly, 1))
-                    points.append(self.getPoint3D(ulx, lry, 1))
-                    points.append(self.getPoint3D(lrx, lry, 1))
-                    points.append(self.getPoint3D(lrx, uly, 1))
-                    self.drawPolygon3D(points, tag="line", fill=color, outline="black")
-
+                points.append((ulx, uly, 0))
+                points.append((ulx, lry, 0))
+                points.append((ulx, lry, 1))
+                points.append((ulx, uly, 1))
+                self.drawPolygon(points, tag="line", fill=color, outline="black")
 
         for light in self.lights:
             if light.type != "fixed": continue # skip those on robots
@@ -223,20 +167,21 @@ class Tk3DSimulator(TkSimulator):
             self.drawOval((x - brightness), (y - brightness),
                           (x + brightness), (y + brightness),
                           tag="line", fill=color, outline="orange")
-##         i = 0
-##         for path in self.trail:
-##             if self.robots[i].subscribed and self.robots[i].display["trail"] == 1:
-##                 if path[self.trailStart] != None:
-##                     lastX, lastY, lastA = path[self.trailStart]
-##                     lastX, lastY = self.scale_x(lastX), self.scale_y(lastY)
-##                     color = self.robots[i].color
-##                     for p in range(self.trailStart, self.trailStart + self.maxTrailSize):
-##                         xya = path[p % self.maxTrailSize]
-##                         if xya == None: break
-##                         x, y = self.scale_x(xya[0]), self.scale_y(xya[1])
-##                         self.canvas.create_line(lastX, lastY, x, y, fill=color)
-##                         lastX, lastY = x, y
-##             i += 1
+        i = 0
+        for path in self.trail:
+            if self.robots[i].subscribed and self.robots[i].display["trail"] == 1:
+                if path[self.trailStart] != None:
+                    lastX, lastY, lastA = path[self.trailStart]
+                    color = self.robots[i].color
+                    for p in range(self.trailStart, self.trailStart + self.maxTrailSize):
+                        xya = path[p % self.maxTrailSize]
+                        if xya == None: break
+                        x, y = xya[0], xya[1]
+                        self.drawLine(lastX, lastY, x, y, fill=color, tag="trail")
+                        lastX, lastY = x, y
+            i += 1
+        if self.display["wireframe"]:
+            self.canvas.delete('all')
         self.drawObjects()
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)

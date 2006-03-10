@@ -147,6 +147,7 @@ class Simulator:
         self.properties = ["stall", "x", "y", "th", "thr", "energy"]
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
+        self.display = {"wireframe": 0}
     def __getitem__(self, name):
         if name in self.robotsByName:
             return self.robotsByName[name]
@@ -473,6 +474,7 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                       ['Display world details', self.printDetails],
                       ['Exit', self.destroy]]),
             ('View',[
+            ['wireframe', lambda: self.simToggle("wireframe")],
             ['trail', lambda: self.toggle("trail")],                     
             ['body', lambda: self.toggle("body")],                 
             ['boundingBox', lambda: self.toggle("boundingBox")],
@@ -496,6 +498,9 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             self.lightAboveWalls = not self.lightAboveWalls
         else:
             raise AttributeError, "invalid key: '%s'" % key
+        self.redraw()
+    def simToggle(self, key):
+        self.display[key] = not self.display[key]
         self.redraw()
     def toggle(self, key):
         for r in self.robots:
@@ -580,14 +585,22 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
         self.remove('all')
         for shape in self.shapes:
             if shape[0] == "box":
-                name, ulx, uly, lrx, lry, color = shape
+                name, ulx, uly, lrx, lry, fill = shape
+                outline = "black"
+                if self.display["wireframe"]:
+                    if fill != "white":
+                        outline = fill
+                    else:
+                        outline = "black"
+                    fill = ""
                 self.canvas.create_rectangle(self.scale_x(ulx), self.scale_y(uly),
                                              self.scale_x(lrx), self.scale_y(lry),
-                                             tag="line", fill=color, outline="black")
-        for segment in self.world:
-            (x1, y1), (x2, y2) = segment.start, segment.end
-            id = self.drawLine(x1, y1, x2, y2, fill="black", tag="line")
-            segment.id = id
+                                             tag="line", fill=fill, outline=outline)
+        if not self.display["wireframe"]:
+            for segment in self.world:
+                (x1, y1), (x2, y2) = segment.start, segment.end
+                id = self.drawLine(x1, y1, x2, y2, fill="black", tag="line")
+                segment.id = id
         for light in self.lights:
             if light.type != "fixed": continue 
             x, y, brightness, color = light.x, light.y, light.brightness, light.color
@@ -635,6 +648,12 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
                                        **args)
     def drawPolygon(self, points, fill="", outline="black", tag="robot", **args):
         xy = map(lambda pt: (self.scale_x(pt[0]), self.scale_y(pt[1])), points)
+        if self.display["wireframe"]:
+            if fill != "white":
+                outline = fill
+            else:
+                outline = "black"
+            fill = ""
         return self.canvas.create_polygon(xy, tag=tag, fill=fill, outline=outline)
     def remove(self, thing):
         self.canvas.delete(thing)
