@@ -372,7 +372,7 @@ class Simulator:
             elif message[0] == "h": # "h_v" bulb:value
                 self.assoc[sockname[1]].bulb.brightness = float(message[1])
                 self.redraw()
-                return "ok"
+                retval = "ok"
             elif message[0] == "i": # "i_name_index_property_val"
                 code, dtype, index, property, val = message
                 device = self.assoc[sockname[1]].getIndex(dtype, int(index))
@@ -383,7 +383,17 @@ class Simulator:
                     device.__dict__[property] = int(val)
                 elif type(oldval) == float:
                     device.__dict__[property] = float(val)
-                return "ok"
+                retval = "ok"
+            elif message[0] == "j": # "j_index_p_t_z" ptz[index].setPose(p, t, z)
+                code, index, p, t, z = message
+                device = self.assoc[sockname[1]].getIndex("ptz", int(index))
+                if device:
+                    retval = device.setPose(float(p), float(t), float(z))
+            elif message[0] == "k": # "k_index" ptz[index].getPose()
+                code, index = message
+                device = self.assoc[sockname[1]].getIndex("ptz", int(index))
+                if device:
+                    retval = device.getPose()
             elif message[0] == "t": # "t_v" translate:value
                 retval = self.assoc[sockname[1]].translate(float(message[1]))
             elif message[0] == "v": # "v_v" global step scalar:value
@@ -891,9 +901,10 @@ class SimRobot:
                 d.scan[2] = d.isClosed()
                 d.scan[3] = d.isOpened()
                 d.scan[4] = d.isMoving()
+            elif d.type == "ptz": pass
             elif d.type == "camera":
                 # FIX: make work with any start/stop angle:
-                x, y = self._gx, self._gy
+                x, y = self._gx, self._gy # camera location
                 stepAngle = (abs(d.startAngle) + abs(d.stopAngle)) / float(d.width - 1)
                 a = d.startAngle
                 d.scan = []
@@ -1380,15 +1391,33 @@ class Gripper:
     def isMoving(self):
         return self.velocity != 0
 
+class PTZ:
+    def __init__(self, camera):
+        self.type = "ptz"
+        self.camera = camera
+        self.active = 1
+    def setPose(self, p = None, t = None, z = None):
+        if p != None:
+            self.camera.pan = p
+        if z != None:
+            self.camera.zoom = z
+        self.camera.startAngle = self.camera.pan + self.camera.zoom/2
+        self.camera.stopAngle = self.camera.pan - self.camera.zoom/2
+        return "ok"
+    def getPose(self):
+        return self.camera.pan, 0, self.camera.zoom
+
 class Camera:
-    def __init__(self, width, height, startAngle, stopAngle, x, y, thr):
+    def __init__(self, width, height, pan, zoom, x, y, thr):
         self.type = "camera"
         self.active = 1
         self.scan = []
         self.width = width
         self.height = height
-        self.startAngle = startAngle
-        self.stopAngle = stopAngle
+        self.pan = pan
+        self.zoom = zoom
+        self.startAngle = self.pan + self.zoom/2
+        self.stopAngle = self.pan - self.zoom/2
         self.pose = (x, y, thr)
         self.color = [[0,0,0] for i in range(self.width)]
         self.range = [0 for i in range(self.width)]

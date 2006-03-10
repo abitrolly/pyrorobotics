@@ -144,6 +144,16 @@ class BulbSimDevice(Device):
 	def setBrightness(self, value):
 		return self._dev.move("h_%f" % value)
 
+class PTZSimDevice(Device):
+	def __init__(self, robot):
+		Device.__init__(self)
+		self.type = "ptz"
+		self._dev = robot
+	def setPose(self, p, t, z):
+		return self._dev.move("j_%d_%f_%f_%f" % (0, p, t, z))
+	def getPose(self):
+		return self._dev.move("k_%d" % 0)
+	
 class GripperSimDevice(GripperDevice):
 	def __init__(self, robot):
 		Device.__init__(self)
@@ -176,7 +186,7 @@ class GripperSimDevice(GripperDevice):
 	def isOpened(self): return self.data[3]
 	def isMoving(self): return self.data[4]
 	def isLiftMoving(self): return 0
-	
+
 class CameraSimDevice(ManualFakeCamera):
 	def __init__(self, robot):
 		self.lock = threading.Lock()
@@ -273,6 +283,9 @@ class Simbot(Robot):
 		elif name == "bulb":
 			self.move("s_%s_%d" % (name, index))
 			return {name: BulbSimDevice(self)}
+		elif name == "ptz":
+			self.move("s_%s_%d" % (name, index))
+			return {name: PTZSimDevice(self)}
 		elif name == "camera":
 			self.move("s_%s_%d" % (name, index))
 			try:
