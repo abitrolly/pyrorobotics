@@ -31,7 +31,9 @@ class Tk3DSimulator(TkSimulator):
         self.offset_y -= y_diff
         self.rotateMatrixWorld *= translate(-x_diff, y_diff, 0) 
         self.redraw()
-
+    def simToggle(self, key):
+        self.display[key] = (self.display[key] + 1) % 3
+        self.redraw()
     def drawOval(self, x1, y1, x2, y2, **args):
         x1, y1, z1 = self.getPoint3D(x1, y1, 0)
         x2, y2, z2 = self.getPoint3D(x2, y2, 0)
@@ -86,13 +88,13 @@ class Tk3DSimulator(TkSimulator):
     def step(self, run = 1):
         self.primitives = []
         TkSimulator.step(self, run)
-        if not self.display["wireframe"]:
+        if self.display["wireframe"] < 2:
             self.redraw()
         self.drawObjects()
 
     def drawObjects(self):
         # sort them, based on Z buffer
-        if not self.display["wireframe"]:
+        if self.display["wireframe"] < 2:
             self.primitives.sort(lambda x,y: cmp(x[1], y[1])) # 1st item is Z
             self.canvas.delete('all')
         for p in self.primitives:
@@ -104,19 +106,22 @@ class Tk3DSimulator(TkSimulator):
                 self.canvas.create_line(x1, y1, x2, y2, **args)
             elif p[0] == "polygon":
                 name, z, points, args = p
-                if self.display["wireframe"]:
+                if self.display["wireframe"] == 2:
                     if "fill" in args:
                         if args["fill"] != "white":
                             args["outline"] = args["fill"]
                     else:
                         args["outline"] = "black"
                     args["fill"] = ""
+                elif self.display["wireframe"] == 1:
+                    if "fill" in args and args["fill"] == "white":
+                        args["fill"] = ""
                 self.canvas.create_polygon(points, **args)
             else:
                 print "need renderer for type:", p[0]
         
     def redraw(self):
-        if self.display["wireframe"]:
+        if self.display["wireframe"] == 2:
             self.primitives = []
         matrix = (
             self.rotateMatrixWorld *
@@ -180,7 +185,7 @@ class Tk3DSimulator(TkSimulator):
                         self.drawLine(lastX, lastY, x, y, fill=color, tag="trail")
                         lastX, lastY = x, y
             i += 1
-        if self.display["wireframe"]:
+        if self.display["wireframe"] == 2:
             self.canvas.delete('all')
         self.drawObjects()
         for robot in self.robots:
