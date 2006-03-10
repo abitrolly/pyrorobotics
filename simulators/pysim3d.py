@@ -19,6 +19,7 @@ class Tk3DSimulator(TkSimulator):
                                            -self.centery, 0) * rotateYDeg(15) * rotateZDeg(15) * rotateXDeg(-60)
         self.matrix = Matrix() * scale(self.scale,self.scale,self.scale)
         self.primitives = []
+        self.wireframe = 1
 
     def click_b2_up(self, event):
         self.click_stop = event.x, event.y
