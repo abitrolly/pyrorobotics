@@ -12,11 +12,7 @@ class Fourway : public Device {
   int otherdepth;
   int quadNumber;
 
-  Fourway(unsigned char *oimage, 
-	  int owidth, 
-	  int oheight, 
-	  int odepth,
-	  int quad);
+  Fourway(void *odev, int quad);
   PyObject *updateMMap();
 };
 

@@ -1,4 +1,5 @@
 from pyrobot.camera import Camera, CBuffer # base class
+from pyrobot.camera.fourway.fourway import Fourway
 from pyrobot.vision.cvision import VisionSystem
 
 class FourwayCamera(Camera):
@@ -7,16 +8,15 @@ class FourwayCamera(Camera):
    def __init__(self, camera, quad):
       self._camera = camera
       self._quad   = quad
-      self._dev = Fourway("", self._camera._cbuf, self._camera.width,
-                          self._camera.height, self._camera.depth, quad)
+      self._dev = Fourway( self._camera._dev, quad)
       self.vision = VisionSystem()
       self.vision.registerCameraDevice(self._dev)
       self._cbuf = self.vision.getMMap()
-      # -------------------------------------------------
+      ## -------------------------------------------------
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
-      Camera.__init__(self, self.width, self.height, self.depth,
-                      "Fourway Camera View")
+      Camera.__init__(self, self._dev.getWidth(), self._dev.getHeight(), self._dev.getDepth(),
+                      "Quad #%d" % quad)
       self.data = CBuffer(self._cbuf)
 
    def update(self):
@@ -24,5 +24,15 @@ class FourwayCamera(Camera):
       self.processAll()
 
 if __name__ == "__main__":
-   camera = FourwayCamera()
-   camera.update()
+   from pyrobot.camera.fake import FakeCamera
+   cam = FakeCamera(pattern = "../../vision/tutorial/test-?.ppm", start = 0,
+                    stop = 11, interval = 1, visionSystem = VisionSystem())
+   cam.update()
+   cam.makeWindow()
+   cam.updateWindow()
+   cameras = [0] * 4
+   for i in range(4):
+      cameras[i] = FourwayCamera(cam, i)
+      cameras[i].update()
+      cameras[i].makeWindow()
+      cameras[i].updateWindow()
