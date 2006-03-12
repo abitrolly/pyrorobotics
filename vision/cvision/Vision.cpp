@@ -1414,9 +1414,15 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Blobify", "Red", "blobify", 0, 255, 255, 0, 1, 1, 1));
   PyList_Append(menu, Py_BuildValue("sssiiiiiii", "Blobify", "Green", "blobify", 1, 255, 255, 0, 1, 1, 1));
   PyList_Append(menu, Py_BuildValue("sssiiiiii", "Blobify", "Blue", "blobify", 2, 255, 255, 0, 1, 1, 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Red", "setPlane", 0));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Green", "setPlane", 1));
-  PyList_Append(menu, Py_BuildValue("sssi", "Clear", "Blue", "setPlane", 2));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Red to   0", "setPlane", 0, 0));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Red to 128", "setPlane", 0, 128));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Red to 255", "setPlane", 0, 255));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Green to   0", "setPlane", 1, 0));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Green to 128", "setPlane", 1, 128));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Green to 255", "setPlane", 1, 255));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Blue to  0", "setPlane", 2, 0));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Blue to 128", "setPlane", 2, 128));
+  PyList_Append(menu, Py_BuildValue("sssii", "Clear", "Blue to 255", "setPlane", 2, 255));
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Red", "superColor", 1, -1, -1, 0, 128));
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Green", "superColor", -1, 1, -1, 1, 128));
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Supercolor", "Blue", "superColor", -1, -1, 1, 2, 128));

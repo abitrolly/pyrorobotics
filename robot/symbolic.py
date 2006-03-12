@@ -49,6 +49,25 @@ colorUnCode = {1: colorMap["red"],
 	       12: colorMap["purple"],
 	       }
 
+class PositionSimDevice(Device):
+	def __init__(self, robot):
+		Device.__init__(self, "position")
+		self._dev = robot
+		self.startDevice()
+	def addWidgets(self, window):
+		window.addData("x", ".x:", self._dev.x)
+		window.addData("y", ".y:", self._dev.y)
+		window.addData("thr", ".th (angle in radians):", self._dev.th)
+		window.addData("th", ".thr (angle in degrees):", self._dev.thr)
+		window.addData("stall", ".stall:", self._dev.stall)
+	def updateWindow(self):
+		if self.visible:
+			self.window.updateWidget("x", self._dev.x)
+			self.window.updateWidget("y",self._dev.y)
+			self.window.updateWidget("thr", self._dev.th)
+			self.window.updateWidget("th", self._dev.thr)
+			self.window.updateWidget("stall",self._dev.stall)
+
 class SimulationDevice(Device):
 	def __init__(self, robot):
 		Device.__init__(self, "simulation")
@@ -150,7 +169,7 @@ class PTZSimDevice(Device):
 		self.type = "ptz"
 		self._dev = robot
 	def setPose(self, p, t, z):
-		return self._dev.move("j_%d_%f_%f_%f" % (0, p, t, z))
+		return self._dev.move("j_%d_%s_%s_%s" % (0, p, t, z))
 	def getPose(self):
 		return self._dev.move("k_%d" % 0)
 	
@@ -228,6 +247,7 @@ class Simbot(Robot):
 		self.properties = self.getItem("properties")
 		self.builtinDevices = self.getItem("builtinDevices")
 		self.builtinDevices.append("simulation")
+		self.builtinDevices.append("position")
 		self.supportedFeatures = self.getItem("supportedFeatures")
 		self.name = self.getItem("name")
 		self.id   = self.connectionNum
@@ -298,6 +318,8 @@ class Simbot(Robot):
 		elif name == "gripper":
 			self.move("s_%s_%d" % (name, index))
 			return {name: GripperSimDevice(self)}
+		elif name == "position":
+			return {name: PositionSimDevice(self)}
 		elif name == "light":
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))

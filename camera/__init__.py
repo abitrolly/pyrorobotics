@@ -10,8 +10,8 @@ import Image, ImageTk, types, time, struct
 def display(item):
    print item
 
-def listFilter(allArgs):
-   retval = 'self.robot.camera[0].addFilter("%s",' % allArgs[0]
+def listFilter(deviceName, allArgs):
+   retval = 'self.robot.%s.addFilter("%s",' % (deviceName, allArgs[0])
    if len(allArgs) > 1:
       for a in allArgs[1]:
          retval += str(a) + ","
@@ -319,7 +319,7 @@ class Camera(PyrobotImage, Device):
       import inspect
       if type(func) == type(""):
          self.callbackList.append( lambda self=self, func=func, args=args: self.apply(func, *args))
-         self.callbackTextList.append( listFilter( (func, args) ))
+         self.callbackTextList.append( listFilter( self.title, (func, args) ))
       else:
          self.callbackList.append( func )
          try:
@@ -377,24 +377,24 @@ class Camera(PyrobotImage, Device):
       x, y = int(x * self.width), int(y * self.height)
       if (x == self.lastX and y == self.lastY):
          rgb = self.vision.get(int(x), int(y))
-         print 'self.robot.camera[0].addFilter("match", %d, %d, %d)' % (rgb[0], rgb[1], rgb[2])
+         print 'self.robot.%s.addFilter("match", %d, %d, %d)' % (self.title, rgb[0], rgb[1], rgb[2])
          return self.addFilter("match", rgb[0], rgb[1], rgb[2])
       else:
-         print 'self.robot.camera[0].addFilter("histogram", %d, %d, %d, %d, 8)' % (self.lastX, self.lastY, x, y)
+         print 'self.robot.%s.addFilter("histogram", %d, %d, %d, %d, 8)' % (self.title, self.lastX, self.lastY, x, y)
          return self.addFilter("histogram", self.lastX, self.lastY, x, y, 8)
 
    def processMiddleClick(self, event):
       x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
-      print 'self.robot.camera[0].addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 1)
+      print 'self.robot.%s.addFilter("match", %d, %d, %d, %d, %d)' % (self.title, rgb[0], rgb[1], rgb[2], 30, 1)
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 1)
 
    def processRightClick(self, event):
       x, y = event.x/float(self.getCanvasWidth()), event.y/float(self.getCanvasHeight())
       x, y = int(x * self.width), int(y * self.height)
       rgb = self.vision.get(int(x), int(y))
-      print 'self.robot.camera[0].addFilter("match", %d, %d, %d, %d, %d)' % (rgb[0], rgb[1], rgb[2], 30, 2)
+      print 'self.robot.%s.addFilter("match", %d, %d, %d, %d, %d)' % (self.title, rgb[0], rgb[1], rgb[2], 30, 2)
       return self.addFilter("match", rgb[0], rgb[1], rgb[2], 30, 2)
 
    def hideWindow(self):

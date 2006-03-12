@@ -388,7 +388,13 @@ class Simulator:
                 code, index, p, t, z = message
                 device = self.assoc[sockname[1]].getIndex("ptz", int(index))
                 if device:
-                    retval = device.setPose(float(p), float(t), float(z))
+                    if p == "None": p = None
+                    else:          p = float(p)
+                    if t == "None": t = None
+                    else:          t = float(t)
+                    if z == "None": z = None
+                    else:          z = float(z * PIOVER180)
+                    retval = device.setPose(p, t, z)
             elif message[0] == "k": # "k_index" ptz[index].getPose()
                 code, index = message
                 device = self.assoc[sockname[1]].getIndex("ptz", int(index))
@@ -1415,6 +1421,7 @@ class Camera:
         self.width = width
         self.height = height
         self.pan = pan
+        self.tilt = 0
         self.zoom = zoom
         self.startAngle = self.pan + self.zoom/2
         self.stopAngle = self.pan - self.zoom/2
