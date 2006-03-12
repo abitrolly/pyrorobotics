@@ -28,3 +28,6 @@ PyObject *Device::initialize(int wi, int he, int de, int r, int g, int b) {
   return PyInt_FromLong(0L);
 }
 
+unsigned char Device::getByte(int position) {
+  return image[position];
+}

@@ -17,6 +17,7 @@ public:
   int getHeight() {return height;}
   int getDepth() {return depth;}
   unsigned char *getImage() {return image;}
+  unsigned char getByte(int position);
 
  protected:
   unsigned char *image;
