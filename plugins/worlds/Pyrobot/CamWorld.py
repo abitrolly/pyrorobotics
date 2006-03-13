@@ -22,7 +22,7 @@ def INIT():
     # add some sensors:
     # x, y relative to body center (beyond bounding box):
     sim.robots[0].addDevice(PioneerFrontSonars())
-    cam = Camera(40, 40, 0, 120 * math.pi/180, 0, 0, 0)
+    cam = Camera(40, 40, 0, 120, 0, 0, 0)
     sim.robots[0].addDevice(cam)
     sim.robots[0].addDevice( PTZ(cam) )
     sim.robots[0].addDevice(Gripper())

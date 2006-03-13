@@ -21,7 +21,7 @@ def INIT():
     # x, y relative to body center (beyond bounding box):
     sim.robots[0].addDevice(BulbDevice(0.226, 0)) # pose x, pose y
     # width, height, startAngle, stopAngle, pose x, pose y, pose thr:
-    cam = Camera(60, 40, 0, 120 * math.pi/180, 0, 0, 0)
+    cam = Camera(60, 40, 0, 120, 0, 0, 0)
     sim.robots[0].addDevice(cam)
     sim.robots[0].addDevice(PTZ(cam))
     return sim

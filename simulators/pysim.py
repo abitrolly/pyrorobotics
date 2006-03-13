@@ -393,7 +393,7 @@ class Simulator:
                     if t == "None": t = None
                     else:          t = float(t)
                     if z == "None": z = None
-                    else:          z = float(z * PIOVER180)
+                    else:          z = float(z)
                     retval = device.setPose(p, t, z)
             elif message[0] == "k": # "k_index" ptz[index].getPose()
                 code, index = message
@@ -874,7 +874,7 @@ class SimRobot:
                         if not hit: # no hit means it has a clear shot:
                             self.drawRay("light", x, y, gx, gy, "orange")
                             intensity = (1.0 / (seg.length() * seg.length())) 
-                            sum += intensity * brightness * 1000.0
+                            sum += min(intensity, 1.0) * brightness * 1000.0
                             for c in [0, 1, 2]:
                                 rgb[c] += light_rgb[c] * (1.0/ seg.length())
                         else:
@@ -909,9 +909,8 @@ class SimRobot:
                 d.scan[4] = d.isMoving()
             elif d.type == "ptz": pass
             elif d.type == "camera":
-                # FIX: make work with any start/stop angle:
                 x, y = self._gx, self._gy # camera location
-                stepAngle = (abs(d.startAngle) + abs(d.stopAngle)) / float(d.width - 1)
+                stepAngle = d.zoom / float(d.width - 1)
                 a = d.startAngle
                 d.scan = []
                 for i in range(d.width):
@@ -1404,14 +1403,14 @@ class PTZ:
         self.active = 1
     def setPose(self, p = None, t = None, z = None):
         if p != None:
-            self.camera.pan = p
+            self.camera.pan = p * PIOVER180
         if z != None:
-            self.camera.zoom = z
+            self.camera.zoom = z * PIOVER180
         self.camera.startAngle = self.camera.pan + self.camera.zoom/2
         self.camera.stopAngle = self.camera.pan - self.camera.zoom/2
         return "ok"
     def getPose(self):
-        return self.camera.pan, 0, self.camera.zoom
+        return self.camera.pan / PIOVER180, 0, self.camera.zoom / PIOVER180
 
 class Camera:
     def __init__(self, width, height, pan, zoom, x, y, thr):
@@ -1420,9 +1419,9 @@ class Camera:
         self.scan = []
         self.width = width
         self.height = height
-        self.pan = pan
+        self.pan = pan * PIOVER180
         self.tilt = 0
-        self.zoom = zoom
+        self.zoom = zoom * PIOVER180
         self.startAngle = self.pan + self.zoom/2
         self.stopAngle = self.pan - self.zoom/2
         self.pose = (x, y, thr)

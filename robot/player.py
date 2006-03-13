@@ -338,6 +338,12 @@ class PlayerPTZDevice(PlayerDevice):
     def getMinZoom(self):
         return 120
 
+    def addWidgets(self, window):
+        p, t, z = 0, 0, 0
+        window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(float(p)))
+        window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(float(t)))
+        window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(float(z)))
+
 class PlayerGripperDevice(PlayerDevice, GripperDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "gripper", visible = 0)

@@ -84,7 +84,7 @@ class SimulationDevice(Device):
 		retval = self._dev.move("!%s" % (command,))
 		return retval
 	def addWidgets(self, window):
-		window.addCommand("eval", "Evaluate exp", "self.", self.onCommand)
+		window.addCommand("eval", "Evaluate exp!", "self.", self.onCommand)
 	def onCommand(self, command):
 		return self.eval(command)
 
@@ -162,7 +162,11 @@ class BulbSimDevice(Device):
 		self._dev = robot
 	def setBrightness(self, value):
 		return self._dev.move("h_%f" % value)
-
+	def addWidgets(self, window):
+		b = 1.0
+		window.addCommand("brightness", "Brightness!", str(b),
+				  lambda b: self.setBrightness(float(b)))
+		
 class PTZSimDevice(Device):
 	def __init__(self, robot):
 		Device.__init__(self)
@@ -172,6 +176,17 @@ class PTZSimDevice(Device):
 		return self._dev.move("j_%d_%s_%s_%s" % (0, p, t, z))
 	def getPose(self):
 		return self._dev.move("k_%d" % 0)
+	def addWidgets(self, window):
+		p, t, z = self._dev.move("k_%d" % 0)
+		window.addCommand("pan", "Pan!", str(p), self.onPan)
+		window.addCommand("tilt", "Tilt!", str(t), self.onTilt)
+		window.addCommand("zoom", "Zoom!", str(z), self.onZoom)
+	def onPan(self, command):
+		return self.setPose(command, None, None)
+	def onTilt(self, command):
+		return self.setPose(None, command, None)
+	def onZoom(self, command):
+		return self.setPose(None, None, command)
 	
 class GripperSimDevice(GripperDevice):
 	def __init__(self, robot):

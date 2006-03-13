@@ -178,6 +178,14 @@ class AiboHeadDevice(Device):
     def center(self):
         return self.setPose(0, 0, 0, 0)
 
+    def addWidgets(self, window):
+        p, t, z, r = self.pose
+        window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(float(p)))
+        window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(float(t)))
+        window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(float(z)))
+        window.addCommand("roll", "Roll!", str(r), lambda r: self.roll(float(r)))
+
+
 class AiboRobot(Robot):
     """
     Class for an Aibo robot in Pyrobot. 
