@@ -193,6 +193,14 @@ class TKgui(Tkinter.Toplevel, gui):
       gui.loadRobot(self)
       self.updateDeviceList()
 
+   def loadBrain(self):
+      gui.loadBrain(self)
+      self.updateDeviceList()
+
+   def resetEngine(self):
+      gui.resetEngine(self)
+      self.updateDeviceList()
+
    def updateDeviceList(self, clear = 0, select = -1):
       devices = []
       selDevice = None

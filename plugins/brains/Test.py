@@ -8,7 +8,7 @@ class SimpleBrain(Brain):
    def setup(self):
       # create any vars you need here
       pass
-
+   
    def step(self):
       #self.robot.move(0, -.2) # negative is to the right!
       pass
