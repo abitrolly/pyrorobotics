@@ -164,6 +164,7 @@ included_packages = ask_yn("\n5. Options:", [
     ('camera/aibo', "Aibo vision (requires Image Processing)"),
     ('camera/robocup', "Robocup simulated vision (requires Image Processing)"),
     ('camera/player', "Gazebo simulated vision (requires Image Processing)"),
+    ('camera/fourway', "Splits a camera view in 4 (requires another camera)"),
     ('brain/psom brain/psom/csom_src/som_pak-dev',
      "Self-organizing Map (SOM)"),
     ('tools/cluster', "Cluster Analysis Tool"),
