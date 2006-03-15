@@ -13,8 +13,8 @@ class FourwayCamera(Camera):
       self.vision.registerCameraDevice(self._dev)
       self._cbuf = self.vision.getMMap()
       ## -------------------------------------------------
-      self.rgb = (0, 1, 2) # offsets to RGB
-      self.format = "RGB"
+      self.rgb = camera.rgb
+      self.format = camera.format
       Camera.__init__(self, self._dev.getWidth(), self._dev.getHeight(), self._dev.getDepth(),
                       "Quad #%d" % quad)
       self.data = CBuffer(self._cbuf)
