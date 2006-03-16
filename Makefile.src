@@ -19,6 +19,7 @@ clean::
 	- $(RM) *.o *.bak core *~ $(OBJS) *.so *module.c *.pyc $(CLEAN)
 	- $(RM) `find . | grep \.pyc$$`
 	- $(RM) `find . | grep ~$$`
+	- $(RM) `find . | grep \.rpo$$`
 ifeq ($(SUBDIRS),)
 else
 	@for i in $(SUBDIRS); do\
