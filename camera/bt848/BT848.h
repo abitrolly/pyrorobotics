@@ -22,7 +22,6 @@ class BT848: public Device
   BT848 ( const char* dname, int w, int h, int d);
   ~BT848();
   PyObject *updateMMap( );
-  void setRGB(int r, int g, int b);
 
  private:
   int size;

@@ -242,6 +242,9 @@ class TKgui(Tkinter.Toplevel, gui):
          help_exp = "help(%s.__class__)" % (exp,)
       self.processCommand(help_exp)
 
+   def viewCallback(self, full_id):
+      self.objectBrowser(self.makeExpression(full_id))
+
    def watchCallback(self, full_id):
       if len(full_id) == 3 and (full_id[0] == "robot" and
                                 full_id[1] in self.engine.robot.devices and
@@ -388,8 +391,12 @@ class TKgui(Tkinter.Toplevel, gui):
                   tree.add_node("%s = %s" % (item, thing.__dict__[item]), id=item, flag=0)
 
    def objectBrowser(self, objectName):
-      TreeWindow(share.gui, objectName, self.getTreeContents,
-                 self.watchCallback, self.pasteCallback, self.execCallback)
+      TreeWindow(share.gui, objectName,
+                 self.getTreeContents,
+                 self.watchCallback,
+                 self.pasteCallback,
+                 self.execCallback,
+                 self.viewCallback)
 
    def makeRobotTree(self):
       if self.engine and self.engine.robot:
@@ -400,7 +407,7 @@ class TKgui(Tkinter.Toplevel, gui):
          else:
             self.robotTreeWindow = TreeWindow(share.gui, "robot", self.getTreeContents,
                                               self.watchCallback, self.pasteCallback,
-                                              self.execCallback)
+                                              self.execCallback, self.viewCallback)
             self.robotTreeWindow.tree.root.expand()
 
    def makeBrainTree(self):
@@ -412,7 +419,7 @@ class TKgui(Tkinter.Toplevel, gui):
          else:
             self.brainTreeWindow = TreeWindow(share.gui, "brain", self.getTreeContents,
                                               self.watchCallback, self.pasteCallback,
-                                              self.execCallback)
+                                              self.execCallback, self.viewCallback)
             self.brainTreeWindow.tree.root.expand()
 
    def makeWindows(self):

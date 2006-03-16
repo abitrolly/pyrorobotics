@@ -39,7 +39,6 @@ class V4L : public Device
   PyObject *updateMMap(void);
   void init(void);
   void swap_rgb24(char *mem, int n); 
-  void setRGB(int r, int g, int b);
 
   /*
   //#ifdef VIDIOC_QUERYCAP

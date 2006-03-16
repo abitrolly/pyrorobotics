@@ -13,6 +13,7 @@ public:
   ~Device();
   PyObject *initialize(int wi, int he, int de, int r, int g, int b);
   int *getRGB() {return rgb;}
+  void setRGB(int r, int g, int b);
   int getWidth() {return width;}
   int getHeight() {return height;}
   int getDepth() {return depth;}

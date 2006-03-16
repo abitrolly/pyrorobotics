@@ -20,13 +20,6 @@ V4L::V4L ( char *device_name, int wi, int he, int de, int ch) :
   init();
 }
 
-void V4L::setRGB(int r, int g, int b) {
-  int rgb_order[MAXDEPTH] = {r, g, b};
-  for (int d = 0; d < depth; d++)
-    // set offsets for RGB
-    rgb[d] = rgb_order[d];
-}
-
 V4L::~V4L ()
 {
   delete [] image;

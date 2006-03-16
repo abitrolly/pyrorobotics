@@ -797,6 +797,7 @@ class ClickNode(Node):
     # pop up menu on right click
     def popup_menu(self, event):
         menu=Menu(self.widget, tearoff=0)
+        menu.add_command(label='View', command=self.view)
         menu.add_command(label='Watch', command=self.watch)
         menu.add_command(label='Paste', command=self.paste)
         menu.add_command(label='Help', command=self.help)
@@ -808,10 +809,12 @@ class ClickNode(Node):
         self.widget.pasteCallback(self.full_id())
     def help(self):
         self.widget.helpCallback(self.full_id())
+    def view(self):
+        self.widget.viewCallback(self.full_id())
 
 class TreeWindow(Toplevel):
     def __init__(self, root, item, contents_callback, watch_callback,
-                 paste_callback, help_callback):
+                 paste_callback, help_callback, view_callback):
         Toplevel.__init__(self, root)
         self.tree = Tree(master = self,
                          root_id=item,
@@ -824,6 +827,7 @@ class TreeWindow(Toplevel):
         self.tree.watchCallback = watch_callback
         self.tree.pasteCallback = paste_callback
         self.tree.helpCallback = help_callback
+        self.tree.viewCallback = view_callback
         self.tree.grid(row=0, column=0, sticky='nsew')
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)

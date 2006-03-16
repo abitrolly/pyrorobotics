@@ -27,13 +27,6 @@ BT848::~BT848() {
  delete [] image;
 }
 
-void BT848::setRGB(int r, int g, int b) {
-  int rgb_order[MAXDEPTH] = {r, g, b};
-  for (int d = 0; d < depth; d++)
-    // set offsets for RGB
-    rgb[d] = rgb_order[d];
-}
-
 PyObject *BT848::updateMMap( ) {
   unsigned char *mmptr;
   if (read(fd, buffer, size) != size) {

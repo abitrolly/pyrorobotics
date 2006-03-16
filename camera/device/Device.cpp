@@ -15,6 +15,13 @@ Device::~Device() {
   delete [] image;
 }
 
+void Device::setRGB(int r, int g, int b) {
+  int rgb_order[MAXDEPTH] = {r, g, b};
+  for (int d = 0; d < depth; d++)
+    // set offsets for RGB
+    rgb[d] = rgb_order[d];
+}
+
 PyObject *Device::initialize(int wi, int he, int de, int r, int g, int b) {
   width = wi;
   height = he;
