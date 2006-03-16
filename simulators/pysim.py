@@ -425,7 +425,7 @@ class Simulator:
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[1]:
                         if int(message[2]) == index:
-                            if message[1] in ["sonar", "laser", "light", "bulb"]:
+                            if message[1] in ["sonar", "laser", "light", "bulb", "ir", "bumper"]:
                                 retval = d.geometry, d.arc, d.maxRange
                             elif message[1] == "camera":
                                 retval = d.width, d.height
@@ -435,7 +435,7 @@ class Simulator:
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[1]:
                         if int(message[2]) == index:
-                            if message[1] in ["sonar", "laser", "light"]:
+                            if message[1] in ["sonar", "laser", "light", "ir", "bumper"]:
                                 retval = d.groups
                         index += 1
             elif message[0] == "s": # "s_sonar_0" subscribe
@@ -444,7 +444,7 @@ class Simulator:
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 self.assoc[sockname[1]].subscribed = 1
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light", "camera", "gripper"]: # sonar_0, light_0...
+            elif message[0] in ["sonar", "laser", "light", "camera", "gripper", "ir", "bumper"]: # sonar_0, light_0...
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
@@ -497,6 +497,8 @@ class TkSimulator(Simulator, Tkinter.Toplevel):
             ['gripper', lambda: self.toggle("gripper")],
             ['camera', lambda: self.toggle("camera")],
             ['sonar', lambda: self.toggle("sonar")],
+            ['ir', lambda: self.toggle("ir")],
+            ['bumper', lambda: self.toggle("bumper")],
             ['light', lambda: self.toggle("light")],                     
             ['lightBlocked', lambda: self.toggle("lightBlocked")], 
             ]
@@ -710,13 +712,14 @@ class SimRobot:
             self.radius = 0.0
         self.builtinDevices = []
         self.color = color
+        self.colorParts = {"ir": "pink", "sonar": "gray", "bumper": "black"}
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
         self.friction = 1.0
         # -1: don't automatically turn display on when subscribing:
         self.display = {"body": 1, "boundingBox": 0, "gripper": -1, "camera": 0, "sonar": 0,
-                        "light": -1, "lightBlocked": 0, "trail": -1} 
+                        "light": -1, "lightBlocked": 0, "trail": -1, "ir": -1, "bumper": 1}
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -824,7 +827,7 @@ class SimRobot:
         sin_a90 = math.sin(a90)
         for d in self.devices:
             if not d.active: continue
-            if d.type == "sonar":
+            if d.type == "sonar" or d.type == "ir" or d.type == "bumper":
                 i = 0
                 for x, y, a in d.geometry:
                     ga = (self._ga + a)
@@ -832,12 +835,16 @@ class SimRobot:
                     gy = self._gy + (x * sin_a90 + y * cos_a90)
                     dist, hit, obj = self.simulator.castRay(self, gx, gy, -ga, d.maxRange)
                     if hit:
-                        self.drawRay("sonar", gx, gy, hit[0], hit[1], "gray")
+                        self.drawRay(d.type, gx, gy, hit[0], hit[1], self.colorParts[d.type])
                     else:
                         hx, hy = math.sin(-ga) * d.maxRange, math.cos(-ga) * d.maxRange
                         dist = d.maxRange
-                        self.drawRay("sonar", gx, gy, gx + hx, gy + hy, "gray")
-                    d.scan[i] = dist
+                        self.drawRay(d.type, gx, gy, gx + hx, gy + hy, self.colorParts[d.type])
+                    if d.type == "bumper":
+                        if dist < d.maxRange: d.scan[i] = 1
+                        else:                 d.scan[i] = 0
+                    else: 
+                        d.scan[i] = dist
                     i += 1
             elif d.type == "bulb":
                 pass # nothing to update... it is not a sensor
@@ -1237,12 +1244,9 @@ class TkPioneer(TkRobot):
             if self.bulb:
                 x = (self._gx + self.bulb.x * cos_a90 - self.bulb.y * sin_a90)
                 y = (self._gy + self.bulb.x * sin_a90 + self.bulb.y * cos_a90)
-                # color based on robot, or value?
-                color = "#%02x%02x%02x" % (min(max(self.bulb.brightness * 255,0),255),
-                                           min(max(self.bulb.brightness * 255,0),255), 0) # amount of yellow
                 radius = .05
                 self.simulator.drawOval(x - radius, y - radius, x + radius, y + radius,
-                                        tag="robot-%s" % self.name, fill=color, outline="black")
+                                        tag="robot-%s" % self.name, fill=self.color, outline="black")
             if self.gripper:
                 # draw grippers:
                 # base:
@@ -1539,3 +1543,160 @@ class Pioneer4FrontLightSensors(LightSensor):
                        'back' : [],
                        'back-all' : []}
 
+class TkMyro(TkRobot):
+    def __init__(self, *args, **kwargs):
+        TkRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.25
+
+    def draw(self):
+        """
+        Draws the body of the robot. Not very efficient.
+        """
+        if self._last_pose == (self._gx, self._gy, self._ga) and (
+            (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): return # hasn't moved
+        self._last_pose = (self._gx, self._gy, self._ga)
+        self.simulator.remove("robot-%s" % self.name)
+        # Body Polygon, by x and y lists:
+        sx = [ .20, .20,-.10,-.10]
+        sy = [ .15,-.15,-.15, .15] 
+        s_x = self.simulator.scale_x
+        s_y = self.simulator.scale_y
+        a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
+        cos_a90 = math.cos(a90)
+        sin_a90 = math.sin(a90)
+        if self.display["body"] == 1:
+            xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                   self._gy + x * sin_a90 + y * cos_a90),
+                     sx, sy)
+            self.simulator.drawPolygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
+            # --------------------------------------------------------------------------
+            # Parts: wheel, wheel, battery
+            bx = [[ .10, .10, -.10, -.10], [ .10, .10, -.10, -.10], [.05, .05, -.10, -.10], [.16, .17, .18, .17], [.16, .17, .18, .17]]
+            by = [[ .18, .16, .16, .18], [ -.18, -.16, -.16, -.18], [.14, -.14, -.14, .14], [.13, .135, .115, .11], [-.13, -.135, -.115, -.11]]
+            colors = ["black", "black", "gray", "yellow", "yellow"]
+            for i in range(len(bx)):
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
+                         bx[i], by[i])
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill=colors[i])
+            # --------------------------------------------------------------------------
+            if self.bulb:
+                x = (self._gx + self.bulb.x * cos_a90 - self.bulb.y * sin_a90)
+                y = (self._gy + self.bulb.x * sin_a90 + self.bulb.y * cos_a90)
+                radius = .04
+                self.simulator.drawOval(x - radius, y - radius, x + radius, y + radius,
+                                        tag="robot-%s" % self.name, fill=self.color, outline="black")
+            if self.gripper:
+                # draw grippers:
+                # base:
+                xy = [(self._gx + x * cos_a90 - y * sin_a90,
+                       self._gy + x * sin_a90 + y * cos_a90) for (x,y) in
+                      ((self.gripper.pose[0], self.gripper.openPosition),
+                       (self.gripper.pose[0], -self.gripper.openPosition))]
+                self.simulator.drawLine(xy[0][0], xy[0][1], xy[1][0], xy[1][1],
+                                        tag="robot-%s" % self.name, fill="black")
+                # left arm:
+                xs = []
+                ys = []
+                xs.append(self.gripper.pose[0]);     ys.append(self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(self.gripper.armPosition - 0.01)
+                xs.append(self.gripper.pose[0]);     ys.append(self.gripper.armPosition - 0.01)
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
+                         xs, ys)
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
+                # right arm:
+                xs = []
+                ys = []
+                xs.append(self.gripper.pose[0]);     ys.append(-self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition + 0.01)
+                xs.append(self.gripper.pose[0] + self.gripper.armLength); ys.append(-self.gripper.armPosition - 0.01)
+                xs.append(self.gripper.pose[0]);     ys.append(-self.gripper.armPosition - 0.01)
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
+                         xs, ys)
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
+        if self.display["boundingBox"] == 1:
+            if self.boundingBox != []:
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
+                         self.boundingBox[0], self.boundingBox[1])
+                self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
+            if self.boundingSeg != []:
+                xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
+                                       self._gy + x * sin_a90 + y * cos_a90),
+                         self.boundingSeg[0], self.boundingSeg[1])
+                for i in range(0, len(xy), 2):
+                    self.simulator.drawLine(xy[i][0], xy[i][1],
+                                            xy[i + 1][0], xy[i + 1][1],
+                                            tag="robot-%s" % self.name, fill="purple")
+            additionalSegments = self.additionalSegments(self._gx, self._gy, cos_a90, sin_a90)
+            if additionalSegments != []:
+                for s in additionalSegments:
+                    self.simulator.drawLine(s.start[0], s.start[1], s.end[0], s.end[1],
+                                            tag="robot-%s" % self.name, fill="purple")
+        self.addMouseBindings()
+
+class MyroIR(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self,
+                             "ir", geometry = (( 0.175, 0.13, 45 * PIOVER180),
+                                               ( 0.175,-0.13,-45 * PIOVER180)),
+                             arc = 5 * PIOVER180, maxRange = 0.5, noise = 0.0)
+        self.groups = {'all': range(2),
+                       'front': (0, 1),
+                       'front-left' : (0, ),
+                       'front-right' : (1, ),
+                       'front-all' : (0, 1,),
+                       'left' : (0,), 
+                       'right' : (1,), 
+                       'left-front' : (0, ), 
+                       'right-front' : (1, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+class MyroBumper(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self,
+                             "bumper", geometry = (( 0.20, 0.0, 80 * PIOVER180),
+                                                   ( 0.20, 0.0,-80 * PIOVER180)),
+                             arc = 5 * PIOVER180, maxRange = 0.20, noise = 0.0)
+        self.groups = {'all': range(2),
+                       'front': (0, 1),
+                       'front-left' : (0, ),
+                       'front-right' : (1, ),
+                       'front-all' : (0, 1,),
+                       'left' : (0,), 
+                       'right' : (1,), 
+                       'left-front' : (0, ), 
+                       'right-front' : (1, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+        
+class MyroLightSensors(LightSensor):
+    def __init__(self):
+        LightSensor.__init__(self, ((.18, .13, 0), (.18, -.13, 0)),
+                             noise=0.0) 
+        self.groups = {"front-all": (0, 1),
+                       "all": (0, 1),
+                       "front": (0, 1),
+                       "front-left": (0, ),
+                       "front-right": (1, ),
+                       'left' : (0,), 
+                       'right' : (1,), 
+                       'left-front' : (0,), 
+                       'right-front' : (1, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}

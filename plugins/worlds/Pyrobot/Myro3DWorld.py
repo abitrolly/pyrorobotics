@@ -5,11 +5,11 @@ a small inner room.
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
 
-from pyrobot.simulators.pysim import *
+from pyrobot.simulators.pysim3d import *
 
 def INIT():
     # (width, height), (offset x, offset y), scale:
-    sim = TkSimulator((585,596), (33,545), 173.983100)
+    sim = Tk3DSimulator((585,596), (33,545), 173.983100)
     # x1, y1, x2, y2 in meters:
     sim.addBox(0, 0, 3, 3)
     sim.addRobot(60000, TkMyro("GreenMyro",

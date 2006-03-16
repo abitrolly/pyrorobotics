@@ -269,7 +269,7 @@ class Simbot(Robot):
 		if startDevices:
 			for dev in self.builtinDevices:
 				d = self.startDevice(dev)
-				if dev in ["sonar", "laser"]:
+				if dev in ["sonar", "laser", "ir"]:
 					self.range = d
 	def move(self, message, other = None):
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
