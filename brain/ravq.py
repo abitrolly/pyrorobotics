@@ -361,7 +361,7 @@ class RAVQ:
         totalCount = 0
         totalIncompatibility = 0.0
         for m in self.models:
-            s += ("%4d Model: " % (cnt + 1)) + stringArray(m.vector) 
+            s += ("%4d Model: " % cnt) + stringArray(m.vector) 
             sum = 0.0
             for b in m.contents:
                 sum += euclideanDistance(m.vector, b, self.mask)
