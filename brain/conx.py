@@ -800,10 +800,19 @@ class Network(object):
                 c.toLayer.name == toName):
                 return 1
         return 0
-    def connect(self, fromName, toName, position = None):
+    def connect(self, *names):
+        """
+        Connects a list of names, one to the next.
+        """
+        fromName, toName, rest = names[0], names[1], names[2:]
+        self.connectAt(fromName, toName)
+        if len(rest) != 0:
+            self.connect(toName, *rest)
+    def connectAt(self, fromName, toName, position = None):
         """
         Connects two layers by instantiating an instance of Connection
-        class.
+        class. Allows a position number, indicating the ordering of
+        the connection.
         """
         fromLayer = self.getLayer(fromName)
         toLayer   = self.getLayer(toName)
@@ -1216,7 +1225,7 @@ class Network(object):
         Copies activations in vec to the specified layer, replacing
         patterns if necessary.
         """
-        vector = self.replacePatterns(vec)
+        vector = self.replacePatterns(vec, layer.name)
         if self.verbosity > 4:
             print "Copying Activations: ", vector[start:start+layer.size]
         layer.copyActivations(vector[start:start+layer.size])
@@ -1225,7 +1234,7 @@ class Network(object):
         Copies targets in vec to specified layer, replacing patterns
         if necessary.
         """
-        vector = self.replacePatterns(vec)
+        vector = self.replacePatterns(vec, layer.name)
         if self.verbosity > 4:
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
@@ -2066,8 +2075,12 @@ class Network(object):
             output += layer.toString()
         return output
     def prompt(self):
-        print "--More-- [quit, go] ",
-        if sys.stdout.name == "<tkgui>":
+        print "--More-- [<enter>, <q>uit, <g>o] ",
+        try:
+            stdoutName = sys.stdout.name
+        except:
+            stdoutName = "<other>" # probably IDLE
+        if stdoutName == "<tkgui>":
             chr = "\n"
             print
             sys.stdout.flush()
@@ -2495,20 +2508,26 @@ class Network(object):
             self.loadOrder[i] = i
 
     # patterning
-    def replacePatterns(self, vector):
+    def lookupPattern(self, name, layer):
+        """ See if there is a name/layer pattern combo, else return the name pattern. """
+        if (name, layer) in self.patterns:
+            return self.patterns[(name, layer)]
+        else:
+            return self.patterns[name]
+    def replacePatterns(self, vector, layer = None):
         """
         Replaces patterned inputs or targets with activation vectors.
         """
         if not self.patterned: return vector
         if type(vector) == str:
-            return self.replacePatterns(self.patterns[vector])
+            return self.replacePatterns(self.lookupPattern(vector, layer), layer)
         elif type(vector) != list:
             return vector
         # should be a vector if we made it here
         vec = []
         for v in vector:
             if type(v) == str:
-                retval = self.replacePatterns(self.patterns[v])
+                retval = self.replacePatterns(self.lookupPattern(v, layer), layer)
                 if type(retval) == list:
                     vec.extend( retval )
                 else:
@@ -2811,10 +2830,10 @@ class IncrementalNetwork(Network):
         self.addLayer("candidate", size, position = -1)
         for layer in self:
             if layer.type != "Output" and layer.name != "candidate":
-                self.connect(layer.name, "candidate", -1)
+                self.connectAt(layer.name, "candidate", position = -1)
         for layer in self: # ghost connection
             if layer.type == "Output" and layer.name != "candidate":
-                self.connect("candidate", layer.name, -1)
+                self.connectAt("candidate", layer.name, position = -1)
     def recruitBest(self):
         bestScore, best = 1000000, 0
         for i in range(self["candidate"].size):
@@ -2845,18 +2864,18 @@ class IncrementalNetwork(Network):
         # first, connect up input
         for layer in self: 
             if layer.type == "Input" and layer.name != hname: # includes contexts
-                self.connect(layer.name, hname, position = 1)
+                self.connectAt(layer.name, hname, position = 1)
                 self[layer.name, hname].frozen = 1 # don't change incoming weights
         # next add hidden connections
         if self.incrType == "cascade": # or parallel
             for layer in self: 
                 if layer.type == "Hidden" and layer.name not in [hname, "candidate"]: 
-                    self.connect(layer.name, hname, position = -1)
+                    self.connectAt(layer.name, hname, position = -1)
                     self[layer.name, hname].frozen = 1 # don't change incoming weights
         # and then output connections
         for layer in self: 
             if layer.type == "Output" and layer.name not in ["candidate", hname]: 
-                self.connect(hname, layer.name, position = -1)
+                self.connectAt(hname, layer.name, position = -1)
                 # not frozen! Can change these hidden to the output
         # now, let's copy the weights, and randomize the old ones:
         for c in self.connections:
@@ -2876,7 +2895,7 @@ class IncrementalNetwork(Network):
                     self["candidate", c.toLayer.name].randomize(1)
         self["candidate"].randomize(1)
         # finally, connect new hidden to candidate
-        self.connect(hname, "candidate", position = -1)
+        self.connectAt(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
 
 class SRN(Network):
@@ -3041,7 +3060,7 @@ class SRN(Network):
                 context.activationSet = 1
         # replace all patterns
         for key in args:
-            args[key] = self.replacePatterns( args[key] )
+            args[key] = self.replacePatterns( args[key], key )
         # This should really loop over each arg that is kind Input
         # For now, just assumes an "input" layer
         if not args.has_key("input"):
@@ -3082,12 +3101,12 @@ class SRN(Network):
                             # Train it to predict first pattern, first sequence item
                             pattern = self.getData(self.loadOrder[0])
                             for key in pattern:
-                                pattern[key] = self.replacePatterns( pattern[key] )
+                                pattern[key] = self.replacePatterns( pattern[key], key )
                             dict[outName] = pattern["input"][start:start+patternLength]
                         else:
                             pattern = self.getData(self.loadOrder[self.currentSweepCount+1]) 
                             for key in pattern:
-                                pattern[key] = self.replacePatterns( pattern[key] )
+                                pattern[key] = self.replacePatterns( pattern[key], key )
                             dict[outName] = pattern["input"][start:start+patternLength]
                 else: # in middle of sequence
                     start = (step + 1) * inLayer.size
