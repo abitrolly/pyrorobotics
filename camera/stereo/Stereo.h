@@ -6,13 +6,16 @@
 class Stereo : public Device {
 
  public:
-  unsigned char *otherimage;
-  int otherwidth;
-  int otherheight;
-  int otherdepth;
-  int quadNumber;
+  unsigned char *leftimage;
+  unsigned char *rightimage;
+  int leftwidth;
+  int leftheight;
+  int leftdepth;
+  int rightwidth;
+  int rightheight;
+  int rightdepth;
 
-  Stereo(void *odev, int splits, int quad);
+  Stereo(void *left, void *right);
   PyObject *updateMMap();
 };
 

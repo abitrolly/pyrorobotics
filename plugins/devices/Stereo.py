@@ -1,20 +1,15 @@
-""" A simple loader for a Video for Linux (V4L) frame grabber """
+""" Needs two cameras. """
 
-from pyrobot.camera.v4l import V4LGrabber
-from pyrobot.vision.cvision import VisionSystem
+from pyrobot.camera.stereo import StereoCamera
+from pyrobot.system.share import ask
 
 def INIT(robot):
-    if robot.name == "Aria":
-        # Pioneers. You may have to set channel by hand to one that works
-        ch = 0 # channel
-    else:
-        # For framegrabbers:
-        # Channel -  0: television; 1: composite; 2: S-Video
-        ch = 1 # channel
-    return {"camera" : V4LGrabber( 160, 120, device = "/dev/video0",
-                                  channel = ch,
-                                  visionSystem = VisionSystem()),
-	    "camera" : V4LGrabber( 160, 120, device = "/dev/video1",
-                                  channel = ch,
-                                  visionSystem = VisionSystem())}
-
+    retval = ask("Please enter the index numbers of the left and right cameras",
+                 (("Left", "0"),
+                  ("Right", "1"),
+                  ))
+    left = int(retval["Left"])
+    right = int(retval["Right"])
+    leftCamera = robot.camera[left]
+    rightCamera = robot.camera[right]
+    return {"camera": StereoCamera(leftCamera, rightCamera)}

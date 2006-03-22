@@ -1,45 +1,37 @@
 #include "Stereo.h"
 
-Stereo::Stereo(void *odev, int splits, int quad) {
+#include <math.h>
+
+Stereo::Stereo(void *left, void *right) {
   // other image:
-  Device *device = (Device *)odev;
-  otherimage = device->getImage();
-  otherwidth = device->getWidth();
-  otherheight = device->getHeight();
-  otherdepth = device->getDepth();
+  Device *leftdevice = (Device *)left;
+  Device *rightdevice = (Device *)right;
+  leftimage = leftdevice->getImage();
+  leftwidth = leftdevice->getWidth();
+  leftheight = leftdevice->getHeight();
+  leftdepth = leftdevice->getDepth();
+  rightimage = rightdevice->getImage();
+  rightwidth = rightdevice->getWidth();
+  rightheight = rightdevice->getHeight();
+  rightdepth = rightdevice->getDepth();
   // this image:
-  if (splits == 2) {
-    width = otherwidth/2;
-    height = otherheight;
-  } else if (splits == 4) {
-    width = otherwidth/2;
-    height = otherheight/2;
-  } else {
-    printf("Error: can't split %d ways.\n", splits);
-  }
-  depth = otherdepth;
-  quadNumber = quad;
+  width = leftwidth;
+  height = leftheight;
+  depth = leftdepth;
   initialize(width, height, depth, 0, 1, 2);
   updateMMap();
 }
 
 PyObject *Stereo::updateMMap() {
-  int offset = 0;
-  if (quadNumber == 0)
-    offset = 0;
-  else if (quadNumber == 1)
-    offset = width * depth;
-  else if (quadNumber == 2)
-    offset = height * width * depth * 2;
-  else if (quadNumber == 3)
-    offset = (height * width * depth * 2) + (width * depth);
-  // Copy the image quad to our space:
-  for (int h = 0; h < height; h++) {
-    for (int w = 0; w < width; w++) {
-     for (int d = 0; d < depth; d++) {
-       image[(h * width + w) * depth + d] = 
-	 otherimage[offset + (h * otherwidth + w) * otherdepth + d];
-     }
+  for (int w = 0; w < width; w++) {
+    for (int h = 0; h < height; h++) {
+      int totalDiff = 0;
+      for (int d = 0; d < depth; d++) {
+	totalDiff += abs(leftimage[(h * width + w) * depth + d] - rightimage[(h * width + w) * depth + d]);
+      }
+      for (int d = 0; d < depth; d++) {
+	image[(h * width + w) * depth + d] = (unsigned char) fmin(fmax(totalDiff/3, 0), 255);
+      }
     }
   } 
   return PyInt_FromLong(0);

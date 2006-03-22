@@ -1,4 +1,4 @@
-OBJS = _fourway.so
+OBJS = _stereo.so
 
 include ../../Makefile.cfg
 include ../../Makefile.src
@@ -16,18 +16,18 @@ LIBS= -lstdc++ -ldl -lpthread
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
-_fourway.so: fourway.o Fourway.o 
-	$(CC) $(CPPFLAGS) -shared fourway.o Fourway.o ../device/Device.o -o $@ $(LIBS)
+_stereo.so: stereo.o Stereo.o 
+	$(CC) $(CPPFLAGS) -shared stereo.o Stereo.o ../device/Device.o -o $@ $(LIBS)
 
-Fourway.o:: Fourway.cpp Fourway.h ../device/Device.o
-	$(CC) $(CPPFLAGS) -o $@ -c Fourway.cpp
+Stereo.o:: Stereo.cpp Stereo.h ../device/Device.o
+	$(CC) $(CPPFLAGS) -o $@ -c Stereo.cpp
 
-Fourway.cc: Fourway.i Fourway.h ../device/Device.o
-	swig -python -c++ $(INCLUDE) -o Fourway.cc Fourway.i
+Stereo.cc: Stereo.i Stereo.h ../device/Device.o
+	swig -python -c++ $(INCLUDE) -o Stereo.cc Stereo.i
 
-fourway.o: Fourway.cc 
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Fourway.cc -o $@
+stereo.o: Stereo.cc 
+	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Stereo.cc -o $@
 
 clean::
-	$(RM) *~ *.so *.o fourway.py Fourway.cc
+	$(RM) *~ *.so *.o stereo.py Stereo.cc
 
