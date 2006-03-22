@@ -1,24 +1,33 @@
-MAIN = p2p
-OBJS = error.o match_scanlines.o pnmio.o postprocess.o
-OBJS_SGI = error.u match_scanlines.u pnmio.u postprocess.u
-SRCS = $(OBJS:.o=.c) $(MAIN).c
-COPT = -fullwarn
-CC = gcc
-CC_SGI = cc
+OBJS = _fourway.so
 
-all:  $(MAIN)
+include ../../Makefile.cfg
+include ../../Makefile.src
 
-.c.o: 
-	$(CC) -O3 -c $<
+INCLUDE = -I../device/
+CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
+	-D_POSIX_THREAD_SAFE_FUNCTIONS \
+	-D_REENTRANT -DPOSIX \
+	-D__x86__ -D__linux__ \
+	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
+	$(PYTHON_INCLUDE) $(INCLUDE)
 
-.c.u: 
-	$(CC_SGI) -j $(COPT) $<
+LIBS= -lstdc++ -ldl -lpthread
 
-$(MAIN): $$@.c $(OBJS)
-	$(CC) -O3 -o $@ $(OBJS) $@.c
+../device/Device.o: ../device/Device.h ../device/Device.cpp
+	cd ../device/; make
 
-$(MAIN)-SGI: $(MAIN).c $(OBJS_SGI)
-	$(CC_SGI) -O3 $(COPT) -o $(MAIN) $(OBJS_SGI) $(MAIN).c
+_fourway.so: fourway.o Fourway.o 
+	$(CC) $(CPPFLAGS) -shared fourway.o Fourway.o ../device/Device.o -o $@ $(LIBS)
 
-clean:
-	\rm -f *.o *.a *.u
+Fourway.o:: Fourway.cpp Fourway.h ../device/Device.o
+	$(CC) $(CPPFLAGS) -o $@ -c Fourway.cpp
+
+Fourway.cc: Fourway.i Fourway.h ../device/Device.o
+	swig -python -c++ $(INCLUDE) -o Fourway.cc Fourway.i
+
+fourway.o: Fourway.cc 
+	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Fourway.cc -o $@
+
+clean::
+	$(RM) *~ *.so *.o fourway.py Fourway.cc
+
