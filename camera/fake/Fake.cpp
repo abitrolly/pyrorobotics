@@ -46,7 +46,7 @@ PyObject *Fake::updateMMap(char filename[]) {
   FILE *theFile;
   theFile = fopen(filename, "rb");
   if (!theFile){
-    printf("Fake camera: error loading file\n");
+    //printf("Fake camera: error loading file\n");
     return PyInt_FromLong(0);
   }
   fscanf(theFile, "P%d\n%d %d\n%3d\n", &num, &w, &h, &maxval);

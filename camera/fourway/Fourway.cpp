@@ -1,7 +1,6 @@
 #include "Fourway.h"
 
-Fourway::Fourway(void *odev, 
-		 int quad) {
+Fourway::Fourway(void *odev, int splits, int quad) {
   // other image:
   Device *device = (Device *)odev;
   otherimage = device->getImage();
@@ -9,8 +8,15 @@ Fourway::Fourway(void *odev,
   otherheight = device->getHeight();
   otherdepth = device->getDepth();
   // this image:
-  width = otherwidth/2;
-  height = otherheight/2;
+  if (splits == 2) {
+    width = otherwidth/2;
+    height = otherheight;
+  } else if (splits == 4) {
+    width = otherwidth/2;
+    height = otherheight/2;
+  } else {
+    printf("Error: can't split %d ways.\n", splits);
+  }
   depth = otherdepth;
   quadNumber = quad;
   initialize(width, height, depth, 0, 1, 2);
