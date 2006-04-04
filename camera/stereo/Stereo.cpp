@@ -1742,8 +1742,11 @@ void Stereo::postprocess(unsigned char *imgL,
     row_interest1 = row_interest0 - 1;
 
   /* Copy original disparity map to new disparity map */
-  for (int i = 0; i < height*width; i++) {
-    disp_map[i] = dm_orig[i];
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      disp_map[(w + h * height) * depth + 0] = dm_orig[h*w];
+      disp_map[(w + h * height) * depth + 1] = dm_orig[h*w];
+      disp_map[(w + h * height) * depth + 2] = dm_orig[h*w];
   }
   //memcpy((unsigned char *) disp_map, (unsigned char *) dm_orig, height*width);
 
