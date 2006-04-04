@@ -1,4 +1,5 @@
 OBJS = _stereo.so
+#OOBJS = error.o match_scanlines.o pnmio.o postprocess.o
 
 include ../../Makefile.cfg
 include ../../Makefile.src
@@ -16,8 +17,8 @@ LIBS= -lstdc++ -ldl -lpthread
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
 
-_stereo.so: stereo.o Stereo.o 
-	$(CC) $(CPPFLAGS) -shared stereo.o Stereo.o ../device/Device.o -o $@ $(LIBS)
+_stereo.so: stereo.o Stereo.o
+	$(CC) $(CPPFLAGS) -shared stereo.o Stereo.o ../device/Device.o $(OOBJS) -o $@ $(LIBS)
 
 Stereo.o:: Stereo.cpp Stereo.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c Stereo.cpp
@@ -29,5 +30,14 @@ stereo.o: Stereo.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Stereo.cc -o $@
 
 clean::
-	$(RM) *~ *.so *.o stereo.py Stereo.cc
+	$(RM) *~ *.so *.o stereo.py Stereo.cc p2p
+
+#error.o: error.c error.h
+#	$(CC) -O3 $(LIBS) -c $<
+#match_scanlines.o: match_scanlines.c
+#	$(CC) -O3 $(LIBS) -c $<
+#pnmio.o: pnmio.c pnmio.h
+#	$(CC) -O3 $(LIBS) -c $<
+#postprocess.o: postprocess.c
+#	$(CC) -O3 $(LIBS) -c $<
 
