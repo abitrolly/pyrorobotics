@@ -22,7 +22,7 @@ Stereo::Stereo(void *left, void *right) {
   depth = leftdepth;
   initialize(width, height, depth, 0, 1, 2);
   
-  g_maxdisp = 11; // maximum disparity
+  g_maxdisp = 14; // maximum disparity
   g_slop = g_maxdisp + 1;  /* expand arrays so we don't have to keep checking whether index is too large */
   occ_pen = 25 * 2;	
   reward = 5 * 2;
@@ -36,9 +36,10 @@ Stereo::Stereo(void *left, void *right) {
   th_max_attraction = 10;
 
   // Memory:
-  disparity_map1 = new unsigned char [height * width * depth];
-  depth_discontinuities1 = new unsigned char [height * width * depth];
-  depth_discontinuities2 = new unsigned char [height * width * depth];
+  disparity_map1 = new unsigned char [height * width];
+  disparity_map2 = new unsigned char [height * width];
+  depth_discontinuities1 = new unsigned char [height * width];
+  depth_discontinuities2 = new unsigned char [height * width];
 
   himgL = new unsigned short int[width + 1];
   himgR = new unsigned short int[width + 1];
@@ -54,7 +55,6 @@ Stereo::Stereo(void *left, void *right) {
   dis = new int [(width + g_slop)*(g_maxdisp + 1)];
   no_igL = new int [(width + g_slop)];
   no_igR = new int [(width + g_slop)];
-  xmin = new int [(width + g_slop)];
   q_no_igL = new int [(height)*(width + g_slop)];
   q_no_igR = new int [(height)*(width + g_slop)];
   matches = new int [2*width];
@@ -79,8 +79,15 @@ PyObject *Stereo::updateMMap() {
   if (DEBUG) printf("Postprocessing disparity map ...\n");
   postprocess(leftimage, rightimage, 
 	      disparity_map1, 
-	      image, 
+	      disparity_map2, 
 	      depth_discontinuities2);
+  for (int h = 0; h < height; h++) {
+    for (int w = 0; w < width; w++) {
+      image[(h * width + w) * depth + 0] = disparity_map2[(h * width + w)] * 255 / g_maxdisp;
+      image[(h * width + w) * depth + 1] = disparity_map2[(h * width + w)] * 255 / g_maxdisp;
+      image[(h * width + w) * depth + 2] = disparity_map2[(h * width + w)] * 255 / g_maxdisp;
+    }
+  }
   return PyInt_FromLong(0);
 }
 
@@ -177,8 +184,8 @@ void Stereo::computeIntensityGradientsX(unsigned char *imgL,
   for (i = 0 ; i < width - w + 1 ; i++)  {
     max1 = 0;      min1 = INF;
     for (j = i ; j < i + w ; j++)  {
-      if (imgL[width*scanline+j] < min1)   min1 = imgL[width*scanline+j];
-      if (imgL[width*scanline+j] > max1)   max1 = imgL[width*scanline+j];
+      if (imgL[width*depth*scanline+j*depth] < min1)   min1 = imgL[width*depth*scanline+j*depth];
+      if (imgL[width*depth*scanline+j*depth] > max1)   max1 = imgL[width*depth*scanline+j*depth];
     }
     if (max1 - min1 >= th)
       no_igL[i] = 0;
@@ -188,8 +195,8 @@ void Stereo::computeIntensityGradientsX(unsigned char *imgL,
   for (i = w - 1 ; i < width ; i++)  {
     max2 = 0;      min2 = INF;
     for (j = i - w + 1 ; j <= i ; j++)  {
-      if (imgR[width*scanline+j] < min2)   min2 = imgR[width*scanline+j];
-      if (imgR[width*scanline+j] > max2)   max2 = imgR[width*scanline+j];
+      if (imgR[width*depth*scanline+j*depth] < min2)   min2 = imgR[width*depth*scanline+j*depth];
+      if (imgR[width*depth*scanline+j*depth] > max2)   max2 = imgR[width*depth*scanline+j*depth];
     }
     if (max2 - min2 >= th)
       no_igR[i] = 0;
@@ -271,20 +278,20 @@ void Stereo::fillDissimilarityTable(unsigned char *imgL,
   unsigned short int pmin, pmax, qmin, qmax;
   unsigned short int x, y, alpha, minn;
   
-  p1 = imgL[width*scanline+0];
-  q1 = imgR[width*scanline+0];
+  p1 = imgL[width*depth*scanline+0];
+  q1 = imgR[width*depth*scanline+0];
   himgL[0] = 2 * p1;
   himgR[0] = 2 * q1;
-  himgL[width] = 2 * imgL[width*scanline+width - 1];
-  himgR[width] = 2 * imgR[width*scanline+width - 1];
+  himgL[width] = 2 * imgL[width*depth*scanline+width*depth - 1]; // or - 3
+  himgR[width] = 2 * imgR[width*depth*scanline+width*depth - 1]; // or - 3
   dimgL[0] = 2 * p1;
   dimgR[0] = 2 * q1;
 
   for (y = 1 ; y < width ; y++)  {
     p0 = p1;
-    p1 = imgL[width*scanline+y];
+    p1 = imgL[width*depth*scanline+y*depth];
     q0 = q1;
-    q1 = imgR[width*scanline+y];
+    q1 = imgR[width*depth*scanline+y*depth];
     himgL[y] = p0 + p1;
     dimgL[y] = 2 * p1;
     himgR[y] = q0 + q1;
@@ -339,7 +346,7 @@ void Stereo::fillDissimilarityTable(unsigned char *imgL,
   for (y = 0 ; y < width ; y++)
     for (alpha = 0 ; alpha <= g_maxdisp ; alpha++)  {
       if (y+alpha < width)  {
-	dis[(g_maxdisp + 1)*y+alpha] = 2 * abs(imgL[width*scanline+y+alpha] - imgR[width*scanline+y]);
+	dis[(g_maxdisp + 1)*y+alpha] = 2 * abs(imgL[width*depth*scanline+y*depth+alpha*depth] - imgR[width*depth*scanline+y*depth]);
       }
     }
 #endif
@@ -1102,8 +1109,8 @@ void Stereo::compute_igxy(unsigned char *imgL, unsigned char *igx, unsigned char
     for (j = 0 ; j < width - w + 1 ; j++)  {
       maxx = 0;      minn = INF;
       for (k = j ; k < j + w ; k++)  {
-        if (imgL[(width)*i+k] < minn)   minn = imgL[(width)*i+k];
-        if (imgL[(width)*i+k] > maxx)   maxx = imgL[(width)*i+k];
+        if (imgL[(width*depth)*i+k*depth] < minn)   minn = imgL[(width*depth)*i+k*depth];
+        if (imgL[(width*depth)*i+k*depth] > maxx)   maxx = imgL[(width*depth)*i+k*depth];
       }
       if (maxx - minn >= th)
         for (k = j ; k < j + w ; k++)
@@ -1115,8 +1122,8 @@ void Stereo::compute_igxy(unsigned char *imgL, unsigned char *igx, unsigned char
     for (i = 0 ; i < height - w + 1 ; i++)  {
       maxx = 0;      minn = INF;
       for (k = i ; k < i + w ; k++)  {
-        if (imgL[(width)*k+j] < minn)   minn = imgL[(width)*k+j];
-        if (imgL[(width)*k+j] > maxx)   maxx = imgL[(width)*k+j];
+        if (imgL[(width*depth)*k+j*depth] < minn)   minn = imgL[(width*depth)*k+j*depth];
+        if (imgL[(width*depth)*k+j*depth] > maxx)   maxx = imgL[(width*depth)*k+j*depth];
       }
       if (maxx - minn >= th)
         for (k = i ; k < i + w ; k++)
@@ -1742,14 +1749,7 @@ void Stereo::postprocess(unsigned char *imgL,
     row_interest1 = row_interest0 - 1;
 
   /* Copy original disparity map to new disparity map */
-  for (int h = 0; h < height; h++) {
-    for (int w = 0; w < width; w++) {
-      disp_map[(w + h * height) * depth + 0] = dm_orig[h*w];
-      disp_map[(w + h * height) * depth + 1] = dm_orig[h*w];
-      disp_map[(w + h * height) * depth + 2] = dm_orig[h*w];
-    }
-  }
-  //memcpy((unsigned char *) disp_map, (unsigned char *) dm_orig, height*width);
+  memcpy((unsigned char *) disp_map, (unsigned char *) dm_orig, height*width);
 
   /* Remove "obvious errors" in the disparity map */
   coerceSurroundedPixelsY(disp_map);

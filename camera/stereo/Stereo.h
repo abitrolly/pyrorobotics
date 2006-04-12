@@ -48,6 +48,7 @@ class Stereo : public Device {
 
  private:
   unsigned char *disparity_map1;
+  unsigned char *disparity_map2;
   unsigned char *depth_discontinuities1;
   unsigned char *depth_discontinuities2;
   unsigned short int *himgL, *himgR;
