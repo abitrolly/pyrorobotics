@@ -1747,6 +1747,7 @@ void Stereo::postprocess(unsigned char *imgL,
       disp_map[(w + h * height) * depth + 0] = dm_orig[h*w];
       disp_map[(w + h * height) * depth + 1] = dm_orig[h*w];
       disp_map[(w + h * height) * depth + 2] = dm_orig[h*w];
+    }
   }
   //memcpy((unsigned char *) disp_map, (unsigned char *) dm_orig, height*width);
 
