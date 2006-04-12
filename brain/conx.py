@@ -681,7 +681,7 @@ class Network(object):
         self.currentSweepCount = None
         self.log = None # a pointer to a file-like object, like a Log object
         self.echo = False   # if going to a log file, echo it too, if true
-        self.hyperbolicError = 1
+        self.hyperbolicError = 0 # exaggerate error?
         # Quickprop settings:
         self._quickprop = 0
         self.mu = 1.75 # maximum growth factor
