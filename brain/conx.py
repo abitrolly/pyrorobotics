@@ -889,6 +889,32 @@ class Network(object):
     def setLayerVerification(self, value):
         for layer in self.layers:
             layer.verify = value
+    def deleteLayerNode(self, layername, nodeNum):
+        """
+        Removes a particular unit/node from a layer.
+        """
+        # first, construct an array of all of the weights
+        # that won't be deleted:
+        gene = []
+        for layer in self.layers:
+            if layer.type != 'Input':
+                for i in range(layer.size):
+                    if layer.name == layername and i == nodeNum:
+                        pass # skip it
+                    else:
+                        gene.append(layer.weight[i])
+        for connection in self.connections:
+            for i in range(connection.fromLayer.size):
+                for j in range(connection.toLayer.size):
+                    if ((connection.fromLayer.name == layername and i == nodeNum) or
+                        (connection.toLayer.name == layername and j == nodeNum)):
+                        pass # skip weights from/to nodeNum
+                    else:
+                        gene.append(connection.weight[i][j])
+        # now, change the size (removes rightmost node):
+        self.changeLayerSize(layername, self[layername].size - 1)
+        # and put the good weights where they go:
+        self.unArrayify(gene)
     def changeLayerSize(self, layername, newsize):
         """
         Changes layer size. Newsize must be greater than zero.
