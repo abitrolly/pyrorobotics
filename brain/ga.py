@@ -346,7 +346,8 @@ class GA:
 
     def applyFitnessFunction(self):
         for i in range( len(self.pop.individuals) ):
-            self.pop.individuals[i].fitness = self.fitnessFunction(i) # PROBLEM!
+            self.pop.individuals[i].fitness = self.fitnessFunction(i)
+            
     def setSeed(self, value):
         self.seed = value
         random.seed(self.seed)
