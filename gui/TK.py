@@ -36,9 +36,19 @@ share.ask = ask
 class JoystickDriver(Joystick):
    def __init__(self, robot):
       self.robot = robot
-      Joystick.__init__(self)
+      self.hasZ = 0
+      try:
+         self.robot.moveZ
+         self.hasZ = 1
+      except:
+         self.hasZ = 0
+      Joystick.__init__(self, hasZ = self.hasZ)
+
    def move(self, translate, rotate):
-      self.robot.move(translate, rotate)
+      if self.hasZ:
+         self.robot.move(translate, rotate, self.getHeightScale())
+      else:
+         self.robot.move(translate, rotate)
 
 class TKgui(Tkinter.Toplevel, gui): 
    def __init__(self, engine):

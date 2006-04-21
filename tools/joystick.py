@@ -2,12 +2,29 @@ import Tkinter
 
 class Joystick(Tkinter.Toplevel):
 
-   def __init__(self, parent = None):
+   def __init__(self, parent = None, hasZ = 0):
       Tkinter.Toplevel.__init__(self, parent)
       self.debug = 0
       self.wm_title('Joystick')
       self.protocol('WM_DELETE_WINDOW',self.destroy)
-      self.frame = Tkinter.Frame(self)
+      if hasZ: # has a 3rd dimension, height
+         self.topFrame = Tkinter.Frame(self)
+         self.rightFrame = Tkinter.Frame(self.topFrame)
+         ticks = 10
+         resolution = .1
+         label = Tkinter.Label(self.rightFrame, text = "Height")
+         label.pack(side = "top")
+         self.heightScale = Tkinter.Scale(self.rightFrame, orient=Tkinter.VERTICAL,
+                                          length = 220, from_=1, to=-1,
+                                          tickinterval=ticks, command = self.getHeightScale,
+                                          resolution = resolution)
+         self.heightScale.set(0)
+         self.heightScale.pack(side = 'bottom', expand = "yes", anchor = "e", fill = 'y')
+         self.rightFrame.pack(side='right')
+         self.topFrame.pack()
+         self.frame = Tkinter.Frame(self.topFrame)
+      else:
+         self.frame = Tkinter.Frame(self)
       label = Tkinter.Label(self.frame, text = "Forward")
       label.pack(side = "top")
       label = Tkinter.Label(self.frame, text = "Reverse")
@@ -27,10 +44,13 @@ class Joystick(Tkinter.Toplevel):
       self.circle = self.canvas.create_oval(self.circle_dim, fill = 'white')
       self.canvas.create_oval(105, 105, 115, 115, fill='black')
 
-      self.frame.pack()
+      self.frame.pack(side='left')
       self.translate = 0.0
       self.rotate = 0.0
       self.threshold = 0.10
+
+   def getHeightScale(self, event = None):
+      return self.heightScale.get()
 
    def initHandlers(self):
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
@@ -85,16 +105,17 @@ class Joystick(Tkinter.Toplevel):
       self.move(0.0, 0.0)
 
    def in_circle(self, x, y):
-      r2 = ((self.circle_dim[2] - self.circle_dim[0])/2)**2
+      return 1
+##       r2 = ((self.circle_dim[2] - self.circle_dim[0])/2)**2
            
-      center = ((self.circle_dim[2] + self.circle_dim[0])/2,
-                (self.circle_dim[3] + self.circle_dim[1])/2)
-      #x in?
-      dist2 = (center[0] - x)**2 + (center[1] - y)**2
-      if (dist2 < r2):
-         return 1
-      else:
-         return 0
+##       center = ((self.circle_dim[2] + self.circle_dim[0])/2,
+##                 (self.circle_dim[3] + self.circle_dim[1])/2)
+##       #x in?
+##       dist2 = (center[0] - x)**2 + (center[1] - y)**2
+##       if (dist2 < r2):
+##          return 1
+##       else:
+##          return 0
 
    def calc_tr(self, x, y):
       #right is negative

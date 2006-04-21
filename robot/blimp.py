@@ -27,6 +27,7 @@ class BlimpRobot(Robot):
         self.simulated = 0
         self.serialPort = serialPort
         self.port = Serial(serialPort, baudrate=9600)
+        #self.port = open("debug.txt", "w")
         self.lastCommand = {}
         offPositions = {}
         for i in range(1, self.channels + 1): # init to zeros
