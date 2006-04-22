@@ -81,7 +81,10 @@ class Joystick(Tkinter.Toplevel):
 
    def setHeightScale(self, event = None):
       self.heightScaleValue = self.heightScale.get()
-      self.move(self.translate, self.rotate, self.heightScaleValue)
+      if self.hasZ:
+         self.move(self.translate, self.rotate, self.heightScaleValue)
+      else:
+         self.move(self.translate, self.rotate)
 
    def initHandlers(self):
       self.canvas.bind("<ButtonRelease-1>", self.canvas_clicked_up)
@@ -94,7 +97,10 @@ class Joystick(Tkinter.Toplevel):
    def _move(self, translate, rotate):
       self.translate = translate
       self.rotate = rotate
-      self.move(self.translate, self.rotate, self.heightScaleValue)
+      if self.hasZ:
+         self.move(self.translate, self.rotate, self.heightScaleValue)
+      else:
+         self.move(self.translate, self.rotate)
 
    def move(self, x, y, z = 0):
       if self.debug:
