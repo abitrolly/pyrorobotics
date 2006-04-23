@@ -276,7 +276,7 @@ class Robot:
             return retval
         else: # from a file
             file = item
-            if file[-3:] != '.py':
+            if len(file) > 3 and file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
                 return self.startDevices( system.loadINIT(file, self), **args )

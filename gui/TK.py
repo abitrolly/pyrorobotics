@@ -36,17 +36,17 @@ share.ask = ask
 class JoystickDriver(Joystick):
    def __init__(self, robot):
       self.robot = robot
-      self.hasZ = 0
+      hasZ = 0
       try:
          self.robot.moveZ
-         self.hasZ = 1
+         hasZ = 1
       except:
-         self.hasZ = 0
-      Joystick.__init__(self, hasZ = self.hasZ)
+         pass
+      Joystick.__init__(self, hasZ = hasZ)
 
    def move(self, translate, rotate):
       if self.hasZ:
-         self.robot.move(translate, rotate, self.getHeightScale())
+         self.robot.move(translate, rotate, self.heightScale.get())
       else:
          self.robot.move(translate, rotate)
 
