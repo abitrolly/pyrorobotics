@@ -244,7 +244,7 @@ class Robot:
         """
         dev = self.startDevices(item, **args)
         if len(dev) < 1:
-            raise AttributeError, ("unknown device: '%s'" % item)
+            print "Error loading device: '%s'" % item
         else:
             return dev[0]
         
