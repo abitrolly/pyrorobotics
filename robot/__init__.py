@@ -276,6 +276,8 @@ class Robot:
             return retval
         else: # from a file
             file = item
+            if file == None:
+                return []
             if len(file) > 3 and file[-3:] != '.py':
                 file = file + '.py'
             if system.file_exists(file):
