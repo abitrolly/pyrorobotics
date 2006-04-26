@@ -43,6 +43,11 @@ class JoystickDriver(Joystick):
       except:
          pass
       Joystick.__init__(self, hasZ = hasZ)
+   def move(self, x, y, z = None):
+      if self.hasZ:
+         self.robot.move(x, y, z)
+      else:
+         self.robot.move(x, y)
 
 class TKgui(Tkinter.Toplevel, gui): 
    def __init__(self, engine):
