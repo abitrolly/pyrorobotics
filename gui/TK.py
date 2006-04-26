@@ -44,12 +44,6 @@ class JoystickDriver(Joystick):
          pass
       Joystick.__init__(self, hasZ = hasZ)
 
-   def move(self, translate, rotate):
-      if self.hasZ:
-         self.robot.move(translate, rotate, self.heightScale.get())
-      else:
-         self.robot.move(translate, rotate)
-
 class TKgui(Tkinter.Toplevel, gui): 
    def __init__(self, engine):
       Tkinter.Toplevel.__init__(self, share.gui)
