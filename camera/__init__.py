@@ -244,6 +244,9 @@ class Camera(PyrobotImage, Device):
          self.canvas.bind("<Return>", lambda event: self.updateOnce())
          self.canvas.bind("-", lambda event: self.popCallbackList())
          self.canvas.bind("=", lambda event: self.listCallbackList())
+         self.canvas.bind("!", lambda event: self.clearCallbackList())
+         self.canvas.bind("+", lambda event: self.toggleFilterMode())
+         self.canvas.bind("<space>", self.togglePausePlay)
          self.canvas.focus_set()
          self.window.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.hideWindow)
 
@@ -252,11 +255,11 @@ class Camera(PyrobotImage, Device):
          else:
             filterData = []
 
-         filterList = [['List filters', self.listCallbackList],
-                       ['Toggle filters', self.toggleFilterMode],
+         filterList = [['List filters', self.listCallbackList, "="],
+                       ['Toggle filters', self.toggleFilterMode, "+"],
                        None,
-                       ['Clear filters', [["Last", self.popCallbackList],
-                                          ['All', self.clearCallbackList]]],
+                       ['Clear filters', [["Last", self.popCallbackList, "-"],
+                                          ['All', self.clearCallbackList, "*"]]],
                        None]
 
          filterList.extend( self.makeFilterMenu(filterData) )
@@ -268,9 +271,8 @@ class Camera(PyrobotImage, Device):
                           None,
                           ['Close',self.hideWindow] 
                           ]),
-                 ('View', [['Pause', self.pauseButton],
-                           ['Play', self.playButton],
-                           ['Update', self.updateButton],
+                 ('View', [['Pause/Play', self.togglePausePlay, "<Space>"],
+                           ['Update', self.updateButton, "<Enter>"],
                            None,
                            ['Fast Update (10Hz)', lambda self=self: self.setUpdateInterval(0.1)],
                            ['Medium Update (5Hz)', lambda self=self: self.setUpdateInterval(0.2)],
@@ -278,20 +280,28 @@ class Camera(PyrobotImage, Device):
                            ['Slow Update (.5Hz)', lambda self=self: self.setUpdateInterval(2.0)],
                            ]),
                  ('Filter', filterList)]
-
+         
          # create menu
          self.mBar = Tkinter.Frame(self.window, relief=Tkinter.RAISED, borderwidth=2)
          self.mBar.pack(fill=Tkinter.X, expand='n', side = "top")
          self.goButtons = {}
          self.menuButtons = {}
          for entry in menu:
-            self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
-         
+            text, func, accel = None, None, None
+            if len(entry) == 2:
+               text, func = entry
+            elif len(entry) == 3:
+               text, func, accel = entry
+               print accel
+            self.mBar.tk_menuBar(self.makeMenu(self.mBar, text, func, accel))
       self.setVisible(1)
-      self.window.aspect(self.width, self.height,
-                         self.width, self.height)
+      self.window.aspect(self.width, self.height + 30,
+                         self.width, self.height + 30)
       self.window.minsize(200, 0)
       while self.window.tk.dooneevent(2): pass
+
+   def togglePausePlay(self, event = None):
+      self.setActive(not self.active)
 
    def pauseButton(self):
       self.setActive(0)
@@ -331,9 +341,9 @@ class Camera(PyrobotImage, Device):
          self.processAll()
       return len(self.callbackList) - 1
 
-   def makeMenu(self, bar, name, commands):
+   def makeMenu(self, bar, name, commands, accel = None):
       """ Assumes self.menuButtons exists """
-      menu = Tkinter.Menubutton(bar,text=name,underline=0)
+      menu = Tkinter.Menubutton(bar,text=name,underline=0,accelerator=accel)
       self.menuButtons[name] = menu
       menu.pack(side=Tkinter.LEFT,padx="2m")
       menu.filemenu = Tkinter.Menu(menu)
@@ -343,10 +353,20 @@ class Camera(PyrobotImage, Device):
          elif type(cmd[1]) == type([1,]):
             newmenu = Tkinter.Menu(menu)
             for command in cmd[1]:
-               newmenu.add_command(label = command[0], command=command[1])
+               if len(command) == 3:
+                  text, func, accel = command
+               elif len(command) == 2:
+                  text, func = command
+                  accel = None
+               newmenu.add_command(label = text, command=func, accelerator=accel)
             menu.filemenu.add_cascade(label=cmd[0], menu=newmenu)
          else:
-            menu.filemenu.add_command(label=cmd[0],command=cmd[1])
+            if len(cmd) == 3:
+               text, func, accel = cmd
+            elif len(cmd) == 2:
+               text, func = cmd
+               accel = None
+            menu.filemenu.add_command(label=text,command=func,accelerator=accel)
       menu['menu'] = menu.filemenu
       return menu
 
