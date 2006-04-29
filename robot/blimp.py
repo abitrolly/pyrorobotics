@@ -98,11 +98,11 @@ class BlimpRobot(Robot):
         t_power = 10000 + int(((-t_amt + 1) / 2.0) * 10000)
         r_power1 = 10000 + int(((r_amt + 1) / 2.0) * 10000)
         r_power4 = 10000 + int(((-r_amt + 1) / 2.0) * 10000)
-        h_power = 10000 + int(((h_amt + 1) / 2.0) * 10000)
+        h_power = 10000 + int(((-h_amt + 1) / 2.0) * 10000)
         self.sendCommands({1: r_power1, 2: h_power, 3: t_power, 4: r_power4})
 
     def moveZ(self, height):
-        power = 10000 + int(((height + 1) / 2.0) * 10000)
+        power = 10000 + int(((-height + 1) / 2.0) * 10000)
         self.sendCommands({2: power})
 
     def stop(self):
