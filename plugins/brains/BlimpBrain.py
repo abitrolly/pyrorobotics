@@ -12,8 +12,8 @@ class BlimpBrain(Brain):
       distance = freq * self.conv
       diff = self.targetDistance - distance
       amount = max(min(diff / 200.0, 1.0), -1.0)
-      print amount
-      self.robot.moveZ(amount)
+      print -amount
+      self.robot.moveZ(-amount)
 
 def INIT(engine):
    return BlimpBrain("BlimpBrain", engine)

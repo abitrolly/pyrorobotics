@@ -52,16 +52,16 @@ class BlimpRobot(Robot):
     def sendCommands(self, channelDict):
         # first, remove any that are duplicates of what has already been sent:
         if self.debug: print "        commands:", channelDict
-        remove = []
-        for channel in channelDict:
-            if self.lastCommand[channel] == channelDict[channel]:
-                remove.append(channel)
-            else:
-                # record what will be the last command sent
-                self.lastCommand[channel] = channelDict[channel]
-        # delete the nums (can't do it above, in loop):
-        for num in remove:
-            del channelDict[num]
+        #remove = []
+        #for channel in channelDict:
+        #    if self.lastCommand[channel] == channelDict[channel]:
+        #        remove.append(channel)
+        #    else:
+        #        # record what will be the last command sent
+        #        self.lastCommand[channel] = channelDict[channel]
+        ## delete the nums (can't do it above, in loop):
+        #for num in remove:
+        #    del channelDict[num]
         # next, construct the packets, if there is one:
         if len(channelDict) == 0: return {}
         if self.debug: print "reduced commands:", channelDict
