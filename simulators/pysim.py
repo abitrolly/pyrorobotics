@@ -346,47 +346,79 @@ class Simulator:
             # assume a package
             message = request.split("_")
             if message[0] == "m": # "m_t_r" move:translate:rotate
-                retval = self.assoc[sockname[1]].move(float(message[1]), float(message[2]))
+                t, r = 0, 0
+                try: t, r = float(message[1]), float(message[2])
+                except: pass
+                retval = self.assoc[sockname[1]].move(t, r)
             elif message[0] == "a": # "a_name_x_y_th" simulation placement
-                simulation, name, x, y, thr = message
+                simulation, name, x, y, thr = None, None, None, None, None
+                try:
+                    simulation, name, x, y, thr = message
+                    x = float(x)
+                    y = float(y)
+                    thr = float(thr)
+                except: pass
                 if name in self.robotsByName:
                     r = self.robotsByName[name]
-                    r.setPose(float(x), float(y), float(thr), 1)#handofgod
+                    r.setPose(x, y, thr, 1)#handofgod
                     r.localize(0, 0, 0)
                     return "ok"
                 return "error: no such robot named '%s'" % name
             elif message[0] == "b": # "b_x_y_th" localize
-                localization, x, y, thr = message
-                retval = self.assoc[sockname[1]].localize(float(x), float(y), float(thr))
+                localization, x, y, thr = None, None, None, None
+                try:
+                    localization, x, y, thr = message
+                    x = float(x)
+                    y = float(y)
+                    thr = float(thr)
+                except: pass
+                retval = self.assoc[sockname[1]].localize(x, y, thr)
             elif message[0] == "c": # "c_name" getpose
-                simulation, name = message
+                simulation, name = None, None
+                try:
+                    simulation, name = message
+                except: pass
                 retval = "error"
                 if name in self.robotsByName:
                     r = self.robotsByName[name]
                     retval = (r._gx, r._gy, r._ga)
             elif message[0] == "f": # "f_i_v" rgb[i][v]
-                index, pos = int(message[1]), int(message[2])
+                index, pos = 0, 0
+                try:
+                    index, pos = int(message[1]), int(message[2])
+                except: pass
                 device = self.assoc[sockname[1]].getIndex("light", index)
                 if device:
                     retval = device.rgb[pos]
             elif message[0] == "h": # "h_v" bulb:value
-                self.assoc[sockname[1]].bulb.brightness = float(message[1])
+                val = None
+                try:
+                    val = float(message[1])
+                except: pass
+                self.assoc[sockname[1]].bulb.brightness = val
                 self.redraw()
                 retval = "ok"
             elif message[0] == "i": # "i_name_index_property_val"
-                code, dtype, index, property, val = message
-                device = self.assoc[sockname[1]].getIndex(dtype, int(index))
-                oldval = device.__dict__[property]
-                if type(oldval) == str:
-                    device.__dict__[property] = val
-                elif type(oldval) == int:
-                    device.__dict__[property] = int(val)
-                elif type(oldval) == float:
-                    device.__dict__[property] = float(val)
-                retval = "ok"
+                try:
+                    code, dtype, index, property, val = message
+                    index = int(index)
+                    device = self.assoc[sockname[1]].getIndex(dtype, index)
+                    oldval = device.__dict__[property]
+                    if type(oldval) == str:
+                        device.__dict__[property] = val
+                    elif type(oldval) == int:
+                        device.__dict__[property] = int(val)
+                    elif type(oldval) == float:
+                        device.__dict__[property] = float(val)
+                    retval = "ok"
+                except: pass
             elif message[0] == "j": # "j_index_p_t_z" ptz[index].setPose(p, t, z)
-                code, index, p, t, z = message
-                device = self.assoc[sockname[1]].getIndex("ptz", int(index))
+                code, index, p, t, z = [None] * 5
+                try:
+                    code, index, p, t, z = message
+                    index = int(index)
+                except: pass
+                device = self.assoc[sockname[1]].getIndex("ptz", index)
                 if device:
                     if p == "None": p = None
                     else:          p = float(p)
@@ -396,27 +428,55 @@ class Simulator:
                     else:          z = float(z)
                     retval = device.setPose(p, t, z)
             elif message[0] == "k": # "k_index" ptz[index].getPose()
-                code, index = message
-                device = self.assoc[sockname[1]].getIndex("ptz", int(index))
+                try:
+                    code, index = message
+                    index = int(index)
+                except: pass
+                device = self.assoc[sockname[1]].getIndex("ptz", index)
                 if device:
                     retval = device.getPose()
             elif message[0] == "t": # "t_v" translate:value
-                retval = self.assoc[sockname[1]].translate(float(message[1]))
+                val = 0
+                try:
+                    val = float(message[1])
+                except: pass
+                retval = self.assoc[sockname[1]].translate(val)
             elif message[0] == "v": # "v_v" global step scalar:value
-                self.assoc[sockname[1]].stepScalar = float(message[1])
+                val = 0
+                try:
+                    val = float(message[1])
+                except: pass                
+                self.assoc[sockname[1]].stepScalar = val
                 retval = "ok"
             elif message[0] == "o": # "o_v" rotate:value
-                retval = self.assoc[sockname[1]].rotate(float(message[1]))
+                val = 0
+                try:
+                    val = float(message[1])
+                except: pass
+                retval = self.assoc[sockname[1]].rotate(val)
             elif message[0] == "d": # "d_sonar" display:keyword
-                retval = self.assoc[sockname[1]].display[message[1]] = 1
+                val = 0
+                try:
+                    val = message[1]
+                except: pass
+                retval = self.assoc[sockname[1]].display[val] = 1
             elif message[0] == "e": # "e_amt" eat:keyword
-                retval = self.assoc[sockname[1]].eat(float(message[1]))
+                val = 0
+                try:
+                    val = float(message[1])
+                except: pass
+                retval = self.assoc[sockname[1]].eat(val)
             elif message[0] == "x": # "x_expression" expression
-                retval = eval(message[1])
+                try:
+                    retval = eval(message[1])
+                except: pass
             elif message[0] == "z": # "z_gripper_0_command" command
-                dtype = message[1]
-                index = int(message[2])
-                command = message[3]
+                dtype, index, command = None, None, None
+                try:
+                    dtype = message[1]
+                    index = int(message[2])
+                    command = message[3]
+                except: pass
                 device = self.assoc[sockname[1]].getIndex(dtype, index)
                 if device:
                     retval = device.__class__.__dict__[command](device)
