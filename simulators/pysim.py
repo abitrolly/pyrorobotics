@@ -129,7 +129,7 @@ class Simulator:
         self.lights = []
         self.trail = []
         self.needToMove = [] # list of robots that need to move (see step)
-        self.maxTrailSize = 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
+        self.maxTrailSize = 10 # 5 * 60 * 10 # 5 minutes (one timeslice = 1/10 sec)
         self.trailStart = 0
         self.world = []
         self.time = 0.0
@@ -148,6 +148,14 @@ class Simulator:
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
         self.display = {"wireframe": 0}
+    def mainloop(self):
+        """ Simulates what TkSimulator does. """
+        while not self.done:
+            self.step()
+            time.sleep(self.timeslice/1000.0) # to run in real time
+    def destroy(self):
+        self.done = 1 # stop processing requests, if handling
+        self.quit = 1 # stop accept/bind toplevel
     def __getitem__(self, name):
         if name in self.robotsByName:
             return self.robotsByName[name]
@@ -518,7 +526,7 @@ class Simulator:
         else:
             return retval
 
-class TkSimulator(Simulator, Tkinter.Toplevel):
+class TkSimulator(Tkinter.Toplevel, Simulator):
     def __init__(self, dimensions, offsets, scale, root = None, run = 1):
         if root == None:
             if share and share.gui:
