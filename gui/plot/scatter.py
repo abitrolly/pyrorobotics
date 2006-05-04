@@ -210,6 +210,14 @@ class Scatter(Toplevel):
         else:
             self.canvas.delete('line%d' % linenum)
 
+    def addLine(self, x1, y1, x2, y2, color = "black", width = 2):
+        my_x1, my_y1 = self._x(x1), self._y(y1)
+        my_x2, my_y2 = self._x(x2), self._y(y2)
+        self.canvas.create_line(my_x1, my_y1,
+                                my_x2, my_y2,
+                                tag = 'graph',
+                                width = width,
+                                fill=color)
     def addPoint(self, x, y, line = 0, flush = 1):
         if not (x >= self.xStart and x <= self.xEnd and
                 y >= self.yStart and y <= self.yEnd):

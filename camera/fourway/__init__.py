@@ -5,14 +5,14 @@ from pyrobot.vision.cvision import VisionSystem
 class FourwayCamera(Camera):
    """
    """
-   def __init__(self, camera, splits, quad):
+   def __init__(self, camera, splits, quad, rot = 0):
       """
       Can split a camera 2 or 4 ways.
       """
       self._camera = camera
       self._splits = splits
       self._quad   = quad
-      self._dev = Fourway( self._camera._dev, splits, quad)
+      self._dev = Fourway( self._camera._dev, splits, quad, rot)
       self.vision = VisionSystem()
       self._dev.setRGB(camera.rgb[0], camera.rgb[1], camera.rgb[2])
       self.rgb = camera.rgb

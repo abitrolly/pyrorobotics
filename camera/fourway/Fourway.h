@@ -11,8 +11,9 @@ class Fourway : public Device {
   int otherheight;
   int otherdepth;
   int quadNumber;
+  int rotate;
 
-  Fourway(void *odev, int splits, int quad);
+  Fourway(void *odev, int splits, int quad, int rot = 0);
   PyObject *updateMMap();
 };
 

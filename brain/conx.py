@@ -1986,8 +1986,9 @@ class Network(object):
         """
         def difference(v):
             if not self.hyperbolicError:
-                if -0.1 < v < 0.1: return 0.0
-                else: return v
+                #if -0.1 < v < 0.1: return 0.0
+                #else:
+                return v
             else:
                 if   v < -0.9999999: return -17.0
                 elif v >  0.9999999: return  17.0

@@ -11,7 +11,7 @@ class NNPredict(Brain):
       """ Create the network. """
       self.sensorCount = self.robot.range.count
       self.net = Network()
-      self.net.addThreeLayers(self.sensorCount + 2, 5, 2)
+      self.net.addThreeLayers(self.sensorCount, 16, 2)
       self.net.initialize()
       self.net.setVerbosity(0)
       self.net.setEpsilon(0.5)
@@ -23,9 +23,14 @@ class NNPredict(Brain):
       self.maxvalue = self.robot.range.getMaxvalue()
       self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       self.plot = Scatter(app=share.gui, linecount=2, connectPoints=0,
-                          xEnd=7.0, yEnd=1.2, legend=["Trained", "Test"],
-                          title="NN Generalization", width=400)
+                          xEnd=10.0, yEnd=1.0, legend=["Trained", "Test"],
+                          title="NN Generalization", width=400,
+                          xLabel = "Distance to wall",
+                          yLabel = "Speed")
+      self.plot.addLine(0, .5, 10, .5, color = "green")
       self.min = 0.0
+      self.robot.range._noise = [0.0] * self.robot.range.count
+      #self.fp = open("train.dat", "w")
       
    def destroy(self):
       self.plot.destroy()
@@ -33,23 +38,24 @@ class NNPredict(Brain):
    def scale(self, val):
       return (val / self.maxvalue)           
 
-   def avoid(self):
+   def teacher(self):
       # set targets   
       target_trans  = 1.0
       target_rotate = 0.5
-      # left and right and front:
-      self.min = min([s.distance() for s in self.robot.range.span(45, -45)])
-      left = min([s.distance() for s in self.robot.range.span(45, -45)])
-      right = min([s.distance() for s in self.robot.range.span(45, -45)])
-      if left < 1.5 or right < 1.5:
+      self.min = min([s.distance() for s in self.robot.range.span(20, -20)])
+      if self.min < 3:
          target_trans = 0.5
-      elif left < 3.5 or right < 3.5:
-         target_trans = 0.75
+      elif self.min < 4:
+         target_trans = 0.65
+      elif self.min < 5:
+         target_trans = 0.8
+      elif self.min < 6:
+         target_trans = 0.95
       return [target_trans, target_rotate]
 
    def step(self):
-      target = self.avoid()
-      old = self.new + [self.trans, self.rotate] #trans and rotate
+      target = self.teacher()
+      old = self.new 
       self.new = [self.scale(s.distance()) for s in self.robot.range["all"]]
       # results
       if self.net.learning:
@@ -57,6 +63,8 @@ class NNPredict(Brain):
          if self.counter % 10 == 0:
             print "error = %.2f" % e
          self.trans, self.rotate = target
+         #self.fp.write(" ".join(map(lambda f: str(f), old)) +
+         #              (" %f %f\n" % (target[0], target[1])))
       else:
          old = self.new + [self.trans, self.rotate] 
          self.net.step(input=old, output=target)
