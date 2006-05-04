@@ -1,5 +1,6 @@
 #include "Vision.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 Vision::Vision() {
   allocatedImage = 0;
@@ -529,6 +530,88 @@ PyObject *Vision::sobel(int thresh) {
   unsigned char *out;
   
   unsigned int a,b,d,f,g,z,c,e,h,gc, sobscale;
+  int k, pos, index = 0, dis, count=0, pi = 0;
+  int ps[width][2], p[4];
+
+  out = (unsigned char *)malloc(sizeof(char)*width*height*depth);
+    
+  ImagePtr = Image;
+  
+  for (j=0;j<height*width*depth;j++)
+    out[j]=0;
+
+  offset = 0;
+  sobscale = 1;
+
+  i = j = 0;
+  
+  for (j=0;j<height-2;j++)
+  {
+    a = Image[(j*width+i)*depth];
+    b = Image[(j*width+(i+1))*depth];
+    d = Image[((j+1)*width+i)*depth];
+    f = Image[((j+2)*width+i)*depth];
+    g = Image[((j+2)*width+(i+1))*depth];
+    z = Image[(j*width+i)*depth];
+    
+    for (i=0;i<width-2;i++) 
+    {
+      c = Image[(j*width+(i+2))*depth];
+      e = Image[((j+1)*width+(i+2))*depth];
+      h = Image[((j+2)*width+(i+2))*depth];
+
+      tempx = (a+d+f) - (c+e+h);
+      if( tempx < 0 ) tempx = -1*tempx;
+      
+      tempy = (a+b+c) - (f+g+h);
+      if( tempy < 0 ) tempy = -1*tempy;
+
+      gc = (unsigned int) (sobscale * sqrt(tempx*tempx+tempy*tempy));
+      gc = offset+gc;
+      gc = (gc>255)? 0 : 255 - gc;
+
+      out[(j*width+i)*depth] = gc;
+      out[(j*width+i)*depth+1] = gc;
+      out[(j*width+i)*depth+2] = gc;
+
+      a=b;
+      b=c;
+      d=z;
+      f=g;
+      g=h;
+      z=e;
+
+    }
+    i=0;
+  }
+
+  ImagePtr = Image;
+  for (j=0;j<height;j++)
+    for (i=0;i<width;i++)
+      for(offset=0;offset<depth;offset++)
+	Image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
+
+  free(out);
+
+  return PyInt_FromLong(0L);
+}
+
+int Vision::feql(int x, int y, double t){
+  int dif = abs(x - y);
+
+  if (dif < (x+y)/2*t)
+    return 1;
+
+  return 0;
+}
+
+PyObject *Vision::fid(int thresh) {
+  int i, j, offset;
+  unsigned int tempx, tempy;
+  unsigned char *ImagePtr;
+  unsigned char *out;
+  
+  unsigned int a,b,d,f,g,z,c,e,h,gc, sobscale;
 
   out = (unsigned char *)malloc(sizeof(char)*width*height*depth);
     
@@ -583,6 +666,85 @@ PyObject *Vision::sobel(int thresh) {
 
   }
 
+  int k, pos, index = 0, dis, count=0, pi = 0, starti = -1, boxw = 255;
+  int ps[width][2];
+  int black = 20, of = 20;
+  double min = width/12*3, max = width/4.5*3;
+
+  for (k=0; k<width; k++)
+    ps[k][0] = ps[k][1] = -1;  
+
+  for (i=0; i<height; i++) {
+    printf("%d %d\n", i, boxw);
+    if ((starti != -1) && (i-starti > boxw*0.3))
+      break;
+
+    for (k=0; k<index; k++)
+      ps[k][0] = ps[k][1] = -1;  
+
+    index = 0;
+  
+    for (j=of; j<width-of; j++) {
+      pos = (i*width+j)*depth;
+      if ( out[pos] < black && out[pos+1] < black && out[pos+2] < black ) {
+	if (ps[index][0] == -1)
+	  ps[index][0] = pos;
+	else if (ps[index][1] == -1) {
+	  if ((pos - ps[index][0]) > min && 
+	      (pos - ps[index][0]) < max ) {
+	    ps[index][1] = pos;
+	    
+	    if (starti == -1 && index > 2) {
+	      starti = i;
+	      boxw = (ps[index][1] - ps[index][0])/3;
+	    }
+
+	    ps[++index][0] = pos;
+
+	  }
+	  else
+	    ps[index][0] = pos;
+	}
+      }
+    }
+
+    int colors[6][3] = {{0, 0, 255},             //blue
+			{0, 255, 0},             //green
+			{255, 0, 0},             //red
+			{0, 255, 255},           //cyan
+			{255, 0, 255},           //magenta
+			{255, 255, 0}};          //yellow
+    int ci = 0, width, previous, maxwidth = 0;
+
+    if (index >2) {
+      for (j=0; j<index; j++) {
+	width = 0;
+	previous = 0;
+	if (ci > 5)
+	  ci = 0;
+     
+	for (k=ps[j][0]; k<=ps[j][1]; k=k+3) {
+	  if ( !((Image[k] == Image[k+1]) && (Image[k+2] == Image[k+1])) 
+	      && (Image[k] > black)) {
+	    out[k] = colors[ci][0];
+	    out[k+1] = colors[ci][1];
+	    out[k+2] = colors[ci][2];
+	    
+	    if (k - previous == 3)
+	      width++;
+	    previous = k;
+	  }
+	}
+	if (width > maxwidth)
+	  maxwidth = width;
+	ci++;
+      }
+    }
+    //    printf("%d %d\n", i, maxwidth);
+  }
+
+  //  printf("\n");
+
   ImagePtr = Image;
   for (j=0;j<height;j++)
     for (i=0;i<width;i++)
@@ -590,9 +752,10 @@ PyObject *Vision::sobel(int thresh) {
 	Image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
 
   free(out);
- 
+
   return PyInt_FromLong(0L);
 }
+
 
 PyObject *Vision::medianBlur(int kernel) {
   int mid;
@@ -1434,7 +1597,7 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Blue", "inverse", 2));
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
-  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));
+  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Fiducials", "fid"));
   PyList_Append(menu, Py_BuildValue("sssii", "Detect", "Motion", "motion", 30, 0));
 
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Match", "By Tolerance", "match", 0, 0, 0, 30, 0));
@@ -1510,6 +1673,13 @@ PyObject *Vision::applyFilter(PyObject *filter) {
       return NULL;
     }
     retval = sobel(i1);
+  } else if (strcmp((char *)command, "fid") == 0) {
+    i1 = 1;
+    if (!PyArg_ParseTuple(list, "|i", &i1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: fid");
+      return NULL;
+    }
+    retval = fid(i1);
   } else if (strcmp((char *)command, "setPlane") == 0) {
     i1 = 0; i2 = 0;
     if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {

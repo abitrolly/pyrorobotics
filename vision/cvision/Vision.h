@@ -90,6 +90,7 @@ public:
   PyObject *histogram(int x1, int y1, int x2, int y2, int bins);
   PyObject *grayScale();
   PyObject *sobel(int val);
+  PyObject *fid(int val);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
@@ -119,6 +120,8 @@ public:
   PyObject *yuv2rgb();
   PyObject *rgb2hsv();
   PyObject *hsv2rgb();
+
+  int feql(int x, int y, double t);
 
  protected:
   unsigned char *Image; // current image (currently only image is available)
