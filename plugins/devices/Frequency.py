@@ -65,7 +65,7 @@ class FrequencyDevice(Device):
     def getFreq(self, seconds):
         # change to read from the buffer, rather than block
         if self.debug:
-            data = self.readFile(1)
+            data = self.readFile(1)[0:seconds * self.sample_rate]
         else:
             data = self.read(seconds)
         transform = FFT.real_fft(data).real
@@ -87,12 +87,12 @@ if __name__ == "__main__":
     sd = FrequencyDevice("/dev/dsp")
     sd.playTone(770, 1)
     sd.playTone(852, 1)
-    for col in [697, 770, 852, 941]:
-        for row in [1209, 1336, 1477, 1633]:
-            sd.playTone((row, col), 1)
+    #for col in [697, 770, 852, 941]:
+    #    for row in [1209, 1336, 1477, 1633]:
+    #        sd.playTone((row, col), 1)
     #sd.setFile("697.txt")
     while 1:
-        print sd.getFreq(1)
+        print sd.getFreq(.2)
         
 ## DTMF Tones
 
