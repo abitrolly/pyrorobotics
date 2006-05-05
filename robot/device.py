@@ -8,7 +8,7 @@ from these.
 """
 
 import pyrobot.robot
-import types, random, exceptions, math, Tkinter
+import types, random, exceptions, math, Tkinter, threading
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
@@ -82,7 +82,6 @@ class DeviceWindow(Tkinter.Toplevel):
         except: pass
     def addCommand(self, name, text, value, procedure):
         """Adds a command field to the device view window."""
-        self.visibleData = 0
         frame = Tkinter.Frame(self)
         frame.pack(fill="both", expand="y")
         try:
@@ -173,13 +172,28 @@ class SensorValue:
         return self.geometry[2]
     hit = property(_hit)
 
+class DeviceThread(threading.Thread):
+    def __init__(self, parent, name = "device thread"):
+        threading.Thread.__init__(self, name = name)
+        self.parent = parent
+        self.event  = threading.Event()
+        self.start()
+    def run(self):
+        while not self.event.isSet():
+            self.parent.asyncUpdate()
+            self.event.wait(self.parent.asyncSleep)
+    def join(self, timeout=None):
+        self.event.set()
+        threading.Thread.join(self, timeout)
+
 class Device(object):
     """ A basic device class. All devices derive from this."""
 
     ### Note: Pyro5 will standardize this interface.
     ### 
 
-    def __init__(self, deviceType = 'unspecified', visible = 0):
+    def __init__(self, deviceType = 'unspecified', visible = 0,
+                 async = 0, sleep = 0.01):
         """Constructor for the device class."""
         self.window = 0
         self.count = 0
@@ -189,9 +203,33 @@ class Device(object):
         self.type = deviceType
         self.state = "stopped"
         self.title = deviceType
+        self.async = async
+        self.asyncSleep = sleep
+        self.timestamp = 0.0
         self.setup()
         if visible:
             self.makeWindow()
+        if self.async:
+            self.asyncThread  = DeviceThread(self, name="%s device" % self.type)
+
+    def setAsync(self, value):
+        if value:
+            if self.async:
+                raise ValueError, "asynchronous device is already asynchronous"
+            self.asyncThread  = DeviceThread(self, name="%s device" % self.type)
+            self.async = 1
+
+        else:
+            if not self.async:
+                raise ValueError, "non-asynchronous device is already non-asynchronous"
+            self.asyncThread.join()
+            del self.asyncThread
+            self.async = 0
+
+    def asyncUpdate(self):
+        """ User overrides this. """
+        pass
+
     # Properties to make getting all values easy:
     def _setDisabled(self, ignore):
         raise AttributeError, "This attribute is read-only"
@@ -511,7 +549,7 @@ class Device(object):
                 
     def updateWindow(self):
         """Method to update the device window."""
-        if self.visible:
+        if self.visible and self.window != 0:
             if self._rangeData:
                 for i in range(min(self.count, 24)):
                     self.window.updateWidget(str(i), "%.2f" % self[i].value)

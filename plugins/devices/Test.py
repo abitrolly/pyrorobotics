@@ -1,4 +1,6 @@
 # A Simple Device
+# See TestNoBlock to see a test device that updates
+# asynchronously, and quickly.
 
 from pyrobot.robot.device import Device
 

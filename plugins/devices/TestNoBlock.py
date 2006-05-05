@@ -1,37 +1,46 @@
 # A Simple Device
 
 from pyrobot.robot.device import Device
-from threading import Thread, Event
 
-class TestDevice(Device, Thread):
+class TestDevice(Device):
     def setup(self):
         self.type = "test"
         self.visible = 1
         self.specialvalue = 42
-        self._stopevent = Event()
-        self._sleepperiod = 0.01
-        Thread.__init__(self, name="TestThread")
         self.threadCount = 0
         self.updateCount = 0
-        self.start()
+        self.async = 1
         
-    def run(self):
-        while not self._stopevent.isSet():
-            self.threadCount += 1
-            self._stopevent.wait(self._sleepperiod)
+    def asyncUpdate(self):
+        # Over writes
+        self.threadCount += 1
 
-    def join(self,timeout=None):
-        self._stopevent.set()
-        Thread.join(self, timeout)
+    #def makeWindow(self):
+    #    print "[[[[ made window! ]]]]"
 
-    def makeWindow(self):
-        print "[[[[ made window! ]]]]"
-
-    def updateWindow(self):
-        print "Thread updates:", self.threadCount, "Manual updates:", self.updateCount
+    #def updateWindow(self):
+    #    print "Thread updates:", self.threadCount, "Manual updates:", self.updateCount
 
     def updateDevice(self):
         self.updateCount += 1
+
+    def addWidgets(self, window):
+        window.addData("name1", "specialvalue:", self.specialvalue)
+        window.addData("name2", "thread count:", self.threadCount)
+        window.addData("name3", "update count:", self.updateCount)
+        window.addCommand("sleep", "time between thread updates:",
+                          self.asyncSleep,
+                          self.setSleep)
+
+    def setSleep(self, value):
+        self.asyncSleep = float(value)
+
+    def updateWindow(self):
+        if self.window != 0:
+            self.window.updateWidget("name1", self.specialvalue)
+            self.window.updateWidget("name2", self.threadCount)
+            self.window.updateWidget("name3", self.updateCount)
+
 
 def INIT(robot):
     return {"test": TestDevice()}

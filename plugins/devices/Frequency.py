@@ -2,7 +2,12 @@ import ossaudiodev, struct, math, FFT, Numeric, time
 from pyrobot.robot.device import Device
 
 class FrequencyDevice(Device):
-    def __init__(self, dev = "/dev/dsp"):
+    def __init__(self, dev = "/dev/dsp", sampleTime = 1.0):
+        """
+        This is an async device with no update(). 
+        dev: sound card device name
+        sampleTime: time, in seconds, in which to sample
+        """
         Device.__init__(self, "frequency")
         self.deviceName = dev
         self.status = "closed"
@@ -12,9 +17,15 @@ class FrequencyDevice(Device):
         self.format = ossaudiodev.AFMT_U8
         self.minFreq = 20
         self.maxFreq = 3500
+        self.sampleTime = sampleTime
+        self.results = None
         self.debug = 0
         if self.debug:
             self.setFile("770.txt")
+        self.setAsync(1)
+
+    def asyncUpdate(self):
+        self.results = self.getFreq(self.sampleTime)
 
     def initialize(self, mode):
         self.dev = ossaudiodev.open(self.deviceName, mode)
@@ -68,6 +79,7 @@ class FrequencyDevice(Device):
             data = self.readFile(1)[0:seconds * self.sample_rate]
         else:
             data = self.read(seconds)
+        self.timestamp = time.time()
         transform = FFT.real_fft(data).real
         minFreqPos = self.minFreq
         maxFreqPos = self.maxFreq
@@ -83,6 +95,40 @@ class FrequencyDevice(Device):
             self.dev.close()
             self.status = "closed"
 
+    def addWidgets(self, window):
+        """Method to addWidgets to the device window."""
+        freq, bestAmt, totalAmt = [1] * 3
+        try:
+            freq, bestAmt, totalAmt = self.results
+        except: pass
+        window.addData("freqency", "frequency:", freq)
+        window.addData("best", "best amount:", bestAmt)
+        window.addData("total", "total:", totalAmt)
+        window.addData("ratio", "best percentage of total:", float(bestAmt)/totalAmt)
+        window.addData("timestamp", "timestamp:", self.timestamp)
+        window.addCommand("sleep", "sleep between reads:", self.asyncSleep,
+                          self.setSleep)
+        window.addCommand("sample", "sample time:", self.sampleTime,
+                          self.setSample)
+
+    def updateWindow(self):
+        freq, bestAmt, totalAmt = [1] * 3
+        try:
+            freq, bestAmt, totalAmt = self.results
+        except: pass
+        if self.window != 0:
+            self.window.updateWidget("freqency", freq)
+            self.window.updateWidget("best", bestAmt)
+            self.window.updateWidget("total", totalAmt)
+            self.window.updateWidget("ratio", float(bestAmt)/totalAmt)
+            self.window.updateWidget("timestamp", self.timestamp)
+
+    def setSleep(self, value):
+        self.asyncSleep = float(value)
+    def setSample(self, value):
+        self.sampleTime = float(value)
+
+        
 if __name__ == "__main__":
     sd = FrequencyDevice("/dev/dsp")
     sd.playTone(770, 1)
@@ -91,8 +137,7 @@ if __name__ == "__main__":
     #    for row in [1209, 1336, 1477, 1633]:
     #        sd.playTone((row, col), 1)
     #sd.setFile("697.txt")
-    while 1:
-        print sd.getFreq(.2)
+    sd.setAsyn(1, 1.0, .5) # on, sleep for a second between .5 second reads
         
 ## DTMF Tones
 
