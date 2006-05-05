@@ -20,6 +20,8 @@ class BehaviorBasedBrain(Brain):
       self.effectsTotal = {}
       self.initialized = 0
       self.activeState = None
+   def getStates(self, status = 1):
+      return [state.name for state in self.states.values() if state.status == status]
    def set_controls(self, controllers):
       self.controls = controllers
       self.history = [{}, {}, {}]
