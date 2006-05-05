@@ -5,9 +5,11 @@ class BlimpBrain(Brain):
       self.targetDistance = 1.0 # meters
       if not self.robot.hasA("frequency"):
          self.startDevice("Frequency")
+      print "sleep between:", self.robot.frequency[0].asyncSleep
+      print "sampleTime:", self.robot.frequency[0].sampleTime
          
    def step(self):
-      freq, value, total = self.robot.frequency[0].getFreq(1)
+      freq, value, total = self.robot.frequency[0].results
       distance = freq * 0.0051 - 0.0472
       diff = self.targetDistance - distance
       amount = max(min(diff / 200.0, 1.0), -1.0)
