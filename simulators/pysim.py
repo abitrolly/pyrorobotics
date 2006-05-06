@@ -148,11 +148,14 @@ class Simulator:
         self.supportedFeatures = ["range-sensor", "continuous-movement", "odometry"]
         self.stepCount = 0
         self.display = {"wireframe": 0}
+        self.running = 0
     def mainloop(self):
         """ Simulates what TkSimulator does. """
+        self.running = 1
         while not self.done:
             self.step()
             time.sleep(self.timeslice/1000.0) # to run in real time
+        self.running = 0
     def destroy(self):
         self.done = 1 # stop processing requests, if handling
         self.quit = 1 # stop accept/bind toplevel
@@ -165,11 +168,25 @@ class Simulator:
         pass
     def update(self):
         pass
+
     def addWall(self, x1, y1, x2, y2, color="black"):
         seg = Segment((x1, y1), (x2, y2), len(self.world) + 1, "wall")
         seg.color = color
         seg.type = "wall"
         self.world.append(seg)
+
+    def addShape(self, name, *args, **nargs):
+        # addShape("box", x, y, x, y, color)
+        # addShape("polygon", points, fill = "black", outline = "purple")
+        # addshape("line", (x1, y1), (x2, y2), fill = "purple", width?)
+        # addshape("oval", (x1, y1), (x2, y2), fill = "purple", outline="yellow")
+        if len(nargs) == 0:
+            temp = list(args)
+            temp.insert(0, name)
+            self.shapes.append(temp)
+        else:
+            self.shapes.append( (name, args, nargs) )
+        self.redraw()
 
     def addBox(self, ulx, uly, lrx, lry, color="white", wallcolor="black"):
         self.addWall( ulx, uly, ulx, lry, wallcolor)
@@ -578,7 +595,10 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             self.mBar.tk_menuBar(self.makeMenu(self.mBar, entry[0], entry[1]))
         self.shapes = []
         if run:
+            self.running = 1
             self.after(100, self.step)
+        else:
+            self.running = 0
     def toggleOption(self, key):
         if key == "lightAboveWalls":
             self.lightAboveWalls = not self.lightAboveWalls
@@ -618,6 +638,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         menu['menu'] = menu.filemenu
         return menu
     def destroy(self):
+        if not self.running:
+            self.withdraw()
         self.done = 1 # stop processing requests, if handling
         self.quit = 1 # stop accept/bind toplevel
         self.root.quit() # kill the gui
@@ -682,6 +704,18 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
                 self.canvas.create_rectangle(self.scale_x(ulx), self.scale_y(uly),
                                              self.scale_x(lrx), self.scale_y(lry),
                                              tag="line", fill=fill, outline=outline)
+            elif shape[0] == "polygon":
+                name, points, nargs = shape
+                xys = [(self.scale_x(x), self.scale_y(y)) for (x, y) in points]
+                self.canvas.create_polygon(xys, tag="line", **nargs)
+            elif shape[0] == "line":
+                name, ((x1, y1), (x2, y2)), nargs = shape
+                x1, y1, x2, y2 = self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2)
+                self.canvas.create_line(x1, y1, x2, y2, tag="line", **nargs)
+            elif shape[0] == "oval":
+                name, ((x1, y1), (x2, y2)), nargs = shape
+                x1, y1, x2, y2 = self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2)
+                self.canvas.create_oval(x1, y1, x2, y2, tag="line", **nargs)
         if not self.display["wireframe"]:
             for segment in self.world:
                 (x1, y1), (x2, y2) = segment.start, segment.end
@@ -709,7 +743,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             i += 1
         for robot in self.robots:
             robot._last_pose = (-1, -1, -1)
-
+        if not self.running:
+            self.step(run=0)
     def printDetails(self):
         print "Window: size=(%d,%d), offset=(%d,%d), scale=%f" % (self.winfo_width(), self.winfo_height(), self.offset_x, self.offset_y, self.scale)
         for robot in self.robots:
@@ -726,8 +761,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         id = self.drawLine(x1, y1, x2, y2, fill=color, tag="line")
         seg.id = id
         self.world.append( seg )
-    def drawLine(self, x1, y1, x2, y2, fill, tag):
-        return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill)
+    def drawLine(self, x1, y1, x2, y2, fill, tag, **args):
+        return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill, **args)
     def drawOval(self, x1, y1, x2, y2, **args):
         return self.canvas.create_oval(self.scale_x(x1), self.scale_y(y1),
                                        self.scale_x(x2), self.scale_y(y2),
@@ -747,8 +782,10 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         self.remove('robot')
         Simulator.step(self, run)
         if run:
+            self.running = 1
             self.after(self.timeslice, self.step)
-
+        else:
+            self.running = 0
     def addTrail(self, pos, index, robot):
         Simulator.addTrail(self, pos, index, robot)
         if robot.display["trail"] == 1:
@@ -1365,6 +1402,28 @@ class TkPioneer(TkRobot):
                 for s in additionalSegments:
                     self.simulator.drawLine(s.start[0], s.start[1], s.end[0], s.end[1],
                                             tag="robot-%s" % self.name, fill="purple")
+        self.addMouseBindings()
+
+class TkBlimp(TkRobot):
+    def __init__(self, *args, **kwargs):
+        TkRobot.__init__(self, *args, **kwargs)
+        self.radius = 0.44 # meters
+        self.color = "purple"
+
+    def draw(self):
+        if self._last_pose == (self._gx, self._gy, self._ga): return
+        self._last_pose = (self._gx, self._gy, self._ga)
+        a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
+        cos_a90 = math.cos(a90)
+        sin_a90 = math.sin(a90)
+        self.simulator.remove("robot-%s" % self.name)
+        self.simulator.drawOval(self._gx - self.radius, self._gy - self.radius,
+                                self._gx + self.radius, self._gy + self.radius,
+                                tag="robot-%s" % self.name, fill=self.color, outline="blue")
+        x = (self._gx + self.radius * cos_a90 - 0 * sin_a90)
+        y = (self._gy + self.radius * sin_a90 + 0 * cos_a90)
+        self.simulator.drawLine(self._gx, self._gy, x, y,
+                                tag="robot-%s" % self.name, fill="blue", width=3)
         self.addMouseBindings()
 
 class RangeSensor:

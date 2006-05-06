@@ -1,7 +1,40 @@
 """ This is the FSM of the whole maze. """
 
 from pyrobot.brain.behaviors import State, FSMBrain
-import random
+from pyrobot.simulators.pysim import *
+import random, time
+
+def f2m(feet):
+   """ feet to meters """
+   return 0.3048 * feet
+
+class Map:
+   def __init__(self):
+      # (width, height), (offset x, offset y), scale:
+      self.sim = TkSimulator((411,651), (43,605), 27.229171, run = 0) 
+      self.sim.wm_title("Indoor Aerial Robot Competition Map")
+      # entry way:
+      self.sim.addWall(f2m(17.3), f2m(0), f2m(17.3), f2m(11))
+      self.sim.addWall(f2m(17.3 + 4), f2m(0), f2m(17.3 + 4), f2m(11))
+      # angles:
+      self.sim.addWall(f2m(17.3), f2m(11), f2m(0), f2m(21))
+      self.sim.addWall(f2m(17.3 + 4), f2m(11), f2m(38), f2m(21))
+      # sides:
+      self.sim.addWall(f2m(0), f2m(21), f2m(0), f2m(21 + 45.7))
+      self.sim.addWall(f2m(38), f2m(21), f2m(38), f2m(21 + 45.7 - 9.5))
+      # far wall:
+
+      self.sim.addRobot(60000, TkBlimp("Blimpy", f2m(17.3 + 2), f2m(8), 0.0))
+      # other things you can add:
+      #self.sim.addShape("line", (5, 3), (6, 5), fill = "blue")
+      #self.sim.addShape("polygon", (2, 3), (3, 2), (4, 3), fill = "red")
+      #self.sim.addShape("oval", (5, 7), (6, 6), fill = "green")
+      #self.sim.addShape("box", 5, 7, 6, 6, "purple")
+      self.update()
+      
+   def update(self):
+      self.sim.step(run=0)
+      self.sim.update()
 
 class Start(State):
    def setup(self):
@@ -121,3 +154,6 @@ def INIT(engine): # passes in engine, if you need it
     brain.add(HoverBullseye())
     brain.add(Done())
     return brain
+
+if __name__ == "__main__":
+   mapper = Map()
