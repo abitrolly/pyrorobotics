@@ -666,39 +666,38 @@ PyObject *Vision::fid(int thresh) {
 
   }
 
-  int k, pos, index = 0, dis, count=0, pi = 0, starti = -1, boxw = 255;
+  int k, pos, starti = -1;
   int ps[width][2];
-  int black = 20, of = 20;
-  double min = width/12*3, max = width/4.5*3;
+  int index = 0;
+  int black = 20, of = 20, white = 255;
+  double min = width/8*3, max = width/2*3;
+  int w, previous, maxwidth = 0, boxwidth = 0, maxboxwidth = 0;
+  
+  // center x, center y, and number of dots
+  int cx=0, cy=0, numdots = 0;
 
   for (k=0; k<width; k++)
     ps[k][0] = ps[k][1] = -1;  
 
   for (i=0; i<height; i++) {
-    printf("%d %d\n", i, boxw);
-    if ((starti != -1) && (i-starti > boxw*0.3))
+    if ((starti != -1) && (i-starti > maxboxwidth))
       break;
 
     for (k=0; k<index; k++)
       ps[k][0] = ps[k][1] = -1;  
 
     index = 0;
-  
+    boxwidth = 0;
+
     for (j=of; j<width-of; j++) {
       pos = (i*width+j)*depth;
-      if ( out[pos] < black && out[pos+1] < black && out[pos+2] < black ) {
+      if (out[pos] < black && out[pos+1] < black && out[pos+2] < black) {
 	if (ps[index][0] == -1)
 	  ps[index][0] = pos;
 	else if (ps[index][1] == -1) {
 	  if ((pos - ps[index][0]) > min && 
 	      (pos - ps[index][0]) < max ) {
 	    ps[index][1] = pos;
-	    
-	    if (starti == -1 && index > 2) {
-	      starti = i;
-	      boxw = (ps[index][1] - ps[index][0])/3;
-	    }
-
 	    ps[++index][0] = pos;
 
 	  }
@@ -714,46 +713,78 @@ PyObject *Vision::fid(int thresh) {
 			{0, 255, 255},           //cyan
 			{255, 0, 255},           //magenta
 			{255, 255, 0}};          //yellow
-    int ci = 0, width, previous, maxwidth = 0;
+    int ci = 0;
 
     if (index >2) {
       for (j=0; j<index; j++) {
-	width = 0;
+	w = 0;
 	previous = 0;
 	if (ci > 5)
 	  ci = 0;
-     
+
+	boxwidth += (ps[j][1] - ps[j][0])/3;
+
 	for (k=ps[j][0]; k<=ps[j][1]; k=k+3) {
-	  if ( !((Image[k] == Image[k+1]) && (Image[k+2] == Image[k+1])) 
-	      && (Image[k] > black)) {
+	  if ( Image[k] < white && Image[k+1] < white && Image[k+2] < white) {
 	    out[k] = colors[ci][0];
 	    out[k+1] = colors[ci][1];
 	    out[k+2] = colors[ci][2];
 	    
 	    if (k - previous == 3)
-	      width++;
+	      w++;
 	    previous = k;
 	  }
 	}
-	if (width > maxwidth)
-	  maxwidth = width;
+	if (w > maxwidth)
+	  maxwidth = w;
 	ci++;
       }
+      boxwidth /= index;
+      if (boxwidth > maxboxwidth) {
+	if (starti == -1)
+	  starti = i;
+	maxboxwidth = boxwidth;
+	cy = i;
+	cx = ((ps[index-1][1] - ps[0][0])/2 + ps[0][0])/3 - i*width;
+      }
     }
-    //    printf("%d %d\n", i, maxwidth);
+
+    //    printf("%d %d %d\n", i, maxwidth, maxboxwidth);
   }
 
-  //  printf("\n");
+  int dotw = maxboxwidth/3;
+
+  if (maxwidth > dotw*2 && maxwidth< dotw*3) 
+    numdots = 3;
+  else if (maxwidth > dotw)
+    numdots = 2;
+  else if (maxwidth > dotw/2)
+    numdots = 1;
+
+  printf("%d %d %d\n", cx, cy, numdots);
+
 
   ImagePtr = Image;
   for (j=0;j<height;j++)
-    for (i=0;i<width;i++)
+    for (i=0;i<width;i++) {
+      if (j == cy || i == cx) {
+	Image[(i+j*width)*depth] = 0;
+	Image[(i+j*width)*depth+1] = 255;
+	Image[(i+j*width)*depth+2] = 255;
+	continue;
+      }
       for(offset=0;offset<depth;offset++)
 	Image[(i+j*width)*depth+offset] = out[(i+j*width)*depth+offset] ;
-
+    }
   free(out);
 
-  return PyInt_FromLong(0L);
+  PyObject *tuple = PyTuple_New(3);
+  PyTuple_SetItem(tuple, 0, Py_BuildValue("i", cx));
+  PyTuple_SetItem(tuple, 1, Py_BuildValue("i", cy));
+  PyTuple_SetItem(tuple, 2, Py_BuildValue("i", numdots));
+  return tuple; 
+
+  //  return PyInt_FromLong(0L);
 }
 
 
