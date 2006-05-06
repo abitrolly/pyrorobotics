@@ -761,7 +761,7 @@ PyObject *Vision::fid(int thresh) {
   else if (maxwidth > dotw/2)
     numdots = 1;
 
-  printf("%d %d %d\n", cx, cy, numdots);
+  //printf("%d %d %d\n", cx, cy, numdots);
 
 
   ImagePtr = Image;

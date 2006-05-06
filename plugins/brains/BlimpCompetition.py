@@ -4,8 +4,24 @@ from pyrobot.brain.behaviors import State, FSMBrain
 import random
 
 class Start(State):
+   def setup(self):
+      if not self.robot.hasA("frequency"):
+         self.startDevice("Frequency")
+         self.robot.frequency[0].setSampleTime(0.1)
+      if not self.robot.hasA("camera"):
+         #self.startDevice("V4LCamera0")
+         self.startDevice("BlimpMovie")
+         self.startDevice("FourwayRot2")
+         self.robot.camera[1].addFilter("rotate",) # backview
+         self.robot.camera[3].addFilter("fid",)    # downview
    def step(self):
-      print "To start: brain.states['Start'].go = 1"
+      self.engine.gui.makeWindows()
+      self.robot.camera[4].setVisible(0)
+      self.robot.camera[0].setVisible(0)
+      self.engine.gui.watch("brain.getStates()")
+      self.engine.gui.watch("robot.camera[3].filterResults")
+      print "RUNNING!"
+      print "Enter: brain.states['Start'].go = 1"
       self.go = 0 
       while not self.go:
          self.robot.move(0, 0, 0)
@@ -21,9 +37,6 @@ class MaintainHeight(State):
       self.integral = 0.0
       self.old_diff = 0.0
       self.deriv = 0.0
-      if not self.robot.hasA("frequency"):
-         self.startDevice("Frequency")
-      self.robot.frequency[0].setSampleTime(0.1)
       print "sleep between:", self.robot.frequency[0].asyncSleep
       print "sampleTime:", self.robot.frequency[0].sampleTime
          
