@@ -130,6 +130,8 @@ class MaintainHeight(State):
       amount = max(min(amount, 1.0), -1.0)
       self.robot.moveZ(amount)
       self.old_diff = diff
+      # if it is somewhat reliable, set the distance:
+      self.robot.z = distance
 
 class Search(State):
     def onActivate(self):

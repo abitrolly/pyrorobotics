@@ -41,6 +41,7 @@ public:
   static const int GREEN = 1;
   static const int BLUE = 2;
   static const int ALL = 10;
+  static const int BLACK = 11;
 
   static const int WORKSPACE = 50;
   static const int ORIGINAL = 60;
@@ -90,6 +91,7 @@ public:
   PyObject *histogram(int x1, int y1, int x2, int y2, int bins);
   PyObject *grayScale();
   PyObject *sobel(int val);
+  PyObject *orientation(double current_height);
   PyObject *fid(int val);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 

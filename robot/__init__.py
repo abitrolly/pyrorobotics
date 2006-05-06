@@ -47,6 +47,7 @@ class Robot:
     Primary attributes:
         .x                   robot's computed global position
         .y                   robot's computed global position
+        .z                   robot's computed global height
         .thr                 theta, in radians
         .stall               true, if the robot is bumping into something
         .brain               a reference to the brain, if loaded
@@ -83,6 +84,7 @@ class Robot:
         self.stall = 0
         self.x = 0
         self.y = 0
+        self.z = 0
         self.th = 0
         self.thr = 0
         # user init:

@@ -362,11 +362,15 @@ PyObject *Vision::drawRect(int x1, int y1, int x2, int y2,
   y2 = MAX(MIN(height - 1, y2),0);
   for(int w=x1; w<=x2; w++) {
       for(int h=y1; h<=y2; h++ ) {
-	if (fill == 1 || ((h == x1) || (h == x2) ||
-			  (w == y1) || (w == y2)))
+	if (fill == 1 || ((h == y1) || (h == y2) ||
+			  (w == x1) || (w == x2)))
 	  if (channel == ALL)
 	    for(int d=0; d<depth; d++) {
 	      Image[(h * width + w) * depth + d] = 255;
+	    }
+	  else if (channel == BLACK)
+	    for(int d=0; d<depth; d++) {
+	      Image[(h * width + w) * depth + d] = 0;
 	    }
 	  else
 	    Image[(h * width + w) * depth + rgb[channel]] = 255;
@@ -505,10 +509,57 @@ PyObject *Vision::threshold(int channel, int value) {
   int x, y;
   for (y=0; y<height; y++)
     for(x=0; x<width; x++) {
-      if (Image[(x+y*width)*depth + rgb[channel]] >= value) {
-	Image[(x+y*width)*depth + rgb[channel]] = 255;
+      if (channel == ALL) { // white
+	if ((Image[(x+y*width)*depth + 0] >= value) &&
+	    (Image[(x+y*width)*depth + 1] >= value) &&
+	    (Image[(x+y*width)*depth + 2] >= value)) {
+	  Image[(x+y*width)*depth + 0] = 255;
+	  Image[(x+y*width)*depth + 1] = 255;
+	  Image[(x+y*width)*depth + 2] = 255;
+	} else {
+	  int sum = Image[(x+y*width)*depth + 0] + Image[(x+y*width)*depth + 1] + Image[(x+y*width)*depth + 2];
+	  int avg = sum / 3;
+	  if (((abs(Image[(x+y*width)*depth + 0] - avg) > 20) ||
+	       (abs(Image[(x+y*width)*depth + 1] - avg) > 20) ||
+	       (abs(Image[(x+y*width)*depth + 2] - avg) > 20) ||
+	       (avg > 155))) {
+	    Image[(x+y*width)*depth + 0] = 255;
+	    Image[(x+y*width)*depth + 1] = 255;
+	    Image[(x+y*width)*depth + 2] = 255;
+	  } else {
+	    Image[(x+y*width)*depth + 0] = 0;
+	    Image[(x+y*width)*depth + 1] = 0;
+	    Image[(x+y*width)*depth + 2] = 0;
+	  }
+	}
+      } else if (channel == BLACK) { // black
+	if ((Image[(x+y*width)*depth + 0] <= value) &&
+	    (Image[(x+y*width)*depth + 1] <= value) &&
+	    (Image[(x+y*width)*depth + 2] <= value)) {
+	  //int sum = Image[(x+y*width)*depth + 0] + Image[(x+y*width)*depth + 1] + Image[(x+y*width)*depth + 2];
+	  //int avg = sum / 3;
+	  //if ((abs(Image[(x+y*width)*depth + 0] - avg) < 20) &&
+	  //    (abs(Image[(x+y*width)*depth + 1] - avg) < 20) &&
+	  //    (abs(Image[(x+y*width)*depth + 2] - avg) < 20)) {
+	  Image[(x+y*width)*depth + 0] = 0;
+	  Image[(x+y*width)*depth + 1] = 0;
+	  Image[(x+y*width)*depth + 2] = 0;
+	  //} else {
+	  //Image[(x+y*width)*depth + 0] = 255;
+	  //Image[(x+y*width)*depth + 1] = 255;
+	  //Image[(x+y*width)*depth + 2] = 255;
+	  //}
+	} else {
+	  Image[(x+y*width)*depth + 0] = 255;
+	  Image[(x+y*width)*depth + 1] = 255;
+	  Image[(x+y*width)*depth + 2] = 255;
+	}
       } else {
-	Image[(x+y*width)*depth + rgb[channel]] = 0;
+	if (Image[(x+y*width)*depth + rgb[channel]] >= value) {
+	  Image[(x+y*width)*depth + rgb[channel]] = 255;
+	} else {
+	  Image[(x+y*width)*depth + rgb[channel]] = 0;
+	}
       }
     }
   return PyInt_FromLong(0L);
@@ -603,6 +654,99 @@ int Vision::feql(int x, int y, double t){
     return 1;
 
   return 0;
+}
+
+PyObject *Vision::orientation(double current_height) {
+  static unsigned char *orientmap = new unsigned char[width * height * depth];
+  int x1, y1, x2, y2;
+  double max_height = 1.75; // meters
+  double percent = (current_height / max_height);
+  int black_count;
+  int sum_count = 0;
+  int last_color; // 0 is black, 1 is white
+  int first_x = -1, first_y = -1, black_pixels = 0;
+  x1 = (int)(width * (.1 + .25 * percent));  // between .1 and .35 percent off on each side
+  y1 = (int)(height * (.1 + .25 * percent));
+  x2 = (int)(width - width * (.1 + .25 * percent));
+  y2 = (int)(height - height * (.1 + .25 * percent));
+  drawRect(x1-2, y1-2, x2+2, y2+2, 0, BLACK); // 0 = fill, ALL=white
+  drawRect(x1-1, y1-1, x2+1, y2+1, 0, ALL); // 0 = fill, ALL=white
+  for (int x = x1; x < x2; x++) {
+    black_count = 0;
+    last_color = -1; // 0 is black, 1 is white
+    black_pixels = 0;
+    first_x = -1;
+    first_y = -1;
+    for (int y = y1; y < y2; y++) {
+      if (Image[(y * width + x) * depth + 0] < 20) {
+	black_pixels++;
+	if (last_color != 0) {
+	  black_count++;
+	  if (black_count == 1) {
+	    // first one! could be an endpoint
+	    first_x = x;
+	    first_y = y;
+	  }
+	}
+	last_color=0;
+      } else 
+	last_color=1;
+    }
+    if (black_count == 1 && first_x != x1 && first_y != y1 && black_pixels > 10) {
+      for (int y = y1; y < y2; y++) {
+	if (x == first_x && y == first_y) {
+	  Image[(y * width + x) * depth + rgb[0]] = 0; 
+	  Image[(y * width + x) * depth + rgb[1]] = 0;
+	  Image[(y * width + x) * depth + rgb[2]] = 255;
+	  sum_count++;
+	} else if (Image[(y * width + x) * depth + 0] < 20) {
+	  Image[(y * width + x) * depth + rgb[0]] = 255;
+	  Image[(y * width + x) * depth + rgb[1]] = 0;
+	  Image[(y * width + x) * depth + rgb[2]] = 0;
+	  sum_count++;
+	}
+      }
+    }
+  }
+  for (int y = y1; y < y2; y++) {
+    black_count = 0;
+    last_color = -1; // 0 is black, 1 is white
+    black_pixels = 0;
+    first_x = -1;
+    first_y = -1;
+    for (int x = x1; x < x2; x++) {
+      if (Image[(y * width + x) * depth + 0] < 20) {
+	black_pixels++;
+	if (last_color != 0) {
+	  black_count++;
+	  if (black_count == 1) {
+	    // first one! could be an endpoint
+	    first_x = x;
+	    first_y = y;
+	  }
+	}
+	last_color=0;
+      } else 
+	last_color=1;
+    }
+    if (black_count == 1 && first_x != x1 && first_y != y1 && // removed black_pixels > 10
+	first_x != x2 && first_y != y2 && black_pixels > 10) {
+      for (int x = x1; x < x2; x++) {
+	if (x == first_x && y == first_y) {
+	  Image[(y * width + x) * depth + rgb[0]] = 0; 
+	  Image[(y * width + x) * depth + rgb[1]] = 0;
+	  Image[(y * width + x) * depth + rgb[2]] = 255;
+	  sum_count++;
+	} else if (Image[(y * width + x) * depth + 0] < 20) {
+	  Image[(y * width + x) * depth + rgb[0]] = 255;
+	  Image[(y * width + x) * depth + rgb[1]] = 0;
+	  Image[(y * width + x) * depth + rgb[2]] = 0;
+	  sum_count++;
+	}
+      }
+    }
+  }
+  return PyInt_FromLong(sum_count);
 }
 
 PyObject *Vision::fid(int thresh) {
@@ -1623,12 +1767,16 @@ PyObject *Vision::getMenu() {
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Red", "threshold", 0));
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Green", "threshold", 1));
   PyList_Append(menu, Py_BuildValue("sssi", "Threshold", "Blue", "threshold", 2));
+  PyList_Append(menu, Py_BuildValue("sssii", "Threshold", "White", "threshold", ALL, 200));
+  PyList_Append(menu, Py_BuildValue("sssii", "Threshold", "Black", "threshold", BLACK, 20));
   PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Red", "inverse", 0));
   PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Green", "inverse", 1));
   PyList_Append(menu, Py_BuildValue("sssi", "Inverse", "Blue", "inverse", 2));
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Backup", "backup"));
   PyList_Append(menu, Py_BuildValue("sss", "Copy", "Restore", "restore"));
-  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Fiducials", "fid"));
+  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Edges (sobel)", "sobel"));  
+  PyList_Append(menu, Py_BuildValue("sss", "Detect", "Fiducials", "fid"));
+  PyList_Append(menu, Py_BuildValue("sssf", "Detect", "Line orientation", "orientation", 1.0));
   PyList_Append(menu, Py_BuildValue("sssii", "Detect", "Motion", "motion", 30, 0));
 
   PyList_Append(menu, Py_BuildValue("sssiiiii", "Match", "By Tolerance", "match", 0, 0, 0, 30, 0));
@@ -1711,6 +1859,13 @@ PyObject *Vision::applyFilter(PyObject *filter) {
       return NULL;
     }
     retval = fid(i1);
+  } else if (strcmp((char *)command, "orientation") == 0) {
+    f1 = 1.0;
+    if (!PyArg_ParseTuple(list, "|f", &f1)) {
+      PyErr_SetString(PyExc_TypeError, "Invalid applyFilters: orientation");
+      return NULL;
+    }
+    retval = orientation(f1);
   } else if (strcmp((char *)command, "setPlane") == 0) {
     i1 = 0; i2 = 0;
     if (!PyArg_ParseTuple(list, "|ii", &i1, &i2)) {
