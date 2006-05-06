@@ -7,6 +7,9 @@ import random, time
 def f2m(feet):
    """ feet to meters """
    return 0.3048 * feet
+def d2r(degrees):
+   """ degrees to radians """
+   return PIOVER180 * degrees
 
 class Map:
    def __init__(self):
@@ -23,7 +26,10 @@ class Map:
       self.sim.addWall(f2m(0), f2m(21), f2m(0), f2m(21 + 45.7))
       self.sim.addWall(f2m(38), f2m(21), f2m(38), f2m(21 + 45.7 - 9.5))
       # far wall:
-
+      # triangles:
+      # fiducials:
+      self.addFiducial(19.3, 17, 0)
+      # robot:
       self.sim.addRobot(60000, TkBlimp("Blimpy", f2m(17.3 + 2), f2m(8), 0.0))
       # other things you can add:
       #self.sim.addShape("line", (5, 3), (6, 5), fill = "blue")
@@ -31,6 +37,40 @@ class Map:
       #self.sim.addShape("oval", (5, 7), (6, 6), fill = "green")
       #self.sim.addShape("box", 5, 7, 6, 6, "purple")
       self.update()
+
+   def move(self, x, y, z = 0):
+      self.sim.robots[0].move(x, y)
+      self.update()
+
+   def moveTo(self, x, y, th):
+      self.sim.robots[0]._gx = f2m(x)
+      self.sim.robots[0]._gy = f2m(y)
+      self.sim.robots[0]._ga = d2r(th)
+      self.update()
+
+   def addFiducial(self, x, y, th, dots = 3):
+      xm = f2m(x)
+      ym = f2m(y)
+      thr = d2r(th)
+      cos_a90 = math.cos(thr)
+      sin_a90 = math.sin(thr)
+      x1, y1 = (xm + f2m(2) * cos_a90 - 0 * sin_a90), (ym + f2m(2) * sin_a90 + 0 * cos_a90)
+      x2, y2 = (xm - f2m(2) * cos_a90 - 0 * sin_a90), (ym - f2m(2) * sin_a90 + 0 * cos_a90)
+      self.sim.addShape("line", (x1, y1), (x2, y2), fill="black") # long line
+      # forks:
+      px1, py1 = (xm + f2m(2) * cos_a90 - f2m(1) * sin_a90), (ym + f2m(2) * sin_a90 + f2m(1) * cos_a90)
+      px2, py2 = (xm - f2m(2) * cos_a90 - f2m(1) * sin_a90), (ym - f2m(2) * sin_a90 + f2m(1) * cos_a90)
+      self.sim.addShape("line", (x1, y1), (px1, py1), fill="black")
+      self.sim.addShape("line", (x2, y2), (px2, py2), fill="black")
+      # dots:
+      if dots in (1, 3):
+         x, y = (xm + f2m(0) * cos_a90 - f2m(.5) * sin_a90), (ym + f2m(0) * sin_a90 + f2m(.5) * cos_a90)
+         self.sim.addShape("oval", (x - f2m(.3), y - f2m(.3)), (x + f2m(.3), y + f2m(.3)), fill="red")
+      if dots in (2, 3):
+         x, y = (xm - f2m(1) * cos_a90 - f2m(.5) * sin_a90), (ym - f2m(1) * sin_a90 + f2m(.5) * cos_a90)
+         self.sim.addShape("oval", (x - f2m(.3), y - f2m(.3)), (x + f2m(.3), y + f2m(.3)), fill="red")
+         x, y = (xm + f2m(1) * cos_a90 - f2m(.5) * sin_a90), (ym + f2m(1) * sin_a90 + f2m(.5) * cos_a90)
+         self.sim.addShape("oval", (x - f2m(.3), y - f2m(.3)), (x + f2m(.3), y + f2m(.3)), fill="red")
       
    def update(self):
       self.sim.step(run=0)

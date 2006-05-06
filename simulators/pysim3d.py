@@ -40,8 +40,8 @@ class Tk3DSimulator(TkSimulator):
         self.primitives.append(("oval", (z1 + z2)/2.0, x1, y1, x2, y2, args))
         return 0
 
-    def drawLine(self, x0, y0, x1, y1, fill, tag):
-        return self.drawLine3D(x0, y0, 0, x1, y1, 0, fill = fill, tag = tag)
+    def drawLine(self, x0, y0, x1, y1, fill, tag, **args):
+        return self.drawLine3D(x0, y0, 0, x1, y1, 0, fill = fill, tag = tag, **args)
 
     def drawLine3D(self, x0, y0, z0, x1, y1, z1, **args):
         VertsIn = [0, 0]
