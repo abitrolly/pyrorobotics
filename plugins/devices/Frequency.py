@@ -1,3 +1,5 @@
+""" Device for getting a frequence and turning it into distance. """
+
 import ossaudiodev, struct, math, FFT, Numeric, time
 from pyrobot.robot.device import Device
 
@@ -15,14 +17,16 @@ class FrequencyDevice(Device):
         self.sample_rate= 8000
         self.sample_width= 1
         self.format = ossaudiodev.AFMT_U8
-        self.minFreq = 20
-        self.maxFreq = 3500
         self.sampleTime = sampleTime
         self.results = None
-        self.debug = 0
-        if self.debug:
-            self.setFile("770.txt")
+        self.lastFreq = int(self.sample_rate * self.sampleTime/ 2.0)
         self.setAsync(1)
+
+    def setSampleTime(self, value):
+        self.sampleTime = value
+        self.lastFreq = int(self.sample_rate * self.sampleTime/ 2.0)
+        if self.window != 0:
+            self.window.updateWidget("timestamp", self.timestamp)
 
     def asyncUpdate(self):
         self.results = self.getFreq(self.sampleTime)
@@ -55,40 +59,29 @@ class FrequencyDevice(Device):
         size = len(buffer)
         return struct.unpack(str(size) + "B", buffer)
 
-    def setFile(self, filename):
-        self.debug = 1
-        self.filename = filename
-        self.fp = open(self.filename, "r")
-
-    def readFile(self, seconds):
-        data = None
-        try:
-            data = eval(self.fp.readline())
-        except:
-            self.fp = open(self.filename, "r")
-            try:
-                data = eval(self.fp.readline())
-            except:
-                print "Failed reading file '%s'" % self.filename
-        time.sleep(seconds)
-        return data[:int(seconds * self.sample_rate)]
-
     def getFreq(self, seconds):
-        # change to read from the buffer, rather than block
-        if self.debug:
-            data = self.readFile(1)[0:seconds * self.sample_rate]
-        else:
-            data = self.read(seconds)
+        data = self.read(seconds)
         self.timestamp = time.time()
         transform = FFT.real_fft(data).real
-        minFreqPos = self.minFreq
-        maxFreqPos = self.maxFreq
-        freq = Numeric.argmax(transform[1+minFreqPos:maxFreqPos])
-        value = transform[1+minFreqPos:maxFreqPos][freq]
-        domFreq = (freq + self.minFreq) / seconds
-        if self.debug and abs(value) > 8000 and self.minFreq < domFreq < self.maxFreq:
-            print "Frequence:", domFreq, "Value:", value, "Volume:", transform[0]
-        return (domFreq, value, transform[0])
+        minFreq = 20 
+        maxFreq = 700
+        minFreqPos = int(minFreq * seconds)
+        maxFreqPos = int(maxFreq * seconds)
+        minFreqPos = max(0, minFreqPos)
+        maxFreqPos = min(int(self.sample_rate * seconds), maxFreqPos)
+        if minFreqPos == maxFreqPos:
+            self.lastFreq = int(self.sample_rate * sampleTime/ 2.0)
+            return
+        elif minFreqPos > maxFreqPos:
+            minFreqPos, maxFreqPos = maxFreqPos, minFreqPos
+        freqPos = Numeric.argmax(transform[1+minFreqPos:maxFreqPos])
+        value = transform[1+minFreqPos:maxFreqPos][freqPos]
+        freq = int((freqPos + minFreqPos) / seconds)
+        distance = freq * 0.0051 - 0.0472
+        bestFreqPos = Numeric.argmax(transform[1:])
+        bestValue = transform[1:][bestFreqPos]
+        bestFreq = int(bestFreqPos / seconds)
+        return (distance, freq, value, transform[0], bestFreq, bestValue)
 
     def close(self):
         if self.status != "closed":
@@ -99,12 +92,13 @@ class FrequencyDevice(Device):
         """Method to addWidgets to the device window."""
         freq, bestAmt, totalAmt = [1] * 3
         try:
-            freq, bestAmt, totalAmt = self.results
+            distance, freq, bestAmt, totalAmt, overallBest, overallAmt = self.results
         except: pass
+        window.addData("distance", "distance:", distance)
         window.addData("freqency", "frequency:", freq)
-        window.addData("best", "best amount:", bestAmt)
-        window.addData("total", "total:", totalAmt)
-        window.addData("ratio", "best percentage of total:", float(bestAmt)/totalAmt)
+        window.addData("ratio", "percentage:", float(bestAmt)/totalAmt)
+        window.addData("overallbest", "overall best freq:", overallBest)
+        window.addData("overallbestamount", "overall best %:", float(overallAmt)/totalAmt)
         window.addData("timestamp", "timestamp:", self.timestamp)
         window.addCommand("sleep", "sleep between reads:", self.asyncSleep,
                           self.setSleep)
@@ -114,19 +108,21 @@ class FrequencyDevice(Device):
     def updateWindow(self):
         freq, bestAmt, totalAmt = [1] * 3
         try:
-            freq, bestAmt, totalAmt = self.results
+            distance, freq, bestAmt, totalAmt, overallBest, overallAmt = self.results
         except: pass
         if self.window != 0:
+            self.window.updateWidget("distance", distance)
             self.window.updateWidget("freqency", freq)
-            self.window.updateWidget("best", bestAmt)
-            self.window.updateWidget("total", totalAmt)
             self.window.updateWidget("ratio", float(bestAmt)/totalAmt)
+            self.window.updateWidget("overallbest", overallBest)
+            self.window.updateWidget("overallbestamount", float(overallAmt)/totalAmt)
             self.window.updateWidget("timestamp", self.timestamp)
 
     def setSleep(self, value):
         self.asyncSleep = float(value)
+
     def setSample(self, value):
-        self.sampleTime = float(value)
+        self.setSampleTime(float(value))
 
         
 if __name__ == "__main__":
@@ -136,25 +132,6 @@ if __name__ == "__main__":
     #for col in [697, 770, 852, 941]:
     #    for row in [1209, 1336, 1477, 1633]:
     #        sd.playTone((row, col), 1)
-    #sd.setFile("697.txt")
-    sd.setAsyn(1, 1.0, .5) # on, sleep for a second between .5 second reads
-        
-## DTMF Tones
-
-##                  1209 Hz 1336 Hz 1477 Hz 1633 Hz
-
-##                           ABC     DEF
-##    697 Hz          1       2       3       A
-
-##                   GHI     JKL     MNO
-##    770 Hz          4       5       6       B
-
-##                   PRS     TUV     WXY
-##    852 Hz          7       8       9       C
-
-##                           oper
-##    941 Hz          *       0       #       D
-
 
 def INIT(robot):
     return {"frequency": FrequencyDevice("/dev/dsp")}

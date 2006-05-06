@@ -1,6 +1,6 @@
 from pyrobot.brain import Brain
-#from pyrobot.camera.v4l import V4LCamera
-from pyrobot.camera.fake import FakeCamera
+from pyrobot.camera.v4l import V4LCamera
+#from pyrobot.camera.fake import FakeCamera
 from pyrobot.vision.cvision import VisionSystem
 from pyrobot.camera.fourway import FourwayCamera
 import time
@@ -25,21 +25,16 @@ class BlimpRecorder(Brain):
     def setup(self):
         self.imageCount = 1
         if not self.robot.hasA("camera"):
-            #self.robot.startDevice("Frequency")
-            #self.robot.startDevice( {"camera", V4LCamera( 640, 480, channel = 0, 
-            #                                              visionSystem = VisionSystem())
-            self.robot.startDevice({"camera": FakeCamera(pattern = "vision/blimp/hall-?.pbm",
-                                                         start = 1,
-                                                         stop = 9,
-                                                         interval = 1,
-                                                         visionSystem = VisionSystem()),
-                                    })
+            self.robot.startDevice("Frequency")
+            self.robot.startDevice({"camera":
+                                    V4LCamera(640,480,channel=0,
+                                              visionSystem = VisionSystem())})
             self.robot.startDevice(setupFourway(self.robot))
             self.robot.camera[3].addFilter("grayScale")
       
     def step(self):
-        print time.time()
-        self.robot.camera[3].vision.saveImage("seq-%00000d.pbm" % self.imageCount)
+        print time.time(), self.robot.frequency[0].results
+        self.robot.camera[0].vision.saveImage("cam0-%05d.pbm" % self.imageCount)
         self.imageCount += 1
 
 def INIT(engine):
