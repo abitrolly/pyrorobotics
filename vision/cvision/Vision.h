@@ -93,7 +93,6 @@ public:
   PyObject *sobel(int val);
   PyObject *orientation(double current_height);
   PyObject *fid(int val);
-  PyObject *fid2(int val);
   PyObject *setPlane(int d, int value);
   PyObject *blobify(int inChannel, int low, int high, 
 			    int sortmethod, 
