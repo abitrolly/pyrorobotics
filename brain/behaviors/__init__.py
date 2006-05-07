@@ -277,6 +277,7 @@ class State:
       b.state = self
       b.setup() # init the behavior, just once
       if b.status:
+         print "Activating state '%s'..." % b.name
          b.onActivate()
    def setcontrols(self, controls):
       self.controls = controls

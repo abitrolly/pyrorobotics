@@ -230,25 +230,20 @@ class Start(State):
          self.startDevice("Frequency")
       self.robot.frequency[0].setSampleTime(0.1)
       if not self.robot.hasA("camera"):
-         self.startDevice("V4LCamera0")
+         #self.startDevice("V4LCamera0")
          #self.startDevice("BlimpMovie")
+         self.startDevice("BlimpCameraHallway")
          self.startDevice("FourwayRot2")
       self.robot.camera[0].clearCallbackList()
       self.robot.camera[1].clearCallbackList()
       self.robot.camera[2].clearCallbackList()
       self.robot.camera[3].clearCallbackList()
-      self.robot.camera[4].clearCallbackList()
       self.robot.camera[1].addFilter("rotate",) # backview
         
    def step(self):
       self.engine.gui.makeWindows()
       self.robot.camera[4].setVisible(0)
       self.robot.camera[0].setVisible(0)
-      self.engine.gui.watch("brain.getStates()")
-      print "RUNNING! Sending zeros to blimp for 10 seconds..."
-      now = time.time()
-      while time.time() - now > 10:
-         self.robot.move(0, 0, 0)
       print "Here we go!"
       self.goto("MaintainHeight")
       self.goto("ReadFiducial")
@@ -316,26 +311,44 @@ class MaintainHeight(State):
 
 class Search(State): # looking through forward camera to find a fiducial
    def onActivate(self):
-      self.robot.camera[1].clearCallbackList()
-      self.robot.camera[1].addFilter("match", 158, 110, 99, 25) #front view look for red
-      self.robot.camera[1].addFilter("superColor", 0) #front view look for red
-      self.robot.camera[1].addFilter("blobify", 0) #front view look for red
-      self.h1 = self.robot.camera[1].height
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+      self.robot.camera[3].addFilter("match", 245, 193, 188, 25) #front view look for red
+      self.robot.camera[3].addFilter("superColor", 0) #front view look for red
+      self.robot.camera[3].addFilter("blobify", 0) #front view look for red
+      self.robot.camera[2].addFilter("match", 158, 110, 99, 25) #front view look for red
+      self.robot.camera[2].addFilter("superColor", 0) #front view look for red
+      self.robot.camera[2].addFilter("blobify", 0) #front view look for red
+      self.h1 = self.robot.camera[2].height
       self.h1L = self.h1/3
       self.counter = 0
       
    def step(self):
-      x1, y1, x2, y2, matches = self.robot.camera[1].filterResults[2][0]
-      if self.brain.robotControl:
-         self.robot.move(0, -.2) # turn to the right
-         time.sleep(.1)
-         self.robot.move(0, 0)
-         time.sleep(.3)
       self.counter += 1
+      x1, y1, x2, y2, matches = self.robot.camera[2].filterResults[2][0]
+      if matches > 100: # FIX: box is big enough?
+         self.goto('GotoBullseye')
+         return
       if matches > 50: # FIX: box is big enough?
          self.goto('Advance2Fid')
          return
-      if self.counter > 100:
+      x1, y1, x2, y2, matches = self.robot.camera[3].filterResults[2][0]
+      if matches > 20:
+         self.goto('Advance2Fid')
+         return
+      if random.random() < .3:
+         if self.brain.robotControl:
+            self.robot.move(.2, 0) # turn to the right
+            time.sleep(6)
+            self.robot.move(0, 0)
+      if random.random() < .3:
+         if self.brain.robotControl:
+            self.robot.move(0, -.2) # turn to the right
+            time.sleep(.1)
+            self.robot.move(0, 0)
+            time.sleep(.3)
+      elif self.counter > 100:
          self.counter = 0
          if self.brain.robotControl:
             self.robot.move(.5,0) # go forward
@@ -344,16 +357,22 @@ class Search(State): # looking through forward camera to find a fiducial
 
 class Advance2Fid(State): # move towards Fiducial
    def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
       if self.brain.robotControl:
          self.robot.move(1,0)
          time.sleep(1)
          self.robot.move(0,0)
    def step(self):
-      self.goto('ReadFiducial')
+      self.goto('OrientFiducial')
 
 class OrientFiducial(State):
    def onActivate(self):
-      self.robot.camera[3].clearCallbackList() # downview
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+      # use filters below
       self.counter = 0
         
    def step(self):
@@ -367,106 +386,202 @@ class OrientFiducial(State):
       if matches > 20: # FIX what is a good color?
          self.goto("ReadFiducial")
          return
+      x1, y1, x2, y2, matches = self.robot.camera[3].filterResults[3][0]
+      cx, cy = (x1 + x2)/2, (y1 + y2)/2
+      if self.brain.robotControl:
+         if cx < self.robot.camera[3].width/2: # need to turn left
+            self.move(0, .2)
+         else: # turn some right
+            self.move(0, -.2)
+         if cy < self.robot.camera[3].height/2: # need to backup
+            self.move(-.2, 0)
+         else: # go forward
+            self.move(.2, 0)
       if self.counter > 100:
          self.goto("Search")
        
 class ReadFiducial(State):
-    def onActivate(self):
-        self.robot.camera[3].clearCallbackList()
-        self.robot.camera[3].addFilter("fid",)    # downview
-        self.counter = 0
-        self.fidC1 = 0
-        self.fidC2 = 0
-        self.fidC3 = 0
+   def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+      self.robot.camera[3].addFilter("fid",)    # downview
+      self.counter = 0
+      self.fidC1 = 0
+      self.fidC2 = 0
+      self.fidC3 = 0
         
-    def step(self):
-       # looking if over fiducial
-        self.h3 = self.robot.camera[3].height
-        #self.w3 = self.robot.camera[3].width
-        self.h3U = self.h3 - (self.h3/3)
-        self.h3L = self.h3 - (2*(self.h3/3))
-        self.fid3x, self.fid3y, self.fid3dots = self.robot.camera[3].filterResults[0]
+   def step(self):
+      # looking if over fiducial
+      self.h3 = self.robot.camera[3].height
+      #self.w3 = self.robot.camera[3].width
+      self.h3U = self.h3 - (self.h3/3)
+      self.h3L = self.h3 - (2*(self.h3/3))
+      self.fid3x, self.fid3y, self.fid3dots = self.robot.camera[3].filterResults[0]
     
-        if self.fid3y > self.h3L and self.fid3y < self.h3U:
-           if self.fid3dots == 1:
-              self.fidC1 += 1
-           elif self.fid3dots == 2:
-              self.fidC2 += 1
-           elif self.fid3dots == 3:
-              self.fidC3 += 1
+      if self.fid3y > self.h3L and self.fid3y < self.h3U:
+         if self.fid3dots == 1:
+            self.fidC1 += 1
+         elif self.fid3dots == 2:
+            self.fidC2 += 1
+         elif self.fid3dots == 3:
+            self.fidC3 += 1
 
-        if self.fidC1 > 5 or self.fidC2 > 5 or self.fidC3 > 5:
-           maxval = max(self.fidC1, self.fidC2, self.fidC3)
-           if maxval == self.fidC1:
-              self.brain.map.decide(1)
-              self.goto('Advance2ft1')
-           elif maxval == self.fidC2:
-              self.brain.map.decide(2)
-              self.goto('Advance2ft2')
-           elif maxval == self.fidC3:
-              self.brain.map.decide(3)
-              self.goto('Advance2ft3')
-           self.FFcounter = 0
-           return
-               
-        if self.counter > 100:
-           self.goto('Advance2Fid')  #### put returns after gotos
-        else:
-           self.counter +=1
+      if self.fidC1 > 5 or self.fidC2 > 5 or self.fidC3 > 5:
+         maxval = max(self.fidC1, self.fidC2, self.fidC3)
+         if maxval == self.fidC1:
+            self.brain.map.decide(1)
+            self.goto('Advance2ft1')
+         elif maxval == self.fidC2:
+            self.brain.map.decide(2)
+            self.goto('Advance2ft2')
+         elif maxval == self.fidC3:
+            self.brain.map.decide(3)
+            self.goto('Advance2ft3')
+         self.FFcounter = 0
+         return
+         
+      if self.counter > 100:
+         self.goto('Search')  #### put returns after gotos
+      else:
+         self.counter +=1
 
 class Advance2ft1(State):
    def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
       if self.brain.robotControl:
+         self.robot.move(0,0) # stop
+         self.robot.move(.2,0) # go forward 2 ft
+         time.sleep(6)
          self.robot.move(0,0)
-         self.robot.move(1,0)
-         self.robot.move(0,0)
-         self.robot.move(0,.5,0)
-         self.robot.move(0,-.25,0)
-         self.robot.move(1,0,0)
+         self.robot.move(0,.2) # turn left
+         time.sleep(2)
+         self.robot.move(0,-.2) # stop turning
+         time.sleep(.2)
+         self.robot.move(.2,0) # go forward a few feet
+         time.sleep(6)
+         self.robot.move(0,0) # stop
    def step(self):
       self.goto('Search')
 
 class Advance2ft2(State):
    def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
       if self.brain.robotControl:
-         self.robot.move(0,0)
-         self.robot.move(1,0)
-         self.robot.move(0,0)
+         self.robot.move(0,0) # stop
+         self.robot.move(.2,0) # go forward 2 ft
+         time.sleep(6)
+         self.robot.move(0,0) # stop
+         time.sleep(1)
+         self.robot.move(.2,0) # go forward a few feet
+         time.sleep(6)
+         self.robot.move(0,0) # stop
    def step(self):
       self.goto('Search')
 
 class Advance2ft3(State):
    def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
       if self.brain.robotControl:
+         self.robot.move(0,0) # stop
+         self.robot.move(.2,0) # go forward 2 ft
+         time.sleep(6)
          self.robot.move(0,0)
-         self.robot.move(1,0)
-         self.robot.move(0,0)
-         self.robot.move(0,.5,0)
-         self.robot.move(0,-.25,0)
-         self.robot.move(1,0,0)
-         self.robot.move(0,-.5,0)
-         self.robot.move(0,.25,0)
-         self.robot.move(1,0,0)
+         self.robot.move(0,-.2) # turn left
+         time.sleep(2)
+         self.robot.move(0,.2) # stop turning
+         time.sleep(.2)
+         self.robot.move(.2,0) # go forward a few feet
+         time.sleep(6)
+         self.robot.move(0,0) # stop
    def step(self):
       self.goto('Search')
         
 class Done(State):
-    def step(self):
-        print "We're done!"
-        if self.brain.robotControl:
-           self.robot.move(0,0)
+   def onActivate(self):
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+   def step(self):
+      print "We're done! Look through window!"
+      if self.brain.robotControl:
+         self.robot.move(0,0)
+
+class GotoBullseye(State):
+   def onActivate(self): # method called when activated or gotoed
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+      self.robot.camera[3].addFilter("match", 245, 193, 188, 25) #front view look for red
+      self.robot.camera[3].addFilter("superColor", 0) #front view look for red
+      self.robot.camera[3].addFilter("blobify", 0) #front view look for red
+      self.robot.camera[2].addFilter("match", 158, 110, 99, 25) #front view look for red
+      self.robot.camera[2].addFilter("superColor", 0) #front view look for red
+      self.robot.camera[2].addFilter("blobify", 0) #front view look for red
+      self.counter = 0
+      self.lost = 0
+
+   def step(self):
+      self.counter += 1
+      if self.robot.camera[3].filterResults[2][0][4] > 20: # matches ///
+         self.goto("HoverBullseye")
+         return
+      x1, y1, x2, y2, matches = self.robot.camera[3].filterResults[2][0]
+      cx, cy = (x1 + x2)/2, (y1 + y2)/2
+      if matches == 0:
+         self.lost += 1
+      if self.lost > 20:
+         self.goto("Search")
+         return
+      if self.brain.robotControl:
+         if cx < self.robot.camera[3].width/2: # need to turn left
+            self.move(0, .2)
+         else: # turn some right
+            self.move(0, -.2)
+         if cy < self.robot.camera[3].height/2: # need to backup
+            self.move(-.2, 0)
+         else: # go forward
+            self.move(.2, 0)
+      if self.counter > 100:
+         self.goto('Search')  #### put returns after gotos
+
 
 class HoverBullseye(State):
    def onActivate(self): # method called when activated or gotoed
-      pass
+      self.robot.camera[0].clearCallbackList()
+      self.robot.camera[2].clearCallbackList()
+      self.robot.camera[3].clearCallbackList()
+      self.robot.camera[3].addFilter("match", 245, 193, 188, 25) #front view look for red
+      self.robot.camera[3].addFilter("superColor", 0) #front view look for red
+      self.robot.camera[3].addFilter("blobify", 0) #front view look for red
+      self.startTime = time.time()
+      self.lost = 0
     
    def step(self):
-      # not seeing red for a bit,
-      if random.random() < .1:
+      if time.time() - self.startTime > 15:
          self.goto('Done')
       else:
-         self.goto('Search')
-         # else keep centered on red
+         x1, y1, x2, y2, matches = self.robot.camera[3].filterResults[2][0]
+         cx, cy = (x1 + x2)/2, (y1 + y2)/2
+         if matches == 0:
+            self.lost += 1
+         if self.lost > 10:
+            self.goto('Search')            
+         if self.brain.robotControl:
+            if cx < self.robot.camera[3].width/2: # need to turn left
+               self.move(0, .2)
+            else: # turn some right
+               self.move(0, -.2)
+            if cy < self.robot.camera[3].height/2: # need to backup
+               self.move(-.2, 0)
+            else: # go forward
+               self.move(.2, 0)
 
 class MyBrain(FSMBrain):
    def setup(self):
@@ -488,6 +603,7 @@ def INIT(engine): # passes in engine, if you need it
    brain.add(Advance2ft2())
    brain.add(Advance2ft3())
    brain.add(Done())
+   brain.add(GotoBullseye())
    brain.add(HoverBullseye())
    return brain
 
