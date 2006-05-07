@@ -84,7 +84,7 @@ class BlimpRobot(Robot):
         return channelDict
 
     def translate(self, amt):
-        power = 10000 + int(((-amt + 1) / 2.0) * 10000)
+        power = 10000 + int(((amt + 1) / 2.0) * 10000)
         self.sendCommands({3: power})
 
     def rotate(self, amt):
@@ -95,7 +95,7 @@ class BlimpRobot(Robot):
         self.sendCommands({1: power1, 4: power4})
 
     def move(self, t_amt = 0, r_amt = 0, h_amt = 0):
-        t_power = 10000 + int(((-t_amt + 1) / 2.0) * 10000)
+        t_power = 10000 + int(((t_amt + 1) / 2.0) * 10000)
         r_power1 = 10000 + int(((r_amt + 1) / 2.0) * 10000)
         r_power4 = 10000 + int(((-r_amt + 1) / 2.0) * 10000)
         h_power = 10000 + int(((-h_amt + 1) / 2.0) * 10000)
