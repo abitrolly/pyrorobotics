@@ -1,16 +1,17 @@
 """ Device for getting a frequence and turning it into distance. """
 
-import ossaudiodev, struct, math, FFT, Numeric, time
+import ossaudiodev, struct, math, FFT, Numeric, time, random
 from pyrobot.robot.device import Device
 
 class FrequencyDevice(Device):
-    def __init__(self, dev = "/dev/dsp", sampleTime = 1.0):
+    def __init__(self, dev = "/dev/dsp", sampleTime = 1.0, fake = 0):
         """
         This is an async device with no update(). 
         dev: sound card device name
         sampleTime: time, in seconds, in which to sample
         """
         Device.__init__(self, "frequency")
+        self.fake = fake
         self.deviceName = dev
         self.status = "closed"
         self.number_of_channels= 1
@@ -18,7 +19,7 @@ class FrequencyDevice(Device):
         self.sample_width= 1
         self.format = ossaudiodev.AFMT_U8
         self.sampleTime = sampleTime
-        self.results = None
+        self.results = [1]*6
         self.lastFreq = int(self.sample_rate * self.sampleTime/ 2.0)
         self.setAsync(1)
 
@@ -32,10 +33,11 @@ class FrequencyDevice(Device):
         self.results = self.getFreq(self.sampleTime)
 
     def initialize(self, mode):
-        self.dev = ossaudiodev.open(self.deviceName, mode)
-        self.dev.setparameters(self.format,
-                              self.number_of_channels,
-                              self.sample_rate)
+        if not self.fake:
+            self.dev = ossaudiodev.open(self.deviceName, mode)
+            self.dev.setparameters(self.format,
+                                   self.number_of_channels,
+                                   self.sample_rate)
         self.status = mode
         
     def playTone(self, freq, seconds):
@@ -49,17 +51,31 @@ class FrequencyDevice(Device):
         for f in freq:
             for n in range(len(sample)):
                 sample[n] += int(freqPortion * math.sin(n * 2 * math.pi * f/self.sample_rate))
+        if self.fake: return
         self.dev.write("".join(map(chr,sample)))
         self.dev.flush()
 
     def read(self, seconds):
         if self.status != "r":
             self.initialize("r")
-        buffer = self.dev.read(int(self.sample_rate * seconds))
-        size = len(buffer)
-        return struct.unpack(str(size) + "B", buffer)
+        if self.fake:
+            buffer = []
+            return None
+        else:
+            buffer = self.dev.read(int(self.sample_rate * seconds))
+            size = len(buffer)
+            return struct.unpack(str(size) + "B", buffer)
 
     def getFreq(self, seconds):
+        if self.fake:
+            base = 300
+            if random.random() < .2:
+                freq = base + randint(-50,50)
+            else:
+                freq = base + randint(-200, 200)
+            #freq = (random.random() * 400) + 100.0
+            distance = freq * 0.0051 - 0.0472
+            return (distance, freq, 1, 1, 1, 1)
         data = self.read(seconds)
         self.timestamp = time.time()
         transform = FFT.real_fft(data).real
@@ -85,7 +101,8 @@ class FrequencyDevice(Device):
 
     def close(self):
         if self.status != "closed":
-            self.dev.close()
+            if not self.fake:
+                self.dev.close()
             self.status = "closed"
 
     def addWidgets(self, window):
@@ -126,9 +143,10 @@ class FrequencyDevice(Device):
 
         
 if __name__ == "__main__":
-    sd = FrequencyDevice("/dev/dsp")
+    sd = FrequencyDevice("/dev/dsp", fake =1)
     sd.playTone(770, 1)
     sd.playTone(852, 1)
+    sd.getFreq(1)
     #for col in [697, 770, 852, 941]:
     #    for row in [1209, 1336, 1477, 1633]:
     #        sd.playTone((row, col), 1)

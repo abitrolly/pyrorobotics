@@ -188,7 +188,7 @@ class Robot:
     def disconnect(self):
         """Disconnects the robot object from the server or simulator. """
         pass
-    def move(self, translate, rotate):
+    def move(self, translate, rotate, z = 0):
         """
         Moves the robot by sending an amount of power.
 

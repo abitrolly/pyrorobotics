@@ -78,15 +78,16 @@ class Map:
 
 class Start(State):
    def setup(self):
-      if not self.robot.hasA("frequency"):
-         self.startDevice("Frequency")
-         self.robot.frequency[0].setSampleTime(0.1)
+      #if not self.robot.hasA("frequency"):
+       #  self.startDevice("Frequency")
+        # self.robot.frequency[0].setSampleTime(0.1)
       if not self.robot.hasA("camera"):
          #self.startDevice("V4LCamera0")
          self.startDevice("BlimpMovie")
          self.startDevice("FourwayRot2")
-         self.robot.camera[1].addFilter("rotate",) # backview
          self.robot.camera[3].addFilter("fid",)    # downview
+        # self.robot.camera[1].addFilter("rotate",) # backview
+        
    def step(self):
       self.engine.gui.makeWindows()
       self.robot.camera[4].setVisible(0)
@@ -98,8 +99,8 @@ class Start(State):
       self.go = 0 
       while not self.go:
          self.robot.move(0, 0, 0)
-      self.goto("MaintainHeight")
-      self.goto("OrientFiducial")
+     # self.goto("MaintainHeight")
+      self.goto("ReadFiducial")
 
 class MaintainHeight(State):
    def setup(self):
@@ -133,39 +134,103 @@ class MaintainHeight(State):
       # if it is somewhat reliable, set the distance:
       self.robot.z = distance
 
-class Search(State):
-    def onActivate(self):
-        self.FFcounter = 0
-        self.slope = -1
+class Search(State): # looking through forward camera to find a fiducial
+   def onActivate(self):
+      self.robot.camera[1].addFilter("fid",)
+      self.robot.camera[1].clearCallbackList()
+      self.robot.camera[1].addFilter("fid",) #front view
+      self.robot.move(1,0)
+      self.robot.move(0,0)
+      self.counter = 0
+      
+   def step(self):
+      self.h1 = self.robot.camera[1].height
+      self.h1L = self.h1/3
+      self.fid1x, self.fid1y, self.fid1dots = self.robot.camera[3].filterResults[0]
+      self.counter += 1
+      
+      if self.fid1y > 0 and self.fid1y  < self.h1L:
+         self.goto('Advance2Fid')
 
-    def step(self):
-        # is there a big red blob?
-        self.goto('HoverBullseye')
-        # is there a black line?
-        #get slope
-        if 0: #self.slope > -1
-            self.FFcounter = 0
-            self.goto('OrientFiducial')
-           
-        if self.FFcounter > 100:
-            # for xxx wait
-            self.FFcount = 0
-            self.FFcounter +=1
-        
-class OrientFiducial(State):
+      if self.counter > 100:
+         self.counter = 0
+         self.robot.move(1,0)
+         self.robot.move(0,0)
+         
+
+class Advance2Fid(State): # move towards Fiducial
+   def onActivate(self):
+      self.robot.move(1,0,0)
+      self.robot.move(0,0)
+      self.goto('ReadFiducial')
+
+   def step(self):
+      pass
+   
+class ReadFiducial(State):
     def onActivate(self):
+        self.robot.camera[3].addFilter("fid",)
+        self.robot.camera[3].clearCallbackList()
+        self.robot.camera[3].addFilter("fid",)    # downview
         self.counter = 0
-        self.slope = 0
-
+        self.fidC1 = 0
+        self.fidC2 = 0
+        self.fidC3 = 0
+        
     def step(self):
-        if self.slope !=0:
-            # for xxx wait
-            # turn nDegrees
-            pass
-        # read direction
-        # for xxx wait
-        # turn nDegrees
-        self.goto('Search')
+        # looking if over fiducial
+        self.h3 = self.robot.camera[3].height
+        #self.w3 = self.robot.camera[3].width
+        self.h3U = self.h3 - (self.h3/3)
+        self.h3L = self.h3 - (2*(self.h3/3))
+        self.fid3x, self.fid3y, self.fid3dots = self.robot.camera[3].filterResults[0]
+    
+        if self.fid3y > self.h3L and self.fid3y < self.h3U:
+           if self.fid3dots == 1:
+              self.fidC1 += 1
+           elif self.fid3dots == 2:
+                 self.fidC2 += 1
+           elif self.fid3dots == 3:
+                    self.fidC3 += 1
+
+
+        if self.fidC1 > 5 or self.fidC2 > 5 or self.fidC3 > 5:
+           self.FFcounter = 0
+           self.goto('Advance2ft')
+           return
+               
+        if self.counter > 100:
+           self.goto('Advance2Fid')  #### set returns where necessary!!!           
+        else:
+           counter +=1
+
+class Advance2ft(State):
+   def onActivate(self):
+       self.robot.move(0,0)
+       self.robot.move(1,0)
+       self.robot.move(0,0)
+       self.goto('setDirection')
+
+   def step(self):
+       pass
+        
+class setDirection(State):
+    def onActivate(self):
+       if self.brain.states['Search'].fidC1 > 5:
+          self.robot.move(0,.5,0)
+          self.robot.move(0,-.25,0)
+          self.robot.move(1,0,0)
+
+       elif self.brain.states['Search'].fidC3 >5:
+          self.robot.move(0,-.5,0)
+          self.robot.move(0,.25,0)
+          self.robot.move(1,0,0)
+       
+       self.goto('Search')
+       
+    def step(self):
+        pass       
+       
         
 class Done(State):
     def onActivate(self):
@@ -190,7 +255,7 @@ def INIT(engine): # passes in engine, if you need it
     brain = FSMBrain("Blimpy", engine)
     # add a few states:
     brain.add(Start(1))
-    brain.add(MaintainHeight()) # will always be on after Start
+   # brain.add(MaintainHeight()) # will always be on after Start
     brain.add(OrientFiducial())
     brain.add(Search())
     brain.add(HoverBullseye())

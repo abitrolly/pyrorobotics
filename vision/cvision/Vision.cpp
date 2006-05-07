@@ -661,89 +661,84 @@ PyObject *Vision::orientation(double current_height) {
   int x1, y1, x2, y2;
   double max_height = 1.75; // meters
   double percent = (current_height / max_height);
-  int black_count;
   int sum_count = 0;
-  int last_color; // 0 is black, 1 is white
-  int first_x = -1, first_y = -1, black_pixels = 0;
+  int threshold = 3;
+  int pairs[MAX(width+1, height+1)][MAX(height/2, width/2)][2];
+  int c_count[MAX(width+1, height+1)];
   x1 = (int)(width * (.1 + .25 * percent));  // between .1 and .35 percent off on each side
   y1 = (int)(height * (.1 + .25 * percent));
   x2 = (int)(width - width * (.1 + .25 * percent));
   y2 = (int)(height - height * (.1 + .25 * percent));
   drawRect(x1-2, y1-2, x2+2, y2+2, 0, BLACK); // 0 = fill, ALL=white
   drawRect(x1-1, y1-1, x2+1, y2+1, 0, ALL); // 0 = fill, ALL=white
-  for (int x = x1; x < x2; x++) {
-    black_count = 0;
-    last_color = -1; // 0 is black, 1 is white
-    black_pixels = 0;
-    first_x = -1;
-    first_y = -1;
-    for (int y = y1; y < y2; y++) {
-      if (Image[(y * width + x) * depth + 0] < 20) {
-	black_pixels++;
-	if (last_color != 0) {
-	  black_count++;
-	  if (black_count == 1) {
-	    // first one! could be an endpoint
-	    first_x = x;
-	    first_y = y;
+  // --------------------------------------------------------------------------
+  // Do across columns:
+  pairs[0][0][0] = y1;
+  pairs[0][0][1] = y2-1;
+  c_count[0] = 1;
+  for (int current = 0; current < x2-x1; current++) {
+    c_count[current+1] = 0;
+    for (int seg = 0; seg < c_count[current]; seg++){
+      sum_count = 0;
+      for(int y = pairs[current][seg][0]; y <= pairs[current][seg][1]; y++){
+	if (Image[(y * width + current+x1) * depth + 0] < 100) {
+	  Image[(y * width + current+x1) * depth + rgb[0]] = 255;
+	  Image[(y * width + current+x1) * depth + rgb[1]] = 0;
+	  Image[(y * width + current+x1) * depth + rgb[2]] = 0;
+	  sum_count++;
+	  if (sum_count == 1) {
+	    pairs[current+1][c_count[current+1]][0] = MAX(y - 1, y1); // start
+	    pairs[current+1][c_count[current+1]][1] = MIN(y + 1, y2); // end, might just be one pixel
+	    c_count[current+1]++;
+	  } else{
+	    pairs[current+1][c_count[current+1]-1][1] = MIN(y + 1, y2); // overwrite end
 	  }
-	}
-	last_color=0;
-      } else 
-	last_color=1;
-    }
-    if (black_count == 1 && first_x != x1 && first_y != y1 && black_pixels > 10) {
-      for (int y = y1; y < y2; y++) {
-	if (x == first_x && y == first_y) {
-	  Image[(y * width + x) * depth + rgb[0]] = 0; 
-	  Image[(y * width + x) * depth + rgb[1]] = 0;
-	  Image[(y * width + x) * depth + rgb[2]] = 255;
-	  sum_count++;
-	} else if (Image[(y * width + x) * depth + 0] < 20) {
-	  Image[(y * width + x) * depth + rgb[0]] = 255;
-	  Image[(y * width + x) * depth + rgb[1]] = 0;
-	  Image[(y * width + x) * depth + rgb[2]] = 0;
-	  sum_count++;
+	} else{ 
+	  sum_count = 0;
 	}
       }
+      if (c_count[current+1] == 0 && current < (x2-x1)/2) { // none found
+	// restart!
+	pairs[current+1][c_count[current+1]][0] = y1; // start
+	pairs[current+1][c_count[current+1]][1] = y2 - 1; // end, might just be one pixel
+	c_count[current+1] = 1;
+      } 
     }
   }
-  for (int y = y1; y < y2; y++) {
-    black_count = 0;
-    last_color = -1; // 0 is black, 1 is white
-    black_pixels = 0;
-    first_x = -1;
-    first_y = -1;
-    for (int x = x1; x < x2; x++) {
-      if (Image[(y * width + x) * depth + 0] < 20) {
-	black_pixels++;
-	if (last_color != 0) {
-	  black_count++;
-	  if (black_count == 1) {
-	    // first one! could be an endpoint
-	    first_x = x;
-	    first_y = y;
+  // --------------------------------------------------------------------------
+  // Do across rows:
+  pairs[0][0][0] = x1;
+  pairs[0][0][1] = x2-1;
+  c_count[0] = 1;
+  for (int current = 0; current < y2-y1; current++) {
+    c_count[current+1] = 0;
+    for (int seg = 0; seg < c_count[current]; seg++){
+      sum_count = 0;
+      for(int x = pairs[current][seg][0]; x <= pairs[current][seg][1]; x++){
+	if (Image[((current + y1) * width + x) * depth + 0] < 100 || ((Image[((current + y1) * width + x) * depth + rgb[0]] == 255) &&
+								      (Image[((current + y1) * width + x) * depth + rgb[1]] == 0) &&
+								      (Image[((current + y1) * width + x) * depth + rgb[2]] == 0))) {
+	  Image[((current + y1) * width + x) * depth + rgb[0]] = 255;
+	  Image[((current + y1) * width + x) * depth + rgb[1]] = 0;
+	  Image[((current + y1) * width + x) * depth + rgb[2]] = 0;
+	  sum_count++;
+	  if (sum_count == 1) {
+	    pairs[current+1][c_count[current+1]][0] = MAX(x - 1, x1); // start
+	    pairs[current+1][c_count[current+1]][1] = MIN(x + 1, x2); // end, might just be one pixel
+	    c_count[current+1]++;
+	  } else{
+	    pairs[current+1][c_count[current+1]-1][1] = MIN(x + 1, x2); // overwrite end
 	  }
-	}
-	last_color=0;
-      } else 
-	last_color=1;
-    }
-    if (black_count == 1 && first_x != x1 && first_y != y1 && // removed black_pixels > 10
-	first_x != x2 && first_y != y2 && black_pixels > 10) {
-      for (int x = x1; x < x2; x++) {
-	if (x == first_x && y == first_y) {
-	  Image[(y * width + x) * depth + rgb[0]] = 0; 
-	  Image[(y * width + x) * depth + rgb[1]] = 0;
-	  Image[(y * width + x) * depth + rgb[2]] = 255;
-	  sum_count++;
-	} else if (Image[(y * width + x) * depth + 0] < 20) {
-	  Image[(y * width + x) * depth + rgb[0]] = 255;
-	  Image[(y * width + x) * depth + rgb[1]] = 0;
-	  Image[(y * width + x) * depth + rgb[2]] = 0;
-	  sum_count++;
+	} else{ 
+	  sum_count = 0;
 	}
       }
+      if (c_count[current+1] == 0 && current < (y2-y1)/2) { // none found
+	// restart!
+	pairs[current+1][c_count[current+1]][0] = x1; // start
+	pairs[current+1][c_count[current+1]][1] = x2 - 1; // end, might just be one pixel
+	c_count[current+1] = 1;
+      } 
     }
   }
   return PyInt_FromLong(sum_count);
