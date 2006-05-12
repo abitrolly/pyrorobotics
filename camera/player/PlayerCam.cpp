@@ -16,7 +16,7 @@ PlayerCam::PlayerCam(char *hostname, int port) {
   client = playerc_client_create(NULL, hostname, port);
   playerc_client_connect(client);
   camDevice = playerc_camera_create(client, index);
-  if (playerc_camera_subscribe(camDevice, PLAYER_READ_MODE) != 0) {
+  if (playerc_camera_subscribe(camDevice, PLAYER_OPEN_MODE) != 0) {
     printf("PlayerCam: subscribe failed\n");
   } else {
     printf("PlayerCam: subscribe succeeded\n");

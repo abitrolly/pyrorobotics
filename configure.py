@@ -130,13 +130,20 @@ PYTHON_INCLUDE=-I%s
 # Where are X11 files (such as X11 include directory)?
 X11_DIR = %s
 
+#where are the player includes? 
+PLAYER_INCLUDE=-I%s
+
 # What subdirs to include in the make process?
 CONFIGDIRS = %s
 
 """
 
 print """
-What version of Python do you want to build Pyro for?
+Please answer the following questions either by supplying a complete
+answer, or by pressing ENTER to accept the default. This uses the
+'locate' command on systems (where available) to search for the best
+possible answer. If there is no default, you should enter a valid
+answer or 'none'.
 """
 
 python_script_name = ask("1. Python version number?", pyverSuggest, 0)
@@ -154,16 +161,22 @@ x11_include_dir = ask("4. Where is the X11 include directory?",
                       "/usr/X11R6",
                       type = "dir",
                       locate = "/usr/X11R6")
+		      
+player_include_dir = ask(" 5. Where is the player include directory (if one, or 'none')?",
+                       "/usr/local/include/player-2.0",
+		       type= "dir",
+		       locate = "include/player-2")
 
-included_packages = ask_yn("\n5. Options:", [
+
+included_packages = ask_yn("\n6. Options:", [
     ('camera/device vision/cvision', "Image Processing"),
     ('camera/v4l', "Video for Linux (requires Image Processing)"),
     ('camera/bt848', "BT848 Video for old Pioneers (requires Image Processing)"),
     ('camera/fake', "Simulated vision from files (requires Image Processing)"),
-    ('camera/blob', "Stage simulated vision (requires Image Processing)"),
+    ('camera/blob', "Stage simulated vision (requires Image Processing and Player)"),
     ('camera/aibo', "Aibo vision (requires Image Processing)"),
     ('camera/robocup', "Robocup simulated vision (requires Image Processing)"),
-    ('camera/player', "Gazebo simulated vision (requires Image Processing)"),
+    ('camera/player', "Gazebo simulated vision (requires Image Processing and Player)"),
     ('camera/fourway', "Splits a camera view in 2 or 4 (requires another camera)"),
     ('camera/stereo', "Stereo Vision from two cameras (requires 2 cameras)"),
     ('brain/psom brain/psom/csom_src/som_pak-dev',
@@ -173,7 +186,7 @@ included_packages = ask_yn("\n5. Options:", [
 
 fp = open("Makefile.cfg", "w")
 fp.write(text % (python_script_name, python_bin_path, python_include_files,
-                 x11_include_dir, included_packages))
+                 x11_include_dir, player_include_dir,  included_packages))
 fp.close()
 
 print """

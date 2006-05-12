@@ -3,7 +3,7 @@ OBJS = _playercam.so
 include ../../Makefile.cfg
 include ../../Makefile.src
 
-INCLUDE = -I../device/ -I/usr/local/include
+INCLUDE = -I../device/ -I/usr/local/include $(PLAYER_INCLUDE)
 CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D_POSIX_THREAD_SAFE_FUNCTIONS \
 	-D_REENTRANT -DPOSIX \
@@ -11,7 +11,7 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	-D__OSVERSION__=2 -frepo -DUSINGTHREADS -DLINUX -D_GNU_SOURCE \
 	$(PYTHON_INCLUDE) $(INCLUDE)
 
-LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerpacket -lplayerc -ljpeg -lplayercclient -lplayerclient -lplayerqueue 
+LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerc -ljpeg  
 
 ../device/Device.o: ../device/Device.h ../device/Device.cpp
 	cd ../device/; make
