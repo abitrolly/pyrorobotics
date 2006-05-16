@@ -82,6 +82,7 @@ class Scatter(Toplevel):
         self.lineCount = self.linecount
         self.hist = [0] * self.linecount # actual hist of line
         self.history = history[:] # history counts for each line
+        self.data = [] # keeps tracks of lines and points drawn, for redraw
         self.firstEver = [0] * self.linecount
         self.last = [0] * self.linecount
         self.count = [0] * self.linecount
@@ -95,6 +96,7 @@ class Scatter(Toplevel):
         self.canvas = Canvas(self, width=width, height=height)
         self.bind("<Configure>", self.changeSize)
         self.canvas.pack({'fill':'both', 'expand':1, 'side': 'left'})
+        self.inChangeSize = 0
         self.init_graphics()
         
     def init_graphics(self):
@@ -171,9 +173,19 @@ class Scatter(Toplevel):
                                     anchor="n",
                                     tag='graph',
                                     fill='black')
+        # clear the points and lines:
+        data, self.data = self.data, []
+        # then go through and re-add them (in case the position has changed):
+        for item in data:
+            if item[0] == "point":
+                self.addPoint( item[1], item[2], item[3])
+            elif item[0] == "line":
+                self.addLine( item[1], item[2], item[3], item[4], item[5], item[6])
         #self.canvas.lower('graph')
             
     def changeSize(self, event = None):
+        if self.inChangeSize: return
+        self.inChangeSize = 1
         if self.title:
             self.topBorder = 45
         else:
@@ -192,6 +204,7 @@ class Scatter(Toplevel):
         self.plotWidth =  self.width - self.leftBorder - 20 - (max(map(len, self.legend)) * 12) # left side, legend box, legend text
         #self.plotHeight # / max value
         self.init_graphics()
+        self.inChangeSize = 0
             
     def setTitle(self, title):
         self.wm_title(title)
@@ -211,6 +224,8 @@ class Scatter(Toplevel):
             self.canvas.delete('line%d' % linenum)
 
     def addLine(self, x1, y1, x2, y2, color = "black", width = 2):
+        # add the line to data, in case of redraw:
+        self.data.append( ("line", x1, y1, x2, y2, color, width))
         my_x1, my_y1 = self._x(x1), self._y(y1)
         my_x2, my_y2 = self._x(x2), self._y(y2)
         self.canvas.create_line(my_x1, my_y1,
@@ -223,6 +238,8 @@ class Scatter(Toplevel):
                 y >= self.yStart and y <= self.yEnd):
             print "pyrobot scatter: data point out of range (%f,%f)" % (x, y)
             return
+        # add the points to data, in case of redraw:
+        self.data.append( ("point", x, y, line) )
         if self.count[line] >= self.history[line]:
             self.count[line] = 0
         # if there is an old one here, delete it
