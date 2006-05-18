@@ -311,7 +311,8 @@ class gui:
             else:
                print "Ok"
          else:
-            print _retval
+            if _retval != None:
+               print _retval
       self.updateDeviceList()
       return 0
 
