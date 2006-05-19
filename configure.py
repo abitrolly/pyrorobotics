@@ -163,7 +163,7 @@ x11_include_dir = ask("4. Where is the X11 include directory?",
                       locate = "/usr/X11R6")
 		      
 player_include_dir = ask(" 5. Where is the player include directory (if one, or 'none')?",
-                       "/usr/local/include/player-2.0",
+                       "/usr/include/player-2.0",
 		       type= "dir",
 		       locate = "include/player-2")
 
