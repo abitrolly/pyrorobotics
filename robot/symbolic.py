@@ -346,7 +346,10 @@ class Simbot(Robot):
 			self.move("s_%s_%d" % (name, index))
 			geometry = self.move("g_%s_%d" % (name, index))
 			groups = self.move("r_%s_%d" % (name, index))
-			return {name: RangeSimDevice(name, index, self, geometry, groups)}
+			dev = RangeSimDevice(name, index, self, geometry, groups)
+			if name == "bumper":
+				dev.units = "SCALED"
+			return {name: dev}
 
 	def translate(self, value):
 		self.move("t_%f" % value)

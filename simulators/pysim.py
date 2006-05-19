@@ -226,7 +226,17 @@ class Simulator:
         self.time += (self.timeslice / 1000.0)
         i = 0
         for r in self.robots:
+            resetVelocities = 0
+            if r.stall:
+                resetVelocities = 1
+                ovx, r.vx = r.vx, r.vx/5.0
+                ovy, r.vy = r.vy, r.vy/5.0
+                ova, r.va = r.va, r.va/5.0
             r.step(self.timeslice)
+            if resetVelocities:
+                r.vx = ovx
+                r.vy = ovy
+                r.va = ova
             self.addTrail(i, self.stepCount % self.maxTrailSize, r)
             i += 1
         for r in self.needToMove:
