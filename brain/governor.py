@@ -96,7 +96,7 @@ class Governor:
         """ Public interface for getting next item from RAVQ. """
         retval = None
         try:
-            retval = self.ravq.models.nextItem().nextItem()
+            retval = self.ravq.models.next().next()
         except AttributeError:
             pass
         return retval
@@ -108,7 +108,7 @@ class Governor:
             ...    print item
             ...
         """
-        return self.ravq.models.nextItem().nextItem()
+        return self.ravq.models.next().next()
 
     def saveRAVQ(self, filename):
         """ Saves RAVQ data to a file. """
@@ -162,10 +162,10 @@ class Governor:
         self.ravq.models.contents = good
         self.ravq.models.names = goodNames
         if len(self.ravq.models.contents):
-            self.ravq.models.next = self.ravq.models.next % \
-                                    len(self.ravq.models.contents)
+            self.ravq.models.nextPos = self.ravq.models.nextPos % \
+                                       len(self.ravq.models.contents)
         else:
-            self.ravq.models.next = 0
+            self.ravq.models.nextPos = 0
 
 class GovernorNetwork(Governor, Network):
     def __init__(self, bufferSize = 5, epsilon = 0.2, delta = 0.6,
@@ -209,7 +209,7 @@ class GovernorNetwork(Governor, Network):
             if self.verbosity: print "in:", vectorIn
             self.map(vectorIn)
             # get the next
-            vectorOut = self.nextItem()
+            vectorOut = self.next()
             if self.verbosity: print "out:", vectorOut
             if vectorOut == None:
                 vectorOut = vectorIn
@@ -296,7 +296,7 @@ class GovernorSRN(Governor, SRN):
         return retval
 
     def trainFromBuffers(self):
-        vectorOut = self.nextItem()
+        vectorOut = self.next()
         if vectorOut == None:
             return None
         # get the pieces out of vectorOut:
@@ -321,7 +321,7 @@ class GovernorSRN(Governor, SRN):
         return self.trainingNetwork.step(**govNet)
 
     def trainFromModelVectors(self):
-        vectorOut = self.models.nextItem()
+        vectorOut = self.models.next()
         if vectorOut == None:
             return None
         # get the pieces out of vectorOut:
@@ -376,7 +376,7 @@ class GovernorSRN(Governor, SRN):
             vectorIn = inputValues + actContext + targetValues
             self.map(vectorIn)
             # get the next
-            vectorOut = self.nextItem()
+            vectorOut = self.next()
             if vectorOut == None:
                 vectorOut = vectorIn
             # get the pieces out of vectorOut:
