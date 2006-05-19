@@ -2,7 +2,7 @@
 #define __AIBO_H__
 
 #include "Device.h"
-#include "playerc.h"
+#include "libplayerc/playerc.h"
 
 class PlayerCam : public Device {
  public:
