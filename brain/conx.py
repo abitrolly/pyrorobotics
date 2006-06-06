@@ -107,16 +107,45 @@ class SRNError(NetworkError):
     """
 
 class Node:
-    """ A temp place to hold values for reference. """
-    def __init__(self, **keywords):
-        self._attributes = keywords.keys()
+    """
+    A temp place to hold values for reference. If given a layer and position, then
+    the node can be used to set values, and can update itself.
+    >>> net["input"][0]
+    <pyrobot.brain.conx.Node instance at 0xb7ae83ec>
+    >>> net["input"][0].activation
+    0.56
+    >>> net["input"][0].activation = .8
+    >>> net["input"][0].activation
+    0.8
+    """
+    def __init__(self, layer = None, position = None, **keywords):
+        self.__dict__["_layer"] = layer
+        self.__dict__["_position"] = position
+        self.__dict__["_attributes"] = keywords.keys()
         for key in keywords:
             self.__dict__[key] = keywords[key]
     def __str__(self):
         retval = "Node:"
+        if self._layer != None:
+            retval += "\n   layer = '%s'" % self._layer.name
+            retval += "\n   position = %d" % self._position
         for key in self._attributes:
             retval += "\n   %s = %s" % (key, self.__dict__[key])
         return retval
+    def update(self):
+        if self._layer != None:
+            for key in self._attributes:
+                self.__dict__[key] = self._layer.__dict__[key][self._position]
+        else:
+            raise AttributeError, "node is read-only"
+    def __setattr__(self, attribute, value):
+        if self._layer != None:
+            if attribute in self._layer.__dict__:
+                self._layer.__dict__[attribute][self._position] = value
+            else:
+                raise AttributeError, "no such property '%s'" % attribute
+        else:
+            raise AttributeError, ("node is read-only: use net['layerName'].%s[NUM] = %s" % (attribute, value))
 
 class Layer:
     """
@@ -191,12 +220,15 @@ class Layer:
     def __getitem__(self, i):
         """ Return a temp object with some properties set """
         if type(i) == int:
-            return Node(activation = self.activation[i],
-                        error = self.error[i],
-                        target = self.target[i],
-                        netinput = self.netinput[i],
-                        weight = self.weight[i]
-                        )
+            return Node(
+                layer = self,
+                position = i,
+                activation = self.activation[i],
+                error = self.error[i],
+                target = self.target[i],
+                netinput = self.netinput[i],
+                weight = self.weight[i]
+                )
         else:
             raise AttributeError, "expected integer instead of '%s'" % i
     # layer methods
@@ -1770,7 +1802,7 @@ class Network(object):
         for key in args:
             layer = self.getLayer(key)
             if layer.kind == 'Input':
-                if not self[key].verify:
+                if not self[key].activationSet and self[key].verify:
                     raise AttributeError, "attempt to set activations on input layer '%s' without reset" % key
                 self.copyActivations(layer, args[key])
             elif layer.kind == 'Context':
