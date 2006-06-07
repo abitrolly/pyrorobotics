@@ -1,4 +1,4 @@
-from brain.conx import *
+from conx import *
 import math
 import pdb
 
@@ -11,32 +11,32 @@ def pick(condition, first, second):
     """
     return (condition and [first] or [second])[0]
 
-def cor(x,y):
-    """
-    This function computes the correlation between two
-    lists (or numeric arrays) x and y.  This code is almost identical
-    to the code on Wikipedia for computing correlation.
-    (http://en.wikipedia.org/wiki/Correlation) It might be a good idea
-    to replace this function with one that only computes the information
-    necessary to find the sign of the correlation.
-    """
-    if Numeric.sum(x)==0 or Numeric.sum(y)==0:
-        return 0
-    sum_sq_x, sum_sq_y, sum_coproduct = 0, 0, 0
-    mean_x, mean_y = x[0], y[0]
-    for i in range(2,len(x)):
-        sweep = (i-1.0)/i
-        delta_x = x[i] - mean_x
-        delta_y = y[i] - mean_y
-        sum_sq_x += delta_x*delta_x*sweep
-        sum_sq_y += delta_y*delta_y*sweep
-        sum_coproduct += delta_x*delta_y*sweep
-        mean_x += delta_x/i
-        mean_y += delta_y/i
-    pop_sd_x = math.sqrt( sum_sq_x / len(x))
-    pop_sd_y = math.sqrt( sum_sq_y / len(y))
-    cov_x_y = sum_coproduct / len(x)
-    return cov_x_y/ (pop_sd_x*pop_sd_y)
+## def cor(x,y):
+##     """
+##     This function computes the correlation between two
+##     lists (or numeric arrays) x and y.  This code is almost identical
+##     to the code on Wikipedia for computing correlation.
+##     (http://en.wikipedia.org/wiki/Correlation) It might be a good idea
+##     to replace this function with one that only computes the information
+##     necessary to find the sign of the correlation.
+##     """
+##     if Numeric.sum(x)==0 or Numeric.sum(y)==0:
+##         return 0
+##     sum_sq_x, sum_sq_y, sum_coproduct = 0, 0, 0
+##     mean_x, mean_y = x[0], y[0]
+##     for i in range(2,len(x)):
+##         sweep = (i-1.0)/i
+##         delta_x = x[i] - mean_x
+##         delta_y = y[i] - mean_y
+##         sum_sq_x += delta_x*delta_x*sweep
+##         sum_sq_y += delta_y*delta_y*sweep
+##         sum_coproduct += delta_x*delta_y*sweep
+##         mean_x += delta_x/i
+##         mean_y += delta_y/i
+##     pop_sd_x = math.sqrt( sum_sq_x / len(x))
+##     pop_sd_y = math.sqrt( sum_sq_y / len(y))
+##     cov_x_y = sum_coproduct / len(x)
+##     return cov_x_y/ (pop_sd_x*pop_sd_y)
 
 cor = Numeric.cross_correlate
 
@@ -55,9 +55,6 @@ def findMax(seq):
         if seq[i+1] > seq[bestSoFar]:
             bestSoFar = i+1
     return bestSoFar
-        
-
-GLOBAL_DEBUG = False
 
 class CascadeCorNet(Network):
     """
@@ -67,8 +64,8 @@ class CascadeCorNet(Network):
                  changeThreshold = 0.01, name = 'CascadeCor Network', verbosity = 0):
         Network.__init__(self, name, verbosity)
         self.incrType = "cascade" # only "cascade" is supported at the moment
-        #self.setBatch(1)
         self.setQuickprop(1)
+        self.epsilon = 0.55 #leaving this at 4.0 caused weights to grow to infinity and overflow
         self.addLayers(inputLayerSize, outputLayerSize)
         self.quitEpoch = patience
         self.patience = patience
@@ -77,20 +74,15 @@ class CascadeCorNet(Network):
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
         self.symmetricOffset = 0.0
-    def setup(self):
-        self.setSeed(3) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
+    #def setup(self):
+    #    self.setSeed(3) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
     def train(self, maxHidden):
         self.maxHidden = maxHidden
         cont = 1
-        while not self.done(): #add hidden units until we give up or win
-            #globals()["GLOBAL_DEBUG"] = not(globals()["GLOBAL_DEBUG"])
-            self.trainOutputs(self.maxOutputEpochs, cont)
-            #globals()["GLOBAL_DEBUG"] = not(globals()["GLOBAL_DEBUG"])
-            #pdb.set_trace()
-            print self.epsilon
+        while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
             best = self.trainCandidates()
             self.recruit(best)
-            cont = 1
+            
     def trainCandidates(self):
         """
 
@@ -312,7 +304,7 @@ class CascadeCorNet(Network):
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
-        
+        return (totalCorrect * 1.0 / totalCount <  self.stopPercent) #true means we continue
     
     def addCandidateLayer(self, size=8):
         """
@@ -395,11 +387,10 @@ if __name__=="__main__":
     
     #print net.getData(0)
 
-    net.mu = 1.75
-    print "what is the learning rate?? ",net.epsilon
-    net.epsilon = 0.55
+    net.mu = 2.25
 
-    net.train(100)
+
+    net.train(10)
     print len(net)
     print "all done"
     
