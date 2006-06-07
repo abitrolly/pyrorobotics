@@ -1802,7 +1802,7 @@ class Network(object):
         for key in args:
             layer = self.getLayer(key)
             if layer.kind == 'Input':
-                if not self[key].activationSet and self[key].verify:
+                if not self[key].verify:
                     raise AttributeError, "attempt to set activations on input layer '%s' without reset" % key
                 self.copyActivations(layer, args[key])
             elif layer.kind == 'Context':
