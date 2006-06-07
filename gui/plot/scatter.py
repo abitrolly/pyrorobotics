@@ -178,7 +178,7 @@ class Scatter(Toplevel):
         # then go through and re-add them (in case the position has changed):
         for item in data:
             if item[0] == "point":
-                self.addPoint( item[1], item[2], item[3])
+                self.addPoint( item[1], item[2], item[3], color = item[4], size = item[5])
             elif item[0] == "line":
                 self.addLine( item[1], item[2], item[3], item[4], item[5], item[6])
         #self.canvas.lower('graph')
@@ -223,23 +223,24 @@ class Scatter(Toplevel):
         else:
             self.canvas.delete('line%d' % linenum)
 
-    def addLine(self, x1, y1, x2, y2, color = "black", width = 2):
+    def addLine(self, x1, y1, x2, y2, color = "black", width = 2, line = 0):
         # add the line to data, in case of redraw:
-        self.data.append( ("line", x1, y1, x2, y2, color, width))
+        self.data.append( ("line", x1, y1, x2, y2, color, width, line))
         my_x1, my_y1 = self._x(x1), self._y(y1)
         my_x2, my_y2 = self._x(x2), self._y(y2)
         self.canvas.create_line(my_x1, my_y1,
                                 my_x2, my_y2,
-                                tag = 'graph',
+                                tags = ('graph','line%d' % line),
                                 width = width,
                                 fill=color)
-    def addPoint(self, x, y, line = 0, flush = 1):
+    def addPoint(self, x, y, line = 0, flush = 1, color = 'coral', size = None):
         if not (x >= self.xStart and x <= self.xEnd and
                 y >= self.yStart and y <= self.yEnd):
             print "pyrobot scatter: data point out of range (%f,%f)" % (x, y)
             return
+        if size == None: size = self.dot
         # add the points to data, in case of redraw:
-        self.data.append( ("point", x, y, line) )
+        self.data.append( ("point", x, y, line, color, size) )
         if self.count[line] >= self.history[line]:
             self.count[line] = 0
         # if there is an old one here, delete it
@@ -251,13 +252,14 @@ class Scatter(Toplevel):
             last_y = self._y(self.last[line].y)
             self.canvas.delete( self.last[line].pointId)
             try:
-                self.last[line].pointId = self.canvas.create_oval(last_x - 2,
-                                                                  last_y - 2,
-                                                                  last_x + 2,
-                                                                  last_y + 2,
+
+                self.last[line].pointId = self.canvas.create_oval(last_x - size,
+                                                                  last_y - size,
+                                                                  last_x + size,
+                                                                  last_y + size,
                                                                   width = 0,
                                                                   tags = ('object','line%d' % line),
-                                                                  fill = 'coral')
+                                                                  fill = color)
             except:
                 pass
         try:
@@ -276,13 +278,13 @@ class Scatter(Toplevel):
                                               width = 1,
                                               tags = ('object','line%d'%line),
                                               fill = 'tan')
-            pid = self.canvas.create_oval(my_x - self.dot,
-                                          my_y - self.dot,
-                                          my_x + self.dot,
-                                          my_y + self.dot,
+            pid = self.canvas.create_oval(my_x - size,
+                                          my_y - size,
+                                          my_x + size,
+                                          my_y + size,
                                           width = 0,
                                           tags = ('object','line%d'%line),
-                                          fill = self.COLOR[line])
+                                          fill = color)
             self.hist[line][self.count[line]] = Line(x, y, lid, pid)
             self.last[line] = self.hist[line][self.count[line]]
             self.count[line] += 1
