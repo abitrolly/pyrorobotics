@@ -40,12 +40,6 @@ def pick(condition, first, second):
 
 cor = Numeric.cross_correlate
 
-def findMax2(seq):
-    """
-    Silly function.  Ignore this.  It amused me.
-    """
-    return max(zip(seq, (i for i in range(len(lst)))))[1]
-
 def findMax(seq):
     """
     Returns the index of the maximum value in the sequence.
@@ -74,6 +68,7 @@ class CascadeCorNet(Network):
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
         self.symmetricOffset = 0.0
+        self.candreportRate = self.reportRate / 2
     #def setup(self):
     #    self.setSeed(3) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
     def train(self, maxHidden):
@@ -85,28 +80,20 @@ class CascadeCorNet(Network):
             
     def trainCandidates(self):
         """
-
+        This function trains the candidate layer to maximize its correlation with the output errors.  The way this is done
+        is by setting weight error derivatives for connections and layers and assuming the change_weights function will update the
+        weights appropriately based on those data members.
         """
-        #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation
-        #Learning Architecture (1991)" V_p = [] #will hold a list of
-        #activations for each candidate for each training pattern,
-        #each row a different pattern, each column a different
-        #candidate E_po = [] #will hold a list of errors for each
-        #pattern for each output unit, E_po[i][j] will be error of jth
-        #output on ith pattern in the load order
+
+        self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
+        self["candidate"].active = 1 #candidate should be active throughout this function
 
         #E_po will hold a list of errors for each pattern for each output unit, E_po[i][j] will be error
         #          of jth output on ith pattern in the load order
-        self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
-        self["candidate"].active = 1 #candidate should be active throughout this function
+        #E_o_avg is the mean of E_po over the different patterns
+        #outputs[i][j] is the output of the jth output unit on the ith pattern
         E_po, E_o_avg, outputs = self.computeDataFromProp()
-        
-        #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation Learning Architecture (1991)"
-        #will hold  a list of activations for each candidate for each training pattern, each row a
-        #           different pattern, each column a different candidate
-        #V_p = self.computeV_p()
-        #V_avg = Numeric.sum(V_p)/len(V_p)#[V/len(V_p) for V in Numeric.sum(V_p)]
-        
+
         numPatterns = len(self.loadOrder)
         numCandidates = len(self["candidate"])
         numInputs = len(self["input"]) #DOES NOT INCLUDE BIAS
@@ -117,21 +104,16 @@ class CascadeCorNet(Network):
         self.quitEpoch = self.patience
         previousBest = 0 #index of best candidate correlation on last iteration
         while ep < self.maxCandEpochs and ep < self.quitEpoch:
-            #print ep, self.maxCandEpochs
+            #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation Learning Architecture (1991)"
+            #will hold  a list of activations for each candidate for each training pattern, each row a
+            #           different pattern, each column a different candidate
+            #
             #no need to reactivate output layer here since we don't need to recompute any data about its propagation status
             V_p, netInptToCnd = self.computeChangingDataFromProp()
             V_avg = Numeric.sum(V_p)/len(V_p)
             #correlation between candidate activation values and output
             #activation values, sigma sub oh in Fahlman's formula
             #sigma_o[i][j] is the sign of the correlation between the
-            #activation of ith output and the jth candidate's activation values
-            #print "V_p"
-            #for k in range(1):
-            #    print "candidate ", k, "V_p"
-            #    print V_p[:,k]
-            #print self["input","candidate"].weight
-            #print "outputs"
-            #print outputs[:,0]
             sigma_o = [[Numeric.sign(cor(V_p[:,c], outputs[:,out])) for c in range(numCandidates)] for out in range(len(outputs[0]))]
             #print "Sigma_o\n", sigma_o
             #self["candidate"].error = S_c #not needed since we never actually use the error when updating weights, right?
@@ -162,6 +144,8 @@ class CascadeCorNet(Network):
                 previousBest = S_c[best]
                 self.quitEpoch = i + self.patience
             ################
+            if ep % self.candreportRate == 0:
+                print "Candidate Epoch # ", ep
             ep += 1
         
         return best
@@ -282,11 +266,9 @@ class CascadeCorNet(Network):
             ################
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(tssErr - self.previousError) > self.previousError*self.changeThreshold:
-                #print "ever here?", self.epoch, self.quitEpoch, tssErr, self.previousError
                 self.previousError = tssErr
                 self.quitEpoch = self.epoch + self.patience
             elif self.epoch == self.quitEpoch:
-                #print "death", self.quitEpoch, self.epoch, self.previousError
                 break #stagnation occured, stop training the outputs
             ################
         print "----------------------------------------------------"
@@ -387,11 +369,11 @@ if __name__=="__main__":
     
     #print net.getData(0)
 
-    net.mu = 2.25
+    net.mu = 1.75
 
 
     net.train(10)
-    print len(net)
+    print len(net)-3
     print "all done"
     
     
