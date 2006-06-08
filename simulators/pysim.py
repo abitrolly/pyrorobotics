@@ -398,7 +398,13 @@ class Simulator:
                     r.setPose(x, y, thr, 1)#handofgod
                     r.localize(0, 0, 0)
                     return "ok"
-                return "error: no such robot named '%s'" % name
+                elif name.isdigit():
+                    pos = int(name)
+                    r = self.robots[pos]
+                    r.setPose(x, y, thr, 1)#handofgod
+                    r.localize(0, 0, 0)
+                    return "ok"
+                return "error: no such robot position '%s'" % name
             elif message[0] == "b": # "b_x_y_th" localize
                 localization, x, y, thr = None, None, None, None
                 try:
@@ -924,6 +930,10 @@ class SimRobot:
         self.vx = vx
         return "ok"
 
+    def getPose(self):
+        """ Returns global coordinates. """
+        return (self._gx, self._gy, self._ga)
+    
     def getIndex(self, dtype, i):
         index = 0
         for d in self.devices:
