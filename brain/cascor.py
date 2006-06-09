@@ -73,9 +73,7 @@ class CascadeCorNet(Network):
         self.symmetricOffset = 0.0
         self.candreportRate = self.reportRate / 2
     def setup(self):
-        #This seed along with epsilon at .55 causes a crash
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
-        #self.setSeed(5)
         pass
     def actDeriv(self, x):
         """
@@ -115,7 +113,6 @@ class CascadeCorNet(Network):
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
 
-        #pdb.set_trace()
 
         ep = 0
         self.quitEpoch = self.patience
@@ -128,13 +125,9 @@ class CascadeCorNet(Network):
             #no need to reactivate output layer here since we don't need to recompute any data about its propagation status
             V_p, netInptToCnd = self.computeChangingDataFromProp()
             V_avg = Numeric.sum(V_p)/len(V_p)
-            #correlation between candidate activation values and output
-            #activation values, sigma sub oh in Fahlman's formula
             #sigma_o[i][j] is the sign of the correlation between the ith candidate and the jth output
             sigma_o = Numeric.array([[Numeric.sign(cor(V_p[:,c], outputs[:,out]))[0] for c in range(numCandidates)] \
                                      for out in range(len(outputs[0]))])
-            #print "Sigma_o\n", sigma_o
-            #self["candidate"].error = S_c #not needed since we never actually use the error when updating weights, right?
             for c in range(numCandidates): #for every candidate unit in the layer, get ready to train the bias weight
                 #recompute dSdw for the bias weight for this candidate
                 dSdw_bias = Numeric.sum( [Numeric.sum([sigma_o[i][c]*(E_po[p][i] - E_o_avg[i])*self.actDeriv(netInptToCnd[p][c]) \
@@ -146,7 +139,6 @@ class CascadeCorNet(Network):
                 self.updateConnection(conxn, dSdw)
             #deactivate output layer here so we don't change its weights
             self["output"].active = 0
-
             self.change_weights() #change incoming connection weights and bias weights for the entire candidate layer
             
             #S_c is a list of the covariances for each candidate, or
@@ -156,30 +148,25 @@ class CascadeCorNet(Network):
             #evaluate a generator expression
             S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
             best = findMax(S_c)
-            ################
+
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(S_c[best] - previousBest) > previousBest*self.changeThreshold:
                 previousBest = S_c[best]
                 self.quitEpoch = i + self.patience
-            ################
-            if ep % self.candreportRate == 0:
+
+            if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
             ep += 1
         
-        return best
-        #S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
-    def updateConnection(self, conxn, dSdw):
-        #self[conxn.fromLayer.name, conxn.toLayer.name].wed = self[conxn.fromLayer.name, conxn.toLayer.name].wed - dSdw
-        self[conxn.fromLayer.name, conxn.toLayer.name].wed = -1.0* dSdw +conxn.weight*self.decay
+        return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
         Updates the information used in changing the bias weight for the cth candidate unit in the candidate layer.
         """
         #let g(x) = -f(x), dg/dx = -df/dx since we maximize correlation (S) but minimize error
-        #shoudl this be  self["candidate"].wed[c] = -1.0*dSdw_bias?  or what?
-        #self["candidate"].wed[c] = self["candidate"].wed[c] -dSdw_bias
         self["candidate"].wed[c] = -1.0*dSdw_bias + self["candidate"].weight[c] * self.decay
-    
+    def updateConnection(self, conxn, dSdw):
+        self[conxn.fromLayer.name, conxn.toLayer.name].wed = -1.0* dSdw +conxn.weight*self.decay
     def computeDataFromProp(self):
         #problem here as of 6/1/06
         """
@@ -194,7 +181,7 @@ class CascadeCorNet(Network):
         return (Numeric.array(E_po), Numeric.array(E_o_avg), Numeric.array(outputs))
     def computeChangingDataFromProp(self):
         """
-        Computes data based on propagation taht needs to be recomputed between candidate weight changes.
+        Computes data based on propagation that needs to be recomputed between candidate weight changes.
         """
         V_p, netInptToCnd = [], []
         for i in self.loadOrder:
@@ -402,7 +389,7 @@ if __name__=="__main__":
     
     #print net.getData(0)
 
-    net.mu = 1.75
+    #net.mu = 1.75
 
     #s = random.randint(0, 10)
     #print s
