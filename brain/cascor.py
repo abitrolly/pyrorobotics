@@ -1,6 +1,7 @@
 from conx import *
 import math
 import pdb
+from unittest import *
 
 __author__="George Dahl <gdahl1@swarthmore.edu>"
 
@@ -59,7 +60,9 @@ class CascadeCorNet(Network):
         Network.__init__(self, name, verbosity)
         self.incrType = "cascade" # only "cascade" is supported at the moment
         self.setQuickprop(1)
-        self.epsilon = 0.55 #leaving this at 4.0 caused weights to grow to infinity and overflow
+        #self.setBatch(1)
+        #self.momentum = 0
+        self.epsilon = 0.55
         self.addLayers(inputLayerSize, outputLayerSize)
         self.quitEpoch = patience
         self.patience = patience
@@ -69,8 +72,20 @@ class CascadeCorNet(Network):
         self.maxCandEpochs = maxCandEpochs
         self.symmetricOffset = 0.0
         self.candreportRate = self.reportRate / 2
-    #def setup(self):
-    #    self.setSeed(3) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
+    def setup(self):
+        #This seed along with epsilon at .55 causes a crash
+        #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
+        #self.setSeed(5)
+        pass
+    def actDeriv(self, x):
+        """
+        Only works on scalars.
+        """
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v))
+        return (act(x) * (1.0 - act(x))) + self.sigmoid_prime_offset
     def train(self, maxHidden):
         self.maxHidden = maxHidden
         cont = 1
@@ -100,6 +115,8 @@ class CascadeCorNet(Network):
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
 
+        #pdb.set_trace()
+
         ep = 0
         self.quitEpoch = self.patience
         previousBest = 0 #index of best candidate correlation on last iteration
@@ -113,13 +130,14 @@ class CascadeCorNet(Network):
             V_avg = Numeric.sum(V_p)/len(V_p)
             #correlation between candidate activation values and output
             #activation values, sigma sub oh in Fahlman's formula
-            #sigma_o[i][j] is the sign of the correlation between the
-            sigma_o = [[Numeric.sign(cor(V_p[:,c], outputs[:,out])) for c in range(numCandidates)] for out in range(len(outputs[0]))]
+            #sigma_o[i][j] is the sign of the correlation between the ith candidate and the jth output
+            sigma_o = Numeric.array([[Numeric.sign(cor(V_p[:,c], outputs[:,out]))[0] for c in range(numCandidates)] \
+                                     for out in range(len(outputs[0]))])
             #print "Sigma_o\n", sigma_o
             #self["candidate"].error = S_c #not needed since we never actually use the error when updating weights, right?
             for c in range(numCandidates): #for every candidate unit in the layer, get ready to train the bias weight
                 #recompute dSdw for the bias weight for this candidate
-                dSdw_bias = Numeric.sum( [Numeric.sum([sigma_o[i][c]*(E_po[p][i] - E_o_avg[i])*self.ACTPRIME(netInptToCnd[p][c]) \
+                dSdw_bias = Numeric.sum( [Numeric.sum([sigma_o[i][c]*(E_po[p][i] - E_o_avg[i])*self.actDeriv(netInptToCnd[p][c]) \
                                                        for p in range(numPatterns)]) for i in range(numOutputs)] )
                 self.updateCandidateLayer(dSdw_bias, c)
             for conxn in incomingConnections: #for every connection going into the candidate layer, prepare to train the weights
@@ -160,7 +178,7 @@ class CascadeCorNet(Network):
         #let g(x) = -f(x), dg/dx = -df/dx since we maximize correlation (S) but minimize error
         #shoudl this be  self["candidate"].wed[c] = -1.0*dSdw_bias?  or what?
         #self["candidate"].wed[c] = self["candidate"].wed[c] -dSdw_bias
-        self["candidate"].wed[c] = -1.0*dSdw_bias + self["candidate"].weight * self.decay
+        self["candidate"].wed[c] = -1.0*dSdw_bias + self["candidate"].weight[c] * self.decay
     
     def computeDataFromProp(self):
         #problem here as of 6/1/06
@@ -202,7 +220,7 @@ class CascadeCorNet(Network):
         numPatterns = len(self.loadOrder)
         numOutputs = len(E_po[0])
         return Numeric.array([[Numeric.sum( [Numeric.sum( \
-                    [sigma_o[i][col]*(E_po[p][i] - E_o_avg[i])*self.ACTPRIME(netInptToCnd[p][col])*self.getData(p)["input"][row] \
+                    [sigma_o[i][col]*(E_po[p][i] - E_o_avg[i])*self.actDeriv( netInptToCnd[p][col] )*self.getData(p)["input"][row] \
                      for p in range(numPatterns)]) for i in range(numOutputs)] ) \
                                  for col in range(len(conxn.weight[0]))] for row in range(len(conxn.weight))])
         
@@ -358,11 +376,26 @@ class CascadeCorNet(Network):
         self.connectAt(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
 
-if __name__=="__main__":
-    
-    print "started"
+def crashTest(seed):
     net = CascadeCorNet(2,1)
     net.addCandidateLayer(1)
+    net.symmetricOffset = 0.0
+    net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
+    net.setTargets([[0], [1], [1], [0]])
+    net.mu = 1.75
+    net.setSeed(seed)
+    net.train(10)
+
+class TestCascadeCorNet(TestCase):
+    def setUp(self):
+        net = CascadeCorNet(2,1)
+
+if __name__=="__main__":
+    #suite =makeSuite(TestCascadeCorNet)
+    #TextTestRunner(verbosity=2).run(suite)
+    print "started"
+    net = CascadeCorNet(2,1)
+    net.addCandidateLayer(8)
     net.symmetricOffset = 0.0
     net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
     net.setTargets([[0], [1], [1], [0]])
@@ -371,9 +404,23 @@ if __name__=="__main__":
 
     net.mu = 1.75
 
-
+    #s = random.randint(0, 10)
+    #print s
+    #net.setSeed(s)
     net.train(10)
     print len(net)-3
+
+##     crashes = 0
+##     seeds = []
+##     for seed in range(100):
+##         try:
+##             crashTest(seed)
+##         except:
+##             crashes += 1
+##             seeds.append(seed)
+##             print "CRASHED"
+##     print "Crashed ", crashes, " times."
+##     print seeds
     print "all done"
     
     
