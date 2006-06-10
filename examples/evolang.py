@@ -74,6 +74,33 @@ sys.exitfunc = myquit
 
 sim.redraw()
 
+from pyrobot.geometry import Polar
+def quadSound(myLoc, q, lastS, location):
+    """
+    Computes the sound heard for quad[q].
+      |0|
+    |3| |1|
+      |2|
+    myLoc:    (x, y, t) of current robot; t where 0 is up
+    q:        which quad?
+    lastS:    last sound made by robots
+    location: (x, y, t) of robots; t where 0 is up
+    """
+    angleRange = [(0, 1), (0, 1), (0, 1), (0, 1)] # FIX: need angles of quads
+    closest = (10000, 0) # dist, freq
+    for n in range(len(location)):
+        loc = location[n]
+        if loc != myLoc:
+            # distance between robots:
+            dist = distance(myLoc[0], myLoc[1], loc[0], loc[1])
+            # global angle from one robot to another:
+            angle = Polar(loc[0] - myLoc[0], loc[1] - myLoc[1], bIsPolar=0) # 0 to right (geometry)
+            # FIX: compute angle from myLoc[2]
+            if angleRange[0] < angle < angleRange[1]: # if in right quad
+                if dist < closest[0]: # if shorter than previous
+                    closest = dist, lastS[n] # new closest
+    return closest[1]
+
 from pyrobot.brain.ga import *
 import operator
 g = engines[0].brain.net.arrayify()
@@ -86,14 +113,26 @@ class NNGA(GA):
             x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi
             engine.robot.simulation[0].setPose(n, x, y, t)
         fitness = [0.0] * 4
-        seconds = 10
-        for i in range(seconds * 10): # simulated seconds (10/sec)
+        seconds = 10 # how much simulated real time to run?
+        s = [0] * 4
+        lastS = [0] * 4
+        location = [(0, 0, 0) for v in range(4)]
+        for i in range(seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
             # move the robots
-            for engine in engines:
+            for n in range(4): # number of robots
+                engine = engines[n]
                 engine.robot.update()
-                # compute sounds for each robot
-                # then process
-                engine.brain.step()
+                # compute quad for this robot
+                quad = [0] * 4
+                myLoc = engine.robot.simulation[0].getPose(n)
+                for q in range(4):
+                    quad[q] = quadSound(myLoc, q, lastS, location)
+                # compute output for each robot
+                oTrans, oRotate, s[n] = engine.brain.propagate(quad)
+                location[n] = engine.robot.simulation[0].getPose(n)
+                # then move it
+                engine.brain.step(oTrans, oRotate)
+                lastS = [v for v in s]
             sim.step(run=0)
             sim.update_idletasks()
             closeTo = [0, 0] # how many robots are close to which lights?
@@ -103,7 +142,7 @@ class NNGA(GA):
                 reading = max(engine.robot.light[0].values())
                 if reading >= 1.0:
                     # get global coords
-                    x, y, t = engine.robot.simulation[0].eval("self.robots[%d].getPose()" % n)
+                    x, y, t = engine.robot.simulation[0].getPose(n)
                     # which light?
                     dists = [distance(light.x, light.y, x, y) for light in sim.lights]
                     if dists[0] < dists[1]:
