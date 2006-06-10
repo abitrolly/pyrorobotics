@@ -19,19 +19,16 @@ class NNBrain(Brain):
         self.net.connect("hidden", "output")
         self.net["context"].setActivations(.5)
         self.net.learning = 0
-        self.net.setLayerVerification(0)
 
-    def step(self):
-        inputs = self.robot.range.distance() + ([0] * 4) + [self.net["output"].activation[2]]
-        self.net.propagate(input=inputs)
-        outputActivations = self.net["output"].activation[:]
-        t, r = [((v * 2) - 1) for v in outputActivations[:2]]
+    def step(self, ot1, or1):
+        t, r = [((v * 2) - 1) for v in [ot1, or1]]
         self.robot.move(t, r)
         
-    def propagate(self, inputs):
+    def propagate(self, sounds):
+        inputs = self.robot.range.distance() + sounds + [self.net["output"].activation[2]]
         self.net.propagate(input=inputs)
-        #t, r = [((v * 2) - 1) for v in outputActivations]
-        return self.net["output"].activation[:]
+        self.net.copyHiddenToContext()
+        return [v for v in self.net["output"].activation] # t, r, speech
 
 def INIT(eng):
     return NNBrain(engine=eng)
