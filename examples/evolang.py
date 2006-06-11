@@ -155,7 +155,7 @@ class NNGA(GA):
         for n in range(len(engines)):
             engine = engines[n]
             # Put each robot in a random location:
-            x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi
+            x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi * 2
             engine.robot.simulation[0].setPose(n, x, y, t)
     def fitnessFunction(self, genePos):
         if genePos >= 0:
