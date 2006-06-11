@@ -257,4 +257,4 @@ if __name__ == "__main__":
     e.loadGenotypes("nolfi-100.wts")
     e.evolve()
     e.saveBest("nolfi-200.wts")
-    
+    e.ga.saveGenesToFile("nolfi-200.pop")
