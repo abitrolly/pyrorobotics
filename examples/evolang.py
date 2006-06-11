@@ -155,7 +155,7 @@ class NNGA(GA):
             x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi
             engine.robot.simulation[0].setPose(n, x, y, t)
         fitness = [0.0] * 4
-        seconds = 2 # how much simulated real time to run, in sim seconds
+        seconds = 20 # how much simulated real time to run, in sim seconds
         s = [0] * 4 # each robot's sound
         lastS = [0] * 4 # previous sound
         location = [(0, 0, 0) for v in range(4)] # each robot's location
@@ -208,12 +208,12 @@ class NNGA(GA):
         return fit
     def isDone(self):
         return 0
-ga = NNGA(Population(3, Gene, size=len(g), verbose=1,
+ga = NNGA(Population(20, Gene, size=len(g), verbose=1,
                      min=-1, max=1, maxStep = 1,
-                     elitePercent = .2),
+                     elitePercent = .1),
           mutationRate=0.05, crossoverRate=0.6,
-          maxGeneration=2, verbose=1)
+          maxGeneration=100, verbose=1)
 ga.evolve()
 
-for n in range(4):
-    engines[n].robot.stop()
+#for n in range(4):
+#    engines[n].robot.stop()

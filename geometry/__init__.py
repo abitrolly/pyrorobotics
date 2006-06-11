@@ -117,61 +117,6 @@ def toleq(a,b):
         return 0
     return 1
 
-"""
-These are the intersect functions
-added by Muhammad temporary
-Stephen - please rewrite them, optimize them, or I don't know - do something
-"""
-
-def intersectSegSeg(A0, A1, B0, B1):
-    #return (intersect?, D)
-    #intersect? is 0 if not, 1 it yes
-    #D is the intersectin point
-    (inter1, d) = intersectLineSeg(A0, A1, B0, B1)
-    (inter2, d) = intersectLineSeg(B0, B1, A0, A1)
-    return (inter1 * inter2, d)
-
-def intersectLineSeg( L0,  L1, S0, S1):
-    L0 = map (float, L0)
-    L1 = map (float, L1)
-    S0 = map (float, S0)
-    S1 = map (float, S1)
-    #return (intersect?, D)
-    #intersect? is 0 if not, 1 it yes
-    #D is the intersectin point
-    
-    #print L0, L1, S0, S1
-    if((S0[0] == S1[0]) and (S0[1] == S1[1])): #we only test real lines
-        return (0, [0,0])
-    if((L0[0] == L1[0]) and (L0[1] == L1[1])):
-        return (0, [1,0])
-    
-    nL = [-(L1[1] - L0[1]), L1[0] - L0[0]]
-    #nL = [L1[0] - L0[0], L1[1] - L0[1]]
-    dS = [ S1[0] - S0[0], S1[1] - S0[1]]
-    
-    nd = -dot(nL,dS, 2)
-    
-    if(toleq(nd,0)):
-        return (0, [2, 0])
-    
-    dLS = [S0[0] - L0[0], S0[1] - L0[1]]
-    
-    #print nL
-    #print dS
-    #print dLS
-    t = dot(nL,dLS, 2) / nd
-    
-    if(t < 0):
-        return (0, [0, -1])
-    
-    if(t > 1):
-        return (0, [0, 1])
-    
-    D = [t*dS[0] + S0[0], t*dS[1] + S0[1]]
-    
-    return (1, D)
-
 def distance2(a, b):
     c = sub(a,b)
     return dot(c,c)
@@ -281,4 +226,3 @@ if __name__ == '__main__':
     if cross(x1,x2) != x3:
         print "cross is broken"
 
-    print intersectSegSeg([0,0],[2,2],[2,0],[0,2])

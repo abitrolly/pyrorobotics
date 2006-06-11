@@ -1,13 +1,22 @@
 import ossaudiodev, struct, math, FFT, Numeric, time
 
+def add(s1, s2):
+    return minmax([(v1 + v2) for (v1, v2) in zip(s1, s2)])
+
+def minmax(vector):
+    return [min(max(v,0),255) for v in vector]
+
+def scale(sample, value):
+    return minmax([((s - 128) * value) + 128 for s in sample])
+
 def sine(freqs, seconds, volume = 1.0, sample_rate = 8000.0):
     sample = [128] * int(sample_rate * seconds)
     if type(freqs) == type(0):
         freqs = [freqs]
     for freq in freqs:
         for n in range(len(sample)):
-            sample[n] = min(max(sample[n] + int(127 * math.sin(n * 2 * math.pi * freq/sample_rate) * volume), 0),255)
-    return sample
+            sample[n] += int(127 * math.sin(n * 2 * math.pi * freq/sample_rate) * volume)
+    return minmax(sample)
 
 class SoundDevice:
     def __init__(self, device):

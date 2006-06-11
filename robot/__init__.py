@@ -9,7 +9,6 @@ senses and controllers.
 """
 
 import pyrobot.system as system
-from pyrobot.geometry import Polar, distance
 from pyrobot.robot.device import *
 import math, string, time, os, sys, types
 

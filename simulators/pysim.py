@@ -149,6 +149,8 @@ class Simulator:
         self.stepCount = 0
         self.display = {"wireframe": 0}
         self.running = 0
+        self.stop = 0 # use to stop the sim
+    def update_idletasks(self): pass
     def mainloop(self):
         """ Simulates what TkSimulator does. """
         self.running = 1
@@ -419,9 +421,12 @@ class Simulator:
                 try:
                     simulation, name = message
                 except: pass
-                retval = "error"
                 if name in self.robotsByName:
                     r = self.robotsByName[name]
+                    retval = (r._gx, r._gy, r._ga)
+                elif name.isdigit():
+                    pos = int(name)
+                    r = self.robots[pos]
                     retval = (r._gx, r._gy, r._ga)
             elif message[0] == "f": # "f_i_v" rgb[i][v]
                 index, pos = 0, 0
@@ -797,7 +802,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
     def step(self, run = 1):
         self.remove('robot')
         Simulator.step(self, run)
-        if run:
+        if run and not self.stop:
             self.running = 1
             self.after(self.timeslice, self.step)
         else:
@@ -1284,7 +1289,23 @@ class TkRobot(SimRobot):
                 robot.setPose(x, y)
         return "break"
     def addMouseBindings(self):
+        return
         ### Mouse methods:
+        # First, unbind (memory leak if you do not!):
+        self.simulator.canvas.unbind_all("<B1-Motion>")
+        self.simulator.canvas.unbind_all("<Button-1>")
+        self.simulator.canvas.unbind_all("<ButtonRelease-1>")
+        self.simulator.canvas.unbind_all("<Control-B1-Motion>")
+        self.simulator.canvas.unbind_all("<Control-Button-1>")
+        self.simulator.canvas.unbind_all("<Control-ButtonRelease-1>")
+        # try 2:
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<B1-Motion>")
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Button-1>")
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<ButtonRelease-1>")
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-B1-Motion>")
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-Button-1>")
+        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-ButtonRelease-1>")
+        # Now, bind new objects:
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
                                        func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
@@ -1296,7 +1317,7 @@ class TkRobot(SimRobot):
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>",
                                        func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
         self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
+                                        func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
 
 class Puck(SimRobot):
     def __init__(self, *args, **kwargs):
