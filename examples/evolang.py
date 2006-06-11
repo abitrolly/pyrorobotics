@@ -147,13 +147,20 @@ from pyrobot.brain.ga import *
 import operator
 g = engines[0].brain.net.arrayify()
 class NNGA(GA):
-    def fitnessFunction(self, genePos):
+    def loadWeights(self, genePos):
         for n in range(len(engines)):
             engine = engines[n]
             engine.brain.net.unArrayify(self.pop.individuals[genePos].genotype)
+    def randomizePositions(self):
+        for n in range(len(engines)):
+            engine = engines[n]
             # Put each robot in a random location:
             x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi
             engine.robot.simulation[0].setPose(n, x, y, t)
+    def fitnessFunction(self, genePos):
+        if genePos >= 0:
+            self.loadWeights(genePos)
+            self.randomizePositions()
         fitness = [0.0] * 4
         s = [0] * 4 # each robot's sound
         lastS = [0] * 4 # previous sound
@@ -161,7 +168,7 @@ class NNGA(GA):
         for i in range(self.seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
             # get the locations
             for n in range(4): # number of robots
-                location[n] = engine.robot.simulation[0].getPose(n)
+                location[n] = engines[0].robot.simulation[0].getPose(n)
             # compute the move for each robot
             for n in range(4): # number of robots
                 engine = engines[n]
@@ -214,13 +221,40 @@ class NNGA(GA):
     def isDone(self):
         return 0
 
-def experiment(seconds, popsize, maxgen):
-    ga = NNGA(Population(popsize, Gene, size=len(g), verbose=1,
-                         imin=-1, imax=1, min=-50, max=50, maxStep = 1,
-                         elitePercent = .1),
-              mutationRate=0.05, crossoverRate=0.6,
-              maxGeneration=maxgen, verbose=1, seconds=seconds)
-    ga.evolve()
-    for n in range(4):
-        engines[n].robot.stop()
-    return ga
+class Experiment:
+    def __init__(self, seconds, popsize, maxgen):
+        self.ga = NNGA(Population(popsize, Gene, size=len(g), verbose=1,
+                                  imin=-1, imax=1, min=-50, max=50, maxStep = 1,
+                                  elitePercent = .1),
+                       mutationRate=0.05, crossoverRate=0.6,
+                       maxGeneration=maxgen, verbose=1, seconds=seconds)
+    def evolve(self, cont = 0):
+        self.ga.evolve(cont)
+    def stop(self):
+        for n in range(4):
+            engines[n].robot.stop()
+    def saveBest(self, filename):
+        net = engines[0].brain.net
+        net.unArrayify(self.ga.pop.bestMember.genotype)
+        net.saveWeightsToFile(filename)
+    def loadGenotypes(self, filename):
+        engines[0].brain.net.loadWeightsFromFile(filename)
+        genotype = engines[0].brain.net.arrayify()
+        for p in self.ga.pop:
+            for n in range(len(genotype)):
+                p.genotype[n] = genotype[n]
+    def loadWeights(self, filename):
+        for n in range(4):
+            engines[n].brain.net.loadWeightsFromFile(filename)
+    def test(self, seconds):
+        self.ga.seconds = seconds
+        return self.ga.fitnessFunction(-1) # -1 testing
+
+if __name__ == "__main__":
+    e = Experiment(0, 20, 100)
+    e.ga.seconds = 20
+    e.loadWeights("nolfi-100.wts")
+    e.loadGenotypes("nolfi-100.wts")
+    e.evolve()
+    e.saveBest("nolfi-200.wts")
+    
