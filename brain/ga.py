@@ -315,8 +315,8 @@ class GA:
             print "elitePercent   = %.3f" % self.origPop.elitePercent
             print "maxGeneration  = %d" % self.maxGeneration
             print "================================================================================"
-        self.reInitialize()
         self.setup(**args)
+        self.reInitialize()
 
     def setup(self, **args):
         pass
@@ -392,8 +392,12 @@ class GA:
             if i not in elitePositions:
                 self.pop.individuals[i] = newpop[i]
     
-    def evolve(self):
-        self.generation = 0
+    def evolve(self, cont = 0):
+        if not cont:
+            self.generation = 0
+        else:
+            if self.generation == self.maxGeneration:
+                self.maxGeneration = self.generation + 100
         while self.generation < self.maxGeneration or self.maxGeneration == 0:
             self.generation += 1
             if self.verbose > 0:
