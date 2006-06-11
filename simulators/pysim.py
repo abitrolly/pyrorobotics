@@ -582,14 +582,10 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
                         fill = 'both')
         self.canvas = Tkinter.Canvas(self.frame, bg="white", width=self._width, height=self._height)
         self.canvas.pack(expand="yes", fill="both", side="top", anchor="n")
-        self.canvas.bind("<ButtonRelease-2>", self.click_b2_up)
-        self.canvas.bind("<ButtonRelease-3>", self.click_b3_up)
-        self.canvas.bind("<Button-2>", self.click_b2_down)
-        self.canvas.bind("<Button-3>", self.click_b3_down)
-        self.canvas.bind("<B2-Motion>", self.click_b2_move)
-        self.canvas.bind("<B3-Motion>", self.click_b3_move)
+        self.addMouseBindings()
         self.mBar = Tkinter.Frame(self, relief=Tkinter.RAISED, borderwidth=2)
         self.mBar.pack(fill=Tkinter.X)
+        self.lastEventRobot = None
         self.menuButtons = {}
         menu = [
             ('File', [['Reset', self.reset],
@@ -664,6 +660,37 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         self.done = 1 # stop processing requests, if handling
         self.quit = 1 # stop accept/bind toplevel
         self.root.quit() # kill the gui
+    def dispatch_event(self, event, type):
+        widget = event.widget
+        x = widget.canvasx(event.x)
+        y = widget.canvasy(event.y)
+        d = 5 # overlap, in canvas units
+        items = widget.find_overlapping(x-d, y-d, x+d, y+d)
+        for item in items:
+            tags = self.canvas.gettags(item)
+            for tag in tags:
+                if "robot-" in tag:
+                    robot = self.robotsByName[tag[6:]]
+                    if "control" in type:
+                        self.lastEventRobot = robot
+                    else:
+                        self.lastEventRobot = None                        
+                    return robot.mouse_event(event, type, robot)
+        if self.lastEventRobot:
+            return self.lastEventRobot.mouse_event(event, type, self.lastEventRobot)
+    def addMouseBindings(self):
+        self.canvas.bind("<B1-Motion>", func=lambda event=self:self.dispatch_event(event, "motion"))
+        self.canvas.bind("<Button-1>",  func=lambda event=self:self.dispatch_event(event, "down"))
+        self.canvas.bind("<ButtonRelease-1>", func=lambda event=self:self.dispatch_event(event, "up"))
+        self.canvas.bind("<Control-B1-Motion>", func=lambda event=self:self.dispatch_event(event, "control-motion"))
+        self.canvas.bind("<Control-Button-1>", func=lambda event=self:self.dispatch_event(event, "control-down"))
+        self.canvas.bind("<Control-ButtonRelease-1>", func=lambda event=self:self.dispatch_event(event, "control-up"))
+        self.canvas.bind("<ButtonRelease-2>", self.click_b2_up)
+        self.canvas.bind("<ButtonRelease-3>", self.click_b3_up)
+        self.canvas.bind("<Button-2>", self.click_b2_down)
+        self.canvas.bind("<Button-3>", self.click_b3_down)
+        self.canvas.bind("<B2-Motion>", self.click_b2_move)
+        self.canvas.bind("<B3-Motion>", self.click_b3_move)
     def click_b2_down(self, event):
         self.click_start = event.x, event.y
     def click_b3_down(self, event):
@@ -1288,37 +1315,6 @@ class TkRobot(SimRobot):
                 x, y = map(lambda v: float(v) / self.simulator.scale, (x, -y))
                 robot.setPose(x, y)
         return "break"
-    def addMouseBindings(self):
-        return
-        ### Mouse methods:
-        # First, unbind (memory leak if you do not!):
-        self.simulator.canvas.unbind_all("<B1-Motion>")
-        self.simulator.canvas.unbind_all("<Button-1>")
-        self.simulator.canvas.unbind_all("<ButtonRelease-1>")
-        self.simulator.canvas.unbind_all("<Control-B1-Motion>")
-        self.simulator.canvas.unbind_all("<Control-Button-1>")
-        self.simulator.canvas.unbind_all("<Control-ButtonRelease-1>")
-        # try 2:
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<B1-Motion>")
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Button-1>")
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<ButtonRelease-1>")
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-B1-Motion>")
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-Button-1>")
-        self.simulator.canvas.tag_unbind("robot-%s" % self.name, "<Control-ButtonRelease-1>")
-        # Now, bind new objects:
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<B1-Motion>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Button-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<ButtonRelease-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "up", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-B1-Motion>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-motion", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-Button-1>",
-                                       func=lambda event,robot=self:self.mouse_event(event, "control-down", robot))
-        self.simulator.canvas.tag_bind("robot-%s" % self.name, "<Control-ButtonRelease-1>",
-                                        func=lambda event,robot=self:self.mouse_event(event, "control-up", robot))
-
 class Puck(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
@@ -1351,7 +1347,6 @@ class TkPuck(TkRobot):
                                    self._gy + x * sin_a90 + y * cos_a90),
                      self.boundingBox[0], self.boundingBox[1])
             self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="", outline="purple")
-        self.addMouseBindings()
 
 Pioneer = SimRobot
 
@@ -1443,7 +1438,6 @@ class TkPioneer(TkRobot):
                 for s in additionalSegments:
                     self.simulator.drawLine(s.start[0], s.start[1], s.end[0], s.end[1],
                                             tag="robot-%s" % self.name, fill="purple")
-        self.addMouseBindings()
 
 class TkBlimp(TkRobot):
     def __init__(self, *args, **kwargs):
@@ -1465,7 +1459,6 @@ class TkBlimp(TkRobot):
         y = (self._gy + self.radius * sin_a90 + 0 * cos_a90)
         self.simulator.drawLine(self._gx, self._gy, x, y,
                                 tag="robot-%s" % self.name, fill="blue", width=3)
-        self.addMouseBindings()
 
 class RangeSensor:
     def __init__(self, name, geometry, arc, maxRange, noise = 0.0):
@@ -1804,7 +1797,6 @@ class TkMyro(TkRobot):
                 for s in additionalSegments:
                     self.simulator.drawLine(s.start[0], s.start[1], s.end[0], s.end[1],
                                             tag="robot-%s" % self.name, fill="purple")
-        self.addMouseBindings()
 
 class MyroIR(RangeSensor):
     def __init__(self):

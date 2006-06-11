@@ -155,11 +155,10 @@ class NNGA(GA):
             x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi
             engine.robot.simulation[0].setPose(n, x, y, t)
         fitness = [0.0] * 4
-        seconds = 20 # how much simulated real time to run, in sim seconds
         s = [0] * 4 # each robot's sound
         lastS = [0] * 4 # previous sound
         location = [(0, 0, 0) for v in range(4)] # each robot's location
-        for i in range(seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
+        for i in range(self.seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
             # get the locations
             for n in range(4): # number of robots
                 location[n] = engine.robot.simulation[0].getPose(n)
@@ -206,14 +205,22 @@ class NNGA(GA):
         fit = max(0.01, fit)
         print "Fitness %d: %.5f" % (genePos, fit)
         return fit
+    def setup(self, **args):
+        if args.has_key('seconds'):
+            self.seconds = args['seconds']
+        else:
+            # default value
+            self.seconds = 20 # how much simulated real time to run, in sim seconds
     def isDone(self):
         return 0
-ga = NNGA(Population(20, Gene, size=len(g), verbose=1,
-                     min=-1, max=1, maxStep = 1,
-                     elitePercent = .1),
-          mutationRate=0.05, crossoverRate=0.6,
-          maxGeneration=100, verbose=1)
-ga.evolve()
 
-#for n in range(4):
-#    engines[n].robot.stop()
+def experiment(seconds, popsize, maxgen):
+    ga = NNGA(Population(popsize, Gene, size=len(g), verbose=1,
+                         imin=-1, imax=1, min=-50, max=50, maxStep = 1,
+                         elitePercent = .1),
+              mutationRate=0.05, crossoverRate=0.6,
+              maxGeneration=maxgen, verbose=1, seconds=seconds)
+    ga.evolve()
+    for n in range(4):
+        engines[n].robot.stop()
+    return ga

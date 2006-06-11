@@ -316,7 +316,11 @@ class GA:
             print "maxGeneration  = %d" % self.maxGeneration
             print "================================================================================"
         self.reInitialize()
+        self.setup(**args)
 
+    def setup(self, **args):
+        pass
+    
     def reInitialize(self):
         self.pop = self.origPop.copy()
         self.initialize()
