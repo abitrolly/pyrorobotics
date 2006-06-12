@@ -284,6 +284,7 @@ class Population:
             print "Average", "%5.2f" % self.avgFitness,
             print "Worst", "%5.2f" % worst.fitness
             print "Elite fitness:", map( lambda x: x.fitness, self.eliteMembers)
+            sys.stdout.flush()
 
 class GA:
     """
