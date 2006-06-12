@@ -251,10 +251,9 @@ class Experiment:
         return self.ga.fitnessFunction(-1) # -1 testing
 
 if __name__ == "__main__":
-    e = Experiment(0, 20, 100)
-    e.ga.seconds = 20
-    e.loadWeights("nolfi-100.wts")
-    e.loadGenotypes("nolfi-100.wts")
+    e = Experiment(20, 20, 100)
+    #e.loadWeights("nolfi-100.wts")
+    #e.loadGenotypes("nolfi-100.wts")
     e.evolve()
-    e.saveBest("nolfi-200.wts")
-    e.ga.saveGenesToFile("nolfi-200.pop")
+    #e.saveBest("nolfi-200.wts")
+    e.ga.saveGenesToFile("nolfi-20-20-100.pop")
