@@ -1,43 +1,19 @@
-from conx import *
+try:
+    from conx import *
+except:
+    from pyrobot.brain.conx import *
 import math
 import pdb
 from unittest import *
 
 __author__="George Dahl <gdahl1@swarthmore.edu>"
 
-def pick(condition, first, second):
-    """
-    If condition evaluates to false, second will be returned.  Otherwise first will be
-    returned.
-    """
-    return (condition and [first] or [second])[0]
-
-## def cor(x,y):
+## def pick(condition, first, second):
 ##     """
-##     This function computes the correlation between two
-##     lists (or numeric arrays) x and y.  This code is almost identical
-##     to the code on Wikipedia for computing correlation.
-##     (http://en.wikipedia.org/wiki/Correlation) It might be a good idea
-##     to replace this function with one that only computes the information
-##     necessary to find the sign of the correlation.
+##     If condition evaluates to false, second will be returned.  Otherwise first will be
+##     returned.
 ##     """
-##     if Numeric.sum(x)==0 or Numeric.sum(y)==0:
-##         return 0
-##     sum_sq_x, sum_sq_y, sum_coproduct = 0, 0, 0
-##     mean_x, mean_y = x[0], y[0]
-##     for i in range(2,len(x)):
-##         sweep = (i-1.0)/i
-##         delta_x = x[i] - mean_x
-##         delta_y = y[i] - mean_y
-##         sum_sq_x += delta_x*delta_x*sweep
-##         sum_sq_y += delta_y*delta_y*sweep
-##         sum_coproduct += delta_x*delta_y*sweep
-##         mean_x += delta_x/i
-##         mean_y += delta_y/i
-##     pop_sd_x = math.sqrt( sum_sq_x / len(x))
-##     pop_sd_y = math.sqrt( sum_sq_y / len(y))
-##     cov_x_y = sum_coproduct / len(x)
-##     return cov_x_y/ (pop_sd_x*pop_sd_y)
+##     return (condition and [first] or [second])[0]
 
 cor = Numeric.cross_correlate
 
@@ -56,22 +32,44 @@ class CascadeCorNet(Network):
     This network implements the cascade-correlation training method.
     """
     def __init__(self, inputLayerSize, outputLayerSize, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200,
-                 changeThreshold = 0.01, name = 'CascadeCor Network', verbosity = 0):
+                 name = 'CascadeCor Network', verbosity = 0):
         Network.__init__(self, name, verbosity)
         self.incrType = "cascade" # only "cascade" is supported at the moment
         self.setQuickprop(1)
-        #self.setBatch(1)
-        #self.momentum = 0
-        self.epsilon = 0.55
         self.addLayers(inputLayerSize, outputLayerSize)
+        
+        self.outputEpsilon = 1.0 #Fahlman's crazy defaults
+        self.candEpsilon = 100.0
+        
+        self.outputMu = 2.0
+        self.candMu = 2.0
+
+        self.outputChangeThreshold = 0.01
+        self.candChangeThreshold = 0.03
+
+        self.outputDecay = 0.0
+        self.candDecay = 0.0
+        
         self.quitEpoch = patience
         self.patience = patience
-        self.changeThreshold = changeThreshold
+                
         self.previousError = sys.maxint
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
         self.symmetricOffset = 0.0
-        self.candreportRate = self.reportRate / 2
+        self.candreportRate = self.reportRate
+
+        self.switchToOutputParams()
+    def switchToOutputParams(self):
+        self.epsilon = self.outputEpsilon
+        self.mu = self.outputMu
+        self.changeThreshold = self.outputChangeThreshold
+        self.decay = self.outputDecay
+    def switchToCandidateParams(self):
+        self.epsilon = self.candEpsilon
+        self.mu = self.candMu
+        self.changeThreshold = self.candChangeThreshold
+        self.decay = self.candDecay
     def setup(self):
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
         pass
@@ -88,9 +86,12 @@ class CascadeCorNet(Network):
         self.maxHidden = maxHidden
         cont = 1
         while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
+            self.epoch = 0
+            self.switchToCandidateParams()
             best = self.trainCandidates()
+            self.switchToOutputParams()
             self.recruit(best)
-            
+            print len(self)-3, " Hidden nodes.\n"
     def trainCandidates(self):
         """
         This function trains the candidate layer to maximize its correlation with the output errors.  The way this is done
