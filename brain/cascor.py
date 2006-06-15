@@ -37,18 +37,21 @@ class CascadeCorNet(Network):
         self.incrType = "cascade" # only "cascade" is supported at the moment
         self.setQuickprop(1)
         self.addLayers(inputLayerSize, outputLayerSize)
-        
-        self.outputEpsilon = 1.0 #Fahlman's crazy defaults
-        self.candEpsilon = 100.0
-        
-        self.outputMu = 2.0
-        self.candMu = 2.0
 
+        #Fahlman had 1.0 and 100 for his code!  That seems insane.
+        self.outputEpsilon = 0.8
+        self.candEpsilon = 2.0
+
+        #Fahlman used 2.0 and 2.0
+        self.outputMu = 2.25
+        self.candMu = 2.25
+
+        #Fahlman had 0.01 and 0.03
         self.outputChangeThreshold = 0.01
-        self.candChangeThreshold = 0.03
+        self.candChangeThreshold = 0.01
 
-        self.outputDecay = 0.0
-        self.candDecay = 0.0
+        self.outputDecay = -0.001
+        self.candDecay = -0.001
         
         self.quitEpoch = patience
         self.patience = patience
@@ -56,7 +59,7 @@ class CascadeCorNet(Network):
         self.previousError = sys.maxint
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
-        self.symmetricOffset = 0.0
+        #self.symmetricOffset = 0.0
         self.candreportRate = self.reportRate
 
         self.switchToOutputParams()
@@ -92,6 +95,8 @@ class CascadeCorNet(Network):
             self.switchToOutputParams()
             self.recruit(best)
             print len(self)-3, " Hidden nodes.\n"
+        if len(self)-3 == self.maxHidden:
+            self.trainOutputs(self.maxOutputEpochs, cont)
     def trainCandidates(self):
         """
         This function trains the candidate layer to maximize its correlation with the output errors.  The way this is done
@@ -398,6 +403,27 @@ if __name__=="__main__":
     net.train(10)
     print len(net)-3
 
+    
+    net = CascadeCorNet(3,1)
+    net.addCandidateLayer(8)
+    net.symmetricOffset = 0.0
+    net.setInputs( [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
+    net.setTargets([[1], [1], [1], [0], [0], [1], [1], [0]])
+    net.train(10)
+    print len(net)-3
+
+    print "Made up function approximation."
+    inputs = [[0.01*i,0.01*j] for i in range(100) for j in range(100)]
+    targets = [[(math.sin(2*npt[0])+math.cos(npt[1]+npt[0]))/2.0] for npt in inputs]
+    net = CascadeCorNet(2,1)
+    net.addCandidateLayer(8)
+    net.symmetricOffset = 0.0
+    net.setInputs(inputs)
+    net.setTargets(targets)
+    net.sweepReportRate = 10000
+    net.train(10)
+    print len(net)-3
+    
 ##     crashes = 0
 ##     seeds = []
 ##     for seed in range(100):
