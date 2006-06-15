@@ -661,6 +661,9 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         self.quit = 1 # stop accept/bind toplevel
         self.root.quit() # kill the gui
     def dispatch_event(self, event, type):
+        if self.lastEventRobot:
+            return self.lastEventRobot.mouse_event(event, type, self.lastEventRobot)
+        # else let's get a robot
         widget = event.widget
         x = widget.canvasx(event.x)
         y = widget.canvasy(event.y)
@@ -671,13 +674,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             for tag in tags:
                 if "robot-" in tag:
                     robot = self.robotsByName[tag[6:]]
-                    if "control" in type:
-                        self.lastEventRobot = robot
-                    else:
-                        self.lastEventRobot = None                        
+                    self.lastEventRobot = robot
                     return robot.mouse_event(event, type, robot)
-        if self.lastEventRobot:
-            return self.lastEventRobot.mouse_event(event, type, self.lastEventRobot)
     def addMouseBindings(self):
         self.canvas.bind("<B1-Motion>", func=lambda event=self:self.dispatch_event(event, "motion"))
         self.canvas.bind("<Button-1>",  func=lambda event=self:self.dispatch_event(event, "down"))
@@ -1283,6 +1281,7 @@ class TkRobot(SimRobot):
                 a = Segment((cx, cy), (x, y)).angle()
                 robot.setPose(a = (-a - PIOVER2) % (2 * math.pi))
                 self._mouse = 0
+                self.simulator.lastEventRobot = None
                 self.simulator.redraw()
             elif command in ["control-down", "control-motion"]:
                 self._mouse = 1
@@ -1296,6 +1295,7 @@ class TkRobot(SimRobot):
                 robot.setPose(x - self._mouse_offset_from_center[0],
                               y - self._mouse_offset_from_center[1])
                 self._mouse = 0
+                self.simulator.lastEventRobot = None
                 self.simulator.redraw()
             elif command == "down":
                 self._mouse = 1
