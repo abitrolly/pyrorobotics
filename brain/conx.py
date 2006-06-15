@@ -736,7 +736,7 @@ class Network(object):
         if value:
             self.batch = 1
             self._quickprop = 1
-            self.mu = 2.25 # maximum growth factor
+            self.mu = 1.75 # maximum growth factor
             self.splitEpsilon = 1
             self.decay = -0.0001
             self.epsilon = 4.0
@@ -1928,7 +1928,7 @@ class Network(object):
         """
         shrinkFactor = self.mu / (1.0 + self.mu)
         if self.splitEpsilon:
-            e /= float(n - 1)
+            e /= float(n)
         if self._quickprop:
             nextStep = Numeric.zeros(len(dweightLast), 'f')
             for i in range(len(dweightLast)):
@@ -1950,7 +1950,7 @@ class Network(object):
                     else:
                         nextStep[i] += d * s / (p - s)
                 else:
-                    nextStep[i] += e * s        ##  Last step was zero, so only use linear   ##
+                    nextStep[i] += e * s + m * d       ##  Last step was zero, so only use linear   ##
             newDweight = nextStep
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
@@ -3357,7 +3357,7 @@ if __name__ == '__main__':
         n = Network()
         n.addLayers(2, 2, 1)
         n.quickprop = 1
-        n.mu = 2.25
+        n.mu = 1.75
         n.epsilon = 4.0
         n.maxRandom = 1.0
         n.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]] )
