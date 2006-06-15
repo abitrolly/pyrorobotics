@@ -30,6 +30,7 @@ net.quickprop = 1
 net.epsilon = e
 net.splitEpsilon = splitEp
 net.autoSymmetric = 0 # take care of it here (above in makeReps)
+net.hyperbolicError = 1
 net.symmetricOffset = symmetric
 net.mu = mu
 net.maxRandom = r
