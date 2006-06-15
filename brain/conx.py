@@ -386,6 +386,7 @@ class Layer:
             self.name, self.kind, self.size, self.active, self.frozen)
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
+            displayArray('Error     ', self.error, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
         if (self.type != 'Input' and self._verbosity > 1):
             displayArray('Error     ', self.error, self.displayWidth)
@@ -2169,18 +2170,24 @@ class Network(object):
             if self.layers[i].active:
                 self.layers[i].display()
                 if self.patterned and self.layers[i].type != 'Hidden':
-                    targetWord = self.getWord( self.layers[i].target )
+                    targetWord, diff = self.getWord( self.layers[i].target, returnDiff = 1)
                     if self.layers[i].kind == 'Output':
                         if targetWord == None:
-                            print "Target = %s" % "No match"
+                            print "Target Pattern   = %s" % "No match"
                         else:
-                            print "Target = '%s'" % targetWord
-                    actWord = self.getWord( self.layers[i].activation )
+                            if diff == 0.0:
+                                print "Target Pattern   = '%s'; (exact)" % targetWord
+                            else:
+                                print "Target Pattern   = '%s'; Match difference = %f)" % (targetWord, diff)
+                    actWord, diff = self.getWord( self.layers[i].activation, returnDiff = 1 )
                     if (self.layers[i].kind == 'Input' or self.layers[i].kind == 'Output'):
                         if actWord == None:
-                            print "Word   = %s" % "No match"
+                            print "Matching Pattern = %s" % "No match"
                         else:
-                            print "Word   = '%s'" % actWord
+                            if diff == 0.0:
+                                print "Matching Pattern = '%s'; (exact)" % actWord
+                            else:
+                                print "Matching Pattern = '%s'; Match difference = %f" % (actWord, diff)
                 if self.verbosity >= 1:
                     weights = range(len(self.connections))
                     weights.reverse()
@@ -2649,20 +2656,31 @@ class Network(object):
             return self.patterns[word]
         else:
             raise ValueError, ('Unknown pattern in getPattern().', word)
-    def getWord(self, pattern):
+    def getWord(self, pattern, returnDiff = 0):
         """
         Returns the word associated with pattern.
 
         Example: net.getWord([0, 0, 0, 1]) => "tom"
 
-        This method uses the net.compare() method to compute if the patterns
-        are the same. Tolerance is adjusted using net.setTolerance().
-        
+        This method now returns the closest pattern based on distance.
         """
+        minDist = 10000
+        closest = None
         for w in self.patterns:
-            if self.compare( self.patterns[w], pattern ):
-                return w
-        return None
+            if len(self.patterns[w]) == len(pattern):
+                dist = reduce(operator.add, [(a - b) ** 2 for (a,b) in zip(self.patterns[w], pattern )])
+                if dist == 0.0:
+                    if returnDiff:
+                        return w, dist
+                    else:
+                        return w
+                if dist < minDist:
+                    minDist = dist
+                    closest = w
+        if returnDiff:
+            return closest, minDist
+        else:
+            return closest
     # use addPattern and delPattern
     def setPattern(self, word, vector):
         """
