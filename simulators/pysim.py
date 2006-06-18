@@ -926,9 +926,12 @@ class SimRobot:
                 dx =  (x - self._gx) * cos_a90 - (y - self._gy) * sin_a90
                 dy =  (x - self._gx) * sin_a90 + (y - self._gy) * cos_a90
                 # then, move that much in the local coords:
+                local90 = -self.a
+                cos_local90 = math.cos(local90)
+                sin_local90 = math.sin(local90)
                 a90 = -self.a
-                self.y += dx * cos_a90 - dy * sin_a90
-                self.x += dx * sin_a90 + dy * cos_a90 
+                self.y += dx * cos_local90 - dy * sin_local90
+                self.x += dx * sin_local90 + dy * cos_local90 
                 # noise: --------------------------------------------------------------
                 # FIXME: should be based on the total distance moved:
                 # dist = Segment((x, y), (self._gx, self._gy)).length()
