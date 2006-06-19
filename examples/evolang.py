@@ -10,30 +10,32 @@ from pyrobot.simulators.pysim import *
 from pyrobot.geometry import distance
 import time, random, math
 
+SimulatorClass, PioneerClass = TkSimulator, TkPioneer
+
 # In pixels, (width, height), (offset x, offset y), scale:
-sim = TkSimulator((441,434), (22,420), 40.357554, run=0)  
+sim = SimulatorClass((441,434), (22,420), 40.357554, run=0)  
 # x1, y1, x2, y2 in meters:
 sim.addBox(0, 0, 10, 10)
 # (x, y) meters, brightness usually 1 (1 meter radius):
 sim.addLight(2, 2, 1)
 sim.addLight(7, 7, 1)
 # port, name, x, y, th, bounding Xs, bounding Ys, color
-sim.addRobot(60000, TkPioneer("RedPioneer",
+sim.addRobot(60000, PioneerClass("RedPioneer",
                               1, 1, -0.86,
                               ((.225, .225, -.225, -.225),
                                (.15, -.15, -.15, .15)),
                             "red"))
-sim.addRobot(60001, TkPioneer("BluePioneer",
+sim.addRobot(60001, PioneerClass("BluePioneer",
                              8, 8, -0.86,
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
                             "blue"))
-sim.addRobot(60002, TkPioneer("GreenPioneer",
+sim.addRobot(60002, PioneerClass("GreenPioneer",
                               5, 1, -0.86,
                               ((.225, .225, -.225, -.225),
                                (.15, -.15, -.15, .15)),
                             "green"))
-sim.addRobot(60003, TkPioneer("YellowPioneer",
+sim.addRobot(60003, PioneerClass("YellowPioneer",
                              8, 1, -0.86,
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
@@ -165,6 +167,7 @@ class NNGA(GA):
         s = [0] * 4 # each robot's sound
         lastS = [0] * 4 # previous sound
         location = [(0, 0, 0) for v in range(4)] # each robot's location
+        stallCount = 0
         for i in range(self.seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
             # get the locations
             for n in range(4): # number of robots
@@ -208,6 +211,18 @@ class NNGA(GA):
                         fitness[n] += .25 * total
                     else:
                         fitness[n] -= 1.0
+            # ==================================================
+            # Check for all stalled:
+            stalled = 0
+            for n in range(4): # number of robots
+                engine = engines[n]
+                if engine.robot.stall: stalled += 1
+            if stalled == 4:
+                stallCount += 1
+            else:
+                stallCount = 0
+            if stallCount == 10:
+                break
         fit = reduce(operator.add, fitness)
         fit = max(0.01, fit)
         print "Fitness %d: %.5f" % (genePos, fit)
@@ -251,9 +266,9 @@ class Experiment:
         return self.ga.fitnessFunction(-1) # -1 testing
 
 if __name__ == "__main__":
-    e = Experiment(20, 20, 100)
+    e = Experiment(50, 100, 100)
     #e.loadWeights("nolfi-100.wts")
     #e.loadGenotypes("nolfi-100.wts")
     e.evolve()
     #e.saveBest("nolfi-200.wts")
-    e.ga.saveGenesToFile("nolfi-20-20-100.pop")
+    e.ga.saveGenesToFile("nolfi-20-20-1000.pop")
