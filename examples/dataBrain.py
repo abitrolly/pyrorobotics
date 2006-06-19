@@ -91,8 +91,9 @@ class SubsumptionBrain(Brain):
         if b < 6:
              for i in range(8):
                  self.inputFile.write("%f " % self.robot.range[i-1].distance(unit = "SCALED"))
-             self.inputFile.write("%f %f\n" % (self.robot.light[0][0].value, self.robot.light[0][1].value))
-             self.targetFile.write("%f %f\n" % (self.behaviors[b].translate, (self.behaviors[b].rotate +1)/2))
+             self.inputFile.write("%f %f" % (self.robot.light[0][0].value, self.robot.light[0][1].value))
+             self.inputFile.write(" %f\n" % self.robot.stall)
+             self.targetFile.write("%f %f\n" % ( (self.behaviors[b].translate +1)/2, (self.behaviors[b].rotate +1)/2))
         time.sleep(1)
 
     def updateAll(self):
