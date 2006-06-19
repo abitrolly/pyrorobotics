@@ -88,7 +88,7 @@ class SubsumptionBrain(Brain):
         print ("%s is in control b " % (self.behaviors[b].__class__.__name__))
         self.move(self.behaviors[b].translate,\
                   self.behaviors[b].rotate)
-        if b < 7:
+        if b < 6:
              for i in range(8):
                  self.inputFile.write("%f " % self.robot.range[i-1].distance(unit = "SCALED"))
              self.inputFile.write("%f %f\n" % (self.robot.light[0][0].value, self.robot.light[0][1].value))
