@@ -95,6 +95,7 @@ class SubsumptionBrain(Brain):
              self.inputFile.write(" %f\n" % self.robot.stall)
              self.targetFile.write("%f %f\n" % ( (self.behaviors[b].translate +1)/2, (self.behaviors[b].rotate +1)/2))
              self.targetFile.flush()
+             self.inputFile.flush()
         time.sleep(1)
 
     def updateAll(self):
