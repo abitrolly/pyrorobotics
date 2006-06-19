@@ -4,7 +4,7 @@
 
 A Subsumption Behavior-Based Brain with Wall- and Freespace- Following
 ----------------------------------------------------------------------
-G. Dahl and A. Pshenichkin - gdahl1, apsheni1@cs.swarthmore.edu
+G. Dahl and A. Pshenichkin - gdahl1, apsheni1@swarthmore.edu
 Created Novermber 3, 2005.
 
 Based on 'SubsumptionFindLight.py', a simple brain by Lisa Meeden
@@ -94,6 +94,7 @@ class SubsumptionBrain(Brain):
              self.inputFile.write("%f %f" % (self.robot.light[0][0].value, self.robot.light[0][1].value))
              self.inputFile.write(" %f\n" % self.robot.stall)
              self.targetFile.write("%f %f\n" % ( (self.behaviors[b].translate +1)/2, (self.behaviors[b].rotate +1)/2))
+             self.targetFile.flush()
         time.sleep(1)
 
     def updateAll(self):
