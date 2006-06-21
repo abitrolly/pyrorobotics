@@ -1908,7 +1908,7 @@ class Network(object):
                 return dict[dict.keys()[0]]
             else:
                 return dict
-    def activationFunction(self, x):
+    def activationFunctionASIG(self, x):
         """
         Determine the activation of a node based on that nodes net input.
         """
@@ -1917,6 +1917,36 @@ class Network(object):
             elif v >  15.0: return 1.0
             else: return 1.0 / (1.0 + Numeric.exp(-v))
         return Numeric.array(map(act, x), 'f') - self._symmetricOffset
+    def ACTPRIMEASIG(self, act):
+        """
+        Used in compute_error.
+        """
+        retval = (act * (1.0 - act)) + self.sigmoid_prime_offset
+        return retval
+    def actDerivASIG(self, x):
+        """
+        Only works on scalars.
+        """
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v))
+        return (act(x) * (1.0 - act(x))) + self.sigmoid_prime_offset
+    #here are three functions that define an alternative node activation function
+    def activationFunctionTANH(self, x):
+        def act(v):
+            if   v < -15.0: return -1.0
+            elif v >  15.0: return 1.0
+            else: return 1.7159 * Numeric.tanh(0.66666 * v)
+        return Numeric.array(map(act, x), 'f')
+    def ACTPRIMETANH(self, act):
+        return 1 - act*act + self.sigmoid_prime_offset
+    def actDerivTANH(self, x):
+        return 1/Numeric.cosh(x) + self.sigmoid_prime_offset
+    #bind the default activation function and its related functions
+    activationFunction = activationFunctionASIG
+    ACTPRIME = ACTPRIMEASIG
+    actDeriv = actDerivASIG
     # backpropagation
     def backprop(self, **args):
         """
@@ -2122,12 +2152,7 @@ class Network(object):
         for layer in self.layers:
             if layer.active:
                 layer.wed = layer.wed + ((1.0 - self._symmetricOffset) * layer.delta)
-    def ACTPRIME(self, act):
-        """
-        Used in compute_error.
-        """
-        retval = (act * (1.0 - act)) + self.sigmoid_prime_offset
-        return retval
+
     def diff(self, value):
         """
         Returns value to within 0.001. Then returns 0.0.
