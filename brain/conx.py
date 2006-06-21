@@ -16,7 +16,18 @@ __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
 
+try:
+    import psyco; psyco.full()
+    print "------------------------------" + "-" * len(__version__.split()[1])
+    print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    print "------------------------------" + "-" * len(__version__.split()[1])
+except:
+    print "--------------" + "-" * len(__version__.split()[1])
+    print "Conx, version %s" % __version__.split()[1]
+    print "--------------" + "-" * len(__version__.split()[1])
+
 def makesym(patterns):
+    """ Make a vector symmetric about 0.0. """
     return [[v - 0.5 for v in vec] for vec in patterns]
 
 def sumMerge(dict1, dict2):
@@ -386,7 +397,6 @@ class Layer:
             self.name, self.kind, self.size, self.active, self.frozen)
         if (self.type == 'Output'):
             displayArray('Target    ', self.target, self.displayWidth)
-            displayArray('Error     ', self.error, self.displayWidth)
         displayArray('Activation', self.activation, self.displayWidth)
         if (self.type != 'Input' and self._verbosity > 1):
             displayArray('Error     ', self.error, self.displayWidth)
@@ -2667,6 +2677,9 @@ class Network(object):
         minDist = 10000
         closest = None
         for w in self.patterns:
+            # There may be some patterns that are scalars; we don't search
+            # those in this function:
+            if type(self.patterns[w]) in [int, float, long]: continue
             if len(self.patterns[w]) == len(pattern):
                 dist = reduce(operator.add, [(a - b) ** 2 for (a,b) in zip(self.patterns[w], pattern )])
                 if dist == 0.0:

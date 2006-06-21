@@ -8,7 +8,7 @@ class NNBrain(Brain):
         self.net = SRN()
         self.sequenceType = "ordered-continuous"
         # INPUT: ir, ears, mouth[t-1]
-        self.net.addLayer("input", len(self.robot.range) + 4 + 2 + 1) # sonar, ears, eyes, speech[t-1]
+        self.net.addLayer("input", len(self.robot.range) + 1 + 4 + 2 + 1) # sonar, stall, ears, eyes, speech[t-1]
         self.net.addContextLayer("context", 5, "hidden")
         self.net.addLayer("hidden", 5)
         # OUTPUT: trans, rotate, say
@@ -26,7 +26,7 @@ class NNBrain(Brain):
         
     def propagate(self, sounds):
         lights = self.robot.light[0].values()
-        inputs = self.robot.range.distance() + sounds + lights + [self.net["output"].activation[2]]
+        inputs = self.robot.range.distance() + [self.robot.stall] + sounds + lights + [self.net["output"].activation[2]]
         self.net.propagate(input=inputs)
         self.net.copyHiddenToContext()
         return [v for v in self.net["output"].activation] # t, r, speech

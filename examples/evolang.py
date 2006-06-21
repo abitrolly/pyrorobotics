@@ -8,6 +8,7 @@ Replicating ALife Nolfi 2006.
 
 from pyrobot.simulators.pysim import *
 from pyrobot.geometry import distance
+from pyrobot.tools.sound import SoundDevice
 import time, random, math
 
 SimulatorClass, PioneerClass = TkSimulator, TkPioneer
@@ -35,11 +36,11 @@ sim.addRobot(60002, PioneerClass("GreenPioneer",
                               ((.225, .225, -.225, -.225),
                                (.15, -.15, -.15, .15)),
                             "green"))
-sim.addRobot(60003, PioneerClass("YellowPioneer",
+sim.addRobot(60003, PioneerClass("GrayPioneer",
                              8, 1, -0.86,
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
-                            "yellow"))
+                            "gray"))
 # add some sensors:
 for robot in sim.robots:
     robot.addDevice(PioneerFrontSonars())
@@ -154,15 +155,24 @@ class NNGA(GA):
             engine = engines[n]
             engine.brain.net.unArrayify(self.pop.individuals[genePos].genotype)
     def randomizePositions(self):
+        positions = [(100, 100)]
         for n in range(len(engines)):
             engine = engines[n]
             # Put each robot in a random location:
             x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi * 2
+            minDistance = min([distance(x, y, x2, y2) for (x2,y2) in positions])
+            while minDistance < 1:
+                x, y, t = 1 + random.random() * 7, 1 + random.random() * 7, random.random() * math.pi * 2
+                minDistance = min([distance(x, y, x2, y2) for (x2,y2) in positions])
+            positions.append( (x,y) )
             engine.robot.simulation[0].setPose(n, x, y, t)
     def fitnessFunction(self, genePos):
+        self.seconds = self.generation
         if genePos >= 0:
             self.loadWeights(genePos)
             self.randomizePositions()
+        sim.resetPaths()
+        sim.redraw()
         fitness = [0.0] * 4
         s = [0] * 4 # each robot's sound
         lastS = [0] * 4 # previous sound
@@ -183,6 +193,8 @@ class NNGA(GA):
                 oTrans, oRotate, s[n] = engine.brain.propagate(quad)
                 # then set the move velocities:
                 engine.brain.step(oTrans, oRotate)
+            # play a sound, need to have a thread running
+            #sd.playTone(int(s[0] * 2000) + 500, .01) # 500 - 2500
             # save the sounds
             for n in range(4): # number of robots
                 lastS = [v for v in s]
@@ -266,9 +278,10 @@ class Experiment:
         return self.ga.fitnessFunction(-1) # -1 testing
 
 if __name__ == "__main__":
-    e = Experiment(50, 100, 100)
+    sd = SoundDevice("/dev/dsp")
+    e = Experiment(0, 20, 100)
     #e.loadWeights("nolfi-100.wts")
     #e.loadGenotypes("nolfi-100.wts")
-    e.evolve()
+    #e.evolve()
     #e.saveBest("nolfi-200.wts")
-    e.ga.saveGenesToFile("nolfi-20-20-1000.pop")
+    #e.ga.saveGenesToFile("nolfi-20-20-100.pop")

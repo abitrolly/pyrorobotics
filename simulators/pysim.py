@@ -735,6 +735,12 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         self.canvas.create_oval(center[0] - radius, center[1] - radius,
                                 center[0] + radius, center[1] + radius,
                                 tag="arrow", outline="purple")
+    def resetPath(self, num):
+        for point in range(len(self.trail[num])):
+            self.trail[num][point] = None
+    def resetPaths(self):
+        for t in range(len(self.trail)):
+            self.resetPath(t)
     def redraw(self):
         self.remove('all')
         for shape in self.shapes:
@@ -778,8 +784,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             if self.robots[i].subscribed and self.robots[i].display["trail"] == 1:
                 if path[self.trailStart] != None:
                     lastX, lastY, lastA = path[self.trailStart]
-                    lastX, lastY = self.scale_x(lastX), self.scale_y(lastY)
-                    color = self.robots[i].color
+                    #lastX, lastY = self.scale_x(lastX), self.scale_y(lastY)
+                    color = self.robots[i].colorParts["trail"]
                     for p in range(self.trailStart, self.trailStart + self.maxTrailSize):
                         xya = path[p % self.maxTrailSize]
                         if xya == None: break
@@ -863,7 +869,7 @@ class SimRobot:
             self.radius = 0.0
         self.builtinDevices = []
         self.color = color
-        self.colorParts = {"ir": "pink", "sonar": "gray", "bumper": "black"}
+        self.colorParts = {"ir": "pink", "sonar": "gray", "bumper": "black", "trail": color}
         self.devices = []
         self.simulator = None # will be set when added to simulator
         self.vx, self.vy, self.va = (0.0, 0.0, 0.0) # meters / second, rads / second
