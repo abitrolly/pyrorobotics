@@ -254,15 +254,27 @@ class GNG:
         return result
         
 if __name__ == '__main__':
-    length = 10
-    vector = [random() for x in range(length)]
-    gng = GNG(length, 1.5)
+    from pyrobot.gui.plot.scatter import Scatter
+    sp = Scatter(connectPoints = 0, linecount=3)
+    length = 2
+    gng = GNG(length, .05) # make second number smaller to match better
     print gng
     print "\n------------------------------------------------\n"
     for i in range(100):
-        for j in range(length):
-            vector[j] = random()
+        #vector = [(1 + sin((i+n) * 2 * pi * 3.0/70.0))/2 for n in range(2)]
+        vector = [random() for x in range(length)]
+        sp.addPoint(vector[0], vector[1], line = 1)
         gng.newInput(vector)
         if (i%10 == 0):
             print gng
             print "\n------------------------------------------------\n"
+            sp.clear(2)
+            for node in gng.nodes:
+                sp.addPoint(node.modelVector[0], node.modelVector[1],
+                            color = "blue", size=3, line=2)
+                for edge in node.edges:
+                    n1 = gng.nodes[edge.node1].modelVector
+                    n2 = gng.nodes[edge.node2].modelVector
+                    sp.addLine(n1[0], n1[1], n2[0], n2[1], 
+                               color = "black", line=2)
+            raw_input("<MORE>")
