@@ -150,6 +150,8 @@ class Simulator:
         self.display = {"wireframe": 0}
         self.running = 0
         self.stop = 0 # use to stop the sim
+    def resetPaths(self): pass
+    def resetPath(self, pos): pass
     def update_idletasks(self): pass
     def mainloop(self):
         """ Simulates what TkSimulator does. """

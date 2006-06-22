@@ -1,4 +1,4 @@
-import ossaudiodev, struct, math, FFT, Numeric, time
+import ossaudiodev, struct, math, FFT, Numeric, time, threading, copy
 
 def add(s1, s2):
     return minmax([(v1 + v2) for (v1, v2) in zip(s1, s2)])
@@ -18,9 +18,32 @@ def sine(freqs, seconds, volume = 1.0, sample_rate = 8000.0):
             sample[n] += int(127 * math.sin(n * 2 * math.pi * freq/sample_rate) * volume)
     return minmax(sample)
 
+class SoundThread(threading.Thread):
+    def __init__(self, parent, name = "sound thread"):
+        threading.Thread.__init__(self, name = name)
+        self.parent = parent
+        self.event  = threading.Event()
+        self.start()
+    def run(self):
+        while not self.event.isSet():
+            self.parent.lock.acquire()
+            buffer = copy.copy(self.parent.buffer)
+            self.parent.buffer = None
+            self.parent.lock.release()
+            if buffer != None:
+                self.parent.dev.write("".join(map(chr,buffer)))
+                self.parent.dev.flush()
+            self.event.wait(.001)
+    def join(self, timeout=None):
+        self.event.set()
+        threading.Thread.join(self, timeout)
+            
 class SoundDevice:
-    def __init__(self, device):
+    def __init__(self, device, async = 0, cache = 1):
         self.device = device
+        self.async = async
+        self.cache = cache
+        self.cacheDict = {}
         self.status = "closed"
         self.number_of_channels= 1
         self.sample_rate= 8000
@@ -29,8 +52,12 @@ class SoundDevice:
         self.minFreq = 20
         self.maxFreq = 3500
         self.debug = 0
+        self.buffer = None
         if self.debug:
             self.setFile("770.txt")
+        if self.async:
+            self.lock = threading.Lock()
+            self.thread = SoundThread(self)
 
     def initialize(self, mode):
         self.dev = ossaudiodev.open("/dev/dsp", mode)
@@ -44,8 +71,13 @@ class SoundDevice:
         """
         if self.status != "w":
             self.initialize("w")
-        self.dev.write("".join(map(chr,sample)))
-        self.dev.flush()
+        if self.async:
+            self.lock.acquire()
+            self.buffer = sample
+            self.lock.release()
+        else:
+            self.dev.write("".join(map(chr,sample)))
+            self.dev.flush()
         
     def playTone(self, freqs, seconds, volume = 1.0):
         """
@@ -57,10 +89,19 @@ class SoundDevice:
             self.initialize("w")
         sample = [128] * int(self.sample_rate * seconds)
         for freq in freqs:
-            for n in range(len(sample)):
-                sample[n] = min(max(sample[n] + int(127 * math.sin(n * 2 * math.pi * freq/self.sample_rate) * volume), 0),255)
-        self.dev.write("".join(map(chr,sample)))
-        self.dev.flush()
+            if self.cache and (freq,seconds) in self.cacheDict:
+                sample = self.cacheDict[(freq,seconds)]
+            else:
+                for n in range(len(sample)):
+                    sample[n] = min(max(sample[n] + int(127 * math.sin(n * 2 * math.pi * freq/self.sample_rate) * volume), 0),255)
+                self.cacheDict[(freq,seconds)] = sample
+        if self.async:
+            self.lock.acquire()
+            self.buffer = sample
+            self.lock.release()
+        else:
+            self.dev.write("".join(map(chr,sample)))
+            self.dev.flush()
 
     def read(self, seconds):
         if self.status != "r":
@@ -108,7 +149,7 @@ class SoundDevice:
             self.status = "closed"
 
 if __name__ == "__main__":
-    sd = SoundDevice("/dev/dsp")
+    sd = SoundDevice("/dev/dsp", async = 1)
     sd.playTone(500, 1)
         
 ## DTMF Tones

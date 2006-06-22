@@ -11,7 +11,8 @@ from pyrobot.geometry import distance
 from pyrobot.tools.sound import SoundDevice
 import time, random, math
 
-SimulatorClass, PioneerClass = TkSimulator, TkPioneer
+#SimulatorClass, PioneerClass = TkSimulator, TkPioneer
+SimulatorClass, PioneerClass = Simulator, Pioneer
 
 # In pixels, (width, height), (offset x, offset y), scale:
 sim = SimulatorClass((441,434), (22,420), 40.357554, run=0)  
@@ -201,7 +202,9 @@ class NNGA(GA):
             sim.update_idletasks()
             # play a sound, need to have a thread running
             if self.playSound:
-                sd.playTone(int(engines[0].brain.net["output"].activation[-1] * 2000) + 500, .1) # 500 - 2500
+                sd.playTone(int(round(engines[0].brain.net["output"].activation[-1], 1) * 2000) + 500, .1) # 500 - 2500
+                # real time?
+                time.sleep(.1)
             # compute fitness
             closeTo = [0, 0] # how many robots are close to which lights?
             for n in range(len(engines)):
@@ -255,13 +258,13 @@ class NNGA(GA):
         return 0
 
 class Experiment:
-    def __init__(self, seconds, popsize, maxgen):
+    def __init__(self, seconds, popsize, maxgen, playsound = 0):
         self.ga = NNGA(Population(popsize, Gene, size=len(g), verbose=1,
                                   imin=-1, imax=1, min=-50, max=50, maxStep = 1,
                                   elitePercent = .1),
                        mutationRate=0.05, crossoverRate=0.6,
                        maxGeneration=maxgen, verbose=1, seconds=seconds,
-                       playSound=0)
+                       playSound=playsound)
     def evolve(self, cont = 0):
         self.ga.evolve(cont)
     def stop(self):
@@ -285,8 +288,8 @@ class Experiment:
         return self.ga.fitnessFunction(-1) # -1 testing
 
 if __name__ == "__main__":
-    sd = SoundDevice("/dev/dsp")
-    e = Experiment(0, 20, 100)
+    sd = SoundDevice("/dev/dsp", async=1)
+    e = Experiment(0, 20, 100, playsound = 0)
     #e.loadWeights("nolfi-100.wts")
     #e.loadGenotypes("nolfi-100.wts")
     #e.evolve()
