@@ -21,26 +21,26 @@ sim.addBox(0, 0, 10, 10)
 sim.addLight(2, 2, 1)
 sim.addLight(7, 7, 1)
 # port, name, x, y, th, bounding Xs, bounding Ys, color
-sim.addRobot(60000, PioneerClass("RedPioneer",
+sim.addRobot(60000, PioneerClass("Pioneer0",
                               1, 1, -0.86,
                               ((.225, .225, -.225, -.225),
                                (.15, -.15, -.15, .15)),
                             "red"))
-sim.addRobot(60001, PioneerClass("BluePioneer",
+sim.addRobot(60001, PioneerClass("Pioneer1",
                              8, 8, -0.86,
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
                             "blue"))
-sim.addRobot(60002, PioneerClass("GreenPioneer",
+sim.addRobot(60002, PioneerClass("Pioneer2",
                               5, 1, -0.86,
                               ((.225, .225, -.225, -.225),
                                (.15, -.15, -.15, .15)),
                             "green"))
-sim.addRobot(60003, PioneerClass("GrayPioneer",
+sim.addRobot(60003, PioneerClass("Pioneer3",
                              8, 1, -0.86,
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
-                            "gray"))
+                            "purple"))
 # add some sensors:
 for robot in sim.robots:
     robot.addDevice(PioneerFrontSonars())
@@ -193,14 +193,15 @@ class NNGA(GA):
                 oTrans, oRotate, s[n] = engine.brain.propagate(quad)
                 # then set the move velocities:
                 engine.brain.step(oTrans, oRotate)
-            # play a sound, need to have a thread running
-            #sd.playTone(int(s[0] * 2000) + 500, .01) # 500 - 2500
             # save the sounds
             for n in range(4): # number of robots
                 lastS = [v for v in s]
             # make the move:
             sim.step(run=0)
             sim.update_idletasks()
+            # play a sound, need to have a thread running
+            if self.playSound:
+                sd.playTone(int(engines[0].brain.net["output"].activation[-1] * 2000) + 500, .1) # 500 - 2500
             # compute fitness
             closeTo = [0, 0] # how many robots are close to which lights?
             for n in range(len(engines)):
@@ -245,6 +246,11 @@ class NNGA(GA):
         else:
             # default value
             self.seconds = 20 # how much simulated real time to run, in sim seconds
+        if args.has_key('playSound'):
+            self.playSound = args['playSound']
+        else:
+            # default value
+            self.playSound = 0 # sound?
     def isDone(self):
         return 0
 
@@ -254,7 +260,8 @@ class Experiment:
                                   imin=-1, imax=1, min=-50, max=50, maxStep = 1,
                                   elitePercent = .1),
                        mutationRate=0.05, crossoverRate=0.6,
-                       maxGeneration=maxgen, verbose=1, seconds=seconds)
+                       maxGeneration=maxgen, verbose=1, seconds=seconds,
+                       playSound=0)
     def evolve(self, cont = 0):
         self.ga.evolve(cont)
     def stop(self):
@@ -285,3 +292,5 @@ if __name__ == "__main__":
     #e.evolve()
     #e.saveBest("nolfi-200.wts")
     #e.ga.saveGenesToFile("nolfi-20-20-100.pop")
+
+# BUG: 73.25000 for 1 in yellow for 34 seconds?
