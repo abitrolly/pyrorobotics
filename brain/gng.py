@@ -254,14 +254,13 @@ class GNG:
         return result
         
 if __name__ == '__main__':
-
-    vector = [0.5,0.2,0.1,0.4]
-    
-    gng = GNG(4, 1.5)
+    length = 10
+    vector = [random() for x in range(length)]
+    gng = GNG(length, 1.5)
     print gng
     print "\n------------------------------------------------\n"
     for i in range(100):
-        for j in range(4):
+        for j in range(length):
             vector[j] = random()
         gng.newInput(vector)
         if (i%10 == 0):
