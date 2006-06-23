@@ -255,6 +255,8 @@ class NNGA(GA):
             # default value
             self.playSound = 0 # sound?
     def isDone(self):
+        if self.generation % 10 == 0:
+            self.saveGenesToFile("gen-%05s.pop" % self.generation)
         return 0
 
 class Experiment:
