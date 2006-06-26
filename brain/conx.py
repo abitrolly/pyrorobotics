@@ -26,9 +26,10 @@ except:
     print "Conx, version %s" % __version__.split()[1]
     print "--------------" + "-" * len(__version__.split()[1])
 
-def makesym(patterns):
-    """ Make a vector symmetric about 0.0. """
-    return [[v - 0.5 for v in vec] for vec in patterns]
+#This function doesn't even do  what it is claims to do
+## def makesym(patterns):
+##     """ Make a vector symmetric about 0.0. """
+##     return [[v - 0.5 for v in vec] for vec in patterns]
 
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
@@ -56,7 +57,25 @@ def ndim(n, *args):
     for i in range(n):
         A.append( ndim(*args) ) 
     return A 
-
+def ndim2(n, *args):
+    """
+    Makes a multi-dimensional array of random floats. (Replaces RandomArray).
+    This version generates random values from a probability distribution more appropriate for a Tanh activation function.
+    """
+    if not args: 
+        return [random.gauss(0, 1) for i in xrange(n)]
+    A = [] 
+    for i in range(n):
+        A.append( ndim(*args) ) 
+    return A 
+def randomArray2(size, bound):
+    """
+    Returns an array initialized to random values between -max and max.
+    """
+    if type(size) == type(1):
+        size = (size,)
+    temp = Numeric.array( ndim(*size) ) * (2.0 * bound)
+    return temp - bound
 def randomArray(size, bound):
     """
     Returns an array initialized to random values between -max and max.
@@ -426,8 +445,6 @@ class Layer:
         #if self.verify and not self.activationSet == 0:
         #    raise LayerError, \
         #          ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
-        if (value < self.minActivation or value > self.maxActivation) and self.kind == 'Input':
-            print "Warning! Activations set to value outside of the proper interval. ", (self.name, value) 
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
     def copyActivations(self, arr):
@@ -444,8 +461,6 @@ class Layer:
             raise LayerError, \
                   ('Activation flag not reset before call to copyActivations()', \
                    self.activationSet) 
-        if (Numeric.add.reduce(array < self.minActivation) or Numeric.add.reduce(array > self.maxActivation)) and self.kind == 'Input':
-            print "Warning! Activations set to value outside of the proper interval. ", (self.name, array) 
         self.activation = array
         self.activationSet = 1
 
@@ -492,6 +507,7 @@ class Layer:
         #        print "(Warning will not be issued again)"
         #        self.warningIssued = 1
         if Numeric.add.reduce(array < self.minTarget) or Numeric.add.reduce(array > self.maxTarget):
+            print self.name, self.minTarget, self.maxTarget
             raise LayerError, ('Targets for this layer are out of range.', (self.name, array))
         self.target = array
         self.targetSet = 1
@@ -1197,8 +1213,8 @@ class Network(object):
         """
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
-        if self.autoSymmetric and self._symmetricOffset != 0.0:
-            inputs = makesym(inputs)
+        #if self.autoSymmetric and self._symmetricOffset != 0.0:
+        #    inputs = makesym(inputs)
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1215,8 +1231,8 @@ class Network(object):
         """
         if not self.verifyArguments(targets) and not self.patterned:
             raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
-        if self.autoSymmetric and self._symmetricOffset != 0.0:
-            targets = makesym(targets)
+        #if self.autoSymmetric and self._symmetricOffset != 0.0:
+        #    targets = makesym(targets)
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1923,6 +1939,14 @@ class Network(object):
         """
         retval = (act * (1.0 - act)) + self.sigmoid_prime_offset
         return retval
+    def ACTPRIME_Fahlman(self, act):
+        return self.sigmoid_prime_offset+0.25 - act*act
+    def actDerivFahlman(self, x):
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v))
+        return self.ACTPRIME_Fahlman(act(x) - self._symmetricOffset )
     def actDerivASIG(self, x):
         """
         Only works on scalars.
@@ -1942,11 +1966,40 @@ class Network(object):
     def ACTPRIMETANH(self, act):
         return 1 - act*act + self.sigmoid_prime_offset
     def actDerivTANH(self, x):
-        return 1/Numeric.cosh(x) + self.sigmoid_prime_offset
+        #print x, 1/Numeric.cosh(x)
+        #return 1/Numeric.cosh(x) + self.sigmoid_prime_offset
+        def act(v):
+            if   v < -15.0: return -1.0
+            elif v >  15.0: return 1.0
+            else: return 1.7159 * Numeric.tanh(0.66666 * v)
+        return self.ACTPRIMETANH(act(x))
+    def useTanhActivationFunction(self):
+        """
+        Change the network to use the hyperbolic tangent activation function for all layers.
+        Must be called after all layers have been added.
+        """
+        self.activationFunction = self.activationFunctionTANH
+        self.ACTPRIME = self.ACTPRIMETANH
+        self.actDeriv = self.actDerivTANH
+        for layer in self:
+            layer.minTarget, layer.minActivation = -1.7159, -1.7159 
+            layer.maxTarget, layer.maxActivation = 1.7159, 1.7159
+    def useFahlmanActivationFunction(self):
+        """
+        Change the network to use Fahlman's default activation function for all layers.
+        Must be called after all layers have been added.
+        """
+        self.activationFunction = self.activationFunctionASIG
+        self._symmetricOffset = 0.5
+        self.ACTPRIME = self.ACTPRIME_Fahlman
+        self.actDeriv = self.actDerivFahlman
+        for layer in self:
+            layer.minTarget, layer.minActivation = -0.5, -0.5 
+            layer.maxTarget, layer.maxActivation = 0.5, 0.5
     #bind the default activation function and its related functions
     activationFunction = activationFunctionASIG
-    ACTPRIME = ACTPRIMEASIG
-    actDeriv = actDerivASIG
+    ACTPRIME = ACTPRIME_Fahlman
+    actDeriv = actDerivFahlman
     # backpropagation
     def backprop(self, **args):
         """
