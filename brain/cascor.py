@@ -39,8 +39,8 @@ class CascadeCorNet(Network):
         self.addLayers(inputLayerSize, outputLayerSize)
 
         #Fahlman had 1.0 and 100 for his code!  That seems insane.
-        self.outputEpsilon = 0.8
-        self.candEpsilon = 2.0
+        self.outputEpsilon = 0.7
+        self.candEpsilon = inputLayerSize*0.6#2.0
 
         #Fahlman used 2.0 and 2.0
         self.outputMu = 2.25
@@ -50,8 +50,10 @@ class CascadeCorNet(Network):
         self.outputChangeThreshold = 0.01
         self.candChangeThreshold = 0.01
 
-        self.outputDecay = -0.001
-        self.candDecay = -0.001
+        #self.outputDecay = -0.001
+        #self.candDecay = -0.001
+        self.outputDecay = -0.01
+        self.candDecay = -0.01
         
         self.quitEpoch = patience
         self.patience = patience
@@ -59,7 +61,8 @@ class CascadeCorNet(Network):
         self.previousError = sys.maxint
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
-        #self.symmetricOffset = 0.0
+        self.symmetricOffset = 0.0
+        self.sigmoid_prime_offset = 0.001#0.0001
         self.candreportRate = self.reportRate
 
         self.switchToOutputParams()
@@ -76,15 +79,6 @@ class CascadeCorNet(Network):
     def setup(self):
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
         pass
-    def actDeriv(self, x):
-        """
-        Only works on scalars.
-        """
-        def act(v):
-            if   v < -15.0: return 0.0
-            elif v >  15.0: return 1.0
-            else: return 1.0 / (1.0 + Numeric.exp(-v))
-        return (act(x) * (1.0 - act(x))) + self.sigmoid_prime_offset
     def train(self, maxHidden):
         self.maxHidden = maxHidden
         cont = 1
@@ -332,6 +326,9 @@ class CascadeCorNet(Network):
             self[hname].wed[i] = self["candidate"].wed[i + n]
             self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
         self[hname].frozen = 1 # don't change these weights/biases
+        #in case we are using a different activation function
+        #     the fact that this code needs to be here is indicative of a poor design in Conx
+        self[hname].minTarget, self[hname].minActivation = self["candidate"].minTarget, self["candidate"].minActivation
         # first, connect up input
         for layer in self: 
             if layer.type == "Input" and layer.name != hname: # includes contexts
@@ -383,16 +380,43 @@ class TestCascadeCorNet(TestCase):
     def setUp(self):
         net = CascadeCorNet(2,1)
 
+def mean(seq):
+    return Numeric.sum(seq)/float(len(seq))
+
+def center(seq):
+    return seq - mean(seq)
+
+## def scale(seq):
+##     """
+##     Assumes the mean of the data is already zero.
+##     Seq must be a two dimensional Numeric array.
+##     Scales each component of the vectors to range between -1 and 1.
+##     """
+##     mx = Numeric.array([max(seq[:,i]) for i in range(len(seq[0]))])
+##     mn = Numeric.array([min(seq[:,i]) for i in range(len(seq[0]))])
+##     s = max - min
+##     return Numeric.array([vect/s for vect in seq])
+
 if __name__=="__main__":
     #suite =makeSuite(TestCascadeCorNet)
     #TextTestRunner(verbosity=2).run(suite)
     print "started"
     net = CascadeCorNet(2,1)
     net.addCandidateLayer(8)
-    net.symmetricOffset = 0.0
-    net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
-    net.setTargets([[0], [1], [1], [0]])
+    #net.symmetricOffset = 0.0
+    ##############################
+    net.useTanhActivationFunction()
+    for layer in net:
+        print layer.name
+        print layer.minTarget, layer.maxTarget
+    print "SIGMOID PRIME OFFSET: ", net.sigmoid_prime_offset
+    #net.sigmoid_prime_offset = 0.0
+    ##############################
     
+    net.setInputs( center([[0, 0], [0, 1], [1, 0], [1, 1]]))
+    net.setTargets(center([[0], [1], [1], [0]]))
+    #net.setInputs( [[-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]])
+    #net.setTargets([[-1.0], [1.0], [1.0], [-1.0]])
     #print net.getData(0)
 
     #net.mu = 1.75
@@ -400,42 +424,51 @@ if __name__=="__main__":
     #s = random.randint(0, 10)
     #print s
     #net.setSeed(s)
+    for layer in net:
+        print layer.name
+        print layer.minTarget, layer.maxTarget
     net.train(10)
     print len(net)-3
+    #import sys
+    #sys.exit()
 
+    strng = raw_input("Enter any key to continue.")
     
     net = CascadeCorNet(3,1)
     net.addCandidateLayer(8)
-    net.symmetricOffset = 0.0
-    net.setInputs( [[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
-    net.setTargets([[1], [1], [1], [0], [0], [1], [1], [0]])
-    net.train(10)
-    print len(net)-3
-
-    print "Made up function approximation."
-    inputs = [[0.01*i,0.01*j] for i in range(100) for j in range(100)]
-    targets = [[(math.sin(2*npt[0])+math.cos(npt[1]+npt[0]))/2.0] for npt in inputs]
-    net = CascadeCorNet(2,1)
-    net.addCandidateLayer(8)
-    net.symmetricOffset = 0.0
-    net.setInputs(inputs)
-    net.setTargets(targets)
-    net.sweepReportRate = 10000
+    net.useTanhActivationFunction()
+    #net.sigmoid_prime_offset = 0.0
+    #net.symmetricOffset = 0.0
+    net.setInputs( center([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]))
+    net.setTargets(center([[1], [1], [1], [0], [0], [1], [1], [0]]))
     net.train(10)
     print len(net)-3
     
-##     crashes = 0
-##     seeds = []
-##     for seed in range(100):
-##         try:
-##             crashTest(seed)
-##         except:
-##             crashes += 1
-##             seeds.append(seed)
-##             print "CRASHED"
-##     print "Crashed ", crashes, " times."
-##     print seeds
-    print "all done"
+    strng = raw_input("Enter any key to continue.")
+    print "Made up function approximation."
+    inputs = center([[0.1*i,0.1*j] for i in range(30) for j in range(30)])
+    targets = center([[(math.sin(npt[0])+math.cos(npt[1]+npt[0]))-
+                       Numeric.sign((math.sin(npt[0])+math.cos(npt[1]+npt[0])))*0.5 ] for npt in inputs])
+    print inputs
+    print targets
+    print max(targets)
+    print min(targets)
+    net = CascadeCorNet(2,1)
+    net.addCandidateLayer(8)
+    net.useTanhActivationFunction()
+    net.setInputs(inputs)
+    net.setTargets(targets)
+    #net.sweepReportRate = 10000
+    net.setTolerance(0.4)
+    #net.verbosity = 2
+
+    net.train(10)
+##     net.learning = 0
+##     net.interactive = 1
+##     net.sweep()
+    print len(net)-3
+    
+ 
     
     
 ##    GLOBAL_DEBUG = False
