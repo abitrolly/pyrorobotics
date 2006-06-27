@@ -57,22 +57,37 @@ class CascadeCorNet(Network):
         
         self.quitEpoch = patience
         self.patience = patience
-                
+
+        self.splitEpsilon = 0 #we will handle this manually since it is different for input and output phases
         self.previousError = sys.maxint
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
         self.maxCandEpochs = maxCandEpochs
-        self.symmetricOffset = 0.0
         self.sigmoid_prime_offset = 0.001#0.0001
+        self.sig_prime_offset_copy = self.sigmoid_prime_offset
         self.candreportRate = self.reportRate
 
         self.switchToOutputParams()
     def switchToOutputParams(self):
+        """
+        This function must be called before trainOutputs is called since the output training phase
+        accepts and sometimes requires different parameters than the candidate training phase.
+        """
+        self.sigmoid_prime_offset = self.sig_prime_offset_copy #restore the original sigmoid prime offset
         self.epsilon = self.outputEpsilon
         self.mu = self.outputMu
         self.changeThreshold = self.outputChangeThreshold
         self.decay = self.outputDecay
     def switchToCandidateParams(self):
-        self.epsilon = self.candEpsilon
+        """
+        This function must be called before trainCandidates is called.  It switches the various learning parameters to their
+        values for the candidate training phase and makes sure the sigmoid prime offset is zero during candidate
+        training.
+        """
+        #+1.0 for bias, should be fan in for candidate layer#this is what Fahlman does?
+        #we basically do the 'split epsilon' trick, but only for candidate training and we do it manually
+        self.epsilon = self.candEpsilon / (self["candidate"].numConnects +1.0)
+        self.sig_prime_offset_copy = self.sigmoid_prime_offset #store the sigmoid prime offset for later recovery
+        self.sigmoid_prime_offset = 0.0 #necessary because a non zero prime offset may confuse correlation machinery
         self.mu = self.candMu
         self.changeThreshold = self.candChangeThreshold
         self.decay = self.candDecay
@@ -82,6 +97,7 @@ class CascadeCorNet(Network):
     def train(self, maxHidden):
         self.maxHidden = maxHidden
         cont = 1
+        self.switchToOutputParams()
         while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
             self.epoch = 0
             self.switchToCandidateParams()
@@ -242,6 +258,7 @@ class CascadeCorNet(Network):
             if sweeps != None:
                 self.resetEpoch = self.epoch + sweeps - 1
         while self.doWhile(totalCount, totalCorrect):
+            #pdb.set_trace()
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             self.complete = 1
             if totalCount != 0:
@@ -366,19 +383,8 @@ class CascadeCorNet(Network):
         self.connectAt(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
 
-def crashTest(seed):
-    net = CascadeCorNet(2,1)
-    net.addCandidateLayer(1)
-    net.symmetricOffset = 0.0
-    net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
-    net.setTargets([[0], [1], [1], [0]])
-    net.mu = 1.75
-    net.setSeed(seed)
-    net.train(10)
 
-class TestCascadeCorNet(TestCase):
-    def setUp(self):
-        net = CascadeCorNet(2,1)
+
 
 def mean(seq):
     return Numeric.sum(seq)/float(len(seq))
@@ -403,7 +409,6 @@ if __name__=="__main__":
     print "started"
     net = CascadeCorNet(2,1)
     net.addCandidateLayer(8)
-    #net.symmetricOffset = 0.0
     ##############################
     net.useTanhActivationFunction()
     for layer in net:
@@ -438,7 +443,6 @@ if __name__=="__main__":
     net.addCandidateLayer(8)
     net.useTanhActivationFunction()
     #net.sigmoid_prime_offset = 0.0
-    #net.symmetricOffset = 0.0
     net.setInputs( center([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]))
     net.setTargets(center([[1], [1], [1], [0], [0], [1], [1], [0]]))
     net.train(10)
@@ -479,7 +483,6 @@ if __name__=="__main__":
     
     
 ##    net.setQuickprop(1)
-##    net.symmetricOffset = 0.0
 ##    #net.setBatch(1)
 ##    #net.verbosity = 4
     
