@@ -17,19 +17,16 @@ __version__ = "$Revision$"
 import Numeric, math, random, time, sys, operator
 
 try:
-    import psyco; psyco.full()
-    print "------------------------------" + "-" * len(__version__.split()[1])
-    print "Conx, version %s (psyco enabled)" % __version__.split()[1]
-    print "------------------------------" + "-" * len(__version__.split()[1])
+    pass
+    #import psyco; psyco.full()
+    #print "------------------------------" + "-" * len(__version__.split()[1])
+    #print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    #print "------------------------------" + "-" * len(__version__.split()[1])
 except:
     print "--------------" + "-" * len(__version__.split()[1])
     print "Conx, version %s" % __version__.split()[1]
     print "--------------" + "-" * len(__version__.split()[1])
 
-#This function doesn't even do  what it is claims to do
-## def makesym(patterns):
-##     """ Make a vector symmetric about 0.0. """
-##     return [[v - 0.5 for v in vec] for vec in patterns]
 
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
@@ -745,19 +742,8 @@ class Network(object):
         self._quickprop = 0
         self.mu = 1.75 # maximum growth factor
         self.splitEpsilon = 0
-        self.autoSymmetric = 1
-        self._symmetricOffset = 0.0
         self.decay = 0.0000
         self.setup()
-    def getSymmetricOffset(self):
-        return self._symmetricOffset
-    def setSymmetricOffset(self, value):
-        self._symmetricOffset = value
-        for layer in self.layers:
-            layer.minTarget = 0.0 - value
-            layer.maxTarget = 1.0 - value
-            layer.minActivation = 0.0 - value
-            layer.maxActivation = 1.0 - value
     def setQuickprop(self, value):
         if value:
             self.batch = 1
@@ -766,14 +752,13 @@ class Network(object):
             self.splitEpsilon = 1
             self.decay = -0.0001
             self.epsilon = 4.0
-            self.symmetricOffset = 0.5
+            #set different activation function here?
             self.name = "Quickprop Network"
         else:
             self._quickprop = 0
             self.splitEpsilon = 0
             self.decay = 0.0000
             self.epsilon = 0.1
-            self.symmetricOffset = 0.0
     def getQuickprop(self): return self._quickprop
     def setup(self):
         pass
@@ -845,10 +830,10 @@ class Network(object):
         """
         layer._verbosity = verbosity
         layer._maxRandom = self._maxRandom
-        layer.minTarget = 0.0 - self._symmetricOffset
-        layer.maxTarget = 1.0 - self._symmetricOffset
-        layer.minActivation = 0.0 - self._symmetricOffset
-        layer.maxActivation = 1.0 - self._symmetricOffset
+        layer.minTarget = 0.0
+        layer.maxTarget = 1.0
+        layer.minActivation = 0.0
+        layer.maxActivation = 1.0
         if position == None:
             self.layers.append(layer)
         else:
@@ -1213,8 +1198,6 @@ class Network(object):
         """
         if not self.verifyArguments(inputs) and not self.patterned:
             raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
-        #if self.autoSymmetric and self._symmetricOffset != 0.0:
-        #    inputs = makesym(inputs)
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1231,8 +1214,6 @@ class Network(object):
         """
         if not self.verifyArguments(targets) and not self.patterned:
             raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
-        #if self.autoSymmetric and self._symmetricOffset != 0.0:
-        #    targets = makesym(targets)
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1797,7 +1778,7 @@ class Network(object):
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
+                layer.netinput = (layer.weight).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         for layer in propagateLayers:
             if layer.active:
@@ -1841,7 +1822,7 @@ class Network(object):
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
+                layer.netinput = (layer.weight).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         for layer in self.layers:
@@ -1893,7 +1874,7 @@ class Network(object):
                 continue # don't set this one
             if not started: continue
             if layer.type != 'Input' and layer.active:
-                layer.netinput = (layer.weight * (1.0 - self._symmetricOffset)).tolist() 
+                layer.netinput = (layer.weight).tolist() 
                 layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         started = 0
@@ -1924,6 +1905,9 @@ class Network(object):
                 return dict[dict.keys()[0]]
             else:
                 return dict
+    #Perhaps these activation functions could be encapsulated in objects?
+    #  We have various activation function classes that also hold their min and max values and the three or
+    #  four functions required to define them.
     def activationFunctionASIG(self, x):
         """
         Determine the activation of a node based on that nodes net input.
@@ -1932,21 +1916,13 @@ class Network(object):
             if   v < -15.0: return 0.0
             elif v >  15.0: return 1.0
             else: return 1.0 / (1.0 + Numeric.exp(-v))
-        return Numeric.array(map(act, x), 'f') - self._symmetricOffset
+        return Numeric.array(map(act, x), 'f')
     def ACTPRIMEASIG(self, act):
         """
         Used in compute_error.
         """
         retval = (act * (1.0 - act)) + self.sigmoid_prime_offset
         return retval
-    def ACTPRIME_Fahlman(self, act):
-        return self.sigmoid_prime_offset+0.25 - act*act
-    def actDerivFahlman(self, x):
-        def act(v):
-            if   v < -15.0: return 0.0
-            elif v >  15.0: return 1.0
-            else: return 1.0 / (1.0 + Numeric.exp(-v))
-        return self.ACTPRIME_Fahlman(act(x) - self._symmetricOffset )
     def actDerivASIG(self, x):
         """
         Only works on scalars.
@@ -1956,6 +1932,23 @@ class Network(object):
             elif v >  15.0: return 1.0
             else: return 1.0 / (1.0 + Numeric.exp(-v))
         return (act(x) * (1.0 - act(x))) + self.sigmoid_prime_offset
+    #here are three functions that define a symmetric sigmoid activation function identical to the one
+    # fahlman uses in his code
+    def activationFunctionFahlman(self, x):
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v)) - 0.5
+        return Numeric.array(map(act, x), 'f')
+    def ACTPRIME_Fahlman(self, act):
+        return self.sigmoid_prime_offset+0.25 - act*act
+    def actDerivFahlman(self, x):
+        def act(v):
+            if   v < -15.0: return 0.0
+            elif v >  15.0: return 1.0
+            else: return 1.0 / (1.0 + Numeric.exp(-v)) - 0.5
+        return self.ACTPRIME_Fahlman( act(x) )
+    
     #here are three functions that define an alternative node activation function
     def activationFunctionTANH(self, x):
         def act(v):
@@ -1989,15 +1982,14 @@ class Network(object):
         Change the network to use Fahlman's default activation function for all layers.
         Must be called after all layers have been added.
         """
-        self.activationFunction = self.activationFunctionASIG
-        self._symmetricOffset = 0.5
+        self.activationFunction = self.activationFunctionFahlman
         self.ACTPRIME = self.ACTPRIME_Fahlman
         self.actDeriv = self.actDerivFahlman
         for layer in self:
             layer.minTarget, layer.minActivation = -0.5, -0.5 
             layer.maxTarget, layer.maxActivation = 0.5, 0.5
     #bind the default activation function and its related functions
-    activationFunction = activationFunctionASIG
+    activationFunction = activationFunctionFahlman
     ACTPRIME = ACTPRIME_Fahlman
     actDeriv = actDerivFahlman
     # backpropagation
@@ -2053,6 +2045,8 @@ class Network(object):
         Changes the weights according to the error values calculated
         during backprop(). Learning must be set.
         """
+        #import pdb
+        #pdb.set_trace()
         dw_count, dw_sum = 0, 0.0
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
@@ -2158,7 +2152,7 @@ class Network(object):
             connect = self.connections[c]
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = (connect.toLayer.error *
-                                         (self.ACTPRIME(connect.toLayer.activation + self._symmetricOffset)))
+                                         (self.ACTPRIME(connect.toLayer.activation)))
                 connect.fromLayer.error = connect.fromLayer.error + \
                                           Numeric.matrixmultiply(connect.weight,connect.toLayer.delta)
         # now all errors are set on all layers!
@@ -2204,7 +2198,7 @@ class Network(object):
                                                                  connect.toLayer.delta)
         for layer in self.layers:
             if layer.active:
-                layer.wed = layer.wed + ((1.0 - self._symmetricOffset) * layer.delta)
+                layer.wed = layer.wed + layer.delta
 
     def diff(self, value):
         """
@@ -2914,7 +2908,6 @@ class Network(object):
     maxRandom = property(getMaxRandom, setMaxRandom)
     verbosity = property(getVerbosity, setVerbosity)
     quickprop = property(getQuickprop, setQuickprop)
-    symmetricOffset = property(getSymmetricOffset, setSymmetricOffset)
 
 class SigmaNetwork(Network):
     """
@@ -2935,12 +2928,12 @@ class SigmaNetwork(Network):
         # def prob(v): return int(random.random() < v)
         def myround(v):
             retval = round(v)
-            return retval - self._symmetricOffset
+            return retval
         def mutate(v, p):
             for i in range(int(round(len(v) * p))):
                 g = int(len(v) * random.random())
-                symbols = [0.0 - self._symmetricOffset,
-                           1.0 - self._symmetricOffset]
+                symbols = [0.0,
+                           1.0]
                 v[g] = symbols[(symbols.index(v[g]) + 1) % 2]
             return v
         for name in dict:
