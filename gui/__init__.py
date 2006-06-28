@@ -37,6 +37,40 @@ class BrainStem:
    """
    def __init__(self, robot = 0):
       self.robot = robot
+    # wrappers here to talk to default robot:
+    def move(self, *args):
+        """Short-cut to call the robot's move method."""
+        return self.robot.move(*args)
+    def translate(self, *args):
+        """Short-cut to call the robot's translate method."""
+        return self.robot.translate(*args)
+    def rotate(self, *args):
+        """Short-cut to call the robot's rotate method."""
+        return self.robot.rotate(*args)
+    def stop(self):
+        """Short-cut to call the robot's stop method."""
+        return self.robot.stop()
+    def startDevice(self, *args, **keywords):
+        """Short-cut to call the robot's startDevice method."""
+        return self.robot.startDevice(*args, **keywords)
+    def removeDevice(self, *args, **keywords):
+        """Short-cut to call the robot's removeDevice method."""
+        return self.robot.removeDevice(*args, **keywords)
+    def update(self):
+        """Short-cut to call the robot's update method."""
+        return self.robot.update()
+    def motors(self, *args):
+        """Short-cut to call the robot's motors method."""
+        return self.robot.motors(*args)
+    def getDevice(self, *args):
+        """Short-cut to call the robot's getDevice method."""
+        return self.robot.getDevice(*args)
+    def hasA(self, *args):
+        """Short-cut to call the robot's hasA method."""
+        return self.robot.hasA(*args)
+    def requires(self, *args):
+        """Short-cut to call the robot's requires method."""
+        return self.robot.requires(*args)
 
 class gui:
    """
