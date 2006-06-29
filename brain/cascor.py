@@ -67,6 +67,9 @@ class CascadeCorNet(Network):
         self.candreportRate = self.reportRate
 
         self.switchToOutputParams()
+    def setSigmoid_prime_offset(self, value):
+        self.sigmoid_prime_offset = value
+        self.sig_prime_offset_copy = self.sigmoid_prime_offset
     def switchToOutputParams(self):
         """
         This function must be called before trainOutputs is called since the output training phase
