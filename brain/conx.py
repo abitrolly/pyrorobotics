@@ -2045,8 +2045,6 @@ class Network(object):
         Changes the weights according to the error values calculated
         during backprop(). Learning must be set.
         """
-        #import pdb
-        #pdb.set_trace()
         dw_count, dw_sum = 0, 0.0
         for layer in self.layers:
             if layer.active and layer.type != 'Input':
