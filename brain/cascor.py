@@ -88,7 +88,11 @@ class CascadeCorNet(Network):
         """
         #+1.0 for bias, should be fan in for candidate layer#this is what Fahlman does?
         #we basically do the 'split epsilon' trick, but only for candidate training and we do it manually
-        self.epsilon = self.candEpsilon / (self["candidate"].numConnects +1.0)
+        self["candidate"].active = 1 #it is silly that these two lines have to be done here, but numConnects needs to be set correctly
+        self.propagate(input = Numeric.zeros(len(self["input"])))  #   it is indicative of some poor design decisions in pyro,
+        #                                                   namely how layers are added THEN connected (instead of both at once)
+        #                                                 and how actual training fills in some important STRUCTURAL information
+        self.epsilon = self.candEpsilon / self["candidate"].numConnects
         self.sig_prime_offset_copy = self.sigmoid_prime_offset #store the sigmoid prime offset for later recovery
         self.sigmoid_prime_offset = 0.0 #necessary because a non zero prime offset may confuse correlation machinery
         self.mu = self.candMu
@@ -111,11 +115,14 @@ class CascadeCorNet(Network):
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
     def trainCandidates(self):
-        """
-        This function trains the candidate layer to maximize its correlation with the output errors.  The way this is done
-        is by setting weight error derivatives for connections and layers and assuming the change_weights function will update the
-        weights appropriately based on those data members.
-        """
+        """ This function trains the candidate layer to maximize its
+        correlation with the output errors.  The way this is done is
+        by setting weight error derivatives for connections and layers
+        and assuming the change_weights function will update the
+        weights appropriately based on those data members.  """
+        self["candidate"].weight = Numeric.array([-0.12])
+        self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+        pdb.set_trace()
 
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
         self["candidate"].active = 1 #candidate should be active throughout this function
@@ -164,7 +171,7 @@ class CascadeCorNet(Network):
             #Fahlman's 'S' quantity, computed for each candidate unit
             #perhaps construction of uneccesary temporary lists could be avoided with
             #generator expressions, but Numeric.sum doesn't seem to
-            #evaluate a generator expression
+            #fold a generator expression
             S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
             best = findMax(S_c)
 
