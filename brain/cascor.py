@@ -102,6 +102,7 @@ class CascadeCorNet(Network):
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
         pass
     def train(self, maxHidden):
+        self.totalEpochs = 0
         self.maxHidden = maxHidden
         cont = 1
         self.switchToOutputParams()
@@ -114,15 +115,16 @@ class CascadeCorNet(Network):
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
+        print self.totalEpochs
     def trainCandidates(self):
         """ This function trains the candidate layer to maximize its
         correlation with the output errors.  The way this is done is
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        self["candidate"].weight = Numeric.array([-0.12])
-        self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
-        pdb.set_trace()
+        #self["candidate"].weight = Numeric.array([-0.12])
+        #self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+        #pdb.set_trace()
 
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
         self["candidate"].active = 1 #candidate should be active throughout this function
@@ -154,14 +156,17 @@ class CascadeCorNet(Network):
             #sigma_o[i][j] is the sign of the correlation between the ith candidate and the jth output
             sigma_o = Numeric.array([[Numeric.sign(cor(V_p[:,c], outputs[:,out]))[0] for c in range(numCandidates)] \
                                      for out in range(len(outputs[0]))])
+            sumSqErr = [Numeric.sum(Numeric.multiply(E_po[:,j], E_po[:,j])) for j in range(numOutputs)] ##does this help?
             for c in range(numCandidates): #for every candidate unit in the layer, get ready to train the bias weight
                 #recompute dSdw for the bias weight for this candidate
                 dSdw_bias = Numeric.sum( [Numeric.sum([sigma_o[i][c]*(E_po[p][i] - E_o_avg[i])*self.actDeriv(netInptToCnd[p][c]) \
                                                        for p in range(numPatterns)]) for i in range(numOutputs)] )
+                #dSdw_bias = Numeric.divide(dSdw_bias, sumSqErr) ##is this what fahlman does?
                 self.updateCandidateLayer(dSdw_bias, c)
             for conxn in incomingConnections: #for every connection going into the candidate layer, prepare to train the weights
                 #dSdw[i][j] is the derivative of S for the ith, jth weight of the current connection
                 dSdw = self.compute_dSdw(sigma_o, E_po, E_o_avg, netInptToCnd, conxn)
+                #dSdw = Numeric.divide(dSdw, sumSqErr)
                 self.updateConnection(conxn, dSdw)
             #deactivate output layer here so we don't change its weights
             self["output"].active = 0
@@ -183,7 +188,7 @@ class CascadeCorNet(Network):
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
             ep += 1
-        
+        self.totalEpochs += ep
         return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
@@ -245,7 +250,8 @@ class CascadeCorNet(Network):
         error drops below the threshold (either self.stopPercent or cross validation if self.useCrossValidationToStop
         is set), or a maximum number of training epochs have been performed.
         """
-        self["candidate", "output"].active = 0 # don't let candidates affect outputs
+        #experiment with disabling ghost connection
+        #self["candidate", "output"].active = 0 # don't let candidates affect outputs
         self["output"].active = 1 #make sure output layer is active, afterall, that is what we are training in this function
         self["candidate"].active = 0 #in fact, don't let the candidate layer do anything!  Hopefully this won't cause problems
         self.quitEpoch = self.patience
@@ -318,6 +324,7 @@ class CascadeCorNet(Network):
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
+        self.totalEpochs += self.epoch
         return (totalCorrect * 1.0 / totalCount <  self.stopPercent) #true means we continue
     
     def addCandidateLayer(self, size=8):
@@ -329,9 +336,9 @@ class CascadeCorNet(Network):
         for layer in self:
             if layer.type != "Output" and layer.name != "candidate":
                 self.connectAt(layer.name, "candidate", position = -1)
-        for layer in self: # ghost connection
-            if layer.type == "Output" and layer.name != "candidate":
-                self.connectAt("candidate", layer.name, position = -1)
+        #for layer in self: # ghost connection
+        #    if layer.type == "Output" and layer.name != "candidate":
+        #        self.connectAt("candidate", layer.name, position = -1)
     def recruit(self, n):
         """
         Grab the Nth candidate node and all incoming weights and make it
