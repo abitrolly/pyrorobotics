@@ -144,7 +144,7 @@ class CascadeCorNet(Network):
 
         ep = 0
         self.quitEpoch = self.patience
-        previousBest = 0 #index of best candidate correlation on last iteration
+        previousBest = 0 #best candidate correlation on last iteration
         while ep < self.maxCandEpochs and ep < self.quitEpoch:
             #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation Learning Architecture (1991)"
             #will hold  a list of activations for each candidate for each training pattern, each row a
@@ -183,7 +183,7 @@ class CascadeCorNet(Network):
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(S_c[best] - previousBest) > previousBest*self.changeThreshold:
                 previousBest = S_c[best]
-                self.quitEpoch = i + self.patience
+                self.quitEpoch = ep + self.patience
 
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
