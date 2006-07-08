@@ -2953,6 +2953,77 @@ class SigmaNetwork(Network):
                     self.outputLayers += len(self.inputs)
         return self.sigmaCorrect != self.outputLayers
 
+import Tkinter
+class NetworkWatcher(Tkinter.Toplevel):
+   def __init__(self, network):
+       self.network = network
+       self._width = 500
+       self._height = 500
+       import pyrobot.system.share
+       if pyrobot.system.share.gui:
+           root = pyrobot.system.share.gui
+       else:
+           root = Tkinter.Tk()
+           root.withdraw()
+       Tkinter.Toplevel.__init__(self, root)
+       self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.minimize)
+       self.wm_title("Pyrobot Network Watcher")
+       self.protocol('WM_DELETE_WINDOW',self.destroy)
+       self.frame = Tkinter.Frame(self)
+       self.frame.pack(side = 'bottom', expand = "yes", anchor = "n",
+                       fill = 'both')
+       self.canvas = Tkinter.Canvas(self.frame, bg="white", width=self._width,
+                                    height=self._height)
+       self.canvas.pack(expand="yes", fill="both", side="top", anchor="n")
+       self.addMouseBindings()
+   def addMouseBindings(self):
+       pass
+   def minimize(self):
+       self.withdraw()
+   def update(self):
+       size = 20
+       for n in range(len(self.network["input"])):
+           # draw horizontal lines
+           self.canvas.create_line(10, self._height - ((n + 1) * (size * 2) - size/2),
+                                   self._width - 10, self._height - ((n + 1) * (size * 2)- size/2),
+                                   fill = "black")
+           # left input nodes
+           self.canvas.create_oval(10, self._height - ((n + 1) * (size * 2)),
+                                   10 + size, self._height - ((n + 1) * (size * 2)) + size,
+                                   fill = "red")
+       for n in range(len(self.network["output"])):
+           # draw vertical lines
+           self.canvas.create_line(self._width - ((n + 1) * (size * 2)),
+                                   10,
+                                   self._width - ((n + 1) * (size * 2)),
+                                   self._height - 10,
+                                   fill = "black")
+           # left output nodes
+           self.canvas.create_oval(self._width - ((n + 1) * (size * 2)) - size/2,
+                                   10,
+                                   self._width - ((n + 1) * (size * 2)) + size/2,
+                                   10 + size,
+                                   fill = "blue")
+       hiddenCount = 0
+       for layer in self.network.layers:
+           if "hidden" in layer.name:
+               self.canvas.create_line(5 * size + hiddenCount * (size + 10),
+                                       self._height - (len(self.network["input"]) + 1) * (size * 2) - hiddenCount * (size + 10) + size/2,
+                                       self._width - 10,
+                                       self._height - (len(self.network["input"]) + 1) * (size * 2) - hiddenCount * (size + 10) + size/2,
+                                       fill = "black")
+               self.canvas.create_line(5 * size + hiddenCount * (size + 10) + size/2,
+                                       self._height - (len(self.network["input"]) + 1) * (size * 2) - hiddenCount * (size + 10) + size/2,
+                                       5 * size + hiddenCount * (size + 10) + size/2,
+                                       self._height - 10,
+                                       fill = "black")
+               self.canvas.create_oval(5 * size + hiddenCount * (size + 10),
+                                       self._height - (len(self.network["input"]) + 1) * (size * 2) - hiddenCount * (size + 10),
+                                       5 * size + hiddenCount * (size + 10) + size,
+                                       self._height - (len(self.network["input"]) + 1) * (size * 2) - hiddenCount * (size + 10) + size,
+                                       fill = "green")
+               hiddenCount += 1
+
 class IncrementalNetwork(Network):
     """
 
@@ -2992,9 +3063,9 @@ class IncrementalNetwork(Network):
         for layer in self:
             if layer.type != "Output" and layer.name != "candidate":
                 self.connectAt(layer.name, "candidate", position = -1)
-        for layer in self: # ghost connection
-            if layer.type == "Output" and layer.name != "candidate":
-                self.connectAt("candidate", layer.name, position = -1)
+        #for layer in self: # ghost connection
+        #    if layer.type == "Output" and layer.name != "candidate":
+        #        self.connectAt("candidate", layer.name, position = -1)
     def recruitBest(self):
         bestScore, best = 1000000, 0
         for i in range(self["candidate"].size):
