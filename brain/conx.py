@@ -18,13 +18,9 @@ import Numeric, math, random, time, sys, operator
 
 try:
     import psyco; psyco.full()
-    print "------------------------------" + "-" * len(__version__.split()[1])
     print "Conx, version %s (psyco enabled)" % __version__.split()[1]
-    print "------------------------------" + "-" * len(__version__.split()[1])
 except:
-    print "--------------" + "-" * len(__version__.split()[1])
-    print "Conx, version %s" % __version__.split()[1]
-    print "--------------" + "-" * len(__version__.split()[1])
+    print "Conx, version %s (regular speed)" % __version__.split()[1]
 
 
 def sumMerge(dict1, dict2):
@@ -1988,9 +1984,9 @@ class Network(object):
             layer.minTarget, layer.minActivation = -0.5, -0.5 
             layer.maxTarget, layer.maxActivation = 0.5, 0.5
     #bind the default activation function and its related functions
-    activationFunction = activationFunctionFahlman
-    ACTPRIME = ACTPRIME_Fahlman
-    actDeriv = actDerivFahlman
+    activationFunction = activationFunctionASIG
+    ACTPRIME = ACTPRIMEASIG
+    actDeriv = actDerivASIG
     # backpropagation
     def backprop(self, **args):
         """
