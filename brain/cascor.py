@@ -27,6 +27,16 @@ def findMax(seq):
             bestSoFar = i+1
     return bestSoFar
 
+def findMin(seq):
+    """
+    Returns the index of the maximum value in the sequence.
+    """
+    bestSoFar = 0
+    for i in range(len(seq)-1):
+        if seq[i+1] < seq[bestSoFar]:
+            bestSoFar = i+1
+    return bestSoFar
+
 class CascadeCorNet(Network):
     """
     This network implements the cascade-correlation training method.
@@ -48,7 +58,7 @@ class CascadeCorNet(Network):
 
         #Fahlman had 0.01 and 0.03
         self.outputChangeThreshold = 0.01
-        self.candChangeThreshold = 0.01
+        self.candChangeThreshold = 0.03
 
         #self.outputDecay = -0.001
         #self.candDecay = -0.001
@@ -177,18 +187,37 @@ class CascadeCorNet(Network):
             #perhaps construction of uneccesary temporary lists could be avoided with
             #generator expressions, but Numeric.sum doesn't seem to
             #fold a generator expression
-            S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
-            best = findMax(S_c)
+            #S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
+            #best = findMax(S_c)
 
+            #pdb.set_trace()
+            #
+            S_co = self.computeFahlmanS_co(V_p, V_avg, E_po, E_o_avg)
+            #sign error when compared with Fahlman,  from our different convention for err (goal - actual or actual - goal)
+            #will simply correcting it now screw anything up?  I know that our code in trainOutputs uses an opposite sign convetion that
+            # works out to the same weight updates, our actual quickprop update rule is possibly negated.
+            #  However, our weight updates are the same in candidate training also and we only use S_c to pick what we recruit so
+            #  simply changing it should be fine.  I hope.
+            S_co = -1.0 * S_co
+            S_c = Numeric.sum(S_co, 1)
+            best = findMax([abs(cr) for cr in S_c])
+            bestScore = abs(S_c[best])
+            
+            self.cor = S_co[best]
+            #print "correlations!"
+            #print self.cor
+            pdb.set_trace()
+            #
+            
             #if there is an appreciable change in the error we don't need to worry about stagnation
-            if abs(S_c[best] - previousBest) > previousBest*self.changeThreshold:
-                previousBest = S_c[best]
+            if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
                 self.quitEpoch = ep + self.patience
-
+                previousBest = bestScore
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
             ep += 1
         self.totalEpochs += ep
+        
         return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
@@ -231,6 +260,10 @@ class CascadeCorNet(Network):
         return Numeric.sum(Numeric.fabs(Numeric.sum(
             [[Numeric.multiply( Numeric.subtract(V_p[i], V_avg), E_po[i][j] - E_o_avg[j])  
                 for j in range(len(E_po[0])) ] for i in range(len(V_p)) ])))
+    def computeFahlmanS_co(self, V_p, V_avg, E_po, E_o_avg):
+        #pdb.set_trace()
+        return (Numeric.array([Numeric.sum(Numeric.transpose(Numeric.multiply(Numeric.transpose(V_p), E_po[:,c]))) \
+                               for c in range(len(E_po[0]))]) - V_avg*E_o_avg)/Numeric.sum(Numeric.sum(E_po*E_po))
     def compute_dSdw(self, sigma_o, E_po, E_o_avg, netInptToCnd, conxn):
         """
         Computes dSdW for a specific connection to the candidate layer.
@@ -399,7 +432,11 @@ class CascadeCorNet(Network):
         # finally, connect new hidden to candidate
         self.connectAt(hname, "candidate", position = -1)
         self[hname, "candidate"].frozen = 1 # don't change weights
-
+        #set the initial weights from the new hidden unit to the output layer to be based on the correlation
+        #we could have the wrong sign here!  Try both signs and see which works better, probably easier than comparing w/Fahlman
+        ##
+        #pdb.set_trace()
+        self[hname, "output"].weight = Numeric.array([Numeric.array([[x] for x in self.cor])[n]])
 
 
 
