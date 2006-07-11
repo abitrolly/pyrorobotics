@@ -103,6 +103,57 @@ class ListenerThread(threading.Thread):
         self._stopevent.set()
         threading.Thread.join(self, timeout)
 
+class JointListenerThread(threading.Thread):
+    def __init__(self, listener):
+        """
+        Constructor, setting initial variables
+        """
+        self.listener = listener
+        #self.callback = read
+        self._stopevent = threading.Event()
+        self._sleepperiod = 0.001
+        threading.Thread.__init__(self, name="JointListenerThread")
+        
+    def run(self):
+        """
+        overload of threading.thread.run()
+        main control loop
+        """
+        while not self._stopevent.isSet():
+            #self.callback(self.listener)
+            self.readState(self.listener)
+            self._stopevent.wait(self._sleepperiod)
+
+    def join(self,timeout=None):
+        """
+        Stop the thread
+        """
+        self._stopevent.set()
+        threading.Thread.join(self, timeout)
+
+    def readState(self, socket):
+        """ Used as a callback in ListenerThread for sockets that produce data fast for us to read. """
+        # read sensor/pid states:
+        self.ws_timestamp = socket.read(4, "l")
+        # ---
+        numPIDJoints = socket.read(4, "l")
+        self.numPIDJoints = numPIDJoints # ERS7: 18
+        self.positionRaw = socket.read(numPIDJoints * 4,
+                                       "<%df" % numPIDJoints,all=1)
+        # ---
+        numSensors = socket.read(4, "l") # ERS7: 8
+        self.numSensors = numSensors
+        self.sensorRaw = socket.read(numSensors * 4,
+                                     "<%df" % numSensors,all=1)
+        # ---
+        numButtons = socket.read(4, "l") # ERS7: 6
+        self.numButtons = numButtons
+        self.buttonRaw = socket.read(numButtons * 4,
+                                     "<%df" % numButtons,all=1)
+        # --- same number as PID joints:             # ERS7: 18
+        self.dutyCycleRaw = socket.read(numPIDJoints * 4,
+                                        "<%df" % numPIDJoints,all=1)
+
 class AiboHeadDevice(Device):
     """
     Class for moving the Aibo Head unit as a Pan-Tilt-Zoom-Nod device.
@@ -229,7 +280,7 @@ class AiboRobot(Robot):
                                          self.host) # sensors
         self.joint_socket    = Listener(self.PORT["Joint Writer"],
                                         self.host) # joints
-        self.sensor_thread    = ListenerThread(self.sensor_socket, self.readWorldState)
+        self.sensor_thread    = JointListenerThread(self.sensor_socket)
         self.sensor_thread.start()
         #self.pid_socket       = Listener(10032, self.host) # sensors
         time.sleep(1) # let all of the servers get going...
@@ -405,7 +456,7 @@ class AiboRobot(Robot):
 
         else:
             raise AttributeError, "no such joint"
-        return self.positionRaw[pos]/normalize, self.dutyCycleRaw[pos]
+        return self.sensor_thread.positionRaw[pos]/normalize, self.sensor_thread.dutyCycleRaw[pos]
 
     def getButton(self, query):
         """ Get value of button by name """
@@ -584,6 +635,13 @@ class AiboRobot(Robot):
             file +=".WAV"
         self.main_control.s.send("!select \"%s\"\n" % "Play Sound")
         self.main_control.s.send("!select \"%s\"\n" % file) #select file
+
+    def runMotion(self, file):
+        file = file.upper()
+        if (not file.endswith(".MOT")):
+            file +=".MOT"
+        self.main_control.s.send("!select \"%s\"\n" % "Run Motion Sequence")
+        self.main_control.s.send("!select \"%s\"\n" % file)
         
     def setWalk(self, file):
         """
@@ -627,7 +685,7 @@ class AiboRobot(Robot):
            ((amty==None) or ( amty>=-1.0 and amty<=1.0)) and \
            ((amtz==None) or ( amtz>=-1.0 and amtz<=1.0)):
             self.update()
-            l = list(self.positionRaw)
+            l = list(self.sensor_thread.positionRaw)
             jointDict = joint.split()
             check = 0
             if "mouth" in jointDict:
