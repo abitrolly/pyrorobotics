@@ -11,8 +11,8 @@ from pyrobot.geometry import distance
 from pyrobot.tools.sound import SoundDevice
 import time, random, math
 
-#SimulatorClass, PioneerClass = TkSimulator, TkPioneer
-SimulatorClass, PioneerClass = Simulator, Pioneer
+SimulatorClass, PioneerClass = TkSimulator, TkPioneer
+#SimulatorClass, PioneerClass = Simulator, Pioneer
 
 # In pixels, (width, height), (offset x, offset y), scale:
 sim = SimulatorClass((441,434), (22,420), 40.357554, run=0)  
@@ -21,6 +21,9 @@ sim.addBox(0, 0, 10, 10)
 # (x, y) meters, brightness usually 1 (1 meter radius):
 sim.addLight(2, 2, 1)
 sim.addLight(7, 7, 1)
+
+robotCount = 5
+
 # port, name, x, y, th, bounding Xs, bounding Ys, color
 sim.addRobot(60000, PioneerClass("Pioneer0",
                               1, 1, -0.86,
@@ -42,6 +45,11 @@ sim.addRobot(60003, PioneerClass("Pioneer3",
                              ((.225, .225, -.225, -.225),
                               (.15, -.15, -.15, .15)),
                             "purple"))
+sim.addRobot(60004, PioneerClass("Pioneer4",
+                             8, 3, -0.86,
+                             ((.225, .225, -.225, -.225),
+                              (.15, -.15, -.15, .15)),
+                            "pink"))
 # add some sensors:
 for robot in sim.robots:
     robot.addDevice(PioneerFrontSonars())
@@ -54,14 +62,10 @@ for robot in sim.robots:
 # client side:
 from pyrobot.robot.symbolic import Simbot
 from pyrobot.engine import Engine
-clients = [Simbot(sim, ["localhost", 60000], 0),
-           Simbot(sim, ["localhost", 60001], 1),
-           Simbot(sim, ["localhost", 60002], 2),
-           Simbot(sim, ["localhost", 60003], 3)]
+clients = [Simbot(sim, ["localhost", 60000 + n], n)  for n in range(robotCount)]
+engines = [Engine() for n in range(robotCount)]
 
-engines = [Engine(), Engine(), Engine(), Engine()]
-
-for n in range(4):
+for n in range(robotCount):
     engines[n].robot = clients[n]
     engines[n].loadBrain("NNBrain")
 
@@ -117,11 +121,11 @@ def quadNum(myangle, angle):
         else:
             return 3
 def quadTest(robot = 0):
-    location = [0] * 4
-    for n in range(4):
+    location = [0] * robotCount
+    for n in range(robotCount):
         location[n] = engines[0].robot.simulation[0].getPose(n)
     myLoc = location[robot]
-    return quadSound(myLoc, range(4), location)
+    return quadSound(myLoc, range(robotCount), location)
 def quadSound(myLoc, lastS, location):
     """
     Computes the sound heard for all quads.
@@ -156,7 +160,7 @@ class NNGA(GA):
             engine = engines[n]
             engine.brain.net.unArrayify(self.pop.individuals[genePos].genotype)
     def randomizePositions(self):
-        positions = [(100, 100)]
+        positions = [(2, 2), (7, 7)]
         for n in range(len(engines)):
             engine = engines[n]
             # Put each robot in a random location:
@@ -168,23 +172,23 @@ class NNGA(GA):
             positions.append( (x,y) )
             engine.robot.simulation[0].setPose(n, x, y, t)
     def fitnessFunction(self, genePos):
-        self.seconds = self.generation
+        self.seconds = min(self.generation, 50)
         if genePos >= 0:
             self.loadWeights(genePos)
             self.randomizePositions()
         sim.resetPaths()
         sim.redraw()
-        fitness = [0.0] * 4
-        s = [0] * 4 # each robot's sound
-        lastS = [0] * 4 # previous sound
-        location = [(0, 0, 0) for v in range(4)] # each robot's location
+        fitness = [0.0] * robotCount
+        s = [0] * robotCount # each robot's sound
+        lastS = [0] * robotCount # previous sound
+        location = [(0, 0, 0) for v in range(robotCount)] # each robot's location
         stallCount = 0
         for i in range(self.seconds * (1000/sim.timeslice)): # simulated seconds (10/sec)
             # get the locations
-            for n in range(4): # number of robots
+            for n in range(robotCount): # number of robots
                 location[n] = engines[0].robot.simulation[0].getPose(n)
             # compute the move for each robot
-            for n in range(4): # number of robots
+            for n in range(robotCount): # number of robots
                 engine = engines[n]
                 engine.robot.update()
                 # compute quad for this robot
@@ -195,7 +199,7 @@ class NNGA(GA):
                 # then set the move velocities:
                 engine.brain.step(oTrans, oRotate)
             # save the sounds
-            for n in range(4): # number of robots
+            for n in range(robotCount): # number of robots
                 lastS = [v for v in s]
             # make the move:
             sim.step(run=0)
@@ -230,10 +234,10 @@ class NNGA(GA):
             # ==================================================
             # Check for all stalled:
             stalled = 0
-            for n in range(4): # number of robots
+            for n in range(robotCount): # number of robots
                 engine = engines[n]
                 if engine.robot.stall: stalled += 1
-            if stalled == 4:
+            if stalled == robotCount:
                 stallCount += 1
             else:
                 stallCount = 0
@@ -270,7 +274,7 @@ class Experiment:
     def evolve(self, cont = 0):
         self.ga.evolve(cont)
     def stop(self):
-        for n in range(4):
+        for n in range(robotCount):
             engines[n].robot.stop()
     def saveBest(self, filename):
         net = engines[0].brain.net
@@ -283,7 +287,7 @@ class Experiment:
             for n in range(len(genotype)):
                 p.genotype[n] = genotype[n]
     def loadWeights(self, filename):
-        for n in range(4):
+        for n in range(robotCount):
             engines[n].brain.net.loadWeightsFromFile(filename)
     def test(self, seconds):
         self.ga.seconds = seconds
@@ -291,7 +295,7 @@ class Experiment:
 
 if __name__ == "__main__":
     sd = SoundDevice("/dev/dsp", async=1)
-    e = Experiment(0, 20, 100, playsound = 0)
+    e = Experiment(0, 100, 100, playsound = 1)
     #e.loadWeights("nolfi-100.wts")
     #e.loadGenotypes("nolfi-100.wts")
     #e.evolve()
