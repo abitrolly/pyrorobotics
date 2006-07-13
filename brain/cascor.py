@@ -132,8 +132,8 @@ class CascadeCorNet(Network):
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        self["candidate"].weight = Numeric.array([-0.12])
-        self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+        #self["candidate"].weight = Numeric.array([-0.12])
+        #self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
         #pdb.set_trace()
 
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
@@ -209,7 +209,7 @@ class CascadeCorNet(Network):
             #print self.cor
             
             #
-            pdb.set_trace()
+            #pdb.set_trace()
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
                 self.quitEpoch = ep + self.patience
