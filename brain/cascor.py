@@ -60,10 +60,10 @@ class CascadeCorNet(Network):
         self.outputChangeThreshold = 0.01
         self.candChangeThreshold = 0.03
 
-        #self.outputDecay = -0.001
-        #self.candDecay = -0.001
-        self.outputDecay = -0.01
-        self.candDecay = -0.01
+        self.outputDecay = -0.001
+        self.candDecay = -0.001
+        #self.outputDecay = -0.01
+        #self.candDecay = -0.01
         
         self.quitEpoch = patience
         self.patience = patience
@@ -132,8 +132,8 @@ class CascadeCorNet(Network):
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        #self["candidate"].weight = Numeric.array([-0.12])
-        #self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+        self["candidate"].weight = Numeric.array([-0.12])
+        self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
         #pdb.set_trace()
 
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
@@ -151,7 +151,7 @@ class CascadeCorNet(Network):
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
 
-
+        #pdb.set_trace()
         ep = 0
         self.quitEpoch = self.patience
         previousBest = 0 #best candidate correlation on last iteration
@@ -180,6 +180,7 @@ class CascadeCorNet(Network):
                 self.updateConnection(conxn, dSdw)
             #deactivate output layer here so we don't change its weights
             self["output"].active = 0
+            #pdb.set_trace()
             self.change_weights() #change incoming connection weights and bias weights for the entire candidate layer
             
             #S_c is a list of the covariances for each candidate, or
@@ -206,9 +207,9 @@ class CascadeCorNet(Network):
             self.cor = S_co[best]
             #print "correlations!"
             #print self.cor
-            pdb.set_trace()
-            #
             
+            #
+            pdb.set_trace()
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
                 self.quitEpoch = ep + self.patience
