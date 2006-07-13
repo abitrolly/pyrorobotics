@@ -17,8 +17,9 @@ __version__ = "$Revision$"
 import Numeric, math, random, time, sys, operator
 
 try:
-    import psyco; psyco.full()
-    print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    pass
+    #import psyco; psyco.full()
+    #print "Conx, version %s (psyco enabled)" % __version__.split()[1]
 except:
     print "Conx, version %s (regular speed)" % __version__.split()[1]
 
@@ -1931,16 +1932,16 @@ class Network(object):
     # fahlman uses in his code
     def activationFunctionFahlman(self, x):
         def act(v):
-            if   v < -15.0: return 0.0
-            elif v >  15.0: return 1.0
+            if   v < -15.0: return -0.5
+            elif v >  15.0: return 0.5
             else: return 1.0 / (1.0 + Numeric.exp(-v)) - 0.5
         return Numeric.array(map(act, x), 'f')
     def ACTPRIME_Fahlman(self, act):
         return self.sigmoid_prime_offset+0.25 - act*act
     def actDerivFahlman(self, x):
         def act(v):
-            if   v < -15.0: return 0.0
-            elif v >  15.0: return 1.0
+            if   v < -15.0: return -0.5
+            elif v >  15.0: return 0.5
             else: return 1.0 / (1.0 + Numeric.exp(-v)) - 0.5
         return self.ACTPRIME_Fahlman( act(x) )
     
