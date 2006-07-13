@@ -44,6 +44,7 @@ class BlobCamera(Camera):
       self.data = CBuffer(self._cbuf)
       
    def update(self):
+      if not self.active: return
       blobs = []
       for i in range(self._devBlobFinder.blob_count):
          try:

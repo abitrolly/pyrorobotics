@@ -75,6 +75,7 @@ class RobocupCamera(Camera):
       return retval
 
    def update(self):
+      if not self.active: return
       try:
          see = self.robot.see
       except:

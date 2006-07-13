@@ -49,6 +49,7 @@ class BT848Camera(Camera):
       Since data is mmaped to the capture card, all we have to do is call
       refresh.
       """
+      if not self.active: return
       try:
          self._dev.updateMMap()
          self.processAll()

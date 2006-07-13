@@ -174,7 +174,7 @@ class Robot:
         for deviceType in self.devices:
             if deviceType in self.__dict__:
                 for device in self.__dict__[deviceType]:
-                    if device.active:
+                    if device.active and not device.async:
                         device.updateDevice()
             else:
                 self.devices.remove(deviceType)

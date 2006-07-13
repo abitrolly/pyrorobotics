@@ -52,7 +52,6 @@ class AiboCamera(Camera):
       """
       self.robot = robot
       self.robot.setRemoteControl("Raw Cam Server", "on")
-      self.thread = None
       time.sleep(1)
       self._dev = AiboCam( self.robot.host, self.robot.PORT["Raw Cam Server"], tcp)
       # connect vision system: --------------------------
@@ -69,16 +68,14 @@ class AiboCamera(Camera):
                       "Aibo Camera View")
       self.subtype = "aibo"
       self.data = CBuffer(self._cbuf)
-      self.thread = CameraThread(self)
-      self.thread.start()
 
    def update(self):
-       if self.thread:
-           self._dev.updateMMap(1) # read and map
-           self.processAll() # need to process filters
-
-   def destroy(self):
-      self.thread.join()
+       """
+       This is called very often, or as fast as possible.
+       """
+       if not self.active: return
+       self._dev.updateMMap(1) # read and map very often
+       self.processAll() # need to process filters
 
 if __name__ == "__main__":
     from pyrobot.vision.cvision import VisionSystem

@@ -25,6 +25,7 @@ class FourwayCamera(Camera):
       self.data = CBuffer(self._cbuf)
 
    def update(self):
+      if not self.active: return
       self._dev.updateMMap()
       self.processAll()
 

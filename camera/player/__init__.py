@@ -39,7 +39,6 @@ class PlayerCamera(Camera):
    def __init__(self, host, port, visionSystem = None):
       """
       """
-      self.thread = None
       self._dev = PlayerCam( host, port)
       # connect vision system: --------------------------
       self.vision = visionSystem
@@ -55,16 +54,11 @@ class PlayerCamera(Camera):
                       "Player Camera View")
       self.subtype = "player"
       self.data = CBuffer(self._cbuf)
-      self.thread = CameraThread(self)
-      self.thread.start()
 
    def update(self):
-       if self.thread:
-           self._dev.updateMMap(1) # read and map
-           self.processAll() # need to process filters
-
-   def destroy(self):
-      self.thread.join()
+      if not self.active: return
+      self._dev.updateMMap(1) # read and map
+      self.processAll() # need to process filters
 
 if __name__ == "__main__":
     from pyrobot.vision.cvision import VisionSystem

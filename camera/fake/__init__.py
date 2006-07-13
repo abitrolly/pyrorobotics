@@ -170,6 +170,7 @@ class FakeCamera(Camera):
          self.oldStop = None
          
    def update(self):
+      if not self.active: return
       if (self.current < self.stop):
          currentTime = time.time()
          if currentTime - self.lastUpdate > self.interval:

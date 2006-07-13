@@ -180,7 +180,7 @@ class DeviceThread(threading.Thread):
         self.start()
     def run(self):
         while not self.event.isSet():
-            self.parent.asyncUpdate()
+            self.parent.update()
             self.event.wait(self.parent.asyncSleep)
     def join(self, timeout=None):
         self.event.set()
@@ -225,10 +225,6 @@ class Device(object):
             self.asyncThread.join()
             del self.asyncThread
             self.async = 0
-
-    def asyncUpdate(self):
-        """ User overrides this. """
-        pass
 
     # Properties to make getting all values easy:
     def _setDisabled(self, ignore):

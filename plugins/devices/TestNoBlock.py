@@ -11,15 +11,9 @@ class TestDevice(Device):
         self.updateCount = 0
         self.async = 1
         
-    def asyncUpdate(self):
-        # Over writes
+    def update(self):
+        if not self.active: return
         self.threadCount += 1
-
-    #def makeWindow(self):
-    #    print "[[[[ made window! ]]]]"
-
-    #def updateWindow(self):
-    #    print "Thread updates:", self.threadCount, "Manual updates:", self.updateCount
 
     def updateDevice(self):
         self.updateCount += 1

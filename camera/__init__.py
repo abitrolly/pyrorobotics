@@ -72,13 +72,13 @@ class Camera(PyrobotImage, Device):
       constructor with one that initalizes the dimensions itself
       """
       PyrobotImage.__init__(self, width, height, depth, 0)
-      Device.__init__(self, 'camera')
       self.app = 0
       self.title = title
       self.filterMode = 1
       self.callbackList = []
       self.filterResults = []
       self.callbackTextList = []
+      Device.__init__(self, 'camera', async = 1)
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
       self.lastWindowUpdate = 0
@@ -175,7 +175,6 @@ class Camera(PyrobotImage, Device):
       file.write("\x20") #attributes
       file.write(self._cbuf)
       file.close
-
 
    def update(self):
       """
