@@ -29,7 +29,8 @@ class FrequencyDevice(Device):
         if self.window != 0:
             self.window.updateWidget("timestamp", self.timestamp)
 
-    def asyncUpdate(self):
+    def update(self):
+        if not self.active: return
         self.results = self.getFreq(self.sampleTime)
 
     def initialize(self, mode):

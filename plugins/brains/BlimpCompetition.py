@@ -230,14 +230,15 @@ class Start(State):
          self.startDevice("Frequency")
       self.robot.frequency[0].setSampleTime(0.1)
       if not self.robot.hasA("camera"):
-         #self.startDevice("V4LCamera0")
+         self.startDevice("V4LCamera")
          #self.startDevice("BlimpMovie")
-         self.startDevice("BlimpCameraHallway")
+         #self.startDevice("BlimpCameraHallway")
          self.startDevice("FourwayRot2")
       self.robot.camera[0].clearCallbackList()
       self.robot.camera[1].clearCallbackList()
       self.robot.camera[2].clearCallbackList()
       self.robot.camera[3].clearCallbackList()
+      self.robot.camera[4].active = 0
       self.robot.camera[1].addFilter("rotate",) # backview
         
    def step(self):
