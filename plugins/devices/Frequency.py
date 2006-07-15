@@ -15,7 +15,7 @@ class FrequencyDevice(Device):
         self.deviceName = dev
         self.status = "closed"
         self.number_of_channels= 1
-        self.sample_rate= 8000
+        self.sample_rate= 14400
         self.sample_width= 1
         self.format = ossaudiodev.AFMT_U8
         self.sampleTime = sampleTime

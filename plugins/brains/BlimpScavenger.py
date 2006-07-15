@@ -27,14 +27,15 @@ class Start(State):
          self.startDevice("Frequency")
       self.robot.frequency[0].setSampleTime(0.1)
       if not self.robot.hasA("camera"):
-         #self.startDevice("V4LCamera0")
+         self.startDevice("V4LCamera")
          #self.startDevice("BlimpMovie")
-         self.startDevice("BlimpCameraHallway")
+         #self.startDevice("BlimpCameraHallway")
          self.startDevice("FourwayRot2")
       self.robot.camera[0].clearCallbackList()
       self.robot.camera[1].clearCallbackList()
       self.robot.camera[2].clearCallbackList()
       self.robot.camera[3].clearCallbackList()
+      self.robot.camera[4].active = 0
       self.robot.camera[1].addFilter("rotate",) # backview
         
    def step(self):
@@ -47,7 +48,7 @@ class Start(State):
 
 class MaintainHeight(State):
    def setup(self):
-      self.targetDistance = 1.0 # meters
+      self.targetDistance = 0.6 # meters
       self.mem = [0]*10
       self.step_count = 0
       self.cont_count = 0
@@ -66,30 +67,36 @@ class MaintainHeight(State):
          distance, freq, value, total, best, bestValue = self.robot.frequency[0].results
          self.mem[i] = distance
          time.sleep(.1)
+      #self.av = avg(self.mem)
+      #self.alpha = 0.3
+      self.freqOutfile = open("frequency.txt", 'w')
          
    def step(self):
       distance, freq, value, total, best, bestValue = self.robot.frequency[0].results
-      av = avg(self.mem)
-      #print abs(distance - av)
-      if(abs(distance - av) > 1):
-         self.cont_count += 1
-         if(self.cont_count > 20):
-            for i in range(10):
-               distance, freq, value, total, best, bestValue = self.robot.frequency[0].results
+      #c = (bestValue/total)/0.6
+      #c = min(1.0, c)
+      if bestValue/total <= 0.15:
+         #bad data! what to do?
          return
       else:
-         self.cont_count = 0
-         self.mem[self.step_count%10] = distance
+         #data must be good
+         #self.av = self.alpha * c * distance + (1-self.alpha)*(1-c)*self.av
+         self.freqOutfile.write(str(distance)+" " + str(bestValue/total)+"\n")
+         self.freqOutfile.flush()
+         print distance, bestValue/total
+         self.mem[self.step_count % len(self.mem)] = distance
          self.step_count += 1
+         self.cont_count = 0
+         #distance = self.av
          #proportional
          diff = self.targetDistance - distance
-         #print diff
+         print diff
          #integral
          self.integral += diff
          #derivative
          self.deriv = diff - self.old_diff
          #correction amount
-         amount = (self.integral * self.igain + diff + (self.deriv*self.dgain)) * self.pgain
+         amount = self.integral * self.igain + self.deriv*self.dgain + diff * self.pgain
          if((amount >= 0) and (amount <= 19)):
             amount += 19
          elif((amount < 0) and (amount >= -19)):
@@ -98,6 +105,7 @@ class MaintainHeight(State):
          #print distance, amount, diff, self.pgain, self.igain, self.dgain
          self.old_amt = amount
          self.robot.moveZ(amount)
+         print "\n\n",amount,"\n\n\n"
          time.sleep(.2)
          self.robot.moveZ(0) # ok, robot will do this automatically
          time.sleep(.2)
