@@ -6,7 +6,7 @@ from math import *
 from os import system
 from time import *
 from random import *
-
+import pdb
 """
 
 This is a copy of iac.py adapted to run on Aibo
@@ -62,7 +62,7 @@ class Region:
         self.errors = errors
         self.regionSize = 0
         self.timeWindow = 10
-        self.smoothing = 20
+        self.smoothing = 15
         self.inputs = []
         self.targets = []
         self.inputTotals = [0] * self.inputVectorSize
@@ -188,8 +188,11 @@ class Region:
         vectors.
         """
         d = 0
-        for i in range(self.inputVectorSize):
-            d += square(v1[i] - v2[i])
+        try:
+            for i in range(self.inputVectorSize):
+                d += square(v1[i] - v2[i])
+        except TypeError:
+            pdb.set_trace()
         return sqrt(d)
     def distFromCenter(self, v):
         """
@@ -240,12 +243,18 @@ class Memory:
         # only copy enough error history to allow for
         # continued calculations of learning progress
         # in the newly split regions
+        # if they are all same:
+        if len(set(map(tuple, r.inputs))) == 1:
+            print "Can't split region!"
+            # add r back, and return
+            self.regions.append(r)
+            return
         numErrors = r.timeWindow + r.smoothing + 1
         while True:
             n = r.regionSize-1
             i1 = randint(0,n)
             i2 = randint(0,n)
-            if i1 != i2:
+            if r.inputs[i1] != r.inputs[i2]:
                 break
         center1 = r.inputs[i1]
         center2 = r.inputs[i2]
@@ -333,6 +342,9 @@ class IACBrain(FSMBrain):
                              self.inputVectorSize,
                              self.targetVectorSize)
         print "MEMORY created"
+        self.fr = open("bbResult", "w")
+        self.fr.write("Bites  Bashes     Steps\n")
+        self.steps = 0
         #self.robot.range.units = 'SCALED'
         self.numCandidates = 3
         self.winningRegion = None
@@ -343,6 +355,7 @@ class IACBrain(FSMBrain):
         self.bashLeg = ""
         self.goodBites = 0
         self.goodBashes = 0
+        self.simulate = 1  # 1 robot does not move
         # Create a dictionary to count interesting states
         self.monitor = {'stall':0, 'light':0, 'blockedL':0,
                         'blockedR':0, 'blockedF':0}
@@ -396,22 +409,25 @@ class chooseMotion(State):
         #print "motion value is:  " + str(mo)
         #set motion flag based on last selections
         #set mouth flag based on last selections
+        self.brain.steps += 1
+        if self.brain.steps % 100 == 0:
+            self.brain.fr.write("%d\t %d\t %d\n" % (self.brain.goodBites, self.brain.goodBashes, self.brain.steps))
         print "last selections " + str(self.brain.motorval)
-        if len(self.brain.motorval)>0:
-            if self.brain.motorval[3] >= .8:
+        if len(self.brain.motorval) > 0:
+            if self.brain.motorval[3] > .8:
                 tag = .5
             if self.brain.motorval[0] == 0: #did it bite last time?
-                if self.brain.motorval[5] == -1: #head pos right for bite
+                if self.brain.motorval[5] == -1: #roll head pos right for bite
                     mouth = 1
                     tag = 1
                     self.brain.goodBites += 1
             if self.brain.motorval[0] == 1: #biting
                 print "BASH"
-                if self.brain.motorval[2] >= .6: #elevation high
+                if self.brain.motorval[2] > .6: #elevation high
                     print "HIGH"
-                    if self.brain.motorval[3] >= .8: #bear tag in sight
+                    if self.brain.motorval[3] > .8: #pan bear tag in sight
                         print "TAG"
-                        if self.brain.motorval[6] > .5:
+                        if self.brain.motorval[6] > .49:
                             print "LEFT"
                             motion = 1
                             self.brain.goodBashes += 1
@@ -436,14 +452,14 @@ class chooseMotion(State):
         self.brain.motorval = self.selectAction(sensors)
         #need to scale just pan and rotate
         if self.brain.motorval[0] == 1:
-            if self.brain.motorval[6] > .5:
+            if self.brain.motorval[6] > .49:
                 self.brain.bashLeg = "leg front left"
             else:
                 self.brain.bashLeg = "leg front right"
         self.brain.motorval[3] = self.brain.scaleBack(self.brain.motorval[3])
         self.brain.motorval[4] = self.brain.scaleBack(self.brain.motorval[4])
         self.brain.motorval[5] = self.brain.scaleBack(self.brain.motorval[5])
-        print "motorval choice" + str(self.brain.motorval)
+        #print "motorval choice" + str(self.brain.motorval)
         # Execute the action
         # Execute pan action
         sleep(2)
@@ -513,15 +529,15 @@ class chooseMotion(State):
       if case <= .16: #look Right Up
          pan = -.8
          roll = .5
-         tilt = -.8
+         tilt = -.1
       elif case <= .32: #look down at ear
          pan = 0
-         roll = -.5
+         roll = .4
          tilt = -1    
-      elif case <= .48: #look Straight Up
+      elif case <= .48: #look Straight Up ahead
          pan = 0
-         roll = .5
-         tilt = -.8
+         roll = .4
+         tilt = -.5
       elif case <= .64: #look Right down
          pan = -.4
          roll = .3
@@ -547,15 +563,16 @@ class moveHead(State):
 
     def step(self):
         print "moving head"
-        if self.brain.motorval[0] == 0:
-            self.robot.setPose("mouth", .8)
-        self.robot.ptz[0].pan(self.brain.motorval[3])
-        sleep(.01)
-        print "pan" + str(self.brain.motorval[3])
-        self.robot.ptz[0].roll(self.brain.motorval[4])
-        sleep(.01)
-        self.robot.ptz[0].tilt(self.brain.motorval[5])
-        sleep(2)
+        if self.brain.simulate == 0: # 1 = Robot does not move
+            if self.brain.motorval[0] == 0:
+                self.robot.setPose("mouth", .8)
+                self.robot.ptz[0].pan(self.brain.motorval[3])
+                sleep(.01)
+                print "pan" + str(self.brain.motorval[3])
+                self.robot.ptz[0].roll(self.brain.motorval[4])
+                sleep(.01)
+                self.robot.ptz[0].tilt(self.brain.motorval[5])
+                sleep(2)
         if self.brain.motorval[0] == 0:
             self.goto("bite")
         else:
@@ -564,7 +581,7 @@ class moveHead(State):
 class bash(State):
     def onActive(self):
         #self.robot.move(0,0)
-        self.robot.playSound("3yips")
+        #self.robot.playSound("3yips")
         print "bash Leg" + self.brain.bashLeg
         #self.speed = 0.05
         #self.turnSpeed= 0.1
@@ -575,36 +592,38 @@ class bash(State):
         print "Bashing"
         #self.robot.playSound("3yips")
         print "leg " + self.brain.bashLeg
-        if self.brain.bashLeg == "leg front left":
-            self.robot.runMotion("lp_raise")
-        else:
-            self.robot.runMotion("rp_raise")
-        sleep(2)
-        self.robot.setPose(self.brain.bashLeg,self.brain.motorval[1], self.brain.motorval[2],.5) #random elevate and rotate
-        sleep(2)
-        if self.brain.bashLeg == "leg front left":
-            self.robot.runMotion("lp_lower")
-        else:
-            self.robot.runMotion("rp_lower")
-        sleep(4)
+        if self.brain.simulate == 0: # 1 = Robot does not move
+            if self.brain.bashLeg == "leg front left":
+                self.robot.runMotion("lp_raise")
+            else:
+                self.robot.runMotion("rp_raise")
+                sleep(2)
+                self.robot.setPose(self.brain.bashLeg,self.brain.motorval[1], self.brain.motorval[2],.5) #random elevate and rotate
+                sleep(2)
+                if self.brain.bashLeg == "leg front left":
+                    self.robot.runMotion("lp_lower")
+                else:
+                    self.robot.runMotion("rp_lower")
+                    sleep(4)
         self.goto("chooseMotion")
 
 class bite(State):
     def onActive(self):
-        self.robot.playSound("growl")
+        #self.robot.playSound("growl")
         print "Bite"
 
     def step(self):
         print "Biting"
-        self.robot.playSound("growl")
-        self.robot.setPose("mouth", 0)
-        sleep(2)
-        print "mouth joint " + str(self.robot.getJoint("mouth"))
-        self.robot.setPose("mouth",.3)
-        sleep(2)
-        self.robot.ptz[0].tilt((self.brain.motorval[5]+.5))
-        sleep(2)
-        self.robot.setPose("mouth",0)
+        if self.brain.simulate == 0: # 1 = Robot does not move
+            self.robot.playSound("growl")
+            self.robot.setPose("mouth", 0)
+            sleep(2)
+            print "mouth joint " + str(self.robot.getJoint("mouth"))
+            self.robot.setPose("mouth",.3)
+            sleep(2)
+            self.robot.ptz[0].tilt((self.brain.motorval[5]+.5))
+            sleep(2)
+            self.robot.setPose("mouth",0)
         self.goto("chooseMotion")
 
 class pause(State):
