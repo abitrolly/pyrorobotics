@@ -86,6 +86,9 @@ public:
   int getHeight() { return height; }
   int getDepth() { return depth; }
   PyObject *saveImage(char *filename);
+  PyObject *startMovie(char *filename);
+  PyObject *stopMovie();
+  PyObject *continueMovie();
   PyObject *getMMap();
 
   PyObject *histogram(int x1, int y1, int x2, int y2, int bins);
@@ -132,6 +135,9 @@ public:
   int motionCount;
   int copyMode;
   int allocatedImage;
+  int movieMode;
+  int movieCounter;
+  char movieFilename[50];
 
   PyObject *filterList;
   int width;

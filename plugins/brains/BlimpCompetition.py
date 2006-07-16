@@ -64,7 +64,7 @@ class Map:
       #self.sim.addShape("box", 5, 7, 6, 6, "purple")
       # fiducials:
       self.fiducials = {}
-      self.fiducialData = [(19.306, 8,8000 0, 1), # x, y, th, ID
+      self.fiducialData = [(19.306, 8,8000, 0, 1), # x, y, th, ID
                            (17.3 + 2, 2, 0, 0),
                            (3.725 * 3.94, 14.57, 60, 2), 
                            (19.306, 17.139, 0, 3),

@@ -287,7 +287,7 @@ class Watcher(Tkinter.Toplevel):
 
    def CreateTextBox(self, text, width = 30, default = ""):
       frame = Tkinter.Frame(self)
-      frame.pack({'expand':'yes', 'side' :'top', 'pady' :'2', 
+      frame.pack({'expand':'no', 'side' :'top', 'pady' :'2', 
                   'fill' :'x'})
       frame['relief'] = 'raised'
       frame['bd']	 = '2'

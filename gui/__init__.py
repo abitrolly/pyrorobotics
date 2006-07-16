@@ -93,6 +93,7 @@ class gui:
       self.MAXHISTORY = 1000
       self.environment = {}
       self.environment["gui"] = self
+      self._populateEnv()
       self.lastDir = {}
       if file_exists(os.getenv('HOME') + "/.pyrobothist"):
          fp = open(os.getenv('HOME') + "/.pyrobothist", "r")
@@ -477,6 +478,7 @@ class gui:
          self.lastDir["brain"] = string.join(f.split('/')[:-1],'/')
          self.freeBrain()
          self.engine.loadBrain(f)
+         self._populateEnv()
 
    def loadDevice(self):
       f = self.fileloaddialog("devices","*.py",self.lastDir.get("devices",''))

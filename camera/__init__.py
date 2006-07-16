@@ -91,6 +91,7 @@ class Camera(PyrobotImage, Device):
       self.width = self.width
       self.depth = self.depth
       self.filters = self.callbackTextList
+      self.lastX, self.lastY = 0, 0
       # Required:
       self.startDevice()
       # make these visible by default
@@ -142,6 +143,19 @@ class Camera(PyrobotImage, Device):
             data[(x + y * self.width) * self.depth + 1] = rgb[self.rgb[1]]
             data[(x + y * self.width) * self.depth + 2] = rgb[self.rgb[2]]
       return data
+
+   def stopMovie(self):
+      self.vision.stopMovie()
+
+   def continueMovie(self):
+      self.vision.continueMovie()
+
+   def startMovie(self, filename = None):
+      if filename == None:
+         import tkFileDialog
+         filename = tkFileDialog.asksaveasfilename()
+      print "starting movie with '%s'..." % filename
+      self.vision.startMovie(filename)
 
    def saveImage(self, filename = None):
       if filename == None:
@@ -267,6 +281,10 @@ class Camera(PyrobotImage, Device):
                           #['Save Filters...', self.saveFilters],
                           #None,
                           ['Save Image...', self.saveImage],
+                          None,
+                          ['Start movie...', self.startMovie],
+                          ['Stop movie...', self.stopMovie],
+                          ['Continue movie...', self.continueMovie],
                           None,
                           ['Close',self.hideWindow] 
                           ]),

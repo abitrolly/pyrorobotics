@@ -4,15 +4,18 @@
 
 Vision::Vision() {
   allocatedImage = 0;
+  movieMode = 0;
 }
 
 Vision::Vision(int wi, int he, int de, int r, int g, int b) {
   allocatedImage = 0;
+  movieMode = 0;
   initialize(wi, he, de, r, g, b);
 }
 
 Vision::Vision(int wi, int he, int de) {
   allocatedImage = 0;
+  movieMode = 0;
   initialize(wi, he, de, 0, 1, 2);
 }
 
@@ -32,7 +35,6 @@ PyObject *Vision::registerCameraDevice(void *dev) {
 PyObject *Vision::getRGB() {
   return Py_BuildValue("iii", rgb[0], rgb[1], rgb[2] );
 }
-
 
 PyObject *Vision::setRGB(int r, int g, int b) {
   int rgb_order[MAXDEPTH] = {r, g, b};
@@ -328,6 +330,23 @@ PyObject *Vision::matchList(PyObject *myList) {
     }
   }
   return Py_BuildValue("i", matches);
+}
+
+PyObject *Vision::continueMovie() {
+  movieMode = 1;
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::stopMovie() {
+  movieMode = 0;
+  return PyInt_FromLong(0L);
+}
+
+PyObject *Vision::startMovie(char *filename) {
+  movieCounter = 0;
+  strcpy(movieFilename, filename);
+  movieMode = 1;
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::saveImage(char *filename) {
@@ -1485,13 +1504,19 @@ PyObject *Vision::gaussianBlur() {
       	Image[(x+y*width)*depth+offset] = out[(x+y*width)*depth+offset] ;
   
   return PyInt_FromLong(0L);
-
 } 
 
 PyObject *Vision::applyFilterList() {
   // This is called right after a call to camera.updateMMap()
   motionCount = 0;
-  return applyFilters(filterList);
+  char buffer[50];
+  PyObject *temp = applyFilters(filterList);
+  if (movieMode) {
+    sprintf(buffer, "%s-%05d.ppm", movieFilename, movieCounter);
+    saveImage(&buffer[0]);
+    movieCounter++;
+  }
+  return PyInt_FromLong(0L);
 }
 
 PyObject *Vision::backup() { 
