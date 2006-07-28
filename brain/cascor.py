@@ -122,6 +122,7 @@ class CascadeCorNet(Network):
             best = self.trainCandidates()
             self.switchToOutputParams()
             self.recruit(best)
+            pdb.set_trace()
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
@@ -132,8 +133,8 @@ class CascadeCorNet(Network):
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        #self["candidate"].weight = Numeric.array([-0.12])
-        #self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+        self["candidate"].weight = Numeric.array([-0.12])
+        self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
         #pdb.set_trace()
 
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
@@ -290,7 +291,7 @@ class CascadeCorNet(Network):
         self["candidate"].active = 0 #in fact, don't let the candidate layer do anything!  Hopefully this won't cause problems
         self.quitEpoch = self.patience
 
-        
+        #pdb.set_trace()
         # check architecture
         self.complete = 0
         self.verifyArchitecture()
