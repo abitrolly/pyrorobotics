@@ -204,11 +204,11 @@ class Layer:
         self.ptotal = 0
         self.correct = 0
         # misc:
-        self.numConnects = 0 # number of incoming weights
         self.minTarget = 0.0
         self.maxTarget = 1.0
         self.minActivation = 0.0
         self.maxActivation = 1.0
+        
     def initialize(self):
         """
         Initializes important node values to zero for each node in the
@@ -1757,6 +1757,16 @@ class Network(object):
         """
         return self.sweep()
 
+    def numConnects(self, layerName):
+        """ Number of incoming weights, including bias. Assumes fully connected. """
+        count = 0
+        if self[layerName].active: 
+            count += 1 # 1 = bias
+            for connection in self.connections:
+                if connection.active and connection.fromLayer.active and connection.toLayer.name == layerName:
+                    count += connection.fromLayer.size
+        return count
+
     # propagation methods
     def prop_from(self, startLayers):
         """
@@ -1775,7 +1785,6 @@ class Network(object):
         for layer in propagateLayers:
             if layer.active: 
                 layer.netinput = (layer.weight).tolist() 
-                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
@@ -1783,7 +1792,6 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
-                        connection.toLayer.numConnects += connection.fromLayer.size                        
                 if layer.type != 'Input':
                     layer.activation = self.activationFunction(layer.netinput)
         for layer in propagateLayers:
@@ -1819,7 +1827,6 @@ class Network(object):
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
                 layer.netinput = (layer.weight).tolist() 
-                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
@@ -1830,7 +1837,6 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
-                        connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
                     layer.activation = self.activationFunction(layer.netinput)
         for layer in self.layers:
@@ -1871,7 +1877,6 @@ class Network(object):
             if not started: continue
             if layer.type != 'Input' and layer.active:
                 layer.netinput = (layer.weight).tolist() 
-                layer.numConnects = 1 # fully connected, so just need to count once: how many incoming weights? 1= bias
         # for each connection, in order:
         started = 0
         for layer in self.layers:
@@ -1885,7 +1890,6 @@ class Network(object):
                         connection.toLayer.netinput = connection.toLayer.netinput + \
                                                       Numeric.matrixmultiply(connection.fromLayer.activation,\
                                                                              connection.weight) # propagate!
-                        connection.toLayer.numConnects += connection.fromLayer.size
                 if layer.type != 'Input':
                     layer.activation = self.activationFunction(layer.netinput)
         for layer in self.layers:
@@ -2051,7 +2055,7 @@ class Network(object):
                                                      layer.dweight,
                                                      layer.wedLast,
                                                      layer.weight,
-                                                     layer.numConnects)
+                                                     self.numConnects(layer.name))
                     layer.weight += layer.dweight
                     layer.wedLast = Numeric.array(layer.wed) # make copy
                     if self._quickprop:
@@ -2076,7 +2080,7 @@ class Network(object):
                                                  connection.dweight[i],
                                                  connection.wedLast[i],
                                                  connection.weight[i],
-                                                 connection.toLayer.numConnects))
+                                                 self.numConnects(connection.toLayer.name)))
                 connection.weight += connection.dweight
                 # reset values:
                 connection.wedLast = Numeric.array(connection.wed) # make copy
