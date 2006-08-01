@@ -1,10 +1,10 @@
 from pyrobot.brain.conx import *
 from pyrobot.brain.cascor import *
 try:
-    pass
-    #import psyco
-    #psyco.full()
-    #print "Warning: Psyco enabled, code may run quickly."
+    #pass
+    import psyco
+    psyco.full()
+    print "Warning: Psyco enabled, code may run quickly."
 except:
     print "Psyco not found.  Oh well."
 
@@ -32,8 +32,8 @@ def compare():
     #n.addCandidateLayer(1) #for debugging
     n.addCandidateLayer(8)
     n.useFahlmanActivationFunction()
-    n["output"].weight = Numeric.array([0.49200001])
-    n["input","output"].weight = Numeric.array([[0.97000003],[-0.66399997]])
+    #n["output"].weight = Numeric.array([0.4920000])
+    #n["input","output"].weight = Numeric.array([[0.9700000],[-0.664]])
     lines = open("twospiral.dat",'r').readlines()
     inputs = [[float(num) for num in line.split()[:-1]] for line in lines]
     inputs = Numeric.array(inputs)
@@ -44,6 +44,43 @@ def compare():
     n.outputEpsilon = 1.0/194.0
     n.outputDecay = 0.0
     n.candEpsilon = 100.0/194.0
+    n.candDecay = 0.0
+    n.candChangeThreshold = 0.03
+    #n.candChangeThreshold = 0.025
+    n.outputChangeThreshold = 0.01
+    n.setSigmoid_prime_offset( 0.1)
+    n.outputMu = 2.0
+    n.candMu = 2.0
+    import pdb
+    
+    #n.switchToOutputParams()
+    #n.trainOutputs(200)
+    n.setOrderedInputs(1)
+    print n .sigmoid_prime_offset
+    #pdb.set_trace()
+    n.train(50)
+    print n["input"].weight
+    print n["input","output"].weight
+    print n["output"].weight
+def compare2():
+    n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
+    #n = CascadeCorNet(2,1, patience = 50, maxOutputEpochs = 200, maxCandEpochs = 200)
+    n.maxRandom = 1.0
+    n.addCandidateLayer(1)
+    n.useFahlmanActivationFunction()
+    n["output"].weight = Numeric.array([0.4920000])
+    n["input","output"].weight = Numeric.array([[0.9700000],[-0.664]])
+    lines = open("test.data",'r').readlines()
+    inputs = [[float(num) for num in line.split()[:-1]] for line in lines]
+    inputs = Numeric.array(inputs)
+    targets = Numeric.array([[float(line.split()[-1])] for line in lines])
+    n.setInputs(inputs)
+    n.setTargets(targets)
+    n.tolerance = 0.4
+    n.outputEpsilon = 1.0/5.0
+    n.outputDecay = 0.0
+    #n.candEpsilon = 100.0/5.0
+    n.candEpsilon = 15.0/50.0
     n.candDecay = 0.0
     n.candChangeThreshold = 0.03
     n.outputChangeThreshold = 0.01
@@ -57,13 +94,14 @@ def compare():
     n.setOrderedInputs(1)
     print n .sigmoid_prime_offset
     #pdb.set_trace()
-    n.train(20)
+    n.train(50)
     print n["input"].weight
     print n["input","output"].weight
     print n["output"].weight
     
 if __name__=="__main__":
     compare()
+    #compare2()
     import sys
     sys.exit()
 
