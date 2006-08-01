@@ -29,7 +29,7 @@ def findMax(seq):
 
 def findMin(seq):
     """
-    Returns the index of the maximum value in the sequence.
+    Returns the index of the minimum value in the sequence.
     """
     bestSoFar = 0
     for i in range(len(seq)-1):
@@ -241,7 +241,7 @@ class CascadeCorNet(Network):
             #  However, our weight updates are the same in candidate training also and we only use S_c to pick what we recruit so
             #  simply changing it should be fine.  I hope.
             S_co = -1.0 * S_co
-            S_c = Numeric.sum(S_co, 1)
+            S_c = Numeric.sum(S_co)
             best = findMax([abs(cr) for cr in S_c])
             bestScore = abs(S_c[best])
             ############################
@@ -252,7 +252,7 @@ class CascadeCorNet(Network):
             ep += 1
             #print "BestScore = ",bestScore, " previousBest = ", previousBest
             #print "(outside) quitEpoch = ", self.quitEpoch
-            self.cor = S_co[best]
+            self.cor = S_co[:,best]
             #print "correlations!"
             #print self.cor
 
@@ -492,8 +492,9 @@ class CascadeCorNet(Network):
         #we could have the wrong sign here!  Try both signs and see which works better, probably easier than comparing w/Fahlman
         ##
         #pdb.set_trace()
-        self[hname, "output"].weight = Numeric.array([Numeric.array([[x] for x in self.cor])[n]])
-
+        #self[hname, "output"].weight = Numeric.array([Numeric.array([[-1.0*x] for x in self.cor])[n]])
+        print self.cor
+        self[hname, "output"].weight = Numeric.array( [ -1.0 * self.cor ])
 
 
 def mean(seq):
