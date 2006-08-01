@@ -37,8 +37,8 @@ class CircularList:
         raise StopIteration, "no item at index %d in CircularList" % index
 
     def __iter__(self):
-        while 1:
-            yield self.nextItem()
+        for c in self.contents:
+            yield c
 
     def addItem(self, item):
         if self.maxSize == 0: return
@@ -49,7 +49,8 @@ class CircularList:
         self.names.append(self.nextID)
         self.nextID += 1
 
-    def next(self): return self.nextItem()
+    def next(self):
+        return self.nextItem()
 
     def nextItem(self):
         if len(self.contents) == 0:
