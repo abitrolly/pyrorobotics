@@ -1,12 +1,9 @@
+# to turn off psyco uncomment these:
+#import pyrobot.system.share
+#pyrobot.system.share.debug = 1
+
 from pyrobot.brain.conx import *
 from pyrobot.brain.cascor import *
-try:
-    #pass
-    import psyco
-    psyco.full()
-    print "Warning: Psyco enabled, code may run quickly."
-except:
-    print "Psyco not found.  Oh well."
 
 def oneTrial():
     n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
