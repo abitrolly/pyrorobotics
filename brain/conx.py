@@ -153,13 +153,6 @@ class Node:
     """
     A temp place to hold values for reference. If given a layer and position, then
     the node can be used to set values, and can update itself.
-    >>> net["input"][0]
-    <pyrobot.brain.conx.Node instance at 0xb7ae83ec>
-    >>> net["input"][0].activation
-    0.56
-    >>> net["input"][0].activation = .8
-    >>> net["input"][0].activation
-    0.8
     """
     def __init__(self, layer = None, position = None, **keywords):
         self.__dict__["_layer"] = layer
@@ -2054,6 +2047,7 @@ class Network(object):
         w - weight vector
         n - fan-in, number of connections coming in (counts bias, too)
         """
+        #print "WEIGHT = ", w
         shrinkFactor = self.mu / (1.0 + self.mu)
         if self.splitEpsilon:
             e /= float(n)
@@ -2063,23 +2057,32 @@ class Network(object):
                 s = wed[i] 
                 d = dweightLast[i]
                 p = wedLast[i]
+                #print "slopes[node] = %f  QP w=%f d=%f s=%f p=%f eps=%f" % (s, w, d, s, p, e)
                 if (d > 0.0):
                     if (s > 0.0):
+                        #print "CASE A1"
                         nextStep[i] += e * s
                     if (s >= (shrinkFactor * p)):
+                        #print "CASE B1"
                         nextStep[i] += self.mu * d
                     else:
+                        #print "CASE C1"
                         nextStep[i] += d * s / (p - s)
                 elif (d < 0.0):
                     if (s < 0.0):
+                        #print "CASE A2"
                         nextStep[i] += e * s
                     if (s <= (shrinkFactor * p)):
+                        #print "CASE B2"
                         nextStep[i] += self.mu * d
                     else:
+                        #print "CASE C2"
                         nextStep[i] += d * s / (p - s)
                 else:
+                    #print "CASE D"
                     nextStep[i] += e * s + m * d       ##  Last step was zero, so only use linear   ##
             newDweight = nextStep
+            #print "Next Step = ", nextStep[i]
         else: # backprop
             newDweight = e * wed + m * dweightLast # gradient descent
         return newDweight
@@ -2100,6 +2103,8 @@ class Network(object):
                                                      layer.weight,
                                                      self.numConnects(layer.name))
                     layer.weight += layer.dweight
+                    #print "layer.wed = ",layer.wed
+                    #print "layer.weight = ",layer.weight," layer.dweight = ",layer.dweight
                     layer.wedLast = Numeric.array(layer.wed) # make copy
                     if self._quickprop:
                         layer.wed = layer.weight * self.decay # reset to last weight, with decay
@@ -2125,6 +2130,8 @@ class Network(object):
                                                  connection.weight[i],
                                                  self.numConnects(connection.toLayer.name)))
                 connection.weight += connection.dweight
+                #print "connection.wed = ",connection.wed
+                #print "connection.weight = ",connection.weight," connection.dweight = ",connection.dweight
                 # reset values:
                 connection.wedLast = Numeric.array(connection.wed) # make copy
                 if self._quickprop:
