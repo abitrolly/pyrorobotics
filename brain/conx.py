@@ -2234,11 +2234,79 @@ class Network(object):
             self.interactive = 0
         elif chr[0] == 'q':
             sys.exit(1)
-    def displayConnections(self):
-        print "Active Connections:"
+    def displayConnections(self, title = "Connections"):
+        def pad(s, n, p = " ", sep = "|", align = "left"):
+            """
+            s = string
+            n = width
+            sep = separator (on end)
+            align = "left", "center", or "right"
+            """
+            if align == "left":
+                return (s + (p * n))[:n] + sep
+            elif align == "center":
+                pos = n + len(s)/2 - n/2
+                return ((p * n) + s + (p * n))[pos:pos + n] + sep
+            elif align == "right":
+                return ((p * n) + s)[-n:] + sep
+        fromColWidth    = 8
+        decimals        = 2
+        colWidth        = 7
+        print title + ":"
+        print "-" * (len(title) + 1)
         for c in self.connections:
-            if c.fromLayer.active and c.toLayer.active:
-                print "   '%s' => '%s' (Frozen: %d)" % (c.fromLayer.name, c.toLayer.name, c.frozen)
+            print "Weights (%s, %s) from '%s' (%s, %s) to '%s' (%s, %s):" % (
+                ["not frozen","frozen"][c.frozen],
+                ["not active","active"][c.active],
+                c.fromLayer.name, ["not frozen","frozen"][c.fromLayer.frozen], ["not active","active"][c.fromLayer.active], 
+                c.toLayer.name, ["not frozen","frozen"][c.toLayer.frozen], ["not active","active"][c.toLayer.active] )
+            # top bar
+            line = ("=" * fromColWidth) + "="
+            line += ("=" * colWidth) + "="
+            for i in range(c.toLayer.size):
+                line += ("=" * colWidth) + "="
+            print line
+            # to layer name:
+            line = " " * fromColWidth + " " + (" " * colWidth) + "|" + pad(c.toLayer.name, (colWidth * c.toLayer.size) + (c.toLayer.size - 1), align="center", )
+            print line
+            # sep bar:
+            line = ("-" * fromColWidth) + "+"
+            line += ("-" * colWidth) + "+"
+            for i in range(c.toLayer.size):
+                line += ("-" * colWidth) + "+"
+            print line
+            # col header:
+            line = pad(c.fromLayer.name, fromColWidth, align="center")
+            line += pad("bias", colWidth, align="center")
+            for i in range(c.toLayer.size):
+                line += pad(str(i), colWidth, align = "center")
+            print line
+            # sep bar:
+            line = ("-" * fromColWidth) + "+"
+            line += ("-" * colWidth) + "+"
+            for i in range(c.toLayer.size):
+                line += ("-" * colWidth) + "+"
+            print line
+            # biases, to layer:
+            line = pad("bias", fromColWidth, align = "center")
+            line += (" " * colWidth) + "|"
+            for j in range(c.toLayer.size):
+                line += pad(("%." + str(decimals) + "f") % c.toLayer.weight[j], colWidth, align = "right")
+            print line
+            # weights:
+            for i in range(c.fromLayer.size):
+                line = pad(str(i), fromColWidth, align = "center")
+                line += pad(("%." + str(decimals) + "f") % c.fromLayer.weight[i], colWidth, align = "right")
+                for j in range(c.toLayer.size):
+                    line += pad(("%." + str(decimals) + "f") % c.weight[i][j], colWidth, align = "right")
+                print line
+            # bottom bar:
+            line = ("=" * fromColWidth) + "="
+            line += ("=" * colWidth) + "="
+            for i in range(c.toLayer.size):
+                line += ("=" * colWidth) + "="
+            print line
+                
     def display(self):
         """
         Displays the network to the screen.
@@ -3006,7 +3074,7 @@ class IncrementalNetwork(Network):
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting candidate number %d" % n
+        print "Recruiting candidate: %d" % n
         # first, add the new layer:
         hcount = 0
         for layer in self:
@@ -3021,7 +3089,7 @@ class IncrementalNetwork(Network):
             self[hname].weight[i] = self["candidate"].weight[i + n]
             self[hname].wed[i] = self["candidate"].wed[i + n]
             self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
-        self[hname].frozen = 1 # don't change these weights/biases
+        self[hname].frozen = 1 # don't change these biases
         # first, connect up input
         for layer in self: 
             if layer.type == "Input" and layer.name != hname: # includes contexts
@@ -3057,7 +3125,7 @@ class IncrementalNetwork(Network):
         self["candidate"].randomize(1)
         # finally, connect new hidden to candidate
         self.connectAt(hname, "candidate", position = -1)
-        self[hname, "candidate"].frozen = 1 # don't change weights
+        #self[hname, "candidate"].frozen = 1 # don't change weights # Bug!
 
 class SRN(Network):
     """

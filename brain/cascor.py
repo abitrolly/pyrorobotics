@@ -140,11 +140,15 @@ class CascadeCorNet(Network):
         self.switchToOutputParams()
         #pdb.set_trace()
         while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
+            #self.displayConnections("Beginning of loop")
             self.epoch = 0
             self.switchToCandidateParams()
+            #self.displayConnections("Before cand train")
             best = self.trainCandidates()
             self.switchToOutputParams()
+            self.displayConnections("Before recruit")
             self.recruit(best)
+            #self.displayConnections("After recruit")
             #pdb.set_trace()
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:
@@ -433,7 +437,7 @@ class CascadeCorNet(Network):
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting candidate number %d" % n
+        print "Recruiting candidate: %d" % n
         # first, add the new layer:
         hcount = 0
         for layer in self:
@@ -448,7 +452,7 @@ class CascadeCorNet(Network):
             self[hname].weight[i] = self["candidate"].weight[i + n]
             self[hname].wed[i] = self["candidate"].wed[i + n]
             self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
-        self[hname].frozen = 1 # don't change these weights/biases
+        self[hname].frozen = 1 # don't change these biases
         #in case we are using a different activation function
         #     the fact that this code needs to be here is indicative of a poor design in Conx
         self[hname].minTarget, self[hname].minActivation = self["candidate"].minTarget, self["candidate"].minActivation
@@ -487,15 +491,13 @@ class CascadeCorNet(Network):
         self["candidate"].randomize(1)
         # finally, connect new hidden to candidate
         self.connectAt(hname, "candidate", position = -1)
-        self[hname, "candidate"].frozen = 1 # don't change weights
+        #self[hname, "candidate"].frozen = 1 # don't change weights BUG!
         #set the initial weights from the new hidden unit to the output layer to be based on the correlation
         #we could have the wrong sign here!  Try both signs and see which works better, probably easier than comparing w/Fahlman
         ##
         #pdb.set_trace()
         #self[hname, "output"].weight = Numeric.array([Numeric.array([[-1.0*x] for x in self.cor])[n]])
-        print self.cor
         self[hname, "output"].weight = Numeric.array( [ -1.0 * self.cor ])
-
 
 def mean(seq):
     return Numeric.sum(seq)/float(len(seq))
