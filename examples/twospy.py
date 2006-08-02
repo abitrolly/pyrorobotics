@@ -1,6 +1,6 @@
 # to turn off psyco uncomment these:
-#import pyrobot.system.share
-#pyrobot.system.share.debug = 1
+import pyrobot.system.share
+pyrobot.system.share.debug = 1
 
 from pyrobot.brain.conx import *
 from pyrobot.brain.cascor import *
@@ -49,7 +49,7 @@ def compare():
     n.outputMu = 2.0
     n.candMu = 2.0
     import pdb
-    
+    #pdb.set_trace()
     #n.switchToOutputParams()
     #n.trainOutputs(200)
     n.setOrderedInputs(1)
