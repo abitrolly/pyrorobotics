@@ -24,6 +24,21 @@ except:
     print "Conx, version %s (regular speed)" % __version__.split()[1]
 
 
+def pad(s, n, p = " ", sep = "|", align = "left"):
+    """
+    s = string
+    n = width
+    sep = separator (on end)
+    align = "left", "center", or "right"
+    """
+    if align == "left":
+        return (s + (p * n))[:n] + sep
+    elif align == "center":
+        pos = n + len(s)/2 - n/2
+        return ((p * n) + s + (p * n))[pos:pos + n] + sep
+    elif align == "right":
+        return ((p * n) + s)[-n:] + sep
+
 def sumMerge(dict1, dict2):
     """ Adds two dictionaries together, and merges into the first, dict1. """
     for key in dict2:
@@ -2235,20 +2250,6 @@ class Network(object):
         elif chr[0] == 'q':
             sys.exit(1)
     def displayConnections(self, title = "Connections"):
-        def pad(s, n, p = " ", sep = "|", align = "left"):
-            """
-            s = string
-            n = width
-            sep = separator (on end)
-            align = "left", "center", or "right"
-            """
-            if align == "left":
-                return (s + (p * n))[:n] + sep
-            elif align == "center":
-                pos = n + len(s)/2 - n/2
-                return ((p * n) + s + (p * n))[pos:pos + n] + sep
-            elif align == "right":
-                return ((p * n) + s)[-n:] + sep
         fromColWidth    = 8
         decimals        = 2
         colWidth        = 7

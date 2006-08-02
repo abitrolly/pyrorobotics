@@ -77,6 +77,51 @@ class CascadeCorNet(Network):
         self.candreportRate = self.reportRate
 
         self.switchToOutputParams()
+
+    def displayCorrelations(self):
+        fromColWidth = 15
+        colWidth = 8
+        decimals = 2
+        layer = self["candidate"]
+        # top bar
+        line = ("=" * fromColWidth) + "="
+        for i in range(layer.size):
+            line += ("=" * colWidth) + "="
+        print line
+        # to layer name:
+        line = " " * fromColWidth + "|" + pad(layer.name, (colWidth * layer.size) + (layer.size - 1), align="center", )
+        print line
+        # sep bar:
+        line = ("-" * fromColWidth) + "+"
+        for i in range(layer.size):
+            line += ("-" * colWidth) + "+"
+        print line
+        # col header:
+        line = pad("correlations", fromColWidth, align="center")
+        for i in range(layer.size):
+            line += pad(str(i), colWidth, align = "center")
+        print line
+        # sep bar:
+        line = ("-" * fromColWidth) + "+"
+        for i in range(layer.size):
+            line += ("-" * colWidth) + "+"
+        print line
+        # correlations:
+        for i in range(self["output"].size):
+            line = pad(str(i), fromColWidth, align = "center")
+            for j in range(layer.size):
+                line += pad(("%." + str(decimals) + "f") % self.correlations[i][j], colWidth, align = "right")
+            print line
+        # bottom bar:
+        line = ("=" * fromColWidth) + "="
+        for i in range(layer.size):
+            line += ("=" * colWidth) + "="
+        print line
+                    
+    def displayConnections(self, title = "Cascade Connections"):
+        Network.displayConnections(self, title)
+        self.displayCorrelations()
+        
     def displayNet(self):
         """
         Displays the weights of the network in a way similar to how Fahlman's code
@@ -148,7 +193,7 @@ class CascadeCorNet(Network):
             self.switchToOutputParams()
             self.displayConnections("Before recruit")
             self.recruit(best)
-            #self.displayConnections("After recruit")
+            self.displayConnections("After recruit")
             #pdb.set_trace()
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:
@@ -257,6 +302,7 @@ class CascadeCorNet(Network):
             #print "BestScore = ",bestScore, " previousBest = ", previousBest
             #print "(outside) quitEpoch = ", self.quitEpoch
             self.cor = S_co[:,best]
+            self.correlations = S_co
             #print "correlations!"
             #print self.cor
 
@@ -429,6 +475,7 @@ class CascadeCorNet(Network):
         for layer in self:
             if layer.type != "Output" and layer.name != "candidate":
                 self.connectAt(layer.name, "candidate", position = -1)
+        self.correlations = [[0.0 for n in range(size)] for m in range(self["input"].size)] # initialize corrleations (for printing)
         #for layer in self: # ghost connection
         #    if layer.type == "Output" and layer.name != "candidate":
         #        self.connectAt("candidate", layer.name, position = -1)
