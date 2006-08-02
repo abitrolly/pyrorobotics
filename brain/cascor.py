@@ -191,9 +191,10 @@ class CascadeCorNet(Network):
             #self.displayConnections("Before cand train")
             best = self.trainCandidates()
             self.switchToOutputParams()
-            self.displayConnections("Before recruit")
+            #self.displayConnections("Before recruit")
+            self.displayCorrelations()
             self.recruit(best)
-            self.displayConnections("After recruit")
+            #self.displayConnections("After recruit")
             #pdb.set_trace()
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:

@@ -1,5 +1,6 @@
 config = 0
-gui = 0
+gui    = 0
+debug  = 0
 
 def ask(title, qlist):
     """

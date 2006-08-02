@@ -4,7 +4,7 @@ An Artificial Neural Network System Implementing
 Backprop. Part of the Pyrobot Robotics Project.
 Provided under the GNU General Public License.
 ----------------------------------------------------
-(c) 2001-2005, Developmental Robotics Research Group
+(c) 2001-2006, Developmental Robotics Research Group
 ----------------------------------------------------
 
 This file implements the major classes and functions for
@@ -15,13 +15,18 @@ __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
 import Numeric, math, random, time, sys, operator
-
 try:
-    pass
-    #import psyco; psyco.full()
-    #print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    import pyrobot.system.share as share
 except:
-    print "Conx, version %s (regular speed)" % __version__.split()[1]
+    class share: debug = 0
+if not share.debug:
+    try:
+        import psyco; psyco.full()
+        print "Conx, version %s (psyco enabled)" % __version__.split()[1]
+    except:
+        print "Conx, version %s (regular speed)" % __version__.split()[1]
+else:
+    print "Conx, version %s (debug; regular speed)" % __version__.split()[1]
 
 
 def pad(s, n, p = " ", sep = "|", align = "left"):
@@ -972,6 +977,29 @@ class Network(object):
         self.changeLayerSize(layername, self[layername].size - 1)
         # and put the good weights where they go:
         self.unArrayify(gene)
+    def addLayerNode(self, layerName, bias = None, weights = {}):
+        """
+        Adds a new node to a layer, and puts in new weights. Adds node on the end.
+        Weights will be random, unless specified.
+
+        bias    = the new node's bias weight
+        weights = dict of {connectedLayerName: [weights], ...}
+
+        Example:
+        >>> net.addLayers(2, 5, 1)
+        >>> net.addLayerNode("hidden", bias = -0.12, weights = {"input": [1, 0], "output": [0]})
+        """
+        self.changeLayerSize(layerName, self[layerName].size + 1)
+        if bias != None:
+            self[layerName].weight[-1] = bias
+        for name in weights.keys():
+            for c in self.connections:
+                if c.fromLayer.name == name and c.toLayer.name == layerName:
+                    for i in range(self[name].size):
+                        self[name, layerName].weight[i][-1] = weights[name][i]
+                elif c.toLayer.name == name and c.fromLayer.name == layerName:
+                    for j in range(self[name].size):
+                        self[layerName, name].weight[-1][j] = weights[name][j]
     def changeLayerSize(self, layername, newsize):
         """
         Changes layer size. Newsize must be greater than zero.
@@ -2268,7 +2296,7 @@ class Network(object):
                 line += ("=" * colWidth) + "="
             print line
             # to layer name:
-            line = " " * fromColWidth + " " + (" " * colWidth) + "|" + pad(c.toLayer.name, (colWidth * c.toLayer.size) + (c.toLayer.size - 1), align="center", )
+            line = " " * fromColWidth + "|" + pad(c.toLayer.name, (colWidth * (c.toLayer.size + 1)) + c.toLayer.size, align="center", )
             print line
             # sep bar:
             line = ("-" * fromColWidth) + "+"
