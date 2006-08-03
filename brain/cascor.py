@@ -168,10 +168,7 @@ class CascadeCorNet(Network):
         """
         #+1.0 for bias, should be fan in for candidate layer#this is what Fahlman does?
         #we basically do the 'split epsilon' trick, but only for candidate training and we do it manually
-        self["candidate"].active = 1 #it is silly that these two lines have to be done here, but numConnects needs to be set correctly
-        #self.propagate(input = Numeric.zeros(len(self["input"])))  #   it is indicative of some poor design decisions in pyro,
-        #                                                   namely how layers are added THEN connected (instead of both at once)
-        #                                                 and how actual training fills in some important STRUCTURAL information
+        self["candidate"].active = 1 #it is silly that these two lines have to be done here
         self.epsilon = self.candEpsilon / self.numConnects("candidate")
         self.sig_prime_offset_copy = self.sigmoid_prime_offset #store the sigmoid prime offset for later recovery
         self.sigmoid_prime_offset = 0.0 #necessary because a non zero prime offset may confuse correlation machinery
@@ -192,13 +189,35 @@ class CascadeCorNet(Network):
             self.epoch = 0
             self.switchToCandidateParams()
             #self.displayConnections("Before cand train")
-            self.displayNet()
+##            self.displayNet()
+##            if len(self)-3 == 0:
+##                 self["candidate"].weight = Numeric.array([-0.12])
+##                 self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
+##                 self["output"].weight[0] = -1.8229036805992e-18
+##                 self["input","output"].weight[0][0] = 0.0034767689558589
+##                 self["input","output"].weight[1][0] = 0.082995712287599
+##             if len(self) - 3 == 1:
+##                 self["candidate"].weight = Numeric.array([-0.856])
+##                 self["input","candidate"].weight = Numeric.array([[-0.248],[0.602]])
+##                 self["hidden0","candidate"].weight[0][0] = -0.472
+##                 self["output"].weight[0] = -6.0762355817677e-19
+##                 self["input","output"].weight[0][0] = -0.013346248061625
+##                 self["input","output"].weight[1][0] = 0.24981909981054
+##                 self["hidden0","output"].weight[0][0] = -1.1236554078713
+##            self.displayNet()
             best = self.trainCandidates()
+##             if len(self)-3 ==0:
+##                 self["candidate"].weight = Numeric.array([4.6527199676955e-17])
+##                 self["input","candidate"].weight = Numeric.array([[-18.758374836101],[140.30203587622]])
             self.switchToOutputParams()
             #self.displayConnections("Before recruit")
             self.displayCorrelations()
             self.recruit(best)
-            self.displayNet()
+##             if len(self)-3 == 1:
+##                 self["hidden0","output"].weight[0][0] = -0.10196805013767
+##            self.displayNet()
+##             if len(self)-3 == 2:
+##                 sys.exit(1)
             #self.displayConnections("After recruit")
             #pdb.set_trace()
             print len(self)-3, " Hidden nodes.\n"
@@ -211,11 +230,6 @@ class CascadeCorNet(Network):
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        #self["candidate"].weight = Numeric.array([-0.12])
-        #self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
-        self["output"].weight[0] = 0.36631740362956
-        self["input","output"].weight[0][0] = -0.7326347696021
-        self["input","output"].weight[1][0] = -0.65277576816915
         #pdb.set_trace()
         #self.changeThreshold = 0.0
         print self.changeThreshold
@@ -226,11 +240,10 @@ class CascadeCorNet(Network):
         #          of jth output on ith pattern in the load order
         #E_o_avg is the mean of E_po over the different patterns
         #outputs[i][j] is the output of the jth output unit on the ith pattern
-        E_po, E_o_avg, outputs = self.computeDataFromProp()
+        E_po, E_o_avg, outputs, layerActivations = self.computeDataFromProp()
 
         numPatterns = len(self.loadOrder)
         numCandidates = len(self["candidate"])
-        numInputs = len(self["input"]) #DOES NOT INCLUDE BIAS
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
 
@@ -244,13 +257,21 @@ class CascadeCorNet(Network):
         V_avg = Numeric.sum(V_p)/len(V_p)
         S_co = self.computeFahlmanS_co(V_p, V_avg, E_po, E_o_avg)
         S_co = -1.0 * S_co
+        #sigma_o[i][j] is the sign of the correlation between the ith candidate and the jth output
         sigma_o = Numeric.sign(S_co)
         ######################################################
-        
+
+##         print self["candidate"].weight
+##         print self["input","candidate"].weight
+##         if len(self) - 3 == 1:
+##                 print self["hidden0","candidate"].weight
+##         print "wedLast for candidate layer ", self["candidate"].wedLast
+##         print "wedLast for input/candidate connection ", self["input","candidate"].wedLast
+##         print "dweightLast for candidate layer ", self["candidate"].dweight
+##         print "dweightLast for input/candidate connection ", self["input","candidate"].dweight
         while ep < self.maxCandEpochs and ep < self.quitEpoch:
-            print "\n\nep = ",ep
-            print self["candidate"].weight
-            print self["input","candidate"].weight
+##             print "\n\nep = ",ep
+            
             #pdb.set_trace()
             #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation Learning Architecture (1991)"
             #will hold  a list of activations for each candidate for each training pattern, each row a
@@ -259,7 +280,7 @@ class CascadeCorNet(Network):
             #no need to reactivate output layer here since we don't need to recompute any data about its propagation status
             V_p, netInptToCnd = self.computeChangingDataFromProp()
             V_avg = Numeric.sum(V_p)/len(V_p)
-            #sigma_o[i][j] is the sign of the correlation between the ith candidate and the jth output
+            
             #print "cor = ", cor(V_p[:,0], outputs[:,0])
             #sigma_o = Numeric.array([[Numeric.sign(cor(V_p[:,c], outputs[:,out]))[0] for c in range(numCandidates)] \
             #                         for out in range(len(outputs[0]))])
@@ -274,7 +295,7 @@ class CascadeCorNet(Network):
                 self.updateCandidateLayer(dSdw_bias, c)
             for conxn in incomingConnections: #for every connection going into the candidate layer, prepare to train the weights
                 #dSdw[i][j] is the derivative of S for the ith, jth weight of the current connection
-                dSdw = self.compute_dSdw(sigma_o, E_po, E_o_avg, netInptToCnd, conxn)
+                dSdw = self.compute_dSdw(sigma_o, E_po, E_o_avg, netInptToCnd, layerActivations, conxn)
                 #dSdw = Numeric.divide(dSdw, sumSqErr)
                 self.updateConnection(conxn, dSdw)
             #deactivate output layer here so we don't change its weights
@@ -282,7 +303,10 @@ class CascadeCorNet(Network):
             #pdb.set_trace()
             #print "*DEBUG* Candidate Epoch  number ",ep
             self.change_weights() #change incoming connection weights and bias weights for the entire candidate layer
-            
+##             print self["candidate"].weight
+##             print self["input","candidate"].weight
+##             if len(self) - 3 == 1:
+##                 print self["hidden0","candidate"].weight
             #S_c is a list of the covariances for each candidate, or
             #Fahlman's 'S' quantity, computed for each candidate unit
             #perhaps construction of uneccesary temporary lists could be avoided with
@@ -313,24 +337,27 @@ class CascadeCorNet(Network):
             #print "(outside) quitEpoch = ", self.quitEpoch
             self.cor = S_co[:,best]
             self.correlations = S_co
-            print "correlations!"
-            print self.cor
-            print "quitEPoch = ",self.quitEpoch
-            print "lhs = ", abs(bestScore - previousBest)," rhs = ", previousBest*self.changeThreshold
+##             print "correlations!"
+##             print self.cor
+##             print "quitEPoch = ",self.quitEpoch
+##             print "lhs = ", abs(bestScore - previousBest)," rhs = ", previousBest*self.changeThreshold
             #
             #pdb.set_trace()
-            #if there is an appreciable change in the error we don't need to worry about stagnation
-            if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
-                print "INSIDE TEST: bestScore = %f lastScore = %f" % (bestScore, previousBest)
-                self.quitEpoch = ep + self.patience
-                print "Quit Epoch = ", self.quitEpoch
+            if ep == 1:
                 previousBest = bestScore
+            else:
+                #if there is an appreciable change in the error we don't need to worry about stagnation
+                if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
+##                     print "INSIDE TEST: bestScore = %f lastScore = %f" % (bestScore, previousBest)
+                    self.quitEpoch = ep + self.patience
+##                     print "Quit Epoch = ", self.quitEpoch
+                    previousBest = bestScore
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
             #ep += 1
             #print "\n"
         self.totalEpochs += ep
-        sys.exit(0)
+        #sys.exit(0)
         return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
@@ -346,12 +373,16 @@ class CascadeCorNet(Network):
         Computes data based on propagation that need not be recomputed between candidate weight changes.
         """
         E_po, outputs = [], []
+        layerActivations = {}
         for i in self.loadOrder: #for each training pattern, save all the information that will be needed later
             self.propagate(**self.getData(i))
+            for layer in self.layers:
+                if layer.name not in ("candidate", "output"):
+                    layerActivations[(i, layer.name)] = layer.activation
             E_po.append(self.errorFunction(self["output"].target, self["output"].activation)) #need not be recomputed later
             outputs.append(self["output"].activation) #need not be recomputed later
         E_o_avg = [E/len(E_po) for E in Numeric.sum(E_po)] # list of the average error over all patterns for each output
-        return (Numeric.array(E_po), Numeric.array(E_o_avg), Numeric.array(outputs))
+        return (Numeric.array(E_po), Numeric.array(E_o_avg), Numeric.array(outputs), layerActivations)
     def computeChangingDataFromProp(self):
         """
         Computes data based on propagation that needs to be recomputed between candidate weight changes.
@@ -380,14 +411,14 @@ class CascadeCorNet(Network):
         #        print "    compute_correlations:", V_p[n][i], E_po[n][i]
         return (Numeric.array([Numeric.sum(Numeric.transpose(Numeric.multiply(Numeric.transpose(V_p), E_po[:,c]))) \
                                for c in range(len(E_po[0]))]) - V_avg*E_o_avg)/Numeric.sum(Numeric.sum(E_po*E_po))
-    def compute_dSdw(self, sigma_o, E_po, E_o_avg, netInptToCnd, conxn):
+    def compute_dSdw(self, sigma_o, E_po, E_o_avg, netInptToCnd, layerActivations, conxn):
         """
         Computes dSdW for a specific connection to the candidate layer.
         """
         numPatterns = len(self.loadOrder)
         numOutputs = len(E_po[0])
         return Numeric.array([[Numeric.sum( [Numeric.sum( \
-                    [sigma_o[i][col]*(E_po[p][i] - E_o_avg[i])*self.actDeriv( netInptToCnd[p][col] )*self.getData(p)["input"][row] \
+                    [sigma_o[i][col]*(E_po[p][i] - E_o_avg[i])*self.actDeriv( netInptToCnd[p][col] )*layerActivations[(p, conxn.fromLayer.name)][row] \
                      for p in range(numPatterns)]) for i in range(numOutputs)] ) \
                                  for col in range(len(conxn.weight[0]))] for row in range(len(conxn.weight))])
         
@@ -405,6 +436,16 @@ class CascadeCorNet(Network):
         self["candidate"].active = 0 #in fact, don't let the candidate layer do anything!  Hopefully this won't cause problems
         self.quitEpoch = self.patience
 
+##         print "wedLast for output layer ", self["output"].wedLast
+##         print "dweight for output layer ", self["output"].dweight
+        for layer in self.layers:
+            layer.wedLast = Numeric.zeros(layer.size, 'f')
+            layer.dweight = Numeric.zeros(layer.size, 'f')
+        for connection in self.connections:
+            connection.wedLast =  Numeric.zeros((connection.fromLayer.size, connection.toLayer.size), 'f')
+            connection.dweight =  Numeric.zeros((connection.fromLayer.size, connection.toLayer.size), 'f')
+            
+        
         #pdb.set_trace()
         # check architecture
         self.complete = 0
