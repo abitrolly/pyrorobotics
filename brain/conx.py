@@ -2218,8 +2218,11 @@ class Network(object):
         error, correct, total = self.ce_init()
         pcorrect = {}
         # go backwards through each proj but don't redo output errors!
-        for c in range(len(self.connections) - 1, -1, -1):
-            connect = self.connections[c]
+        if len(self.cacheConnections) != 0:
+            changeConnections = self.cacheConnections
+        else:
+            changeConnections = self.connections
+        for connect in reverse(changeConnections):
             if connect.active and connect.toLayer.active and connect.fromLayer.active:
                 connect.toLayer.delta = (connect.toLayer.error *
                                          (self.ACTPRIME(connect.toLayer.activation)))
