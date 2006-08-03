@@ -28,7 +28,9 @@ if not share.debug:
 else:
     print "Conx, version %s (debug; regular speed)" % __version__.split()[1]
 
-
+def reverse(lyst):
+    """ Returns a reversed list. """
+    return [lyst[p] for p in range(len(lyst) - 1, -1, -1)]
 def pad(s, n, p = " ", sep = "|", align = "left"):
     """
     s = string
@@ -752,7 +754,18 @@ class Network(object):
         self.mu = 1.75 # maximum growth factor
         self.splitEpsilon = 0
         self.decay = 0.0000
+        self.cacheConnections = []
+        self.cacheLayers = []
         self.setup()
+    def cacheChanges(self):
+        self.cacheConnections = []
+        self.cacheLayers = []
+        for layer in self.layers:
+            if layer.active and not layer.frozen:
+                self.cacheLayers.append( layer )
+        for connection in self.connections:
+            if connection.active and not connection.frozen:
+                self.cacheConnections.append( connection )
     def setQuickprop(self, value):
         if value:
             self.batch = 1
@@ -1386,6 +1399,7 @@ class Network(object):
         Check for orphaned layers or connections. Assure that network
         architecture is feed-forward (no-cycles). Check connectivity. Check naming.
         """
+        if len(self.cacheLayers) != 0 or len(self.cacheConnections) != 0: return
         # flags for layer type tests
         hiddenInput = 1
         hiddenOutput = 1       
@@ -2092,7 +2106,11 @@ class Network(object):
         during backprop(). Learning must be set.
         """
         dw_count, dw_sum = 0, 0.0
-        for layer in self.layers:
+        if len(self.cacheLayers) != 0:
+            changeLayers = self.cacheLayers
+        else:
+            changeLayers = self.layers
+        for layer in changeLayers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
                     layer.dweight = self.deltaWeight(self.epsilon,
@@ -2112,7 +2130,11 @@ class Network(object):
                         layer.wed = layer.wed * 0.0 # keep same numeric type, just zero it
                     dw_count += len(layer.dweight)
                     dw_sum += Numeric.add.reduce(abs(layer.dweight))
-        for connection in self.connections:
+        if len(self.cacheConnections) != 0:
+            changeConnections = self.cacheConnections
+        else:
+            changeConnections = self.connections
+        for connection in changeConnections:
             if (connection.active
                 and connection.fromLayer.active
                 and connection.toLayer.active
@@ -2239,12 +2261,19 @@ class Network(object):
         Computes weight error derivative for all connections in
         self.connections starting with the last connection.
         """
-        for c in range(len(self.connections) - 1, -1, -1):
-            connect = self.connections[c]
+        if len(self.cacheConnections) != 0:
+            changeConnections = self.cacheConnections
+        else:
+            changeConnections = self.connections            
+        for connect in reverse(changeConnections):
             if connect.active and connect.fromLayer.active and connect.toLayer.active:
                 connect.wed = connect.wed + Numeric.outerproduct(connect.fromLayer.activation,
                                                                  connect.toLayer.delta)
-        for layer in self.layers:
+        if len(self.cacheLayers) != 0:
+            changeLayers = self.cacheLayers
+        else:
+            changeLayers = self.layers
+        for layer in changeLayers:
             if layer.active:
                 layer.wed = layer.wed + layer.delta
 
