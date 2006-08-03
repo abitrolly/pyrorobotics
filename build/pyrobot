@@ -80,7 +80,7 @@ try:
     from pyrobot.engine import *
 except ImportError:
     raise "You need to run 'make' in %s" % (os.environ["PYROBOT"],)
-print "Using PYROBOT in '%s'..." % (os.environ["PYROBOT"],)
+# ------------------------------ Let's start
 robotfile = 0
 devices = 0
 vars = []
@@ -113,17 +113,20 @@ def process_options():
     global robotfile, brainfile, window, simulator, \
            pyroargs, configfile, evalcommand, worldfile, devices
     try:
-        opts, args = getopt.getopt(sys.argv[1:], \
-                                   "r:b:hg:s:a:i:e:w:d:c:v:", \
-                                   ["robot=", "brain=", "help", \
-                                    "gui=", "sim=", "args=",\
+        opts, args = getopt.getopt(sys.argv[1:], 
+                                   "r:b:hg:s:a:i:e:w:d:c:v:p:", 
+                                   ["robot=", "brain=", "help", 
+                                    "gui=", "sim=", "args=",
                                     "init=", "eval=", "world=",
-                                    "devices=", "config=", "var="])
+                                    "devices=", "config=", "var=",
+                                    "proc="])
     except getopt.GetoptError:
         # print help information and exit:
         pyrobot.system.usage()
         sys.exit(1)
 
+    flags = {}
+    flags.update(opts)
     for o, a in opts:
         if o in ("-h", "--help"):
             pyrobot.system.usage()
@@ -148,11 +151,37 @@ def process_options():
             evalcommand = a
 	elif o in ("-v", "--var"):
             vars.append( a )
+        elif o in ("-p", "--proc"):
+            flags[o] = a # handle later
+    return flags
 
+flags = process_options()
+# ------------------------------ Check system
+message = " on %s" % os.name
+if os.name in ['posix']:
+    pid = os.getpid()
+    cpu = "0" # could be a list "0,2,5"
+    if "-p" in flags:
+        cpu = flags["-p"]
+    elif "--proc" in flags:
+        cpu = flags["--proc"]
+    retval = os.system("taskset -c -p %s %d > /dev/null" % (cpu, pid))
+    if retval == 0:
+        message += " with CPU %s" % cpu
+    elif retval == 256: # invalid call; help
+        print "PYROBOT WARNING: invalid cpu list: %s" % cpu
+        message += " with default CPUs"
+    elif retval == 32512: # can't find taskset
+        print "PYROBOT WARNING: can't find 'taskset'"
+        message += " with default CPUs"
+    else: # other error
+        print "PYROBOT WARNING: taskset error: %d" % retval
+        message += " with default CPUs"
+# ------------------------------- Let's go
+print "Using PYROBOT%s in '%s'..." % (message, os.environ["PYROBOT"],)
 if pyrobot.startup_check():
     import pyrobot.system
     from pyrobot.system.config import Configuration
-    process_options()
     c = Configuration(configfile)
     if configfile:
         c.put('config', 'file', configfile)
