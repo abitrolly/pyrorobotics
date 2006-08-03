@@ -7,7 +7,7 @@ def about():
     print "Pyrobot - Python Robotics"
     print "Version:", version()
     print "See: http://PyroRobotics.org"
-    print "(c) 2005, PyroRobotics.org. Released under the GNU GPL"
+    print "(c) 2006, PyroRobotics.org. Released under the GNU GPL"
     print "-------------------------------------------------------------"
 
 def usage():
@@ -15,17 +15,17 @@ def usage():
     print " Pyrobot Command Line Arguments:"
     print "-------------------------------------------------------------"
     print "  -h                     show this help"
-    print "  -r ROBOT               name of robot.py file to load"
-    print "  -b BRAIN               name of brain.py file to load"
     print "  -a ARGUMENTS           user args; available as string engine.args"
-    print "  -s SIMULATOR           name of simulator to run"
-    print "  -i INI_FILE            name of init file to load, or 'None'"
-    print "  -w WORLDFILE           name of simulator world to load"
+    print "  -b BRAIN               name of brain.py file to load"
     print "  -c CONFIGFILE          name of server config to load"
     print "  -d DEVICE[,...]        names of devices (files or names)"
     print "  -g tty | tk | simple   type of GUI to use"
-    print "  -e \"string\"            eval string of Pyro commands"
-    print "                            that are ; separated"    
+    print "  -i INIFILE             name of init file to load, or 'None'"
+    print "  -p CPULIST             list of integer for CPU affinity taskset"
+    print "  -r ROBOT               name of robot.py file to load"
+    print "  -s SIMULATOR           name of simulator to run"
+    print "  -w WORLDFILE           name of simulator world to load"
+    print "  -e \"string\"            eval string of ; separated commands"
     print ""
 
 def help():
