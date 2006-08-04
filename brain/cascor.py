@@ -228,7 +228,7 @@ class CascadeCorNet(Network):
 ##                 sys.exit(1)
             #self.displayConnections("After recruit")
             #pdb.set_trace()
-            print len(self)-3, " Hidden nodes.\n"
+            print len(self)-3, " Hidden nodes"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
         print "Total epochs:", self.totalEpochs
@@ -549,7 +549,7 @@ class CascadeCorNet(Network):
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting candidate: %d with correlation %f" % (n, self.correlations[:,n])
+        print "Recruiting candidate: %d with correlation %s" % (n, self.correlations[:,n])
         # first, add the new layer:
         hcount = 0
         for layer in self:
