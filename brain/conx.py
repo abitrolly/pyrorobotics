@@ -1031,7 +1031,6 @@ class Network(object):
         """
         random.seed(self.seed)
         self.initialize()
-        print "Conx initialized; using seed", self.seed
     def initialize(self):
         """
         Initializes network by calling Connection.initialize() and
@@ -1142,6 +1141,7 @@ class Network(object):
         """
         self.seed = value
         random.seed(self.seed)
+        print "Conx using seed:", self.seed
     def getConnection(self, lfrom, lto):
         """
         Returns the connection instance connecting the specified (string)
