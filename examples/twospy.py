@@ -1,6 +1,6 @@
 # to turn off psyco uncomment these:
-#import pyrobot.system.share
-#pyrobot.system.share.debug = 1
+import pyrobot.system.share
+pyrobot.system.share.debug = 1
 
 from pyrobot.brain.conx import *
 from pyrobot.brain.cascor import *

@@ -1031,6 +1031,7 @@ class Network(object):
         """
         random.seed(self.seed)
         self.initialize()
+        print "Conx initialized; using seed", self.seed
     def initialize(self):
         """
         Initializes network by calling Connection.initialize() and
