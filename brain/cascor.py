@@ -8,14 +8,7 @@ from unittest import *
 
 __author__="George Dahl <gdahl1@swarthmore.edu>"
 
-## def pick(condition, first, second):
-##     """
-##     If condition evaluates to false, second will be returned.  Otherwise first will be
-##     returned.
-##     """
-##     return (condition and [first] or [second])[0]
-
-cor = Numeric.cross_correlate
+#cor = Numeric.cross_correlate
 
 def findMax(seq):
     """
@@ -48,13 +41,12 @@ class CascadeCorNet(Network):
         self.setQuickprop(1)
         self.addLayers(inputLayerSize, outputLayerSize)
 
-        #Fahlman had 1.0 and 100 for his code!  That seems insane.
+        
         self.outputEpsilon = 0.7
         self.candEpsilon = inputLayerSize*0.6#2.0
 
-        #Fahlman used 2.0 and 2.0
-        self.outputMu = 2.25
-        self.candMu = 2.25
+        self.outputMu = 2.0
+        self.candMu = 2.0
 
         #Fahlman had 0.01 and 0.03
         self.outputChangeThreshold = 0.01
@@ -168,7 +160,7 @@ class CascadeCorNet(Network):
         """
         #+1.0 for bias, should be fan in for candidate layer#this is what Fahlman does?
         #we basically do the 'split epsilon' trick, but only for candidate training and we do it manually
-        self["candidate"].active = 1 #it is silly that these two lines have to be done here
+        self["candidate"].active = 1 
         self.epsilon = self.candEpsilon / self.numConnects("candidate")
         self.sig_prime_offset_copy = self.sigmoid_prime_offset #store the sigmoid prime offset for later recovery
         self.sigmoid_prime_offset = 0.0 #necessary because a non zero prime offset may confuse correlation machinery
@@ -187,47 +179,16 @@ class CascadeCorNet(Network):
         self.maxHidden = maxHidden
         cont = 1
         self.switchToOutputParams()
-        #pdb.set_trace()
         while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
-            #self.displayConnections("Beginning of loop")
             self.epoch = 0
             self.switchToCandidateParams()
-            #self.displayConnections("Before cand train")
-##            self.displayNet()
-##            if len(self)-3 == 0:
-##                 self["candidate"].weight = Numeric.array([-0.12])
-##                 self["input","candidate"].weight = Numeric.array([[-0.15],[0.88]])
-##                 self["output"].weight[0] = -1.8229036805992e-18
-##                 self["input","output"].weight[0][0] = 0.0034767689558589
-##                 self["input","output"].weight[1][0] = 0.082995712287599
-##             if len(self) - 3 == 1:
-##                 self["candidate"].weight = Numeric.array([-0.856])
-##                 self["input","candidate"].weight = Numeric.array([[-0.248],[0.602]])
-##                 self["hidden0","candidate"].weight[0][0] = -0.472
-##                 self["output"].weight[0] = -6.0762355817677e-19
-##                 self["input","output"].weight[0][0] = -0.013346248061625
-##                 self["input","output"].weight[1][0] = 0.24981909981054
-##                 self["hidden0","output"].weight[0][0] = -1.1236554078713
-##            self.displayNet()
             best = self.trainCandidates()
-##             if len(self)-3 ==0:
-##                 self["candidate"].weight = Numeric.array([4.6527199676955e-17])
-##                 self["input","candidate"].weight = Numeric.array([[-18.758374836101],[140.30203587622]])
             self.switchToOutputParams()
-            #self.displayConnections("Before recruit")
-            #self.displayCorrelations()
             self.recruit(best)
             act = self["output"]
             self["output"].active = 1
             self.setCache(1)
             self["output"].active = act
-##             if len(self)-3 == 1:
-##                 self["hidden0","output"].weight[0][0] = -0.10196805013767
-##            self.displayNet()
-##             if len(self)-3 == 2:
-##                 sys.exit(1)
-            #self.displayConnections("After recruit")
-            #pdb.set_trace()
             print len(self)-3, " Hidden nodes"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
@@ -238,9 +199,6 @@ class CascadeCorNet(Network):
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
-        #pdb.set_trace()
-        #self.changeThreshold = 0.0
-        #print self.changeThreshold
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
         self["candidate"].active = 1 #candidate should be active throughout this function
 
@@ -255,12 +213,12 @@ class CascadeCorNet(Network):
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
 
-        #pdb.set_trace()
         ep = 0
         self.quitEpoch = self.patience
         previousBest = 0 #best candidate correlation on last iteration
 
-        ###################################################### equivalent to Fahlman's correlation epoch function hopefully
+        #we need to get the initial correlations to know what direction to update the weights in
+        ###################################################### equivalent to Fahlman's correlation epoch function
         V_p, netInptToCnd = self.computeChangingDataFromProp(layerActivations)
         V_avg = Numeric.sum(V_p)/len(V_p)
         S_co = self.computeFahlmanS_co(V_p, V_avg, E_po, E_o_avg)
@@ -269,18 +227,7 @@ class CascadeCorNet(Network):
         sigma_o = Numeric.sign(S_co)
         ######################################################
 
-##         print self["candidate"].weight
-##         print self["input","candidate"].weight
-##         if len(self) - 3 == 1:
-##                 print self["hidden0","candidate"].weight
-##         print "wedLast for candidate layer ", self["candidate"].wedLast
-##         print "wedLast for input/candidate connection ", self["input","candidate"].wedLast
-##         print "dweightLast for candidate layer ", self["candidate"].dweight
-##         print "dweightLast for input/candidate connection ", self["input","candidate"].dweight
         while ep < self.maxCandEpochs and ep < self.quitEpoch:
-##             print "\n\nep = ",ep
-            
-            #pdb.set_trace()
             #V sub p on page 5 of Fahlman's paper "The Cascade-Correlation Learning Architecture (1991)"
             #will hold  a list of activations for each candidate for each training pattern, each row a
             #           different pattern, each column a different candidate
@@ -289,11 +236,6 @@ class CascadeCorNet(Network):
             V_p, netInptToCnd = self.computeChangingDataFromProp(layerActivations)
             V_avg = Numeric.sum(V_p)/len(V_p)
             
-            #print "cor = ", cor(V_p[:,0], outputs[:,0])
-            #sigma_o = Numeric.array([[Numeric.sign(cor(V_p[:,c], outputs[:,out]))[0] for c in range(numCandidates)] \
-            #                         for out in range(len(outputs[0]))])
-            
-            #print "SIGMA_O = ", sigma_o
             sumSqErr = [Numeric.sum(Numeric.multiply(E_po[:,j], E_po[:,j])) for j in range(numOutputs)] ##does this help?
             for c in range(numCandidates): #for every candidate unit in the layer, get ready to train the bias weight
                 #recompute dSdw for the bias weight for this candidate
@@ -308,13 +250,9 @@ class CascadeCorNet(Network):
                 self.updateConnection(conxn, dSdw)
             #deactivate output layer here so we don't change its weights
             self["output"].active = 0
-            #pdb.set_trace()
-            #print "*DEBUG* Candidate Epoch  number ",ep
             self.change_weights() #change incoming connection weights and bias weights for the entire candidate layer
-##             print self["candidate"].weight
-##             print self["input","candidate"].weight
-##             if len(self) - 3 == 1:
-##                 print self["hidden0","candidate"].weight
+
+            #My original code for computing S_c has been replaced by something more like Fahlman's implementation and less like his paper
             #S_c is a list of the covariances for each candidate, or
             #Fahlman's 'S' quantity, computed for each candidate unit
             #perhaps construction of uneccesary temporary lists could be avoided with
@@ -323,49 +261,33 @@ class CascadeCorNet(Network):
             #S_c = self.computeS_c(V_p, V_avg, E_po, E_o_avg)
             #best = findMax(S_c)
 
-            #pdb.set_trace()
-            #
             S_co = self.computeFahlmanS_co(V_p, V_avg, E_po, E_o_avg)
             #sign error when compared with Fahlman,  from our different convention for err (goal - actual or actual - goal)
-            #will simply correcting it now screw anything up?  I know that our code in trainOutputs uses an opposite sign convetion that
-            # works out to the same weight updates, our actual quickprop update rule is possibly negated.
-            #  However, our weight updates are the same in candidate training also and we only use S_c to pick what we recruit so
-            #  simply changing it should be fine.  I hope.
+            #Our quickprop rule is negated from what Fahlman has in his Cascade-correlation code (but not in his quickprop code?)
+            #
+            #We only use S_c to pick what we recruit so we need to fix its sign, alternatively we could probably find a min instead of a max
+            #  but that obfuscates the intent and motivation of the algorithm even more
             S_co = -1.0 * S_co
             S_c = Numeric.sum(S_co)
             best = findMax([abs(cr) for cr in S_c])
             bestScore = abs(S_c[best])
-            ############################
             sigma_o = Numeric.sign(S_co)
-            ############################
             
             
             ep += 1
-            #print "BestScore = ",bestScore, " previousBest = ", previousBest
-            #print "(outside) quitEpoch = ", self.quitEpoch
-            self.cor = S_co[:,best]
+            self.cor = S_co[:,best] #need to save this for in order to know a good initial weight from the newly recruited candidate to
+            #                        the output layer
             self.correlations = S_co
-##             print "correlations!"
-##             print self.cor
-##             print "quitEPoch = ",self.quitEpoch
-##             print "lhs = ", abs(bestScore - previousBest)," rhs = ", previousBest*self.changeThreshold
-            #
-            #pdb.set_trace()
             if ep == 1:
                 previousBest = bestScore
             else:
                 #if there is an appreciable change in the error we don't need to worry about stagnation
                 if abs(bestScore - previousBest) > previousBest*self.changeThreshold:
-##                     print "INSIDE TEST: bestScore = %f lastScore = %f" % (bestScore, previousBest)
                     self.quitEpoch = ep + self.patience
-##                     print "Quit Epoch = ", self.quitEpoch
                     previousBest = bestScore
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
                 print "Candidate Epoch # ", ep
-            #ep += 1
-            #print "\n"
         self.totalEpochs += ep
-        #sys.exit(0)
         return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
@@ -376,7 +298,6 @@ class CascadeCorNet(Network):
     def updateConnection(self, conxn, dSdw):
         self[conxn.fromLayer.name, conxn.toLayer.name].wed = -1.0* dSdw +conxn.weight*self.decay
     def computeDataFromProp(self):
-        #problem here as of 6/1/06
         """
         Computes data based on propagation that need not be recomputed between candidate weight changes.
         """
