@@ -455,7 +455,7 @@ class Layer:
         #          ('Activation flag not reset. Activations may have been set multiple times without any intervening call to propagate().', self.activationSet)
         Numeric.put(self.activation, Numeric.arange(len(self.activation)), value)
         self.activationSet = 1
-    def copyActivations(self, arr):
+    def copyActivations(self, arr, reckless = 0):
         """
         Copies activations from the argument array into
         layer activations.
@@ -466,9 +466,10 @@ class Layer:
                   ('Mismatched activation size and layer size in call to copyActivations()', \
                    (len(array), self.size))
         if self.verify and not self.activationSet == 0:
-            raise LayerError, \
-                  ('Activation flag not reset before call to copyActivations()', \
-                   self.activationSet) 
+            if not reckless:
+                raise LayerError, \
+                      ('Activation flag not reset before call to copyActivations()', \
+                       self.activationSet) 
         self.activation = array
         self.activationSet = 1
 
@@ -757,15 +758,18 @@ class Network(object):
         self.cacheConnections = []
         self.cacheLayers = []
         self.setup()
-    def cacheChanges(self):
+    def setCache(self, val = 1):
+        """ Sets cache on (or updates), or turns off """
+        # first clear the old cached values
         self.cacheConnections = []
         self.cacheLayers = []
-        for layer in self.layers:
-            if layer.active and not layer.frozen:
-                self.cacheLayers.append( layer )
-        for connection in self.connections:
-            if connection.active and not connection.frozen:
-                self.cacheConnections.append( connection )
+        if val:
+            for layer in self.layers:
+                if layer.active and not layer.frozen:
+                    self.cacheLayers.append( layer )
+            for connection in self.connections:
+                if connection.active and not connection.frozen:
+                    self.cacheConnections.append( connection )
     def setQuickprop(self, value):
         if value:
             self.batch = 1
@@ -1902,6 +1906,34 @@ class Network(object):
                 return dict[dict.keys()[0]]
             else:
                 return dict
+    def propagateTo(self, toLayer, **args):
+        """
+        Propagates activation to a layer. Optionally, takes input layer names
+        as keywords, and their associated activations. Returns the toLayer's activation.
+
+        Examples:
+
+        >>> net.propagateTo("output")
+        [0.34]
+        >>> net.propagateTo("hidden")
+        [0.12, 0.05, 0.61, 0.99]
+        >>> net.propagateTo("hidden", input = [0, .5, 0], context = [.5, .5, .5])
+        [0.54, 0.98, 0.57, 0.34]
+        """
+        for layerName in args:
+            self[layerName].activationSet = 0 # force it to be ok
+            self[layerName].copyActivations(args[layerName])
+        # init toLayer:
+        self[toLayer].netinput = (self[toLayer].weight).tolist() 
+        # for each connection, in order:
+        for connection in self.connections:
+            if connection.active and connection.toLayer.name == toLayer and connection.fromLayer.active:
+                connection.toLayer.netinput = connection.toLayer.netinput + \
+                                              Numeric.matrixmultiply(connection.fromLayer.activation,\
+                                                                     connection.weight) # propagate!
+                if self[toLayer].type != 'Input':
+                    self[toLayer].activation = self.activationFunction(self[toLayer].netinput)
+        return self[toLayer].activation.tolist()
     def propagateFrom(self, startLayer, **args):
         """
         Propagates activation through the network. Optionally, takes input layer names

@@ -5,6 +5,8 @@
 from pyrobot.brain.conx import *
 from pyrobot.brain.cascor import *
 
+n = None
+
 def oneTrial():
     n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
     n.addCandidateLayer(8)
@@ -23,6 +25,7 @@ def center(seq):
     return seq - mean(seq)
 
 def compare():
+    global n
     n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
     #n = CascadeCorNet(2,1, patience = 50, maxOutputEpochs = 200, maxCandEpochs = 200)
     n.maxRandom = 1.0
@@ -53,12 +56,12 @@ def compare():
     #n.switchToOutputParams()
     #n.trainOutputs(200)
     n.setOrderedInputs(1)
-    print n .sigmoid_prime_offset
+    #print n .sigmoid_prime_offset
     #pdb.set_trace()
     n.train(50)
-    print n["input"].weight
-    print n["input","output"].weight
-    print n["output"].weight
+    #print n["input"].weight
+    #print n["input","output"].weight
+    #print n["output"].weight
 def compare2():
     n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
     #n = CascadeCorNet(2,1, patience = 50, maxOutputEpochs = 200, maxCandEpochs = 200)
@@ -89,12 +92,12 @@ def compare2():
     #n.switchToOutputParams()
     #n.trainOutputs(200)
     n.setOrderedInputs(1)
-    print n .sigmoid_prime_offset
+    #print n .sigmoid_prime_offset
     #pdb.set_trace()
     n.train(50)
-    print n["input"].weight
-    print n["input","output"].weight
-    print n["output"].weight
+    #print n["input"].weight
+    #print n["input","output"].weight
+    #print n["output"].weight
     
 if __name__=="__main__":
     compare()
@@ -115,9 +118,9 @@ if __name__=="__main__":
 ##     intputs = center(inputs)*2.0
 ##     targets = center([datum*2 for datum in targets])
     
-    print targets
-    print "max", max(targets)
-    print "min", min(targets)
+    #print targets
+    #print "max", max(targets)
+    #print "min", min(targets)
     
     n = CascadeCorNet(2,1, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200)
     
@@ -128,8 +131,8 @@ if __name__=="__main__":
     #n.useTanhActivationFunction()
     n["input","output"].weight = Numeric.array([[random.gauss(0,0.5)],[random.gauss(0,0.5)]])
     n["input"].weight = Numeric.array([random.gauss(0,0.5),random.gauss(0,0.5)])
-    print n["input"].weight
-    print n["input","output"].weight
+    #print n["input"].weight
+    #print n["input","output"].weight
     n.setInputs(inputs)
     n.setTargets(targets)
 
@@ -143,15 +146,15 @@ if __name__=="__main__":
     #n.sigmoid_prime_offset =  0.001
     #n.outputDecay = 0.0#-0.01
     #n.candDecay = 0.0#-0.01
-    print n.candChangeThreshold
-    print n.outputEpsilon
-    print n.candEpsilon
-    print n.outputChangeThreshold
+    #print n.candChangeThreshold
+    #print n.outputEpsilon
+    #print n.candEpsilon
+    #print n.outputChangeThreshold
     n.train(20)
-    print n.candEpsilon
-    print n.outputEpsilon
-    print n.candChangeThreshold
-    print n.outputChangeThreshold
+    #print n.candEpsilon
+    #print n.outputEpsilon
+    #print n.candChangeThreshold
+    #print n.outputChangeThreshold
 ##     for i in range(100):
 ##         print "Trial ",i,"\n\n\n"
 ##         oneTrial()

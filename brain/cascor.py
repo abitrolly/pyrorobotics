@@ -177,6 +177,10 @@ class CascadeCorNet(Network):
         self.decay = self.candDecay
     def setup(self):
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
+        # no cache         : 11 nodes, 1392 epochs, 14:43.823, 14:31.554
+        # cache            : 11 nodes, 1392 epochs, 11:30.779, 11:17.926
+        # propTo, no cache : 11 nodes, 1392 epochs, 15:50.927
+        # propTo, cache    : 11 nodes, 1392 epochs, 13:18.994
         pass
     def train(self, maxHidden):
         self.totalEpochs = 0
@@ -211,8 +215,12 @@ class CascadeCorNet(Network):
 ##                 self["input","candidate"].weight = Numeric.array([[-18.758374836101],[140.30203587622]])
             self.switchToOutputParams()
             #self.displayConnections("Before recruit")
-            self.displayCorrelations()
+            #self.displayCorrelations()
             self.recruit(best)
+            act = self["output"]
+            self["output"].active = 1
+            self.setCache(1)
+            self["output"].active = act
 ##             if len(self)-3 == 1:
 ##                 self["hidden0","output"].weight[0][0] = -0.10196805013767
 ##            self.displayNet()
@@ -223,7 +231,7 @@ class CascadeCorNet(Network):
             print len(self)-3, " Hidden nodes.\n"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
-        print self.totalEpochs
+        print "Total epochs:", self.totalEpochs
     def trainCandidates(self):
         """ This function trains the candidate layer to maximize its
         correlation with the output errors.  The way this is done is
@@ -232,7 +240,7 @@ class CascadeCorNet(Network):
         weights appropriately based on those data members.  """
         #pdb.set_trace()
         #self.changeThreshold = 0.0
-        print self.changeThreshold
+        #print self.changeThreshold
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
         self["candidate"].active = 1 #candidate should be active throughout this function
 
@@ -253,7 +261,7 @@ class CascadeCorNet(Network):
         previousBest = 0 #best candidate correlation on last iteration
 
         ###################################################### equivalent to Fahlman's correlation epoch function hopefully
-        V_p, netInptToCnd = self.computeChangingDataFromProp()
+        V_p, netInptToCnd = self.computeChangingDataFromProp(layerActivations)
         V_avg = Numeric.sum(V_p)/len(V_p)
         S_co = self.computeFahlmanS_co(V_p, V_avg, E_po, E_o_avg)
         S_co = -1.0 * S_co
@@ -278,7 +286,7 @@ class CascadeCorNet(Network):
             #           different pattern, each column a different candidate
             #
             #no need to reactivate output layer here since we don't need to recompute any data about its propagation status
-            V_p, netInptToCnd = self.computeChangingDataFromProp()
+            V_p, netInptToCnd = self.computeChangingDataFromProp(layerActivations)
             V_avg = Numeric.sum(V_p)/len(V_p)
             
             #print "cor = ", cor(V_p[:,0], outputs[:,0])
@@ -383,13 +391,19 @@ class CascadeCorNet(Network):
             outputs.append(self["output"].activation) #need not be recomputed later
         E_o_avg = [E/len(E_po) for E in Numeric.sum(E_po)] # list of the average error over all patterns for each output
         return (Numeric.array(E_po), Numeric.array(E_o_avg), Numeric.array(outputs), layerActivations)
-    def computeChangingDataFromProp(self):
+    def computeChangingDataFromProp(self, layerActivations):
         """
         Computes data based on propagation that needs to be recomputed between candidate weight changes.
         """
         V_p, netInptToCnd = [], []
         for i in self.loadOrder:
             self.propagate(**self.getData(i))
+            # This actually slowed things down!?
+            #acts = {}
+            #for (p, layerName) in layerActivations.keys():
+            #    if p == i:
+            #        acts[layerName] = layerActivations[(p, layerName)]
+            #self.propagateTo("candidate", **acts)
             netInptToCnd.append(self["candidate"].netinput)
             V_p.append([neuron.activation for neuron in self["candidate"]])
         return (Numeric.array(V_p), Numeric.array(netInptToCnd))
@@ -535,7 +549,7 @@ class CascadeCorNet(Network):
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting candidate: %d" % n
+        print "Recruiting candidate: %d with correlation %f" % (n, self.correlations[:,n])
         # first, add the new layer:
         hcount = 0
         for layer in self:
