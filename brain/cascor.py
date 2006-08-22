@@ -1,14 +1,8 @@
-try:
-    from conx import *
-except:
-    from pyrobot.brain.conx import *
+from pyrobot.brain.conx import *
 import math
-import pdb
-from unittest import *
 
-__author__="George Dahl <gdahl1@swarthmore.edu>"
-
-#cor = Numeric.cross_correlate
+__author__  = "George Dahl <gdahl1@swarthmore.edu>"
+__version__ = "$Revision$"
 
 def findMax(seq):
     """
@@ -30,36 +24,30 @@ def findMin(seq):
             bestSoFar = i+1
     return bestSoFar
 
-class CascadeCorNet(Network):
+class CascorNetwork(Network):
     """
     This network implements the cascade-correlation training method.
     """
-    def __init__(self, inputLayerSize, outputLayerSize, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200,
-                 name = 'CascadeCor Network', verbosity = 0):
+    def __init__(self, inputLayerSize = 0, outputLayerSize = 0, patience = 12, maxOutputEpochs = 200, maxCandEpochs = 200,
+                 name = 'Cascor Network', verbosity = 0):
         Network.__init__(self, name, verbosity)
         self.incrType = "cascade" # only "cascade" is supported at the moment
         self.setQuickprop(1)
-        self.addLayers(inputLayerSize, outputLayerSize)
-
-        
+        if inputLayerSize != 0 and outputLayerSize != 0:
+            self.addLayers(inputLayerSize, outputLayerSize)
+            self.candEpsilon = inputLayerSize * 0.6 # 2.0
+        else:
+            self.candEpsilon = None
         self.outputEpsilon = 0.7
-        self.candEpsilon = inputLayerSize*0.6#2.0
-
         self.outputMu = 2.0
         self.candMu = 2.0
-
         #Fahlman had 0.01 and 0.03
         self.outputChangeThreshold = 0.01
         self.candChangeThreshold = 0.03
-
         self.outputDecay = -0.001
         self.candDecay = -0.001
-        #self.outputDecay = -0.01
-        #self.candDecay = -0.01
-        
         self.quitEpoch = patience
         self.patience = patience
-
         self.splitEpsilon = 0 #we will handle this manually since it is different for input and output phases
         self.previousError = sys.maxint
         self.maxOutputEpochs = maxOutputEpochs #perhaps duplicates the purpose of a datamember that already exists?
@@ -67,7 +55,8 @@ class CascadeCorNet(Network):
         self.sigmoid_prime_offset = 0.001#0.0001
         self.sig_prime_offset_copy = self.sigmoid_prime_offset
         self.candreportRate = self.reportRate
-
+        self.correlations = []
+        self.autoSaveNetworkFile = "cascor-??.net"
         self.switchToOutputParams()
 
     def displayCorrelations(self):
@@ -160,7 +149,9 @@ class CascadeCorNet(Network):
         """
         #+1.0 for bias, should be fan in for candidate layer#this is what Fahlman does?
         #we basically do the 'split epsilon' trick, but only for candidate training and we do it manually
-        self["candidate"].active = 1 
+        self["candidate"].active = 1
+        if self.candEpsilon == None:
+            self.candEpsilon = self["input"].size * 0.6
         self.epsilon = self.candEpsilon / self.numConnects("candidate")
         self.sig_prime_offset_copy = self.sigmoid_prime_offset #store the sigmoid prime offset for later recovery
         self.sigmoid_prime_offset = 0.0 #necessary because a non zero prime offset may confuse correlation machinery
@@ -169,18 +160,17 @@ class CascadeCorNet(Network):
         self.decay = self.candDecay
     def setup(self):
         #self.setSeed(113) #FOR DEBUGGING ONLY, DISABLE WHEN DEBUGGING COMPLETE
-        # no cache         : 11 nodes, 1392 epochs, 14:43.823, 14:31.554
-        # cache            : 11 nodes, 1392 epochs, 11:30.779, 11:17.926
-        # propTo, no cache : 11 nodes, 1392 epochs, 15:50.927
-        # propTo, cache    : 11 nodes, 1392 epochs, 13:18.994
         pass
     def train(self, maxHidden):
-        self.totalEpochs = 0
+        self.totalEpoch = 0
         self.maxHidden = maxHidden
         cont = 1
         self.switchToOutputParams()
         while (not self.done()) and self.trainOutputs(self.maxOutputEpochs, cont): #add hidden units until we give up or win
             self.epoch = 0
+            if self.autoSaveNetworkFile != None:
+                self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat, counter = len(self) - 3)
+                self.Print("   Saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
             self.switchToCandidateParams()
             best = self.trainCandidates()
             self.switchToOutputParams()
@@ -192,13 +182,16 @@ class CascadeCorNet(Network):
             print len(self)-3, " Hidden nodes"
         if len(self)-3 == self.maxHidden:
             self.trainOutputs(self.maxOutputEpochs, cont)
-        print "Total epochs:", self.totalEpochs
+        self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat, counter = len(self) - 3)
+        self.Print("   Saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
+        print "Total epochs:", self.totalEpoch
     def trainCandidates(self):
         """ This function trains the candidate layer to maximize its
         correlation with the output errors.  The way this is done is
         by setting weight error derivatives for connections and layers
         and assuming the change_weights function will update the
         weights appropriately based on those data members.  """
+        print "Candidate phase ------------------------------------"
         self["output"].active = 1 #we need the output error, etc. so the output layer must be active during propagation
         self["candidate"].active = 1 #candidate should be active throughout this function
 
@@ -272,9 +265,8 @@ class CascadeCorNet(Network):
             best = findMax([abs(cr) for cr in S_c])
             bestScore = abs(S_c[best])
             sigma_o = Numeric.sign(S_co)
-            
-            
             ep += 1
+            self.totalEpoch += 1
             self.cor = S_co[:,best] #need to save this for in order to know a good initial weight from the newly recruited candidate to
             #                        the output layer
             self.correlations = S_co
@@ -286,8 +278,8 @@ class CascadeCorNet(Network):
                     self.quitEpoch = ep + self.patience
                     previousBest = bestScore
             if ep % self.candreportRate == 0: #simplified candidate epoch reporting mechanism
-                print "Candidate Epoch # ", ep
-        self.totalEpochs += ep
+                print "Epoch: %6d | Candidate Epoch: %7d | Best score: %7.4f" % (self.totalEpoch, ep, previousBest)
+        #self.totalEpoch += ep
         return best #return the index of the candidate we should recruit
     def updateCandidateLayer(self, dSdw_bias, c):
         """
@@ -301,6 +293,7 @@ class CascadeCorNet(Network):
         """
         Computes data based on propagation that need not be recomputed between candidate weight changes.
         """
+        self.setLayerVerification(0)
         E_po, outputs = [], []
         layerActivations = {}
         for i in self.loadOrder: #for each training pattern, save all the information that will be needed later
@@ -316,15 +309,11 @@ class CascadeCorNet(Network):
         """
         Computes data based on propagation that needs to be recomputed between candidate weight changes.
         """
+        # passes in layerActivations so that we could take advantage, but don't yet
+        # initial experiments should that this slowed down processing
         V_p, netInptToCnd = [], []
         for i in self.loadOrder:
             self.propagate(**self.getData(i))
-            # This actually slowed things down!?
-            #acts = {}
-            #for (p, layerName) in layerActivations.keys():
-            #    if p == i:
-            #        acts[layerName] = layerActivations[(p, layerName)]
-            #self.propagateTo("candidate", **acts)
             netInptToCnd.append(self["candidate"].netinput)
             V_p.append([neuron.activation for neuron in self["candidate"]])
         return (Numeric.array(V_p), Numeric.array(netInptToCnd))
@@ -340,10 +329,6 @@ class CascadeCorNet(Network):
             [[Numeric.multiply( Numeric.subtract(V_p[i], V_avg), E_po[i][j] - E_o_avg[j])  
                 for j in range(len(E_po[0])) ] for i in range(len(V_p)) ])))
     def computeFahlmanS_co(self, V_p, V_avg, E_po, E_o_avg):
-        #pdb.set_trace()
-        #for n in range(len(V_p)):
-        #    for i in range(len(V_p[n])):
-        #        print "    compute_correlations:", V_p[n][i], E_po[n][i]
         return (Numeric.array([Numeric.sum(Numeric.transpose(Numeric.multiply(Numeric.transpose(V_p), E_po[:,c]))) \
                                for c in range(len(E_po[0]))]) - V_avg*E_o_avg)/Numeric.sum(Numeric.sum(E_po*E_po))
     def compute_dSdw(self, sigma_o, E_po, E_o_avg, netInptToCnd, layerActivations, conxn):
@@ -365,23 +350,16 @@ class CascadeCorNet(Network):
         error drops below the threshold (either self.stopPercent or cross validation if self.useCrossValidationToStop
         is set), or a maximum number of training epochs have been performed.
         """
-        #experiment with disabling ghost connection
-        #self["candidate", "output"].active = 0 # don't let candidates affect outputs
+        print "Output phase    ------------------------------------"
         self["output"].active = 1 #make sure output layer is active, afterall, that is what we are training in this function
         self["candidate"].active = 0 #in fact, don't let the candidate layer do anything!  Hopefully this won't cause problems
         self.quitEpoch = self.patience
-
-##         print "wedLast for output layer ", self["output"].wedLast
-##         print "dweight for output layer ", self["output"].dweight
         for layer in self.layers:
             layer.wedLast = Numeric.zeros(layer.size, 'f')
             layer.dweight = Numeric.zeros(layer.size, 'f')
         for connection in self.connections:
             connection.wedLast =  Numeric.zeros((connection.fromLayer.size, connection.toLayer.size), 'f')
             connection.dweight =  Numeric.zeros((connection.fromLayer.size, connection.toLayer.size), 'f')
-            
-        
-        #pdb.set_trace()
         # check architecture
         self.complete = 0
         self.verifyArchitecture()
@@ -399,7 +377,6 @@ class CascadeCorNet(Network):
             if sweeps != None:
                 self.resetEpoch = self.epoch + sweeps - 1
         while self.doWhile(totalCount, totalCorrect):
-            #pdb.set_trace()
             (tssErr, totalCorrect, totalCount, totalPCorrect) = self.sweep()
             self.complete = 1
             if totalCount != 0:
@@ -419,13 +396,16 @@ class CascadeCorNet(Network):
                         self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
+                        self.totalEpoch += 1
                         break
             if self.resetEpoch == self.epoch:
                 self.Print("Reset limit reached; ending without reaching goal")
                 self.epoch += 1
+                self.totalEpoch += 1
                 self.complete = 0
                 break
             self.epoch += 1
+            self.totalEpoch += 1
             ################
             #if there is an appreciable change in the error we don't need to worry about stagnation
             if abs(tssErr - self.previousError) > self.previousError*self.changeThreshold:
@@ -434,7 +414,7 @@ class CascadeCorNet(Network):
             elif self.epoch == self.quitEpoch:
                 break #stagnation occured, stop training the outputs
             ################
-        print "----------------------------------------------------"
+        #print "----------------------------------------------------"
         if totalCount > 0:
             self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr, totalPCorrect)
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
@@ -448,8 +428,8 @@ class CascadeCorNet(Network):
                     self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
         else:
             print "Final: nothing done"
-        print "----------------------------------------------------"
-        self.totalEpochs += self.epoch
+        #print "----------------------------------------------------"
+        #self.totalEpoch += self.epoch
         return (totalCorrect * 1.0 / totalCount <  self.stopPercent) #true means we continue
     
     def addCandidateLayer(self, size=8):
@@ -462,15 +442,12 @@ class CascadeCorNet(Network):
             if layer.type != "Output" and layer.name != "candidate":
                 self.connectAt(layer.name, "candidate", position = -1)
         self.correlations = [[0.0 for n in range(size)] for m in range(self["input"].size)] # initialize corrleations (for printing)
-        #for layer in self: # ghost connection
-        #    if layer.type == "Output" and layer.name != "candidate":
-        #        self.connectAt("candidate", layer.name, position = -1)
     def recruit(self, n):
         """
         Grab the Nth candidate node and all incoming weights and make it
         a layer unto itself. New layer is a frozen layer.
         """
-        print "Recruiting candidate: %d with correlation %s" % (n, self.correlations[:,n])
+        print "Recruiting candidate: %d, correlation(s): %s" % (n, self.correlations[:,n])
         # first, add the new layer:
         hcount = 0
         for layer in self:
@@ -524,173 +501,5 @@ class CascadeCorNet(Network):
         self["candidate"].randomize(1)
         # finally, connect new hidden to candidate
         self.connectAt(hname, "candidate", position = -1)
-        #self[hname, "candidate"].frozen = 1 # don't change weights BUG!
-        #set the initial weights from the new hidden unit to the output layer to be based on the correlation
-        #we could have the wrong sign here!  Try both signs and see which works better, probably easier than comparing w/Fahlman
-        ##
-        #pdb.set_trace()
-        #self[hname, "output"].weight = Numeric.array([Numeric.array([[-1.0*x] for x in self.cor])[n]])
         self[hname, "output"].weight = Numeric.array( [ -1.0 * self.cor ])
 
-def mean(seq):
-    return Numeric.sum(seq)/float(len(seq))
-
-def center(seq):
-    return seq - mean(seq)
-
-## def scale(seq):
-##     """
-##     Assumes the mean of the data is already zero.
-##     Seq must be a two dimensional Numeric array.
-##     Scales each component of the vectors to range between -1 and 1.
-##     """
-##     mx = Numeric.array([max(seq[:,i]) for i in range(len(seq[0]))])
-##     mn = Numeric.array([min(seq[:,i]) for i in range(len(seq[0]))])
-##     s = max - min
-##     return Numeric.array([vect/s for vect in seq])
-
-if __name__=="__main__":
-    #suite =makeSuite(TestCascadeCorNet)
-    #TextTestRunner(verbosity=2).run(suite)
-    print "started"
-    net = CascadeCorNet(2,1)
-    net.addCandidateLayer(8)
-    ##############################
-    net.useTanhActivationFunction()
-    for layer in net:
-        print layer.name
-        print layer.minTarget, layer.maxTarget
-    print "SIGMOID PRIME OFFSET: ", net.sigmoid_prime_offset
-    #net.sigmoid_prime_offset = 0.0
-    ##############################
-    
-    net.setInputs( center([[0, 0], [0, 1], [1, 0], [1, 1]]))
-    net.setTargets(center([[0], [1], [1], [0]]))
-    #net.setInputs( [[-1.0, -1.0], [-1.0, 1.0], [1.0, -1.0], [1.0, 1.0]])
-    #net.setTargets([[-1.0], [1.0], [1.0], [-1.0]])
-    #print net.getData(0)
-
-    #net.mu = 1.75
-
-    #s = random.randint(0, 10)
-    #print s
-    #net.setSeed(s)
-    for layer in net:
-        print layer.name
-        print layer.minTarget, layer.maxTarget
-    net.train(10)
-    print len(net)-3
-    #import sys
-    #sys.exit()
-
-    strng = raw_input("Enter any key to continue.")
-    
-    net = CascadeCorNet(3,1)
-    net.addCandidateLayer(8)
-    net.useTanhActivationFunction()
-    #net.sigmoid_prime_offset = 0.0
-    net.setInputs( center([[0, 0, 0], [0, 0, 1], [0, 1, 0], [0, 1, 1], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]))
-    net.setTargets(center([[1], [1], [1], [0], [0], [1], [1], [0]]))
-    net.train(10)
-    print len(net)-3
-    
-    strng = raw_input("Enter any key to continue.")
-    print "Made up function approximation."
-    inputs = center([[0.1*i,0.1*j] for i in range(30) for j in range(30)])
-    targets = center([[(math.sin(npt[0])+math.cos(npt[1]+npt[0]))-
-                       Numeric.sign((math.sin(npt[0])+math.cos(npt[1]+npt[0])))*0.5 ] for npt in inputs])
-    print inputs
-    print targets
-    print max(targets)
-    print min(targets)
-    net = CascadeCorNet(2,1)
-    net.addCandidateLayer(8)
-    net.useTanhActivationFunction()
-    net.setInputs(inputs)
-    net.setTargets(targets)
-    #net.sweepReportRate = 10000
-    net.setTolerance(0.4)
-    #net.verbosity = 2
-
-    net.train(10)
-##     net.learning = 0
-##     net.interactive = 1
-##     net.sweep()
-    print len(net)-3
-    
- 
-    
-    
-##    GLOBAL_DEBUG = False
-##    net = IncrementalNetwork("cascade")
-##    net.addLayers(3,2)
-##    net.addCandidateLayer(8)
-    
-    
-    
-##    net.setQuickprop(1)
-##    #net.setBatch(1)
-##    #net.verbosity = 4
-    
-##    #net.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
-##    #net.setTargets([[0], [1], [1], [0]])
-    
-##    net.setInputs( [[0,0,0], [0,0,1], [0,1,0], [0,1,1], [1,0,0], [1,0,1], [1,1,0], [1,1,1]])
-##    net.setTargets([  [0,0],   [0,1],   [1,1],   [1,0],   [1,0],   [1,1],   [0,1],   [0,0]])
-##    net.tolerance = .25
-    
-##    print net.getData(1)
-    
-##    print net.getQuickprop()
-##    print "num layers? ",len(net)
-    
-##    net.reportRate = 100
-##    cont = 0
-##    while True:
-##        net.train(50, cont = cont)
-##        #print net.epoch, net.resetEpoch
-##        #print "netinput:  "
-##        #print net["candidate"].netinput
-##        #print "\n"
-##        if not net.complete:
-##            net.recruitBest()
-##            cont = 1
-##        else:
-##            break
-        
-##        print "in batch?",net.batch
-##        print "num layers? ",len(net)
-##        print [layer.error for layer in net.layers if layer.type == 'Output'][0]
-        
-    ## net2 = IncrementalNetwork("cascade")
-##     net2.addLayers(2,1)
-##     net2.addCandidateLayer(8)
-
-##     for layer in net2:
-##         print layer.getActive()
-    
-##     net2.setQuickprop(1)
-
-##     net2.setInputs( [[0, 0], [0, 1], [1, 0], [1, 1]])
-##     net2.setTargets([[0], [1], [1], [0]])
-##     net2.tolerance = .25
-
-    
-##     print net2.getQuickprop()
-
-##     net2.reportRate = 100
-##     cont = 0
-##     while True:
-##         net2.train(25, cont = cont)
-        
-##         if not net2.complete:
-##             input("press a key")
-##             net2.recruitBest()
-##             cont = 1
-##         else:
-##             break
-
-##     net2["candidate"].active = 0 # make sure it is not effecting outputs
-##     net2.displayConnections()
-##     net2.interactive = 1
-##     net2.sweep()

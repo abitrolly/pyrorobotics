@@ -52,16 +52,56 @@ def sumMerge(dict1, dict2):
         dict1[key] = map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key])
     return dict1 # and also returns it, in case you want to do something to it
 
-def loadNetworkFromFile(filename):
+def loadNetworkFromFile(filename, mode = 'pickle'):
     """
     Loads network from a file using pickle. See Network.saveNetworkToFile()
     """
-    import pickle
-    f = open(filename)
-    network = pickle.load(f)
-    f.close()
-    return network
-
+    if mode == 'pickle':
+        import pickle
+        fp = open(filename)
+        network = pickle.load(fp)
+        fp.close()
+        return network
+    elif mode in ['plain', 'conx']:
+        fp = open(filename, "r")
+        line = fp.readline()
+        network = None
+        while line:
+            if line.startswith("layer,"):
+                # layer, name, size
+                temp, name, sizeStr = line.split(",")
+                name = name.strip()
+                size = int(sizeStr)
+                network.addLayer(name, size)
+                line = fp.readline()
+                weights = [float(f) for f in line.split()]
+                for i in range(network[name].size):
+                    network[name].weight[i] = weights[i]
+            elif line.startswith("connection,"):
+                # connection, fromLayer, toLayer
+                temp, nameFrom, nameTo = line.split(",")
+                nameFrom, nameTo = nameFrom.strip(), nameTo.strip()
+                network.connect(nameFrom, nameTo)
+                for i in range(network[nameFrom].size):
+                    line = fp.readline()
+                    weights = [float(f) for f in line.split()]
+                    for j in range(network[nameTo].size):
+                        network[nameFrom, nameTo].weight[i][j] = weights[j]
+            elif line.startswith("parameter,"):
+                temp, exp = line.split(",")
+                exec(exp) # network is the neural network object
+            elif line.startswith("network,"):
+                temp, netType = line.split(",")
+                netType = netType.strip().lower()
+                if netType in ["cascornetwork", "cascadecornet"]:
+                    from pyrobot.brain.cascor import CascorNetwork
+                    network = CascorNetwork()
+                elif netType == "network":
+                    network = Network()
+                elif netType == "srn":
+                    network = SRN()
+            line = fp.readline()
+        return network
 def ndim(n, *args):
     """
     Makes a multi-dimensional array of random floats. (Replaces RandomArray).
@@ -721,6 +761,7 @@ class Network(object):
         self.resetLimit = 1
         self.batch = 0
         self.epoch = 0
+        self.totalEpoch = 0
         self.count = 0 # number of times propagate is called
         self.verbosity = verbosity
         self.stopPercent = 1.0
@@ -742,6 +783,11 @@ class Network(object):
         self.results = []
         self.autoCrossValidation = 0
         self.autoSaveWeightsFile = None
+        self.autoSaveWeightsFileFormat = "conx"
+        self.lastAutoSaveWeightsFilename = None
+        self.autoSaveNetworkFile = None
+        self.autoSaveNetworkFileFormat = "conx"
+        self.lastAutoSaveNetworkFilename = None
         self.lastLowestTSSError = sys.maxint # some maximum value (not all pythons have Infinity)
         self._cv = False # set true when in cross validation
         self._sweeping = 0 # flag set when sweeping through corpus (as apposed to just stepping)
@@ -1073,8 +1119,12 @@ class Network(object):
         return self.layersByName[name]
     def setAutoCrossValidation(self, value):
         self.autoCrossValidation = value
-    def setAutoSaveWeightsFile(self, filename):
+    def setAutoSaveWeightsFile(self, filename, format = "conx"):
         self.autoSaveWeightsFile = filename
+        self.autoSaveWeightsFileFormat = format
+    def setAutoSaveNetworkFile(self, filename, format = "conx"):
+        self.autoSaveNetworkFile = filename
+        self.autoSaveNetworkFileFormat = format
     def setPatterned(self, value):
         """
         Sets the network to use patterns for inputs and targets.
@@ -1547,7 +1597,7 @@ class Network(object):
         self.Print("Epoch #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            if self[layerName].size > 1:
+            if self[layerName].active and self[layerName].size > 1:
                 self.Print("   Epoch #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
                            (epoch, "'" + layerName + "'",
                             float(pcorrect[layerName][0]) / pcorrect[layerName][1],
@@ -1564,7 +1614,7 @@ class Network(object):
         self.Print("Final #%6d | TSS Error: %.4f | Correct: %.4f | RMS Error: %.4f" % \
                    (epoch-1, tssErr, totalCorrect * 1.0 / totalCount, rmsErr))
         for layerName in pcorrect:
-            if self[layerName].size > 1:
+            if self[layerName].active and self[layerName].size > 1:
                 self.Print("   Final #%6d, Layer = %-12s | Units: %.4f | Patterns: %.4f" % \
                            (epoch-1, "'" + layerName + "'",
                             float(pcorrect[layerName][0]) / pcorrect[layerName][1],
@@ -1613,8 +1663,11 @@ class Network(object):
                                (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                         self.lastLowestTSSError = tssCVErr
-                        self.saveWeightsToFile(self.autoSaveWeightsFile)
-                        self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
+                        self.saveWeightsToFile(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
+                        self.Print("auto saving weights to '%s'..." % self.lastAutoSaveWeightsFilename)
+                    if self.autoSaveNetworkFile != None:
+                        self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
+                        self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
                         break
@@ -1640,8 +1693,11 @@ class Network(object):
                            (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                     self.lastLowestTSSError = tssCVErr
-                    self.saveWeightsToFile(self.autoSaveWeightsFile)
-                    self.Print("auto saving weights to '%s'..." % self.autoSaveWeightsFile)
+                    self.saveWeightsToFile(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
+                    self.Print("auto saving weights to '%s'..." % self.lastAutoSaveWeightsFilename)
+                if self.autoSaveNetworkFile != None:
+                    self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
+                    self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
         else:
             print "Final: nothing done"
         print "----------------------------------------------------"
@@ -1869,7 +1925,7 @@ class Network(object):
         for key in args:
             layer = self.getLayer(key)
             if layer.kind == 'Input':
-                if not self[key].verify:
+                if self[key].verify and not self[key].activationSet == 0: 
                     raise AttributeError, "attempt to set activations on input layer '%s' without reset" % key
                 self.copyActivations(layer, args[key])
             elif layer.kind == 'Context':
@@ -2498,18 +2554,33 @@ class Network(object):
         Close the layerName's log file.
         """
         self.getLayer(layerName).closeLog()
-    def saveWeightsToFile(self, filename, mode = 'pickle'):
+    def saveWeightsToFile(self, filename, mode = 'pickle', counter = None):
         """
         Saves weights to file in pickle, plain, or tlearn mode.
         """
-        # modes: pickle, plain, tlearn
+        # modes: pickle/conx, plain, tlearn
+        if "?" in filename: # replace ? pattern in filename with epoch number
+            import re
+            char = "?"
+            match = re.search(re.escape(char) + "+", filename)
+            if match:
+                num = self.epoch
+                if counter != None:
+                    num = counter
+                elif self.totalEpoch != 0: # use a total epoch, if one:
+                    num = self.totalEpoch
+                fstring = "%%0%dd" % len(match.group())
+                filename = filename[:match.start()] + \
+                           fstring % self.epoch + \
+                           filename[match.end():]
+                self.lastAutoSaveWeightsFilename = filename
         if mode == 'pickle':
             mylist = self.arrayify()
             import pickle
             fp = open(filename, "w")
             pickle.dump(mylist, fp)
             fp.close()
-        elif mode == 'plain':
+        elif mode in ['plain', 'conx']:
             fp = open(filename, "w")
             fp.write("# Biases\n")
             for layer in self.layers:
@@ -2554,14 +2625,14 @@ class Network(object):
         """
         Loads weights from a file in pickle, plain, or tlearn mode.
         """
-        # modes: pickle, plain, tlearn
+        # modes: pickle, plain/conx, tlearn
         if mode == 'pickle':
             import pickle
             fp = open(filename, "r")
             mylist = pickle.load(fp)
             fp.close()
             self.unArrayify(mylist)
-        elif mode == 'plain':
+        elif mode in ['plain', 'conx']:
             arr = []
             fp = open(filename, "r")
             lines = fp.readlines()
@@ -2666,35 +2737,68 @@ class Network(object):
                 line = fp.readline() # $
                 line = fp.readline() # beginning of weights
         else:
-            raise ValueError, ('Unknown mode in loadWeightFromFile()', mode)
-    def saveNetworkToFile(self, filename, makeWrapper = 1):
+            raise ValueError, ('Unknown mode in loadWeightsFromFile()', mode)
+    def saveNetworkToFile(self, filename, makeWrapper = 1, mode = "pickle", counter = None):
         """
         Saves network to file using pickle.
         """
-        # dump network via pickle:
-        import pickle
-        basename = filename.split('.')[0]
-        filename += ".pickle"
-        fp = open(filename, 'w')
-        pickle.dump(self, fp)
-        fp.close()
-        # make wrapper python file:
-        if makeWrapper:
-            fp = open(basename + ".py", "w")
-            fp.write("from pyrobot.brain.conx import *\n")
-            fp.write("import pickle\n")
-            fp.write("fp = open('%s', 'r')\n" % filename)
-            fp.write("network = pickle.load(fp)")
+        if "?" in filename: # replace ? pattern in filename with epoch number
+            import re
+            char = "?"
+            match = re.search(re.escape(char) + "+", filename)
+            if match:
+                num = self.epoch
+                if counter != None:
+                    num = counter
+                elif self.totalEpoch != 0: # use a total epoch, if one:
+                    num = self.totalEpoch
+                fstring = "%%0%dd" % len(match.group())
+                filename = filename[:match.start()] + \
+                           fstring % num + \
+                           filename[match.end():]
+                self.lastAutoSaveNetworkFilename = filename
+        if mode == "pickle":
+            # dump network via pickle:
+            import pickle
+            basename = filename.split('.')[0]
+            filename += ".pickle"
+            fp = open(filename, 'w')
+            pickle.dump(self, fp)
             fp.close()
-        # give some help:
-        print "To load network:"
-        print "   %% python -i %s " % (basename + ".py")
-        print "   >>> network.train() # for example"
-        print "--- OR ---"
-        print "   % python"
-        print "   >>> from pyrobot.brain.conx import *"
-        print "   >>> network = loadNetworkFromFile(%s)" % filename
-        print "   >>> network.train() # for example"
+            # make wrapper python file:
+            if makeWrapper:
+                fp = open(basename + ".py", "w")
+                fp.write("from pyrobot.brain.conx import *\n")
+                fp.write("import pickle\n")
+                fp.write("fp = open('%s', 'r')\n" % filename)
+                fp.write("network = pickle.load(fp)")
+                fp.close()
+            # give some help:
+            print "To load network:"
+            print "   %% python -i %s " % (basename + ".py")
+            print "   >>> network.train() # for example"
+            print "--- OR ---"
+            print "   % python"
+            print "   >>> from pyrobot.brain.conx import *"
+            print "   >>> network = loadNetworkFromFile(%s)" % filename
+            print "   >>> network.train() # for example"
+        elif mode in ["plain", "conx"]:
+            fp = open(filename, "w")
+            fp.write("network, %s\n" % (self.__class__.__name__))
+            for layer in self.layers:
+                fp.write("layer, %s, %s\n" % (layer.name, layer.size))
+                # biases:
+                for i in range(layer.size):
+                    fp.write("%f " % layer.weight[i])
+                fp.write("\n")
+            for connection in self.connections:
+                fp.write("connection, %s, %s\n" %(connection.fromLayer.name, connection.toLayer.name))
+                # weights:
+                for i in range(connection.fromLayer.size):
+                    for j in range(connection.toLayer.size):
+                        fp.write("%f " % connection.weight[i][j])
+                    fp.write("\n")
+            fp.close()
     def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
                             delim = ' ', checkEven = 1, patterned = 0):
         """
