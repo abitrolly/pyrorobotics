@@ -201,7 +201,6 @@ class CascorNetwork(Network):
         #outputs[i][j] is the output of the jth output unit on the ith pattern
         E_po, E_o_avg, outputs, layerActivations = self.computeDataFromProp()
 
-        numPatterns = len(self.loadOrder)
         numCandidates = len(self["candidate"])
         incomingConnections = [connection for connection in self.connections if connection.toLayer.name=="candidate"]
         numOutputs = len(outputs[0])
@@ -233,7 +232,7 @@ class CascorNetwork(Network):
             for c in range(numCandidates): #for every candidate unit in the layer, get ready to train the bias weight
                 #recompute dSdw for the bias weight for this candidate
                 dSdw_bias = Numeric.sum( [Numeric.sum([sigma_o[i][c]*(E_po[p][i] - E_o_avg[i])*self.actDeriv(netInptToCnd[p][c]) \
-                                                       for p in range(numPatterns)]) for i in range(numOutputs)] )
+                                                       for p in self.loadOrder]) for i in range(numOutputs)] )
                 #dSdw_bias = Numeric.divide(dSdw_bias, sumSqErr) ##is this what fahlman does?
                 self.updateCandidateLayer(dSdw_bias, c)
             for conxn in incomingConnections: #for every connection going into the candidate layer, prepare to train the weights
@@ -294,15 +293,15 @@ class CascorNetwork(Network):
         Computes data based on propagation that need not be recomputed between candidate weight changes.
         """
         self.setLayerVerification(0)
-        E_po, outputs = [], []
+        E_po, outputs = [0 for i in self.loadOrder], [0 for i in self.loadOrder]
         layerActivations = {}
         for i in self.loadOrder: #for each training pattern, save all the information that will be needed later
             self.propagate(**self.getData(i))
             for layer in self.layers:
                 if layer.name not in ("candidate", "output"):
                     layerActivations[(i, layer.name)] = layer.activation
-            E_po.append(self.errorFunction(self["output"].target, self["output"].activation)) #need not be recomputed later
-            outputs.append(self["output"].activation) #need not be recomputed later
+            E_po[i] = self.errorFunction(self["output"].target, self["output"].activation) #need not be recomputed later
+            outputs[i] = self["output"].activation #need not be recomputed later
         E_o_avg = [E/len(E_po) for E in Numeric.sum(E_po)] # list of the average error over all patterns for each output
         return (Numeric.array(E_po), Numeric.array(E_o_avg), Numeric.array(outputs), layerActivations)
     def computeChangingDataFromProp(self, layerActivations):
@@ -311,11 +310,11 @@ class CascorNetwork(Network):
         """
         # passes in layerActivations so that we could take advantage, but don't yet
         # initial experiments should that this slowed down processing
-        V_p, netInptToCnd = [], []
+        V_p, netInptToCnd = [0 for i in self.loadOrder], [0 for i in self.loadOrder]
         for i in self.loadOrder:
             self.propagate(**self.getData(i))
-            netInptToCnd.append(self["candidate"].netinput)
-            V_p.append([neuron.activation for neuron in self["candidate"]])
+            netInptToCnd[i] = self["candidate"].netinput
+            V_p[i] = [neuron.activation for neuron in self["candidate"]]
         return (Numeric.array(V_p), Numeric.array(netInptToCnd))
     def computeS_c(self, V_p, V_avg, E_po, E_o_avg):
         """
@@ -335,11 +334,10 @@ class CascorNetwork(Network):
         """
         Computes dSdW for a specific connection to the candidate layer.
         """
-        numPatterns = len(self.loadOrder)
         numOutputs = len(E_po[0])
         return Numeric.array([[Numeric.sum( [Numeric.sum( \
                     [sigma_o[i][col]*(E_po[p][i] - E_o_avg[i])*self.actDeriv( netInptToCnd[p][col] )*layerActivations[(p, conxn.fromLayer.name)][row] \
-                     for p in range(numPatterns)]) for i in range(numOutputs)] ) \
+                     for p in self.loadOrder]) for i in range(numOutputs)] ) \
                                  for col in range(len(conxn.weight[0]))] for row in range(len(conxn.weight))])
         
     def done(self):
