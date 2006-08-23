@@ -31,12 +31,14 @@ else:
 def reverse(lyst):
     """ Returns a reversed list. """
     return [lyst[p] for p in range(len(lyst) - 1, -1, -1)]
+
 def pad(s, n, p = " ", sep = "|", align = "left"):
     """
-    s = string
-    n = width
-    sep = separator (on end)
-    align = "left", "center", or "right"
+    Returns a padded string.
+    s = string to pad
+    n = width of string to return
+    sep = separator (on end of string)
+    align = text alignment, "left", "center", or "right"
     """
     if align == "left":
         return (s + (p * n))[:n] + sep
@@ -47,7 +49,10 @@ def pad(s, n, p = " ", sep = "|", align = "left"):
         return ((p * n) + s)[-n:] + sep
 
 def sumMerge(dict1, dict2):
-    """ Adds two dictionaries together, and merges into the first, dict1. """
+    """
+    Adds two dictionaries together, and merges into the first, dict1.
+    Returns first dict.
+    """
     for key in dict2:
         dict1[key] = map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key])
     return dict1 # and also returns it, in case you want to do something to it
@@ -93,13 +98,15 @@ def loadNetworkFromFile(filename, mode = 'pickle'):
             elif line.startswith("network,"):
                 temp, netType = line.split(",")
                 netType = netType.strip().lower()
-                if netType in ["cascornetwork", "cascadecornet"]:
+                if netType == "cascornetwork":
                     from pyrobot.brain.cascor import CascorNetwork
                     network = CascorNetwork()
                 elif netType == "network":
                     network = Network()
                 elif netType == "srn":
                     network = SRN()
+                else:
+                    raise AttributeError, "unknown network type: '%s'" % netType
             line = fp.readline()
         return network
 def ndim(n, *args):
@@ -3225,112 +3232,6 @@ class SigmaNetwork(Network):
                 if layer.kind == "Output":
                     self.outputLayers += len(self.inputs)
         return self.sigmaCorrect != self.outputLayers
-
-class IncrementalNetwork(Network):
-    """
-
-    This network has a candidate layer from which it incremental draws
-    new nodes as hidden layers (or part of a hidden layer).  As new
-    candidate units are recruited, their weights are frozen. New
-    hidden units can be put into the network in two ways: cascade, or
-    parallel. Cascading hiddens have the output of one going into all
-    later hiddens. Parallel hiddens appear all on one level.
-
-    Here, candidate nodes are trained using standard backprop on
-    error. This is not cascade correlation in which hiddens are
-    trained to maximize error variance.
-
-    """
-    def __init__(self, incrType = "cascade", name = 'Incremental Network', verbosity = 0):
-        Network.__init__(self, name, verbosity)
-        self.incrType = incrType # "cascade" or "parallel"
-    def prePropagate(self, **args):
-        self["candidate", "output"].active = 0 # don't affect outputs
-        return None
-    def preBackprop(self, **args):
-        self["candidate", "output"].active = 1 # do change the weights
-        return None
-    def postBackprop(self, **args):
-        for i in range(self["candidate"].size):
-            self["candidate"].totalError[i] += self["candidate"].error[i]
-        return None
-    def preSweep(self):
-        self["candidate"].totalError = [0.0 for i in range(self["candidate"].size)]
-    def addCandidateLayer(self, size=8):
-        """
-        Adds a candidate layer for recruiting the new hidden layer cascade
-        node. Connect it up to all layers except outputs.
-        """
-        self.addLayer("candidate", size, position = -1)
-        for layer in self:
-            if layer.type != "Output" and layer.name != "candidate":
-                self.connectAt(layer.name, "candidate", position = -1)
-        #for layer in self: # ghost connection
-        #    if layer.type == "Output" and layer.name != "candidate":
-        #        self.connectAt("candidate", layer.name, position = -1)
-    def recruitBest(self):
-        bestScore, best = 1000000, 0
-        for i in range(self["candidate"].size):
-            if self["candidate"].totalError[i] < bestScore:
-                bestScore, best = self["candidate"].totalError[i], i
-        self.recruit(best)
-    def recruit(self, n):
-        """
-        Grab the Nth candidate node and all incoming weights and make it
-        a layer unto itself. New layer is a frozen layer.
-        """
-        print "Recruiting candidate: %d" % n
-        # first, add the new layer:
-        hcount = 0
-        for layer in self:
-            if layer.type == "Hidden": 
-                hcount += 1
-        hname = "hidden%d" % hcount
-        hsize = 1 # wonder what would happen if we added more than 1?
-        self.addLayer(hname, hsize, position = -2)
-        # copy all of the relevant data:
-        for i in range(hsize):
-            self[hname].dweight[i] = self["candidate"].dweight[i + n]
-            self[hname].weight[i] = self["candidate"].weight[i + n]
-            self[hname].wed[i] = self["candidate"].wed[i + n]
-            self[hname].wedLast[i] = self["candidate"].wedLast[i + n]
-        self[hname].frozen = 1 # don't change these biases
-        # first, connect up input
-        for layer in self: 
-            if layer.type == "Input" and layer.name != hname: # includes contexts
-                self.connectAt(layer.name, hname, position = 1)
-                self[layer.name, hname].frozen = 1 # don't change incoming weights
-        # next add hidden connections
-        if self.incrType == "cascade": # or parallel
-            for layer in self: 
-                if layer.type == "Hidden" and layer.name not in [hname, "candidate"]: 
-                    self.connectAt(layer.name, hname, position = -1)
-                    self[layer.name, hname].frozen = 1 # don't change incoming weights
-        # and then output connections
-        for layer in self: 
-            if layer.type == "Output" and layer.name not in ["candidate", hname]: 
-                self.connectAt(hname, layer.name, position = -1)
-                # not frozen! Can change these hidden to the output
-        # now, let's copy the weights, and randomize the old ones:
-        for c in self.connections:
-            if c.toLayer.name == "candidate":
-                for i in range(hsize):
-                    for j in range(c.fromLayer.size):
-                        if self.isConnected(c.fromLayer.name, hname):
-                            self[c.fromLayer.name, hname][j][i] = self[c.fromLayer.name, "candidate"][j][i + n]
-                if self.isConnected(c.fromLayer.name, hname):
-                    self[c.fromLayer.name, "candidate"].randomize(1)
-            elif c.fromLayer.name == "candidate":
-                for i in range(c.toLayer.size):
-                    for j in range(hsize):
-                        if self.isConnected(hname, c.toLayer.name):
-                            self[hname, c.toLayer.name][j][i] = self["candidate", c.toLayer.name][j + n][i]
-                if self.isConnected(hname, c.toLayer.name):
-                    self["candidate", c.toLayer.name].randomize(1)
-        self["candidate"].randomize(1)
-        # finally, connect new hidden to candidate
-        self.connectAt(hname, "candidate", position = -1)
-        #self[hname, "candidate"].frozen = 1 # don't change weights # Bug!
 
 class SRN(Network):
     """
