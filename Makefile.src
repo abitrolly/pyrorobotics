@@ -5,7 +5,7 @@
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYROBOT_VERSION = 4.9.1
+PYROBOT_VERSION = 4.9.2
 PYROBOT_DEFINE = -DPYROBOT_VERSION=\"$(PYROBOT_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean all
