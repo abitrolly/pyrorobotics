@@ -21,5 +21,4 @@ net.outputChangeThreshold = 0.01
 net.setSigmoid_prime_offset( 0.1)
 net.outputMu = 2.0
 net.candMu = 2.0
-net.setOrderedInputs(1)
 net.train(50)
