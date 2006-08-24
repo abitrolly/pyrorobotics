@@ -1293,18 +1293,24 @@ class Network(object):
         for l in arg:
             if not type(l) == list and \
                not type(l) == type(Numeric.array([0.0])) and \
-               not type(l) == tuple:
+               not type(l) == tuple and \
+               not type(l) == dict:
                 return 0
-            for i in l:
-                if not type(i) == float and not type(i) == int:
-                    return 0
+            if type(l) == dict:
+                for i in l:
+                    if not type(i) == str and i not in self.layers.keys():
+                        return 0
+            else:
+                for i in l:
+                    if not type(i) == float and not type(i) == int:
+                        return 0
         return 1
     def setInputs(self, inputs):
         """
         Sets self.input to inputs. Load order is by default random. Use setOrderedInputs() to order inputs.
         """
         if not self.verifyArguments(inputs) and not self.patterned:
-            raise NetworkError, ('setInputs() requires a nested list of the form [[...],[...],...].', inputs)
+            raise NetworkError, ('setInputs() requires [[...],[...],...] or [{"layerName": [...]}, ...].', inputs)
         self.inputs = inputs
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
@@ -1320,7 +1326,7 @@ class Network(object):
         Sets the targets.
         """
         if not self.verifyArguments(targets) and not self.patterned:
-            raise NetworkError, ('setTargets() requires a nested list of the form [[...],[...],...].', targets)
+            raise NetworkError, ('setTargets() requires [[...],[...],...] or [{"layerName": [...]}, ...].', targets)
         self.targets = targets
     def setInputsAndTargets(self, data1, data2=None):
         """
@@ -1439,7 +1445,10 @@ class Network(object):
             raise IndexError, ('getData() pattern beyond range.', pos)
         if self.verbosity >= 1: print "Getting input", pos, "..."
         if len(self.inputMap) == 0:
-            retval[self.layers[0].name] = self.inputs[pos]
+            if type(self.inputs[pos]) == dict: # allow inputs to be a dict
+                retval.update(self.inputs[pos])
+            else:
+                retval[self.layers[0].name] = self.inputs[pos]
         else: # mapInput set manually
             for vals in self.inputMap:
                 (name, offset) = vals
@@ -1448,7 +1457,10 @@ class Network(object):
         if len(self.targets) == 0:
             pass # ok, no targets
         elif len(self.targetMap) == 0:
-            retval[self.layers[len(self.layers)-1].name] = self.targets[pos]
+            if type(self.targets[pos]) == dict: # allow targets to be a dict
+                retval.update(self.targets[pos])
+            else:
+                retval[self.layers[len(self.layers)-1].name] = self.targets[pos]
         else: # set manually
             for vals in self.targetMap:
                 (name, offset) = vals
