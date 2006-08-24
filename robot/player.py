@@ -276,14 +276,11 @@ class PlayerPositionDevice(PlayerDevice):
             self.window.updateWidget("stall",self._dev.stall)
 
 class PlayerPTZDevice(PlayerDevice):
-
     def __init__(self, client, name):
         PlayerDevice.__init__(self, client, name)
-        self.origPose = (0, 0, 120)
-        self.tilt = None
-        self.pan = None
-        self.zoom = None
-        self.pose = None
+        self.subtype = "Canon VC-C50i"
+        self.origPose = (0, 0, 0)
+        self.pose = [self.origPose[0], self.origPose[1], self.origPose[2]]
         self.supports = ["pan", "tilt", "zoom"]
 
     def init(self):
@@ -291,28 +288,43 @@ class PlayerPTZDevice(PlayerDevice):
 
     def setPose(self, *args):
         if len(args) == 3:
-            pan, tilt, zoom = args[0], args[1], args[2]
-        elif len(args[0]) == 3:
-            pan, tilt, zoom = args[0][0], args[0][1], args[0][2]
+            self.pose = [args[0], args[1], args[2]]
+        elif len(args) == 1 and len(args[0]) == 3:
+            self.pose = [args[0][0], args[0][1], args[0][2]]
         else:
             raise AttributeError, "setPose takes pan, tilt, and zoom"
-        return self._client.set(pan, tilt, zoom)
+        if self.pose[0] < self.getMaxNegPan():
+	    self.pose[0] = self.getMaxNegPan()
+	if self.pose[0] > self.getMaxPosPan():
+	    self.pose[0] = self.getMaxPosPan()
+	if self.pose[1] < self.getMaxNegTilt():
+	    self.pose[1] = self.getMaxNegTilt()
+	if self.pose[1] > self.getMaxPosTilt():
+	    self.pose[1] = self.getMaxPosTilt()
+	if self.pose[2] < self.getMinZoom():
+	    self.pose[2] = self.getMinZoom()
+	if self.pose[2] > self.getMaxZoom():
+	    self.pose[2] = self.getMaxZoom()
 
-    #def getPose(self):
-    #    # FIX: how to get pose? This doesn't exist
-    #    return self._client.get_ptz()
+        return self._dev.set(self.pose[0], self.pose[1], self.pose[2])
 
-    def pan(self, numDegrees):
-        return self._client.pan(numDegrees)
+    def getPose(self):
+	return self.pose
 
-    def tilt(self, numDegrees):
-        return self._client.tilt(numDegrees)
+    def pan(self, panVal):
+	newPose = (panVal, self.pose[1], self.pose[2])
+	return self.setPose(*newPose)
+
+    def tilt(self, tiltVal):
+	newPose = (self.pose[0], tiltVal, self.pose[2])
+	return self.setPose(*newPose) 
+
+    def zoom(self, zoomVal):
+	newPose = (self.pose[0], self.pose[1], zoomVal)
+	return self.setPose(*newPose)
 
     def center(self):
-        return self.setPose(self.origPose)
-
-    def zoom(self, numDegrees):
-        return self._client.zoom(numDegrees)
+	return self.setPose(*self.origPose)
 
     def canGetRealPanTilt(self):
         return 0
@@ -321,28 +333,59 @@ class PlayerPTZDevice(PlayerDevice):
         return 0
 
     def getMaxPosPan(self):
-        return 100
-
+        if self.subtype == "Canon VC-C50i":
+            return 2
+        else:
+            return 100
     def getMaxNegPan(self):
-        return -100
-
+        if self.subtype == "Canon VC-C50i":
+            return -2
+        else:
+            return -100
     def getMaxPosTilt(self):
-        return 30
-
+        if self.subtype == "Canon VC-C50i":
+            return 1.5
+        else:
+            return 30
     def getMaxNegTilt(self):
-        return -30
-
+        if self.subtype == "Canon VC-C50i":
+            return -0.5
+        else:
+            return -30
     def getMaxZoom(self):
-        return 10
-
+        if self.subtype == "Canon VC-C50i":
+            return 34
+        else:
+            return 10
     def getMinZoom(self):
-        return 120
-
+        if self.subtype == "Canon VC-C50i":
+            return 0
+        else:
+            return 120
     def addWidgets(self, window):
         p, t, z = 0, 0, 0
         window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(float(p)))
         window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(float(t)))
         window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(float(z)))
+
+class PlayerBumperDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "bumper", visible = 0)
+        self.groups = {'all': range(len(self)),
+                       'front': range(0, 5),
+                       'back': range(5, 10),
+                       }
+    def __len__(self):
+        return len(self._dev.bumpers)
+	
+    def getFrontBumpers(self):
+        return self._dev.bumpers[0:5]
+
+    def getRearBumpers(self):
+	return self._dev.bumpers[5:10]
+	
+    def getAllBumpers(self):
+	return self._dev.bumpers
 
 class PlayerGripperDevice(PlayerDevice, GripperDevice):
     def __init__(self, client):
@@ -543,6 +586,10 @@ class PlayerRobot(Robot):
             except:
                 pass
             return {"simulation": obj}
+	elif item == "ptz":
+	    return {"ptz": PlayerPTZDevice(self._client, "ptz")}
+	elif item == "bumper":
+	    return {"bumper": PlayerBumperDevice(self._client)}
 ##         elif item == "camera":
 ##             if self.simulated:
 ##                 return self.startDevice("BlobCamera", visible=0)
