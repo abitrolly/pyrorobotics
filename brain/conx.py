@@ -1420,9 +1420,21 @@ class Network(object):
             print "Copying Target: ", vector[start:start+layer.size]
         layer.copyTargets(vector[start:start+layer.size])
     def getDataCrossValidation(self, pos):
-        set = {"input": self.inputs[pos]}
+        """
+        Returns the inputs/targets for a pattern pos, or assumes that
+        the layers are called input and output and uses the lists
+        in self.inputs and self.targets.
+        """
+        set = {}
+        if type(self.inputs[pos]) == dict:
+            set.update(self.inputs[pos])
+        else:
+            set["input"] = self.inputs[pos]
         if self.targets:
-            set["output"] = self.targets[pos]
+            if type(self.targets[pos]) == dict:
+                set.update(self.targets[pos])
+            else:
+                set["output"] = self.targets[pos]
         return set
     def getDataMap(self, intype, pos, name, offset = 0):
         """
