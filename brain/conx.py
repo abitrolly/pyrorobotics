@@ -3420,15 +3420,17 @@ class SRN(Network):
         # replace all patterns
         for key in args:
             args[key] = self.replacePatterns( args[key], key )
-        # This should really loop over each arg that is kind Input
-        # For now, just assumes an "input" layer
-        if not args.has_key("input"):
-            retval = self.networkStep(**args)
-            return retval
-        # The rest of this assumes at least an "input" parameter!
-        # compute length of sequence:
-        sequenceLength = len(args["input"]) / self["input"].size
-        patternLength = self["input"].size
+        # Get all of the input/output layer names:
+        inputBankNames = [layer.name for layer in self.layers if layer.kind == 'Input']
+        outputBankNames = [layer.name for layer in self.layers if layer.kind == 'Output']
+        inputBankSizes = [layer.size for layer in self.layers if layer.kind == 'Input']
+        inputBankTotalSize = sum(inputBankSizes)
+        inputArgSizes = [len(args[name]) for name in inputBankNames if name in args]
+        inputArgTotalSize = sum(inputArgSizes)
+        #sequenceLength = len(args["input"]) / self["input"].size
+        sequenceLength = inputArgTotalSize / inputBankTotalSize
+        #patternLength = self["input"].size
+        patternLength = inputBankTotalSize
         learning = self.learning
         totalRetvals = (0.0, 0, 0) # error, correct, total
         totalPCorrect = {}
@@ -3439,9 +3441,12 @@ class SRN(Network):
             dict = {}
             dict.update(args) # in case context, or others
             # now, overwrite input and output, if necessary
-            dict["input"] = args["input"][offset:offset+patternLength]
-            if args.has_key("output"):
-                dict["output"] = args["output"][offset:offset+patternLength]
+            for name in inputBankNames:
+                if name in args:
+                    dict[name] = args[name][offset:offset+patternLength]
+            for name in outputBankNames:
+                if name in args:
+                    dict[name] = args[name][offset:offset+patternLength]
             # get info for predicition -------------------------
             for p in self.prediction:
                 (inName, outName) = p
@@ -3461,12 +3466,18 @@ class SRN(Network):
                             pattern = self.getData(self.loadOrder[0])
                             for key in pattern:
                                 pattern[key] = self.replacePatterns( pattern[key], key )
-                            dict[outName] = pattern["input"][start:start+patternLength]
+                            if inName in inputBankNames:
+                                if inName in pattern:
+                                    dict[outName] = pattern[inName][start:start+patternLength]
+                            #dict[outName] = pattern["input"][start:start+patternLength]
                         else:
                             pattern = self.getData(self.loadOrder[self.currentSweepCount+1]) 
                             for key in pattern:
                                 pattern[key] = self.replacePatterns( pattern[key], key )
-                            dict[outName] = pattern["input"][start:start+patternLength]
+                            if inName in inputBankNames:
+                                if inName in pattern:
+                                    dict[outName] = pattern[inName][start:start+patternLength]
+                            #dict[outName] = pattern["input"][start:start+patternLength]
                 else: # in middle of sequence
                     start = (step + 1) * inLayer.size
                     dict[outName] = args[inName][start:start+patternLength]
