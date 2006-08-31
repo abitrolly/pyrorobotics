@@ -1768,12 +1768,12 @@ class Network(object):
         retargs = self.preBackprop(**args)
         if retargs: args = retargs # replace the args
         (error, correct, total, pcorrect) = self.backprop(**args) # compute_error()
-        retargs = self.postBackprop(**args)
-        if retargs: args = retargs # replace the args
         if self.verbosity > 2 or self.interactive:
             self.display()
             if self.interactive:
                 self.prompt()
+        retargs = self.postBackprop(**args)
+        if retargs: args = retargs # replace the args
         # if learning is true, and need to update weights here:
         if self.learning and not self.batch:
             self.change_weights() # else change weights in sweep
@@ -3382,31 +3382,18 @@ class SRN(Network):
         """
         SRN.propagate: Sets error flags and propagates.
         """
-        if not self.contextCopying:
-            for layer in self.layers:
-                if layer.kind == "Context":
-                    layer.activationSet = 1
         return Network.propagate(self, **args)
-    def backprop(self, **args):
-        """
-        Extends backprop() from Network to automatically deal with context
-        layers. Copies the contexts, if contextCopying is true.
-        """
-        retval = Network.backprop(self, **args)
-        if self.contextCopying:
-            self.copyHiddenToContext() # must go after error computation
-        return retval
     def step(self, **args):
         """
         SRN.step()
         Extends network step method by automatically copying hidden
         layer activations to the context layer.
         """
+        if self.sequenceType == None:
+            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType() """
         # take care of any params other than layer names:
         # two ways to clear context:
         # 1. force it to right now with arg initContext = 1:
-        if self.sequenceType == None:
-            raise AttributeError, """sequenceType not set! Use SRN.setSequenceType() """
         if args.has_key('initContext'):
             if args['initContext']:
                 self.setContext()
@@ -3503,6 +3490,16 @@ class SRN(Network):
             sumMerge(totalPCorrect, retvals[3])
             totalRetvals.append( totalPCorrect)
         return totalRetvals
+    def prePropagate(self, **args):
+        if not self.contextCopying:
+            for layer in self.layers:
+                if layer.kind == "Context":
+                    layer.activationSet = 1
+        return None
+    def postBackprop(self, **args):
+        if self.contextCopying:
+            self.copyHiddenToContext() # must go after error computation
+        return None
     def networkStep(self, **args):
         """
         This exists so that other extensions can interface at the point
