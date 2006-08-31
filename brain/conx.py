@@ -1740,6 +1740,8 @@ class Network(object):
         Format for parameters: <layer name> = <activation/target list>
         
         """
+        if self.verbosity > 0:
+            print "Network.step() called with:", args
         # First, copy the values into either activations or targets:
         retargs = self.preStep(**args)
         if retargs: args = retargs # replace the args
@@ -3443,10 +3445,20 @@ class SRN(Network):
             # now, overwrite input and output, if necessary
             for name in inputBankNames:
                 if name in args:
-                    dict[name] = args[name][offset:offset+patternLength]
+                    if len(args[name]) == self[name].size:
+                        # if this seq is just the right size, just use it:
+                        dict[name] = args[name][:]
+                    else:
+                        # else, go to the right spot in seq:
+                        dict[name] = args[name][offset:offset+patternLength]
             for name in outputBankNames:
                 if name in args:
-                    dict[name] = args[name][offset:offset+patternLength]
+                    if len(args[name]) == self[name].size:
+                        # if this seq is just the right size, just use it:
+                        dict[name] = args[name][:]
+                    else:
+                        # else, go to the right spot in seq:
+                        dict[name] = args[name][offset:offset+patternLength]
             # get info for predicition -------------------------
             for p in self.prediction:
                 (inName, outName) = p
