@@ -3416,33 +3416,33 @@ class SRN(Network):
         inputBankTotalSize = sum(inputBankSizes)
         inputArgSizes = [len(args[name]) for name in inputBankNames if name in args]
         inputArgTotalSize = sum(inputArgSizes)
-        #sequenceLength = len(args["input"]) / self["input"].size
         sequenceLength = inputArgTotalSize / inputBankTotalSize
-        #patternLength = self["input"].size
-        patternLength = inputBankTotalSize
         learning = self.learning
         totalRetvals = (0.0, 0, 0) # error, correct, total
         totalPCorrect = {}
         for step in range(sequenceLength):
             if self.verbosity >= 1 or self.interactive:
                 print "-----------------------------------Step #", step + 1
-            offset = step * patternLength
             dict = {}
             dict.update(args) # in case context, or others
             # now, overwrite input and output, if necessary
             for name in inputBankNames:
                 if name in args:
-                    if len(args[name]) == self[name].size:
-                        # if this seq is just the right size, just use it:
-                        dict[name] = args[name][:]
+                    patternLength = self[name].size
+                    offset = step * patternLength
+                    if (offset + patternLength) >= len(args[name]):
+                        # if this seq is too big, use last part:
+                        dict[name] = args[name][-patternLength:]
                     else:
                         # else, go to the right spot in seq:
                         dict[name] = args[name][offset:offset+patternLength]
             for name in outputBankNames:
                 if name in args:
-                    if len(args[name]) == self[name].size:
-                        # if this seq is just the right size, just use it:
-                        dict[name] = args[name][:]
+                    patternLength = self[name].size
+                    offset = step * patternLength
+                    if (offset + patternLength) >= len(args[name]):
+                        # if this seq is too big, use last part:
+                        dict[name] = args[name][-patternLength:]
                     else:
                         # else, go to the right spot in seq:
                         dict[name] = args[name][offset:offset+patternLength]
