@@ -42,7 +42,6 @@ class GUI(Tkinter.Toplevel):
         for i in self.properties:
             self.__dict__[i] = None
         self.initWorld()
-        self.checkMovement()
         self.count = 0
         self.tag = "data-%d" % self.count
         self.movements = ["left", "right", "forward", "shoot", "grab"]
@@ -72,8 +71,16 @@ class GUI(Tkinter.Toplevel):
             for y in range(1, 4):
                 if random.random() < .20:
                     self.world[x][y] = 'P'
-        self.world[ random.randint(1, 3) ][ random.randint(1, 3)] += 'G'
-        self.world[ random.randint(1, 3) ][ random.randint(1, 3)] += 'W'
+        # Assign the positions of the gold and the wumpus:
+        x = random.randint(0, 3); y = random.randint(0, 3)
+        while x == 0 and y == 0:
+            x = random.randint(0, 3); y = random.randint(0, 3)
+        self.world[x][y] += 'G'
+        x = random.randint(0, 3); y = random.randint(0, 3)
+        while x == 0 and y == 0:
+            x = random.randint(0, 3); y = random.randint(0, 3)
+        self.world[x][y] += 'W'
+        self.checkMovement()
 
     def add(self, loc, dir):
         x = 0
