@@ -106,7 +106,7 @@ class GUI(Tkinter.Toplevel):
             return "you died a miserable death!"
         self.stench = self.nearby(self.location, 'W')
         self.breeze = self.nearby(self.location, 'P')
-        self.gold = self.nearby(self.location, 'G')
+        self.gold = int('G' in self.world[self.location[0]][self.location[1]])
         # bump computed when you move
         # scream computed when you shoot
         return "ok"
