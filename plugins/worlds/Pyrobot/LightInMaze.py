@@ -1,6 +1,6 @@
 """
-A PyrobotSimulator world. A large room with two robots and
-two lights.
+A PyrobotSimulator world. A large room with a robot
+and many walls.
 
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
