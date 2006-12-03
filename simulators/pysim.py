@@ -230,12 +230,13 @@ class Simulator:
         self.time += (self.timeslice / 1000.0)
         i = 0
         for r in self.robots:
+            r.ovx, r.ovy, r.ova = r.vx, r.vy, r.va
             resetVelocities = 0
             if r.stall:
                 resetVelocities = 1
-                ovx, r.vx = r.vx, r.vx/5.0
-                ovy, r.vy = r.vy, r.vy/5.0
-                ova, r.va = r.va, r.va/5.0
+                ovx, r.ovx = r.ovx, r.ovx/5.0
+                ovy, r.ovy = r.ovy, r.ovy/5.0
+                ova, r.ova = r.ova, r.ova/5.0
             r.step(self.timeslice)
             if resetVelocities:
                 r.vx = ovx
@@ -1125,11 +1126,11 @@ class SimRobot:
         """
         if self._mouse: return # don't do any of this if mouse is down
         self.proposePosition = 1
-        gvx = self.vx * self.stepScalar
-        gvy = self.vy * self.stepScalar
+        gvx = self.ovx * self.stepScalar
+        gvy = self.ovy * self.stepScalar
         vx = gvx * math.sin(-self._ga) + gvy * math.cos(-self._ga)
         vy = gvx * math.cos(-self._ga) - gvy * math.sin(-self._ga)
-        va = self.va
+        va = self.ova
         # proposed positions:
         p_x = self._gx + vx * (timeslice / 1000.0) # miliseconds
         p_y = self._gy + vy * (timeslice / 1000.0) # miliseconds
@@ -1168,7 +1169,7 @@ class SimRobot:
                         if self.gripper and self.gripper.velocity != 0:
                             self.gripper.state = "stop"
                             self.gripper.velocity = 0
-                        if self.vx != 0 or self.vy != 0 or self.va != 0:
+                        if self.ovx != 0 or self.ovy != 0 or self.ova != 0:
                             self.stall = 1
                         self.updateDevices()
                         self.draw()
@@ -1203,21 +1204,21 @@ class SimRobot:
                                 # transfer some energy to puck
                                 if movePucks:
                                     r._ga = self._ga + ((random.random() - .5) * 0.4) # send in random direction, 22 degree
-                                    r.vx = self.vx * 0.9 # knock it away
+                                    r.ovx = self.ovx * 0.9 # knock it away
                                     if r not in self.simulator.needToMove:
                                         self.simulator.needToMove.append(r)
                                     if self.type == "puck":
-                                        self.vx = self.vx * 0.9 # loose some
+                                        self.ovx = self.ovx * 0.9 # loose some
                                 pushedAPuck = 1
                         elif bbintersect:
                             if self.type == "puck":
-                                self.vx = 0.0
-                                self.vy = 0.0
+                                self.ovx = 0.0
+                                self.ovy = 0.0
                             self.proposePosition = 0
                             if self.gripper and self.gripper.velocity != 0:
                                 self.gripper.state = "stop"
                                 self.gripper.velocity = 0
-                            if self.vx != 0 or self.vy != 0 or self.va != 0:
+                            if self.ovx != 0 or self.ovy != 0 or self.ova != 0:
                                 self.stall = 1
                             self.updateDevices()
                             self.draw()
@@ -1230,7 +1231,7 @@ class SimRobot:
                 if self.gripper and self.gripper.velocity != 0:
                     self.gripper.state = "stop"
                     self.gripper.velocity = 0
-                if self.vx != 0 or self.vy != 0 or self.va != 0:
+                if self.ovx != 0 or self.ovy != 0 or self.ova != 0:
                     self.stall = 1
                 self.updateDevices()
                 self.draw()
@@ -1251,12 +1252,12 @@ class SimRobot:
                     r.setPose(rx, ry, 0.0)
                     d.state = "open"
         if self.friction != 1.0:
-            self.vx *= self.friction
-            self.vy *= self.friction
-            if 0.0 < self.vx < 0.1: self.vx = 0.0
-            if 0.0 < self.vy < 0.1: self.vy = 0.0
-            if 0.0 > self.vx > -0.1: self.vx = 0.0
-            if 0.0 > self.vy > -0.1: self.vy = 0.0
+            self.ovx *= self.friction
+            self.ovy *= self.friction
+            if 0.0 < self.ovx < 0.1: self.ovx = 0.0
+            if 0.0 < self.ovy < 0.1: self.ovy = 0.0
+            if 0.0 > self.ovx > -0.1: self.ovx = 0.0
+            if 0.0 > self.ovy > -0.1: self.ovy = 0.0
         self.stall = 0
         self.setPose(p_x, p_y, p_a)
         self.updateDevices()
