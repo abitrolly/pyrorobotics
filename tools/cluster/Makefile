@@ -13,7 +13,7 @@ MANEXT = 1
 # for public installation
 #BINDIR = /usr/local/bin
 #MANDIR = /usr/local/man/man$(MANEXT)
-#MANEXT = l
+#MANEXT = 1
 
 # the following constants could be redefined in DEFINES
 #
