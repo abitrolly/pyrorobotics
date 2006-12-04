@@ -298,10 +298,13 @@ class Scatter(Toplevel):
         while self.tk.dooneevent(2): pass
 
 if __name__ == '__main__':
-    sp = Scatter()
+    import Tkinter
+    tk = Tkinter.Tk()
+    #tk.withdraw()
+    sp = Scatter(tk)
     from random import random
     for y in range(100):
         for x in range(10):
             sp.addPoint(random(), random())
             sp.update()
-    sp.win.mainloop()
+    sp.mainloop()
