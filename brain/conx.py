@@ -2235,13 +2235,16 @@ class Network(object):
         for layer in changeLayers:
             if layer.active and layer.type != 'Input':
                 if not layer.frozen:
-                    layer.dweight = self.deltaWeight(self.epsilon,
-                                                     layer.wed,
-                                                     self.momentum,
-                                                     layer.dweight,
-                                                     layer.wedLast,
-                                                     layer.weight,
-                                                     self.numConnects(layer.name))
+                    if self._quickprop or self.splitEpsilon:
+                        layer.dweight = self.deltaWeight(self.epsilon,
+                                                         layer.wed,
+                                                         self.momentum,
+                                                         layer.dweight,
+                                                         layer.wedLast,
+                                                         layer.weight,
+                                                         self.numConnects(layer.name))
+                    else:
+                        layer.dweight = self.epsilon * layer.wed + self.momentum * layer.dweight
                     layer.weight += layer.dweight
                     #print "layer.wed = ",layer.wed
                     #print "layer.weight = ",layer.weight," layer.dweight = ",layer.dweight
@@ -2262,17 +2265,20 @@ class Network(object):
                 and connection.toLayer.active
                 and not connection.frozen):
                 toLayer = connection.toLayer
-                # doing it one vector at a time, to match layer bias training (a quickprop abstraction)
-                for i in range(len(connection.dweight)):
-                    Numeric.put(connection.dweight[i],
-                                Numeric.arange(len(connection.dweight[i])),
-                                self.deltaWeight(self.epsilon,
-                                                 connection.wed[i],
-                                                 self.momentum,
-                                                 connection.dweight[i],
-                                                 connection.wedLast[i],
-                                                 connection.weight[i],
-                                                 self.numConnects(connection.toLayer.name)))
+                if self._quickprop or self.splitEpsilon:
+                    # doing it one vector at a time, to match layer bias training (a quickprop abstraction)
+                    for i in range(len(connection.dweight)):
+                        Numeric.put(connection.dweight[i],
+                                    Numeric.arange(len(connection.dweight[i])),
+                                    self.deltaWeight(self.epsilon,
+                                                     connection.wed[i],
+                                                     self.momentum,
+                                                     connection.dweight[i],
+                                                     connection.wedLast[i],
+                                                     connection.weight[i],
+                                                     self.numConnects(connection.toLayer.name)))
+                else:
+                    connection.dweight = self.epsilon * connection.wed + self.momentum * connection.dweight
                 connection.weight += connection.dweight
                 #print "connection.wed = ",connection.wed
                 #print "connection.weight = ",connection.weight," connection.dweight = ",connection.dweight
