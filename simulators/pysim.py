@@ -238,7 +238,7 @@ class Simulator:
                 ovy, r.ovy = r.ovy, r.ovy/5.0
                 ova, r.ova = r.ova, r.ova/5.0
             r.step(self.timeslice)
-            if resetVelocities:
+            if r.type != "puck" and resetVelocities:
                 r.vx = ovx
                 r.vy = ovy
                 r.va = ova
@@ -1212,8 +1212,8 @@ class SimRobot:
                                 pushedAPuck = 1
                         elif bbintersect:
                             if self.type == "puck":
-                                self.ovx = 0.0
-                                self.ovy = 0.0
+                                self.vx = 0.0
+                                self.vy = 0.0
                             self.proposePosition = 0
                             if self.gripper and self.gripper.velocity != 0:
                                 self.gripper.state = "stop"
@@ -1252,12 +1252,20 @@ class SimRobot:
                     r.setPose(rx, ry, 0.0)
                     d.state = "open"
         if self.friction != 1.0:
-            self.ovx *= self.friction
-            self.ovy *= self.friction
-            if 0.0 < self.ovx < 0.1: self.ovx = 0.0
-            if 0.0 < self.ovy < 0.1: self.ovy = 0.0
-            if 0.0 > self.ovx > -0.1: self.ovx = 0.0
-            if 0.0 > self.ovy > -0.1: self.ovy = 0.0
+            if r.type == "puck":
+                self.vx *= self.friction
+                self.vy *= self.friction
+                if 0.0 < self.vx < 0.1: self.vx = 0.0
+                if 0.0 < self.vy < 0.1: self.vy = 0.0
+                if 0.0 > self.vx > -0.1: self.vx = 0.0
+                if 0.0 > self.vy > -0.1: self.vy = 0.0
+            else:
+                self.ovx *= self.friction
+                self.ovy *= self.friction
+                if 0.0 < self.ovx < 0.1: self.ovx = 0.0
+                if 0.0 < self.ovy < 0.1: self.ovy = 0.0
+                if 0.0 > self.ovx > -0.1: self.ovx = 0.0
+                if 0.0 > self.ovy > -0.1: self.ovy = 0.0
         self.stall = 0
         self.setPose(p_x, p_y, p_a)
         self.updateDevices()
