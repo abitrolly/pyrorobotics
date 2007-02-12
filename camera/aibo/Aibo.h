@@ -11,6 +11,7 @@ class AiboCam : public Device {
   PyObject *updateMMap(int decompress);
   Socket *sock;
   RWLock lock;
+  int tcp;
 };
 
 #endif

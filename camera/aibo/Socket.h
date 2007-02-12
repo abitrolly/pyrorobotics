@@ -19,4 +19,14 @@ class Socket {
   struct hostent *host_id;
 };
 
+class FakeSocket {
+ public:
+  FakeSocket(char *buf);
+  char *read(int cnt);
+  char *readUntil(char stop);
+ private:
+  char *buffer;
+  int current;
+};
+
 #endif
