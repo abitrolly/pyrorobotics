@@ -50,6 +50,11 @@ class Listener:
             print >> sys.stderr, "connected!"
         except IOError, e:
             print e
+        if self.protocol == "UDP":
+            self.s.send("connection request")
+            self.s.settimeout(0.5)
+            self.s.receive()
+            self.s.settimeout(0)
 
     def readUntil(self, stop = "\n"):
         retval = ""
@@ -217,6 +222,7 @@ class AiboRobot(Robot):
         self.setRemoteControl("Walk Remote Control", "on")
         self.setRemoteControl("EStop Remote Control", "on")
         self.setRemoteControl("World State Serializer", "on")
+        self.setRemoteControl("Raw Cam Server", "off")
         self.setRemoteControl("Aibo 3D", "on")
         time.sleep(1) # let the servers get going...
         self.walk_control     = Listener(self.PORT["Walk Remote Control"],
@@ -563,6 +569,7 @@ class AiboRobot(Robot):
         self.walk_control.write( makeControlCommand('r', rotate))
 
     def destroy(self):
+        self.setRemoteControl("Raw Cam Server", "off")
         self.sensor_thread.join()
         Robot.destroy(self)
 
