@@ -1204,11 +1204,11 @@ class SimRobot:
                                 # transfer some energy to puck
                                 if movePucks:
                                     r._ga = self._ga + ((random.random() - .5) * 0.4) # send in random direction, 22 degree
-                                    r.ovx = self.ovx * 0.9 # knock it away
+                                    r.vx = self.vx * 0.9 # knock it away
                                     if r not in self.simulator.needToMove:
                                         self.simulator.needToMove.append(r)
                                     if self.type == "puck":
-                                        self.ovx = self.ovx * 0.9 # loose some
+                                        self.vx = self.vx * 0.9 # loose some
                                 pushedAPuck = 1
                         elif bbintersect:
                             if self.type == "puck":
