@@ -260,7 +260,7 @@ class KheperaRobot(Robot):
         elif item == "light":
             return {"light": LightSensor(self)}
         elif item == "gripper":
-            return {"gripper": Gripper(self)}
+            return {"gripper": KheperaGripper(self)}
         else:
             raise AttributeError, "K-Team robot does not support device '%s'" % item
 
@@ -420,9 +420,9 @@ class KheperaRobot(Robot):
         dev.lastRotate = value
         dev.adjustSpeed()
     
-class Gripper(Device):
+class KheperaGripper(GripperDevice):
     def __init__(self, robot, type = "gripper"):
-        Device.__init__(self, type)
+        GripperDevice.__init__(self, type)
         self.robot = robot
         self.robot.sendMsg('T,1,B')    # gripper software version
         self.robot.sendMsg('T,1,J')    # gripper jumpers
@@ -434,50 +434,26 @@ class Gripper(Device):
 
     # preGet methods
     def getGripState(self):
-        gripState = self.robot.rawData['FIX ME'][0]
-        if gripState < 100:
+        r = self.resistance()
+        if r > 20:
             return 'closed'
         else:
             return 'open'
 
-    def getBreakBeamState(self):
-        beamState = self.robot.rawData['gripper beam state'][0]
-        if beamState < 100:
-            return 'nothing'
-        else:
-            return 'something'
-
     def getArmPosition(self):
         return self.robot.rawData['gripper arm position'][0]
 
-    def getResistivity(self):
+    def resistance(self):
         return self.robot.rawData['gripper resistivity'][0]
 
     def getSoftwareVersion(self):
         version, revision = self.robot.rawData['gripper software'][0:2]
         return version + 0.1 * revision
 
-    def isClosed(self):
-        return self.getGripState() == 'closed'
-
-    def isGripMoving(self):
-        pass
-
-    def isLiftMoving(self):
-        pass
-
     def isLiftMaxed(self):
         return self.getArmPosition() == self.highestArmPosition
 
     # postSet methods
-    def gripOpen(self):
-        self.robot.sendMsg('T,1,D,0')
-
-    def gripClose(self):
-        self.robot.sendMsg('T,1,D,1')
-
-    def gripStop(self):
-        pass
 
     def setArmPosition(self, angle):
         if angle > self.lowestArmPosition:
@@ -486,22 +462,50 @@ class Gripper(Device):
             angle = self.highestArmPosition
         self.robot.sendMsg('T,1,E,' + str(angle))
 
-    def liftUp(self):
+    # previous name was gripClose
+    def close(self):
+        self.robot.sendMsg('T,1,D,1')
+
+    # previous name was gripOpen
+    def open(self):
+        self.robot.sendMsg('T,1,D,0')
+
+    # previous name was liftUp
+    def up(self):
         self.setArmPosition(self.liftUpPosition)
 
-    def liftDown(self):
+    # previous name was liftDown
+    def down(self):
         self.setArmPosition(self.putDownPosition)
 
-    def gripperStore(self):
-        self.gripClose()
-        self.liftUp()
+    # previous name was gripperStore
+    def store(self):
+        self.close()
+        self.up()
 
-    def gripperDeploy(self):
-        self.liftDown()
-        self.gripOpen()
+    # previous name was gripperDeploy
+    def deploy(self):
+        self.down()
+        self.open()
 
-    def gripperHalt(self):
-        pass
+    # previous name was gripperHalt
+    def halt(self):
+        return self.stop()
+
+    def getBreakBeam(self, which = None):
+        # ignore which, because khepera has only one beam
+        beamState = self.robot.rawData['gripper beam state'][0]
+        if beamState < 100:
+            return 0
+        else:
+            return 1
+
+    def isClosed(self):
+        return int(self.getGripState() == 'closed')
+
+    def isOpened(self):
+        return int(self.getGripState() == 'open')
+
 
 if __name__ == '__main__':
     x = KheperaRobot()

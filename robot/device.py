@@ -234,56 +234,73 @@ class Device(object):
         """Internal get for all of the .value properties."""
         return [s.value for s in self]
     value = property(_getValue, _setDisabled)
+
     def values(self, subset="all"):
         if type(subset) == int:
             return self[subset].value
         else:
             return [s.value for s in self[subset]]
+
     def _getPos(self):
         """Internal get for all of the .pos properties."""
         return [s.pos for s in self]
+
     pos = property(_getPos, _setDisabled)
+
     def poses(self, subset = "all"):
         if type(subset) == int:
             return self[subset].pos
         else:
             return [s.pos for s in self[subset]]
+
     def _getGeometry(self):
         """Internal get for all of the .geometry properties."""
         return [s.geometry for s in self]
+
     geometry = property(_getGeometry, _setDisabled)
+
     def geometries(self, subset = "all"):
         if type(subset) == int:
             return self[subset].geometry
         else:
             return [s.geometry for s in self[subset]]
+
     def _getRawValue(self):
         """Internal get for all of the .rawValue properties."""
         return [s.rawValue for s in self]
+
     rawValue = property(_getRawValue, _setDisabled)
+
     def rawValues(self, subset = "all"):
         if type(subset) == int:
             return self[subset].rawValue
         else:
             return [s.rawValue for s in self[subset]]
+
     def _getHit(self):
         """Internal get for all of the .hit properties."""
         return [s.hit for s in self]
+
     hit = property(_getHit, _setDisabled)
+
     def hits(self, subset = "all"):
         if type(subset) == int:
             return self[subset].hit
         else:
             return [s.hit for s in self[subset]]
+
     def _getNoise(self):
         """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
+
     noise = property(_getNoise, _setDisabled)
+
     def noises(self, subset = "all"):
         if type(subset) == int:
             return self[subset].noise
         else:
             return [s.noise for s in self[subset]]
+
     # Methods to make getting all values easy:
     def distance(self, *args, **kwargs):
         """
@@ -295,11 +312,13 @@ class Device(object):
         [90, 45, 180]
         """
         return [s.distance(*args, **kwargs) for s in self]
+
     def distances(self, subset = "all", *args, **kwargs):
         if type(subset) == int:
             return self[subset].distance(*args, **kwargs)
         else:
             return [s.distance(*args, **kwargs) for s in self[subset]]
+
     def angle(self, *args, **kwargs):
         """
         Device-level method to get all of the angles. Can translate units.
@@ -308,11 +327,13 @@ class Device(object):
         >>> [s.angle(unit="degrees") for s in robot.sonar[0]["left"]]
         """
         return [s.angle(*args, **kwargs) for s in self]
+
     def angles(self, subset = "all", *args, **kwargs):
         if type(subset) == int:
             return self[subset].angle(*args, **kwargs)
         else:
             return [s.angle(*args, **kwargs) for s in self[subset]]
+
     def span(self, start, stop, units="degrees", subset="all"):
         """
         Device-level method to get sensor readings between two angles (inclusive).
@@ -340,11 +361,13 @@ class Device(object):
                     return start <= val <= -180 or stop <= val <= 180
             
         return [s for s in self[subset] if between(s.angle(unit=units))]
+
     def getSensorValue(self, pos):
         """
         Returns a specific SensorValue from the range device.
         """
         return None
+
     def __len__(self):
         # devices should overload this method if they are iterable
         return 0
@@ -397,10 +420,12 @@ class Device(object):
                 if pos in self.groups[key]:
                     retval.append( key )
         return retval
+
     def setMaxvalue(self, value):
         """Set the maxvalue of the sensor."""
         self.maxvalueraw = self.rawToUnits(value, units="UNRAW")
         return "Ok"
+
     def getMaxvalue(self):
         """Get the maxvalue of the sensor."""
         return self.rawToUnits(self.maxvalueraw)
@@ -490,6 +515,7 @@ class Device(object):
     def getVisible(self):
         """Returns the .visible of the sensor."""
         return self.visible
+
     def setVisible(self, value):
         """Sets the .visible attribute, and hides/shows window."""
         self.visible = value
@@ -499,34 +525,43 @@ class Device(object):
             else:
                 self.window.withdraw()
         return "Ok"
+
     def getActive(self):
         """Returns the value of .active."""
         return self.active
+
     def setActive(self, value):
         """Sets the .active property."""
         self.active = value
         return "Ok"
+
     def startDevice(self):
         """Starts the device (sets the .state)."""
         self.state = "started"
         return self
+
     def stopDevice(self):
         """Stops the device (sets the .state)."""
         self.state = "stopped"
         return "Ok"
+
     def destroy(self):
         """Hides the window."""
         if self.window:
             self.window.destroy()
+
     def getDeviceData(self):
         """Returns the device data, whatever it might be."""
         return {}
+
     def getDeviceState(self):
         """Returns the .state."""
         return self.state
+
     def updateDevice(self):
         """Method called to update the device properties."""
         pass
+
     # gui methods
     def addWidgets(self, window):
         """Method to addWidgets to the device window."""
@@ -562,7 +597,29 @@ class Device(object):
         else:
             self.window = DeviceWindow(self, self.title)
 
+
 class GripperDevice(Device):
+
+    # these should be overridden by robot-specific methods
+
+    def resistance(self):
+        return "N/A"
+
+    def isMoving(self):
+        return "N/A"
+
+    def isLiftMoving(self):
+        return "N/A"
+
+    def up(self):
+        pass
+
+    def down(self):
+        pass
+
+    def stop(self):
+        pass
+
     def addWidgets(self, window):
         window.addButton("open", ".open()", self.open)
         window.addButton("close", ".close()", self.close)
@@ -576,16 +633,22 @@ class GripperDevice(Device):
                        self.getBreakBeam("inner"))
         window.addData("outer", ".getBreakBeam('outer')",
                        self.getBreakBeam("outer"))
-        window.addData("1", ".isClosed()", self.isClosed())
-        window.addData("2", ".isOpened()", self.isOpened())
-        window.addData("3", ".isMoving()", self.isMoving())
-        window.addData("4", ".isLiftMoving()", self.isLiftMoving())
+        window.addData("1", ".resistance():", self.resistance())
+        window.addData("2", ".isClosed()", self.isClosed())
+        window.addData("3", ".isOpened()", self.isOpened())
+        window.addData("4", ".isMoving()", self.isMoving())
+        window.addData("5", ".isLiftMoving()", self.isLiftMoving())
+        Device.addWidgets(self, window)
 
     def updateWindow(self):
-        self.window.updateWidget("inner", self.getBreakBeam("inner"))
-        self.window.updateWidget("outer", self.getBreakBeam("outer"))
-        self.window.updateWidget("1", self.isClosed())
-        self.window.updateWidget("2", self.isOpened())
-        self.window.updateWidget("3", self.isMoving())
-        self.window.updateWidget("4", self.isLiftMoving())
+        if self.visible and self.window != 0:
+            self.window.updateWidget("inner", self.getBreakBeam("inner"))
+            self.window.updateWidget("outer", self.getBreakBeam("outer"))
+            self.window.updateWidget("1", self.resistance())
+            self.window.updateWidget("2", self.isClosed())
+            self.window.updateWidget("3", self.isOpened())
+            self.window.updateWidget("4", self.isMoving())
+            self.window.updateWidget("5", self.isLiftMoving())
+            Device.updateWindow(self)
+            
             

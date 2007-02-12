@@ -234,9 +234,9 @@ class TKgui(Tkinter.Toplevel, gui):
       deviceExp = "self.engine.robot." + self.var.get()
       try:
          dev = eval(deviceExp)
-         dev.makeWindow()
       except:
-         pass
+         return
+      dev.makeWindow()
 
    def pasteCallback(self, full_id):
       self.commandEntry.insert('end', self.makeExpression(full_id))

@@ -105,6 +105,7 @@ class RangeSimDevice(Device):
 		
 	def __len__(self):
 		return len(self._geometry[0])
+
 	def getSensorValue(self, pos):
 		try:
 			v = self._dev.__dict__["%s_%d" % (self.type, self.index)][pos]
@@ -202,8 +203,6 @@ class GripperSimDevice(GripperDevice):
 			self.data[i] = newData[i]
 	def close(self):  return self._dev.move("z_gripper_0_close")
 	def open(self):   return self._dev.move("z_gripper_0_open")
-	def up(self):     pass
-	def down(self):   pass
 	def stop(self):   return self._dev.move("z_gripper_0_stop")
 	def store(self):  return self._dev.move("z_gripper_0_store")
 	def deploy(self): return self._dev.move("z_gripper_0_deploy")
