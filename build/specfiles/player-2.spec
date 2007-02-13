@@ -27,6 +27,7 @@ ln -b -s /usr/lib/libltdl.so.3 /usr/lib/libltdl.so
 mkdir -p /usr/X11R6/lib/X11
 ln -b -s /usr/share/X11/rgb.txt /usr/X11R6/lib/X11/rgb.txt
 %configure
+sed -i -e 's/$(LINK) -rpath $(libdir) $(libplayererror_la_LDFLAGS) $(libplayererror_la_OBJECTS) $(libplayererror_la_LIBADD) $(LIBS)/$(CXXLINK) -rpath $(libdir) $(libplayererror_la_LDFLAGS) $(libplayererror_la_OBJECTS) $(libplayererror_la_LIBADD) $(LIBS)/' libplayercore/Makefile
 
 %install
 rm -rf $RPM_BUILD_ROOT

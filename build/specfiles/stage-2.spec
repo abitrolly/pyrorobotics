@@ -3,14 +3,15 @@
 
 Summary: 2d robotics simulator
 Name: stage
-Version: 2.0.2
-Release: fc5
+Version: 2.0.3
+Release: fc6
 License: GPL
 Group: Development/Libraries
 URL: http://playerstage.sf.net/
 Packager: D.S. Blank <dblank@dblank@cs.brynmawr.edu>
 Obsoletes: stage <= %{version}
 Provides: stage = %{version}-%{release}
+BuildRequires: player
 Requires: player
 Source0: %{name}-%{version}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -20,7 +21,7 @@ Stage robot simulator
 
 %prep
 %setup -q 
-./bootstrap
+#./bootstrap
 
 %build
 %configure
