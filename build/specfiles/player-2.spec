@@ -3,8 +3,8 @@
 
 Summary: robotics protocols
 Name: player
-Version: 2.0.2
-Release: fc5
+Version: 2.0.3
+Release: fc6
 License: GPL
 Group: Development/Libraries
 URL: http://playerstage.sf.net/
@@ -13,6 +13,8 @@ Obsoletes: player <= %{version}
 Provides: player = %{version}-%{release}
 Source0: %{name}-%{version}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+BuildRequires: ode ode-devel gsl freeglut-devel wxPythonGTK2 libtool-ltdl-devel
+Requires: ode gsl wxPythonGTK2
 
 %description
 Player robot protocols
@@ -59,38 +61,38 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libplayercore.la
 %{_libdir}/libplayercore.so
 %{_libdir}/libplayercore.so.2
-%{_libdir}/libplayercore.so.2.0.2
+%{_libdir}/libplayercore.so.2.0.3
 %{_libdir}/libplayerc.so
 %{_libdir}/libplayerc++.so
 %{_libdir}/libplayerc.so.2
 %{_libdir}/libplayerc++.so.2
-%{_libdir}/libplayerc.so.2.0.2
-%{_libdir}/libplayerc++.so.2.0.2
+%{_libdir}/libplayerc.so.2.0.3
+%{_libdir}/libplayerc++.so.2.0.3
 %{_libdir}/libplayerdrivers.a
 %{_libdir}/libplayerdrivers.la
 %{_libdir}/libplayerdrivers.so
 %{_libdir}/libplayerdrivers.so.2
-%{_libdir}/libplayerdrivers.so.2.0.2
+%{_libdir}/libplayerdrivers.so.2.0.3
 %{_libdir}/libplayererror.a
 %{_libdir}/libplayererror.la
 %{_libdir}/libplayererror.so
 %{_libdir}/libplayererror.so.2
-%{_libdir}/libplayererror.so.2.0.2
+%{_libdir}/libplayererror.so.2.0.3
 %{_libdir}/libplayerjpeg.a
 %{_libdir}/libplayerjpeg.la
 %{_libdir}/libplayerjpeg.so
 %{_libdir}/libplayerjpeg.so.2
-%{_libdir}/libplayerjpeg.so.2.0.2
+%{_libdir}/libplayerjpeg.so.2.0.3
 %{_libdir}/libplayertcp.a
 %{_libdir}/libplayertcp.la
 %{_libdir}/libplayertcp.so
 %{_libdir}/libplayertcp.so.2
-%{_libdir}/libplayertcp.so.2.0.2
+%{_libdir}/libplayertcp.so.2.0.3
 %{_libdir}/libplayerxdr.a
 %{_libdir}/libplayerxdr.la
 %{_libdir}/libplayerxdr.so
 %{_libdir}/libplayerxdr.so.2
-%{_libdir}/libplayerxdr.so.2.0.2
+%{_libdir}/libplayerxdr.so.2.0.3
 %{_libdir}/pkgconfig/playercore.pc
 %{_libdir}/pkgconfig/playerc.pc
 %{_libdir}/pkgconfig/playerc++.pc
