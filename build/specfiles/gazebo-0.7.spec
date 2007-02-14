@@ -11,7 +11,7 @@ License: GPL
 URL: http://playerstage.sourceforge.net
 Source: %{name}-%{version}.tgz
 Packager: D.S. Blank <dblank@cs.brynmawr.edu>
-Obsoletes: gazebo <= %{version}
+Obsoletes: gazebo < %{version}
 Provides: gazebo = %{version}-%{release}
 Requires: ode gsl freeglut-devel wxPythonGTK2
 Prefix: /usr
@@ -30,7 +30,6 @@ Gazebo 3D simulator
 %makeinstall
 
 %clean
-%{__rm} -rf %{buildroot}
 
 %files
 %defattr(-,root,root)

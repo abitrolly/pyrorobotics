@@ -9,10 +9,9 @@ License: GPL
 Group: Development/Libraries
 URL: http://playerstage.sf.net/
 Packager: D.S. Blank <dblank@dblank@cs.brynmawr.edu>
-Obsoletes: player <= %{version}
+Obsoletes: player < %{version}
 Provides: player = %{version}-%{release}
 Source0: %{name}-%{version}.tgz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: ode ode-devel gsl freeglut-devel wxPythonGTK2 libtool-ltdl-devel
 Requires: ode gsl wxPythonGTK2
 
@@ -27,20 +26,17 @@ ln -b -s /usr/lib/libltdl.so.3 /usr/lib/libltdl.so
 mkdir -p /usr/X11R6/lib/X11
 ln -b -s /usr/share/X11/rgb.txt /usr/X11R6/lib/X11/rgb.txt
 %configure
-sed -i -e 's/$(LINK) -rpath $(libdir) $(libplayererror_la_LDFLAGS) $(libplayererror_la_OBJECTS) $(libplayererror_la_LIBADD) $(LIBS)/$(CXXLINK) -rpath $(libdir) $(libplayererror_la_LDFLAGS) $(libplayererror_la_OBJECTS) $(libplayererror_la_LIBADD) $(LIBS)/' libplayercore/Makefile
 
 %install
-rm -rf $RPM_BUILD_ROOT
 %makeinstall
 
 %clean
-rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
 %{_libdir}/python%{pythonver}/site-packages/playerc.py
 %{_libdir}/python%{pythonver}/site-packages/playerc.pyc
-%{_libdir}/python%{pythonver}/site-packages/playerc.pyo
+#%{_libdir}/python%{pythonver}/site-packages/playerc.pyo
 %{_libdir}/python%{pythonver}/site-packages/_playerc.so
 %{_bindir}/player
 %{_bindir}/playercam
@@ -51,8 +47,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/playervcr
 %{_bindir}/playerwritemap
 %{_bindir}/playerxdrgen.py
-%{_bindir}/playerxdrgen.pyc
-%{_bindir}/playerxdrgen.pyo
+#%{_bindir}/playerxdrgen.pyc
+#%{_bindir}/playerxdrgen.pyo
 %{_includedir}/player-2.0/
 %{_libdir}/libplayerc.a
 %{_libdir}/libplayerc++.a

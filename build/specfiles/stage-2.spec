@@ -9,12 +9,11 @@ License: GPL
 Group: Development/Libraries
 URL: http://playerstage.sf.net/
 Packager: D.S. Blank <dblank@dblank@cs.brynmawr.edu>
-Obsoletes: stage <= %{version}
+Obsoletes: stage < %{version}
 Provides: stage = %{version}-%{release}
 BuildRequires: player
 Requires: player
 Source0: %{name}-%{version}.tgz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 Stage robot simulator
@@ -27,11 +26,9 @@ Stage robot simulator
 %configure
 
 %install
-#rm -rf $RPM_BUILD_ROOT
 %makeinstall
 
 %clean
-#rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
