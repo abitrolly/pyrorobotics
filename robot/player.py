@@ -29,23 +29,15 @@ class PlayerDevice(Device):
         if "get_geom" in self._client.__dict__:
             self._client.get_geom() # reads it into handle.pose or poses
     def startDevice(self, mode):
+        dtype = self.type
+        if self.type == "position":
+            dtype = "position2d"
         exec("self._dev = playerc.playerc_%s(self._client, %d)" %
-             (self.type, self.index))
-        if mode == None: # auto
-            # try all first:
-            mode = playerc.PLAYERC_ALL_MODE
-            try:    retval = self._dev.subscribe(mode)
-            except: retval = -1
-            if retval != 0:
-                # if that fails, try read:
-                mode = playerc.PLAYERC_READ_MODE
-                try:    retval = self._dev.subscribe(mode)
-                except: retval = -1
-                if retval != 0:
-                    raise playerc.playerc_error_str()
-        else:
-            if self._dev.subscribe(mode) != 0:
-                raise playerc.playerc_error_str()
+             (dtype, self.index))
+        mode = playerc.PLAYERC_OPEN_MODE
+        retval = self._dev.subscribe(mode)
+        if retval != 0:
+            raise playerc.playerc_error_str()
         Device.startDevice(self)
         # robot.blobfinder.blobs[0].x, y, top, left, range, right, color,
         #   area, bottom,
@@ -85,7 +77,7 @@ class PlayerSimulationDevice(PlayerDevice):
 
 class PlayerFiducialDevice(PlayerDevice):
     def __init__(self, client):
-        PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_READ_MODE)
+        PlayerDevice.__init__(self, client, "fiducial", mode=playerc.PLAYERC_OPEN_MODE)
 
         self.count = len(self)
         self.id = self.getFiducialsById
@@ -217,7 +209,7 @@ class PlayerLaserDevice(PlayerDevice):
     def __len__(self):
         return self._dev.scan_count
     def getSensorValue(self, pos):
-        return SensorValue(self, self._dev.scan[pos][0],
+        return SensorValue(self, self._dev.ranges[pos],
                            pos,
                            (self._dev.pose[0],
                             self._dev.pose[1],
@@ -227,7 +219,7 @@ class PlayerLaserDevice(PlayerDevice):
                            noise=self._noise)
     def addWidgets(self, window):
         for i in range(0, self.count, 10):
-            window.addData(str(i), "[%d]:" % i, self._dev.scan[i][0])
+            window.addData(str(i), "[%d]:" % i, self._dev.ranges[i])
     def updateWindow(self):
         if self.visible:
             for i in range(0, self.count, 10):
@@ -494,21 +486,30 @@ class PlayerRobot(Robot):
         self.thread.start()
         # a robot with no devices will hang here!
         while self._client.get_devlist() == -1: pass
-        # Make sure laser is before sonar, so if you have
-        # sonar, it will be the default 'range' device
-        devNameList = [playerc.playerc_lookup_name(device.code) for device in self._client.devinfos]
-        self.builtinDevices = devNameList
+        self.builtinDevices = []
+        for i in range(0, self._client.devinfo_count):
+            devinfo =  self._client.devinfos[i]
+            devname = playerc.playerc_lookup_name(devinfo.addr.interf)
+            if devname == "position2d":
+                self.builtinDevices.append("position")
+            else:
+                self.builtinDevices.append(devname)
+            #devinfo.addr.robot: 6665
+            #devinfo.addr.index: 0
+            #devinfo.drivername: "stage"
         if "blobfinder" in self.builtinDevices:
             self.builtinDevices.append( "camera" )
         self.builtinDevices.append( "simulation" )
         if startDevices:
             for device in ["position", "laser", "ir", "sonar", "bumper"]:
                 #is it supported? if so start it up:
-                if device in devNameList:
+                if device in self.builtinDevices:
                     #try: # this is for gazebo; can't tell what it really has
                     deviceName = self.startDevice(device)
                     #except:
                     #    continue
+                    # Make sure laser is before sonar, so if you have
+                    # sonar, it will be the default 'range' device
                     if device == "laser":
                         self.range = self.laser[0]
                     elif device == "ir":
