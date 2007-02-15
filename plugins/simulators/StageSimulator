@@ -8,8 +8,8 @@ then
 else
     world="$1"
 fi
-export PLAYERPATH=$PLAYERPATH:/usr/local/lib:/usr/lib
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib
+export PLAYERPATH=$PLAYERPATH:/usr/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib
 #stage -p $(( 16000 + $UID )) $world &
 player $world &
 while ps --noheaders $pyropid; do sleep 1; done > /dev/null
