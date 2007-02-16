@@ -68,8 +68,8 @@ class PlayerSimulationDevice(PlayerDevice):
         self._client = playerc.playerc_client(None, hostname, 7000)
         self._client.connect()
         PlayerDevice.__init__(self, self._client, "simulation")
-        self.thread = PlayerUpdater(self)
-        self.thread.start()
+        #self.thread = PlayerUpdater(self)
+        #self.thread.start()
     def setPose(self, name, x, y, deg):
         th = deg * PIOVER180
         self._dev.set_pose2d(name, x, y, th)
@@ -503,7 +503,7 @@ class PlayerUpdater(threading.Thread):
         """
         self.runable = runable
         self._stopevent = threading.Event()
-        self._sleepperiod = 0.001
+        self._sleepperiod = 0.01
         # We have to read it this fast to keep up!
         threading.Thread.__init__(self, name="PlayerUpdater")
         
@@ -530,7 +530,7 @@ class PlayerRobot(Robot):
         self.scale = 0.5
         self.last_rotate = 0.0
         self.last_translate = 0.0
-        self.simulated = 1 # FIX: how can you tell?
+        self.simulated = 1 # FIX: how can you tell? See drivername below
         self.hostname = hostname
         self.port = port
         self.name = name
@@ -543,13 +543,13 @@ class PlayerRobot(Robot):
         for i in range(0, self._client.devinfo_count):
             devinfo =  self._client.devinfos[i]
             devname = playerc.playerc_lookup_name(devinfo.addr.interf)
+            #devinfo.addr.robot: 6665
+            #devinfo.addr.index: 0
+            #devinfo.drivername: "stage"
             if devname == "position2d":
                 self.builtinDevices.append("position")
             else:
                 self.builtinDevices.append(devname)
-            #devinfo.addr.robot: 6665
-            #devinfo.addr.index: 0
-            #devinfo.drivername: "stage"
         if "blobfinder" in self.builtinDevices:
             self.builtinDevices.append( "camera" )
         self.builtinDevices.append( "simulation" )
