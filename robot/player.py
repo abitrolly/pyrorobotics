@@ -28,6 +28,11 @@ class PlayerDevice(Device):
         self.startDevice(mode)
         if "get_geom" in self._client.__dict__:
             self._client.get_geom() # reads it into handle.pose or poses
+    def __getattr__(self, item):
+        if item in dir(self._dev):
+            return self._dev.__getattribute__(item)
+        else:
+            raise AttributeError
     def startDevice(self, mode):
         dtype = self.type
         if self.type == "position":
@@ -99,6 +104,61 @@ class PlayerFiducialDevice(PlayerDevice):
     def __len__(self):
         return len(self._dev.fiducials)
 
+class PlayerSpeechDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "speech", visible = 0)
+    def addWidgets(self, window):
+        window.addCommand("say", "Say!", "", self.say)
+
+class PlayerGraphics2dDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "graphics2d", visible = 0)
+    def addWidgets(self, window):
+        window.addCommand("draw", "Draw Polygon!", "[(0,0), (1,1), (1,-1)]", lambda s: self.drawPolygon(eval(s)))
+        window.addButton("clear", "Clear!", self.clear)
+    def drawPolygon(self, lyst, something = 4, fill = 1, color = (255, 0, 0, 0)):
+        # points
+        # something, fill color?
+        # fill?
+        # line color red, green, blue, alpha
+        return self.draw_polygon(lyst, something, fill, color)
+    # 'clear', 'color', 'destroy', 'draw_points', 'draw_polygon',
+    # 'draw_polyline', 'info', 'setcolor', 
+
+class PlayerBumperDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "bumper", visible = 0)
+        self._dev.get_geom() # stores it in self._dev.poses[]
+        self.groups = {'all': range(len(self)),
+                       'front': range(0, len(self)/2 + 1),
+                       'back': range(len(self)/2 + 1, len(self)),
+                       }
+        self.units    = "RAW"
+        # What are the raw units?
+        # Anything that you pass to rawToUnits should be in these units
+        self.rawunits = "RAW"
+        self.maxvalueraw = 1.0 # meters
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.radius = 0.40 # meters
+        # ----------------------------------------------------------
+        # All of the rest of the measures are relative to units, given in rawunits:
+        self._noise = 0.00 # 5 percent
+        self.count = len(self)
+        self.arc = 7.5 * PIOVER180 #??
+
+    def __len__(self):
+        return len(self._dev.bumpers)
+
+    def getSensorValue(self, pos):
+        z = 0.23 # height
+        return SensorValue(self, self._dev.bumpers[pos], pos,
+                           (self._dev.poses[pos].pose.px, # x in meters
+                            self._dev.poses[pos].pose.py, # y
+                            z,                    # z
+                            self._dev.poses[pos].pose.pa, # rads
+                            self.arc),               # rads
+                           noise=self._noise)
+	
 class PlayerSonarDevice(PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "sonar")
@@ -158,10 +218,10 @@ class PlayerSonarDevice(PlayerDevice):
         if pos < 16: z = 0.23
         else:        z = 1.1
         return SensorValue(self, self._dev.scan[pos], pos,
-                           (self._dev.poses[pos][0], # x in meters
-                            self._dev.poses[pos][1], # y
+                           (self._dev.poses[pos].px, # x in meters
+                            self._dev.poses[pos].py, # y
                             z,                    # z
-                            self._dev.poses[pos][2], # rads
+                            self._dev.poses[pos].pa, # rads
                             self.arc),               # rads
                            noise=self._noise)
 
@@ -253,6 +313,8 @@ class PlayerCommDevice(PlayerDevice):
                 self.messages.append( msg )
 
 class PlayerPositionDevice(PlayerDevice):
+    def __init__(self, client):
+        PlayerDevice.__init__(self, client, "position")
     def addWidgets(self, window):
         window.addData("x", ".x:", self._dev.px)
         window.addData("y", ".y:", self._dev.py)
@@ -360,24 +422,14 @@ class PlayerPTZDevice(PlayerDevice):
         window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(float(t)))
         window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(float(z)))
 
-class PlayerBumperDevice(PlayerDevice):
+class PlayerMapDevice(PlayerDevice):
     def __init__(self, client):
-        PlayerDevice.__init__(self, client, "bumper", visible = 0)
-        self.groups = {'all': range(len(self)),
-                       'front': range(0, 5),
-                       'back': range(5, 10),
-                       }
-    def __len__(self):
-        return len(self._dev.bumpers)
-	
-    def getFrontBumpers(self):
-        return self._dev.bumpers[0:5]
-
-    def getRearBumpers(self):
-	return self._dev.bumpers[5:10]
-	
-    def getAllBumpers(self):
-	return self._dev.bumpers
+        PlayerDevice.__init__(self, client, "map", visible = 0)
+        self.get_map()
+        # Makes these available: 'cells', 'destroy', 'get_map', 'get_vector',
+        # 'height', 'info', 'num_segments', 'origin', 'resolution', 'segments',
+        # 'subscribe', 'this', 'unsubscribe', 'vmaxx', 'vmaxy', 'vminx',
+        # 'vminy', 'width'
 
 class PlayerGripperDevice(PlayerDevice, GripperDevice):
     def __init__(self, client):
@@ -389,26 +441,27 @@ class PlayerGripperDevice(PlayerDevice, GripperDevice):
     def close(self):
         return self._dev.set_cmd(2, 0) 
 
-    def stopMoving(self):
-        pass
-
     def up(self):
         return self._dev.set_cmd(4, 0) 
 
     def down(self):
         return self._dev.set_cmd(5, 0) 
 
-    def stop(self):
-        return self._dev.set_cmd(6, 0) 
+    #def stop(self):
+    #    return self._dev.set_cmd(6, 0) 
 
     def store(self):
-        return self._dev.set_cmd(7, 0) 
+        #return self._dev.set_cmd(7, 0)
+        self.close()
+        self.up()
 
     def deploy(self):
-        return self._dev.set_cmd(8, 0) 
+        #return self._dev.set_cmd(8, 0)
+        self.down()
+        self.close()
 
-    def halt(self):
-        return self._dev.set_cmd(15, 0) 
+    #def halt(self):
+    #    return self._dev.set_cmd(15, 0) 
 
     def getState(self):
         return self._dev.state
@@ -501,7 +554,8 @@ class PlayerRobot(Robot):
             self.builtinDevices.append( "camera" )
         self.builtinDevices.append( "simulation" )
         if startDevices:
-            for device in ["position", "laser", "ir", "sonar", "bumper"]:
+            for device in ["position", "laser", "ir", "sonar", "bumper",
+                           "speech", "graphics2d", "gripper"]:
                 #is it supported? if so start it up:
                 if device in self.builtinDevices:
                     #try: # this is for gazebo; can't tell what it really has
@@ -579,7 +633,13 @@ class PlayerRobot(Robot):
         elif item == "gripper":
             return {"gripper": PlayerGripperDevice(self._client)}
         elif item == "position":
-            return {"position": PlayerPositionDevice(self._client, "position")}
+            return {"position": PlayerPositionDevice(self._client)}
+        elif item == "speech":
+            return {"speech": PlayerSpeechDevice(self._client)}
+        elif item == "graphics2d":
+            return {"graphics2d": PlayerGraphics2dDevice(self._client)}
+        elif item == "map":
+            return {"map": PlayerMapDevice(self._client)}
         elif item == "simulation":
             obj = None
             try:

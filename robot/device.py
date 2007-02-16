@@ -620,6 +620,9 @@ class GripperDevice(Device):
     def stop(self):
         pass
 
+    def halt(self):
+        pass
+
     def addWidgets(self, window):
         window.addButton("open", ".open()", self.open)
         window.addButton("close", ".close()", self.close)
