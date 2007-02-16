@@ -390,6 +390,16 @@ class Simulator:
                 try: t, r = float(message[1]), float(message[2])
                 except: pass
                 retval = self.assoc[sockname[1]].move(t, r)
+            elif message[0] == "l": # "l_name_string" say text
+                el, name, strng = None, None, None
+                try:
+                    el, name, strng = message
+                except: pass
+                if name in self.robotsByName:
+                    r = self.robotsByName[name]
+                    r.say(strng)
+                    self.redraw()
+                    retval = "ok"
             elif message[0] == "a": # "a_name_x_y_th" simulation placement
                 simulation, name, x, y, thr = None, None, None, None, None
                 try:
@@ -605,7 +615,8 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             ['ir', lambda: self.toggle("ir")],
             ['bumper', lambda: self.toggle("bumper")],
             ['light', lambda: self.toggle("light")],                     
-            ['lightBlocked', lambda: self.toggle("lightBlocked")], 
+            ['lightBlocked', lambda: self.toggle("lightBlocked")],
+            ['speech', lambda: self.toggle("speech")],
             ]
              ),
             ('Options', [['lights visible above walls',
@@ -816,7 +827,10 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         id = self.drawLine(x1, y1, x2, y2, fill=color, tag="line")
         seg.id = id
         self.world.append( seg )
-    def drawLine(self, x1, y1, x2, y2, fill, tag, **args):
+    def drawText(self, x, y, text, fill="black", tag="robot", **args):
+        #self.canvas.create_polygon()
+        return self.canvas.create_text(self.scale_x(x) + 30, self.scale_y(y) - 40, text=text, tag=tag, fill=fill, anchor="nw", **args)
+    def drawLine(self, x1, y1, x2, y2, fill="", tag="robot", **args):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill, **args)
     def drawOval(self, x1, y1, x2, y2, **args):
         return self.canvas.create_oval(self.scale_x(x1), self.scale_y(y1),
@@ -879,7 +893,8 @@ class SimRobot:
         self.friction = 1.0
         # -1: don't automatically turn display on when subscribing:
         self.display = {"body": 1, "boundingBox": 0, "gripper": -1, "camera": 0, "sonar": 0,
-                        "light": -1, "lightBlocked": 0, "trail": -1, "ir": -1, "bumper": 1}
+                        "light": -1, "lightBlocked": 0, "trail": -1, "ir": -1, "bumper": 1,
+                        "speech": 1}
         self.stall = 0
         self.energy = 10000.0
         self.maxEnergyCostPerStep = 1.0
@@ -891,6 +906,7 @@ class SimRobot:
         self._last_pose = (-1, -1, -1) # last robot pose drawn
         self.bulb = None
         self.gripper = None
+        self.sayText = ""
 
     def additionalSegments(self, x, y, cos_a90, sin_a90, **dict):
         # dynamic segments
@@ -924,6 +940,9 @@ class SimRobot:
         
     def localize(self, x = 0, y = 0, th = 0):
         self.x, self.y, self.a = (x, y, th)
+
+    def say(self, text):
+        self.sayText = text
 
     def setPose(self, x = None, y = None, a = None, handOfGod = 0):
         if x != None: # we never send just x; always comes with y
@@ -1439,6 +1458,11 @@ class TkPioneer(TkRobot):
                                        self._gy + x * sin_a90 + y * cos_a90),
                          xs, ys)
                 self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
+        if self.display["speech"] == 1:
+            if self.sayText != "":
+                # center of robot: 
+                x, y = self._gx, self._gy
+                self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
         if self.display["boundingBox"] == 1:
             if self.boundingBox != []:
                 xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
