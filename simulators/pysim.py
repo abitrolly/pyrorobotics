@@ -828,8 +828,25 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         seg.id = id
         self.world.append( seg )
     def drawText(self, x, y, text, fill="black", tag="robot", **args):
-        #self.canvas.create_polygon()
-        return self.canvas.create_text(self.scale_x(x) + 30, self.scale_y(y) - 40, text=text, tag=tag, fill=fill, anchor="nw", **args)
+        # sizes are all in pixels
+        import tkFont
+        font = tkFont.Font(size = -15) # n is in pixel tall
+        actual = font.actual()
+        width = font.measure(text) * .80
+        height = actual["size"] + 20
+        between = 30
+        above   = 40
+        xp, yp = self.scale_x(x), self.scale_y(y)
+        points = [(xp, yp),
+                  (xp + between, yp - above),
+                  (xp + between, yp - above - 10),
+                  (xp + between + width, yp - above - 10),
+                  (xp + between + width, yp - above - 10 + height),
+                  (xp + between, yp - above - 10 + height),
+                  (xp + between, yp - above + 10),
+                  ]
+        self.canvas.create_polygon(points, tag=tag, fill="white", outline="black")
+        self.canvas.create_text(self.scale_x(x) + between + 5, self.scale_y(y) - above, text=text, tag=tag, fill=fill, anchor="nw", **args)
     def drawLine(self, x1, y1, x2, y2, fill="", tag="robot", **args):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill, **args)
     def drawOval(self, x1, y1, x2, y2, **args):
