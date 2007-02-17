@@ -168,6 +168,15 @@ class BulbSimDevice(Device):
 		window.addCommand("brightness", "Brightness!", str(b),
 				  lambda b: self.setBrightness(float(b)))
 		
+class SpeechSimDevice(SpeechDevice, Device):
+	def __init__(self, robot):
+		Device.__init__(self)
+		self.type = "speech"
+		self._dev = robot
+	def say(self, msg):
+		msg = msg.replace("_", "~-")
+		return self._dev.move("l_%s" % (msg,))
+
 class PTZSimDevice(Device):
 	def __init__(self, robot):
 		Device.__init__(self)
@@ -320,6 +329,9 @@ class Simbot(Robot):
 		elif name == "ptz":
 			self.move("s_%s_%d" % (name, index))
 			return {name: PTZSimDevice(self)}
+		elif name == "speech":
+			self.move("s_%s_%d" % (name, index))
+			return {name: SpeechSimDevice(self)}
 		elif name == "camera":
 			self.move("s_%s_%d" % (name, index))
 			try:

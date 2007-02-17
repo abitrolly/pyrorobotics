@@ -598,6 +598,10 @@ class Device(object):
             self.window = DeviceWindow(self, self.title)
 
 
+class SpeechDevice:
+    def addWidgets(self, window):
+        window.addCommand("say", "Say!", "", self.say)
+
 class GripperDevice(Device):
 
     # these should be overridden by robot-specific methods

@@ -375,13 +375,13 @@ class Simulator:
             retval = self.assoc[sockname[1]].a / PIOVER180
         elif len(request) > 1 and request[0] == '!': # eval
             try:
-                retval = eval(request[1:])
-            except:
+                retval = str(eval(request[1:]))
+            except Exception, msg:
                 try:
                     exec request[1:]
                     retval = "ok"
                 except:
-                    retval = "error"
+                    retval = "error: %s" % msg
         else:
             # assume a package
             message = request.split("_")
@@ -390,16 +390,15 @@ class Simulator:
                 try: t, r = float(message[1]), float(message[2])
                 except: pass
                 retval = self.assoc[sockname[1]].move(t, r)
-            elif message[0] == "l": # "l_name_string" say text
-                el, name, strng = None, None, None
+            elif message[0] == "l": # "l_string" say text
+                el, strng = None, None
                 try:
-                    el, name, strng = message
+                    el, strng = message
                 except: pass
-                if name in self.robotsByName:
-                    r = self.robotsByName[name]
-                    r.say(strng)
-                    self.redraw()
-                    retval = "ok"
+                strng = strng.replace("~-", "_")
+                self.assoc[sockname[1]].say(strng)
+                self.redraw()
+                retval = "ok"
             elif message[0] == "a": # "a_name_x_y_th" simulation placement
                 simulation, name, x, y, thr = None, None, None, None, None
                 try:
@@ -830,23 +829,34 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
     def drawText(self, x, y, text, fill="black", tag="robot", **args):
         # sizes are all in pixels
         import tkFont
-        font = tkFont.Font(size = -15) # n is in pixel tall
-        actual = font.actual()
-        width = font.measure(text) * .80
-        height = actual["size"] + 20
+        fontPixelHeight = 15
+        font = tkFont.Font(size = -fontPixelHeight) # -n is n pixels tall
+        actual = font.actual() # but let's get actual
+        lines = text.split("\n")
+        width = 0
+        for line in lines:
+            w = font.measure(line)  * 1.25 # width of text
+            if w > width:
+                width = w + 10
+        height = (actual["size"] * len(lines) * 1.25) + fontPixelHeight
         between = 30
         above   = 40
+        roundness = 2
         xp, yp = self.scale_x(x), self.scale_y(y)
         points = [(xp, yp),
                   (xp + between, yp - above),
-                  (xp + between, yp - above - 10),
-                  (xp + between + width, yp - above - 10),
-                  (xp + between + width, yp - above - 10 + height),
-                  (xp + between, yp - above - 10 + height),
+                  (xp + between, yp - above - 10 + roundness),
+                  (xp + between + roundness, yp - above - 10),
+                  (xp + between + width - roundness, yp - above - 10),
+                  (xp + between + width, yp - above - 10 + roundness),
+                  (xp + between + width, yp - above - 10 + height - roundness),
+                  (xp + between + width - roundness, yp - above - 10 + height),
+                  (xp + between + roundness, yp - above - 10 + height),
+                  (xp + between, yp - above - 10 + height - roundness),
                   (xp + between, yp - above + 10),
                   ]
-        self.canvas.create_polygon(points, tag=tag, fill="white", outline="black")
-        self.canvas.create_text(self.scale_x(x) + between + 5, self.scale_y(y) - above, text=text, tag=tag, fill=fill, anchor="nw", **args)
+        self.canvas.create_polygon(points, tag=(tag,"top"), fill="white", outline="black")
+        self.canvas.create_text(self.scale_x(x) + between + 5, self.scale_y(y) - above, text=text, tag=(tag,"top"), fill=fill, anchor="nw", **args)
     def drawLine(self, x1, y1, x2, y2, fill="", tag="robot", **args):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill, **args)
     def drawOval(self, x1, y1, x2, y2, **args):
@@ -901,7 +911,7 @@ class SimRobot:
             self.radius = max(max(map(abs, boundingBox[0])), max(map(abs, boundingBox[1]))) # meters
         else:
             self.radius = 0.0
-        self.builtinDevices = []
+        self.builtinDevices = ["speech"]
         self.color = color
         self.colorParts = {"ir": "pink", "sonar": "gray", "bumper": "black", "trail": color}
         self.devices = []
@@ -1388,6 +1398,7 @@ class TkPuck(TkRobot):
         """
         Draws the body of the robot. Not very efficient.
         """
+        self.simulator.canvas.tkraise("top")
         if  self._last_pose == (self._gx, self._gy, self._ga): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.remove("robot-%s" % self.name)
@@ -1415,6 +1426,7 @@ class TkPioneer(TkRobot):
         """
         Draws the body of the robot. Not very efficient.
         """
+        self.simulator.canvas.tkraise("top")
         if self._last_pose == (self._gx, self._gy, self._ga) and (
             (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
@@ -1507,6 +1519,7 @@ class TkBlimp(TkRobot):
         self.color = "purple"
 
     def draw(self):
+        self.simulator.canvas.tkraise("top")
         if self._last_pose == (self._gx, self._gy, self._ga): return
         self._last_pose = (self._gx, self._gy, self._ga)
         a90 = self._ga + PIOVER2 # angle is 90 degrees off for graphics
@@ -1774,6 +1787,7 @@ class TkMyro(TkRobot):
         """
         Draws the body of the robot. Not very efficient.
         """
+        self.simulator.canvas.tkraise("top")
         if self._last_pose == (self._gx, self._gy, self._ga) and (
             (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)

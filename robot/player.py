@@ -104,11 +104,9 @@ class PlayerFiducialDevice(PlayerDevice):
     def __len__(self):
         return len(self._dev.fiducials)
 
-class PlayerSpeechDevice(PlayerDevice):
+class PlayerSpeechDevice(SpeechDevice, PlayerDevice):
     def __init__(self, client):
         PlayerDevice.__init__(self, client, "speech", visible = 0)
-    def addWidgets(self, window):
-        window.addCommand("say", "Say!", "", self.say)
 
 class PlayerGraphics2dDevice(PlayerDevice):
     def __init__(self, client):
