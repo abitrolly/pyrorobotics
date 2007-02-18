@@ -434,7 +434,10 @@ class gui:
             fp.close()
          except:
             pass
-         sys.stdout.flush()
+         try:
+             sys.stdout.flush()
+         except IOError:
+             pass
          sys.exit(1)
       else:
          os._exit(1)
@@ -539,7 +542,8 @@ class gui:
          if os.name in ['nt', 'dos', 'os2'] :
             # FIXME: this assumes program to run is a python program; how will we know?
             # could leave out "python" and windows will ask
-            os.system("start python %s %d %s" % (f, pyroPID, worldfile))
+            print "start python %s %d %s" % (f, pyroPID, worldfile)
+            os.system("start python \"%s\" \"%d\" \"%s\"" % (f, pyroPID, worldfile))
          elif os.name in ['posix']:
             os.system(f + (" %d " % pyroPID) + worldfile + " &")
          else:

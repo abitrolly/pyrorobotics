@@ -616,15 +616,15 @@ class TKgui(Tkinter.Toplevel, gui):
       self.joywin = JoystickDriver(self.engine.robot)
 
    def about(self):
-      self.redirectToTerminal()
+      #self.redirectToTerminal()
       system.about()
-      self.redirectToWindow()
+      #self.redirectToWindow()
 
    def help(self):
-      self.redirectToTerminal()
+      #self.redirectToTerminal()
       system.help()
       system.usage()
-      self.redirectToWindow()
+      #self.redirectToWindow()
 
    def editor(self):
       import os
