@@ -1,4 +1,19 @@
-import ossaudiodev, struct, math, FFT, Numeric, time, threading, copy
+try:
+    import ossaudiodev
+except:
+    print "ossaudiodev not installed"
+    ossaudiodev = None
+try:
+    import FFT
+except:
+    print "FFT not installed"
+    ossaudiodev = None
+try:
+    import Numeric
+except:
+    print "Numeric not installed"
+    ossaudiodev = None
+import struct, math, time, threading, copy
 
 def add(s1, s2):
     return minmax([(v1 + v2) for (v1, v2) in zip(s1, s2)])
@@ -48,18 +63,20 @@ class SoundDevice:
         self.number_of_channels= 1
         self.sample_rate= 8000
         self.sample_width= 1
-        self.format = ossaudiodev.AFMT_U8
         self.minFreq = 20
         self.maxFreq = 3500
         self.debug = 0
         self.buffer = None
-        if self.debug:
-            self.setFile("770.txt")
-        if self.async:
-            self.lock = threading.Lock()
-            self.thread = SoundThread(self)
+        if ossaudiodev != None:
+            self.format = ossaudiodev.AFMT_U8
+            if self.debug:
+                self.setFile("770.txt")
+            if self.async:
+                self.lock = threading.Lock()
+                self.thread = SoundThread(self)
 
     def initialize(self, mode):
+        if ossaudiodev == None: return
         self.dev = ossaudiodev.open("/dev/dsp", mode)
         self.dev.setparameters(self.format,
                               self.number_of_channels,
@@ -69,6 +86,7 @@ class SoundDevice:
     def play(self, sample):
         """
         """
+        if ossaudiodev == None: return
         if self.status != "w":
             self.initialize("w")
         if self.async:
@@ -83,6 +101,7 @@ class SoundDevice:
         """
         freq example: playTone([550,400], .1, volume=.5) # middle C for .1 seconds, half volume
         """
+        if ossaudiodev == None: return
         if type(freqs) == type(0):
             freqs = [freqs]
         if self.status != "w":
@@ -104,6 +123,7 @@ class SoundDevice:
             self.dev.flush()
 
     def read(self, seconds):
+        if ossaudiodev == None: return
         if self.status != "r":
             self.initialize("r")
         buffer = self.dev.read(int(self.sample_rate * seconds))
@@ -111,10 +131,12 @@ class SoundDevice:
         return struct.unpack(str(size) + "B", buffer)
 
     def setFile(self, filename):
+        if ossaudiodev == None: return
         self.filename = filename
         self.fp = open(self.filename, "r")
 
     def readFile(self, seconds):
+        if ossaudiodev == None: return
         data = None
         try:
             data = eval(self.fp.readline())
@@ -129,6 +151,7 @@ class SoundDevice:
 
     def getFreq(self, seconds):
         # change to read from the buffer, rather than block
+        if ossaudiodev == None: return
         if self.debug:
             data = self.readFile(1)
         else:
@@ -144,6 +167,7 @@ class SoundDevice:
         return (domFreq, value, transform[0])
 
     def close(self):
+        if ossaudiodev == None: return
         if self.status != "closed":
             self.dev.close()
             self.status = "closed"
