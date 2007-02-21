@@ -419,27 +419,30 @@ class Roomba(Robot):
 
     def adjustSpeed(dev):
     	if dev.lastTranslate == 0:
-		if dev.lastRotate < 0:
-			dev.sendMsg('\x89\x00\x80\x00\x00')
-		elif dev.lastRotate > 0:
-			dev.sendMsg('\x89\x00\x80\xFF\xFF')
-		else :
-			dev.sendMsg('\x89\x00\x00\x00\x00')
-		return
-	vel = int(dev.lastTranslate * 500)	
-	if dev.lastRotate == 0:
-		rad = 0x8000
-	else:
-		rad = int(100.0/dev.lastRotate)
-		if rad > 2000:
-			rad = 2000
-		elif rad < -2000:
-			rad = -2000
-	velHigh = 0xFF & (vel >> 8)
-	velLow = vel & 0xFF
-	radHigh = 0xFF & (rad >> 8)
-	radLow = rad & 0xFF
-	dev.sendMsg('\x89%c%c%c%c' % (velHigh, velLow, radHigh, radLow))
+            if dev.lastTranslate == 0:
+                    if dev.lastRotate < 0:
+                            dev.sendMsg('\x89\x00\x80\xFF\xFF')
+                    elif dev.lastRotate > 0:
+                            dev.sendMsg('\x89\x00\x80\x00\x00')
+                    else :
+                            dev.sendMsg('\x89\x00\x00\x00\x00')
+        else:
+            vel = int(dev.lastTranslate * 500)	
+            if dev.lastRotate == 0:
+                    rad = 0x8000
+            else:
+                    rad = int(100.0/dev.lastRotate)
+                    if rad > 2000:
+                            rad = 2000
+                    elif rad < -2000:
+                            rad = -2000
+            if dev.lastTranslate < 0: # backwards
+                rad *= -1 # reverse the effect of turn
+            velHigh = 0xFF & (vel >> 8)
+            velLow = vel & 0xFF
+            radHigh = 0xFF & (rad >> 8)
+            radLow = rad & 0xFF
+            dev.sendMsg('\x89%c%c%c%c' % (velHigh, velLow, radHigh, radLow))
 	
     def reset(dev):
     	dev.sendMsg('\x80\x82')
