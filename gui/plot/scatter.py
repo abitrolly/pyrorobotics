@@ -305,6 +305,6 @@ if __name__ == '__main__':
     from random import random
     for y in range(100):
         for x in range(10):
-            sp.addPoint(random(), random())
+            sp.addPoint(random(), random(), color="blue")
             sp.update()
     sp.mainloop()

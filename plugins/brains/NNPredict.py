@@ -71,7 +71,9 @@ class NNPredict(Brain):
          self.trans, self.rotate = self.net['output'].activation
          if self.counter % 10 == 0:
             print self.trans, self.rotate
-      self.plot.addPoint(self.min, self.trans, not self.net.learning)
+      colors= ["red", "blue"]
+      self.plot.addPoint(self.min, self.trans, int(not self.net.learning),
+                         color=colors[int(not self.net.learning)])
       self.robot.move((self.trans - .5)/2.0, (self.rotate - .5)/2.0)
       self.counter += 1
 
