@@ -80,6 +80,92 @@ def toTwosComplement2Bytes( value ):
 
     return ( (eqBitVal >> 8) & 0xFF, eqBitVal & 0xFF )
 
+class RoombaIRDevice(Device):
+    def __init__(self, robot):
+        self._dev = robot
+        Device.__init__(self, "ir")
+        self.units    = "RAW"
+        # What are the raw units?
+        # Anything that you pass to rawToUnits should be in these units
+        self.rawunits = "RAW"
+        self.maxvalueraw = 255 # meters
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.radius = self._dev.radius # meters
+        # ----------------------------------------------------------
+        # All of the rest of the measures are relative to units, given in rawunits:
+        self.count = len(self)
+        self.groups = {'wallSensor': 0,
+                       'leftCliff': 1,
+                       'frontLeftCliff': 2,
+                       'frontRightCliff': 3,
+                       'rightCliff': 4,
+                       'virtualWall': 5,
+                       'commIR': 6,
+                       'all': range(7)}
+        self.startDevice()
+    def __len__(self):
+        return 7
+    def getSensorValue(self, pos):
+        name = ['wallSensor', 'leftCliff', 'frontLeftCliff',
+                'frontRightCliff', 'rightCliff', 'virtualWall',
+                'commIR']
+        return SensorValue(self,
+                           self._dev.sensorData[name[pos]],
+                           pos,
+                           (0,  # x in meters
+                            0,  # y
+                            0,  # z
+                            0,  # rads
+                            0), # arc rads
+                           noise=0)
+
+class RoombaBumperDevice(Device):
+    def __init__(self, robot):
+        self._dev = robot
+        Device.__init__(self, "bumper")
+        self.units    = "RAW"
+        # What are the raw units?
+        # Anything that you pass to rawToUnits should be in these units
+        self.rawunits = "RAW"
+        self.maxvalueraw = 1.0 # meters
+        # These are fixed in meters: DO NOT CONVERT ----------------
+        self.radius = self._dev.radius # meters
+        # ----------------------------------------------------------
+        # All of the rest of the measures are relative to units, given in rawunits:
+        self.count = len(self)
+        self.groups = {'leftBump': 0, 'rightBump': 1, 'all': (0, 1)}
+        self.startDevice()
+    def __len__(self):
+        return 2
+    def getSensorValue(self, pos):
+        name = ['leftBump', 'rightBump']
+        return SensorValue(self,
+                           self._dev.sensorData[name[pos]],
+                           pos,
+                           (0,  # x in meters
+                            0,  # y
+                            0,  # z
+                            0,  # rads
+                            0), # arc rads
+                           noise=0)
+
+class RoombaBatteryDevice(Device):
+    def __init__(self, robot):
+        self._dev = robot
+        Device.__init__(self, "ir")
+    def getTemperature(self):    
+    	return self._dev.sensorData['temperature']
+    def getCharge(self):
+    	return self._dev.sensorData['charge']
+    charge = property(getCharge)
+    temperature = property(getTemperature)
+    def addWidgets(self, window):
+        window.addData("charge", ".charge:", self.charge)
+        window.addData("temp", ".temperature:", self.temperature)
+    def updateWindow(self):
+        self.window.updateWidget("charge", self.charge)
+        self.window.updateWidget("temp", self.temperature)
+
 class Roomba(Robot):
     def __init__(self,
                  port = None, 
@@ -118,18 +204,25 @@ class Roomba(Robot):
         self.simulated = simulator
         self.supportedFeatures.append( "continuous-movement" )
         self.supportedFeatures.append( "range-sensor" )
-	
         self.sendMsg('\x80') #Start Sci
 	self.sendMsg('\x82') #Give user control
 	self.sendMsg('\x8E\x02') # reset sensors, useful for distance
-	
 	self.sensorData = {} # Holds all of the sensor data
-		
 	self.supportedFeatures.append( "mono-sound" )
 	self.supportedFeatures.append( "visual-feedback" )
+	self.builtinDevices = ["ir", "bumper", "battery"]
+	for name in self.builtinDevices:
+            self.startDevice(name)
 	self.update() 
         print "Done loading Roomba."
-	    
+
+    def startDeviceBuiltin(self, name, index=0):
+        if name == "ir":
+            return {"ir": RoombaIRDevice(self)}
+        elif name == "bumper":
+            return {"bumper": RoombaBumperDevice(self)}
+        elif name == "battery":
+            return {"battery": RoombaBatteryDevice(self)}
     def connect(self):
     	self.start()
 	
@@ -143,7 +236,6 @@ class Roomba(Robot):
 	self.lock.release()
     
     def readData(self):
-    
     	while self.sc.inWaiting(): # Clear out whatever may be in buffer
 		self.sc.read(size=1)
 	while 1:	
@@ -157,9 +249,7 @@ class Roomba(Robot):
 	self.interpretSensorString(retvalInt) # Handles the sensor data
 	
     def interpretSensorString(self, r ):
-     
 	# byte 0: bumps and wheeldrops
-		
 	self.sensorData['casterDrop'] = bitOfByte( 4, r[0] )
 	self.sensorData['leftWheelDrop'] = bitOfByte( 3, r[0] )
 	self.sensorData['rightWheelDrop'] = bitOfByte( 2, r[0] )
@@ -168,19 +258,14 @@ class Roomba(Robot):
     
     	# byte 1: wall sensor, the IR looking to the right
 	self.sensorData['wallSensor'] = bitOfByte( 0, r[1] )
-    
    	# byte 2: left cliff sensor
 	self.sensorData['leftCliff'] = bitOfByte( 0, r[2] )
-    
     	# byte 3: front left cliff sensor
     	self.sensorData['frontLeftCliff'] = bitOfByte( 0, r[3] )
-    
     	# byte 4: front right cliff sensor
     	self.sensorData['frontRightCliff'] = bitOfByte( 0, r[4] )
-    
     	# byte 5: right cliff sensor
     	self.sensorData['rightCliff'] = bitOfByte( 0, r[5] )
-    
     	# byte 6: virtual wall detector (the separate unit)
     	self.sensorData['virtualWall'] = bitOfByte( 0, r[6] )
            
@@ -214,6 +299,36 @@ class Roomba(Robot):
     	self.sensorData['rawAngle'] = twosComplementInt2bytes( r[14], r[15] )
     	# the distance between the wheels is 258 mm
     	self.sensorData['angleInRadians'] = 2.0 * self.sensorData['rawAngle'] / 258.0
+
+    	# bytes 17: Communication IR 
+    	self.sensorData['commIR'] = twosComplementInt1byte( r[17] )
+    	# remote control signals/meaning:
+    	# 129 - left
+    	# 130 - forward
+    	# 131 - right
+    	# 132 - spot
+    	# 133 - max
+    	# 134 - small
+    	# 135 - medium
+    	# 136 - large/clean
+    	# 137 - pause
+    	# 138 - power
+    	# 139 - arc-forward-left
+    	# 140 - arc-forward-right
+    	# 141 - drive stop
+    	# scheduling:
+    	# 142 - send all
+    	# 143 - seek dock
+    	# home base:
+    	# 240 - reserved
+    	# 248 - red buoy (on robot's right as looking at base)
+    	# 244 - green buoy (on  robot's left as looking at base)
+    	# 242 - force field
+    	# 252 - red and green
+    	# 250 - red and force field
+    	# 246 - green and force field
+    	# 254 - red, green, and force field
+    	
         
     	# byte 21: temperature of the battery
     	# this is in degrees celsius
@@ -236,21 +351,24 @@ class Roomba(Robot):
 		self.adjustSpeed()
 	'''
 
-    def getSensor(dev, value):
-        
-	if dev.sensorData.has_key(value):
-		return dev.sensorData[value]
+    def getSensor(dev, value = None):
+        if value == None:
+                return dev.sensorData.keys()
+	elif dev.sensorData.has_key(value):
+                return dev.sensorData[value]
 	else:
-		print "Sorry not a valid Sensor"
+		print "Sorry not a valid Sensor. Use %s" % dev.sensorData.keys()
 		return None
     
-    def mode(dev, value):
+    def setMode(dev, value):
+        """ set to safe or full """
     	if value == "safe":
 		dev.sendMsg('\x83')
 	elif value == "full":
 		dev.sendMsg('\x84')
 
-    def clean(dev, value):
+    def setClean(dev, value):
+        """ set to spot, clean, or max """
     	if value == "spot":
 		dev.sendMsg('\x86')
 	elif value == "clean":
@@ -258,7 +376,8 @@ class Roomba(Robot):
 	elif value == "max":
 		dev.sendMsg('\x88')
 
-    def motor(dev, value):
+    def setMotor(dev, value):
+        """ set to main, vac, side, or off """
     	if value == "main":
 		dev.sendMsg('\x8A\x04')
 	elif value == "vac":
@@ -269,12 +388,12 @@ class Roomba(Robot):
 		dev.sendMsg('\x8A\x00')
 	#could also add side&vac, main&side, main&vac, all
 
-    def status(dev, value):
+    def setStatus(dev, value):
+        """ set to sleep or wake """
     	if value == "sleep": # sends the Roomba to its dock
 		dev.sendMsg('\x88') #(max clean cycle): must be in clean cycle to
 		time.sleep(1)
     		dev.sendMsg('\x8F') #look for the charging station
-		
 	elif value == "wakeup":
 		dev.reset()
 		time.sleep(.5)
@@ -290,6 +409,14 @@ class Roomba(Robot):
 	self.lastRotate = rotate
 	self.adjustSpeed()
 
+    def translate(dev, value):
+	dev.lastTranslate = value
+	dev.adjustSpeed()
+	    
+    def rotate(dev, value):
+    	dev.lastRotate = value
+	dev.adjustSpeed()
+
     def adjustSpeed(dev):
     	if dev.lastTranslate == 0:
 		if dev.lastRotate < 0:
@@ -299,23 +426,19 @@ class Roomba(Robot):
 		else :
 			dev.sendMsg('\x89\x00\x00\x00\x00')
 		return
-		
 	vel = int(dev.lastTranslate * 500)	
 	if dev.lastRotate == 0:
 		rad = 0x8000
-		
 	else:
 		rad = int(100.0/dev.lastRotate)
 		if rad > 2000:
 			rad = 2000
 		elif rad < -2000:
 			rad = -2000
-	
 	velHigh = 0xFF & (vel >> 8)
 	velLow = vel & 0xFF
 	radHigh = 0xFF & (rad >> 8)
 	radLow = rad & 0xFF
-		
 	dev.sendMsg('\x89%c%c%c%c' % (velHigh, velLow, radHigh, radLow))
 	
     def reset(dev):
@@ -324,14 +447,6 @@ class Roomba(Robot):
     def off(dev):
     	dev.sendMsg('\x85')
 	
-    def translate(dev, value):
-	dev.lastTranslate = value
-	dev.adjustSpeed()
-	    
-    def rotate(dev, value):
-    	dev.lastRotate = value
-	dev.adjustSpeed()
-
 if __name__ == '__main__':
     x = Roomba()
     x.update()
