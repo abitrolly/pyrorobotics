@@ -483,3 +483,4 @@ if __name__ == '__main__': # some tests
   f = BellFuzzy(10,20,30)
   for i in range(100):
     print str(i) + ", " + str(float(f(i)))
+

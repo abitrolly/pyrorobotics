@@ -382,3 +382,4 @@ if __name__ == '__main__':
     print repr(s.read(5))
     print s.inWaiting()
     del s
+
