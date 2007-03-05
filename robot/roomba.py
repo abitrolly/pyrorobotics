@@ -18,9 +18,21 @@ from pyrobot.robot import *
 from pyrobot.robot.device import *
 from pyrobot.system.serial import *
 import pyrobot.gui.console as console
-import string, array, math 
+import string, array, math , struct
 import threading
 import time
+
+def freq2num(f):
+    # 32.70 is arbitrarily zero octave
+    # 32.70 = exp(VAL / 1.442695)
+    # VAL = 5.03121
+    octave = math.log(f) * 1.442695 - 5.03121 + 2 # make it 2 octaves higher
+    octaveInt = int(round(octave, 2)) # get base octave
+    if octaveInt >= octave:
+        return (octaveInt * 12)
+    else:
+        # use computed octave differance as a percentage of octave:
+        return (octaveInt * 12) + int((octave - octaveInt) * 12.0)
 
 def bitOfByte( bit, byte ):
     """ returns a 0 or 1: the value of the 'bit' of 'byte' """
@@ -190,7 +202,11 @@ class Roomba(Robot):
                     port = "/dev/rfcomm0"
                 if rate == None:
                     rate = 57600
-            print "Roomba opening port", port, "..."
+            if type(port) == str and port.lower().startswith("com"):
+                portnum = int(port[3:])
+                if portnum >= 10:
+                    port = r'\\.\COM%d' % (portnum)
+            print "Roomba opening port '%s' with baudrate %s ..." % (port, rate)
             self.sc = Serial(port, baudrate=rate) #, xonxoff=0, rtscts=0)
             self.sc.setTimeout(0.5)
             self.sc.readlines() # to clear out the line
@@ -294,11 +310,17 @@ class Roomba(Robot):
     	# not polled often enough, i.e., it then means "a long way"
     	# It is the sum of the two drive wheels' distances, divided by 2
     	self.sensorData['distance'] = twosComplementInt2bytes( r[12], r[13] )
-    
     	# bytes 14 and 15: angle
     	self.sensorData['rawAngle'] = twosComplementInt2bytes( r[14], r[15] )
     	# the distance between the wheels is 258 mm
-    	self.sensorData['angleInRadians'] = 2.0 * self.sensorData['rawAngle'] / 258.0
+    	self.sensorData['angleInRadians'] = (2.0 * self.sensorData['rawAngle']) / 258.0
+    	a = self.sensorData['angleInRadians']
+    	d = self.sensorData['distance'] * 0.001
+        self.x += math.cos(a) * d
+        self.y += math.sin(a) * d
+        self.th += self.sensorData['angleInRadians'] * 180/math.pi
+        self.th %= 360
+        self.thr = self.th % math.pi/180
 
     	# bytes 17: Communication IR 
     	self.sensorData['commIR'] = twosComplementInt1byte( r[17] )
@@ -351,6 +373,17 @@ class Roomba(Robot):
 		self.adjustSpeed()
 	'''
 
+    def beep(self, frequency, duration):
+        num = freq2num(frequency)
+        durInt = min(int(duration * 64.0), 255) # convert to 1/64 units
+        # duration is four seconds max
+        # song number is 15
+        # PLAY is opcode 141
+        # STORESONG is opcode 140
+        msg = struct.pack("BBBBBBB", 140, 15, 1, num, durInt, 141, 15)
+        print msg
+        self.sendMsg(msg)
+        
     def getSensor(dev, value = None):
         if value == None:
                 return dev.sensorData.keys()
