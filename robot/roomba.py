@@ -373,7 +373,7 @@ class Roomba(Robot):
 		self.adjustSpeed()
 	'''
 
-    def beep(self, frequency, duration):
+    def beep(self, duration, frequency, frequency2=0):
         num = freq2num(frequency)
         durInt = min(int(duration * 64.0), 255) # convert to 1/64 units
         # duration is four seconds max
