@@ -1,6 +1,7 @@
 # Uses KheperaRobot, a subclass of robot, for the Hemisson
 
 from pyrobot.robot.khepera import *
+from pyrobot.system.share import ask
 
 def INIT():
     retval = ask("Please enter the Hemisson Data",
