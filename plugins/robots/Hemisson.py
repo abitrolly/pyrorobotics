@@ -1,10 +1,15 @@
 # Uses KheperaRobot, a subclass of robot, for the Hemisson
 
-#import termios
 from pyrobot.robot.khepera import *
 
 def INIT():
-    # For serial connected Hemisson:
-    return KheperaRobot(port = "/dev/rfcomm0",
-                        rate = 115200,
-                        subtype = "Hemisson")
+    retval = ask("Please enter the Hemisson Data",
+                 (("Port", "6665"),
+                  ("Baud", 115200)))
+    if retval["ok"]:
+        # For serial connected Hemisson:
+        return KheperaRobot(port = retval["Port"],
+                            rate = int(retval["Baud"]),
+                            subtype = "Hemisson")
+    else:
+        raise "Cancelled!" 
