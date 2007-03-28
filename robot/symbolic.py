@@ -11,6 +11,7 @@ __version__ = "$Revision$"
 import socket, threading, random, time
 from pyrobot.robot import Robot
 from pyrobot.robot.device import *
+from pyrobot.simulators.pysim import colorMap, colorCode, colorUnCode
 try:
 	import cPickle as pickle
 except:
@@ -21,33 +22,6 @@ except:
 	class ManualFakeCamera: pass
 	# camera C++ code not built (or PIL not installed)
 	print "ManualFakeCamera not loaded! Won't be able to use camera."
-
-colorMap = {"red": (255, 0,0),
-            "green": (0, 255,0),
-            "blue": (0, 0,255),
-            "white": (255, 255, 255),
-            "black": (0, 0, 0),
-            "cyan": (0, 255, 255),
-            "yellow": (255, 255, 0),
-            "brown": (165, 42, 42),
-            "orange": (255, 165, 0),
-            "pink": (255, 192, 203),
-            "violet": (238, 130, 238),
-            "purple": (160, 32, 240),
-            }
-colorUnCode = {1: colorMap["red"],
-	       2: colorMap["green"],
-	       3: colorMap["blue"],
-	       4: colorMap["white"],
-	       5: colorMap["black"],
-	       6: colorMap["cyan"],
-	       7: colorMap["yellow"],
-	       8: colorMap["brown"],
-	       9: colorMap["orange"],
-	       10: colorMap["pink"],
-	       11: colorMap["violet"],
-	       12: colorMap["purple"],
-	       }
 
 class PositionSimDevice(Device):
 	def __init__(self, robot):
