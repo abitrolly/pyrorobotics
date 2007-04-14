@@ -46,7 +46,7 @@ class BlobCamera(Camera):
    def update(self):
       if not self.active: return
       blobs = []
-      for i in range(self._devBlobFinder.blob_count):
+      for i in range(self._devBlobFinder.blobs_count):
          try:
             b = self._devBlobFinder.blobs[i]
             blobs.append((b.left, b.top, b.right, b.bottom, b.color))
