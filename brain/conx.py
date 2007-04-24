@@ -900,6 +900,7 @@ class Network(object):
     def addLayer(self, name, size, verbosity = 0, position = None):
         assert type(name) == str, "first parameter (name) must be a string"
         assert type(size) == int, "second parameter (size) must be an integer"
+        assert (name not in self.layersByName), ("duplicate layer name '%s' is not allowed" % name)
         layer = Layer(name, size, maxRandom=self._maxRandom)
         Network.add(self, layer, verbosity, position)
     # methods for constructing and modifying a network
