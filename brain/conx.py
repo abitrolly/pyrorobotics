@@ -1719,7 +1719,6 @@ class Network(object):
                 tssErr = 0.0; rmsErr = 0.0; self.epoch = 1; totalCorrect = 0; totalPCorrect = {}
                 continue
             self.epoch += 1
-        print "----------------------------------------------------"
         if totalCount > 0:
             self.reportFinal(self.epoch, tssErr, totalCorrect, totalCount, rmsErr, totalPCorrect)
             if len(self.crossValidationCorpus) > 0 or self.autoCrossValidation:
@@ -1736,7 +1735,6 @@ class Network(object):
                     self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
         else:
             print "Final: nothing done"
-        print "----------------------------------------------------"
     def step(self, **args):
         """
         Network.step()
