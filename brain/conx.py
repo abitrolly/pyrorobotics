@@ -1203,7 +1203,7 @@ class Network(object):
         """
         self.seed = value
         random.seed(self.seed)
-        if self._verbosity >= 0:
+        if self.verbosity >= 0:
             print "Conx using seed:", self.seed
     def getConnection(self, lfrom, lto):
         """
