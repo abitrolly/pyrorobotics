@@ -752,10 +752,11 @@ class Network(object):
             x = random.random() * 100000 + time.time()
         else:
             x = seed
+        self.layers = []
+        self.verbosity = verbosity
         self.setSeed(x)
         self.complete = 0
         self.name = name
-        self.layers = []
         self.layersByName = {}
         self.connections = []
         self.inputMap = []
@@ -774,7 +775,6 @@ class Network(object):
         self.epoch = 0
         self.totalEpoch = 0
         self.count = 0 # number of times propagate is called
-        self.verbosity = verbosity
         self.stopPercent = 1.0
         self.sigmoid_prime_offset = 0.1
         self.tolerance = 0.4
