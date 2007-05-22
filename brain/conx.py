@@ -1203,7 +1203,8 @@ class Network(object):
         """
         self.seed = value
         random.seed(self.seed)
-        print "Conx using seed:", self.seed
+        if self._verbosity >= 0:
+            print "Conx using seed:", self.seed
     def getConnection(self, lfrom, lto):
         """
         Returns the connection instance connecting the specified (string)
