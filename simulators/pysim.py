@@ -857,6 +857,7 @@ class Simulator:
         self.trail.append([None] * self.maxTrailSize)
         r.simulator = self
         r._xya = r._gx, r._gy, r._ga # save original position for later reset
+        r._port = port
         if port != None:
             self.assoc[port] = r
             self.ports.append(port)
@@ -2342,6 +2343,34 @@ class PioneerFrontSonars(RangeSensor):
                        'back' : [],
                        'back-all' : []}
         
+class PioneerBackSonars(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self,
+            "sonar", geometry = (( -0.10,-0.175,-90 * PIOVER180),
+                                 ( -0.17,-0.15, (180 + 65) * PIOVER180),
+                                 ( -0.20,-0.11, (180 + 40) * PIOVER180),
+                                 ( -0.225,-0.05,(180 + 15) * PIOVER180),
+                                 ( -0.225, 0.05,(180 - 15) * PIOVER180),
+                                 ( -0.20, 0.11, (180 - 40) * PIOVER180),
+                                 ( -0.17, 0.15, (180 - 65) * PIOVER180),
+                                 ( -0.10, 0.175,(180 - 90) * PIOVER180)),
+            arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+        self.groups = {'all': range(8),
+                       'front': [],
+                       'front-left' : [],
+                       'front-right' : [],
+                       'front-all' : [],
+                       'left' : (7, ), 
+                       'right' : (0, ), 
+                       'left-front' : [], 
+                       'right-front' : [],
+                       'left-back' : (7, ),
+                       'right-back' : (0, ),
+                       'back-right' : (1, 2, 3),
+                       'back-left' : (4, 5, 6), 
+                       'back' : (3, 4),
+                       'back-all' : ( 1, 2, 3, 4, 5, 6)}
+
 class Pioneer16Sonars(RangeSensor):
     def __init__(self):
         RangeSensor.__init__(self,

@@ -293,7 +293,11 @@ class Device(object):
         """Internal get for all of the .noise properties."""
         return [s.noise for s in self]
 
-    noise = property(_getNoise, _setDisabled)
+    def _setNoise(self, value):
+        """Internal set for all of the .noise properties."""
+        self._noise = [value for i in range(len(self))]
+
+    noise = property(_getNoise, _setNoise)
 
     def noises(self, subset = "all"):
         if type(subset) == int:

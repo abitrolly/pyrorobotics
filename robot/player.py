@@ -579,9 +579,6 @@ class PlayerRobot(Robot):
         except:
             self.builtinDevices.remove("simulation")
             del self.simulation
-        # specific things about this robot type:
-        self.port = port
-        self.hostname = hostname
         # default values for all robots:
         self.stall = 0
         self.x = 0.0
