@@ -37,7 +37,7 @@ class Segment:
         elif other.vertical:
             return 0
         else:
-            return self.slope == other.slope
+            return round(self.slope,7) == round(other.slope,7)
     # return the point at which two segments would intersect if they extended
     # far enough
     def intersection(self, other):
@@ -58,10 +58,10 @@ class Segment:
             x = ((other.yintercept - self.yintercept) / (self.slope - other.slope))
             return (x, self.yintercept + x * self.slope)
     def in_bbox(self, point):
-        return ((point[0] <= self.start[0] and point[0] >= self.end[0] or
-                 point[0] <= self.end[0] and point[0] >= self.start[0]) and
-                (point[1] <= self.start[1] and point[1] >= self.end[1] or
-                 point[1] <= self.end[1] and point[1] >= self.start[1]))
+        return (((self.end[0]   <= round(point[0],7) <= self.start[0]) or
+                 (self.start[0] <= round(point[0],7) <= self.end[0])) and
+                ((self.end[1]   <= round(point[1],7) <= self.start[1]) or
+                 (self.start[1] <= round(point[1],7) <= self.end[1])))
     # is a point collinear with this line segment?
     def on_line(self, point):
         if self.vertical:
@@ -79,7 +79,7 @@ class Segment:
                 else:
                     return None
             else:
-                if self.yintercept == other.yintercept:
+                if round(self.yintercept,7) == round(other.yintercept,7):
                     return self.intersection(other)
                 else:
                     return None
