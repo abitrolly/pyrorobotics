@@ -2406,6 +2406,30 @@ class Pioneer16Sonars(RangeSensor):
                        'back-left' : (12, 13, 14), 
                        'back' : (11, 12),
                        'back-all' : ( 9, 10, 11, 12, 13, 14)}
+
+class Pioneer4Sonars(RangeSensor):
+    def __init__(self):
+        RangeSensor.__init__(self, "sonar",
+             geometry = (( 0.225, 0.05, 15 * PIOVER180),
+                         ( 0.225,-0.05,-15 * PIOVER180),
+                         ( -0.225,-0.05,(180 + 15) * PIOVER180),
+                         ( -0.225, 0.05,(180 - 15) * PIOVER180),
+                         ), arc = 5 * PIOVER180, maxRange = 8.0, noise = 0.0)
+        self.groups = {'all': range(4),
+                       'front': (0, 1),
+                       'front-left' : (0,),
+                       'front-right' : (1,),
+                       'front-all' : (0,1),
+                       'left' : [], 
+                       'right' : [], 
+                       'left-front' : [], 
+                       'right-front' : [],
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : (2,),
+                       'back-left' : (3,), 
+                       'back' : (2, 3),
+                       'back-all' : ( 2, 3)}
         
 class PioneerFrontLightSensors(LightSensor):
     def __init__(self):
