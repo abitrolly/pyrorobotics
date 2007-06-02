@@ -52,17 +52,16 @@ class Segment:
             return other.intersection(self)
         elif other.vertical:
             return (other.start[0],
-                    round(self.yintercept +
-                          other.start[0] * self.slope, RESOLUTION))
+                    self.yintercept + other.start[0] * self.slope)
         else:
             # m1x + b1 = m2x + b2; so
             # (m1 - m2)x + b1 - b2 == 0
             # (m1 - m2)x = b2 - b1
             # x = (b2 - b1)/(m1 - m2)
             # figure intersect:
-            x = round(((other.yintercept - self.yintercept) /
-                       (self.slope - other.slope)), RESOLUTION)
-            return (x, round(self.yintercept + x * self.slope, RESOLUTION))
+            # putting a round() around both of these next 2 computations caused problems:
+            x = ((other.yintercept - self.yintercept) / (self.slope - other.slope))
+            return (x, self.yintercept + x * self.slope)
     def in_bbox(self, point):
         return (((self.end[0]   <= round(point[0],RESOLUTION) <= self.start[0]) or
                  (self.start[0] <= round(point[0],RESOLUTION) <= self.end[0])) and
