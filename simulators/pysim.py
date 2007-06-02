@@ -16,28 +16,32 @@ except:
     share = None
 PIOVER180 = math.pi / 180.0
 PIOVER2   = math.pi /2
+RESOLUTION = 7 # decimal places of accuracy in making comparisons
 class Segment:
     def __init__(self, start, end, id = None, partOf = None):
-        self.start = start
-        self.end = end
+        self.start = [round(v,RESOLUTION) for v in start]
+        self.end = [round(v,RESOLUTION) for v in end]
         self.id = id
         self.partOf = partOf
         self.vertical = self.start[0] == self.end[0]
         if not self.vertical:
-            self.slope = (self.end[1] - self.start[1])/(self.end[0] - self.start[0])
-            self.yintercept = self.start[1] - self.start[0] * self.slope
+            self.slope = round((self.end[1] - self.start[1])/
+                               (self.end[0] - self.start[0]), RESOLUTION)
+            self.yintercept = round(self.start[1] -
+                                    self.start[0] * self.slope, RESOLUTION)
     def length(self):
         return math.sqrt((self.start[0] - self.end[0])**2 +
                          (self.start[1] - self.end[1])**2)
     def angle(self):
-        return math.atan2(self.end[1] - self.start[1], self.end[0] - self.start[0])
+        return math.atan2(self.end[1] - self.start[1],
+                          self.end[0] - self.start[0])
     def parallel(self, other):
         if self.vertical:
             return other.vertical
         elif other.vertical:
             return 0
         else:
-            return round(self.slope,7) == round(other.slope,7)
+            return self.slope == other.slope
     # return the point at which two segments would intersect if they extended
     # far enough
     def intersection(self, other):
@@ -48,26 +52,29 @@ class Segment:
             return other.intersection(self)
         elif other.vertical:
             return (other.start[0],
-                    self.yintercept + other.start[0] * self.slope)
+                    round(self.yintercept +
+                          other.start[0] * self.slope, RESOLUTION))
         else:
             # m1x + b1 = m2x + b2; so
             # (m1 - m2)x + b1 - b2 == 0
             # (m1 - m2)x = b2 - b1
             # x = (b2 - b1)/(m1 - m2)
             # figure intersect:
-            x = ((other.yintercept - self.yintercept) / (self.slope - other.slope))
-            return (x, self.yintercept + x * self.slope)
+            x = round(((other.yintercept - self.yintercept) /
+                       (self.slope - other.slope)), RESOLUTION)
+            return (x, round(self.yintercept + x * self.slope, RESOLUTION))
     def in_bbox(self, point):
-        return (((self.end[0]   <= round(point[0],7) <= self.start[0]) or
-                 (self.start[0] <= round(point[0],7) <= self.end[0])) and
-                ((self.end[1]   <= round(point[1],7) <= self.start[1]) or
-                 (self.start[1] <= round(point[1],7) <= self.end[1])))
+        return (((self.end[0]   <= round(point[0],RESOLUTION) <= self.start[0]) or
+                 (self.start[0] <= round(point[0],RESOLUTION) <= self.end[0])) and
+                ((self.end[1]   <= round(point[1],RESOLUTION) <= self.start[1]) or
+                 (self.start[1] <= round(point[1],RESOLUTION) <= self.end[1])))
     # is a point collinear with this line segment?
     def on_line(self, point):
         if self.vertical:
-            return point[0] == self.start[0]
+            return round(point[0],RESOLUTION) == self.start[0]
         else:
-            return (point[0] * self.slope + self.yintercept == point[1])
+            return (round(point[0] * self.slope +
+                          self.yintercept,RESOLUTION) == round(point[1]),RESOLUTION)
     def intersects(self, other):
         if self.parallel(other):
             # they can "intersect" if they are collinear and overlap
@@ -79,7 +86,7 @@ class Segment:
                 else:
                     return None
             else:
-                if round(self.yintercept,7) == round(other.yintercept,7):
+                if self.yintercept == other.yintercept:
                     return self.intersection(other)
                 else:
                     return None
