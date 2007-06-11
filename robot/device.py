@@ -8,7 +8,13 @@ from these.
 """
 
 import pyrobot.robot
-import types, random, exceptions, math, Tkinter, threading
+import types, random, exceptions, math, threading
+try:
+    import Tkinter
+except:
+    print "Warning: pyrobot.robot.device cannot import Tkinter"
+    class Tkinter:
+        Toplevel = object
 from pyrobot.geometry import PIOVER180, DEG90RADS, COSDEG90RADS, SINDEG90RADS
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
@@ -399,12 +405,25 @@ class Device(object):
         elif type(item) == types.IntType:
             return self.getSensorValue(item)
         elif type(item) == types.SliceType:
-            if item.stop >= len(self): stop = len(self) - 1
-            else:                      stop = item.stop
-            step = 1
+            if item.start == None:
+                start = 0
+            else:
+                start = item.start
+            if item.stop == None:
+                stop = len(self)
+            elif item.stop > len(self):
+                stop = len(self)
+            else:
+                stop = item.stop
             if item.step:
                 step = item.step
-            return [self.getSensorValue(p) for p in xrange(item.start, stop, step)]
+            else:
+                step = 1
+            if start < 0:
+                start = len(self) + start
+            if stop < 0:
+                stop = len(self) + stop
+            return [self.getSensorValue(p) for p in xrange(start, stop, step)]
         else:
             raise AttributeError, "invalid device[%s]" % item
 
