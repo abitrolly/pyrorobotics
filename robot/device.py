@@ -405,23 +405,29 @@ class Device(object):
         elif type(item) == types.IntType:
             return self.getSensorValue(item)
         elif type(item) == types.SliceType:
-            if item.start == None:
-                start = 0
-            else:
-                start = item.start
-            if item.stop == None:
-                stop = len(self)
-            elif item.stop > len(self):
-                stop = len(self)
-            else:
-                stop = item.stop
             if item.step:
                 step = item.step
             else:
                 step = 1
-            if start < 0:
+            if item.start == None:
+                if step > 0:
+                    start = 0
+                else:
+                    start = len(self) - 1
+            else:
+                start = item.start
+            if item.stop == None:
+                if step > 0:
+                    stop = len(self)
+                else:
+                    stop = -1
+            elif item.stop > len(self):
+                stop = len(self)
+            else:
+                stop = item.stop
+            if start < 0 and step > 0:
                 start = len(self) + start
-            if stop < 0:
+            if stop < 0 and step > 0:
                 stop = len(self) + stop
             return [self.getSensorValue(p) for p in xrange(start, stop, step)]
         else:
