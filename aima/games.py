@@ -1,7 +1,3 @@
-"""Games, or Adversarial Search. (Chapters 6)
-
-"""
-
 from utils import *
 import random 
 
@@ -11,9 +7,9 @@ import random
 def minimax_decision(state, game):
     """Given a state in a game, calculate the best move by searching
     forward all the way to the terminal states. [Fig. 6.4]"""
-
+    
     player = game.to_move(state)
-
+    
     def max_value(state):
         if game.terminal_test(state):
             return game.utility(state, player)
@@ -32,7 +28,7 @@ def minimax_decision(state, game):
 
     # Body of minimax_decision starts here:
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s))
+                           lambda (a, s): min_value(s))
     return action
 
 
@@ -68,7 +64,7 @@ def alphabeta_full_search(state, game):
 
     # Body of alphabeta_search starts here:
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s, -infinity, infinity))
+                           lambda (a, s): min_value(s, -infinity, infinity))
     return action
 
 def alphabeta_search(state, game, d=4, cutoff_test=None, eval_fn=None):
@@ -105,7 +101,7 @@ def alphabeta_search(state, game, d=4, cutoff_test=None, eval_fn=None):
                    (lambda state,depth: depth>d or game.terminal_test(state)))
     eval_fn = eval_fn or (lambda state: game.utility(state, player))
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s, -infinity, infinity, 0))
+                           lambda (a, s): min_value(s, -infinity, infinity, 0))
     return action
 
 #______________________________________________________________________________
