@@ -487,7 +487,7 @@ class Layer:
         """
         Returns node activations in list (copy) form.
         """
-        return self.activation.tolist()
+        return self.activation.copy()
     def getActivations(self):
         """
         Returns node activations in (Numeric) array (pointer) form.
@@ -525,7 +525,7 @@ class Layer:
         """
         Returns targets in list form.
         """
-        return self.target.tolist()
+        return self.target.copy()
     def getTargets(self):
         """
         Return targets in (Numeric) array form.
@@ -1932,7 +1932,7 @@ class Network(object):
                     propagateLayers.append(layer)
         for layer in propagateLayers:
             if layer.active: 
-                layer.netinput = (layer.weight).tolist() 
+                layer.netinput = (layer.weight).copy() 
         for layer in propagateLayers:
             if layer.active:
                 for connection in self.connections:
@@ -1974,7 +1974,7 @@ class Network(object):
         # initialize netinput:
         for layer in self.layers:
             if layer.type != 'Input' and layer.active:
-                layer.netinput = (layer.weight).tolist() 
+                layer.netinput = (layer.weight).copy() 
         # for each connection, in order:
         for layer in self.layers:
             if layer.active:
@@ -1995,7 +1995,7 @@ class Network(object):
             dict = {}
             for layer in self.layers:
                 if layer.type == "Output":
-                    dict[layer.name] = layer.activation.tolist()
+                    dict[layer.name] = layer.activation.copy()
             if len(dict) == 1:
                 return dict[dict.keys()[0]]
             else:
@@ -2018,7 +2018,7 @@ class Network(object):
             self[layerName].activationSet = 0 # force it to be ok
             self[layerName].copyActivations(args[layerName])
         # init toLayer:
-        self[toLayer].netinput = (self[toLayer].weight).tolist() 
+        self[toLayer].netinput = (self[toLayer].weight).copy() 
         # for each connection, in order:
         for connection in self.connections:
             if connection.active and connection.toLayer.name == toLayer and connection.fromLayer.active:
@@ -2027,7 +2027,7 @@ class Network(object):
                                                                      connection.weight) # propagate!
                 if self[toLayer].type != 'Input':
                     self[toLayer].activation = self.activationFunction(self[toLayer].netinput)
-        return self[toLayer].activation.tolist()
+        return self[toLayer].activation.copy()
     def propagateFrom(self, startLayer, **args):
         """
         Propagates activation through the network. Optionally, takes input layer names
@@ -2052,7 +2052,7 @@ class Network(object):
                 continue # don't set this one
             if not started: continue
             if layer.type != 'Input' and layer.active:
-                layer.netinput = (layer.weight).tolist() 
+                layer.netinput = (layer.weight).copy() 
         # for each connection, in order:
         started = 0
         for layer in self.layers:
@@ -2076,7 +2076,7 @@ class Network(object):
             dict = {}
             for layer in self.layers:
                 if layer.type == "Output":
-                    dict[layer.name] = layer.activation.tolist()
+                    dict[layer.name] = layer.activation.copy()
             if len(dict) == 1:
                 return dict[dict.keys()[0]]
             else:
