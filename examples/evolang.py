@@ -190,6 +190,23 @@ class NNGA(GA):
         self.done = 0
         self.randomizePositions()
 
+    def generate(self):
+        if self.generation == 1: return
+        elitePositions = map(lambda x: x.position, self.pop.eliteMembers)
+        elitePositions.sort()
+        # Move all good ones to front of the line:
+        for i in range(len(self.pop.eliteMembers)):
+            #print "   move", elitePositions[i], "to", i
+            self.pop.individuals[i] = self.pop.individuals[elitePositions[i]]
+        # Populate the rest of the pop with copies of these:
+        for i in range(len(self.pop.eliteMembers)):
+            copies = (self.pop.size - len(self.pop.eliteMembers))/len(self.pop.eliteMembers)
+            for j in range(copies):
+                pos = (i * copies) + len(self.pop.eliteMembers) + j
+                #print "   copy", i, "to", pos
+                self.pop.individuals[pos] = self.pop.individuals[i].copy()
+                self.pop.individuals[pos].mutate(self.mutationRate)
+
     def loadWeights(self, genePos):
         for n in range(len(engines)):
             engine = engines[n]
@@ -305,7 +322,7 @@ class NNGA(GA):
             # default value
             self.seconds = 20 # how much simulated seconds to run
     def isDone(self):
-        if self.generation % 10 == 0:
+        if self.generation % 1 == 0:
             self.saveGenesToFile("gen-%05d.pop" % self.generation)
         return self.done
 
@@ -382,7 +399,7 @@ def suspend(*args):
 import signal
 signal.signal(signal.SIGINT,suspend)
 
-e = Experiment(seconds=20, popsize=50, maxgen=100)
+e = Experiment(seconds=20, popsize=100, maxgen=100)
 if automaticRestart:
     import glob
     maxI = None
