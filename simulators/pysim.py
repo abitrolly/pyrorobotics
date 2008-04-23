@@ -1241,6 +1241,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         Tkinter.Toplevel.__init__(self, root)
         Simulator.__init__(self, dimensions, offsets, scale)
         self.root = root
+        self.tkfont = None
         self.wm_title("Pyrobot Simulator")
         self.protocol('WM_DELETE_WINDOW',self.destroy)
         self.frame = Tkinter.Frame(self)
@@ -1481,18 +1482,21 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         seg.id = id
         self.world.append( seg )
     def drawText(self, x, y, text, fill="black", tag="robot", **args):
-        # sizes are all in pixels
-        import tkFont
         fontPixelHeight = 15
-        font = tkFont.Font(size = -fontPixelHeight) # -n is n pixels tall
-        actual = font.actual() # but let's get actual
+        if not self.tkfont:
+            import tkFont
+            self.font = tkFont.Font(size = -fontPixelHeight) # -n is n pixels tall
+            self.tkfont = tkFont.Font(self.canvas, font=self.font)
+            self.tkfont.height = self.tkfont.metrics("linespace")
+            self.actual = self.font.actual() # but let's get actual
+        # sizes are all in pixels
         lines = text.split("\n")
         width = 0
         for line in lines:
-            w = font.measure(line)  * 1.25 # width of text
+            w = self.tkfont.measure(line) * 1.25 + 10 # width of text
             if w > width:
-                width = w + 10
-        height = (actual["size"] * len(lines) * 1.25) + fontPixelHeight
+                width = w 
+        height = (self.actual["size"] * len(lines) * 1.25) + fontPixelHeight
         between = 30
         above   = 40
         roundness = 2
@@ -1510,7 +1514,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
                   (xp + between, yp - above + 10),
                   ]
         self.canvas.create_polygon(points, tag=(tag,"top"), fill="white", outline="black")
-        self.canvas.create_text(self.scale_x(x) + between + 5, self.scale_y(y) - above, text=text, tag=(tag,"top"), fill=fill, anchor="nw", **args)
+        self.canvas.create_text(self.scale_x(x) + between + 5, self.scale_y(y) - above, text=text, font=self.font, tag=(tag,"top"), fill=fill, anchor="nw", **args)
     def drawLine(self, x1, y1, x2, y2, fill="", tag="robot", **args):
         return self.canvas.create_line(self.scale_x(x1), self.scale_y(y1), self.scale_x(x2), self.scale_y(y2), tag=tag, fill=fill, **args)
     def drawOval(self, x1, y1, x2, y2, **args):
