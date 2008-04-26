@@ -259,7 +259,7 @@ class Population:
         """
         self.sumFitness = 0
         best = self.individuals[0]
-        bestPosition = 0
+        best.bestPosition = 0
         worst= self.individuals[0]
         self.eliteMembers = self.individuals[0:int(self.elitePercent * len(self.individuals))]
         self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
@@ -271,7 +271,7 @@ class Population:
                 worst = current
             if current.fitness > best.fitness:
                 best = current
-                bestPosition = i
+                best.bestPosition = i
             if len(self.eliteMembers) > 0 and current.fitness > self.eliteMembers[0].fitness:
                 self.eliteMembers.append( current )
                 self.eliteMembers.sort(lambda x, y: cmp( x.fitness, y.fitness))
@@ -421,7 +421,7 @@ class GA:
                 break
         print "-" * 60
         print "Done evolving at generation", self.generation
-        print "Current best individual"
+        print "Current best individual [#%d]" % self.pop.bestMember.bestPosition,
         self.pop.bestMember.display()
         print "Fitness", self.pop.bestMember.fitness
 
