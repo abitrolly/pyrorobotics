@@ -7,6 +7,7 @@ class SimpleBrain(Brain):
 
    def setup(self):
       # create any vars you need here
+      print "Setup!"
       pass
    
    def step(self):
