@@ -10,44 +10,89 @@ Date:   March 2008
 For use with PyroRobotics.org
 """
 
-############################################################
-# First, let's build a simulated world:
-############################################################
-
 from pyrobot.simulators.pysim import *
 from pyrobot.geometry import distance, Polar
 from pyrobot.tools.sound import SoundDevice
 from pyrobot.brain.ga import *
 from pyrobot.robot.symbolic import Simbot
 from pyrobot.engine import Engine
+from pyrobot.brain import Brain
+from pyrobot.brain.conx import SRN
 import sys, time, random, math
+
+############################################################
+# First, let's define the brains to be used by each robot:
+############################################################
+class NNBrain(Brain):
+    def setup(self):
+        self.robot.range.units = "scaled"
+        self.net = SRN()
+        self.sequenceType = "ordered-continuous"
+        # INPUT: ir, ears, mouth[t-1]
+        #        sonar, stall, ears, eyes, speech[t-1]
+        self.net.addLayer("input", len(self.robot.range) + 1 + 4 + 1 + 1) 
+        self.net.addContextLayer("context", 2, "hidden")
+        self.net.addLayer("hidden", 2)
+        # OUTPUT: trans, rotate, say
+        self.net.addLayer("output", 3)
+        # ----------------------------------
+        self.net.connect("input", "output")
+        self.net.connect("input", "hidden")
+        self.net.connect("context", "hidden")
+        self.net.connect("hidden", "output")
+        self.net["context"].setActivations(.5)
+        self.net.learning = 0
+
+    def step(self, ot1, or1):
+        t, r = [((v * 2) - 1) for v in [ot1, or1]]
+        self.robot.move(t, r)
+        
+    def propagate(self, sounds):
+        light = [max(map(lambda v: math.floor(v),self.robot.light[0].values()))]
+        inputs = (self.robot.range.distance() + [self.robot.stall] + 
+                  sounds + light + [self.net["output"].activation[2]])
+        self.net.propagate(input=inputs)
+        self.net.copyHiddenToContext()
+        return [v for v in self.net["output"].activation] # t, r, speech
 
 # Defaults:
 SimulatorClass, PioneerClass = TkSimulator, TkPioneer
 robotCount = 4
 automaticRestart = False
-playSound = False
-playRobot = 0
 sd = "/dev/dsp"
 startEvolving = False
+loadPop = None
+numTrials = 5
+numSeconds = 30
+numPopsize= 30
+numMaxgen = 100
+canHear = True
+# Robot colors; make sure you have enough for robotCount:
+colors = ["red", "blue", "green", "purple", "pink", "orange", "white"]
+
 i = 1
 while i < len(sys.argv):
     if sys.argv[i] == "-h":
         print "python evolang.py command line:"
         print 
-        print "   -g 2d|3d|none  (graphics)"
-        print "   -n N           (robot count)"
-        print "   -a             (automatic restart)"
-        print "   -e             (start evolving)"
-        print "   -p /dev/dsp    (to play sounds)"
-        print "   -r M           (which robot to play sound, 0-N)"
+        print "   -g 2d|3d|none  (graphics, default 2d)"
+        print "   -n N           (robot count, default 4)"
+        print "   -a             (automatic restart, default off)"
+        print "   -e             (start evolving, default off)"
+        print "   -p /dev/dsp    (sound device or none, default /dev/dsp)"
+        print "   -l file.pop    (load a population of genes)"
+        print "   -t T           (fitness function uses T trials, default 5)"
+        print "   -s S           (sim seconds per trial, default 20)"
+        print "   -z Z           (population size, default 100)"
+        print "   -m M           (max generations, default 100)"
+        print "   -c 0|1         (can hear?, default 1)"
         print
         print " CONTROL+c to stop at next end of generation"
         print " CONTROL+c CONTROL+c to stop now"
         sys.exit()
     if sys.argv[i] == "-g":
         i += 1
-        simType = sys.argv[i]
+        simType = sys.argv[i].lower()
         if simType == "2d":
             SimulatorClass, PioneerClass = TkSimulator, TkPioneer
         elif simType == "none":
@@ -62,20 +107,47 @@ while i < len(sys.argv):
         robotCount = int(sys.argv[i])
     elif sys.argv[i] == "-a":
         automaticRestart = True
+    elif sys.argv[i] == "-l":
+        i += 1 
+        loadPop = sys.argv[i]
+    elif sys.argv[i] == "-t":
+        i += 1 
+        numTrials = int(sys.argv[i])
+    elif sys.argv[i] == "-s":
+        i += 1 
+        numSeconds = int(sys.argv[i])
+    elif sys.argv[i] == "-z":
+        i += 1 
+        numPopsize = int(sys.argv[i])
+    elif sys.argv[i] == "-m":
+        i += 1 
+        numMaxgen = int(sys.argv[i])
+    elif sys.argv[i] == "-c":
+        i += 1 
+        canHear = int(sys.argv[i])
     elif sys.argv[i] == "-e":
         startEvolving = True
     elif sys.argv[i] == "-p":
         i += 1 
-        sd = SoundDevice(sys.argv[i])
-        playSound = True
-    elif sys.argv[i] == "-r":
-        i += 1
-        playRobot = int(sys.argv[i])
+        if sys.argv[i].lower() == "none":
+            sd = None
+        else:
+            sd = sys.argv[i]
     i += 1
 
-# Define the world:
+try:
+    sd = SoundDevice(sd)
+except:
+    sd = None
+    print "Sound device failed to start"
+
+############################################################
+# Build a simulated world:
+############################################################
 # In pixels, (width, height), (offset x, offset y), scale:
 sim = SimulatorClass((441,434), (22,420), 40.357554, run=0)  
+## Milliseconds of time to simulate per step:
+sim.timeslice = 250
 # Add a bounding box:
 # x1, y1, x2, y2 in meters:
 sim.addBox(0, 0, 10, 10)
@@ -83,9 +155,6 @@ sim.addBox(0, 0, 10, 10)
 # (x, y) meters, brightness usually 1 (1 meter radius):
 sim.addLight(2, 2, 1)
 sim.addLight(7, 7, 1)
-
-# Robot colors; make sure you have enough for robotCount:
-colors = ["red", "blue", "green", "purple", "pink", "orange", "white"]
 
 for i in range(robotCount):
     # port, name, x, y, th, bounding Xs, bounding Ys, color
@@ -103,14 +172,31 @@ for i in range(robotCount):
 ############################################################
 
 # client side:
-clients = [Simbot(sim, ["localhost", 60000 + n], n)  for n in range(robotCount)]
+clients = [Simbot(sim, ["localhost", 60000 + n], n) for n in range(robotCount)]
 # server side:
 engines = [Engine() for n in range(robotCount)]
 for n in range(robotCount):
     engines[n].robot = clients[n]
+    # turn off noise:
     clients[n].light[0].noise = 0.0
     clients[n].sonar[0].noise = 0.0
-    engines[n].loadBrain("NNBrain")
+    # load brain:
+    engines[n].brain = NNBrain(engine=engines[n])
+
+# Set some properties after robots are created:
+for n in range(robotCount):
+    sim.display["%s robot audio" % colors[n]] = False
+if isinstance(sim, TkSimulator):
+    sim.toggle("trail")
+    sim.toggle("speech")
+    sim.toggle("sonar")
+    alist = []
+    for n in range(robotCount):
+        s = "%s robot audio" % colors[n]
+        alist.append([s, lambda s=s: sim.simToggle(s)])
+    menu = [('Program', alist)]
+    for entry in menu:
+        sim.mBar.tk_menuBar(sim.makeMenu(sim.mBar, entry[0], entry[1]))
 sim.redraw()
 
 ############################################################
@@ -158,7 +244,10 @@ def quadSound(myLoc, lastS, location):
     lastS:    last sound made by robots
     location: (x, y, t) of robots; t where 0 is up
     """
-    closest = [(10000,0.5), (10000,0.5), (10000,0.5), (10000,0.5)] # dist, freq
+    if not canHear:
+        return [0.5 for x in range(robotCount)]
+    # dist, freq for each robot; 0.5 is what is silence
+    closest = [(10000,0.5), (10000,0.5), (10000,0.5), (10000,0.5)] 
     for n in range(len(location)):
         loc = location[n]
         if loc != myLoc:
@@ -173,9 +262,10 @@ def quadSound(myLoc, lastS, location):
             angle = (angle - math.pi/2) % (math.pi * 2)
             q = quadNum(myLoc[2], angle) 
             #print n, myLoc[2], angle, q
-            if dist < closest[q][0]: # if shorter than previous
+            # if shorter than previous, and less than N meters
+            if dist < closest[q][0] and dist < 1.0/2.7 * 7.0: 
                 closest[q] = dist, lastS[n] # new closest
-    return [((v[1] - .5) * 2.0) for v in closest] # return the sounds
+    return [v[1] for v in closest] # return the sounds
 
 ############################################################
 # Now, let's define the GA:
@@ -200,7 +290,8 @@ class NNGA(GA):
             self.pop.individuals[i] = self.pop.individuals[elitePositions[i]]
         # Populate the rest of the pop with copies of these:
         for i in range(len(self.pop.eliteMembers)):
-            copies = (self.pop.size - len(self.pop.eliteMembers))/len(self.pop.eliteMembers)
+            copies = ((self.pop.size - len(self.pop.eliteMembers))/
+                      len(self.pop.eliteMembers))
             for j in range(copies):
                 pos = (i * copies) + len(self.pop.eliteMembers) + j
                 #print "   copy", i, "to", pos
@@ -212,7 +303,13 @@ class NNGA(GA):
             engine = engines[n]
             engine.brain.net.unArrayify(self.pop.individuals[genePos].genotype)
 
-    def randomizePositions(self):
+    def randomizePositions(self, seed=None):
+        # seed = 0 (reinit), seed = None (random), seed = num (seed it)
+        if seed == 0: # Reinitialize to something random:
+            seed = random.random() * 100000 + time.time()
+        if seed != None: # use a specific seed:
+            random.seed(seed)
+        # Make the robots far from these positions:
         positions = [(2, 2), (7, 7)] # position of lights
         for n in range(len(engines)):
             engine = engines[n]
@@ -222,98 +319,118 @@ class NNGA(GA):
                        random.random() * math.pi * 2)
             minDistance = min([distance(x, y, x2, y2) for (x2,y2) in positions])
             # make sure they are far enough apart:
-            while minDistance < 1:
+            while minDistance < 2: # in meters
                 x, y, t = (1 + random.random() * 7, 
                            1 + random.random() * 7, 
                            random.random() * math.pi * 2)
-                minDistance = min([distance(x, y, x2, y2) for (x2,y2) in positions])
+                minDistance = min([distance(x, y, x2, y2) 
+                                   for (x2,y2) in positions])
             positions.append( (x,y) )
             engine.robot.simulation[0].setPose(n, x, y, t)
         sim.redraw()
 
-    def fitnessFunction(self, genePos, randomize=1):
+    def fitnessFunction(self, genePos, randomizeSeed=None):
+        # seed = -1 (cont), seed = 0 (reinit), seed = None (random), 
+        # seed = num (seed it)
         if self.pre_init: # initial generation fitness
             return 1.0
-        if genePos >= 0: # -1 is test of last one
-            self.loadWeights(genePos)
-            if randomize:
-                self.randomizePositions()
-        sim.resetPaths()
-        sim.redraw()
-        s = [0] * robotCount # each robot's sound
-        lastS = [0] * robotCount # previous sound
-        location = [(0, 0, 0) for v in range(robotCount)] 
         fitness = 0.01
-        for i in range(self.seconds * (1000/sim.timeslice)): # (10 per sec)
-            # ------------------------------------------------
-            # First, get the locations:
-            # ------------------------------------------------
-            for n in range(robotCount): # number of robots
-                location[n] = engines[0].robot.simulation[0].getPose(n)
-            # ------------------------------------------------
-            # Next, compute the move for each robot
-            # ------------------------------------------------
-            for n in range(robotCount): # number of robots
-                engine = engines[n]
-                engine.robot.update()
-                # compute quad for this robot
-                myLoc = location[n]
-                quad = quadSound(myLoc, lastS, location)
-                # print n, quad
-                # compute output for each robot
-                oTrans, oRotate, s[n] = engine.brain.propagate(quad)
-                # then set the move velocities:
-                engine.brain.step(oTrans, oRotate)
-                sim.robots[n].say("%.2f Heard: [%s]" % 
-                                  (s[n], 
-                                   ",".join(map(lambda v: "%.2f" % v, quad))))
-            # ------------------------------------------------
-            # Save the sounds
-            # ------------------------------------------------
-            for n in range(robotCount): # number of robots
-                lastS = [v for v in s]
-            # ------------------------------------------------
-            # Make the move:
-            # ------------------------------------------------
-            sim.step(run=0)
-            # update tasks in GUI:
-            if isinstance(sim, TkSimulator):
-                while sim.tk.dooneevent(2): pass
-            # Stop the robots from moving on other steps:
+	print "-------------------------------"
+        for count in range(numTrials):
+            subfitness = 0.01
+            if genePos >= 0: # -1 is test of last one
+                self.loadWeights(genePos)
+            if randomizeSeed == -1:
+                pass # continue
+            else:
+                # seed = 0 (reinit), seed = None (random), seed = num (seed it)
+                self.randomizePositions(randomizeSeed)
+            sim.resetPaths()
+            sim.redraw()
+            s = [0] * robotCount # each robot's sound
+            lastS = [0] * robotCount # previous sound
+            location = [(0, 0, 0) for v in range(robotCount)] 
+            # Set the context values to zero:
             for n in range(robotCount): # number of robots
                 engine = engines[n]
-                engine.robot.stop()
-            # play a sound, need to have a sound thread running
-            if playSound:
-                sd.playTone(int(round(engines[playRobot].brain.net["output"].activation[-1], 1) * 2000) + 500, .1) # 500 - 2500
-            # ------------------------------------------------
-            # Compute fitness
-            # ------------------------------------------------
-            closeTo = [0, 0] # number of lights
-            # how many robots are close to which lights?
-            for n in range(len(engines)):
-                engine = engines[n]
-                # get global coords
-                x, y, t = engine.robot.simulation[0].getPose(n)
-                # which light?
-                dists = [distance(light.x, light.y, x, y) for light in sim.lights]
-                if min(dists) <= 1.0:
-                    if dists[0] < dists[1]:
-                        closeTo[0] += 1
-                    else:
-                        closeTo[1] += 1
-            # ------------------------------------------------
-            # Finally, compute the fitness
-            # ------------------------------------------------
-            for total in closeTo:
-                fitness += .25 * total
-                # only allow N per feeding area
-                if total > 2:
-                    fitness -= 1.0 * (total - 2)
-                fitness = max(0.01, fitness)
-            #print "   ", closeTo, fitness,
-            #raw_input(" press [ENTER]")
-        print "Fitness %d: %.5f" % (genePos, fitness)
+                engine.brain.net.setContext(0.5)
+                engine.brain.net["output"].setActivations(0.5)
+                engine.brain.net["output"].resetActivationFlag()
+            for i in range(self.seconds * (1000/sim.timeslice)): # (10 per sec)
+                # ------------------------------------------------
+                # First, get the locations:
+                # ------------------------------------------------
+                for n in range(robotCount): # number of robots
+                    location[n] = engines[0].robot.simulation[0].getPose(n)
+                # ------------------------------------------------
+                # Next, compute the move for each robot
+                # ------------------------------------------------
+                for n in range(robotCount): # number of robots
+                    engine = engines[n]
+                    engine.robot.update()
+                    # compute quad for this robot
+                    myLoc = location[n]
+                    quad = quadSound(myLoc, lastS, location)
+                    # print n, quad
+                    # compute output for each robot
+                    oTrans, oRotate, s[n] = engine.brain.propagate(quad)
+                    # then set the move velocities:
+                    engine.brain.step(oTrans, oRotate)
+                    sim.robots[n].say("%.2f Heard: [%s]" % 
+                                      (s[n], 
+                                       ",".join(map(lambda v: "%.2f" % v, quad))))
+                # ------------------------------------------------
+                # Save the sounds
+                # ------------------------------------------------
+                for n in range(robotCount): # number of robots
+                    lastS = [v for v in s]
+                # ------------------------------------------------
+                # Make the move:
+                # ------------------------------------------------
+                sim.step(run=0)
+                # update tasks in GUI:
+                if isinstance(sim, TkSimulator):
+                    while sim.tk.dooneevent(2): pass
+                # Stop the robots from moving on other steps:
+                for n in range(robotCount): # number of robots
+                    engine = engines[n]
+                    engine.robot.stop()
+                # play a sound, need to have a sound thread running
+                for n in range(robotCount): # number of robots
+                    st = "%s robot audio" % colors[n]
+                    if sim.display[st] and sd != None:
+                        sd.playTone(int(round(engines[n].brain.net["output"].activation[-1], 1) * 2000) + 500, .1) # 500 - 2500
+                # ------------------------------------------------
+                # Compute fitness
+                # ------------------------------------------------
+                closeTo = [0, 0] # number of lights
+                # how many robots are close to which lights?
+                for n in range(len(engines)):
+                    engine = engines[n]
+                    # get global coords
+                    x, y, t = engine.robot.simulation[0].getPose(n)
+                    # which light?
+                    dists = [distance(light.x, light.y, x, y) 
+                             for light in sim.lights]
+                    if min(dists) <= 1.0:
+                        if dists[0] < dists[1]:
+                            closeTo[0] += 1
+                        else:
+                            closeTo[1] += 1
+                # ------------------------------------------------
+                # Finally, compute the fitness
+                # ------------------------------------------------
+                for total in closeTo:
+                    subfitness += .25 * total
+                    # only allow N per feeding area
+                    if total > 2:
+                        subfitness -= 1.0 * (total - 2)
+                    subfitness = max(0.01, subfitness)
+                #print "   ", closeTo, subfitness,
+                #raw_input(" press [ENTER]")
+            print "   subfitness: %d: %.5f" % (genePos,subfitness)
+            fitness += subfitness
+        print "Total Fitness %d: %.5f" % (genePos, fitness)
         return fitness
     def setup(self, **args):
         if args.has_key('seconds'):
@@ -324,6 +441,11 @@ class NNGA(GA):
     def isDone(self):
         if self.generation % 1 == 0:
             self.saveGenesToFile("gen-%05d.pop" % self.generation)
+            # load the best into a network:
+            engines[0].brain.net.unArrayify(self.pop.bestMember.genotype)
+            # and save it
+            engines[0].brain.net.saveWeightsToFile("best-%05d.wts" % 
+                                                   self.generation)
         return self.done
 
 class Experiment:
@@ -380,11 +502,10 @@ for e in engines:
     e.shutdown()
     e.robot = temp
 
-# ----------------------------------
-# Code to handle control+c: once to 
-# exit at end of generation; twice to 
+# ---------------------------------------------------------------------
+# Code to handle control+c: once to exit at end of generation; twice to 
 # abort right now.
-# ----------------------------------
+# ---------------------------------------------------------------------
 def suspend(*args):
     if not e.ga.done: # first time
         print "# ------------------------------------------"
@@ -399,19 +520,28 @@ def suspend(*args):
 import signal
 signal.signal(signal.SIGINT,suspend)
 
-e = Experiment(seconds=20, popsize=100, maxgen=100)
+e = Experiment(seconds=numSeconds, popsize=numPopsize, maxgen=numMaxgen)
 if automaticRestart:
     import glob
     maxI = None
     flist = glob.glob("./gen-*.pop")
     if len(flist) > 0:
+        flist.sort()
         filename = flist[-1]
         e.ga.loadGenesFromFile(filename)
         e.ga.generation = int(filename[6:11])
+elif loadPop:
+    e.ga.loadGenesFromFile(loadPop)
 if startEvolving:
     e.evolve(cont=1)
 
-#e.evolve()
+# Other commands to try:
+#e.ga.randomizePositions() # pick random places
+#e.ga.randomizePositions(7652361) # seed to use
+#e.ga.fitnessFunction(23, randomize=0) # test #23, do not reposition
+#e.ga.fitnessFunction(-1) # test again in random place
+#e.ga.fitnessFunction(-1, randomize=0) # test again in this place
+#e.evolve(cont=1) # continues from before
 #e.loadWeights("nolfi-100.wts")
 #e.loadGenotypes("nolfi-100.wts")
 #e.evolve()
