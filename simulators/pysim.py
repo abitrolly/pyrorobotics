@@ -3,7 +3,13 @@ A Pure Python 2D Robot Simulator
 
 (c) 2005, PyroRobotics.org. Licensed under the GNU GPL.
 """
-import Tkinter, time, math, random
+import time, math, random
+try:
+    import Tkinter
+except:
+    print "Warning: Tkinter is not available for pysim"
+    class Tkinter:
+        Toplevel = object
 try:
     import cPickle as pickle
 except:
@@ -2086,7 +2092,15 @@ class TkPioneer(TkRobot):
         """
         self.simulator.canvas.tkraise("top")
         if self._last_pose == (self._gx, self._gy, self._ga) and (
-            (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): return # hasn't moved
+            (self.gripper == None) or (self.gripper and self.gripper.velocity == 0)): 
+            if self.display["speech"] == 1:
+                if self.sayText != "":
+                    # center of robot: 
+                    x, y = self._gx, self._gy
+                    # FIXME: remove old text
+                    # self.simulator.remove("robot-%s" % self.name)
+                    self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
+            return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.remove("robot-%s" % self.name)
         # Body Polygon, by x and y lists:
@@ -2145,11 +2159,6 @@ class TkPioneer(TkRobot):
                                        self._gy + x * sin_a90 + y * cos_a90),
                          xs, ys)
                 self.simulator.drawPolygon(xy, tag="robot-%s" % self.name, fill="black", outline="black")
-        if self.display["speech"] == 1:
-            if self.sayText != "":
-                # center of robot: 
-                x, y = self._gx, self._gy
-                self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
         if self.display["boundingBox"] == 1:
             if self.boundingBox != []:
                 xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
@@ -2169,6 +2178,11 @@ class TkPioneer(TkRobot):
                 for s in additionalSegments:
                     self.simulator.drawLine(s.start[0], s.start[1], s.end[0], s.end[1],
                                             tag="robot-%s" % self.name, fill="purple")
+        if self.display["speech"] == 1:
+            if self.sayText != "":
+                # center of robot: 
+                x, y = self._gx, self._gy
+                self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
 
 class TkBlimp(TkRobot):
     def __init__(self, *args, **kwargs):
@@ -2517,8 +2531,16 @@ class TkMyro(TkRobot):
             self.simulator.drawPolygon(xy, fill=self.color, tag="robot-%s" % self.name, outline="black")
             # --------------------------------------------------------------------------
             # Parts: wheel, wheel, battery
-            bx = [[ .10, .10, -.10, -.10], [ .10, .10, -.10, -.10], [.05, .05, -.10, -.10], [.16, .17, .18, .17], [.16, .17, .18, .17]]
-            by = [[ .18, .16, .16, .18], [ -.18, -.16, -.16, -.18], [.14, -.14, -.14, .14], [.13, .135, .115, .11], [-.13, -.135, -.115, -.11]]
+            bx = [[ .10, .10, -.10, -.10], 
+                  [ .10, .10, -.10, -.10], 
+                  [.05, .05, -.10, -.10], 
+                  [.16, .17, .18, .17], 
+                  [.16, .17, .18, .17]]
+            by = [[ .18, .16, .16, .18], 
+                  [ -.18, -.16, -.16, -.18], 
+                  [.14, -.14, -.14, .14], 
+                  [.13, .135, .115, .11], 
+                  [-.13, -.135, -.115, -.11]]
             colors = ["black", "black", "gray", "yellow", "yellow"]
             for i in range(len(bx)):
                 xy = map(lambda x, y: (self._gx + x * cos_a90 - y * sin_a90,
