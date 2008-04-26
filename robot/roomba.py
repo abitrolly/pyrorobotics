@@ -381,7 +381,7 @@ class Roomba(Robot):
         # PLAY is opcode 141
         # STORESONG is opcode 140
         msg = struct.pack("BBBBBBB", 140, 15, 1, num, durInt, 141, 15)
-        print msg
+        #print msg
         self.sendMsg(msg)
         
     def getSensor(dev, value = None):
