@@ -9,3 +9,4 @@ def pyrobotdir():
 
 def startup_check():
     return pyrobotdir() != None
+
