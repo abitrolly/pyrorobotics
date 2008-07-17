@@ -164,7 +164,7 @@ class RoombaBumperDevice(Device):
 class RoombaBatteryDevice(Device):
     def __init__(self, robot):
         self._dev = robot
-        Device.__init__(self, "ir")
+        Device.__init__(self, "battery")
     def getTemperature(self):    
     	return self._dev.sensorData['temperature']
     def getCharge(self):
