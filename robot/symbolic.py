@@ -130,6 +130,21 @@ class LightSimDevice(RangeSimDevice):
 				self.window.updateWidget("%d.value" % i, self[i].value)
 				self.window.updateWidget("%d.rgb" % i, self[i].rgb)
 
+class DirectionalLightSimDevice(RangeSimDevice):
+	def __init__(self, *args, **kwargs):
+		RangeSimDevice.__init__(self, *args, **kwargs)
+		self.units = "SCALED"
+	def getSensorValue(self, pos):
+		retval = RangeSimDevice.getSensorValue(self, pos)
+		return retval
+	def addWidgets(self, window):
+		for i in range(min(self.count, 24)):
+			window.addData("%d.value" % i, "[%d].value:" % i, self[i].value)
+	def updateWindow(self):
+		if self.visible:
+			for i in range(min(self.count, 24)):
+				self.window.updateWidget("%d.value" % i, self[i].value)
+
 class BulbSimDevice(Device):
 	def __init__(self, robot):
 		Device.__init__(self)
@@ -326,6 +341,12 @@ class Simbot(Robot):
 			geometry = self.move("g_%s_%d" % (name, index))
 			groups = self.move("r_%s_%d" % (name, index))
 			return {name: LightSimDevice(name, index, self, geometry, groups)}
+		elif name == "directional":
+			self.properties.append("%s_%d" % (name, index))
+			self.move("s_%s_%d" % (name, index))
+			geometry = self.move("g_%s_%d" % (name, index))
+			groups = self.move("r_%s_%d" % (name, index))
+			return {name: DirectionalLightSimDevice(name, index, self, geometry, groups)}
 		else:
 			self.properties.append("%s_%d" % (name, index))
 			self.move("s_%s_%d" % (name, index))

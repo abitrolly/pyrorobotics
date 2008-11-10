@@ -23,6 +23,17 @@ except:
 PIOVER180 = math.pi / 180.0
 PIOVER2   = math.pi /2
 RESOLUTION = 7 # decimal places of accuracy in making comparisons
+
+def normRad(x):
+    """
+    Compute angle in range radians(-180) to radians(180)
+    """
+    while (x > math.pi): 
+        x -= 2 * math.pi
+    while (x < -math.pi):
+        x += 2 * math.pi
+    return x
+
 class Segment:
     def __init__(self, start, end, id = None, partOf = None):
         self.start = [round(v,RESOLUTION) for v in start]
@@ -1203,7 +1214,7 @@ class Simulator:
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[1]:
                         if int(message[2]) == index:
-                            if message[1] in ["sonar", "laser", "light", "bulb", "ir", "bumper"]:
+                            if message[1] in ["sonar", "light", "directional", "bulb", "ir", "bumper"]:
                                 retval = d.geometry, d.arc, d.maxRange
                             elif message[1] == "camera":
                                 retval = d.width, d.height
@@ -1213,7 +1224,7 @@ class Simulator:
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[1]:
                         if int(message[2]) == index:
-                            if message[1] in ["sonar", "laser", "light", "ir", "bumper"]:
+                            if message[1] in ["sonar", "light", "directional", "ir", "bumper"]:
                                 retval = d.groups
                         index += 1
             elif message[0] == "s": # "s_sonar_0" subscribe
@@ -1222,7 +1233,8 @@ class Simulator:
                 self.properties.append("%s_%s" % (message[1], message[2]))
                 self.assoc[sockname[1]].subscribed = 1
                 retval = "ok"
-            elif message[0] in ["sonar", "laser", "light", "camera", "gripper", "ir", "bumper"]: # sonar_0, light_0...
+            elif message[0] in ["sonar", "light", "directional", 
+                                "camera", "gripper", "ir", "bumper"]: # sonar_0, light_0...
                 index = 0
                 for d in self.assoc[sockname[1]].devices:
                     if d.type == message[0]:
@@ -1725,6 +1737,52 @@ class SimRobot:
                     i += 1
             elif d.type == "bulb":
                 pass # nothing to update... it is not a sensor
+            elif d.type == "directional": # directional light
+                # for each light sensor:
+                i = 0
+                for (d_x, d_y, d_a) in d.geometry:
+                    # compute total light on sensor, falling off as square of distance
+                    # position of light sensor in global coords:
+                    gx = self._gx + (d_x * cos_a90 - d_y * sin_a90)
+                    gy = self._gy + (d_x * sin_a90 + d_y * cos_a90)
+                    sum = 0.0
+                    for light in self.simulator.lights: # for each light source:
+                        # these can be type == "fixed" and type == "bulb"
+                        if light.type == "fixed": 
+                            x, y, brightness = light.x, light.y, light.brightness
+                        else: # get position from robot:
+                            if light.robot == self: continue # don't read the bulb if it is on self
+                            ogx, ogy, oga, brightness = (light.robot._gx,
+                                                         light.robot._gy,
+                                                         light.robot._ga,
+                                                         light.brightness)
+                            oa90 = oga + PIOVER2
+                            x = ogx + (light.x * math.cos(oa90) - light.y * math.sin(oa90))
+                            y = ogy + (light.x * math.sin(oa90) + light.y * math.cos(oa90))
+                        seg = Segment((x,y), (gx, gy))
+                        a = -seg.angle() + PIOVER2
+                        # see if line between sensor and light is blocked by any boundaries (ignore other bb)
+                        dist,hit,obj = self.simulator.castRay(self, x, y, a, seg.length() - .1,
+                                                               ignoreRobot = "other", rayType = "light")
+                        # compute distance of segment; value is sqrt of that?
+                        if not hit: # no hit means it has a clear shot:
+                            # is the light source within the arc of the sensor
+                            dx = x - gx
+                            dy = y - gy
+                            angle = math.atan2(-dy, dx) - normRad(d_a + a90) 
+                            angle = normRad(angle)
+                            print "%.2f %.2f" % (math.degrees(angle), math.degrees(normRad(d_a + a90)))
+                            if -d.arc/2.0 <= angle <= d.arc/2.0:
+                                self.drawRay("light", x, y, gx, gy, "orange")
+                                intensity = math.cos(angle * 1.5) * (1.0 / (seg.length() * seg.length())) 
+                                sum += min(intensity, 1.0) * brightness * 1000.0
+                            else:
+                                self.drawRay("lightBlocked", x, y, gx, gy, "blue")
+                        else:
+                            self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
+                            print "hit!"
+                    d.scan[i] = min(sum, d.maxRange)
+                    i += 1
             elif d.type == "light":
                 # for each light sensor:
                 i = 0
@@ -2236,6 +2294,7 @@ class BulbDevice(Light):
         self.type = "bulb"
         self.active = 1
         self.geometry = (0, 0, 0)
+
 class LightSensor:
     def __init__(self, geometry, noise = 0.0):
         self.type = "light"
@@ -2247,6 +2306,18 @@ class LightSensor:
         self.groups = {}
         self.scan = [0] * len(geometry) # for data
         self.rgb = [[0,0,0] for g in geometry]
+
+class DirectionalLightSensor:
+    def __init__(self, geometry, arc, noise = 0.0):
+        # geometry (x, y, a) where a is direction (in radians) relative to robot
+        self.type = "directional"
+        self.active = 1
+        self.geometry = geometry
+        self.arc = arc
+        self.maxRange = 1000.0 # in mm
+        self.noise = noise
+        self.groups = {}
+        self.scan = [0] * len(geometry) # for data
 
 class Gripper:
     def __init__(self):
@@ -2495,6 +2566,29 @@ class Pioneer4FrontLightSensors(LightSensor):
                        'right' : (2, 3), 
                        'left-front' : (0,), 
                        'right-front' : (3, ),
+                       'left-back' : [],
+                       'right-back' : [],
+                       'back-right' : [],
+                       'back-left' : [], 
+                       'back' : [],
+                       'back-all' : []}
+
+class PioneerFrontDirectionalLightSensors(DirectionalLightSensor):
+    def __init__(self):
+        # make sure outside of bb!
+        DirectionalLightSensor.__init__(self, ((.225,  .175, -30 * PIOVER180), 
+                                               (.225, -.175, 30 * PIOVER180)),
+                                        120 * PIOVER180,
+                                        noise=0.0) 
+        self.groups = {"front-all": (0, 1),
+                       "all": (0, 1),
+                       "front": (0, 1),
+                       "front-left": (0, ),
+                       "front-right": (1, ),
+                       'left' : (0,), 
+                       'right' : (1,), 
+                       'left-front' : (0,), 
+                       'right-front' : (1, ),
                        'left-back' : [],
                        'right-back' : [],
                        'back-right' : [],
