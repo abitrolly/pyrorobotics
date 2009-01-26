@@ -500,6 +500,12 @@ class PlayerUpdater(threading.Thread):
         Constructor, setting initial variables
         """
         self.runable = runable
+        # set datamode to pull
+        if self.runable._client.datamode(playerc.PLAYERC_DATAMODE_PULL) == 0:
+            print playerc.playerc_error_str()
+        # set up the appropriate replacement rule for new data
+        if self.runable._client.set_replace_rule(-1,-1,playerc.PLAYER_MSGTYPE_DATA,-1,1) != 0:
+            print playerc.playerc_error_str()
         self._stopevent = threading.Event()
         self._sleepperiod = 0.01
         # We have to read it this fast to keep up!

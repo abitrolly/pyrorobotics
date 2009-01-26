@@ -1769,14 +1769,15 @@ class SimRobot:
                             # is the light source within the arc of the sensor
                             dx = x - gx
                             dy = y - gy
-                            angle = math.atan2(-dy, dx) - normRad(d_a + a90) 
+                            angle = math.atan2(dy, dx) - (ga + PIOVER2)
                             angle = normRad(angle)
-                            print "%.2f %.2f" % (math.degrees(angle), math.degrees(normRad(d_a + a90)))
-                            if -d.arc/2.0 <= angle <= d.arc/2.0:
+                            if -math.pi/3 < angle < math.pi/3:
                                 self.drawRay("light", x, y, gx, gy, "orange")
-                                intensity = math.cos(angle * 1.5) * (1.0 / (seg.length() * seg.length())) 
-                                sum += min(intensity, 1.0) * brightness * 1000.0
-                            else:
+                                intensity = (1.0 / (seg.length() * seg.length()))
+                                sum += min(intensity, 1.0) * math.cos(angle*1.5) * brightness * 1000.0
+                                for c in [0, 1, 2]:
+                                    rgb[c] += light_rgb[c] * (1.0/ seg.length())
+                            else: 
                                 self.drawRay("lightBlocked", x, y, gx, gy, "blue")
                         else:
                             self.drawRay("lightBlocked", x, y, hit[0], hit[1], "purple")
