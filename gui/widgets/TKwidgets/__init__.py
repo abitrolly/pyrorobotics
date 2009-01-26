@@ -89,7 +89,8 @@ class ModalDialog(Dialog):
 		import string
 		self.SetupDialog()
 		self.CenterDialog()
-		self.top.grab_set()
+                if self.top.winfo_viewable():
+                   self.top.grab_set()
 		self.top.focus()
 		self.top.deiconify()
 		self.top.waitvar(self.myWaitVar)
