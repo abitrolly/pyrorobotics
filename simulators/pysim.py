@@ -872,6 +872,40 @@ class Simulator:
         self.lights.append(Light(x, y, brightness, color))
         self.redraw()
 
+    def refillLights(self, brightness):
+        """
+        Set all the lights to the given brightness.
+        """
+        for light in self.lights:
+            if light.type != "fixed": continue
+            light.brightness = brightness
+        self.redraw()
+
+    def resetLights(self, brightness, width, height):
+        """
+        Randomly relocate all lights in the environment within the
+        bounding box defined by the given width and height.  Make sure
+        that they are not too close to the edge of the bounding box.
+        """
+        for light in self.lights:
+            if light.type != "fixed": continue
+            light.x = 0.5 + random.random() * (width-1)
+            light.y = 0.5 + random.random() * (height-1)
+            light.brightness = brightness
+        self.redraw()
+
+    def resetLightPositions(self, coords):
+        """
+        Relocate lights in the environment to the given list of 
+        coordinates.
+        """
+        for i in range(len(self.lights)):
+            light = self.lights[i]
+            if light.type != "fixed": continue
+            light.x = coords[i][0]
+            light.y = coords[i][1]
+        self.redraw()
+
     def redraw(self): pass
 
     def addRobot(self, port, r):
@@ -1191,9 +1225,12 @@ class Simulator:
                 retval = self.assoc[sockname[1]].display[val] = 1
             elif message[0] == "e": # "e_amt" eat:keyword
                 val = 0
-                try:
-                    val = float(message[1])
-                except: pass
+                if message[1] == "all":
+                    val = -1.0 # code for "eat all light; returns 1.0"
+                else:
+                    try:
+                        val = float(message[1])
+                    except: pass
                 retval = self.assoc[sockname[1]].eat(val)
             elif message[0] == "x": # "x_expression" expression
                 try:
@@ -1737,7 +1774,7 @@ class SimRobot:
                     i += 1
             elif d.type == "bulb":
                 pass # nothing to update... it is not a sensor
-            elif d.type == "directional": # directional light
+            elif d.type == "directional": # directional light sensor
                 # for each light sensor:
                 i = 0
                 for (d_x, d_y, d_a) in d.geometry:
@@ -1745,11 +1782,13 @@ class SimRobot:
                     # position of light sensor in global coords:
                     gx = self._gx + (d_x * cos_a90 - d_y * sin_a90)
                     gy = self._gy + (d_x * sin_a90 + d_y * cos_a90)
+                    ga = self._ga + d_a
                     sum = 0.0
+                    rgb = [0, 0, 0]
                     for light in self.simulator.lights: # for each light source:
                         # these can be type == "fixed" and type == "bulb"
                         if light.type == "fixed": 
-                            x, y, brightness = light.x, light.y, light.brightness
+                            x, y, brightness, light_rgb = light.x, light.y, light.brightness, light.rgb
                         else: # get position from robot:
                             if light.robot == self: continue # don't read the bulb if it is on self
                             ogx, ogy, oga, brightness = (light.robot._gx,
@@ -1882,7 +1921,12 @@ class SimRobot:
             if light != "fixed": continue
             dist = Segment((self._gx, self._gy), (light.x, light.y)).length()
             radius = max(light.brightness, self.radius)
-            if dist <= radius and amt/1000.0 <= light.brightness:
+            if amt == -1:
+                if light.brightness > 0 and dist <= radius:
+                    light.brightness = 0
+                    self.simulator.redraw()
+                    return 1.0
+            elif dist <= radius and amt/1000.0 <= light.brightness:
                 light.brightness -= amt/1000.0
                 self.energy += amt
                 self.simulator.redraw()
