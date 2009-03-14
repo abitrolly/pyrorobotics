@@ -330,7 +330,7 @@ class PlayerPositionDevice(PlayerDevice):
 class PlayerPTZDevice(PlayerDevice):
     def __init__(self, client, name):
         PlayerDevice.__init__(self, client, name)
-        self.subtype = "Canon VC-C50i"
+        self.subtype = "canon" # or "Sony"
         self.origPose = (0, 0, 0)
         self.pose = [self.origPose[0], self.origPose[1], self.origPose[2]]
         self.supports = ["pan", "tilt", "zoom"]
@@ -385,32 +385,32 @@ class PlayerPTZDevice(PlayerDevice):
         return 0
 
     def getMaxPosPan(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return 2
         else:
             return 100
     def getMaxNegPan(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return -2
         else:
             return -100
     def getMaxPosTilt(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return 1.5
         else:
             return 30
     def getMaxNegTilt(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return -0.5
         else:
             return -30
     def getMaxZoom(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return 34
         else:
             return 10
     def getMinZoom(self):
-        if self.subtype == "Canon VC-C50i":
+        if self.subtype == "canon":
             return 0
         else:
             return 120
