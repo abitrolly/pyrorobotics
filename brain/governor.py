@@ -92,6 +92,10 @@ class Governor:
                 self.decayHistogram[index] = 1
         return (index, modelVector)
 
+    def next(self):
+        """ Public interface for getting next item from RAVQ. """
+        return self.nextItem()
+
     def nextItem(self):
         """ Public interface for getting next item from RAVQ. """
         retval = None
