@@ -14,7 +14,7 @@ DEVICEID_1 = chr(0x31)  # used with SETRANGE
 PANSLEW = chr(0x50)     # Sets the pan slew
 TILTSLEW = chr(0x51)    # Sets the tilt slew
 STOP = chr(0x53)        # Stops current pan/tilt motion
-INIT = chr(0x58)        # Initializes the camera
+INITIALIZE = chr(0x58)  # Initializes the camera
 SLEWREQ = chr(0x59)     # Request pan/tilt min/max slew
 ANGLEREQ = chr(0x5C)    # Request pan/tilt min/max angle
 PANTILT = chr(0x62)     # Pan/tilt command
@@ -80,9 +80,8 @@ def tiltSlewPacket(tiltSlew):
     packet = PACKET_HEADER + TILTSLEW + bytes + FOOTER
     return packet
 
-# ArVCC4.cpp says this is necessary because the camera defaults to a
-# max tilt range of 30 instead of 88, but this doesn't seem to happen
-# with my camera (a VC-C50i), but maybe it is needed for older cameras
+# this is necessary because the camera defaults to a max tilt range of
+# 30 instead of 88
 def defaultTiltRangePacket():
     bytes = '%04X' % int(MIN_TILT / 0.1125 + 0x8000)
     bytes += '%04X' % int(MAX_TILT / 0.1125 + 0x8000)
@@ -117,7 +116,7 @@ def powerOnPacket():
     return PACKET_HEADER + POWER + DEVICEID_1 + FOOTER
 
 def initPacket():
-    return PACKET_HEADER + INIT + DEVICEID + FOOTER
+    return PACKET_HEADER + INITIALIZE + DEVICEID + FOOTER
 
 def haltPanTiltPacket():
     return PACKET_HEADER + STOP + DEVICEID + FOOTER
@@ -138,14 +137,13 @@ class CanonPTZ(Device):
     def __init__(self, portname):
         Device.__init__(self, deviceType='ptz')
         self.port = serial.Serial(portname, baudrate=9600)
-        self._send(powerOnPacket())
         self._send(controlModePacket())
         self._send(initPacket())
         self._send(opticalZoomPacket(0))
         self._send(digitalZoomPacket(1))
         self._send(panSlewPacket(MAX_PAN_SLEW))
         self._send(tiltSlewPacket(MAX_TILT_SLEW))
-        #self._send(defaultTiltRangePacket())
+        self._send(defaultTiltRangePacket())
         self._pan = 0
         self._tilt = 0
         self._zoom = 0
@@ -238,7 +236,7 @@ class CanonPTZ(Device):
 
     def reset(self):
         self._send(initPacket())
-        #self._send(defaultTiltRangePacket())
+        self._send(defaultTiltRangePacket())
         self._pan, self._tilt = 0, 0
         self.setPanSpeed(MAX_PAN_SLEW)
         self.setTiltSpeed(MAX_TILT_SLEW)
@@ -397,10 +395,10 @@ class CanonPTZ(Device):
 
     def addWidgets(self, window):
         p, t, z, m = 0, 0, 0, 1
-        window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(p))
-        window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(t))
-        window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(z))
-        window.addCommand("magnify", "Magnify!", str(m), lambda m: self.magnify(m))
+        window.addCommand("pan", "Pan", str(p), lambda p: self.pan(p))
+        window.addCommand("tilt", "Tilt", str(t), lambda t: self.tilt(t))
+        window.addCommand("zoom", "Zoom", str(z), lambda z: self.zoom(z))
+        window.addCommand("magnify", "Magnify", str(m), lambda m: self.magnify(m))
 
 #-----------------------------------------------------------------------------
 
