@@ -1,3 +1,5 @@
+from pyrobot.robot.device import Device
+
 # Python interface for Canon VCC4 Pan/Tilt/Zoom device
 # Jim Marshall
 # Version 3/25/2009
@@ -131,8 +133,10 @@ def reveal(packet):
 
 #-----------------------------------------------------------------------------
 
-class CanonPTZ(object):
+class CanonPTZ(Device):
+
     def __init__(self, portname):
+        Device.__init__(self, deviceType='ptz')
         self.port = serial.Serial(portname, baudrate=9600)
         self._send(powerOnPacket())
         self._send(controlModePacket())
@@ -148,8 +152,8 @@ class CanonPTZ(object):
         self._magnify = 1
         self._panSpeed = MAX_PAN_SLEW
         self._tiltSpeed = MAX_TILT_SLEW
-        self.supports = ['pan', 'tilt', 'zoom']
-        print 'PTZ camera ready'
+        self.supports = ['pan', 'tilt', 'zoom', 'magnify']
+        print 'Canon PTZ device ready'
 
     def _send(self, packet):
         while True:
@@ -361,6 +365,9 @@ class CanonPTZ(object):
     def zoom(self, zoomVal):
         self.setZoom(zoomVal)
 
+    def magnify(self, magnifyVal):
+        self.setMagnify(magnifyVal)
+
     def center(self):
         self.setPanTilt(0, 0)
 
@@ -389,12 +396,14 @@ class CanonPTZ(object):
         return MIN_ZOOM
 
     def addWidgets(self, window):
-        p, t, z = 0, 0, 0
-        window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(float(p)))
-        window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(float(t)))
-        window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(float(z)))
+        p, t, z, m = 0, 0, 0, 1
+        window.addCommand("pan", "Pan!", str(p), lambda p: self.pan(p))
+        window.addCommand("tilt", "Tilt!", str(t), lambda t: self.tilt(t))
+        window.addCommand("zoom", "Zoom!", str(z), lambda z: self.zoom(z))
+        window.addCommand("magnify", "Magnify!", str(m), lambda m: self.magnify(m))
 
 #-----------------------------------------------------------------------------
 
 def INIT(robot):
-    return {'ptz' : CanonPTZ('/dev/ttyS3') }
+    return {'ptz' : CanonPTZ('/dev/ttyS3')}
+
