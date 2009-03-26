@@ -1,12 +1,15 @@
+<<<<<<< .mine
+=======
 from pyrobot.robot.device import Device
 from pyrobot.system.share import ask
 
+>>>>>>> .r2508
 # Python interface for Canon VCC4 Pan/Tilt/Zoom device
 # Jim Marshall
 # Version 3/25/2009
-# Based on /usr/local/Aria/src/ArVCC4.cpp and
-# /usr/local/Aria/include/ArVCC4.h
+# Based on Aria/src/ArVCC4.cpp and Aria/include/ArVCC4.h
 
+from pyrobot.robot.device import Device
 import serial, time
 
 DELIM = chr(0x00)       # Delimeter character
@@ -367,15 +370,19 @@ class CanonPTZ(Device):
 
     def pan(self, panVal):
         self.setPan(panVal)
+        return self.getPose()
 
     def tilt(self, tiltVal):
         self.setTilt(tiltVal)
+        return self.getPose()
 
     def zoom(self, zoomVal):
         self.setZoom(zoomVal)
+        return self.getPose()
 
     def magnify(self, magnifyVal):
         self.setMagnify(magnifyVal)
+        return self.getPose()
 
     def center(self):
         self.setPanTilt(0, 0)
@@ -406,10 +413,10 @@ class CanonPTZ(Device):
 
     def addWidgets(self, window):
         p, t, z, m = 0, 0, 0, 1
-        window.addCommand("pan", "Pan", str(p), lambda p: self.pan(p))
-        window.addCommand("tilt", "Tilt", str(t), lambda t: self.tilt(t))
-        window.addCommand("zoom", "Zoom", str(z), lambda z: self.zoom(z))
-        window.addCommand("magnify", "Magnify", str(m), lambda m: self.magnify(m))
+        window.addCommand("pan", "Pan", str(p), lambda p: self.pan(int(p)))
+        window.addCommand("tilt", "Tilt", str(t), lambda t: self.tilt(int(t)))
+        window.addCommand("zoom", "Zoom", str(z), lambda z: self.zoom(int(z)))
+        window.addCommand("magnify", "Magnify", str(m), lambda m: self.magnify(int(m)))
 
 #-----------------------------------------------------------------------------
 
