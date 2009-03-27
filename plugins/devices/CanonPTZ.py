@@ -1,9 +1,6 @@
-<<<<<<< .mine
-=======
 from pyrobot.robot.device import Device
 from pyrobot.system.share import ask
 
->>>>>>> .r2508
 # Python interface for Canon VCC4 Pan/Tilt/Zoom device
 # Jim Marshall
 # Version 3/25/2009
@@ -144,13 +141,15 @@ class CanonPTZ(Device):
             if portname == None:
                 portname = '/dev/ttyS3'
             if baudrate == None:
-                baudrate= 9600
+                baudrate = 9600
             result = ask("Please enter the parameters for the Canon PTZ",
                          (("Port name", portname),
                           ("Baud rate", baudrate),
                           ))
-        self.port = serial.Serial(result["Port name"], 
-                                  baudrate=result["Baud rate"])
+        else:
+            result = {'Port name': portname, 'Baud rate': baudrate}
+        self.port = serial.Serial(result['Port name'],
+                                  baudrate=result['Baud rate'])
         self._send(controlModePacket())
         self._send(initPacket())
         self._send(opticalZoomPacket(0))
