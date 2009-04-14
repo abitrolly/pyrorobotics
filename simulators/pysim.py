@@ -1551,7 +1551,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             w = self.tkfont.measure(line) * 1.25 + 10 # width of text
             if w > width:
                 width = w 
-        height = -(self.actual["size"] * len(lines) * 1.25) + fontPixelHeight
+        height = (abs(self.actual["size"]) * len(lines) * 1.25) + fontPixelHeight
         between = 30
         above   = 40
         roundness = 2
