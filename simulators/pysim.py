@@ -1551,7 +1551,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
             w = self.tkfont.measure(line) * 1.25 + 10 # width of text
             if w > width:
                 width = w 
-        height = (self.actual["size"] * len(lines) * 1.25) + fontPixelHeight
+        height = -(self.actual["size"] * len(lines) * 1.25) + fontPixelHeight
         between = 30
         above   = 40
         roundness = 2
@@ -1588,7 +1588,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
     def remove(self, thing):
         self.canvas.delete(thing)
     def step(self, run = 1):
-        self.remove('robot')
+        self.remove("robot")
         Simulator.step(self, run)
         if run and not self.stop:
             self.running = 1
@@ -2202,7 +2202,7 @@ class TkPioneer(TkRobot):
                     x, y = self._gx, self._gy
                     # FIXME: remove old text
                     # self.simulator.remove("robot-%s" % self.name)
-                    self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
+                    self.simulator.drawText(x, y, self.sayText, tag="robot") # -%s" % self.name)
             return # hasn't moved
         self._last_pose = (self._gx, self._gy, self._ga)
         self.simulator.remove("robot-%s" % self.name)
@@ -2285,7 +2285,7 @@ class TkPioneer(TkRobot):
             if self.sayText != "":
                 # center of robot: 
                 x, y = self._gx, self._gy
-                self.simulator.drawText(x, y, self.sayText, tag="robot-%s" % self.name)
+                self.simulator.drawText(x, y, self.sayText, tag="robot") # % self.name)
 
 class TkBlimp(TkRobot):
     def __init__(self, *args, **kwargs):
