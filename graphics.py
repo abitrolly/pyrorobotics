@@ -126,6 +126,8 @@ http://mcsp.wartburg.edu/zelle/python for a quick reference"""
 import time, os, sys
 import Tkinter
 tk = Tkinter
+import pyrobot.system.share as share
+_root = share.gui
 
 ##########################################################################
 # Module Exceptions
