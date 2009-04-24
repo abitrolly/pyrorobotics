@@ -71,7 +71,7 @@ int close_file(struct file_info *fi);
 char *mygetline(struct file_info *fi);
 
 /* for getting the program name */
-char *setprogname(char *argv0);
-#define getprogname() setprogname(NULL);
+char *mysetprogname(char *argv0);
+#define getprogname() mysetprogname(NULL);
 
 #endif /* SOMPAK_FILEIO_H */

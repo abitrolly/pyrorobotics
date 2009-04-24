@@ -471,7 +471,7 @@ char *mygetline(struct file_info *fi)
 
 static char progname_real[512];
 
-char *setprogname(char *argv0)
+char *mysetprogname(char *argv0)
 {
   char *s, *s2;
   static char *progname = NULL;

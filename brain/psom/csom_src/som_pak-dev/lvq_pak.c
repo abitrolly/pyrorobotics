@@ -221,7 +221,8 @@ void adapt_vector(struct data_entry *codetmp, struct data_entry *sample,
 
 /* package errors */
 
-int lvq_errno;
+// added "= 0" in order to be able to compile on MacOSX -jbm 4/10/09
+int lvq_errno = 0;
 
 void errormsg(char *msg)
 {
