@@ -1,3 +1,4 @@
+CC=g++
 OBJS = _geometry.so
 
 include ../../Makefile.cfg
@@ -14,7 +15,7 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 LIBS= -lstdc++ -ldl -lpthread
 
 _geometry.so: geometry.o GeometryLib.o
-	$(CC) $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -framework Python -dynamiclib $^ $(LIBDIRS) -o $@ $(LIBS)
 
 GeometryLib.o:: GeometryLib.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<

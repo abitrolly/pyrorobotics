@@ -66,7 +66,7 @@ class Camera(PyrobotImage, Device):
    """
    A base class for Camera
    """
-   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None, visible = 0):
+   def __init__(self, width, height, depth = 3, title = "Camera View", parent = None, visible = 0, async=1):
       """
       To specify the resolution of a particular camera, overload this
       constructor with one that initalizes the dimensions itself
@@ -78,7 +78,7 @@ class Camera(PyrobotImage, Device):
       self.callbackList = []
       self.filterResults = []
       self.callbackTextList = []
-      Device.__init__(self, 'camera', async = 1)
+      Device.__init__(self, 'camera', async=async)
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
       self.lastWindowUpdate = 0

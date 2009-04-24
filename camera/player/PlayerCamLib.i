@@ -1,8 +1,8 @@
 %module playercam
 %{
 #include "Device.h"
-#include "PlayerCam.h"
+#include "PlayerCamLib.h"
 %}
 
 %include Device.h
-%include PlayerCam.h
+%include PlayerCamLib.h

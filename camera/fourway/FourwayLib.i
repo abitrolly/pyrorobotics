@@ -1,8 +1,8 @@
 %module fourway
 %{
 #include "Device.h"
-#include "Fourway.h"
+#include "FourwayLib.h"
 %}
 
 %include Device.h
-%include Fourway.h
+%include FourwayLib.h

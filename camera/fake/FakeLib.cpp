@@ -1,4 +1,4 @@
-#include "Fake.h"
+#include "FakeLib.h"
 
 Fake::Fake(char filename[], int width, int height, int depth) {
   int limit, w, h, num, maxval, color;

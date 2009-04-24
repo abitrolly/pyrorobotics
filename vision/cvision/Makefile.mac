@@ -1,9 +1,11 @@
-OBJS = _geometry.so
+CC = g++
+
+OBJS = _vision.so
 
 include ../../Makefile.cfg
 include ../../Makefile.src
 
-INCLUDE = 
+INCLUDE = -I../../camera/device/
 CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 	-D_POSIX_THREAD_SAFE_FUNCTIONS \
 	-D_REENTRANT -DPOSIX \
@@ -13,18 +15,18 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 
 LIBS= -lstdc++ -ldl -lpthread
 
-_geometry.so: geometry.o GeometryLib.o
-	$(CC) $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
+_vision.so: vision.o VisionLib.o ../../camera/device/Device.o
+	$(CC) $(CPPFLAGS) -dynamiclib $^ $(LIBDIRS) -framework Python -o $@ $(LIBS)
 
-GeometryLib.o:: GeometryLib.cpp
+VisionLib.o:: VisionLib.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<
 
-GeometryLib.cc: GeometryLib.i GeometryLib.h GeometryLib.cpp
-	swig $(INCLUDE) -python -c++ -o $@ GeometryLib.i
+VisionLib.cc: VisionLib.i VisionLib.h VisionLib.cpp
+	swig $(INCLUDE) -python -c++ -o $@ VisionLib.i
 
-geometry.o: GeometryLib.cc
+vision.o: VisionLib.cc
 	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) $^ -o $@
 
 clean::
-	$(RM) *~ *.so *.o *.cc *.so *.pyc geometry.py
+	$(RM) *~ *.so *.o *.cc *.so *.pyc vision.py
 

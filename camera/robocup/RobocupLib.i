@@ -1,8 +1,8 @@
 %module robocup
 %{
 #include "Device.h"
-#include "Robocup.h"
+#include "RobocupLib.h"
 %}
 
 %include Device.h
-%include Robocup.h
+%include RobocupLib.h

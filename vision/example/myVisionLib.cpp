@@ -1,4 +1,4 @@
-#include "myVision.h"
+#include "myVisionLib.h"
 
 myVision::myVision() {
   allocatedImage = 0;

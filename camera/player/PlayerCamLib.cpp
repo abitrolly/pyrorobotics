@@ -1,4 +1,4 @@
-#include "PlayerCam.h"
+#include "PlayerCamLib.h"
 
 PyObject *PlayerCam::updateMMap(int load) {
   void *rdevice = playerc_client_read(client);

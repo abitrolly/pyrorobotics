@@ -1,4 +1,4 @@
-#include "Stereo.h"
+#include "StereoLib.h"
 
 #include <math.h>
 

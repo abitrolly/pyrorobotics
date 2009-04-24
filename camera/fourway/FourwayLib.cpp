@@ -1,4 +1,4 @@
-#include "Fourway.h"
+#include "FourwayLib.h"
 
 Fourway::Fourway(void *odev, int splits, int quad, int rot) {
   // other image:

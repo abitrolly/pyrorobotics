@@ -1,3 +1,4 @@
+CC = g++
 OBJS = _robocup.so
 
 include ../../Makefile.cfg
@@ -18,7 +19,7 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _robocup.so: robocup.o RobocupLib.o 
-	$(CC) $(CPPFLAGS) -shared robocup.o RobocupLib.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -framework Python -dynamiclib robocup.o RobocupLib.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
 
 RobocupLib.o:: RobocupLib.cpp RobocupLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c RobocupLib.cpp

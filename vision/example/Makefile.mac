@@ -1,3 +1,4 @@
+CC=g++
 
 ifeq ($(PYROBOT),)
 $(warning You do not have a PYROBOT environment variable set.)
@@ -18,7 +19,7 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 LIBS= -lstdc++ -ldl -lpthread 
 
 _myvision.so: myvision.o myVisionLib.o $(PYROBOT)/camera/device/Device.o
-	$(CC) $(CPPFLAGS) -shared $^ -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -framework Python -dynamiclib $^ -o $@ $(LIBS)
 
 myVisionLib.o:: myVisionLib.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<

@@ -1,8 +1,8 @@
 %module fake
 %{
 #include "Device.h"
-#include "Fake.h"
+#include "FakeLib.h"
 %}
 
 %include Device.h
-%include Fake.h
+%include FakeLib.h

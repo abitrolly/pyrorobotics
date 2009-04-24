@@ -1,4 +1,4 @@
-#include "Robocup.h"
+#include "RobocupLib.h"
 
 Robocup::Robocup(int w, int h, int d) {
   initialize(w, h, 3, 0, 1, 2);
@@ -96,9 +96,9 @@ PyObject *Robocup::updateMMap(PyObject *points, PyObject *lines) {
   // ]
   // draw points
   PyObject *key, *value;
-  int next = 0;
+  Py_ssize_t *next = 0;
   int lastX, lastY;
-  while (PyDict_Next(points, &next, &key, &value)) { // for each line
+  while (PyDict_Next(points, next, &key, &value)) { // for each line
     // key is the name of the line
     // value is the list of points
     lastX = -1, lastY = -1;

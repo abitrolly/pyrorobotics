@@ -1537,6 +1537,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         seg.id = id
         self.world.append( seg )
     def drawText(self, x, y, text, fill="black", tag="robot", **args):
+        #print 'called drawText with "%s"' % text
         fontPixelHeight = 15
         if not self.tkfont:
             import tkFont
@@ -1548,7 +1549,7 @@ class TkSimulator(Tkinter.Toplevel, Simulator):
         lines = text.split("\n")
         width = 0
         for line in lines:
-            w = self.tkfont.measure(line) * 1.25 + 10 # width of text
+            w = self.tkfont.measure(line) + 10 # width of text
             if w > width:
                 width = w 
         height = (abs(self.actual["size"]) * len(lines) * 1.25) + fontPixelHeight
@@ -2104,6 +2105,7 @@ class SimRobot:
 class TkRobot(SimRobot):
     def __init__(self, *args, **kwargs):
         SimRobot.__init__(self, *args, **kwargs)
+	self._mouse_offset_from_center = 0, 0
     def mouse_event(self, event, command, robot):
         x, y = event.x, event.y
         if command[:8] == "control-":
