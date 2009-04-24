@@ -64,8 +64,7 @@ class AiboCamera(Camera):
       self.data = CBuffer(self._cbuf)
       self.rgb = (0, 1, 2) # offsets to RGB
       self.format = "RGB"
-      Camera.__init__(self, self.width, self.height, self.depth,
-                      "Aibo Camera View")
+      Camera.__init__(self, self.width, self.height, self.depth, "Aibo Camera View", async=1)
       self.subtype = "aibo"
       self.data = CBuffer(self._cbuf)
 
