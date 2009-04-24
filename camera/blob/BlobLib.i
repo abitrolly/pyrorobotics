@@ -1,8 +1,8 @@
 %module blob
 %{
 #include "Device.h"
-#include "Blob.h"
+#include "BlobLib.h"
 %}
 
 %include Device.h
-%include Blob.h
+%include BlobLib.h

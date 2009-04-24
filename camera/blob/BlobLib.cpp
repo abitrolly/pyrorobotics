@@ -1,4 +1,4 @@
-#include "Blob.h"
+#include "BlobLib.h"
 
 Blob::Blob(int w, int h, int d) {
   initialize(w, h, 3, 0, 1, 2);
