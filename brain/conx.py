@@ -3966,6 +3966,7 @@ class BackpropNetwork(Network):
         self.testTargets = []
         self.resetLimit = 1
         self.classifications = None
+        self.countWrong = False
 
 #     def __del__(self):
 #         Network.__del__(self)
@@ -4062,6 +4063,7 @@ class BackpropNetwork(Network):
         self.setLearning(learn)
         self.setOrderedInputs(order)
         self.setInteractive(interact)
+        self.countWrong = False
         if self.weightDisplay is not None:
             self.weightDisplay.disabled = False
 
