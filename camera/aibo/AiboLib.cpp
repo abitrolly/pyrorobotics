@@ -1,4 +1,4 @@
-#include "Aibo.h"
+#include "AiboLib.h"
 #include "jpeg.h"
 
 #define MAXBUFSIZE 10000
