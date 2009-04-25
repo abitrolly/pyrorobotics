@@ -60,9 +60,15 @@ def sumMerge(dict1, dict2):
         dict1[key] = map(lambda a,b: a + b, dict1.get(key, [0,0,0,0]), dict2[key])
     return dict1 # and also returns it, in case you want to do something to it
 
+def loadNetwork(filename, mode = 'pickle'):
+    """
+    Loads network from a file using pickle. See Network.saveNetwork()
+    """
+    return loadNetworkFromFile(filename, mode)
+
 def loadNetworkFromFile(filename, mode = 'pickle'):
     """
-    Loads network from a file using pickle. See Network.saveNetworkToFile()
+    Deprecated. Use loadNetwork instead.
     """
     if mode == 'pickle':
         import pickle
@@ -1703,10 +1709,10 @@ class Network(object):
                                (self.epoch, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                     if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                         self.lastLowestTSSError = tssCVErr
-                        self.saveWeightsToFile(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
+                        self.saveWeights(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
                         self.Print("auto saving weights to '%s'..." % self.lastAutoSaveWeightsFilename)
                     if self.autoSaveNetworkFile != None:
-                        self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
+                        self.saveNetwork(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
                         self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
                     if totalCVCorrect * 1.0 / totalCVCount >= self.stopPercent and self.useCrossValidationToStop:
                         self.epoch += 1
@@ -1732,10 +1738,10 @@ class Network(object):
                            (self.epoch-1, tssCVErr, totalCVCorrect * 1.0 / totalCVCount, rmsCVErr))
                 if self.autoSaveWeightsFile != None and tssCVErr < self.lastLowestTSSError:
                     self.lastLowestTSSError = tssCVErr
-                    self.saveWeightsToFile(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
+                    self.saveWeights(self.autoSaveWeightsFile, mode = self.autoSaveWeightsFileFormat)
                     self.Print("auto saving weights to '%s'..." % self.lastAutoSaveWeightsFilename)
                 if self.autoSaveNetworkFile != None:
-                    self.saveNetworkToFile(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
+                    self.saveNetwork(self.autoSaveNetworkFile, mode = self.autoSaveNetworkFileFormat)
                     self.Print("auto saving network to '%s'..." % self.lastAutoSaveNetworkFilename)
         else:
             print "Final: nothing done"
@@ -2603,9 +2609,16 @@ class Network(object):
         Close the layerName's log file.
         """
         self.getLayer(layerName).closeLog()
-    def saveWeightsToFile(self, filename, mode = 'pickle', counter = None):
+
+    def saveWeights(self, filename, mode = 'pickle', counter = None):
         """
         Saves weights to file in pickle, plain, or tlearn mode.
+        """
+        self.saveWeightsToFile(filename, mode, counter)
+
+    def saveWeightsToFile(self, filename, mode = 'pickle', counter = None):
+        """
+        Deprecated.
         """
         # modes: pickle/conx, plain, tlearn
         if "?" in filename: # replace ? pattern in filename with epoch number
@@ -2669,10 +2682,17 @@ class Network(object):
                         cnt += 1
             fp.close()            
         else:
-            raise ValueError, ('Unknown mode in saveWeightsToFile().', mode)
-    def loadWeightsFromFile(self, filename, mode = 'pickle'):
+            raise ValueError, ('Unknown mode in saveWeights().', mode)
+
+    def loadWeights(self, filename, mode = 'pickle'):
         """
         Loads weights from a file in pickle, plain, or tlearn mode.
+        """
+        self.loadWeightsFromFile(filename, mode)
+
+    def loadWeightsFromFile(self, filename, mode = 'pickle'):
+        """
+        Deprecated. Use loadWeights instead.
         """
         # modes: pickle, plain/conx, tlearn
         if mode == 'pickle':
@@ -2786,10 +2806,17 @@ class Network(object):
                 line = fp.readline() # $
                 line = fp.readline() # beginning of weights
         else:
-            raise ValueError, ('Unknown mode in loadWeightsFromFile()', mode)
-    def saveNetworkToFile(self, filename, makeWrapper = 1, mode = "pickle", counter = None):
+            raise ValueError, ('Unknown mode in loadWeights()', mode)
+
+    def saveNetwork(self, filename, makeWrapper = 1, mode = "pickle", counter = None):
         """
         Saves network to file using pickle.
+        """
+        self.saveNetworkToFile(filename, makeWrapper, mode, counter)
+
+    def saveNetworkToFile(self, filename, makeWrapper = 1, mode = "pickle", counter = None):
+        """
+        Deprecated.
         """
         if "?" in filename: # replace ? pattern in filename with epoch number
             import re
@@ -2829,7 +2856,7 @@ class Network(object):
             print "--- OR ---"
             print "   % python"
             print "   >>> from pyrobot.brain.conx import *"
-            print "   >>> network = loadNetworkFromFile(%s)" % filename
+            print "   >>> network = loadNetwork(%s)" % filename
             print "   >>> network.train() # for example"
         elif mode in ["plain", "conx"]:
             fp = open(filename, "w")
@@ -2848,12 +2875,21 @@ class Network(object):
                         fp.write("%f " % connection.weight[i][j])
                     fp.write("\n")
             fp.close()
-    def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
-                            delim = ' ', checkEven = 1, patterned = 0):
+
+    def loadVectors(self, filename, cols = None, everyNrows = 1,
+                    delim = ' ', checkEven = 1, patterned = 0):
         """
         Load a set of vectors from a file. Takes a filename, list of cols
         you want (or None for all), get every everyNrows (or 1 for no
         skipping), and a delimeter.
+        """
+        return self.loadVectorsFromFile(filename, cols, everyNrows,
+                                        delim, checkEven, patterned)
+
+    def loadVectorsFromFile(self, filename, cols = None, everyNrows = 1,
+                            delim = ' ', checkEven = 1, patterned = 0):
+        """
+        Deprecated.
         """
         fp = open(filename, "r")
         line = fp.readline()
@@ -2885,27 +2921,52 @@ class Network(object):
             line = fp.readline()    
         fp.close()
         return data
-    def loadInputPatternsFromFile(self, filename, cols = None, everyNrows = 1,
-                                  delim = ' ', checkEven = 1):
+
+    def loadInputPatterns(self, filename, cols = None, everyNrows = 1,
+                          delim = ' ', checkEven = 1):
         """
         Loads inputs as patterns from file.
         """
-        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim, checkEven, patterned = 1)
+        self.loadInputPatternsFromFile(filename, cols, everyNrows,
+                                       delim, checkEven)
+
+    def loadInputPatternsFromFile(self, filename, cols = None, everyNrows = 1,
+                                  delim = ' ', checkEven = 1):
+        """
+        Deprecated.
+        """
+        self.inputs = self.loadVectors(filename, cols, everyNrows, delim, checkEven, patterned = 1)
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
             self.loadOrder[i] = i
-    def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
-                           delim = ' ', checkEven = 1):
+
+    def loadInputs(self, filename, cols = None, everyNrows = 1,
+                   delim = ' ', checkEven = 1):
         """
         Loads inputs from file. Patterning is lost.
         """
-        self.inputs = self.loadVectorsFromFile(filename, cols, everyNrows, delim, checkEven)
+        self.loadInputsFromFile(filename, cols, everyNrows,
+                                delim, checkEven)
+
+    def loadInputsFromFile(self, filename, cols = None, everyNrows = 1,
+                           delim = ' ', checkEven = 1):
+        """
+        Depricated.
+        """
+        self.inputs = self.loadVectors(filename, cols, everyNrows, delim, checkEven)
         self.loadOrder = [0] * len(self.inputs)
         for i in range(len(self.inputs)):
             self.loadOrder[i] = i
-    def saveInputsToFile(self, filename):
+
+    def saveInputs(self, filename):
         """
         Saves inputs to file.
+        """
+        self.saveInputsToFile(filename)
+
+    def saveInputsToFile(self, filename):
+        """
+        Deprecated.
         """
         fp = open(filename, 'w')
         for input in self.inputs:
@@ -2913,23 +2974,48 @@ class Network(object):
             for item in vec:
                 fp.write("%f " % item)
             fp.write("\n")
+
+    def loadTargets(self, filename, cols = None, everyNrows = 1,
+                            delim = ' ', checkEven = 1):
+        """
+        Loads targets from file.
+        """
+        self.loadTargetsFromFile(filename, cols, everyNrows,
+                                 delim, checkEven)
+
     def loadTargetsFromFile(self, filename, cols = None, everyNrows = 1,
                             delim = ' ', checkEven = 1):
         """
         Loads targets from file.
         """
-        self.targets = self.loadVectorsFromFile(filename, cols, everyNrows,
-                                                delim, checkEven)
-    def loadTargetPatternssFromFile(self, filename, cols = None, everyNrows = 1,
-                                    delim = ' ', checkEven = 1):
+        self.targets = self.loadVectors(filename, cols, everyNrows,
+                                        delim, checkEven)
+
+    def loadTargetPatterns(self, filename, cols = None, everyNrows = 1,
+                            delim = ' ', checkEven = 1):
         """
         Loads targets as patterns from file.
         """
-        self.targets = self.loadVectorsFromFile(filename, cols, everyNrows,
-                                                delim, checkEven, patterned=1)
-    def saveTargetsToFile(self, filename):
+        self.loadTargetPatternssFromFile(filename, cols, everyNrows,
+                                         delim, checkEven)
+
+    def loadTargetPatternsFromFile(self, filename, cols = None, everyNrows = 1,
+                                   delim = ' ', checkEven = 1):
+        """
+        Deprecated.
+        """
+        self.targets = self.loadVectors(filename, cols, everyNrows,
+                                        delim, checkEven, patterned=1)
+
+    def saveTargets(self, filename):
         """
         Saves targets to file.
+        """
+        self.saveTargetsToFile(filename)
+
+    def saveTargetsToFile(self, filename):
+        """
+        Deprecated.
         """
         fp = open(filename, 'w')
         for target in self.targets:
@@ -2937,9 +3023,16 @@ class Network(object):
             for item in vec:
                 fp.write("%f " % item)
             fp.write("\n")
-    def saveDataToFile(self, filename):
+
+    def saveData(self, filename):
         """
         Saves data (targets/inputs) to file.
+        """
+        self.saveDataToFile(filename)
+
+    def saveDataToFile(self, filename):
+        """
+        Deprecated.
         """
         fp = open(filename, 'w')
         for i in range(len(self.inputs)):
@@ -2956,9 +3049,16 @@ class Network(object):
             except:
                 pass
             fp.write("\n")
-    def loadDataFromFile(self, filename, ocnt = -1):
+
+    def loadData(self, filename, ocnt = -1):
         """
         Loads data (targets/inputs) from file.
+        """
+        self.loadDataFromFile(filename, ocnt)
+
+    def loadDataFromFile(self, filename, ocnt = -1):
+        """
+        Deprecated.
         """
         if ocnt == -1:
             ocnt = int(self.layers[len(self.layers) - 1].size)
@@ -4145,8 +4245,14 @@ class BackpropNetwork(Network):
         self.updateGraphics()
         return result
 
+    def loadWeights(self, filename):
+        self.loadWeightsFromFile(filename)
+
     def loadWeightsFromFile(self, filename):
-        Network.loadWeightsFromFile(self, filename)
+        """
+        Deprecated.
+        """
+        Network.loadWeights(self, filename)
         self.updateGraphics()
 
     # saveHiddenReps creates a file containing the hidden layer representations
@@ -4725,14 +4831,14 @@ if __name__ == '__main__':
             print "Filename to save inputs: ",
             filename = sys.stdin.readline().strip()
             print "Saving Inputs: ", net.inputs
-            net.saveInputsToFile(filename)
-            net.loadInputsFromFile(filename)
+            net.saveInputs(filename)
+            net.loadInputs(filename)
             print "Loading Inputs: ", net.inputs
             print "Filename to save targets: ",
             filename = sys.stdin.readline().strip()
             print "Saving Targets: ", net.targets
-            net.saveTargetsToFile(filename)
-            net.loadTargetsFromFile(filename)
+            net.saveTargets(filename)
+            net.loadTargets(filename)
             print "Loading Targets: ", net.targets
         if ask("Do you want to test saving and loading patterned data?"):
             print "Setting inputs and targets..."
@@ -4743,9 +4849,9 @@ if __name__ == '__main__':
             print "Saving data: "
             print net.inputs
             print net.targets
-            net.saveDataToFile(filename)
+            net.saveData(filename)
             print "Loading data: "
-            net.loadDataFromFile(filename, 1)
+            net.loadData(filename, 1)
             print net.inputs
             print net.targets
             
@@ -4753,14 +4859,14 @@ if __name__ == '__main__':
         print "Filename to save inputs: ",
         filename = sys.stdin.readline().strip()
         print "Saving Inputs: ", n.inputs
-        n.saveInputsToFile(filename)
-        n.loadInputsFromFile(filename)
+        n.saveInputs(filename)
+        n.loadInputs(filename)
         print "Loading Inputs: ", n.inputs
         print "Filename to save targets: ",
         filename = sys.stdin.readline().strip()
         print "Saving Targets: ", n.targets
-        n.saveTargetsToFile(filename)
-        n.loadTargetsFromFile(filename)
+        n.saveTargets(filename)
+        n.loadTargets(filename)
         print "Loading Targets: ", n.targets
 
     if ask("Do you want to test saving and loading XOR data?"):
@@ -4769,9 +4875,9 @@ if __name__ == '__main__':
         print "Saving data: "
         print n.inputs
         print n.targets
-        n.saveDataToFile(filename)
+        n.saveData(filename)
         print "Loading data: "
-        n.loadDataFromFile(filename, 1)
+        n.loadData(filename, 1)
         print n.inputs
         print n.targets
         
@@ -4897,7 +5003,7 @@ if __name__ == '__main__':
             print "Setting log layer..."
             n.logLayer('input', 'input.log')
             # previously did not work if layer had a file pointer
-            n.saveNetworkToFile(filename)
+            n.saveNetwork(filename)
             print "Loading file..."
             fp = open(filename + ".pickle")
             n = pickle.load(fp)
@@ -5021,31 +5127,31 @@ if __name__ == '__main__':
         if ask("Do you want to see (and save) the previous network?"):
             print "Filename to save network (.pickle): ",
             filename = sys.stdin.readline().strip()
-            raam.saveNetworkToFile(filename)
+            raam.saveNetwork(filename)
             raam.sweep()
         if ask("Do you want to save weights of previous network?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            raam.saveWeightsToFile(filename)
+            raam.saveWeights(filename)
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
                 print "Loading standard style weights..."
-                raam.loadWeightsFromFile(filename)
+                raam.loadWeights(filename)
                 raam.sweep()
         if ask("Do you want to save weights of previous network in plain format?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            raam.saveWeightsToFile(filename, 'plain')
+            raam.saveWeights(filename, 'plain')
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
                 print"Loading plain style weights..."
-                raam.loadWeightsFromFile(filename, 'plain')
+                raam.loadWeights(filename, 'plain')
                 raam.sweep()
         if ask("Do you want to save weights of previous network in tlearn format?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            raam.saveWeightsToFile(filename, 'tlearn')
+            raam.saveWeights(filename, 'tlearn')
             if ask("Do you want to try loading the tlearn style weights you just saved (and sweep())?"):
                 print "Loading tlearn style weights..."
-                raam.loadWeightsFromFile(filename, 'tlearn')
+                raam.loadWeights(filename, 'tlearn')
                 raam.sweep()
                 
     if ask("Do you want to train a network to both predict and auto-associate?"):
@@ -5077,31 +5183,31 @@ if __name__ == '__main__':
         if ask("Do you want to see (and save) the previous network?"):
             print "Filename to save network (.pickle): ",
             filename = sys.stdin.readline().strip()
-            n.saveNetworkToFile(filename)
+            n.saveNetwork(filename)
             n.sweep()
         if ask("Do you want to save weights of previous network?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            n.saveWeightsToFile(filename)
+            n.saveWeights(filename)
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
                 print "Loading standard style weights..."
-                n.loadWeightsFromFile(filename)
+                n.loadWeights(filename)
                 n.sweep()
         if ask("Do you want to save weights of previous network in plain format?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            n.saveWeightsToFile(filename, 'plain')
+            n.saveWeights(filename, 'plain')
             if ask("Do you want to try loading the weights you just saved (and sweep())?"):
                 print"Loading plain style weights..."
-                n.loadWeightsFromFile(filename, 'plain')
+                n.loadWeights(filename, 'plain')
                 n.sweep()
         if ask("Do you want to save weights of previous network in tlearn format?"):
             print "Filename to save weights (.wts): ",
             filename = sys.stdin.readline().strip() + ".wts"
-            n.saveWeightsToFile(filename, 'tlearn')
+            n.saveWeights(filename, 'tlearn')
             if ask("Do you want to try loading the tlearn style weights you just saved (and sweep())?"):
                 print "Loading tlearn style weights..."
-                n.loadWeightsFromFile(filename, 'tlearn')
+                n.loadWeights(filename, 'tlearn')
                 n.sweep()
                 
     if ask("Do you want to change the size of a hidden layer in 3-3-3 network?"):
