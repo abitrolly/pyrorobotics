@@ -1,0 +1,4 @@
+On Fedora, you'll need at least:
+
+yum install python python-devel swig libjpeg-devel ncurses-libs
+
