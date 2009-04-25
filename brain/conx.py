@@ -2610,15 +2610,15 @@ class Network(object):
         """
         self.getLayer(layerName).closeLog()
 
-    def saveWeights(self, filename, mode = 'pickle', counter = None):
+    def saveWeightsToFile(self, filename, mode='pickle', counter=None):
+        """
+        Deprecated. Use saveWeights instead.
+        """
+        self.saveWeights(filename, mode, counter)
+
+    def saveWeights(self, filename, mode='pickle', counter=None):
         """
         Saves weights to file in pickle, plain, or tlearn mode.
-        """
-        self.saveWeightsToFile(filename, mode, counter)
-
-    def saveWeightsToFile(self, filename, mode = 'pickle', counter = None):
-        """
-        Deprecated.
         """
         # modes: pickle/conx, plain, tlearn
         if "?" in filename: # replace ? pattern in filename with epoch number
@@ -2684,15 +2684,15 @@ class Network(object):
         else:
             raise ValueError, ('Unknown mode in saveWeights().', mode)
 
-    def loadWeights(self, filename, mode = 'pickle'):
-        """
-        Loads weights from a file in pickle, plain, or tlearn mode.
-        """
-        self.loadWeightsFromFile(filename, mode)
-
-    def loadWeightsFromFile(self, filename, mode = 'pickle'):
+    def loadWeightsFromFile(self, filename, mode='pickle'):
         """
         Deprecated. Use loadWeights instead.
+        """
+        self.loadWeights(filename, mode)
+
+    def loadWeights(self, filename, mode='pickle'):
+        """
+        Loads weights from a file in pickle, plain, or tlearn mode.
         """
         # modes: pickle, plain/conx, tlearn
         if mode == 'pickle':
@@ -3421,7 +3421,9 @@ def pretty(values, max=0, places=2):
 
 class PGM(GraphWin):
 
-    def __init__(self, file=None, values=None, title='', shape=0, scale=0, highlight=None):
+    def __init__(self, file=None, values=None, title='', shape=0, scale=0, highlight=None, invert=False):
+        # invert flag displays an inverted version of the image, but does not invert
+        # the actual intensity values
         if file is None and values is not None:
             assert type(values) is list and len(values) > 0, 'a list of values is required'
             for v in values:
@@ -3459,8 +3461,10 @@ class PGM(GraphWin):
             x = (i % self.cols) * scale
             y = (i / self.cols) * scale
             grayLevel = int(100 * self.normalized[i])
+            if invert:
+                grayLevel = 100 - grayLevel
             fColor = oColor = 'gray%d' % grayLevel
-            if self.rows == 1: oColor = 'black'
+            if self.rows == 1 or self.cols == 1: oColor = 'black'
             r = self.create_rectangle(x, y, x+scale, y+scale, outline=oColor, fill=fColor)
             self.rectangles.append(r)
         if highlight is not None:
@@ -3490,13 +3494,17 @@ class PGM(GraphWin):
         self.winfo_toplevel().title(title)
         self.title = title
 
-    def updateImage(self, newValues):
+    def updateImage(self, newValues, invert=False):
+        # invert flag True displays an inverted version of the image,
+        # but does not invert the intensity values themselves
         assert len(newValues) == len(self.rectangles), 'wrong number of values'
         for i in xrange(len(newValues)):
             assert 0 <= newValues[i] <= 1, 'image values must be in range 0-1'
             grayLevel = int(100 * newValues[i])
+            if invert:
+                grayLevel = 100 - grayLevel
             fColor = oColor = 'gray%d' % grayLevel
-            if self.rows == 1: oColor = 'black'
+            if self.rows == 1 or self.cols == 1: oColor = 'black'
             self.itemconfigure(self.rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
         self.normalized = newValues
@@ -3504,12 +3512,15 @@ class PGM(GraphWin):
         self.maxval = 100
 
     def invert(self):
+        """"
+        Sets the intensity values of the image to their inverse.
+        """
         self.raw = [self.maxval-v for v in self.raw]
         self.normalized = [float(v)/self.maxval for v in self.raw]
         for i in xrange(len(self.normalized)):
             grayLevel = int(100 * self.normalized[i])
             fColor = oColor = 'gray%d' % grayLevel
-            if self.rows == 1: oColor = 'black'
+            if self.rows == 1 or self.cols == 1: oColor = 'black'
             self.itemconfigure(self.rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
 
@@ -3529,7 +3540,7 @@ class PGM(GraphWin):
 
 class NetworkActivationDisplay(GraphWin):
 
-    def __init__(self, net, title, style, horizSpacing, vertSpacing, info):
+    def __init__(self, net, title, style, horizSpacing, vertSpacing, invert, info):
         validStyles = ['line', 'lines', 'arrow', 'arrows', 'full', 'fullarrows']
         assert style in validStyles, 'style must be one of: %s' % ', '.join(validStyles)
         defaultScale = 30
@@ -3542,6 +3553,7 @@ class NetworkActivationDisplay(GraphWin):
         bgText = self.bgColor
         self.wrongColor = 'red'
         self.wrong = False
+        self.invert = invert
         self.net = net
         self.info = info
         self.rectangles = {}
@@ -3731,6 +3743,8 @@ class NetworkActivationDisplay(GraphWin):
                 rows, cols = self.info[layer.name]['shape']
                 for i in xrange(layer.size):
                     grayLevel = int(100 * layer.activation[i])
+                    if self.invert:
+                        grayLevel = 100 - grayLevel
                     fColor = oColor = 'gray%d' % grayLevel
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i], fill=fColor, outline=oColor)
@@ -3746,7 +3760,7 @@ class NetworkActivationDisplay(GraphWin):
 
 class NetworkWeightDisplay(GraphWin):
 
-    def __init__(self, net, title, kwInfo):
+    def __init__(self, net, title, invert, kwInfo):
         defaultScale = 20
         sideMargin = 20
         topMargin = 30
@@ -3758,6 +3772,7 @@ class NetworkWeightDisplay(GraphWin):
         self.bgColor = color_rgb(176, 196, 222)  # 'light steel blue'
         fgText = 'blue'
         bgText = self.bgColor
+        self.invert = invert
         self.net = net
         # weight display is disabled during showPerformance
         self.disabled = False
@@ -3872,6 +3887,8 @@ class NetworkWeightDisplay(GraphWin):
                     scaled_w = (w + maxMagnitude)/(2 * maxMagnitude)
                     grayLevel = int(100 * scaled_w)
                     assert 0 <= grayLevel <= 100, 'bad grayLevel value: %s' % grayLevel
+                    if self.invert:
+                        grayLevel = 100 - grayLevel
                     fColor = oColor = 'gray%d' % grayLevel
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i][j], fill=fColor, outline=oColor)
@@ -4102,19 +4119,19 @@ class BackpropNetwork(Network):
         if self.weightDisplay is not None:
             self.weightDisplay.update()
 
-    def showNetwork(self, title=None, style='arrows', horizSpacing=40, vertSpacing=40, **kw_args):
+    def showNetwork(self, title=None, style='arrows', horizSpacing=40, vertSpacing=40, invert=False, **kw_args):
         if title is None:
             title = self.name
         info = self.process_keyword_args(kw_args)
         if self.actDisplay is not None and not self.actDisplay.closed:
             self.actDisplay.close()
-        self.actDisplay = NetworkActivationDisplay(self, title, style, horizSpacing, vertSpacing, info)
+        self.actDisplay = NetworkActivationDisplay(self, title, style, horizSpacing, vertSpacing, invert, info)
 
-    def showWeights(self, title='Weights', **kw_args):
+    def showWeights(self, title='Weights', invert=False, **kw_args):
         info = self.process_keyword_args(kw_args)
         if self.weightDisplay is not None and not self.weightDisplay.closed:
             self.weightDisplay.close()
-        self.weightDisplay = NetworkWeightDisplay(self, title, info)
+        self.weightDisplay = NetworkWeightDisplay(self, title, invert, info)
 
     def process_keyword_args(self, kw_args):
         commonScale = None
@@ -4162,7 +4179,7 @@ class BackpropNetwork(Network):
         return info
 
     # displays a specific input pattern graphically in a popup window
-    def showInput(self, inputNumber, shape=0, scale=0):
+    def showInput(self, inputNumber, shape=0, scale=0, invert=False):
         assert len(self.inputs) > 0, 'no input patterns are currently defined'
         assert type(inputNumber) is int and 0 <= inputNumber < len(self.inputs), \
             "input number must be in range 0-%d" % (len(self.inputs) - 1)
@@ -4170,20 +4187,20 @@ class BackpropNetwork(Network):
         shape = validateShape(pattern, shape, self.getDefault('input', 'shape'))
         scale = validateScale(scale, self.getDefault('input', 'scale'))
         title = 'input #%d' % inputNumber
-        pgm = PGM(values=pattern, title=title, shape=shape, scale=scale)
+        pgm = PGM(values=pattern, title=title, shape=shape, scale=scale, invert=invert)
 
-    def showInputs(self, inputNums, shape=0, scale=0):
+    def showInputs(self, inputNums, shape=0, scale=0, invert=False):
         assert len(self.inputs) > 0, 'no input patterns are currently defined'
         for i in inputNums:
             assert type(i) is int, 'a list of input numbers is required'
             assert 0 <= i < len(self.inputs), \
                 'input numbers must be in range 0-%d' % (len(self.inputs) - 1)
-        self.showPatterns([self.inputs[i] for i in inputNums])
+        self.showPatterns([self.inputs[i] for i in inputNums], shape, scale, invert)
 
-    def showPattern(self, pattern, title='', shape=0, scale=0):
+    def showPattern(self, pattern, title='', shape=0, scale=0, invert=False):
         if type(pattern) is int:
             print 'calling showInput(%d)' % pattern
-            self.showInput(pattern)
+            self.showInput(pattern, shape, scale, invert)
             return
         elif type(pattern) is str:
             assert self.patterned and self.patterns.has_key(pattern), \
@@ -4192,9 +4209,9 @@ class BackpropNetwork(Network):
         assert type(pattern) is list and len(pattern) > 0, 'bad pattern: %s' % pattern
         shape = validateShape(pattern, shape, self.getDefault('input', 'shape'))
         scale = validateScale(scale, self.getDefault('input', 'scale'))
-        pgm = PGM(values=pattern, title=title, shape=shape, scale=scale)
+        pgm = PGM(values=pattern, title=title, shape=shape, scale=scale, invert=invert)
 
-    def showPatterns(self, patterns, shape=0, scale=0):
+    def showPatterns(self, patterns, shape=0, scale=0, invert=False):
         assert type(patterns) is list and len(patterns) > 0, 'a list of patterns is required'
         if type(patterns[0]) is str:
             # assume patterns is a list of pattern names
@@ -4204,11 +4221,11 @@ class BackpropNetwork(Network):
             patterns = [self.patterns[name] for name in patterns]
         elif type(patterns[0]) is not list:
             # assume patterns is really a single pattern
-            self.showPattern(patterns, shape=shape, scale=scale)
+            self.showPattern(patterns, shape=shape, scale=scale, invert=invert)
             return
         shape = validateShape(patterns[0], shape, self.getDefault('input', 'shape'))
         scale = validateScale(scale, self.getDefault('input', 'scale'))
-        pgm = PGM(values=patterns[0], shape=shape, scale=scale)
+        pgm = PGM(values=patterns[0], shape=shape, scale=scale, invert=invert)
         for pattern in patterns[1:]:
             answer = raw_input('<enter> to continue, <q> to quit... ')
             if answer in ['Q', 'q']:
@@ -4216,7 +4233,7 @@ class BackpropNetwork(Network):
                 return
             validateShape(pattern, shape, self.getDefault('input', 'shape'))
             if pgm.closed: return
-            pgm.updateImage(pattern)
+            pgm.updateImage(pattern, invert)
         raw_input('<enter> to close... ')
         pgm.close()
 
@@ -4245,14 +4262,18 @@ class BackpropNetwork(Network):
         self.updateGraphics()
         return result
 
-    def loadWeights(self, filename):
-        self.loadWeightsFromFile(filename)
+    def loadWeightsFromFile(self, filename, mode='pickle'):
+        """
+        Deprecated. Use loadWeights instead.
+        """
+        Network.loadWeights(self, filename, mode)
+        self.updateGraphics()
 
-    def loadWeightsFromFile(self, filename):
+    def loadWeights(self, filename, mode='pickle'):
         """
-        Deprecated.
+        Loads weights from a file in pickle, plain, or tlearn mode.
         """
-        Network.loadWeights(self, filename)
+        Network.loadWeights(self, filename, mode)
         self.updateGraphics()
 
     # saveHiddenReps creates a file containing the hidden layer representations
