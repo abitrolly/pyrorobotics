@@ -127,6 +127,9 @@ import time, os, sys
 import Tkinter
 tk = Tkinter
 import pyrobot.system.share as share
+if share.gui == 0:
+    share.gui = Tkinter.Tk()
+    share.gui.withdraw()
 _root = share.gui
 
 ##########################################################################
