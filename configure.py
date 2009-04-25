@@ -157,10 +157,10 @@ python_bin_path = ask("3. What is Python's binary? (enter path and name)",
                            ("%s/bin/python" + python_script_name) % prefix,
                       locate = "bin/python" + python_script_name)
 
-x11_include_dir = ask("4. Where is the X11 include directory?",
-                      "/usr/X11R6",
+x11_include_dir = ask("4. Where is the X11 include directory (need rgb.txt)?",
+                      "/usr/share/X11",
                       type = "dir",
-                      locate = "/usr/X11R6")
+                      locate = "/usr/share/X11")
 		      
 player_include_dir = ask(" 5. Where is the player include directory (if one, or 'none')?",
                        "/usr/include/player-2.0",
