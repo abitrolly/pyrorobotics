@@ -28,7 +28,7 @@ SWIG=swig
 LD=$(CC)
 CC_FLAGS=-c -g -I $(PYTHON_INCLUDE)
 SWIG_FLAGS=-python
-LD_FLAGS=-framework Python -dynamiclib
+LD_FLAGS=-shared
 
 MYOBJS:=$(patsubst %.o, $(OBJLIB)/%.o, $(MYOBJS))
 

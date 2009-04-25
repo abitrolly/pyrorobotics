@@ -1,4 +1,3 @@
-CC = g++
 OBJS = _blob.so
 
 include ../../Makefile.cfg
@@ -19,7 +18,7 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _blob.so: blob.o BlobLib.o 
-	$(CC) $(CPPFLAGS) -framework Python -dynamiclib blob.o BlobLib.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -shared blob.o BlobLib.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
 
 BlobLib.o:: BlobLib.cpp BlobLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c BlobLib.cpp

@@ -1,4 +1,3 @@
-CC = g++
 OBJS = _playercam.so
 
 include ../../Makefile.cfg
@@ -18,7 +17,7 @@ LIBS= -lstdc++ -ldl -L/usr/local/lib -L/usr/lib -lpthread -lplayerc -ljpeg
 	cd ../device/; make
 
 _playercam.so: playercam.o PlayerCamLib.o
-	$(CC) $(CPPFLAGS) -framework Python -dynamiclib playercam.o PlayerCamLib.o ../device/Device.o $(LIBS) -o $@ 
+	$(CC) $(CPPFLAGS) -shared playercam.o PlayerCamLib.o ../device/Device.o $(LIBS) -o $@ 
 
 PlayerCamLib.o: PlayerCamLib.cpp PlayerCamLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c PlayerCamLib.cpp

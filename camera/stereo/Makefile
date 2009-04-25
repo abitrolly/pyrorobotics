@@ -1,4 +1,3 @@
-CC = g++
 OBJS = _stereo.so
 #OOBJS = error.o match_scanlines.o pnmio.o postprocess.o
 
@@ -19,7 +18,7 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _stereo.so: stereo.o StereoLib.o
-	$(CC) $(CPPFLAGS) -dynamiclib stereo.o StereoLib.o ../device/Device.o -framework Python $(OOBJS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -shared stereo.o StereoLib.o ../device/Device.o $(OOBJS) -o $@ $(LIBS)
 
 StereoLib.o:: StereoLib.cpp StereoLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c StereoLib.cpp

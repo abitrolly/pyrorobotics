@@ -1,4 +1,3 @@
-CC = g++
 OBJS = _fourway.so
 
 include ../../Makefile.cfg
@@ -18,7 +17,7 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _fourway.so: fourway.o FourwayLib.o
-	$(CC) $(CPPFLAGS) -dynamiclib fourway.o FourwayLib.o ../device/Device.o -framework Python -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -shared fourway.o FourwayLib.o ../device/Device.o -o $@ $(LIBS)
 
 FourwayLib.o:: FourwayLib.cpp FourwayLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c FourwayLib.cpp
