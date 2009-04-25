@@ -1,3 +1,4 @@
+CC = g++
 
 OBJS = _vision.so
 
@@ -15,7 +16,7 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 LIBS= -lstdc++ -ldl -lpthread
 
 _vision.so: vision.o VisionLib.o ../../camera/device/Device.o
-	$(CC) $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -dynamiclib $^ $(LIBDIRS) -framework Python -o $@ $(LIBS)
 
 VisionLib.o:: VisionLib.cpp
 	$(CC) $(CPPFLAGS) -o $@ -c $<

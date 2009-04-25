@@ -1,3 +1,5 @@
+CC = g++
+
 OBJS = _fake.so
 
 include ../../Makefile.cfg
@@ -17,7 +19,7 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _fake.so: fake.o FakeLib.o 
-	$(CC) $(CPPFLAGS) -shared fake.o FakeLib.o ../device/Device.o -o $@ $(LIBS)
+	$(CC) $(CPPFLAGS) -dynamiclib fake.o FakeLib.o ../device/Device.o -framework Python -o $@ $(LIBS)
 
 FakeLib.o:: FakeLib.cpp FakeLib.h ../device/Device.o
 	$(CC) $(CPPFLAGS) -o $@ -c FakeLib.cpp
