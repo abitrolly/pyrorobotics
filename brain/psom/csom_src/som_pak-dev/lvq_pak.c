@@ -471,7 +471,7 @@ int global_options(int argc, char **argv)
   char *s;
 
   /* set program name */
-  setprogname(argv[0]);
+  /* setprogname(argv[0]); */
 
 #ifndef NO_PIPED_COMMANDS
   /* command for compressing */

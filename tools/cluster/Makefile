@@ -97,7 +97,7 @@ ALIAS	= pca
 HDRS	= alloc.h error.h cluster.h
 SRCS	= alloc.c cluster.c error.c pca.c graph.c
 OBJS	= alloc.o cluster.o error.o pca.o graph.o
-LIBS	= -lm -lcurses
+LIBS	= -lm -lncurses
 
 OTHERS	= ALGORITHM ANNOUNCE README BENCHMARKS MAIL Makefile vectors names \
 	  $(PROG).man $(ALIAS).man testm.c test/*
