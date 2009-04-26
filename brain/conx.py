@@ -3637,7 +3637,7 @@ class NetworkActivationDisplay(GraphWin):
                 if info[name]['size'] > 1:
                     label = Text(Point(textX, textY), '%s units' % name)
                 else:
-                    label = Text(Point(centerX, textY), '%s unit' % name)
+                    label = Text(Point(textX, textY), '%s unit' % name)
                 label.setSize(textSize)
                 labels.append(label)
                 x1 = x2 + horizSpacing
@@ -4056,6 +4056,7 @@ class BackpropNetwork(Network):
         self.setInteractive(1)
         # this forces sweep to go through the dataset patterns in order
         self.setOrderedInputs(1)
+        self.quitFromSweep = False
         self.sweep()
         if self.countWrong and self.interactive:
             print 'Got %d right, %d wrong' % (self.numRight, self.numWrong)
@@ -4116,9 +4117,9 @@ class BackpropNetwork(Network):
         self.swapData(verbose=False)
 
     def updateGraphics(self):
-        if self.actDisplay is not None:
+        if self.actDisplay is not None and not self.actDisplay.closed:
             self.actDisplay.update()
-        if self.weightDisplay is not None:
+        if self.weightDisplay is not None and not self.weightDisplay.closed:
             self.weightDisplay.update()
 
     def showNetwork(self, title=None, style='arrows', horizSpacing=40, vertSpacing=40, invert=False, **kw_args):
@@ -4410,6 +4411,7 @@ class BackpropNetwork(Network):
         #if input in ['G', 'g']:
         if input in ['Q', 'q']:
             self.interactive = 0
+            self.quitFromSweep = True
 
     # overrides Network method
     def display(self):
@@ -4551,7 +4553,7 @@ class SRN(BackpropNetwork):
         self.contextLayers = {} # records layer reference and associated hidden layer
     def setSequenceType(self, value):
         """
-        You must set this! Set it to "epoch" or "pattern".
+        You must set this!
         """
         if value == "ordered-continuous":
             self.orderedInputs = 1           
@@ -4767,6 +4769,23 @@ class SRN(BackpropNetwork):
         return BackpropNetwork.step(self, **args)
     def sweepCrossValidation(self):
         return BackpropNetwork.sweepCrossValidation(self)
+
+    # newConx methods
+
+    def showPerformance(self):
+        """
+        SRN.showPerformance()
+        Clears the context layer(s) and then repeatedly cycles through
+        training patterns until the user decides to quit.
+        """
+        if len(self.inputs) == 0:
+            print 'no patterns to test'
+            return
+        self.setContext()
+        while True:
+            BackpropNetwork.showPerformance(self)
+            if self.quitFromSweep:
+                return
 
 #---------------------------------------------------------------------------------
 # Test code
