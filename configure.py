@@ -75,8 +75,8 @@ def file_exists(file_name, type = 'file'):
 def ask_yn(title, list_of_options):
     print title
     retval = ''
-    for directory, desc in list_of_options:
-        if ask("Option:    Do you want to build " + desc + "? (y/n)", "y", 0) == "y":
+    for directory, desc, default in list_of_options:
+        if ask("Option:    Do you want to build " + desc + "? (y/n)", default, 0) == "y":
             retval = retval + " " + directory
     return retval
 
@@ -86,8 +86,13 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    while not done:
       print question
       if (locate) and not useDefaults:
-          pipe = popen("locate %s | head -1 " % locate )
-          default = pipe.readline().strip()
+          print "Looking for '%s'..." % locate 
+          pipe = popen("locate \"%s\" 2> /dev/null" % locate )
+          new_default = pipe.readline()
+          new_default = new_default.strip()
+          if new_default:
+              default = new_default
+          pipe.close()
       print 'Default = [' + default + ']: ',
       if useDefaults or useLocates:
           retval = ""
@@ -106,7 +111,7 @@ def ask(question, default, filecheck = 1, type = 'file', locate = ''):
    if retval == 'none':
       return ''
    else:
-      return retval
+       return retval
 
 print """
 ---------------------------------------------------------------------
@@ -163,25 +168,30 @@ x11_include_dir = ask("4. Where is the X11 include directory (need rgb.txt)?",
                       locate = "/usr/share/X11")
 		      
 player_include_dir = ask(" 5. Where is the player include directory (if one, or 'none')?",
-                       "/usr/include/player-2.0",
+                       "none",
 		       type= "dir",
 		       locate = "include/player-2")
 
-
 included_packages = ask_yn("\n6. Options:", [
-    ('camera/device vision/cvision', "Image Processing"),
-    ('camera/v4l', "Video for Linux (requires Image Processing)"),
-    ('camera/bt848', "BT848 Video for old Pioneers (requires Image Processing)"),
-    ('camera/fake', "Simulated vision from files (requires Image Processing)"),
-    ('camera/blob', "Stage simulated vision (requires Image Processing and Player)"),
-    ('camera/aibo', "Aibo vision (requires Image Processing)"),
-    ('camera/robocup', "Robocup simulated vision (requires Image Processing)"),
-    ('camera/player', "Gazebo simulated vision (requires Image Processing and Player)"),
-    ('camera/fourway', "Splits a camera view in 2 or 4 (requires another camera)"),
-    ('camera/stereo', "Stereo Vision from two cameras (requires 2 cameras)"),
-    ('brain/psom brain/psom/csom_src/som_pak-dev',
-     "Self-organizing Map (SOM)"),
-    ('tools/cluster', "Cluster Analysis Tool"),
+    ('camera/device vision/cvision', "Image Processing", "y"),
+    ('camera/v4l', "Video for Linux \n(requires Image Processing)", 
+     "y"),
+    ('camera/bt848', "BT848 Video for old Pioneers \n(requires Image Processing)", 
+     "n"),
+    ('camera/fake', "Simulated vision from files \n(requires Image Processing)", 
+     "y"),
+    ('camera/blob', "Stage simulated vision \n(requires Image Processing and Player)", "ny"[int(player_include_dir != "")]),
+    ('camera/player', "Gazebo simulated vision \n(requires Image Processing and Player)", "ny"[int(player_include_dir != "")]),
+    ('camera/aibo', "Aibo vision \n(requires Image Processing)", "y"),
+    ('camera/robocup', "Robocup simulated vision \n(requires Image Processing)", 
+     "y"),
+    ('camera/fourway', "Splits a camera view in 2 or 4 \n(requires combined camera image)", 
+     "y"),
+    ('camera/stereo', "Stereo Vision from two cameras \n(requires 2 cameras)", 
+     "y"),
+    ('brain/psom brain/psom/csom_src/som_pak-dev', "Self-organizing Map (SOM)", 
+     "y"),
+    ('tools/cluster', "Cluster Analysis Tool", "y"),
     ])
 
 fp = open("Makefile.cfg", "w")
