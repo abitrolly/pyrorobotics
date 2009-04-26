@@ -164,7 +164,7 @@ class GraphWin(tk.Canvas):
     def __init__(self, title="Graphics Window",
                  width=200, height=200, autoflush=False):
         _tkCall(self.__init_help, title, width, height, autoflush)
- 
+        self.tk.call('tk', 'scaling', 1.4)
     
     def __init_help(self, title, width, height, autoflush):
         master = tk.Toplevel(_root)
