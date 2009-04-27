@@ -265,6 +265,8 @@ class gui:
             self.inform("Done!")
          else:
             self.inform("Define a robot first!")
+      elif len(retval) >= 2 and retval[0:2] == "$$":
+         os.system(retval[2:])
       elif len(retval) >= 1 and retval[0] == "$":
          pipe = popen(retval[1:])
          for line in pipe.readlines():
