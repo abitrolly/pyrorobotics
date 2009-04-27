@@ -128,8 +128,11 @@ import Tkinter
 tk = Tkinter
 import pyrobot.system.share as share
 if share.gui == 0:
-    share.gui = Tkinter.Tk()
-    share.gui.withdraw()
+    try:
+        share.gui = Tkinter.Tk()
+        share.gui.withdraw()
+    except:
+        share.gui = 0
 _root = share.gui
 
 ##########################################################################
