@@ -5,6 +5,7 @@ import sys
 import signal
 import time
 import string
+from posix import popen
 from pyrobot.system.version import version as version
 from pyrobot.system import help, usage, about, file_exists
 
@@ -265,7 +266,10 @@ class gui:
          else:
             self.inform("Define a robot first!")
       elif len(retval) >= 1 and retval[0] == "$":
-         return os.system(retval[1:])
+         pipe = popen(retval[1:])
+         for line in pipe.readlines():
+            print line.strip()
+         pipe.close()
       elif len(retval) >= 1 and retval[0] == "!":
          if retval == "!":
             self.listCommandHistory()
@@ -365,7 +369,7 @@ class gui:
             excName = cla.__name__  # a real exception object
          else:
             excName = cla   # one our fake, string exceptions
-      if "__dict__" in dir(exc):
+      if "__dict__" in dir(exc) and "args" in exc.__dict__:
          excArgs = exc.__dict__["args"]
       else:
          excArgs = ("",)

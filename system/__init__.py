@@ -44,7 +44,7 @@ def help():
     print "-------------------------------------------------------------"
     print "  <command>                   execute <command> in Python"
     print "  <exp>                       print <exp> in Python"
-    print "  % <command>                 execute <command> in shell"
+    print "  $ <command>                 execute <command> in shell"
     print "  edit                        edit the brain file"
     print "  help                        this help message"
     print "  info                        show brain and robot info"
