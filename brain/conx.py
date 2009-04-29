@@ -3507,6 +3507,7 @@ class PGM(GraphWin):
             if self.rows == 1 or self.cols == 1: oColor = 'black'
             self.itemconfigure(self.rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
+        while self.tk.dooneevent(2): pass
         self.normalized = newValues
         self.raw = [int(100*v) for v in self.normalized]
         self.maxval = 100
@@ -3523,6 +3524,7 @@ class PGM(GraphWin):
             if self.rows == 1 or self.cols == 1: oColor = 'black'
             self.itemconfigure(self.rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
+        while self.tk.dooneevent(2): pass
 
     def saveImage(self, pathname):
         f = open(pathname, mode='w')
@@ -3749,6 +3751,7 @@ class NetworkActivationDisplay(GraphWin):
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
+        while self.tk.dooneevent(2): pass
 
     def showWrong(self):
         if self.closed: return
@@ -3893,6 +3896,7 @@ class NetworkWeightDisplay(GraphWin):
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i][j], fill=fColor, outline=oColor)
         self.update_idletasks()
+        while self.tk.dooneevent(2): pass
 
     def setTitle(self, title):
         self.winfo_toplevel().title(title)
