@@ -1,5 +1,6 @@
 import Tkinter, os, random, pickle
 import Image, ImageTk, ImageDraw, ImageFont 
+from pyrobot import pyrobotdir
 
 class GUI(Tkinter.Toplevel):
     """
@@ -19,10 +20,10 @@ class GUI(Tkinter.Toplevel):
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
         # sensors: stench, breeze, glitter, bump, scream
-        self.goldFilename = os.environ["PYROBOT"] + "/images/gold.gif" 
-        self.wumpusFilename = os.environ["PYROBOT"] + "/images/wumpus.gif" 
-        self.pitFilename = os.environ["PYROBOT"] + "/images/pit.gif"
-        self.agentFilename = os.environ["PYROBOT"] + "/images/agent.gif" 
+        self.goldFilename = pyrobotdir() + "/images/gold.gif" 
+        self.wumpusFilename = pyrobotdir() + "/images/wumpus.gif" 
+        self.pitFilename = pyrobotdir() + "/images/pit.gif"
+        self.agentFilename = pyrobotdir() + "/images/agent.gif" 
         # --------------------------------------------------------
         self.goldImage = Image.open(self.goldFilename)
         self.goldImage = self.goldImage.resize( (100, 25), Image.BILINEAR )

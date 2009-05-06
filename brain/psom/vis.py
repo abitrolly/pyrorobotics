@@ -1,5 +1,6 @@
 from pyrobot.brain.psom import *
 from pyrobot.brain.psom.visvector import *
+from pyrobot import pyrobotdir
 from Tkinter import *
 
 ACT_MAX   = 5
@@ -449,8 +450,8 @@ if __name__ == "__main__":
       print "Press [Enter] to continue...",
       raw_input();
    #mysom = VisPsom(file='ex.cod', vis_vectortype="Hinton")
-   mysom = VisPsom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
-   mydataset = dataset(file=getenv("PYROBOT") + '/brain/psom/ex.dat')
+   mysom = VisPsom(file=pyrobotdir() + '/brain/psom/ex.cod')
+   mydataset = dataset(file=pyrobotdir() + '/brain/psom/ex.dat')
    mysom.init_training(0.02,4.0,5005)
    print "---> Begin training from dataset..."
    mysom.timing_start()

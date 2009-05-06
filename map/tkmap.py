@@ -4,6 +4,7 @@ from math import cos, sin
 import pyrobot.gui.widgets.TKwidgets as TKwidgets
 import pyrobot.system as system
 import pyrobot.gui.console as console
+from pyrobot import pyrobotdir
 
 class TkMap(Map, Tkinter.Tk):
     """ Map with Tkinter GUI functions """
@@ -98,16 +99,15 @@ class TkMap(Map, Tkinter.Tk):
 
     def fileloaddialog(self, filetype, skel, startdir = ''):
         from string import replace
-        import pyrobot
         from os import getcwd, getenv, chdir
         retval = ""
         cwd = getcwd()
         if startdir == '':
-            chdir(pyrobot.pyrobotdir() + "/plugins/" + filetype)
+            chdir(pyrobotdir() + "/plugins/" + filetype)
         else:
             chdir(startdir)
         d = TKwidgets.LoadFileDialog(self, "Load " + filetype, skel,
-                                     pyrobot.pyrobotdir() + "/plugins/" + filetype)
+                                     pyrobotdir() + "/plugins/" + filetype)
         if d.Show() == 1:
             doc = d.GetFileName()
             d.DialogCleanup()
@@ -128,9 +128,9 @@ class TkMap(Map, Tkinter.Tk):
             file = file + '.py'
         if system.file_exists(file):
             grid = system.loadINIT(file)
-        elif system.file_exists(os.getenv('PYROBOT') + \
+        elif system.file_exists(pyrobotdir() + \
                                 '/plugins/maps/' + file): 
-            grid = system.loadINIT(os.getenv('PYROBOT') + \
+            grid = system.loadINIT(pyrobotdir() + \
                                    '/plugins/plots/' + file)
         else:
             raise 'Map file not found: ' + file

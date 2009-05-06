@@ -1,5 +1,6 @@
 import struct
 from pyrobot.system import file_exists
+from pyrobot import pyrobotdir
 
 # Standard convolution matrices:
 
@@ -776,7 +777,7 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       image = PyrobotImage(0, 0)
-      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-1.ppm")
+      image.loadFromFile(pyrobotdir() + "/vision/snaps/som-1.ppm")
       image.saveToFile("test2.ppm")
       print "Done! To see output, use 'xv test2.ppm'"
    else:
@@ -818,7 +819,7 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       image = PyrobotImage(0, 0)
-      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-21.ppm")
+      image.loadFromFile(pyrobotdir() + "/vision/snaps/som-21.ppm")
       image.grayScale()
       image.saveToFile("test3.ppm")
       #image.display()
@@ -830,7 +831,7 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       image = PyrobotImage(0, 0)
-      image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-21.ppm")
+      image.loadFromFile(pyrobotdir() + "/vision/snaps/som-21.ppm")
       image.saveToFile("test3.01a.ppm")
       mybitmap = image.getBitmap(4.0, mode='rg/b')
       mybitmap.saveToFile("test3.01b.ppm")
@@ -852,7 +853,7 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       try:
-         image.loadFromFile(getenv('PYROBOT') + "/vision/snaps/som-1.ppm")
+         image.loadFromFile(pyrobotdir() + "/vision/snaps/som-1.ppm")
          import PIL.PpmImagePlugin
          from struct import *
          c = ''
@@ -898,7 +899,7 @@ if __name__ == '__main__':
                   self.image = ImageTk.PhotoImage(im)
                   Tkinter.Label.__init__(self, master, image=self.image, bd=0)
          root = Tkinter.Toplevel()
-         filename = getenv('PYROBOT') + "/vision/snaps/som-1.ppm"
+         filename = pyrobotdir() + "/vision/snaps/som-1.ppm"
          root.title(filename)
          im = Image.open(filename)
          #im = i
@@ -953,7 +954,7 @@ if __name__ == '__main__':
    if sys.stdin.readline().lower()[0] == 'y':
       print "Running..."
       image = PyrobotImage(0,0)
-      image.loadFromFile(getenv('PYROBOT') + '/vision/snaps/som-16.ppm')
+      image.loadFromFile(pyrobotdir() + '/vision/snaps/som-16.ppm')
       image.grayScale()
       mask = image.convolve(edge, 1, 128)
       #mask = mask.convolve(fill, 1)
@@ -979,13 +980,13 @@ if __name__ == '__main__':
       for x in range( len(files)):
          print "Loading " + files[x] + "..."
          imgs[x] = PyrobotImage(0,0)
-         imgs[x].loadFromFile(getenv('PYROBOT') + files[x])
+         imgs[x].loadFromFile(pyrobotdir() + files[x])
          hists[x] = imgs[x].histogram(20, 20)
 
       f = "/vision/snaps/som-dsb4.ppm"
       print "========================= Testing " + f
       i = PyrobotImage(0,0)
-      i.loadFromFile(getenv('PYROBOT') + f)
+      i.loadFromFile(pyrobotdir() + f)
       h = i.histogram(20,20)
       maxcomp = 0
       for x in range( len(files)):

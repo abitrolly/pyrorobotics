@@ -1,5 +1,6 @@
 import Tkinter, os, pickle
 import Image, ImageTk, ImageDraw, ImageFont 
+from pyrobot import pyrobotdir
 
 class GUI(Tkinter.Toplevel):
     """
@@ -17,8 +18,8 @@ class GUI(Tkinter.Toplevel):
         self.canvas = Tkinter.Canvas(self,width=self.width,height=self.height,bg="white")
         self.canvas.pack()
         self.winfo_toplevel().protocol('WM_DELETE_WINDOW',self.destroy)
-        self.dirtFilename = os.environ["PYROBOT"] + "/images/dirt.gif" 
-        self.vacFilename = os.environ["PYROBOT"] + "/images/vac.gif" 
+        self.dirtFilename = pyrobotdir() + "/images/dirt.gif" 
+        self.vacFilename = pyrobotdir() + "/images/vac.gif" 
         self.dirtImage = Image.open(self.dirtFilename)
         self.vacImage = Image.open(self.vacFilename)
         self.vacImageTk = ImageTk.PhotoImage(self.vacImage)

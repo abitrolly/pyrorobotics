@@ -11,6 +11,7 @@ senses and controllers.
 import pyrobot.system as system
 from pyrobot.robot.device import *
 import math, string, time, os, sys, types
+from pyrobot import pyrobotdir
 
 __author__ = "Stephen McCaul, Douglas Blank"
 __version__ = "$Revision$"
@@ -18,9 +19,6 @@ __version__ = "$Revision$"
 if float(sys.version[0:3]) < 2.4:
     False = 0
     True  = 1
-
-if not os.environ.has_key('PYROBOT'):
-    raise AttributeError, "PYROBOT not defined: export PYROBOT=/usr/local/pyrobot"
 
 def commas(lyst):
     """
@@ -283,9 +281,9 @@ class Robot:
                 file = file + '.py'
             if system.file_exists(file):
                 return self.startDevices( system.loadINIT(file, self), **args )
-            elif system.file_exists(os.getenv('PYROBOT') + \
+            elif system.file_exists(pyrobotdir() + \
                                     '/plugins/devices/' + file): 
-                return self.startDevices( system.loadINIT(os.getenv('PYROBOT') + \
+                return self.startDevices( system.loadINIT(pyrobotdir() + \
                                                    '/plugins/devices/'+ \
                                                    file, self), **args)
             else:

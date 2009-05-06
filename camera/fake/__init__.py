@@ -2,6 +2,7 @@ from pyrobot.camera.fake.fake import Fake # cameraDevice
 from pyrobot.camera import Camera, CBuffer # base class
 from pyrobot.vision.cvision import VisionSystem
 import pyrobot.system as system
+from pyrobot import pyrobotdir
 import re, time, os
 
 class ManualFakeCamera(Camera):
@@ -113,8 +114,8 @@ class FakeCamera(Camera):
          currname = self.pattern
       if system.file_exists(currname):
          self.path = ''
-      elif system.file_exists( os.getenv('PYROBOT') + "/" + currname):
-         self.path = os.getenv('PYROBOT') + "/"
+      elif system.file_exists( pyrobotdir() + "/" + currname):
+         self.path = pyrobotdir() + "/"
       else:
          raise ValueError, "file not found: '%s'" % currname
       if self.verbose:

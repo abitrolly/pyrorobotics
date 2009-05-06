@@ -15,6 +15,7 @@ from os import getenv
 import time, types
 from posixpath import exists
 import _csom as csom
+from pyrobot import pyrobotdir
 
 csom.set_globals()  # neither worry about nor change this
                     # doug, trust me, this sets global parameters that
@@ -1607,8 +1608,8 @@ if(__name__ == '__main__'):
     print "test 1: som from file, data from file, train from dataset"
     print "---------------------------------------------------------"
     if 1:
-        mysom = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
-        mydataset = dataset(file=getenv("PYROBOT") + '/brain/psom/ex.dat')
+        mysom = psom(file=pyrobotdir() + '/brain/psom/ex.cod')
+        mydataset = dataset(file=pyrobotdir() + '/brain/psom/ex.dat')
         mysom.init_training(0.02,4.0,5000)
         mysom.timing_start()
         # test train_from_dataset
@@ -1657,7 +1658,7 @@ if(__name__ == '__main__'):
 
         # test map_from_dataset
         print "Testing map from dataset"
-        mysom1a = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
+        mysom1a = psom(file=pyrobotdir() + '/brain/psom/ex.cod')
         mysom1a.timing_start()
         mysom1a.map_from_dataset(mydataset)
         #mysom1a.map_from_dataset(mydataset)
@@ -1752,7 +1753,7 @@ if(__name__ == '__main__'):
         # test4.cod after training.
         print "test 4: data/training dynamic, view SRN levels"
         print "----------------------------------------------"
-        mysom4 = psom(file=getenv("PYROBOT") + '/brain/psom/ex.cod')
+        mysom4 = psom(file=pyrobotdir() + '/brain/psom/ex.cod')
         mysom4.init_training(0.02,8,6)
         vecs = []
         vecs.append(vector([13.57, 12.61, -1.38, -1.99, 399.77]))

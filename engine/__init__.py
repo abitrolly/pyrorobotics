@@ -17,6 +17,7 @@ __author__ = "Douglas Blank <dblank@cs.brynmawr.edu>"
 __version__= "$Revision$"
 
 import time, sys, os
+from pyrobot import pyrobotdir
 import pyrobot.gui.console as console
 import pyrobot.system as system
 import pyrobot.system.share as share
@@ -115,45 +116,45 @@ class Engine:
          configDirName = simulatorName[:-6]
          if system.file_exists(worldfile):
             pass # leave it alone
-         elif (os.getenv('PYROBOT') != None and
-               system.file_exists( os.getenv('PYROBOT') + \
+         elif (pyrobotdir() != None and
+               system.file_exists( pyrobotdir() + \
                                    '/plugins/configs/%s/%s' %
                                    (configDirName, worldfile))):
-            worldfile = os.getenv('PYROBOT') + \
+            worldfile = pyrobotdir() + \
                         '/plugins/configs/%s/%s' % (configDirName, worldfile)
          if self.config.get("pyrobot", "gui") .lower() == 'tty':
             guiflag = '-g'
          if system.file_exists(options[0]):
             os.system(file + (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
-         elif (os.getenv('PYROBOT') != None and
-               system.file_exists(os.getenv('PYROBOT') + \
+         elif (pyrobotdir() != None and
+               system.file_exists(pyrobotdir() + \
                                   '/plugins/simulators/' + options[0])):
-            os.system(os.getenv('PYROBOT') + '/plugins/simulators/' + file + \
+            os.system(pyrobotdir() + '/plugins/simulators/' + file + \
                       (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
          else:
-            raise "Server file not found: '%s'; is PYROBOT set?" % file
+            raise "Pyrobot Server file not found: '%s'" % file
       else:
          # Ends with "Simulator"
          simDirName = simulatorName[:-9]
          if system.file_exists(worldfile):
             pass # leave it alone
-         elif (os.getenv('PYROBOT') != None and
-               system.file_exists( os.getenv('PYROBOT') + \
+         elif (pyrobotdir() != None and
+               system.file_exists( pyrobotdir() + \
                                    '/plugins/worlds/%s/%s' %
                                    (simDirName, worldfile))):
-            worldfile = os.getenv('PYROBOT') + \
+            worldfile = pyrobotdir() + \
                         '/plugins/worlds/%s/%s' % (simDirName, worldfile)
          if self.config.get("pyrobot", "gui") .lower() == 'tty':
             guiflag = '-g'
          if system.file_exists(options[0]):
             os.system(file + (" %d " % pyroPID)+ guiflag + " " + worldfile + " &")
-         elif (os.getenv('PYROBOT') != None and
-               system.file_exists(os.getenv('PYROBOT') + \
+         elif (pyrobotdir() != None and
+               system.file_exists(pyrobotdir() + \
                                   '/plugins/simulators/' + options[0])):
-            os.system(os.getenv('PYROBOT') + '/plugins/simulators/' + file + \
+            os.system(pyrobotdir() + '/plugins/simulators/' + file + \
                       (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
          else:
-            raise "Simulator file not found: '%s'; is PYROBOT set?" % file
+            raise "Pyrobot Simulator file not found: '%s'" % file
       print "Loading.",
       sys.stdout.flush()
       wait = None
@@ -173,14 +174,14 @@ class Engine:
       if system.file_exists(file):
          self.robot = system.loadINIT(file)
          self.robotfile = file
-      elif (os.getenv('PYROBOT') != None and
-            system.file_exists(os.getenv('PYROBOT') + \
+      elif (pyrobotdir() != None and
+            system.file_exists(pyrobotdir() + \
                                '/plugins/robots/' + file)): 
-         self.robot = system.loadINIT(os.getenv('PYROBOT') + \
+         self.robot = system.loadINIT(pyrobotdir() + \
                                       '/plugins/robots/' + file)
-         self.robotfile = os.getenv('PYROBOT') + '/plugins/robots/' + file
+         self.robotfile = pyrobotdir() + '/plugins/robots/' + file
       else:
-         raise "Robot file not found: '%s'; is PYROBOT set?" % file
+         raise "Pyrobot Robot file not found: '%s'" % file
 
    def setRobot(self,robot):
       """Sets the robot, after the creation of the engine."""
@@ -207,8 +208,8 @@ class Engine:
             pass
          self.brain = system.loadINIT(file, self)
          self.brainfile = file
-      elif (os.getenv('PYROBOT') != None and
-            system.file_exists(os.getenv('PYROBOT') + \
+      elif (pyrobotdir() != None and
+            system.file_exists(pyrobotdir() + \
                                '/plugins/brains/' + file)): 
          try:
             self.brain.window.destroy()
@@ -218,11 +219,11 @@ class Engine:
             self.brain.destroy()
          except:
             pass
-         self.brain = system.loadINIT(os.getenv('PYROBOT') + \
+         self.brain = system.loadINIT(pyrobotdir() + \
                                       '/plugins/brains/' + file, self)
-         self.brainfile = os.getenv('PYROBOT') + '/plugins/brains/' + file
+         self.brainfile = pyrobotdir() + '/plugins/brains/' + file
       else:
-         raise "File not found: '%s'; is PYROBOT set?" % file
+         raise "Pyrobot File not found: '%s'" % file
 
    def freeBrain(self):
       """Kills the brain."""

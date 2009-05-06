@@ -1,5 +1,6 @@
 from os import environ
 from pyrobot.system import file_exists
+from pyrobot import pyrobotdir
 import ConfigParser
 import string
 
@@ -54,19 +55,19 @@ class Configuration:
 
     def load(self, file = None):
         cp = ConfigParser.ConfigParser()
-        if file_exists( environ['PYROBOT'] + "/.pyrobot"): # $PYROBOT?
-            self.processFile( environ['PYROBOT'] + "/.pyrobot", cp)
-        if file_exists( environ['PYROBOT'] + "/pyrobot.ini"): # $PYRO?
-            self.processFile( environ['PYROBOT'] + "/pyrobot.ini", cp)
-        if file_exists( environ['PYROBOT'] +
+        if file_exists( pyrobotdir() + "/.pyrobot"): 
+            self.processFile( pyrobotdir() + "/.pyrobot", cp)
+        if file_exists( pyrobotdir() + "/pyrobot.ini"): # $PYRO?
+            self.processFile( pyrobotdir() + "/pyrobot.ini", cp)
+        if file_exists( pyrobotdir() +
                         "/.pyrobot-" + environ['HOSTNAME']):
             # $PYRO-HOSTNAME?
-            self.processFile( environ['PYROBOT'] +
+            self.processFile( pyrobotdir() +
                               "/.pyrobot-" + environ['HOSTNAME'], cp)
-        if file_exists( environ['PYROBOT'] +
+        if file_exists( pyrobotdir() +
                         "/pyrobot-" + environ['HOSTNAME'] + ".ini"):
             # $PYRO-HOSTNAME?
-            self.processFile( environ['PYROBOT'] +
+            self.processFile( pyrobotdir() +
                               "/pyrobot-" + environ['HOSTNAME'] + ".ini", cp)
         if file_exists( environ['HOME'] + "/.pyrobot"): # home dir?
             self.processFile( environ['HOME'] + "/.pyrobot", cp)

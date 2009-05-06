@@ -3,6 +3,7 @@ import Image, ImageTk, ImageDraw, ImageFont
 from Numeric import resize
 from string import atof, atoi
 import itertools
+from pyrobot import pyrobotdir
 
 class GUI(Tkinter.Toplevel):
     """
@@ -63,13 +64,13 @@ class GUI(Tkinter.Toplevel):
         self.square_width  = self.height / self.num_squares_y;
 
         # goal image
-        goldFilename = os.environ["PYROBOT"] + "/images/rlgoal.gif" 
+        goldFilename = pyrobotdir() + "/images/rlgoal.gif" 
         goldImage = Image.open(goldFilename)
         goldImage = goldImage.resize( [self.square_height-2, self.square_width-2] )
         self.goldImageTk = ImageTk.PhotoImage(goldImage)
 
         # pit image
-        pitFilename = os.environ["PYROBOT"] + "/images/rlpit.gif" 
+        pitFilename = pyrobotdir() + "/images/rlpit.gif" 
         pitImage = Image.open(pitFilename)
         pitImage = pitImage.resize( [self.square_height-2, self.square_width-2] )
         self.pitImageTk = ImageTk.PhotoImage(pitImage, height=self.square_height, width=self.square_width)

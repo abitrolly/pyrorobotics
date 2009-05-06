@@ -8,6 +8,7 @@ import string
 from posix import popen
 from pyrobot.system.version import version as version
 from pyrobot.system import help, usage, about, file_exists
+from pyrobot import pyrobotdir
 
 class TextWatcher:
    def __init__(self):
@@ -164,25 +165,25 @@ class gui:
       cwd = os.getcwd()
       if self.engine.simfile:
          file = self.engine.simfile
-         if os.environ["PYROBOT"] + "/plugins/" in file or \
+         if pyrobotdir() + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          config.put("simulator", "file", file)
       if self.engine.worldfile:
          file = self.engine.worldfile
-         if os.environ["PYROBOT"] + "/plugins/" in file or \
+         if pyrobotdir() + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          config.put("world", "file", file)
       if self.engine.robotfile:
          file = self.engine.robotfile
-         if os.environ["PYROBOT"] + "/plugins/" in file or \
+         if pyrobotdir() + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          config.put("robot", "file", file)
       if self.engine.brainfile:
          file = self.engine.brainfile
-         if os.environ["PYROBOT"] + "/plugins/" in file or \
+         if pyrobotdir() + "/plugins/" in file or \
                 cwd in file:
             file = file.split(os.path.sep)[-1]
          config.put("brain", "file", file)
@@ -192,22 +193,22 @@ class gui:
       commandLine = sys.argv[0] + " "
       if self.engine.simfile:
          file = self.engine.simfile
-         if os.environ["PYROBOT"] + "/plugins/" in file:
+         if pyrobotdir() + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          commandLine += "-s %s " % file
       if self.engine.worldfile:
          file = self.engine.worldfile
-         if os.environ["PYROBOT"] + "/plugins/" in file:
+         if pyrobotdir() + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          commandLine += "-w %s " % file
       if self.engine.robotfile:
          file = self.engine.robotfile
-         if os.environ["PYROBOT"] + "/plugins/" in file:
+         if pyrobotdir() + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          commandLine += "-r %s " % file
       if self.engine.brainfile:
          file = self.engine.brainfile
-         if os.environ["PYROBOT"] + "/plugins/" in file:
+         if pyrobotdir() + "/plugins/" in file:
             file = file.split(os.path.sep)[-1]
          commandLine += "-b %s " % file
       print commandLine
@@ -503,7 +504,7 @@ class gui:
       self.engine.brainfile = ''
 
    def loadSim(self, worldfile = ''):
-      pyropath = os.getenv('PYROBOT')
+      pyropath = pyrobotdir()
       f = self.fileloaddialog("simulators","*",self.lastDir.get("sim", ''))
       if f != '' and f != 0:
          self.lastDir["sim"] = string.join(f.split('/')[:-1],'/')

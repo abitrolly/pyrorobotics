@@ -10,6 +10,7 @@ import pyrobot.system as system
 import pyrobot.system.share as share
 from posixpath import exists
 from pyrobot.tools.joystick import Joystick
+from pyrobot import pyrobotdir
 
 def ask(title, qlist):
    d = TKwidgets.AskDialog(share.gui, title, qlist)
@@ -638,7 +639,7 @@ class TKgui(Tkinter.Toplevel, gui):
          myfile = "~/MyBrain%d.py" % i
          if not exists(myfile):
             break
-      os.system( "cp " + os.getenv("PYROBOT") + ("/build/brainTemplate.py %s" % myfile))
+      os.system( "cp " + pyrobotdir() + ("/build/brainTemplate.py %s" % myfile))
       if os.getenv("EDITOR"):
          os.system(os.getenv("EDITOR") + " %s &" % myfile)
       else:
