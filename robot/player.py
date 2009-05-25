@@ -162,7 +162,25 @@ class PlayerSonarDevice(PlayerDevice):
         PlayerDevice.__init__(self, client, "sonar")
         self._dev.get_geom() # stores it in self._dev.poses[]
         while len(self) == 0: pass
-        if len(self) == 16:
+        if len(self) == 8:
+            self.groups = {'all': range(8),
+                           'front': (3, 4),
+                           'front-left' : (1,2,3),
+                           'front-right' : (4, 5, 6),
+                           'front-all' : (1, 2, 3, 4, 5, 6),
+                           'front-to-back-left': (3, 2, 1, 0), # in order
+                           'front-to-back-right': (4, 5, 6, 7), # in order
+                           'left' : (0,), 
+                           'right' : (7,), 
+                           'left-front' : (0,), 
+                           'right-front' : (7, ),
+                           'left-back' : (),
+                           'right-back' : (),
+                           'back-right' : (),
+                           'back-left' : (), 
+                           'back' : (),
+                           'back-all' : ()}
+        elif len(self) == 16:
             self.groups = {'all': range(16),
                            'front': (3, 4),
                            'front-left' : (1,2,3),

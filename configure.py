@@ -76,7 +76,8 @@ def ask_yn(title, list_of_options):
     print title
     retval = ''
     for directory, desc, default in list_of_options:
-        if ask("Option:    Do you want to build " + desc + "? (y/n)", default, 0) == "y":
+        if ask("Option:    Do you want to build " + desc + "? (y/n)", 
+               default, 0) == "y":
             retval = retval + " " + directory
     return retval
 
@@ -180,8 +181,10 @@ included_packages = ask_yn("\n6. Options:", [
      "n"),
     ('camera/fake', "Simulated vision from files \n(requires Image Processing)", 
      "y"),
-    ('camera/blob', "Stage simulated vision \n(requires Image Processing and Player)", "ny"[int(player_include_dir != "")]),
-    ('camera/player', "Gazebo simulated vision \n(requires Image Processing and Player)", "ny"[int(player_include_dir != "")]),
+    ('camera/blob', "Stage simulated vision \n(requires Image Processing and Player)", 
+     "ny"[int(player_include_dir != "")]),
+    ('camera/player', "Gazebo simulated vision \n(requires Image Processing and Player)", 
+     "ny"[int(player_include_dir != "")]),
     ('camera/aibo', "Aibo vision \n(requires Image Processing)", "y"),
     ('camera/robocup', "Robocup simulated vision \n(requires Image Processing)", 
      "y"),
