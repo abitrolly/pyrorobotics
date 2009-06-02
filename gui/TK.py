@@ -1,4 +1,4 @@
-import Tkinter, time, sys, os, types
+import Tkinter, time, sys, os, types, traceback
 from pyrobot.gui import *
 import pyrobot.gui.widgets.TKwidgets as TKwidgets
 from pyrobot.system.version import *
@@ -515,7 +515,8 @@ class TKgui(Tkinter.Toplevel, gui):
          self.engine.brain.redraw()
          self.lastRun = self.engine.brain.lastRun
       except:
-         pass
+         print "Brain redraw exception:"
+         traceback.print_exc()
          
    def fastUpdate(self):
       self.update_interval = 100
