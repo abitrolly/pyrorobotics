@@ -510,14 +510,19 @@ class TKgui(Tkinter.Toplevel, gui):
          if self.engine and self.engine.brain:
             self.engine.brain.makeWindow()
 
+
    def redrawWindowBrain(self):
+      try:
+         test = getattr(self.engine.brain, "redraw")
+      except AttributeError:
+         return
       try:
          self.engine.brain.redraw()
          self.lastRun = self.engine.brain.lastRun
       except:
          print "Brain redraw exception:"
          traceback.print_exc()
-         
+
    def fastUpdate(self):
       self.update_interval = 100
 
