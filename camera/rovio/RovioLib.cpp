@@ -12,7 +12,7 @@ long convert(char *buff) {
   return retval;
 }
 
-PyObject *AiboCam::updateMMap(int decompress) {
+PyObject *RovioCam::updateMMap(int decompress) {
   char *header, *type, *creator, *fmt, *image_buffer;
   long format, compression, newWidth, newHeight, timeStamp, frameNum, unknown1;
   long chanWidth, chanHeight, layer, chanID, unknown2, size;
@@ -123,7 +123,7 @@ PyObject *AiboCam::updateMMap(int decompress) {
   if (width == 0 && height == 0) {
     width = newWidth;
     height = newHeight;
-    printf("New Aibo image size: %d x %d; %ld\n", width, height, size);
+    printf("New Rovio image size: %d x %d; %ld\n", width, height, size);
     lock.ReadUnlock();
     return PyInt_FromLong(0);
   }
@@ -136,7 +136,7 @@ PyObject *AiboCam::updateMMap(int decompress) {
       lock.ReadUnlock();
       return PyInt_FromLong(size);
     } else {
-      printf("Aibo camera bad JPEG size: %ld\n", size);
+      printf("Rovio camera bad JPEG size: %ld\n", size);
       lock.ReadUnlock();
       return PyInt_FromLong(0);
     }
@@ -145,7 +145,7 @@ PyObject *AiboCam::updateMMap(int decompress) {
   return PyInt_FromLong(0);
 }
 
-AiboCam::AiboCam(char *hostname, int port, int tcp_val) {
+RovioCam::RovioCam(char *hostname, int port, int tcp_val) {
   // get image details
   tcp = tcp_val;
   sock = new Socket(hostname, port, tcp);

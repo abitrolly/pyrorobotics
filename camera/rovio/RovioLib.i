@@ -1,4 +1,4 @@
-%module aibo
+%module rovio
 %{
 #include "Device.h"
 #include "RovioLib.h"
