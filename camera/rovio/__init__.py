@@ -1,8 +1,5 @@
 from pyrobot.camera import Camera, CBuffer
 from pyrobot.camera.rovio.rovio import RovioCam
-from math import pi, sin, cos
-import threading
-import time
 
 class RovioCamera(Camera):
    """
