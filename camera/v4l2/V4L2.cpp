@@ -1,55 +1,36 @@
 #include "V4L2.h"
-/*
- *  V4L2 video capture example
- *
- *  This program can be used and distributed without restrictions.
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <fcntl.h>              /* low-level i/o */
-#include <unistd.h>
-#include <errno.h>
-#include <malloc.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/mman.h>
-#include <sys/ioctl.h>
-#include <asm/types.h>          /* for videodev2.h */
-#include <linux/videodev2.h>
 
-#define CLEAR(x) memset (&(x), 0, sizeof (x))
+V4L2::V4L2 ( char *device_name, int wi, int he, int de, int ch) :
+     Device(wi, he, de) {
+  int size = 0;
+  snprintf(device, 255, device_name);
+  width = wi;
+  height = he;
+  depth = de;
+  channel = ch;
+  fprintf(stderr, "V4L2 constructor '%s' (%d x %d) x %d ch = %d\n",
+	  device, width, height, depth, channel);
+  size = width * height * depth;
+  image = new unsigned char [size];
+  init();
+}
 
-typedef enum {
-	IO_METHOD_READ,
-	IO_METHOD_MMAP,
-	IO_METHOD_USERPTR,
-} io_method;
+V4L2::~V4L2 ()
+{
+  stop_capturing();
+  uninit_device();
+  close_device();
+  delete [] image;
+}
 
-struct buffer {
-        void *                  start;
-        size_t                  length;
-};
-static char *           dev_name        = NULL;
-static io_method	io		= IO_METHOD_MMAP;
-static int              fd              = -1;
-struct buffer *         buffers         = NULL;
-static unsigned int     n_buffers       = 0;
-
-static void
-errno_exit                      (const char *           s)
+void V4L2::errno_exit(char *s)
 {
         fprintf (stderr, "%s error %d, %s\n",
                  s, errno, strerror (errno));
         exit (EXIT_FAILURE);
 }
 
-static int
-xioctl                          (int                    fd,
-                                 int                    request,
-                                 void *                 arg)
+int V4L2::xioctl(int fd, int request, void *arg)
 {
         int r;
         do r = ioctl (fd, request, arg);
@@ -57,15 +38,13 @@ xioctl                          (int                    fd,
         return r;
 }
 
-static void
-process_image                   (const void *           p)
+void V4L2::process_image(void *p)
 {
         fputc ('.', stdout);
         fflush (stdout);
 }
 
-static int
-read_frame			(void)
+int V4L2:: read_frame(void)
 {
         struct v4l2_buffer buf;
 	unsigned int i;
@@ -132,41 +111,7 @@ read_frame			(void)
 	return 1;
 }
 
-static void
-mainloop                        (void)
-{
-	unsigned int count;
-        count = 100;
-        while (count-- > 0) {
-                for (;;) {
-                        fd_set fds;
-                        struct timeval tv;
-                        int r;
-                        FD_ZERO (&fds);
-                        FD_SET (fd, &fds);
-                        /* Timeout. */
-                        tv.tv_sec = 2;
-                        tv.tv_usec = 0;
-                        r = select (fd + 1, &fds, NULL, NULL, &tv);
-                        if (-1 == r) {
-                                if (EINTR == errno)
-                                        continue;
-                                errno_exit ("select");
-                        }
-                        if (0 == r) {
-                                fprintf (stderr, "select timeout\n");
-                                exit (EXIT_FAILURE);
-                        }
-			if (read_frame ())
-                    		break;
-	
-			/* EAGAIN - continue select loop. */
-                }
-        }
-}
-
-static void
-stop_capturing                  (void)
+void V4L2::stop_capturing(void)
 {
         enum v4l2_buf_type type;
 	switch (io) {
@@ -182,8 +127,7 @@ stop_capturing                  (void)
 	}
 }
 
-static void
-start_capturing                 (void)
+void V4L2::start_capturing(void)
 {
         unsigned int i;
         enum v4l2_buf_type type;
@@ -225,8 +169,7 @@ start_capturing                 (void)
 	}
 }
 
-static void
-uninit_device                   (void)
+void V4L2::uninit_device(void)
 {
         unsigned int i;
 	switch (io) {
@@ -246,10 +189,9 @@ uninit_device                   (void)
 	free (buffers);
 }
 
-static void
-init_read			(unsigned int		buffer_size)
+void V4L2::init_read(unsigned int buffer_size)
 {
-        buffers = calloc (1, sizeof (*buffers));
+  buffers = (buffer*) calloc (1, sizeof (*buffers));
         if (!buffers) {
                 fprintf (stderr, "Out of memory\n");
                 exit (EXIT_FAILURE);
@@ -262,8 +204,7 @@ init_read			(unsigned int		buffer_size)
 	}
 }
 
-static void
-init_mmap			(void)
+void V4L2::init_mmap(void)
 {
 	struct v4l2_requestbuffers req;
         CLEAR (req);
@@ -273,7 +214,7 @@ init_mmap			(void)
 	if (-1 == xioctl (fd, VIDIOC_REQBUFS, &req)) {
                 if (EINVAL == errno) {
                         fprintf (stderr, "%s does not support "
-                                 "memory mapping\n", dev_name);
+                                 "memory mapping\n", device_name);
                         exit (EXIT_FAILURE);
                 } else {
                         errno_exit ("VIDIOC_REQBUFS");
@@ -281,10 +222,10 @@ init_mmap			(void)
         }
         if (req.count < 2) {
                 fprintf (stderr, "Insufficient buffer memory on %s\n",
-                         dev_name);
+                         device_name);
                 exit (EXIT_FAILURE);
         }
-        buffers = calloc (req.count, sizeof (*buffers));
+        buffers = (buffer*) calloc (req.count, sizeof (*buffers));
         if (!buffers) {
                 fprintf (stderr, "Out of memory\n");
                 exit (EXIT_FAILURE);
@@ -309,8 +250,7 @@ init_mmap			(void)
         }
 }
 
-static void
-init_userp			(unsigned int		buffer_size)
+void V4L2::init_userp(unsigned int buffer_size)
 {
 	struct v4l2_requestbuffers req;
         unsigned int page_size;
@@ -323,13 +263,13 @@ init_userp			(unsigned int		buffer_size)
         if (-1 == xioctl (fd, VIDIOC_REQBUFS, &req)) {
                 if (EINVAL == errno) {
                         fprintf (stderr, "%s does not support "
-                                 "user pointer i/o\n", dev_name);
+                                 "user pointer i/o\n", device_name);
                         exit (EXIT_FAILURE);
                 } else {
                         errno_exit ("VIDIOC_REQBUFS");
                 }
         }
-        buffers = calloc (4, sizeof (*buffers));
+        buffers = (buffer*) calloc (4, sizeof (*buffers));
         if (!buffers) {
                 fprintf (stderr, "Out of memory\n");
                 exit (EXIT_FAILURE);
@@ -345,8 +285,7 @@ init_userp			(unsigned int		buffer_size)
         }
 }
 
-static void
-init_device                     (void)
+void V4L2::init_device(void)
 {
         struct v4l2_capability cap;
         struct v4l2_cropcap cropcap;
@@ -356,7 +295,7 @@ init_device                     (void)
         if (-1 == xioctl (fd, VIDIOC_QUERYCAP, &cap)) {
                 if (EINVAL == errno) {
                         fprintf (stderr, "%s is no V4L2 device\n",
-                                 dev_name);
+                                 device_name);
                         exit (EXIT_FAILURE);
                 } else {
                         errno_exit ("VIDIOC_QUERYCAP");
@@ -364,14 +303,14 @@ init_device                     (void)
         }
         if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
                 fprintf (stderr, "%s is no video capture device\n",
-                         dev_name);
+                         device_name);
                 exit (EXIT_FAILURE);
         }
 	switch (io) {
 	case IO_METHOD_READ:
 		if (!(cap.capabilities & V4L2_CAP_READWRITE)) {
 			fprintf (stderr, "%s does not support read i/o\n",
-				 dev_name);
+				 device_name);
 			exit (EXIT_FAILURE);
 		}
 		break;
@@ -379,7 +318,7 @@ init_device                     (void)
 	case IO_METHOD_USERPTR:
 		if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
 			fprintf (stderr, "%s does not support streaming i/o\n",
-				 dev_name);
+				 device_name);
 			exit (EXIT_FAILURE);
 		}
 		break;
@@ -435,112 +374,74 @@ init_device                     (void)
 	}
 }
 
-static void
-close_device                    (void)
+void V4L2::close_device(void)
 {
         if (-1 == close (fd))
 	        errno_exit ("close");
         fd = -1;
 }
 
-static void
-open_device                     (void)
+void V4L2:: open_device(void)
 {
         struct stat st; 
-        if (-1 == stat (dev_name, &st)) {
+        if (-1 == stat (device_name, &st)) {
                 fprintf (stderr, "Cannot identify '%s': %d, %s\n",
-                         dev_name, errno, strerror (errno));
+                         device_name, errno, strerror (errno));
                 exit (EXIT_FAILURE);
         }
         if (!S_ISCHR (st.st_mode)) {
-                fprintf (stderr, "%s is no device\n", dev_name);
+                fprintf (stderr, "%s is no device\n", device_name);
                 exit (EXIT_FAILURE);
         }
-        fd = open (dev_name, O_RDWR /* required */ | O_NONBLOCK, 0);
+        fd = open (device_name, O_RDWR /* required */ | O_NONBLOCK, 0);
         if (-1 == fd) {
                 fprintf (stderr, "Cannot open '%s': %d, %s\n",
-                         dev_name, errno, strerror (errno));
+                         device_name, errno, strerror (errno));
                 exit (EXIT_FAILURE);
         }
-}
-
-static void
-usage                           (FILE *                 fp,
-                                 int                    argc,
-                                 char **                argv)
-{
-        fprintf (fp,
-                 "Usage: %s [options]\n\n"
-                 "Options:\n"
-                 "-d | --device name   Video device name [/dev/video]\n"
-                 "-h | --help          Print this message\n"
-                 "-m | --mmap          Use memory mapped buffers\n"
-                 "-r | --read          Use read() calls\n"
-                 "-u | --userp         Use application allocated buffers\n"
-                 "",
-		 argv[0]);
-}
-
-/*
-        dev_name = "/dev/video";
-        open_device ();
-        init_device ();
-        start_capturing ();
-        mainloop ();
-        stop_capturing ();
-        uninit_device ();
-        close_device ();
-        exit (EXIT_SUCCESS);
-        return 0;
-*/
-
-V4L2::V4L2 ( char *device_name, int wi, int he, int de, int ch) :
-     Device(wi, he, de) {
-  int size = 0;
-  snprintf(device, 255, device_name);
-  width = wi;
-  height = he;
-  depth = de;
-  channel = ch;
-  fprintf(stderr, "V4L2 constructor '%s' (%d x %d) x %d ch = %d\n",
-	  device, width, height, depth, channel);
-  size = width * height * depth;
-  image = new unsigned char [size];
-  init();
-}
-
-V4L2::~V4L2 ()
-{
-  delete [] image;
 }
 
 PyObject *V4L2:: updateMMap( )
 {
   for (;;) {
-    if (-1 >= ioctl(grab_fd,VIDIOCMCAPTURE,&grab_map)) {
-      fprintf(stderr,"Error: ioctl cmcapture");
-      perror("ioctl VIDIOCMCAPTURE");
-    } else {
-      if (-1 >= ioctl(grab_fd,VIDIOCSYNC,&grab_map)) {
-	fprintf(stderr,"Error: VivioCsync");
-	perror("ioctl VIDIOCSYNC");
-      } else {
-	//swap_rgb24((char *)image,grab_map.width*grab_map.height);
-	width  = grab_map.width;
-	height = grab_map.height;
-	return PyInt_FromLong(0L);
-      }
+    fd_set fds;
+    struct timeval tv;
+    int r;
+    FD_ZERO (&fds);
+    FD_SET (fd, &fds);
+    // Timeout. 
+    tv.tv_sec = 2;
+    tv.tv_usec = 0;
+    r = select (fd + 1, &fds, NULL, NULL, &tv);
+    if (-1 == r) {
+      if (EINTR == errno)
+	continue;
+      errno_exit ("select");
     }
+    if (0 == r) {
+      fprintf (stderr, "select timeout\n");
+      exit (EXIT_FAILURE);
+    }
+    if (read_frame())
+      break;
+    
+    // EAGAIN - continue select loop.
     sleep(1); 
     // force context switch to avoid giant sucking sound
     // this is a millisec
   }
+  return PyInt_FromLong(0L);
 }
 
 void V4L2::init(void) {
   fprintf(stderr,"Init-ing Video under Querycap-V4L2\n");
+  io		= IO_METHOD_MMAP;
+  fd              = -1;
+  buffers         = NULL;
+  n_buffers       = 0;
   open_device();
   init_device();
+  start_capturing();
   fprintf(stderr,"Done Init Video under Querycap-V4L2\n");
 }
 

@@ -5,28 +5,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <fcntl.h>              /* low-level i/o */
 #include <unistd.h>
-#include <sys/fcntl.h>
+#include <errno.h>
+#include <malloc.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <asm/types.h>          /* for videodev2.h */
+#include <linux/videodev2.h>
 
-#include <errno.h>
-#include <sys/time.h>
-#include <asm/types.h>
-#include <linux/videodev.h>	/* change this to "videodev2.h" for v4l2 */
-#include "jpeglib.h"
-// #define GRAB_DEVICE       "/dev/video1"
-// #define GRAB_WIDTH        320
-// #define GRAB_HEIGHT       240
-// #define GRAB_TEXT         "v4lgrab %d.%m.%Y %H:%M:%S"        /* strftime */
+#define CLEAR(x) memset (&(x), 0, sizeof (x))
 
-#ifdef VIDIOCGCAP
-/* these work for v4l only, not v4l2 */
-//  # define GRAB_SOURCE      1
-  # define GRAB_NORM        VIDEO_MODE_NTSC
-#endif
+typedef enum {
+	IO_METHOD_READ,
+	IO_METHOD_MMAP,
+	IO_METHOD_USERPTR,
+} io_method;
 
-//extern int errno;
+struct buffer {
+        void *                  start;
+        size_t                  length;
+};
 
 class V4L2 : public Device
 {
@@ -39,32 +42,28 @@ class V4L2 : public Device
   PyObject *updateMMap(void);
   void init(void);
   void swap_rgb24(char *mem, int n); 
-
-  /*
-  //#ifdef VIDIOC_QUERYCAP
-
-  struct v4l2_capability    grab_cap;
-  struct v4l2_format        grab_pix;
-  int                       grab_fd, grab_size;
-  //unsigned char            *grab_data;
-
-//#endif
-*/
-
-#ifdef VIDIOCGCAP
-
-  struct video_capability   grab_cap;
-  struct video_mmap         grab_map;
-  struct video_mbuf         grab_buf;
-  struct video_channel	    grab_chan;
-  int                       grab_fd, grab_size;
-  //unsigned char            *grab_data;
-
-#endif
+  void uninit_device();
+  void start_capturing(void);
+  void init_read(unsigned int);
+  void init_mmap();
+  void init_userp(unsigned int);
+  void init_device();
+  void close_device();
+  void open_device();
+  void stop_capturing(void);
+  void errno_exit(char*);
+  int xioctl(int, int, void*);
+  void process_image(void*);
+  int read_frame();
 
   char device[255];
   int channel;
-
+  char *device_name;
+  static char *           dev_name;
+  static io_method	  io;
+  static int              fd;
+  struct buffer *         buffers;
+  static unsigned int     n_buffers;
 };
 
 #endif // __V4L2_H
