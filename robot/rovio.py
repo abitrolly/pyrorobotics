@@ -13,6 +13,7 @@ import threading, Queue
 import subprocess, os
 import cStringIO
 
+
 class RovioRobot(Robot):
     def __init__(self, url, user='adminUsername', password='adminPassword'):
         Robot.__init__(self)
@@ -20,7 +21,7 @@ class RovioRobot(Robot):
         self.theurl = url
         self.username = user
         self.password = password
-        
+        self.camLock = 1
         self.ping()
         
       # said Admin user's password
@@ -35,9 +36,8 @@ class RovioRobot(Robot):
         self.emailok = 0
         self.head = 1
         self.obstacle = 0
-        
+         
         self.lock = threading.Lock()
-        
         
     def connect(self): pass 
     def disconnect(self): pass
@@ -149,6 +149,7 @@ class RovioRobot(Robot):
         #|battery=126|charging=80|head_position=203|ac_freq=2
     # makeProgBar(width,min,max,val)
       stats = {}
+      self.imageDump()
       statstr = self.SendRequest("Cmd=nav&action=1", 1)
       statstr = statstr.replace("Cmd = nav\nresponses = 0|", '')
       statstr = statstr.replace("\n", "")
@@ -207,8 +208,9 @@ class RovioRobot(Robot):
 
     def imageDump(self):
       self.lock.acquire()
-      urllib.urlretrieve("http://"+self.theurl+"/Jpeg/CamImg1234.jpg", "test.jpg")
-      print "pic retrieved"
+      self.camLock = 0
+      urllib.urlretrieve("http://"+self.theurl+"/Jpeg/CamImg1234.jpg", "/home/rwalker1/research/test.jpg")
+      self.camLock = 1
       self.lock.release()
 
     def imageGrab(self):
@@ -231,8 +233,8 @@ class RovioCamera(Camera):
    """
    def __init__(self, robot, visionSystem):
       self.robot = robot
-      self.width = 352
-      self.height = 288
+      self.width = 320
+      self.height = 240
       self.depth = 3
       self._dev = Fake("", self.width, self.height, self.depth)
       self.vision = VisionSystem()
@@ -284,15 +286,17 @@ class RovioCamera(Camera):
                self.vision.setVal(w, h, d, array[w][h][d])
 
    def update(self):
+       if self.robot.camLock == 0: return
        if not self.active: return
        import PIL.Image as PyImage
        import array
-       filename = "/home/dblank/Desktop/CamImg4523.jpg"
+       filename = "/home/rwalker1/research/test.jpg"
        width = 352
        height = 288
-       fp = open(filename, "r")
+       #fp = open(filename, "r")
        #fp = self.robot.imageGrab()
-       image = PyImage.open(fp) 
+       #image = PyImage.open(fp) 
+       image = PyImage.open(filename) 
        width, height = image.size
        pixels = image.load()
        for w in range(width):
