@@ -1,280 +1,362 @@
-from math import *
-from random import *
+from random import random
+from math import sqrt
 
-__author__ = "Jenny Barry"
-__version__ = "$Revision$"
+"""
+Author: Lisa Meeden
+Date: 2/14/2008
 
-class Node:
+Implementation of GNG as described in the paper 'A Growing Neural Gas
+Network Learns Topologies' by Bernd Fritzke published in 'Advances in
+Neural Information Processing 7', MIT Press, 1995.
 
-    def __init__(self, index, modelVector):
-        self.modelVector = modelVector
-        self.edges = []
+GNG is an incremental network model able to learn the topological
+relationships in a given set of input vectors using a simple Hebb-like
+learning rule.
+"""
+
+def randomCirclePoint(radius):
+    """
+    Assuming circle is centered at (0,0)
+    """
+    diameter = 2*radius
+    limit = radius**2
+    while True:
+        x = (diameter*random())-radius
+        y = (diameter*random())-radius
+        if x**2 + y**2 <= limit:
+            return [x, y]
+
+def randomSpherePoint(radius):
+    """
+    Assuming sphere is centered at (0,0)
+    """
+    diameter = 2*radius
+    limit = radius**2
+    while True:
+        x = (diameter*random())-radius
+        y = (diameter*random())-radius
+        z = (diameter*random())-radius
+        if x**2 + y**2 + z**2 <= limit:
+            return [x, y, z]
+
+class Unit:
+    """
+    Each unit in the GNG maintains a reference vector, an error
+    measure, and a list of edges.
+    """
+    
+    def __init__(self, vector = None, dimension=2, minVal=-1, maxVal=1):
+        self.dimension = dimension
+        self.minVal = minVal
+        self.maxVal = maxVal
+        if vector:
+            self.vector = vector
+        else:
+            self.vector = self.randomVector()
         self.error = 0
-        self.index = index
+        self.edges = []
 
     def __str__(self):
-        result = "Node # "+str(self.index)+ \
-                 "\nModel vector: "+str(self.modelVector)+"\nEdges:\n"
-        for i in range(len(self.edges)):
-            result+= "\t"+str(self.edges[i])+"\n"
-        result+="Error: "+str(self.error)
+        result = "Unit:\n"
+        result += "Vector: " + self.vectorStr()
+        result += " Error: " + str(self.error) + "\n" 
+        for e in self.edges:
+            result += e.__str__()
         return result
 
-class Edge:
+    def vectorStr(self):
+        result = "[ "
+        for i in range(len(self.vector)):
+            result += "%.3f " % self.vector[i]
+        result += "] "
+        return result
+    
+    def getEdgeTo(self, unit):
+        """
+        Returns the edge to the given unit or None.
+        """
+        for edge in self.edges:
+            if edge.toUnit == unit:
+                return edge
+        return None
 
-    def __init__(self, node1, node2):
-        self.node1 = node1
-        self.node2 = node2
+    def getNeighbors(self):
+        """
+        Returns a list of its immediate neighboring units. 
+        """
+        neighbors = []
+        for edge in self.edges:
+            neighbors.append(edge.toUnit)
+        return neighbors
+
+    def randomVector(self):
+        """
+        Generats a random reference vector within the appropriate bounds.
+        """
+        vec = []
+        for i in range(self.dimension):
+            vec.append(((self.maxVal-self.minVal) * random()) + self.minVal)
+        return vec
+
+    def moveVector(self, towardPoint, lrate):
+        """
+        Moves the reference vector toward the given point based on the
+        given learning rate.
+        """
+        for i in range(len(towardPoint)):
+            self.vector[i] += lrate*(towardPoint[i]-self.vector[i])
+
+class Edge:
+    """
+    Edges in the GNG are undirected.  However for ease of
+    implementation, the edges are represented as one-way. For example,
+    if unitA and unitB and connected, then unitA maintains an edge to
+    unitB and unitB maintains an edge to unitA.  Edges also maintain
+    their age.  If an edge becomes too old, it will be removed.
+    """
+    def __init__(self, toUnit):
+        self.toUnit = toUnit
         self.age = 0
 
     def __str__(self):
-        result = "Node "+str(self.node1)\
-                 +" <--"+str(self.age)+"--> "\
-                 +"Node "+str(self.node2)
+        result = "Edge to: "
+        result += self.toUnit.vectorStr()
+        result += " Age: " + str(self.age) + "\n"
         return result
 
-class GNG:
-
-    INFTY = 1.0E16
-
+class GrowingNeuralGas:
     """
-    vectorSize: size of the model vectors
-    epb: learning parameter for node
-    epn: learning parameter for neighborhood
-    alpha: decrease in error of new node when it is inserted
-    max_age: maximum age of an edge before deletion
-    d: error decay rate
-    """
+    Parameters:
 
-    def __init__(self, vectorSize, maxError, epb=0.2, epn=0.006, alpha=0.6, \
-                 max_age=30, d=0.995, rVector0 = [], rVector1 = []):
-        self.vectorSize = vectorSize
-        self.maxError = maxError
-        self.epb = epb
-        self.epn = epn
-        self.alpha = alpha
-        self.max_age = max_age
-        self.d = d
-        self.nodes = []
-        self.error = 0
-        if (len(rVector1)!=vectorSize or len(rVector2)!=vectorSize):
-            for i in range(2):
-                self.nodes.append(self.createRandomNode(i))
-        else:
-            self.nodes.append(Node(0,rVector0))
-            self.nodes.append(Node(1,rVector1))
-
-    """
-    All entries to this vector between 0 and 1
-    """
-    def createRandomNode(self, index):
-        vector = []
-        for i in range(self.vectorSize):
-            vector.append(random())
-            
-        return Node(index, vector)
-
-    def newInput(self,vector):
-        [s1, s2] = self.findNearNodes(vector)
-        n1 = self.nodes[s1]
-        n2 = self.nodes[s2]
-        for i in range(len(n1.edges)):
-            n1.edges[i].age += 1
-        dist = self.dist(n1.modelVector, vector)
-        n1.error+=dist*dist
-        #update winner
-        self.updateModelVector(n1, vector, self.epb)
-        #update neighborhood of winner
-        edgeExists = 0
-        i = 0
-        #this has to be a while statement and not a for loop because
-        #len(n1.edges) might change
-        while i < (len(n1.edges)):
-            #find which end of the edge is NOT n1
-            if (n1.edges[i].node1 != n1.index):
-                node = self.nodes[n1.edges[i].node1]
-            else:
-                node = self.nodes[n1.edges[i].node2]
-                
-            self.updateModelVector(node,vector, self.epn)
-            if (node.index == s2):
-                edgeExists = 1
-                n1.edges[i].age = 0
-
-            else:
-                n1.edges[i].age += 1
-                if (n1.edges[i].age > self.max_age):
-                    print "deleting edge for age, i=",i,"len(edges)=",\
-                          len(n1.edges)
-                    self.deleteEdge(node, n1)
-                    if (len(node.edges)==0):
-                        self.deleteNode(node)
-            i+=1
-            
-        if (edgeExists == 0):
-            edge = Edge(s1,s2)
-            n1.edges.append(edge)
-            n2.edges.append(edge)
-        news = []
-        if (self.error > self.maxError):
-            maxNode = self.findMaxErrorNode()
-            maxNeighbor = self.findMaxErrorNeighbor(maxNode)
-            newVector = []
-            for i in range(self.vectorSize):
-                newVector.append(0.5*(maxNode.modelVector[i]\
-                                 +maxNeighbor.modelVector[i]))
-            for i in range(len(self.nodes)):
-                if (self.nodes[i].modelVector == None):
-                    break
-            if (i == len(self.nodes)-1 and self.nodes[i].modelVector != None):
-                i = i+1
-            newNode = Node(i,newVector)
-            news.append(i)
-            news.append(maxNode.index)
-            news.append(maxNeighbor.index)
-            if i == len(self.nodes):
-                self.nodes.append(newNode)
-            else:
-                self.nodes[i] = newNode
-            self.deleteEdge(maxNode, maxNeighbor)
-            edge = Edge(i, maxNode.index)
-            newNode.edges.append(edge)
-            maxNode.edges.append(edge)
-            edge = Edge(i, maxNeighbor.index)
-            newNode.edges.append(edge)
-            maxNeighbor.edges.append(edge)
-            maxNode.error = self.alpha*maxNode.error
-            maxNeighbor.error = self.alpha*maxNeighbor.error
-            newNode.error = maxNode.error
-            
-        self.error = 0
-        num = 0
-        for i in range(len(self.nodes)):
-            if (self.nodes[i].modelVector != None):
-                self.nodes[i].error = self.d*self.nodes[i].error
-                self.error += self.nodes[i].error
-                num+=1
-                
-        self.error = self.error/num
-        #news will be an empty list if a new node was not created and will be
-        #[the index of the new node, the index of the closest node, the index
-        #of the neighbor node]
-        return [s1, news]
-        
-    def findMaxErrorNode(self):
-        error = -1
-        node = self.nodes[0]
-        for i in range (len(self.nodes)):
-            if (self.nodes[i].error > error \
-                and self.nodes[i].modelVector != None):
-                error = self.nodes[i].error
-                node = self.nodes[i]
-        return node
-
-    def findMaxErrorNeighbor(self, node):
-        error = -1
-        maxnode = self.nodes[0]
-        for i in range(len(node.edges)):
-            edge = node.edges[i]
-            if (edge.node1 == node.index):
-                ind = edge.node2
-            else:
-                ind = edge.node1
-            err = self.nodes[ind].error
-            if (err > error):
-                error = err
-                maxnode = self.nodes[ind]
-        return maxnode
-                
-    def deleteNode(self, node):
-        print "***Deleting Node***",node.index
-        node.modelVector = None
-
-
-    def deleteEdge(self, toNode, fromNode):
-        self.deleteHalfEdge(toNode, fromNode)
-        self.deleteHalfEdge(fromNode, toNode)
-
-    def deleteHalfEdge(self, toNode, fromNode):
-        for i in range(len(toNode.edges)):
-            if (toNode.edges[i].node1 == fromNode.index \
-                or toNode.edges[i].node2 == fromNode.index):
-                del(toNode.edges[i])
-                break
-                
+    winnerLearnRate   Used to adjust closest unit towards input point
+    neighborLearnRate Used to adjust other neighbors towards input point
+    maxAge            Edges older than maxAge are removed
+    reduceError       All errors are reduced by this amount each GNG step
+    stepsToInsert     A new unit is added periodically based on this
+    insertError       Error of every new unit is reduced by this amount
     
-    def updateModelVector(self,node, vector, ep):
-        for i in range(len(vector)):
-            node.modelVector[i] += ep*(vector[i]-node.modelVector[i])
+    NOTE: The default values are taken from the paper.
 
+    The GNG always begins with two randomly placed units.  It takes as
+    input a function that will generate the next point from the input
+    distribution. 
+    """
+    def __init__(self, generateNext, length, verbose=0):
+        self.winnerLearnRate = 0.2
+        self.neighborLearnRate = 0.006
+        self.maxAge = 50
+        self.reduceError = 0.995
+        self.stepsToInsert = 100
+        self.insertError = 0.5
 
-    def findNearNodes(self,vector):
-        dist1 = self.dist(self.nodes[0].modelVector, vector)
-        dist2 = self.dist(self.nodes[1].modelVector, vector)
-        if (dist1 > dist2):
-            tmp = dist1
-            dist1 = dist2
-            dist2 = tmp
-            s1 = 1
-            s2 = 0
-        else:
-            s1 = 0
-            s2 = 1
-        
-        for i in range(2,len(self.nodes)):
-            dist = self.dist(self.nodes[i].modelVector, vector)
-            if (dist < dist1):
-                dist2 = dist1
-                dist1 = dist
-                s2 = s1
-                s1 = i
-            elif (dist < dist2):
-                dist2 = dist
-                s2 = i
-        return [s1, s2]
-
-    def dist(self, v1, v2):
-        """
-        Returns the euclidean distance between two given
-        vectors.
-        """
-        d = 0
-        if (v1 == None or v2 == None):
-            return self.INFTY
-
-        for i in range(self.vectorSize):
-            d += (v1[i] - v2[i])*(v1[i] - v2[i])
-        return sqrt(d)
+        self.verbose = verbose
+        self.stepCount = 1
+        self.units = [Unit(dimension=length), Unit(dimension=length)]
+        self.generateNext = generateNext
 
     def __str__(self):
-        result = ""
-        for i in range(len(self.nodes)):
-            result += str(self.nodes[i])+"\n"
-        result += "Net Error: "+str(self.error)
+        result = "GNG step " + str(self.stepCount) + "\n"
+        result += "Number of units: " + str(len(self.units)) + "\n"
+        result += "Average error: " + str(self.averageError()) + "\n"
+        if self.verbose > 1:
+            for unit in self.units:
+                result += unit.__str__()
         return result
+
+    def distance(self, v1, v2):
+        """
+        Returns the Euclidean distance between two vectors.
+        """
+        total = 0
+        for i in range(len(v1)):
+            total += (v1[i] - v2[i])**2
+        return sqrt(total)
+
+    def plot(self):
+        """
+        Creates a file readable by xgraph of the first two dimensions
+        of every unit vector and its edges
+        """
+        filename = "plot%d" % self.stepCount
+        data = open(filename, "w")
+        for unit in self.units:
+            for edge in unit.edges:
+                data.write("move %f %f\n" % (unit.vector[0], unit.vector[1]))
+                next = edge.toUnit
+                data.write("%f %f\n" % (next.vector[0], next.vector[1]))
+        data.close()
+
+    def unitOfInterest(self, unit, cutoff):
+        """
+        Used to focus on particular units when debugging.
+        """
+        for value in unit.vector:
+            if abs(value) > cutoff:
+                return True
+        else:
+            return False
+
+    def computeDistances(self, point):
+        """
+        Computes the distances between the given point and every unit
+        in the GNG.  Returns the closest and next closest units.
+        """
+        dists = []
+        for i in range(len(self.units)):
+            dists.append((self.distance(self.units[i].vector, point), i))
+        dists.sort()
+        best = dists[0][1]
+        second = dists[1][1]
+        if self.verbose > 1:
+            print "Processing:", point
+            print "Closest:", self.units[best].vectorStr()
+            print "Second:", self.units[second].vectorStr()
+            print
+        return self.units[best], self.units[second]
+
+    def incrementEdgeAges(self, unit):
+        """
+        Increments the ages of every unit directly connected to the
+        given unit.
+        """
+        for outgoing in unit.edges:
+            outgoing.age += 1
+            incoming = outgoing.toUnit.getEdgeTo(unit)
+            incoming.age += 1
+
+    def connectUnits(self, a, b):
+        """
+        Adds the appropriate edges to connect units a and b.
+        """
+        if self.verbose >= 1:
+            print "Add edge:", a.vectorStr(), b.vectorStr()
+        a.edges.append(Edge(b))
+        b.edges.append(Edge(a))
+
+    def disconnectUnits(self, a, b):
+        """
+        Removes the appropriate edges to disconnect units a and b.
+        """
+        if self.verbose >= 1:
+            print "Remove edge:", a.vectorStr(), b.vectorStr()
+        a.edges.remove(a.getEdgeTo(b))
+        b.edges.remove(b.getEdgeTo(a))
+
+    def removeStaleEdges(self):
+        """
+        Checks all edges in the GNG and removes any with an age exceeding
+        the maxAge parameter.  Also removes any unit that is completely
+        disconnected.
+        """
+        for unit in self.units:
+            i = len(unit.edges)-1
+            while i>=0:
+                if unit.edges[i].age > self.maxAge:
+                    if self.verbose >= 1:
+                        adjacent = unit.edges[i].toUnit
+                        print "Removing stale edge: %s %s" % \
+                              (unit.vectorStr(), adjacent.vectorStr())
+                    unit.edges.pop(i)
+                i -= 1
+                    
+        i = len(self.units)-1
+        while i>=0:
+            if len(self.units[i].edges) == 0:
+                if self.verbose >= 1:
+                    print "Removing disconnected unit:", unit.vectorStr()
+                self.units.pop(i)
+            i -= 1
+
+    def maxErrorUnit(self, unitList):
+        """
+        Given a list of units, returns the unit with the highest error.
+        """
+        highest = unitList[0]
+        for i in range(1, len(unitList)):
+            if unitList[i].error > highest.error:
+                highest = unitList[i]
+        return highest
+
+    def averageError(self):
+        """
+        Returns the average error across all units in the GNG.
+        """
+        total = 0.0
+        for unit in self.units:
+            total += unit.error
+        return total/len(self.units)
+
+    def insertUnit(self):
+        """
+        Inserts a new unit into the GNG.  Finds the unit with the highest
+        error and then finds its topological neighbor with the highest
+        error and inserts the new unit between the two. 
+        """
+        worst = self.maxErrorUnit(self.units)
+        if self.verbose > 1:
+            print "Max error", worst.__str__()
+        worstNeighbor = self.maxErrorUnit(worst.getNeighbors())
+        newVector = []
+        for i in range(len(worst.vector)):
+            newVector.append(0.5 * (worst.vector[i] + worstNeighbor.vector[i]))
+        newUnit = Unit(newVector)
+        if self.verbose > 0:
+            print "Insert unit:", newUnit.vectorStr()
+        self.units.append(newUnit)
+        self.connectUnits(newUnit, worst)
+        self.connectUnits(newUnit, worstNeighbor)
+        self.disconnectUnits(worst, worstNeighbor)
+        worst.error *= self.insertError
+        worstNeighbor.error *= self.insertError
+        newUnit.error = worst.error
+
+    def reduceAllErrors(self):
+        """
+        Decays the error at all units.
+        """
+        for unit in self.units:
+            unit.error *= self.reduceError
+                
+    def step(self):
+        """
+        Processes one input at a time through the GNG.
         
-if __name__ == '__main__':
-    from pyrobot.gui.plot.scatter import Scatter
-    sp = Scatter(connectPoints = 0, linecount=3)
-    length = 2
-    gng = GNG(length, .05) # make second number smaller to match better
-    print gng
-    print "\n------------------------------------------------\n"
-    for i in range(100):
-        #vector = [(1 + sin((i+n) * 2 * pi * 3.0/70.0))/2 for n in range(2)]
-        vector = [random() for x in range(length)]
-        sp.addPoint(vector[0], vector[1], line = 1)
-        gng.newInput(vector)
-        if (i%10 == 0):
+        Do an experiment to illustrate the ability of GNG to grow and
+        shrink.  Generate input from the unit circle.  The change the
+        distribution for a time.  Eventually revert back to the
+        original distribution.
+        """
+        if self.stepCount < 5000 or self.stepCount > 10000:
+            nextPoint = self.generateNext(1)
+        else:
+            nextPoint = self.generateNext(0.5)
+        best, second = self.computeDistances(nextPoint)
+        self.incrementEdgeAges(best)
+        best.error += self.distance(best.vector, nextPoint)**2
+        best.moveVector(nextPoint, self.winnerLearnRate)
+        for unit in best.getNeighbors():
+            unit.moveVector(nextPoint, self.neighborLearnRate)
+        edgeExists = best.getEdgeTo(second)
+        if edgeExists:
+            edgeExists.age = 0
+            second.getEdgeTo(best).age = 0
+        else:
+            self.connectUnits(best, second)
+        self.removeStaleEdges()
+        if self.stepCount % self.stepsToInsert == 0:
+            self.insertUnit()
+        self.reduceAllErrors()
+        ### To view progress of learning
+        if self.stepCount % 1000 == 0:
+            self.plot()
+        self.stepCount += 1
+
+def main():
+    gng = GrowingNeuralGas(randomCirclePoint, 2, verbose=0)
+    for i in range(15000):
+        gng.step()
+        if gng.stepCount % 1000==0:
             print gng
-            print "\n------------------------------------------------\n"
-            sp.clear(2)
-            for node in gng.nodes:
-                sp.addPoint(node.modelVector[0], node.modelVector[1],
-                            color = "blue", size=3, line=2)
-                for edge in node.edges:
-                    n1 = gng.nodes[edge.node1].modelVector
-                    n2 = gng.nodes[edge.node2].modelVector
-                    sp.addLine(n1[0], n1[1], n2[0], n2[1], 
-                               color = "black", line=2)
-            raw_input("<MORE>")
+    
+if __name__ == '__main__':
+    main()
