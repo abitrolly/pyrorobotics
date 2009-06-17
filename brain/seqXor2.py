@@ -51,7 +51,7 @@ if __name__ == '__main__':
     print "the second output is predictable."
     n = SRN()
     n.addSRNLayers(1,5,1)
-    n.setSequenceType("epoch")
+    n.setSequenceType("random-continuous")
     n.setEpsilon(0.2)
     n.setMomentum(0.1)
     n.setBatch(0)
