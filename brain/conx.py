@@ -4005,13 +4005,13 @@ class BackpropNetwork(Network):
         else:
             return self.actDisplay.info[layerName][attribute]
 
-    def train(self, sweeps=None):
+    def train(self, sweeps=None, cont=0):
         if sweeps is None:
             self.resetEpoch = 10000
         else:
             assert type(sweeps) is int and sweeps > 0, 'invalid number of sweeps'
             self.resetEpoch = sweeps
-        Network.train(self)
+        Network.train(self, cont=cont)
 
     def showData(self):
         print "%d training patterns, %d test patterns" % (len(self.inputs), len(self.testInputs))
