@@ -290,6 +290,7 @@ class RovioCamera(Camera):
        if not self.active: return
        import PIL.Image as PyImage
        import array
+       self.processAll()
        filename = "/home/rwalker1/research/test.jpg"
        width = 352
        height = 288
