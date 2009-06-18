@@ -59,11 +59,11 @@ class V4L2 : public Device
   char device[255];
   int channel;
   char *device_name;
-  static char *           dev_name;
-  static io_method	  io;
-  static int              fd;
-  struct buffer *         buffers;
-  static unsigned int     n_buffers;
+  char *           dev_name;
+  io_method	  io;
+  int              fd;
+  buffer *         buffers;
+  unsigned int     n_buffers;
 };
 
 #endif // __V4L2_H
