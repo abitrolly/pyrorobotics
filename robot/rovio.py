@@ -60,7 +60,7 @@ class RovioRobot(Robot):
         self.SendRequest("Cmd=nav&action=18&drive="+data+"")
         time.sleep(1)
 
-    def Light(self):
+    def light(self):
         if self.light == "1":
             self.light = "0"
         else:
@@ -148,6 +148,8 @@ class RovioRobot(Robot):
         #|wifi_ss=233|show_time=0|ddns_state=0|email_state=0
         #|battery=126|charging=80|head_position=203|ac_freq=2
     # makeProgBar(width,min,max,val)
+      
+      self.stop()
       stats = {}
       self.imageDump()
       statstr = self.SendRequest("Cmd=nav&action=1", 1)
@@ -220,7 +222,8 @@ class RovioRobot(Robot):
       return pic
 
     def ping(self):
-      os.system('ping -c2 ' + self.theurl)
+      #set for a short nonverbose ping, remove flags but -c* for normal
+      os.system('ping -c1 -n -q -s1 ' + self.theurl)
 
 from pyrobot.camera.fake.fake import Fake # cameraDevice
 from pyrobot.camera import Camera, CBuffer # base class
