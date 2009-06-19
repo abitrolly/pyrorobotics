@@ -133,6 +133,59 @@ static void yuv420p_to_rgb24(int width, int height, unsigned char *pIn0,
     }
 }
 
+#define u32 uint32_t
+
+#define R(x,y,width) pRGB24[0 + 3 * ((x) + width * (y))]
+#define G(x,y,width) pRGB24[1 + 3 * ((x) + width * (y))]
+#define B(x,y,width) pRGB24[2 + 3 * ((x) + width * (y))]
+
+#define Bay(x,y,width) pBay[(x) + width * (y)]
+
+static void bayer_copy(unsigned char *pBay, unsigned char *pRGB24, int x, int y, int width)
+{
+
+  G(x + 0, y + 0,width) = Bay(x + 0, y + 0,width);
+  G(x + 1, y + 1,width) = Bay(x + 1, y + 1,width);
+  G(x + 0, y + 1,width) = G(x + 1, y + 0,width) = ((u32)Bay(x + 0, y + 0,width) + (u32)Bay(x + 1, y + 1, width)) / 2;
+  R(x + 0, y + 0,width) = R(x + 1, y + 0,width) = R(x + 1, y + 1,width) = R(x + 0, y + 1,width) = Bay(x + 0, y + 1,width);
+  B(x + 1, y + 1,width) = B(x + 0, y + 0, width) = B(x + 0, y + 1,width) = B(x + 1, y + 0,width) = Bay(x + 1, y + 0,width);
+}
+
+static void bayer_bilinear(unsigned char *pBay, unsigned char *pRGB24, int x, int y, int width)
+{
+  R(x + 0, y + 0, width) = ((u32)Bay(x + 0, y + 1, width) + (u32)Bay(x + 0, y - 1, width)) / 2;
+  G(x + 0, y + 0, width) = Bay(x + 0, y + 0, width);
+  B(x + 0, y + 0, width) = ((u32)Bay(x - 1, y + 0, width) + (u32)Bay(x + 1, y + 0, width)) / 2;
+
+  R(x + 0, y + 1, width) = Bay(x + 0, y + 1, width);
+  G(x + 0, y + 1, width) = ((u32)Bay(x + 0, y + 0, width) + (u32)Bay(x + 0, y + 2, width)
+      + (u32)Bay(x - 1, y + 1, width) + (u32)Bay(x + 1, y + 1, width)) / 4;
+  B(x + 0, y + 1, width) = ((u32)Bay(x + 1, y + 0, width) + (u32)Bay(x - 1, y + 0, width)
+      + (u32)Bay(x + 1, y + 2, width) + (u32)Bay(x - 1, y + 2, width)) / 4;
+
+  R(x + 1, y + 0, width) = ((u32)Bay(x + 0, y + 1, width) + (u32)Bay(x + 2, y + 1, width)
+      + (u32)Bay(x + 0, y - 1, width) + (u32)Bay(x + 2, y - 1, width)) / 4;
+  G(x + 1, y + 0, width) = ((u32)Bay(x + 0, y + 0, width) + (u32)Bay(x + 2, y + 0, width)
+      + (u32)Bay(x + 1, y - 1, width) + (u32)Bay(x + 1, y + 1, width)) / 4;
+  B(x + 1, y + 0, width) = Bay(x + 1, y + 0, width);
+
+  R(x + 1, y + 1, width) = ((u32)Bay(x + 0, y + 1, width) + (u32)Bay(x + 2, y + 1, width)) / 2;
+  G(x + 1, y + 1, width) = Bay(x + 1, y + 1, width);
+  B(x + 1, y + 1, width) = ((u32)Bay(x + 1, y + 0, width) + (u32)Bay(x + 1, y + 2, width)) / 2;
+}
+
+
+static void bayer_to_rgb24(unsigned char *pBay, unsigned char *pRGB24, int width)
+{
+  int i, j;
+  for (i = 0; i < 640; i += 2)
+    for (j = 0; j < 480; j += 2)
+      if (i == 0 || j == 0 || i == 640 - 2 || j == 480 - 2)
+	bayer_copy(pBay, pRGB24, i, j, width);
+      else
+	bayer_bilinear(pBay, pRGB24, i, j, width);
+}
+
 void V4L2::process_image(void *p, int length)
 {
   switch(format){
@@ -146,6 +199,10 @@ void V4L2::process_image(void *p, int length)
     break;
   case V4L2_PIX_FMT_YUYV:
     convert_yuyv_to_bgr24((unsigned char *)p, image, width, height);
+    break;
+    //case 1196573255: // GBRG
+  case V4L2_PIX_FMT_SPCA561:
+    bayer_to_rgb24((unsigned char *)p, image, width);
     break;
     //case V4L2_PIX_FMT_UYVY: 
     //break;
@@ -502,11 +559,21 @@ void V4L2::init_device(void)
 	case V4L2_PIX_FMT_YUV420: 
 	  printf("v4l2 format: YUV 4:2:0\n");
 	  break;
+	case V4L2_PIX_FMT_SPCA561:
+	  //case 1196573255: // GBRG
+	  printf("v4l2 format: GBRG\n"); // a Bayer pattern
+	  break;
 	default: 
 	  char format_name[5] = {'\0'};
 	  for (int i = 0; i < 4; i++) {
 	    format_name[i] = (char)(fmt.fmt.pix.pixelformat >> (i * 8));
 	  }
+	  fprintf(stderr, "compute: %d\n", 
+	      ((long)'G') + 
+	      ((long)'B') << 8 + 
+	      ((long)'R') << 16 + 
+	      ((long)'G') << 24);
+	  fprintf(stderr, " actual: %d\n", fmt.fmt.pix.pixelformat);
 	  fprintf(stderr, "ERROR: Unknown V4L2 init_device format '%s'\n",
 	      format_name);
 	  errno_exit("unknown v4l2 format");
