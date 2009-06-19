@@ -144,14 +144,17 @@ void V4L2::process_image(void *p, int length)
   case V4L2_PIX_FMT_RGB32: 
     image = (unsigned char*)p;
     break;
-    //  case V4L2_PIX_FMT_UYVY: 
+  case V4L2_PIX_FMT_YUYV:
+    convert_yuyv_to_bgr24((unsigned char *)p, image, width, height);
+    break;
+    //case V4L2_PIX_FMT_UYVY: 
     //break;
     //case V4L2_PIX_FMT_GREY:
     //break;
     //case V4L2_PIX_FMT_YUV420: 
     //break;
   default: 
-    fprintf(stderr, "unknown format '%c%c%c%c'\n",
+    fprintf(stderr, "ERROR: Unknown V4L2 format '%c%c%c%c'\n",
 	    (char)(format),
 	    (char)(format>>8),
 	    (char)(format>>16),
@@ -490,6 +493,9 @@ void V4L2::init_device(void)
 	case V4L2_PIX_FMT_UYVY: 
 	  printf("v4l2 format: YUV\n");
 	  break;
+	case V4L2_PIX_FMT_YUYV: 
+	  printf("v4l2 format: YUYV\n");
+	  break;
 	case V4L2_PIX_FMT_GREY: 
 	  printf("v4l2 format: GREY\n");
 	  break;
@@ -497,11 +503,12 @@ void V4L2::init_device(void)
 	  printf("v4l2 format: YUV 4:2:0\n");
 	  break;
 	default: 
-	  fprintf(stderr, "unknown format '%c%c%c%c'\n",
-		  (char)(fmt.fmt.pix.pixelformat),
-		  (char)(fmt.fmt.pix.pixelformat>>8),
-		  (char)(fmt.fmt.pix.pixelformat>>16),
-		  (char)(fmt.fmt.pix.pixelformat>>24));
+	  char format_name[5] = {'\0'};
+	  for (int i = 0; i < 4; i++) {
+	    format_name[i] = (char)(fmt.fmt.pix.pixelformat >> (i * 8));
+	  }
+	  fprintf(stderr, "ERROR: Unknown V4L2 init_device format '%s'\n",
+	      format_name);
 	  errno_exit("unknown v4l2 format");
 	}
   
