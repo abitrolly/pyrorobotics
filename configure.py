@@ -177,6 +177,8 @@ included_packages = ask_yn("\n6. Options:", [
     ('camera/device vision/cvision', "Image Processing", "y"),
     ('camera/v4l', "Video for Linux \n(requires Image Processing)", 
      "y"),
+    ('camera/v4l2', "Video for Linux2 \n(requires Image Processing)", 
+     "y"),
     ('camera/bt848', "BT848 Video for old Pioneers \n(requires Image Processing)", 
      "n"),
     ('camera/fake', "Simulated vision from files \n(requires Image Processing)", 
