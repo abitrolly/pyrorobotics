@@ -38,15 +38,126 @@ int V4L2::xioctl(int fd, int request, void *arg)
         return r;
 }
 
-void V4L2::process_image(void *p)
+#define CLIP(color) (unsigned char)(((color)>0xFF)?0xff:(((color)<0)?0:(color))) 
+void convert_yuyv_to_bgr24(const unsigned char *src, unsigned char *dest,
+  int width, int height)
 {
-  fputc ('.', stdout);
-  fflush (stdout);
-  // image should be memory mapped
-  /* You could do some things on top of image here:
-    for (int i = 0; i < size; i++)
-    image[i] = (unsigned char) ((unsigned char*)p)[i];
-  */
+  int j;
+
+  while (--height >= 0) {
+    for (j = 0; j < width; j += 2) {
+      int u = src[1];
+      int v = src[3];
+      int u1 = (((u - 128) << 7) +  (u - 128)) >> 6;
+      int rg = (((u - 128) << 1) +  (u - 128) +
+                ((v - 128) << 2) + ((v - 128) << 1)) >> 3;
+      int v1 = (((v - 128) << 1) +  (v - 128)) >> 1;
+
+      *dest++ = CLIP(src[0] + u1);
+      *dest++ = CLIP(src[0] - rg);
+      *dest++ = CLIP(src[0] + v1);
+
+      *dest++ = CLIP(src[2] + u1);
+      *dest++ = CLIP(src[2] - rg);
+      *dest++ = CLIP(src[2] + v1);
+      src += 4;
+    }
+  }
+} 
+
+#define LIMIT(x) ((x)>0xffffff?0xff: ((x)<=0xffff?0:((x)>>16)))
+
+static inline void move_420_block(int yTL, int yTR, int yBL, int yBR, 
+				  int u, int v, int rowPixels, 
+				  unsigned char * rgb)
+{
+    const int rvScale = 91881;
+    const int guScale = -22553;
+    const int gvScale = -46801;
+    const int buScale = 116129;
+    const int yScale  = 65536;
+    int r, g, b;
+
+    g = guScale * u + gvScale * v;
+    r = rvScale * v;
+    b = buScale * u;
+
+    yTL *= yScale; yTR *= yScale;
+    yBL *= yScale; yBR *= yScale;
+
+    /* Write out top two pixels */
+    rgb[0] = LIMIT(b+yTL); rgb[1] = LIMIT(g+yTL);
+    rgb[2] = LIMIT(r+yTL);
+
+    rgb[3] = LIMIT(b+yTR); rgb[4] = LIMIT(g+yTR);
+    rgb[5] = LIMIT(r+yTR);
+
+    /* Skip down to next line to write out bottom two pixels */
+    rgb += 3 * rowPixels;
+    rgb[0] = LIMIT(b+yBL); rgb[1] = LIMIT(g+yBL);
+    rgb[2] = LIMIT(r+yBL);
+
+    rgb[3] = LIMIT(b+yBR); rgb[4] = LIMIT(g+yBR);
+    rgb[5] = LIMIT(r+yBR);
+}
+
+static void yuv420p_to_rgb24(int width, int height, unsigned char *pIn0, 
+			     unsigned char *pOut0)
+{
+    const int numpix = width * height;
+    const int bytes = 24 >> 3;
+    int i, j, y00, y01, y10, y11, u, v;
+    unsigned char *pY = pIn0;
+    unsigned char *pU = pY + numpix;
+    unsigned char *pV = pU + numpix / 4;
+    unsigned char *pOut = pOut0;
+
+    for (j = 0; j <= height - 2; j += 2) {
+        for (i = 0; i <= width - 2; i += 2) {
+            y00 = *pY;
+            y01 = *(pY + 1);
+            y10 = *(pY + width);
+            y11 = *(pY + width + 1);
+            u = (*pU++) - 128;
+            v = (*pV++) - 128;
+
+            move_420_block(y00, y01, y10, y11, u, v,
+                       width, pOut);
+    
+            pY += 2;
+            pOut += 2 * bytes;
+
+        }
+        pY += width;
+        pOut += width * bytes;
+    }
+}
+
+void V4L2::process_image(void *p, int length)
+{
+  switch(format){
+  case V4L2_PIX_FMT_JPEG: 
+    jpeg_decompress((unsigned char *)image, (width * height * depth), 
+		    (unsigned char *)p, (int) length);
+    swap_rgb24((char *)image, width * height);
+    break;
+  case V4L2_PIX_FMT_RGB32: 
+    image = (unsigned char*)p;
+    break;
+    //  case V4L2_PIX_FMT_UYVY: 
+    //break;
+    //case V4L2_PIX_FMT_GREY:
+    //break;
+    //case V4L2_PIX_FMT_YUV420: 
+    //break;
+  default: 
+    fprintf(stderr, "unknown format '%c%c%c%c'\n",
+	    (char)(format),
+	    (char)(format>>8),
+	    (char)(format>>16),
+	    (char)(format>>24));
+    errno_exit("process_image");
+  }
 }
 
 int V4L2:: read_frame(void)
@@ -66,7 +177,8 @@ int V4L2:: read_frame(void)
 				errno_exit ("read");
 			}
 		}
-    		process_image (buffers[0].start);
+    		process_image(buffers[0].start,
+			      buffers[0].length);
 		break;
 	case IO_METHOD_MMAP:
 		CLEAR (buf);
@@ -84,7 +196,8 @@ int V4L2:: read_frame(void)
 			}
 		}
                 assert (buf.index < n_buffers);
-	        process_image (buffers[buf.index].start);
+	        process_image(buffers[buf.index].start, 
+			      buffers[buf.index].length);
 		if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
 			errno_exit ("VIDIOC_QBUF");
 		break;
@@ -108,7 +221,8 @@ int V4L2:: read_frame(void)
 			    && buf.length == buffers[i].length)
 				break;
 		assert (i < n_buffers);
-    		process_image ((void *) buf.m.userptr);
+    		process_image ((void *) buf.m.userptr,
+			       buf.length);
 		if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
 			errno_exit ("VIDIOC_QBUF");
 		break;
@@ -210,11 +324,11 @@ void V4L2::init_read(unsigned int buffer_size)
   }
 }
 
-void V4L2::init_mmap(void)
+void V4L2::init_mmap(int nbufs)
 {
 	struct v4l2_requestbuffers req;
         CLEAR (req);
-        req.count               = 4; 
+        req.count               = nbufs; 
         req.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         req.memory              = V4L2_MEMORY_MMAP;
 	if (-1 == xioctl (fd, VIDIOC_REQBUFS, &req)) {
@@ -226,11 +340,13 @@ void V4L2::init_mmap(void)
                         errno_exit ("VIDIOC_REQBUFS");
                 }
         }
+	/*
         if (req.count < 2) {
                 fprintf (stderr, "Insufficient buffer memory on %s\n",
                          device);
                 exit (EXIT_FAILURE);
         }
+	*/
         buffers = (buffer*) calloc (req.count, sizeof (*buffers));
         if (!buffers) {
                 fprintf (stderr, "Out of memory\n");
@@ -245,17 +361,15 @@ void V4L2::init_mmap(void)
                 if (-1 == xioctl (fd, VIDIOC_QUERYBUF, &buf))
                         errno_exit ("VIDIOC_QUERYBUF");
                 buffers[n_buffers].length = buf.length;
-                buffers[n_buffers].start =
-                        mmap (NULL /* start anywhere */,
-                              buf.length,
-                              PROT_READ | PROT_WRITE /* required */,
-                              MAP_SHARED /* recommended */,
-                              fd, buf.m.offset);
+		buffers[n_buffers].start =
+		  mmap (NULL /* start anywhere */,
+			buf.length,
+			PROT_READ | PROT_WRITE /* required */,
+			MAP_SHARED /* recommended */,
+			fd, buf.m.offset);
                 if (MAP_FAILED == buffers[n_buffers].start)
                         errno_exit ("mmap");
         }
-	// DSB:
-	// image = (unsigned char*)buffers[0].start;
 }
 
 void V4L2::init_userp(unsigned int buffer_size)
@@ -357,11 +471,40 @@ void V4L2::init_device(void)
         fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         fmt.fmt.pix.width       = width; 
         fmt.fmt.pix.height      = height;
-	// DSB:
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24; // V4L2_PIX_FMT_YUYV;
+        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
         fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
         if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
-                errno_exit ("VIDIOC_S_FMT");
+	  errno_exit ("VIDIOC_S_FMT");
+
+	if (-1 == xioctl (fd, VIDIOC_G_FMT, &fmt))
+	  errno_exit("VIDIOC_G_FMT");
+	
+	format = fmt.fmt.pix.pixelformat;
+	switch(fmt.fmt.pix.pixelformat){
+	case V4L2_PIX_FMT_JPEG: 
+	  printf("v4l2 format: JPEG\n");
+	  break;
+	case V4L2_PIX_FMT_RGB32: 
+	  printf("v4l2 format: RGBA\n");
+	  break;
+	case V4L2_PIX_FMT_UYVY: 
+	  printf("v4l2 format: YUV\n");
+	  break;
+	case V4L2_PIX_FMT_GREY: 
+	  printf("v4l2 format: GREY\n");
+	  break;
+	case V4L2_PIX_FMT_YUV420: 
+	  printf("v4l2 format: YUV 4:2:0\n");
+	  break;
+	default: 
+	  fprintf(stderr, "unknown format '%c%c%c%c'\n",
+		  (char)(fmt.fmt.pix.pixelformat),
+		  (char)(fmt.fmt.pix.pixelformat>>8),
+		  (char)(fmt.fmt.pix.pixelformat>>16),
+		  (char)(fmt.fmt.pix.pixelformat>>24));
+	  errno_exit("unknown v4l2 format");
+	}
+  
         /* Note VIDIOC_S_FMT may change width and height. */
 	/* Buggy driver paranoia. */
 	min = fmt.fmt.pix.width * 2;
@@ -375,7 +518,7 @@ void V4L2::init_device(void)
 		init_read (fmt.fmt.pix.sizeimage);
 		break;
 	case IO_METHOD_MMAP:
-		init_mmap ();
+		init_mmap(1);
 		break;
 	case IO_METHOD_USERPTR:
 		init_userp (fmt.fmt.pix.sizeimage);

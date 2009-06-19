@@ -17,6 +17,7 @@
 #include <sys/ioctl.h>
 #include <asm/types.h>          /* for videodev2.h */
 #include <linux/videodev2.h>
+#include "jpeg.h"
 
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
@@ -45,7 +46,7 @@ class V4L2 : public Device
   void uninit_device();
   void start_capturing(void);
   void init_read(unsigned int);
-  void init_mmap();
+  void init_mmap(int nbufs);
   void init_userp(unsigned int);
   void init_device();
   void close_device();
@@ -53,7 +54,7 @@ class V4L2 : public Device
   void stop_capturing(void);
   void errno_exit(char*);
   int xioctl(int, int, void*);
-  void process_image(void*);
+  void process_image(void*, int);
   int read_frame();
 
   char device[255];
@@ -64,6 +65,7 @@ class V4L2 : public Device
   int              fd;
   buffer *         buffers;
   unsigned int     n_buffers;
+  int              format;
 };
 
 #endif // __V4L2_H

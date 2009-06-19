@@ -13,10 +13,13 @@ CPPFLAGS = -Wall -Wno-unused -D_POSIX_THREADS \
 	$(PYTHON_INCLUDE)
 
 LIBDIRS= 
-LIBS= -lstdc++ -ldl -lpthread
+LIBS= -lstdc++ -ldl -lpthread -ljpeg
 
-_v4l2.so: v4l2.o V4L2.o
-	$(CC) $(CPPFLAGS) -shared v4l2.o V4L2.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+_v4l2.so: v4l2.o V4L2.o jpeg.o
+	$(CC) $(CPPFLAGS) -shared v4l2.o jpeg.o V4L2.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+
+jpeg.o: jpeg.c jpeg.h
+	$(CC) jpeg.c -c
 
 V4L2.o:: V4L2.cpp ../device/Device.o
 	$(CC) $(CPPFLAGS) $(INCLUDE) -o $@ -c V4L2.cpp
