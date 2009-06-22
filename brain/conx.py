@@ -790,7 +790,7 @@ class Network(object):
         self.interactive = 0
         self.epsilon = 0.1
         self.reportRate = 25
-        self.sweepReportRate = 1000
+        self.sweepReportRate = None #1000
         self.crossValidationCorpus = ()
         self.crossValidationReportLayers = []
         self.crossValidationSampleRate = 0
@@ -1837,7 +1837,7 @@ class Network(object):
             totalCorrect += correct
             totalCount += total
             sumMerge(totalPCorrect, pcorrect)
-            if (cnt + 1) % self.sweepReportRate == 0:
+            if self.sweepReportRate and (cnt + 1) % self.sweepReportRate == 0:
                 print "   Step # %6d | TSS Error: %.4f | Correct: %.4f" % \
                       (cnt + 1, tssError, totalCorrect * 1.0 / totalCount)
             if self.crossValidationSampleRate and self.epoch % self.crossValidationSampleRate == 0:
@@ -3382,7 +3382,7 @@ class SigmaNetwork(Network):
 #=================================================================================
 
 import os
-from pyrobot.graphics import *
+from pyrobot.graphics import GraphWin, Line, Point, color_rgb, Text
 
 # support functions
 
@@ -3751,6 +3751,7 @@ class NetworkActivationDisplay(GraphWin):
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i], fill=fColor, outline=oColor)
         self.update_idletasks()
+        #GraphWin.update(self)
         while self.tk.dooneevent(2): pass
 
     def showWrong(self):
@@ -3896,6 +3897,7 @@ class NetworkWeightDisplay(GraphWin):
                     if rows == 1 or cols == 1: oColor = 'black'
                     self.itemconfigure(rectangles[i][j], fill=fColor, outline=oColor)
         self.update_idletasks()
+        #GraphWin.update(self)
         while self.tk.dooneevent(2): pass
 
     def setTitle(self, title):
@@ -3987,6 +3989,7 @@ class BackpropNetwork(Network):
     # give unArrayify method a better name
     def installWeights(self, weightList):
         self.unArrayify(weightList)
+        self.updateGraphics()
 
     def getIncomingLayers(self, layerName):
         layers = []
