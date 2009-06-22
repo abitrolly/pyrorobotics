@@ -21,7 +21,7 @@ class RovioRobot(Robot):
         self.theurl = url
         self.username = user
         self.password = password
-        self.camLock = 1
+       # self.camLock = 1
         self.ping()
         
       # said Admin user's password
@@ -38,6 +38,7 @@ class RovioRobot(Robot):
         self.obstacle = 0
          
         self.lock = threading.Lock()
+        self.camLock = threading.Lock()
         
     def connect(self): pass 
     def disconnect(self): pass
@@ -210,9 +211,9 @@ class RovioRobot(Robot):
 
     def imageDump(self):
       self.lock.acquire()
-      self.camLock = 0
+      self.camLock.acquire()
       urllib.urlretrieve("http://"+self.theurl+"/Jpeg/CamImg1234.jpg", "/home/rwalker1/research/test.jpg")
-      self.camLock = 1
+      self.camLock.release()
       self.lock.release()
 
     def imageGrab(self):
@@ -289,7 +290,7 @@ class RovioCamera(Camera):
                self.vision.setVal(w, h, d, array[w][h][d])
 
    def update(self):
-       if self.robot.camLock == 0: return
+       self.robot.camLock.acquire()
        if not self.active: return
        import PIL.Image as PyImage
        import array
@@ -309,6 +310,7 @@ class RovioCamera(Camera):
                self.vision.setVal(w, h, 0, r)
                self.vision.setVal(w, h, 1, g)
                self.vision.setVal(w, h, 2, b)
+       self.robot.camLock.release()
 
 if __name__=='__main__':
     x = RovioRobot('10.0.0.9')
