@@ -150,7 +150,7 @@ class RovioRobot(Robot):
         #|battery=126|charging=80|head_position=203|ac_freq=2
     # makeProgBar(width,min,max,val)
       
-      self.stop()
+      #self.stop()
       stats = {}
       self.imageDump()
       statstr = self.SendRequest("Cmd=nav&action=1", 1)
@@ -221,6 +221,15 @@ class RovioRobot(Robot):
       pic = urllib.urlopen("http://"+self.theurl+"/Jpeg/CamImg1234.jpg")
       self.lock.release()
       return pic
+
+    def battery(self):
+      avg = 0
+      for bat in self.battList:
+        avg += bat
+      avg = ((avg/5)-100)/27.0
+
+      print "Rovio Battery status: "
+      print str(avg) + "%"
 
     def ping(self):
       #set for a short nonverbose ping, remove flags but -c* for normal

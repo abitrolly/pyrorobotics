@@ -5,8 +5,8 @@ class rovioTrackBall(Brain):
 
     def setup(self):
         self.cam = self.robot.camera[0]
-        self.cam.addFilter("match", 248, 68, 97)
-        #self.cam.addFilter("match", 234, 18, 129)
+        self.cam.addFilter("match", 255, 77, 85)
+        self.cam.addFilter("match", 254, 121, 155)
         self.cam.addFilter("blobify",0,255,255,0,1,1,1,)
         print "setup complete"
                 
@@ -26,15 +26,15 @@ class rovioTrackBall(Brain):
                 if area > 25:
                     centerX, centerY = (x1 + x2)/2, (y1 + y2)/2
                     diff = (centerX - (self.cam.width/2))
-                    if abs(diff) < (.1 * self.cam.width):
+                    if abs(diff) < (.2 * self.cam.width):
                         self.robot.translate(1)
                     elif diff < 0:
                         # negative is right, positive is left
-                        self.robot.rotate(.3) 
+                        print "Turn Left"
                         self.robot.rotate(.3) 
                         self.robot.rotate(.3) 
                     else:
-                        self.robot.rotate(-.3) 
+                        print "Turn Right"
                         self.robot.rotate(-.3) 
                         self.robot.rotate(-.3) 
                     # ---------------------------------
