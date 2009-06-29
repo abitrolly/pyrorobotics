@@ -510,11 +510,8 @@ class TKgui(Tkinter.Toplevel, gui):
          if self.engine and self.engine.brain:
             self.engine.brain.makeWindow()
 
-
    def redrawWindowBrain(self):
-      try:
-         test = getattr(self.engine.brain, "redraw")
-      except AttributeError:
+      if getattr(self.engine.brain, "redraw", None) is None:
          return
       try:
          self.engine.brain.redraw()

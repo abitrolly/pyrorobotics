@@ -218,7 +218,8 @@ class Brain(threading.Thread):
 
     def redraw(self):
         """Redraws the brain watch window."""
-        self.canvas.create_text(100,130, tags='pie',fill='black', text = "This Brain needs a redraw method!")
+        if getattr(self, 'canvas', None) is not None:
+            self.canvas.create_text(100,130, tags='pie',fill='black', text = "This Brain needs a redraw method!")
 
     def destroy(self):
         """
