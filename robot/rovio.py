@@ -177,7 +177,7 @@ class RovioRobot(Robot):
 
       if battavg < 108:
         battPercent = 27.0/(battavg-100)
-        print "LOW BATTERY WARNING. Battery at: "+battPercent
+        print "LOW BATTERY WARNING. Battery at: "+str(battPercent)
 
 
       # Going Home state doesn't seem to be used?
