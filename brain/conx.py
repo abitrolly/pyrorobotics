@@ -475,6 +475,7 @@ class Layer:
         """
         Displays the Layer instance to the screen.
         """
+        if self.displayWidth == 0: return
         print "============================="
         print "Layer '%s': (Kind: %s, Size: %d, Active: %d, Frozen: %d)" % (
             self.name, self.kind, self.size, self.active, self.frozen)
