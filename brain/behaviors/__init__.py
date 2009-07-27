@@ -161,7 +161,8 @@ class BehaviorBasedBrain(Brain):
                   #     pass
                   percentSoFar += portion
       else:
-         self.canvas.create_text(200,130, tags='pie',fill='black', text = "Ready...")
+         if getattr(self, 'canvas', None) is not None:
+            self.canvas.create_text(200,130, tags='pie',fill='black', text = "Ready...")
 
 class Behavior:
    """
