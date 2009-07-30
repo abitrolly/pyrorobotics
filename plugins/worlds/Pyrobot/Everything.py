@@ -18,10 +18,10 @@ def INIT():
                          ((.225, .225, -.225, -.225),
                           (.175, -.175, -.175, .175)), "red")
     sim.addRobot(60000, pioneer1)
-    pioneer2 = TkPioneer("Green Pioneer", 3, 3, 1,
-                         ((.225, .225, -.225, -.225),
-                          (.175, -.175, -.175, .175)), "green")
-    sim.addRobot(60001, pioneer2)
+#     pioneer2 = TkPioneer("Green Pioneer", 3, 3, 1,
+#                          ((.225, .225, -.225, -.225),
+#                           (.175, -.175, -.175, .175)), "green")
+#     sim.addRobot(60001, pioneer2)
 
     # configure red robot
     # add camera w/PTZ
@@ -35,22 +35,23 @@ def INIT():
     # add front light sensors
     sim.robots[0].addDevice(PioneerFrontLightSensors())
 
-    # configure green robot
-    # add camera w/PTZ
-    cam2 = Camera(80, 40, 0, 120, 0, 0, 0)
-    sim.robots[1].addDevice(cam2)
-    sim.robots[1].addDevice(PTZ(cam2))
-    # add gripper
-    sim.robots[1].addDevice(Gripper())
+#     # configure green robot
+#     # add camera w/PTZ
+#     cam2 = Camera(80, 40, 0, 120, 0, 0, 0)
+#     sim.robots[1].addDevice(cam2)
+#     sim.robots[1].addDevice(PTZ(cam2))
+#     # add gripper
+#     sim.robots[1].addDevice(Gripper())
 
     # add the walls
     walls = [(7.5, 1.5, 8, 8.5, "blue"),
-             (1.5, 5, 3, 7.5, "magenta")]
+#             (1.5, 5, 3, 7.5, "magenta")
+             ]
     for (x1, y1, x2, y2, color) in walls:
         sim.addBox(x1, y1, x2, y2, color, wallcolor=color)
 
     # add a light
-    sim.addLight(1.2, 1.2, 1) # (x, y) meters, brightness usually 1 (1 meter radius)
+    sim.addLight(2, 2, 1.9) # (x, y) meters, brightness usually 1 (1 meter radius)
 
     # add red pucks at random positions
     numpucks = 10
