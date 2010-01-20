@@ -4137,12 +4137,14 @@ class BackpropNetwork(Network):
         if self.actDisplay is not None and not self.actDisplay.closed:
             self.actDisplay.close()
         self.actDisplay = NetworkActivationDisplay(self, title, style, horizSpacing, vertSpacing, invert, info)
+        self.updateGraphics()
 
     def showWeights(self, title='Weights', invert=False, **kw_args):
         info = self.process_keyword_args(kw_args)
         if self.weightDisplay is not None and not self.weightDisplay.closed:
             self.weightDisplay.close()
         self.weightDisplay = NetworkWeightDisplay(self, title, invert, info)
+        self.updateGraphics()
 
     def process_keyword_args(self, kw_args):
         commonScale = None
