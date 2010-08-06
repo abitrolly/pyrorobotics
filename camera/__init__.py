@@ -500,8 +500,8 @@ class Camera(PyrobotImage, Device):
    def clearCallbackList(self):
       # callback is a function that has first param
       # as self (ie, the visionSystem object)
-      while len(self.callbackList) > 0: self.callbackList.pop()
-      while len(self.callbackTextList) > 0: self.callbackTextList.pop()
+      self.callbackList[:] = []
+      self.callbackTextList[:] = []
       if not self.getActive():
          self.updateOnce()
       return "Ok"

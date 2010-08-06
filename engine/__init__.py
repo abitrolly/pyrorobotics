@@ -132,7 +132,7 @@ class Engine:
             os.system(pyrobotdir() + '/plugins/simulators/' + file + \
                       (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
          else:
-            raise "Pyrobot Server file not found: '%s'" % file
+            raise Exception("Pyrobot Server file not found: '%s'" % file)
       else:
          # Ends with "Simulator"
          simDirName = simulatorName[:-9]
@@ -154,7 +154,7 @@ class Engine:
             os.system(pyrobotdir() + '/plugins/simulators/' + file + \
                       (" %d " % pyroPID) + guiflag + " " + worldfile + " &")
          else:
-            raise "Pyrobot Simulator file not found: '%s'" % file
+            raise Exception("Pyrobot Simulator file not found: '%s'" % file)
       print "Loading.",
       sys.stdout.flush()
       wait = None
@@ -181,7 +181,7 @@ class Engine:
                                       '/plugins/robots/' + file)
          self.robotfile = pyrobotdir() + '/plugins/robots/' + file
       else:
-         raise "Pyrobot Robot file not found: '%s'" % file
+         raise Exception("Pyrobot Robot file not found: '%s'" % file)
 
    def setRobot(self,robot):
       """Sets the robot, after the creation of the engine."""
@@ -194,7 +194,7 @@ class Engine:
    def loadBrain(self,file):
       """Finds and loads the brain file."""
       if self.robot is 0:
-         raise 'No robot loaded when loading brain'
+         raise Except('No robot loaded when loading brain')
       if file[-3:] != '.py':
          file = file + '.py'
       if system.file_exists(file):
