@@ -3383,7 +3383,7 @@ class SigmaNetwork(Network):
 #=================================================================================
 
 import os
-from pyrobot.graphics import GraphWin, Line, Point, color_rgb, Text
+from pyrobot.pyrographics import GraphWin, Line, Point, color_rgb, Text
 
 # support functions
 

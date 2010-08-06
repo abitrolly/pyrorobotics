@@ -223,7 +223,7 @@ class Engine:
                                       '/plugins/brains/' + file, self)
          self.brainfile = pyrobotdir() + '/plugins/brains/' + file
       else:
-         raise "Pyrobot File not found: '%s'" % file
+         raise Exception("Pyrobot File not found: '%s'" % file)
 
    def freeBrain(self):
       """Kills the brain."""

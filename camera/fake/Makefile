@@ -17,16 +17,16 @@ LIBS= -lstdc++ -ldl -lpthread
 	cd ../device/; make
 
 _fake.so: fake.o FakeLib.o 
-	$(CC) $(CPPFLAGS) -shared fake.o FakeLib.o ../device/Device.o -o $@ $(LIBS)
+	$(CC) -fPIC $(CPPFLAGS) -shared fake.o FakeLib.o ../device/Device.o -o $@ $(LIBS)
 
 FakeLib.o:: FakeLib.cpp FakeLib.h ../device/Device.o
-	$(CC) $(CPPFLAGS) -o $@ -c FakeLib.cpp
+	$(CC) -fPIC $(CPPFLAGS) -o $@ -c FakeLib.cpp
 
 FakeLib.cc: FakeLib.i FakeLib.h ../device/Device.o
 	swig -python -c++ $(INCLUDE) -o FakeLib.cc FakeLib.i
 
 fake.o: FakeLib.cc
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) FakeLib.cc -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) FakeLib.cc -o $@
 
 clean::
 	$(RM) *~ *.so *.o fake.py FakeLib.cc

@@ -512,9 +512,11 @@ class Camera(PyrobotImage, Device):
    def processAll(self):
       if self.filterMode and self.vision != None:
          self.vision.applyFilterList()
-         while len(self.filterResults): self.filterResults.pop()
+         self.filterResults[:] = []
          for filterFunc in self.callbackList:
             self.filterResults.append( filterFunc(self) )
+         if len(self.filterResults) != len(self.callbackList):
+            print "processAll: invalid length of filterResults"
 
 if __name__ == '__main__':
    from pyrobot.vision.cvision import VisionSystem

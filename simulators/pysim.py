@@ -1,3 +1,4 @@
+
 """
 A Pure Python 2D Robot Simulator
 
@@ -892,6 +893,8 @@ class Simulator:
             light.x = 0.5 + random.random() * (width-1)
             light.y = 0.5 + random.random() * (height-1)
             light.brightness = brightness
+            # ADDED BY LISA, to reset color map
+            light.rgb = colorMap[light.color]
         self.redraw()
 
     def resetLightPositions(self, coords):
@@ -1919,12 +1922,15 @@ class SimRobot:
 
     def eat(self, amt):
         for light in self.simulator.lights:
-            if light != "fixed": continue
+            if light.type != "fixed": continue
             dist = Segment((self._gx, self._gy), (light.x, light.y)).length()
             radius = max(light.brightness, self.radius)
             if amt == -1:
                 if light.brightness > 0 and dist <= radius:
                     light.brightness = 0
+                    # ADDED BY LISA, RGB values should be voided once eaten
+                    # "grey0" is (0,0,0)
+                    light.rgb = colorMap["grey0"]
                     self.simulator.redraw()
                     return 1.0
             elif dist <= radius and amt/1000.0 <= light.brightness:
@@ -2329,8 +2335,10 @@ class Light:
         self.y = y
         self.brightness = brightness
         self.color = color
+        # ADDED BY LISA, to allow lights to be reset back to original color
+        self.origColor = color
         self._xyb = x, y, brightness # original settings for reset
-        self.rgb = colorMap[color]
+        self.rgb = colorMap[color] 
         self.type = "fixed"
 class BulbDevice(Light):
     """

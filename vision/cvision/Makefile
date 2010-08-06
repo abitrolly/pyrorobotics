@@ -15,16 +15,16 @@ CPPFLAGS = -O3 -Wall -Wno-unused -D_POSIX_THREADS \
 LIBS= -lstdc++ -ldl -lpthread
 
 _vision.so: vision.o VisionLib.o ../../camera/device/Device.o
-	$(CC) $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) -fPIC $(CPPFLAGS) -shared $^ $(LIBDIRS) -o $@ $(LIBS)
 
 VisionLib.o:: VisionLib.cpp
-	$(CC) $(CPPFLAGS) -o $@ -c $<
+	$(CC) -fPIC $(CPPFLAGS) -o $@ -c $<
 
 VisionLib.cc: VisionLib.i VisionLib.h VisionLib.cpp
 	swig $(INCLUDE) -python -c++ -o $@ VisionLib.i
 
 vision.o: VisionLib.cc
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) $^ -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) $^ -o $@
 
 clean::
 	$(RM) *~ *.so *.o *.cc *.so *.pyc vision.py
