@@ -233,6 +233,11 @@ class Engine:
    def freeRobot(self):
       """Kills the robot."""
       self.freeBrain()
+      # First, disconnect other robots
+      if hasattr(self.brain, "otherRobots"):
+         for engine in self.brain.otherRobots:
+            engine.pleaseStop()
+            engine.freeRobot()
       if self.robot != 0:
          self.robot.disconnect()
          self.robot = 0
