@@ -426,11 +426,8 @@ class gui:
       if not self.alreadyCleanedUp:
          self.alreadyCleanedUp = 1
          self.done = 1
-         try:
-            sys.stdout = self.sysstdout
-            sys.stderr = self.sysstderr
-         except:
-            pass
+         sys.stdout = self.sysstdout
+         sys.stderr = self.sysstderror
          if self.engine != 0:
             self.engine.shutdown()
          try:
