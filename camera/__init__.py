@@ -76,8 +76,8 @@ class Camera(PyrobotImage, Device):
       self.title = title
       self.filterMode = 1
       self.callbackList = []
-      self.filterResults = []
       self.callbackTextList = []
+      self.filterResults = [] 
       Device.__init__(self, 'camera', async=async)
       # specific camera type will define self.rgb = (0, 1, 2) offsets
       # and self.format = "RGB", for example
@@ -512,11 +512,8 @@ class Camera(PyrobotImage, Device):
    def processAll(self):
       if self.filterMode and self.vision != None:
          self.vision.applyFilterList()
-         self.filterResults[:] = []
-         for filterFunc in self.callbackList:
-            self.filterResults.append( filterFunc(self) )
-         if len(self.filterResults) != len(self.callbackList):
-            print "processAll: invalid length of filterResults"
+         self.filterResults[:] = [filterFunc(self) for 
+                                  filterFunc in self.callbackList]
 
 if __name__ == '__main__':
    from pyrobot.vision.cvision import VisionSystem
