@@ -233,6 +233,9 @@ class CameraSimDevice(ManualFakeCamera):
 		self.lock.acquire()
 		self.data = [128 for i in range(self.height * self.width * 3)]
 		self._data = self.robot.move("camera_%d" % 0)
+		if self._data == None:
+			self.lock.release()
+			return
 		if len(self._data) == self.width:
 			for w in range(self.width):
 				(color, height) = self._data[w]
@@ -394,6 +397,8 @@ class TCPRobot(Simbot):
 		self.init(startDevices)
 
 	def move(self, message, other = None):
+		if self.lock.locked():
+			return None
 		self.lock.acquire()
 		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
 			message = "m_%.2f_%.2f" % (message, other)
