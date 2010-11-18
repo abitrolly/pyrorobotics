@@ -26,7 +26,7 @@ SWIG=swig
 #statically linked one. -- WKV 2003-07-28
 #LD=ld
 LD=$(CC)
-CC_FLAGS=-c -g -I $(PYTHON_INCLUDE)
+CC_FLAGS=-c -g -I $(PYTHON_INCLUDE) -fPIC
 SWIG_FLAGS=-python
 LD_FLAGS=-shared
 

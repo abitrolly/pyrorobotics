@@ -20,13 +20,13 @@ _fourway.so: fourway.o FourwayLib.o
 	$(CC) $(CPPFLAGS) -shared fourway.o FourwayLib.o ../device/Device.o -o $@ $(LIBS)
 
 FourwayLib.o:: FourwayLib.cpp FourwayLib.h ../device/Device.o
-	$(CC) $(CPPFLAGS) -o $@ -c FourwayLib.cpp
+	$(CC) -fPIC $(CPPFLAGS) -o $@ -c FourwayLib.cpp
 
 FourwayLib.cc: FourwayLib.i FourwayLib.h ../device/Device.o
 	swig -python -c++ $(INCLUDE) -o FourwayLib.cc FourwayLib.i
 
 fourway.o: FourwayLib.cc
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) FourwayLib.cc -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) FourwayLib.cc -o $@
 
 clean::
 	$(RM) *~ *.so *.o fourway.py FourwayLib.cc

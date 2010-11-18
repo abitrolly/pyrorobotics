@@ -21,13 +21,13 @@ _stereo.so: stereo.o StereoLib.o
 	$(CC) $(CPPFLAGS) -shared stereo.o StereoLib.o ../device/Device.o $(OOBJS) -o $@ $(LIBS)
 
 StereoLib.o:: StereoLib.cpp StereoLib.h ../device/Device.o
-	$(CC) $(CPPFLAGS) -o $@ -c StereoLib.cpp
+	$(CC) -fPIC $(CPPFLAGS) -o $@ -c StereoLib.cpp
 
 StereoLib.cc: StereoLib.i StereoLib.h ../device/Device.o
 	swig -python -c++ $(INCLUDE) -o StereoLib.cc StereoLib.i
 
 stereo.o: StereoLib.cc
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) StereoLib.cc -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) StereoLib.cc -o $@
 
 clean::
 	$(RM) *~ *.so *.o stereo.py StereoLib.cc p2p

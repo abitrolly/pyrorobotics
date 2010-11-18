@@ -18,25 +18,25 @@ LIBS= -lstdc++ -ldl -lpthread -ljpeg
 	cd ../device/; make
 
 _aibo.so: aibo.o AiboLib.o Socket.o jpeg.o RWLock.o
-	$(CC) $(CPPFLAGS) -shared aibo.o AiboLib.o Socket.o jpeg.o RWLock.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
+	$(CC) -fPIC $(CPPFLAGS) -shared aibo.o AiboLib.o Socket.o jpeg.o RWLock.o ../device/Device.o $(LIBDIRS) -o $@ $(LIBS)
 
 RWLock.o: RWLock.cpp RWLock.h
-	$(CC) RWLock.cpp -c
+	$(CC) -fPIC RWLock.cpp -c
 
 jpeg.o: jpeg.c jpeg.h
-	$(CC) jpeg.c -c
+	$(CC) -fPIC jpeg.c -c
 
 AiboLib.o: AiboLib.cpp AiboLib.h ../device/Device.o
-	$(CC) $(CPPFLAGS) -o $@ -c AiboLib.cpp
+	$(CC) -fPIC $(CPPFLAGS) -o $@ -c AiboLib.cpp
 
 AiboLib.cc: AiboLib.i AiboLib.h ../device/Device.o
 	swig -python -c++ $(INCLUDE) -o AiboLib.cc AiboLib.i
 
 aibo.o: AiboLib.cc 
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) AiboLib.cc -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) AiboLib.cc -o $@
 
 Socket.o: Socket.cpp Socket.h
-	$(CC) -c $(PYTHON_INCLUDE) $(INCLUDE) Socket.cpp -o $@
+	$(CC) -fPIC -c $(PYTHON_INCLUDE) $(INCLUDE) Socket.cpp -o $@
 
 clean::
 	$(RM) *~ *.so *.o AiboLib.cc aibo.py

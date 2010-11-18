@@ -2,8 +2,8 @@ include ../../../../Makefile.cfg
 include ../../../../Makefile.src
 
 CC=cc
-CFLAGS=-O $(PYTHON_INCLUDE)
-LDFLAGS=-s
+CFLAGS=-O $(PYTHON_INCLUDE) -fPIC
+LDFLAGS=-s -fPIC
 LDLIBS=-lm
 LD=$(CC)
 
