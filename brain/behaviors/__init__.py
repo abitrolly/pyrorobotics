@@ -132,13 +132,17 @@ class BehaviorBasedBrain(Brain):
       width = 100
       row = (pie - 1) * (width * 1.5)
       colors = ['blue', 'red', 'tan', 'yellow', 'orange', 'black', 'azure', 'beige', 'brown', 'coral', 'gold', 'ivory', 'moccasin', 'navy', 'salmon', 'tan', 'ivory']
-      self.canvas.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
-      self.canvas.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
-      self.canvas.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
+      if getattr(self, 'canvas', None) is not None:
+         self.canvas.create_text(xoffset + 60,row + 10, tags='pie',fill='black', text = controller) 
+         self.canvas.create_arc(xoffset + 10,row + yoffset,width + xoffset + 10,row + width + yoffset,start = percentSoFar * 360.0, extent = percent * 360.0 - .001, tags='pie',fill=colors[(piececnt - 1) % 17])
+         self.canvas.create_text(xoffset + 300,row + 10 + piececnt * 20, tags='pie',fill=colors[(piececnt - 1) % 17], text = name)
 
    def redraw(self):
       if len(self.pie) != 0:
-         self.canvas.delete('pie')
+         if getattr(self, 'canvas', None) is not None:
+            self.canvas.delete('pie')
+         else:
+            return
          piecnt = 0
          for control in self.controls:
             if control == "update": continue
