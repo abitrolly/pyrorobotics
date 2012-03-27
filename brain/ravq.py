@@ -1,4 +1,5 @@
-import Numeric, math, random, sys
+import numpy.oldnumeric as Numeric
+import math, random, sys
 from pyrobot.tools.circularlist import CircularList
 
 __author__ = "Jeremy Stober"

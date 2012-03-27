@@ -139,6 +139,7 @@ class SOM:
               error
 
     def test(self):
+        import numpy.oldnumeric as Numeric
         self.loadOrder = range(len(self.input))
         histogram = Numeric.zeros((self.cols, self.rows), 'i')
         for p in self.loadOrder:
@@ -152,7 +153,7 @@ class SOM:
         print ""
 
 if __name__ == '__main__':
-    import Numeric
+    import numpy.oldnumeric as Numeric
     s = SOM(5, 7, 5) # rows, cols; length of high-dimensional input
     s.setInputs( RandomArray.random((100, 5))) 
     s.maxStep = 100

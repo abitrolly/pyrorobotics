@@ -5,7 +5,8 @@ A simple Genetic Algorithm in Python
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import Numeric, math, random, time, sys, string
+import numpy.oldnumeric as Numeric
+import math, random, time, sys, string
 from copy import deepcopy
 
 def display(v):
@@ -624,9 +625,8 @@ if __name__ == '__main__':
     if sys.stdin.readline().lower()[0] == 'y':
         # composed of N colors, M places (usually 6 and 4)
         # feedback is # in correct place, # of correct color
-        phrase = "abcdefghijklmnopqrstuvwxyz"
+        phrase = "evolution is one cool search mechanism"
         size = len(phrase)
-        primer = 0
         print
         class MasterMindGA(GA):
             def fitnessFunction(self, i):
@@ -644,17 +644,7 @@ if __name__ == '__main__':
                     if g in correct:
                         correct.remove(g)
                         sumColor += 1
-                if primer:
-                    if (sumColor + sumPosition > size/2):
-                        goodPosition = 10
-                        goodColor    =  1
-                    else:
-                        goodPosition = 0
-                        goodColor    = 1
-                else:
-                    goodPosition = 100
-                    goodColor    =   1
-                return sumColor * goodColor + sumPosition * goodPosition
+                return sumColor + sumPosition * 100
             def isDone(self):
                 print "Best:",
                 self.pop.bestMember.display()

@@ -7,7 +7,8 @@
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
 __version__ = "$Revision$"
 
-import Numeric, math, random
+import numpy.oldnumeric as Numeric
+import math, random
 
 # Typical activation functions are:
 

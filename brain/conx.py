@@ -17,7 +17,8 @@ __version__ = "$Revision$"
 # Includes newConx version 4/24/2009
 # Jim Marshall
 
-import Numeric, math, random, time, sys, operator
+import numpy.oldnumeric as Numeric
+import math, random, time, sys, operator
 try:
     import pyrobot.system.share as share
 except:
