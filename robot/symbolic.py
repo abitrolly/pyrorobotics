@@ -272,7 +272,7 @@ class Simbot(Robot):
 				if dev in ["sonar", "laser", "ir"]:
 					self.range = d
 	def move(self, message, other = None):
-		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
+		if type(message) != type(""):
 			message = "m_%.2f_%.2f" % (message, other)
 			other = None
 		retval = None
@@ -400,7 +400,7 @@ class TCPRobot(Simbot):
 		if self.lock.locked():
 			return None
 		self.lock.acquire()
-		if type(message) in [type(1), type(1.)] and type(other) in [type(1), type(1.)]:
+		if type(message) != type(""): 
 			message = "m_%.2f_%.2f" % (message, other)
 			other = None
 		exp = None
