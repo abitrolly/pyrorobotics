@@ -543,10 +543,11 @@ class gui:
          self.engine.simfile = f
          pyroPID = os.getpid()
          if os.name in ['nt', 'dos', 'os2'] :
-            # FIXME: this assumes program to run is a python program; how will we know?
-            # could leave out "python" and windows will ask
-            print "start python %s %d %s" % (f, pyroPID, worldfile)
-            os.system("start python \"%s\" \"%d\" \"%s\"" % (f, pyroPID, worldfile))
+            # FIXME: this assumes program to run is a python program, but theres is only
+            # one such simulator
+            cmd = 'start "simulator" "%s" "%s" %d "%s"' % (sys.executable, f, pyroPID, worldfile)
+            print cmd
+            os.system(cmd)
          elif os.name in ['posix']:
             os.system(f + (" %d " % pyroPID) + worldfile + " &")
          else:
