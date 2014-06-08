@@ -5,7 +5,6 @@ import sys
 import signal
 import time
 import string
-from posix import popen
 from pyrobot.system.version import version as version
 from pyrobot.system import help, usage, about, file_exists
 from pyrobot import pyrobotdir
@@ -269,7 +268,7 @@ class gui:
       elif len(retval) >= 2 and retval[0:2] == "$$":
          os.system(retval[2:])
       elif len(retval) >= 1 and retval[0] == "$":
-         pipe = popen(retval[1:])
+         pipe = os.popen(retval[1:])
          for line in pipe.readlines():
             print line.strip()
          pipe.close()
