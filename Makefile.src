@@ -5,7 +5,10 @@
 # You shouldn't need to change anything below this line
 # -----------------------------------------------------
 
-PYROBOT_VERSION = 5.0.2
+# This define is only for packaging, see __init__.py
+# for actual version definition.
+
+PYROBOT_VERSION = 5.0.3
 PYROBOT_DEFINE = -DPYROBOT_VERSION=\"$(PYROBOT_VERSION)\"
 
 .PHONY: $(SUBDIRS) clean all

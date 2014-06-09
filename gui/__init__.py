@@ -5,7 +5,7 @@ import sys
 import signal
 import time
 import string
-from pyrobot.system.version import version as version
+from pyrobot.system.version import version
 from pyrobot.system import help, usage, about, file_exists
 from pyrobot import pyrobotdir
 
