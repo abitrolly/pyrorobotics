@@ -1,5 +1,5 @@
 import RandomArray
-import Numeric
+import numpy.oldnumeric as Numeric
 import operator
 
 def randomBits(length):

@@ -1,6 +1,8 @@
 """ Device for getting a frequence and turning it into distance. """
 
-import ossaudiodev, struct, math, FFT, Numeric, time, random
+import ossaudiodev, struct, math, FFT
+import numpy.oldnumeric as Numeric 
+import time, random
 from pyrobot.robot.device import Device
 
 class FrequencyDevice(Device):

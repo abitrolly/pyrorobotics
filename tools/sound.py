@@ -9,7 +9,7 @@ except:
     print "FFT not installed"
     ossaudiodev = None
 try:
-    import Numeric
+    import numpy.oldnumeric as Numeric
 except:
     print "Numeric not installed"
     ossaudiodev = None

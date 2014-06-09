@@ -3,7 +3,7 @@ Classes for 3D Matrix manipulations.
 """
 
 import math
-import Numeric
+import numpy.oldnumeric as Numeric
 
 RAD = math.pi/180.0
 

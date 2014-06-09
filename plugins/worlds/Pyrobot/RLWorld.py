@@ -1,6 +1,6 @@
 import Tkinter, os, random, pickle
 import Image, ImageTk, ImageDraw, ImageFont 
-from Numeric import resize
+from numpy.oldnumeric import resize
 from string import atof, atoi
 import itertools
 from pyrobot import pyrobotdir

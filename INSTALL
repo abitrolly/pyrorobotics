@@ -1,3 +1,9 @@
+Prerequisites
+=============
+
+  * NumPy 1.8.x
+
+
 Building Pyrobot
 ----------------
 
