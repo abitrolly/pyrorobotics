@@ -1,7 +1,7 @@
 import os
 
 __author__ = "Douglas Blank <dblank@brynmawr.edu>"
-__version__ = "5.0.3"
+__version__ = "5.0.4"
 
 def pyrobotdir():
     return os.path.split(os.path.abspath(__file__))[0]
