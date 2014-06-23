@@ -7,6 +7,18 @@ Prerequisites
 
   * NumPy 1.8.x
 
+Using Pyrobot
+=============
+
+Windows:
+
+  > python bin/pyrobot.py
+
+Linux:
+
+  > make
+  > pyrobot
+
 
 Building Pyrobot
 ================

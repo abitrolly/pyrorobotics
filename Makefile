@@ -37,7 +37,7 @@ Makefile.cfg:
 
 bin/pyrobot: Makefile.cfg Makefile Makefile.src build/pyrobot
 	echo "#!$(PYTHON_BIN)" > bin/pyrobot
-	cat build/pyrobot >> bin/pyrobot
+	cat bin/pyrobot.py >> bin/pyrobot
 	chmod a+x bin/pyrobot
 
 clean:: 
